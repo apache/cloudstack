@@ -81,7 +81,7 @@
           </a-button>
         </a-col>
         <a-col :xs="{span: 1, offset: 3}" :md="1">
-          <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
+          <a-button :disabled="options.img === ''" type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
         </a-col>
         <a-col :xs="{span: 2, offset: 5}" :md="2">
           <a-button
@@ -195,7 +195,7 @@ export default {
       this.options.img = ''
     },
     beforeUpload (file) {
-      if (!/\.(svg|jpg|jpeg|png|bmp|SVG|JPG|PNG)$/.test(file.name)) {
+      if (!/\.(bmp|jpeg|jpg|png|svg)$/i.test(file.name)) {
         this.showAlert = true
       }
       const reader = new FileReader()

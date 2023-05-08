@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -87,7 +89,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     // from LibvirtComputingResource.createDiskFromTemplate(KVMPhysicalDisk, String, PhysicalDiskFormat, long, KVMStoragePool)
     // does not apply for iScsiAdmStoragePool
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
@@ -95,7 +97,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     // from KVMStorageProcessor.createVolume(CreateObjectCommand)
     // does not apply for iScsiAdmStoragePool
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         throw new UnsupportedOperationException("Creating a physical disk is not supported.");
     }
 
@@ -170,4 +172,15 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
     public boolean supportsConfigDriveIso() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("path", getLocalPath()).toString();
+    }
+
 }

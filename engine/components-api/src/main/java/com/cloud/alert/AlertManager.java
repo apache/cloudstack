@@ -36,10 +36,16 @@ public interface AlertManager extends Manager, AlertService {
         ConfigKey.Scope.Cluster, null);
 
     public static final ConfigKey<Boolean> AlertSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "alert.smtp.useStartTLS", "false",
-            "If set to true and if we enable security via alert.smtp.useAuth, this will enable StartTLS to secure the conection.", true);
+            "If set to true and if we enable security via alert.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
     public static final ConfigKey<String> AlertSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "alert.smtp.enabledSecurityProtocols", "",
             "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true);
+
+    public static final ConfigKey<Double> Ipv6SubnetCapacityThreshold = new ConfigKey<Double>("Advanced", Double.class,
+            "zone.virtualnetwork.ipv6subnet.capacity.notificationthreshold",
+            "0.75",
+            "Percentage (as a value between 0 and 1) of guest network IPv6 subnet utilization above which alerts will be sent.",
+            true);
 
     void clearAlert(AlertType alertType, long dataCenterId, long podId);
 

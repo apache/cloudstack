@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.event.Event;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Event.class)
 @SuppressWarnings("unused")
@@ -70,6 +69,18 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Param(description = "the name of the account's domain")
     private String domainName;
 
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Param(description = "the id of the resource", since = "4.17.0")
+    private String resourceId;
+
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "the type of the resource", since = "4.17.0")
+    private String resourceType;
+
+    @SerializedName(ApiConstants.RESOURCE_NAME)
+    @Param(description = "the name of the resource", since = "4.17.0")
+    private String resourceName;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the event was created")
     private Date created;
@@ -81,6 +92,10 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @SerializedName(ApiConstants.PARENT_ID)
     @Param(description = "whether the event is parented")
     private String parentId;
+
+    @SerializedName(ApiConstants.ARCHIVED)
+    @Param(description = "whether the event has been archived or not")
+    private Boolean archived;
 
     public void setId(String id) {
         this.id = id;
@@ -117,6 +132,30 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
         this.domainName = domainName;
     }
 
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    public String getResourceName() {
+        return resourceName;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
     }
@@ -137,5 +176,9 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setArchived(Boolean archived) {
+        this.archived = archived;
     }
 }

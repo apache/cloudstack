@@ -52,7 +52,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         + " AS runningVm ON c.id = runningVm.proxy_id WHERE i.state='Running' " + " GROUP BY c.id";
 
     //
-    // query SQL for returnning running VM count at data center basis
+    // query SQL for returning running VM count at data center basis
     //
     private static final String DATACENTER_VM_MATRIX = "SELECT d.id, d.name, count(v.id) AS count"
         + " FROM data_center AS d LEFT JOIN vm_instance AS v ON v.data_center_id=d.id "

@@ -30,6 +30,7 @@ import org.apache.cloudstack.network.opendaylight.api.model.NeutronPortWrapper;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.junit.Test;
 
+import com.google.gson.JsonParser;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -61,7 +62,8 @@ public class NeutronPortAdapterTest {
 
             String actual = entity.getContent();
 
-            Assert.assertEquals(jsonString, actual);
+            JsonParser parser = new JsonParser();
+            Assert.assertEquals(parser.parse(jsonString), parser.parse(actual));
         } catch (UnsupportedEncodingException e) {
             Assert.fail(e.getMessage());
         }

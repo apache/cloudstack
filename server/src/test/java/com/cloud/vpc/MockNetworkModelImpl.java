@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -46,11 +47,13 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -541,6 +544,16 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     }
 
+    @Override
+    public void checkNetworkOperatePermissions(Account owner, Network network) {
+
+    }
+
+    @Override
+    public void checkRouterPermissions(Account owner, VirtualRouter router) {
+
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getDefaultManagementTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
      */
@@ -913,7 +926,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId, String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
+    public List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId, String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
         return null;
     }
 
@@ -922,4 +935,19 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return null;
     }
 
+    @Override
+    public Pair<String, String> getNetworkIp4Dns(Network network, DataCenter zone) {
+        return new Pair<>(null, null);
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp6Dns(Network network, DataCenter zone) {
+        return new Pair<>(null, null);
+    }
+
+    @Override
+    public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {}
+
+    @Override
+    public void verifyIp6DnsPair(String ip4Dns1, String ip4Dns2) {}
 }

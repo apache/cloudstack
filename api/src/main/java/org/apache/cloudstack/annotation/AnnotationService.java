@@ -39,12 +39,13 @@ public interface AnnotationService {
 
     enum EntityType {
         VM(true), VOLUME(true), SNAPSHOT(true),
-        VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true),
+        VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true), USER_DATA(true),
         NETWORK(true), VPC(true), PUBLIC_IP_ADDRESS(true), VPN_CUSTOMER_GATEWAY(true),
         TEMPLATE(true), ISO(true), KUBERNETES_CLUSTER(true),
         SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
         ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
-        PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false);
+        PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false),
+        AUTOSCALE_VM_GROUP(true), MANAGEMENT_SERVER(false),;
 
         private final boolean usersAllowed;
 
@@ -76,6 +77,7 @@ public interface AnnotationService {
             list.add(EntityType.SECONDARY_STORAGE);
             list.add(EntityType.VR);
             list.add(EntityType.SYSTEM_VM);
+            list.add(EntityType.MANAGEMENT_SERVER);
             if (roleType != RoleType.DomainAdmin) {
                 list.add(EntityType.DOMAIN);
                 list.add(EntityType.SERVICE_OFFERING);

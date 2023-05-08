@@ -40,7 +40,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">
@@ -67,7 +66,7 @@
               </div>
               <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
-                <div>{{ acl.startport }}</div>
+                <div>{{ element.startport }}</div>
               </div>
               <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
@@ -120,7 +119,7 @@
         <a-form
           :ref="formRef"
           :model="form"
-          :rules="tagRules"
+          :rules="rules"
           class="add-tags"
           v-ctrl-enter="handleAddTag"
          >
@@ -138,7 +137,7 @@
               <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
-          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" :disabled="!(form.key && form.value)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;" />
@@ -182,10 +181,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
-            <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
+            <a-select-option value="allow" :label="$t('label.allow')">{{ $t('label.allow') }}</a-select-option>
+            <a-select-option value="deny" :label="$t('label.deny')">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.protocol')" ref="protocol" name="protocol">
@@ -194,13 +193,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
-            <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all" :label="$t('label.all')">{{ $t('label.all') }}</a-select-option>
+            <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ $t('label.protocol.number') }}</a-select-option>
           </a-select>
         </a-form-item>
 
@@ -236,16 +235,16 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
-            <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
+            <a-select-option value="ingress" :label="$t('label.ingress')">{{ $t('label.ingress') }}</a-select-option>
+            <a-select-option value="egress" :label="$t('label.egress')">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item :label="$t('label.description')" ref="reason" name="reason">
           <a-textarea
             v-model:value="form.reason"
-            :autosize="{ minRows: 2 }"
+            :autoSize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
 
@@ -262,10 +261,12 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import draggable from 'vuedraggable'
+import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',
+  mixins: [mixinForm],
   components: {
     draggable,
     TooltipButton
@@ -367,8 +368,8 @@ export default {
     openTagsModal (acl) {
       this.initForm()
       this.rules = {
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       }
       this.selectedAcl = acl
       this.fetchTags(this.selectedAcl)
@@ -499,7 +500,8 @@ export default {
     },
     handleEditRule () {
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
@@ -588,7 +590,8 @@ export default {
     },
     handleAddRule (e) {
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.fetchLoading = true
         this.ruleModalVisible = false
 

@@ -31,13 +31,12 @@ import com.cloud.user.Account;
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
-    private static final String s_name = "queryasyncjobresultresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "the ID of the asychronous job")
+    @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, required = true, description = "the ID of the asynchronous job")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -51,11 +50,6 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

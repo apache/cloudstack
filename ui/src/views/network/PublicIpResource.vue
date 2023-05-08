@@ -113,6 +113,11 @@ export default {
       this.loading = false
     },
     async filterTabs () {
+      // Public IPs in Free state have nothing
+      if (['Free', 'Reserved'].includes(this.resource.state)) {
+        this.tabs = this.defaultTabs
+        return
+      }
       // VPC IPs with source nat have only VPN
       if (this.resource && this.resource.vpcid && this.resource.issourcenat) {
         this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))

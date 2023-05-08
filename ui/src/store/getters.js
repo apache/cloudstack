@@ -42,7 +42,13 @@ const getters = {
   darkMode: state => state.user.darkMode,
   defaultListViewPageSize: state => state.user.defaultListViewPageSize,
   countNotify: state => state.user.countNotify,
-  customColumns: state => state.user.customColumns
+  customColumns: state => state.user.customColumns,
+  logoutFlag: state => state.user.logoutFlag,
+  shutdownTriggered: state => state.user.shutdownTriggered,
+  twoFaEnabled: state => state.user.twoFaEnabled,
+  twoFaProvider: state => state.user.twoFaProvider,
+  twoFaIssuer: state => state.user.twoFaIssuer,
+  loginFlag: state => state.user.loginFlag
 }
 
 export default getters

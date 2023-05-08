@@ -41,12 +41,21 @@ export default {
     param: 'storageid'
   }],
   resourceType: 'PrimaryStorage',
+  filters: () => {
+    const filters = ['initial', 'initialized', 'creating', 'attaching', 'up', 'prepareformaintenance', 'errorinmaintenance', 'cancelmaintenance', 'maintenance', 'disabled', 'removed']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'StoragePool',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))

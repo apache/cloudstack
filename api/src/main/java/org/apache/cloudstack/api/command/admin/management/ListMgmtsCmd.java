@@ -17,21 +17,19 @@
 package org.apache.cloudstack.api.command.admin.management;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = ListMgmtsCmd.APINAME, description = "Lists management servers.", responseObject = ManagementServerResponse.class,
+@APICommand(name = "listManagementServers", description = "Lists management servers.", responseObject = ManagementServerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListMgmtsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListMgmtsCmd.class.getName());
 
-    public static final String APINAME = "listManagementServers";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -60,13 +58,8 @@ public class ListMgmtsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Host;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Host;
     }
 
     @Override

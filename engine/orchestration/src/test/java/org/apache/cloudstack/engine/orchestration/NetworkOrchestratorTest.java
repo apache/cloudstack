@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,33 +38,48 @@ import org.junit.runners.JUnit4;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
+import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.IpAddress.State;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 
@@ -89,6 +102,11 @@ public class NetworkOrchestratorTest extends TestCase {
 
     private static final long networkOfferingId = 1l;
 
+    final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
+    final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
+    final String[] ip4AltDns = {"7.7.7.7", "8.8.8.8"};
+    final String[] ip6AltDns = {"2001:4860:4860::7777", "2001:4860:4860::8888"};
+
     @Override
     @Before
     public void setUp() {
@@ -101,6 +119,12 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchastrator._nicIpAliasDao = mock(NicIpAliasDao.class);
         testOrchastrator._ipAddressDao = mock(IPAddressDao.class);
         testOrchastrator._vlanDao = mock(VlanDao.class);
+        testOrchastrator._networkModel = mock(NetworkModel.class);
+        testOrchastrator._nicExtraDhcpOptionDao = mock(NicExtraDhcpOptionDao.class);
+        testOrchastrator.routerDao = mock(DomainRouterDao.class);
+        testOrchastrator.routerNetworkDao = mock(RouterNetworkDao.class);
+        testOrchastrator._vpcMgr = mock(VpcManager.class);
+        testOrchastrator.routerJoinDao = mock(DomainRouterJoinDao.class);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();
@@ -555,5 +579,133 @@ public class NetworkOrchestratorTest extends TestCase {
 
         Assert.assertEquals(expectedIsolation, resultUri.getScheme());
         Assert.assertEquals(expectedUri, resultUri.toString());
+    }
+
+    private NicProfile prepareMocksAndRunPrepareNic(VirtualMachine.Type vmType, boolean isDefaultNic, boolean isVpcRouter, boolean routerResourceHasCustomDns) {
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        Long nicId = 1L;
+        Long vmId = 1L;
+        Long networkId = 1L;
+        Integer networkRate = 200;
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getGuruName()).thenReturn(GuestNetworkGuru.class.getSimpleName());
+        Mockito.when(network.getDns1()).thenReturn(ip4Dns[0]);
+        Mockito.when(network.getDns2()).thenReturn(ip4Dns[1]);
+        Mockito.when(network.getIp6Dns1()).thenReturn(ip6Dns[0]);
+        Mockito.when(network.getIp6Dns2()).thenReturn(ip6Dns[1]);
+        Mockito.when(testOrchastrator._networkModel.getNetworkRate(networkId, vmId)).thenReturn(networkRate);
+        NicVO nicVO = Mockito.mock(NicVO.class);
+        Mockito.when(nicVO.isDefaultNic()).thenReturn(isDefaultNic);
+        Mockito.when(testOrchastrator._nicDao.findById(nicId)).thenReturn(nicVO);
+        Mockito.when(testOrchastrator._nicDao.update(nicId, nicVO)).thenReturn(true);
+        Mockito.when(testOrchastrator._networkModel.isSecurityGroupSupportedInNetwork(network)).thenReturn(false);
+        Mockito.when(testOrchastrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn(null);
+        Mockito.when(testOrchastrator._ntwkSrvcDao.getDistinctProviders(networkId)).thenReturn(new ArrayList<>());
+        testOrchastrator.networkElements = new ArrayList<>();
+        Mockito.when(testOrchastrator._nicExtraDhcpOptionDao.listByNicId(nicId)).thenReturn(new ArrayList<>());
+        Mockito.when(testOrchastrator._ntwkSrvcDao.areServicesSupportedInNetwork(networkId, Service.Dhcp)).thenReturn(false);
+        VirtualMachineProfile virtualMachineProfile = Mockito.mock(VirtualMachineProfile.class);
+        Mockito.when(virtualMachineProfile.getType()).thenReturn(vmType);
+        Mockito.when(virtualMachineProfile.getId()).thenReturn(vmId);
+        DeployDestination deployDestination = Mockito.mock(DeployDestination.class);
+        ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+        Mockito.doAnswer((org.mockito.stubbing.Answer<Void>) invocation -> {
+            NicProfile nicProfile = (NicProfile) invocation.getArguments()[0];
+            Network ntwk = (Network) invocation.getArguments()[1];
+            nicProfile.setIPv4Dns1(ntwk.getDns1());
+            nicProfile.setIPv4Dns2(ntwk.getDns2());
+            nicProfile.setIPv6Dns1(ntwk.getIp6Dns1());
+            nicProfile.setIPv6Dns2(ntwk.getIp6Dns2());
+            return null;
+        }).when(guru).updateNicProfile(Mockito.any(NicProfile.class), Mockito.any(Network.class));
+        DomainRouterVO routerVO = Mockito.mock(DomainRouterVO.class);
+        if (isVpcRouter) {
+            Long vpcId = 1L;
+            Mockito.when(routerVO.getVpcId()).thenReturn(vpcId);
+            VpcVO vpcVO = Mockito.mock(VpcVO.class);
+            if (routerResourceHasCustomDns) {
+                Mockito.when(vpcVO.getIp4Dns1()).thenReturn(ip4AltDns[0]);
+                Mockito.when(vpcVO.getIp4Dns2()).thenReturn(ip4AltDns[1]);
+                Mockito.when(vpcVO.getIp6Dns1()).thenReturn(ip6AltDns[0]);
+                Mockito.when(vpcVO.getIp6Dns2()).thenReturn(ip6AltDns[1]);
+            } else {
+                Mockito.when(vpcVO.getIp4Dns1()).thenReturn(null);
+                Mockito.when(vpcVO.getIp6Dns1()).thenReturn(null);
+            }
+            Mockito.when(testOrchastrator._vpcMgr.getActiveVpc(vpcId)).thenReturn(vpcVO);
+        } else {
+            Mockito.when(routerVO.getVpcId()).thenReturn(null);
+            Long routerNetworkId = 2L;
+            NetworkVO routerNetworkVO = Mockito.mock(NetworkVO.class);
+            if (routerResourceHasCustomDns) {
+                Mockito.when(routerNetworkVO.getDns1()).thenReturn(ip4AltDns[0]);
+                Mockito.when(routerNetworkVO.getDns2()).thenReturn(ip4AltDns[1]);
+                Mockito.when(routerNetworkVO.getIp6Dns1()).thenReturn(ip6AltDns[0]);
+                Mockito.when(routerNetworkVO.getIp6Dns2()).thenReturn(ip6AltDns[1]);
+            } else {
+                Mockito.when(routerNetworkVO.getDns1()).thenReturn(null);
+                Mockito.when(routerNetworkVO.getIp6Dns1()).thenReturn(null);
+            }
+            Mockito.when(testOrchastrator.routerNetworkDao.getRouterNetworks(vmId)).thenReturn(List.of(routerNetworkId));
+            Mockito.when(testOrchastrator._networksDao.findById(routerNetworkId)).thenReturn(routerNetworkVO);
+        }
+        Mockito.when(testOrchastrator.routerDao.findById(vmId)).thenReturn(routerVO);
+        NicProfile profile = null;
+        try {
+            profile = testOrchastrator.prepareNic(virtualMachineProfile, deployDestination, reservationContext, nicId, network);
+        } catch (InsufficientCapacityException | ResourceUnavailableException e) {
+            Assert.fail(String.format("Failure with exception %s", e.getMessage()));
+        }
+        return profile;
+    }
+
+    @Test
+    public void testPrepareNicUserVm() {
+        NicProfile profile = prepareMocksAndRunPrepareNic(Type.User, false, false, false);
+        Assert.assertNotNull(profile);
+        Assert.assertEquals(ip4Dns[0], profile.getIPv4Dns1());
+        Assert.assertEquals(ip4Dns[1], profile.getIPv4Dns2());
+        Assert.assertEquals(ip6Dns[0], profile.getIPv6Dns1());
+        Assert.assertEquals(ip6Dns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testPrepareNicVpcRouterVm() {
+        NicProfile profile = prepareMocksAndRunPrepareNic(Type.DomainRouter, true, true, true);
+        Assert.assertNotNull(profile);
+        Assert.assertEquals(ip4AltDns[0], profile.getIPv4Dns1());
+        Assert.assertEquals(ip4AltDns[1], profile.getIPv4Dns2());
+        Assert.assertEquals(ip6AltDns[0], profile.getIPv6Dns1());
+        Assert.assertEquals(ip6AltDns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testPrepareNicVpcRouterNoDnsVm() {
+        NicProfile profile = prepareMocksAndRunPrepareNic(Type.DomainRouter, true, true, false);
+        Assert.assertNotNull(profile);
+        Assert.assertEquals(ip4Dns[0], profile.getIPv4Dns1());
+        Assert.assertEquals(ip4Dns[1], profile.getIPv4Dns2());
+        Assert.assertEquals(ip6Dns[0], profile.getIPv6Dns1());
+        Assert.assertEquals(ip6Dns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testPrepareNicNetworkRouterVm() {
+        NicProfile profile = prepareMocksAndRunPrepareNic(Type.DomainRouter, true, false, true);
+        Assert.assertNotNull(profile);
+        Assert.assertEquals(ip4AltDns[0], profile.getIPv4Dns1());
+        Assert.assertEquals(ip4AltDns[1], profile.getIPv4Dns2());
+        Assert.assertEquals(ip6AltDns[0], profile.getIPv6Dns1());
+        Assert.assertEquals(ip6AltDns[1], profile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testPrepareNicNetworkRouterNoDnsVm() {
+        NicProfile profile = prepareMocksAndRunPrepareNic(Type.DomainRouter, true, false, false);
+        Assert.assertNotNull(profile);
+        Assert.assertEquals(ip4Dns[0], profile.getIPv4Dns1());
+        Assert.assertEquals(ip4Dns[1], profile.getIPv4Dns2());
+        Assert.assertEquals(ip6Dns[0], profile.getIPv6Dns1());
+        Assert.assertEquals(ip6Dns[1], profile.getIPv6Dns2());
     }
 }

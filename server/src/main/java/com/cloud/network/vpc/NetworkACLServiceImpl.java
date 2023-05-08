@@ -608,7 +608,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         List<String> sourceCidrList = networkACLItemVO.getSourceCidrList();
         if (CollectionUtils.isNotEmpty(sourceCidrList)) {
             for (String cidr : sourceCidrList) {
-                if (!NetUtils.isValidIp4Cidr(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
@@ -1145,6 +1145,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         NetworkACLVO acl = _networkACLDao.findById(aclId);
         Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Re-ordering rules for a default ACL is prohibited");
+        }
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vpc);
     }

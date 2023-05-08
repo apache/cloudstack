@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.account;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -44,7 +45,6 @@ import com.cloud.user.UserAccount;
 public class CreateAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
-    private static final String s_name = "createaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -172,11 +172,6 @@ public class CreateAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -206,5 +201,10 @@ public class CreateAccountCmd extends BaseCmd {
         if (getAccountType() == null && (getRoleId() == null || getRoleId() < 1L)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither account type and role ID are not provided");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

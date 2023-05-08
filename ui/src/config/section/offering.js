@@ -32,7 +32,7 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -142,7 +142,7 @@ export default {
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'tags', 'domain', 'zone', 'created']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'tags', 'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -223,12 +223,12 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
       }, {
         api: 'updateBackupOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-        args: ['name', 'description']
+        args: ['name', 'description', 'allowuserdrivenbackups']
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',
@@ -247,9 +247,8 @@ export default {
       icon: 'wifi-outlined',
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
-      params: { isrecursive: 'true' },
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
@@ -339,10 +338,9 @@ export default {
       icon: 'deployment-unit-outlined',
       docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
       permission: ['listVPCOfferings', 'listInfrastructure'],
-      params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

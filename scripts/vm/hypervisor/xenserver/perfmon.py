@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -75,7 +75,7 @@ class RRDUpdates:
         return report.keys()
 
     def get_total_cpu_core(self, uuid):
-	report = self.vm_reports[uuid]
+        report = self.vm_reports[uuid]
         if not report:
             return 0
         else:
@@ -87,8 +87,8 @@ class RRDUpdates:
             return result
 
     def get_vm_data(self, uuid, param, row):
-	#pp = pprint.PrettyPrinter(indent=4) 
-	#pp.pprint(self.vm_reports)
+        #pp = pprint.PrettyPrinter(indent=4)
+        #pp.pprint(self.vm_reports)
         report = self.vm_reports[uuid]
         col = report[param]
         return self.__lookup_data(col, row)
@@ -135,15 +135,15 @@ class RRDUpdates:
         paramstr = "&".join(["%s=%s" % (k, params[k]) for k in params])
         # this is better than urllib.urlopen() as it raises an Exception on http 401 'Unauthorised' error
         # rather than drop into interactive mode
-	for host in login.host.get_all():
-		#print "http://" + str(login.host.get_address(host)) + "/rrd_updates?%s" % paramstr
-        	sock = urllib.URLopener().open("http://" + str(login.host.get_address(host)) + "/rrd_updates?%s" % paramstr)
-	        xmlsource = sock.read()
-        	sock.close()
-        	xmldoc = minidom.parseString(xmlsource)
-        	self.__parse_xmldoc(xmldoc)
-        	# Update the time used on the next run
-        	self.params['start'] = self.end_time + 1  # avoid retrieving same data twice
+        for host in login.host.get_all():
+            #print "http://" + str(login.host.get_address(host)) + "/rrd_updates?%s" % paramstr
+            sock = urllib.URLopener().open("http://" + str(login.host.get_address(host)) + "/rrd_updates?%s" % paramstr)
+            xmlsource = sock.read()
+            sock.close()
+            xmldoc = minidom.parseString(xmlsource)
+            self.__parse_xmldoc(xmldoc)
+            # Update the time used on the next run
+            self.params['start'] = self.end_time + 1  # avoid retrieving same data twice
 
     def __parse_xmldoc(self, xmldoc):
         # The 1st node contains meta data (description of the data)
@@ -165,7 +165,7 @@ class RRDUpdates:
         self.legend = self.meta_node.getElementsByTagName('legend')[0]
         # vm_reports matches uuid to per VM report
         if not hasattr(self,'vm_reports'):
-		self.vm_reports = {}
+            self.vm_reports = {}
         # There is just one host_report and its uuid should not change!
         self.host_report = None
         # Handle each column.  (I.e. each variable)
@@ -198,7 +198,7 @@ class RRDUpdates:
 def getuuid(vm_name):
     status, output = commands.getstatusoutput("xe vm-list | grep "+vm_name+" -B 1 | head -n 1 | awk -F':' '{print $2}' | tr -d ' '")
     if (status != 0):
-	raise PerfMonException("Invalid vm name: %s" % vm_name)
+        raise PerfMonException("Invalid vm name: %s" % vm_name)
     return output
 
 def get_vm_group_perfmon(args={}):
@@ -228,19 +228,19 @@ def get_vm_group_perfmon(args={}):
 
     #for uuid in rrd_updates.get_vm_list():
     for vm_count in xrange(1, total_vm + 1):
-	vm_name = args['vmname' + str(vm_count)]
+        vm_name = args['vmname' + str(vm_count)]
         vm_uuid = getuuid(vm_name)
         #print "Got values for VM: " + str(vm_count) + " " + vm_uuid
         for counter_count in xrange(1, total_counter + 1):
-	    #refresh average
-	    average_cpu = 0
-	    average_memory = 0
+            #refresh average
+            average_cpu = 0
+            average_memory = 0
             counter = args['counter' + str(counter_count)]
             total_row = rrd_updates.get_nrows()
             duration = int(args['duration' + str(counter_count)]) / 60
             duration_diff = total_row - duration
             if counter == "cpu":
-		total_cpu = rrd_updates.get_total_cpu_core(vm_uuid)
+                total_cpu = rrd_updates.get_total_cpu_core(vm_uuid)
                 for row in xrange(duration_diff, total_row):
                     for cpu in xrange(0, total_cpu):
                         average_cpu += rrd_updates.get_vm_data(vm_uuid, "cpu" + str(cpu), row)
@@ -258,4 +258,3 @@ def get_vm_group_perfmon(args={}):
                 else:
                     result += ',' + str(vm_count) +  '.' +  str(counter_count) + ':' + str(average_memory)
     return result
-

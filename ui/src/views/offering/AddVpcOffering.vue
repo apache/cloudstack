@@ -42,6 +42,31 @@
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"/>
         </a-form-item>
+        <a-form-item name="internetprotocol" ref="internetprotocol">
+          <template #label>
+            <tooltip-label :title="$t('label.internetprotocol')" :tooltip="apiParams.internetprotocol.description"/>
+          </template>
+          <span v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="ipv6NetworkOfferingEnabled ? $t('message.offering.internet.protocol.warning') : $t('message.offering.ipv6.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-radio-group
+            v-model:value="form.internetprotocol"
+            :disabled="!ipv6NetworkOfferingEnabled"
+            buttonStyle="solid"
+            @change="e => { internetProtocolValue = e.target.value }" >
+            <a-radio-button value="ipv4">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="dualstack">
+              {{ $t('label.ip.v4.v6') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item>
           <template #label>
             <tooltip-label :title="$t('label.supportedservices')" :tooltip="apiParams.supportedservices.description"/>
@@ -68,6 +93,29 @@
         </a-form-item>
         <a-form-item name="redundantrouter" ref="redundantrouter" :label="$t('label.redundantrouter')" v-if="sourceNatServiceChecked">
           <a-switch v-model:checked="form.redundantrouter" />
+        </a-form-item>
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
+          <a-alert v-if="!isVpcVirtualRouterForAtLeastOneService" type="warning" style="margin-bottom: 10px">
+            <template #message>
+              <span v-html="$t('message.vr.alert.upon.network.offering.creation.others')" />
+            </template>
+          </a-alert>
+          <template #label>
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            v-model:value="form.serviceofferingid"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="apiParams.serviceofferingid.description">
+            <a-select-option v-for="(opt) in serviceOfferings" :key="opt.id" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
@@ -138,12 +186,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddVpcOffering',
+  mixins: [mixinForm],
   components: {
     CheckBoxSelectPair,
     ResourceIcon,
@@ -154,6 +204,7 @@ export default {
       selectedDomains: [],
       selectedZones: [],
       isConserveMode: true,
+      internetProtocolValue: 'ipv4',
       domains: [],
       domainLoading: false,
       zones: [],
@@ -161,9 +212,13 @@ export default {
       loading: false,
       supportedServices: [],
       supportedServiceLoading: false,
+      serviceOfferings: [],
+      serviceOfferingLoading: false,
+      isVpcVirtualRouterForAtLeastOneService: false,
       connectivityServiceChecked: false,
       sourceNatServiceChecked: false,
-      selectedServiceProviderMap: {}
+      selectedServiceProviderMap: {},
+      ipv6NetworkOfferingEnabled: false
     }
   },
   beforeCreate () {
@@ -185,11 +240,11 @@ export default {
       this.form = reactive({
         regionlevelvpc: true,
         distributedrouter: true,
-        ispublic: true
+        ispublic: true,
+        internetprotocol: this.internetProtocolValue
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.description') }],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         zoneid: [{
           type: 'array',
@@ -206,9 +261,18 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       this.fetchSupportedServiceData()
+      this.fetchIpv6NetworkOfferingConfiguration()
     },
     isAdmin () {
       return isAdmin()
+    },
+    fetchIpv6NetworkOfferingConfiguration () {
+      this.ipv6NetworkOfferingEnabled = false
+      var params = { name: 'ipv6.offering.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.ipv6NetworkOfferingEnabled = value === 'true'
+      })
     },
     fetchDomainData () {
       const params = {}
@@ -225,7 +289,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
@@ -328,12 +391,36 @@ export default {
       } else {
         delete this.selectedServiceProviderMap[service]
       }
+      this.isVpcVirtualRouterForAtLeastOneService = false
+      const providers = Object.values(this.selectedServiceProviderMap)
+      const self = this
+      providers.forEach(function (prvdr, idx) {
+        if (prvdr === 'VpcVirtualRouter') {
+          self.isVpcVirtualRouterForAtLeastOneService = true
+        }
+      })
+      if (this.isVpcVirtualRouterForAtLeastOneService && this.serviceOfferings.length === 0) {
+        this.fetchServiceOfferingData()
+      }
+    },
+    fetchServiceOfferingData () {
+      const params = {}
+      params.issystem = true
+      params.systemvmtype = 'domainrouter'
+      this.serviceOfferingLoading = true
+      api('listServiceOfferings', params).then(json => {
+        const listServiceOfferings = json.listserviceofferingsresponse.serviceoffering
+        this.serviceOfferings = this.serviceOfferings.concat(listServiceOfferings)
+      }).finally(() => {
+        this.serviceOfferingLoading = false
+      })
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {}
         params.name = values.name
         params.displaytext = values.displaytext
@@ -363,6 +450,9 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
+        if (values.internetprotocol) {
+          params.internetprotocol = values.internetprotocol
+        }
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)
           params.supportedservices = supportedServices.join(',')
@@ -390,6 +480,9 @@ export default {
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
             params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
             serviceCapabilityIndex++
+          }
+          if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
+            params.serviceofferingid = values.serviceofferingid
           }
         } else {
           params.supportedservices = ''

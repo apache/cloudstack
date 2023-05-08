@@ -56,8 +56,8 @@
             :options="detailValues"
             :placeholder="$t('label.value')"
             @change="e => onAddInputChange(e, 'newValue')" />
-          <tooltip-button :tooltip="$t('label.add.setting')" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
-          <tooltip-button :tooltip="$t('label.cancel')" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
+          <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
+          <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
         </a-input-group>
         <p v-if="error" style="color: red"> {{ $t(error) }} </p>
       </div>
@@ -73,7 +73,7 @@
               <a-auto-complete
                 style="width: 100%"
                 v-model:value="item.value"
-                :options="detailOptions[item.name]"
+                :options="getDetailOptions(detailOptions[item.name])"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
               <tooltip-button
@@ -223,6 +223,13 @@ export default {
     },
     handleInputChange (val, index) {
       this.details[index].value = val
+    },
+    getDetailOptions (values) {
+      if (!values) {
+        return
+      }
+      var data = values.map(value => { return { value: value } })
+      return data
     },
     onAddInputChange (val, obj) {
       this.error = false

@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RoleResponse;
@@ -43,12 +42,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
 
-@APICommand(name = ImportRoleCmd.APINAME, description = "Imports a role based on provided map of rule permissions", responseObject = RoleResponse.class,
+@APICommand(name = "importRole", description = "Imports a role based on provided map of rule permissions", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.15.0",
         authorized = {RoleType.Admin})
 public class ImportRoleCmd extends RoleCmd {
-    public static final String APINAME = "importRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,6 +63,10 @@ public class ImportRoleCmd extends RoleCmd {
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
             description = "Force create a role with the same name. This overrides the role type, description and rule permissions for the existing role. Default is false.")
     private Boolean forced;
+
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Indicates whether the role will be visible to all users (public) or only to root admins (private)." +
+            " If this parameter is not specified during the creation of the role its value will be defaulted to true (public).")
+    private boolean publicRole = true;
 
     @Inject
     ApiServerService _apiServer;
@@ -116,14 +118,13 @@ public class ImportRoleCmd extends RoleCmd {
         return (forced != null) ? forced : false;
     }
 
+    public boolean isPublicRole() {
+        return publicRole;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -137,7 +138,7 @@ public class ImportRoleCmd extends RoleCmd {
         }
 
         CallContext.current().setEventDetails("Role: " + getRoleName() + ", type: " + getRoleType() + ", description: " + getRoleDescription());
-        Role role = roleService.importRole(getRoleName(), getRoleType(), getRoleDescription(), getRules(), isForced());
+        Role role = roleService.importRole(getRoleName(), getRoleType(), getRoleDescription(), getRules(), isForced(), isPublicRole());
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to import role");
         }

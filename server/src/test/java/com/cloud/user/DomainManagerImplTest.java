@@ -357,19 +357,19 @@ public class DomainManagerImplTest {
     @Test
     public void createDomainVoTestCreateValidUuidIfEmptyString(){
         DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest","");
-        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+        Assert.assertTrue(UuidUtils.isUuid(domainVo.getUuid()));
     }
 
     @Test
     public void createDomainVoTestCreateValidUuidIfWhiteSpace(){
         DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest","  ");
-        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+        Assert.assertTrue(UuidUtils.isUuid(domainVo.getUuid()));
     }
 
     @Test
     public void createDomainVoTestCreateValidUuidIfNull(){
         DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest",null);
-        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+        Assert.assertTrue(UuidUtils.isUuid(domainVo.getUuid()));
     }
 
     @Test

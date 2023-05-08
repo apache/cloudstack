@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.user;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -36,7 +37,6 @@ import com.cloud.user.User;
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
-    private static final String s_name = "createuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -125,11 +125,6 @@ public class CreateUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
         if ((account == null) || _accountService.isAdmin(account.getId())) {
@@ -171,5 +166,10 @@ public class CreateUserCmd extends BaseCmd {
         if(StringUtils.isEmpty(getPassword())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.User;
     }
 }

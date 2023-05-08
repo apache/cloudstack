@@ -30,6 +30,13 @@ export default {
       docHelp: 'adminguide/storage.html#working-with-volumes',
       permission: ['listVolumesMetrics'],
       resourceType: 'Volume',
+      filters: () => {
+        if (store.getters.userInfo.roletype === 'Admin') {
+          return ['user', 'all']
+        } else {
+          return []
+        }
+      },
       columns: () => {
         const fields = ['name', 'state', 'type', 'vmname', 'sizegb']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
@@ -69,6 +76,18 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'metrics',
+          resourceType: 'Volume',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/StatsTab.vue'))),
+          show: (record) => { return store.getters.features.instancesdisksstatsretentionenabled }
+        },
+        {
+          name: 'events',
+          resourceType: 'Volume',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
@@ -89,6 +108,7 @@ export default {
           icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
+          show: () => { return 'getUploadParamsForVolume' in store.getters.apis },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
@@ -107,7 +127,7 @@ export default {
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.disk',
           dataView: true,
-          show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
+          show: (record) => { return ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/AttachVolume.vue')))
         },
@@ -117,10 +137,7 @@ export default {
           label: 'label.action.detach.disk',
           message: 'message.detach.disk',
           dataView: true,
-          show: (record) => {
-            return record.type !== 'ROOT' && record.virtualmachineid &&
-              ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
-          }
+          show: (record) => { return record.virtualmachineid && ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate) }
         },
         {
           api: 'updateVolume',
@@ -185,12 +202,13 @@ export default {
         },
         {
           api: 'migrateVolume',
+          permission: ['migrateVolume', 'findStoragePoolsForMigration', 'listStoragePools', 'listDiskOfferings'],
           icon: 'drag-outlined',
           docHelp: 'adminguide/storage.html#id2',
           label: 'label.migrate.volume',
           args: ['volumeid', 'storageid', 'livemigrate'],
           dataView: true,
-          show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
+          show: (record, store) => { return record.state === 'Ready' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateVolume.vue')))
         },
@@ -329,18 +347,8 @@ export default {
           label: 'label.action.create.volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: (record, store) => {
-            var fields = ['snapshotid', 'name']
-            if (record.volumetype === 'ROOT') {
-              fields.push('diskofferingid')
-            }
-            return fields
-          },
-          mapping: {
-            snapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
         },
         {
           api: 'revertSnapshot',

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <repositories>
@@ -136,7 +136,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <forkMode>always</forkMode>
-                    <argLine>-Xmx1024m</argLine>
+                    <argLine>@{argLine} -Xmx1024m</argLine>
                     <excludes>
                         <exclude>**/NetworkProviderTest.java</exclude>
                         <exclude>**/PublicNetworkTest.java</exclude>

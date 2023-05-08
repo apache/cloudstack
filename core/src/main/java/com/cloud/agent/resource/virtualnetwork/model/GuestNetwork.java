@@ -27,15 +27,25 @@ public class GuestNetwork extends ConfigBase {
     private String routerGuestNetmask;
     private String routerGuestGateway;
     private String cidr;
+    private String cidr6;
     private String dns;
+    private String dns6;
     private String domainName;
+    private String routerGuestIp6;
+    private String routerGuestIp6Gateway;
+    private String routerGuestIp6Cidr;
+    private String routerIp6;
+    private String routerIp6Gateway;
+    private String routerIp6Cidr;
+
+    private Integer mtu;
 
     public GuestNetwork() {
         super(ConfigBase.GUEST_NETWORK);
     }
 
     public GuestNetwork(final boolean add, final String macAddress, final String device, final String routerGuestIp, final String routerGuestNetmask, final String routerGuestGateway,
-            final String cidr, final String dns, final String domainName) {
+            final String cidr, final String dns, final String dns6, final String domainName) {
         super(ConfigBase.GUEST_NETWORK);
         this.add = add;
         this.macAddress = macAddress;
@@ -45,6 +55,7 @@ public class GuestNetwork extends ConfigBase {
         this.routerGuestGateway = routerGuestGateway;
         this.cidr = cidr;
         this.dns = dns;
+        this.dns6 = dns6;
         this.domainName = domainName;
     }
 
@@ -104,6 +115,14 @@ public class GuestNetwork extends ConfigBase {
         this.cidr = cidr;
     }
 
+    public String getCidr6() {
+        return cidr6;
+    }
+
+    public void setCidr6(String cidr6) {
+        this.cidr6 = cidr6;
+    }
+
     public String getDns() {
         return dns;
     }
@@ -112,11 +131,75 @@ public class GuestNetwork extends ConfigBase {
         this.dns = dns;
     }
 
+    public String getDns6() {
+        return dns6;
+    }
+
+    public void setDns6(String dns6) {
+        this.dns6 = dns6;
+    }
+
     public String getDomainName() {
         return domainName;
     }
 
     public void setDomainName(final String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getRouterGuestIp6() {
+        return routerGuestIp6;
+    }
+
+    public void setRouterGuestIp6(String routerGuestIp6) {
+        this.routerGuestIp6 = routerGuestIp6;
+    }
+
+    public String getRouterGuestIp6Gateway() {
+        return routerGuestIp6Gateway;
+    }
+
+    public void setRouterGuestIp6Gateway(String routerGuestIp6Gateway) {
+        this.routerGuestIp6Gateway = routerGuestIp6Gateway;
+    }
+
+    public String getRouterGuestIp6Cidr() {
+        return routerGuestIp6Cidr;
+    }
+
+    public void setRouterGuestIp6Cidr(String routerGuestIp6Cidr) {
+        this.routerGuestIp6Cidr = routerGuestIp6Cidr;
+    }
+
+    public String getRouterIp6() {
+        return routerIp6;
+    }
+
+    public void setRouterIp6(String routerIp6) {
+        this.routerIp6 = routerIp6;
+    }
+
+    public String getRouterIp6Gateway() {
+        return routerIp6Gateway;
+    }
+
+    public void setRouterIp6Gateway(String routerIp6Gateway) {
+        this.routerIp6Gateway = routerIp6Gateway;
+    }
+
+    public String getRouterIp6Cidr() {
+        return routerIp6Cidr;
+    }
+
+    public void setRouterIp6Cidr(String routerIp6Cidr) {
+        this.routerIp6Cidr = routerIp6Cidr;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
+    public Integer getMtu() {
+        return mtu;
     }
 }

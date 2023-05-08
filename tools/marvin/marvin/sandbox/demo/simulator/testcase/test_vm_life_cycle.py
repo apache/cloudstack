@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,12 +47,12 @@ class Services:
                     "firstname": "Test",
                     "lastname": "User",
                     "username": "test",
-                    # Random characters are appended in create account to 
+                    # Random characters are appended in create account to
                     # ensure unique username generated each time
                     "password": "password",
                 },
                 "small":
-                # Create a small virtual machine instance with disk offering 
+                # Create a small virtual machine instance with disk offering
                 {
                     "displayname": "testserver",
                     "username": "root", # VM creds for SSH
@@ -63,7 +63,7 @@ class Services:
                     "publicport": 22,
                     "protocol": 'TCP',
                 },
-                "medium":   # Create a medium virtual machine instance 
+                "medium":   # Create a medium virtual machine instance
                 {
                     "displayname": "testserver",
                     "username": "root",
@@ -86,7 +86,7 @@ class Services:
                     },
                  "small":
                     {
-                     # Small service offering ID to for change VM 
+                     # Small service offering ID to for change VM
                      # service offering from medium to small
                         "name": "Small Instance",
                         "displaytext": "Small Instance",
@@ -180,20 +180,20 @@ class TestDeployVM(cloudstackTestCase):
                 "Verify listVirtualMachines response for virtual machine: %s" \
                 % self.virtual_machine.id
             )
-        
+
         self.assertEqual(
                             isinstance(list_vm_response, list),
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
                             "Check VM available in List Virtual Machines"
                         )
         vm_response = list_vm_response[0]
-        
+
         self.assertEqual(
 
                             vm_response.id,
@@ -316,7 +316,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                                             self.apiclient,
                                             id=self.small_virtual_machine.id
                                             )
-        
+
         self.assertEqual(
                             isinstance(list_vm_response, list),
                             True,
@@ -341,7 +341,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         # Validate the following
         # 1. listVM command should return this VM.State
         #    of this VM should be Running".
-        
+
         self.debug("Starting VM - ID: %s" % self.virtual_machine.id)
         self.small_virtual_machine.start(self.apiclient)
 
@@ -354,11 +354,11 @@ class TestVMLifeCycle(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
-                            "Check VM avaliable in List Virtual Machines"
+                            "Check VM available in List Virtual Machines"
                         )
 
         self.debug(
@@ -378,75 +378,75 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         # Validate the following
         # 1. Log in to the Vm .We should see that the CPU and memory Info of
-        #    this Vm matches the one specified for "Small" service offering. 
-        # 2. Using  listVM command verify that this Vm 
+        #    this Vm matches the one specified for "Small" service offering.
+        # 2. Using  listVM command verify that this Vm
         #    has Small service offering Id.
-        
+
         self.debug("Stopping VM - ID: %s" % self.medium_virtual_machine.id)
-        
+
         self.medium_virtual_machine.stop(self.apiclient)
-        
+
         # Poll listVM to ensure VM is stopped properly
         timeout = self.services["timeout"]
-        
+
         while True:
             time.sleep(self.services["sleep"])
-        
+
             # Ensure that VM is in stopped state
             list_vm_response = list_virtual_machines(
                                             self.apiclient,
                                             id=self.medium_virtual_machine.id
                                             )
-            
+
             if isinstance(list_vm_response, list):
-                
+
                 vm = list_vm_response[0]
                 if vm.state == 'Stopped':
                     self.debug("VM state: %s" % vm.state)
                     break
-            
-            if timeout == 0: 
+
+            if timeout == 0:
                     raise Exception(
                         "Failed to stop VM (ID: %s) in change service offering" % vm.id)
-                    
+
             timeout = timeout - 1
-        
-        self.debug("Change Service offering VM - ID: %s" % 
+
+        self.debug("Change Service offering VM - ID: %s" %
                                     self.medium_virtual_machine.id)
-        
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
         cmd.serviceofferingid = self.small_offering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % self.medium_virtual_machine.id)
         self.medium_virtual_machine.start(self.apiclient)
-        
+
         # Poll listVM to ensure VM is started properly
         timeout = self.services["timeout"]
-        
+
         while True:
             time.sleep(self.services["sleep"])
-        
+
             # Ensure that VM is in running state
             list_vm_response = list_virtual_machines(
                                             self.apiclient,
                                             id=self.medium_virtual_machine.id
                                             )
-            
+
             if isinstance(list_vm_response, list):
-                
+
                 vm = list_vm_response[0]
                 if vm.state == 'Running':
                     self.debug("VM state: %s" % vm.state)
                     break
-            
-            if timeout == 0: 
+
+            if timeout == 0:
                     raise Exception(
                         "Failed to start VM (ID: %s) after changing service offering" % vm.id)
-                    
+
             timeout = timeout - 1
-        
+
         return
 
     def test_06_destroy_vm(self):
@@ -457,7 +457,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 1. Should not be able to login to the VM.
         # 2. listVM command should return this VM.State
         #    of this VM should be "Destroyed".
-        
+
         self.debug("Destroy VM - ID: %s" % self.small_virtual_machine.id)
         self.small_virtual_machine.delete(self.apiclient)
 
@@ -470,11 +470,11 @@ class TestVMLifeCycle(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
-                            "Check VM avaliable in List Virtual Machines"
+                            "Check VM available in List Virtual Machines"
                         )
 
         self.assertEqual(
@@ -492,9 +492,9 @@ class TestVMLifeCycle(cloudstackTestCase):
         # 1. listVM command should return this VM.
         #    State of this VM should be "Stopped".
         # 2. We should be able to Start this VM successfully.
-        
+
         self.debug("Recovering VM - ID: %s" % self.small_virtual_machine.id)
-        
+
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = self.small_virtual_machine.id
         self.apiclient.recoverVirtualMachine(cmd)
@@ -508,11 +508,11 @@ class TestVMLifeCycle(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_vm_response),
                             0,
-                            "Check VM avaliable in List Virtual Machines"
+                            "Check VM available in List Virtual Machines"
                         )
 
         self.assertEqual(

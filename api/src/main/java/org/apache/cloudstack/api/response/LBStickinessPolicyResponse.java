@@ -55,8 +55,8 @@ public class LBStickinessPolicyResponse extends BaseResponse {
     @Param(description = "is policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
-    // FIXME : if prams with the same name exists more then once then value are concatinated with ":" as delimitor .
-    // Reason: Map does not support duplicate keys, need to look for the alernate data structure
+    // FIXME : if params with the same name exist more than once then values are concatenated with ":" as delimiter .
+    // Reason: Map does not support duplicate keys, need to look for the alternate data structure
     // Example: <params>{indirect=null, name=testcookie, nocache=null, domain=www.yahoo.com:www.google.com, postonly=null}</params>
     // in the above there are two domains with values www.yahoo.com and www.google.com
     @SerializedName("params")

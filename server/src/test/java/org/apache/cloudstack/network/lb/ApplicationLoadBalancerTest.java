@@ -186,22 +186,11 @@ public class ApplicationLoadBalancerTest extends TestCase {
         assertNotNull("Couldn't find existing application load balancer", rule);
     }
 
-    @Test
+    @Test(expected = InvalidParameterValueException.class)
     //Negative test - try to retrieve non-existing lb
         public
-        void searchForNonExistingLoadBalancer() {
-        boolean notFound = false;
-        ApplicationLoadBalancerRule rule = null;
-        try {
-            rule = _appLbSvc.getApplicationLoadBalancer(nonExistingLbId);
-            if (rule != null) {
-                notFound = false;
-            }
-        } catch (InvalidParameterValueException ex) {
-            notFound = true;
-        }
-
-        assertTrue("Found non-existing load balancer; no invalid parameter value exception was thrown", notFound);
+        void searchForNonExistingLoadBalancer() throws InvalidParameterValueException {
+        _appLbSvc.getApplicationLoadBalancer(nonExistingLbId);
     }
 
     /**

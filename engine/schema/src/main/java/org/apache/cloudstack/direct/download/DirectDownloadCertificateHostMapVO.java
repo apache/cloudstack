@@ -25,12 +25,12 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "direct_download_certificate_host_map")
-public class DirectDownloadCertificateHostMapVO {
+public class DirectDownloadCertificateHostMapVO implements DirectDownloadCertificateHostMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;
+    private long id;
 
     @Column(name = "host_id")
     private Long hostId;
@@ -50,15 +50,15 @@ public class DirectDownloadCertificateHostMapVO {
         this.revoked = false;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public Long getHostId() {
+    public long getHostId() {
         return hostId;
     }
 
@@ -66,7 +66,7 @@ public class DirectDownloadCertificateHostMapVO {
         this.hostId = hostId;
     }
 
-    public Long getCertificateId() {
+    public long getCertificateId() {
         return certificateId;
     }
 
@@ -74,8 +74,8 @@ public class DirectDownloadCertificateHostMapVO {
         this.certificateId = certificateId;
     }
 
-    public Boolean isRevoked() {
-        return revoked;
+    public boolean isRevoked() {
+        return revoked != null && revoked;
     }
 
     public void setRevoked(Boolean revoked) {

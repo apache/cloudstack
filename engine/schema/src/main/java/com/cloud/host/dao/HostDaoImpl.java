@@ -90,7 +90,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             "from vm_instance vm " +
             "join host h on (vm.host_id=h.id) " +
             "where vm.service_offering_id= ? and vm.state not in (\"Destroyed\", \"Expunging\", \"Error\") group by h.id";
-
+    private static final String GET_ORDERED_HW_VERSIONS_IN_DC = "select hypervisor_version from host " +
+            "where type = 'Routing' and status = 'Up' and hypervisor_type = ? and data_center_id = ? " +
+            "group by hypervisor_version " +
+            "order by hypervisor_version asc";
 
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -119,6 +122,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
+    protected SearchBuilder<HostVO> ResponsibleMsCountSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
@@ -178,6 +182,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTypeCountSearch = createSearchBuilder();
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.done();
+
+        ResponsibleMsCountSearch = createSearchBuilder();
+        ResponsibleMsCountSearch.and("managementServerId", ResponsibleMsCountSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ResponsibleMsCountSearch.done();
 
         HostTypeZoneCountSearch = createSearchBuilder();
         HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -1285,6 +1293,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public int countByMs(long msid) {
+        SearchCriteria<HostVO> sc = ResponsibleMsCountSearch.create();
+        sc.setParameters("managementServerId", msid);
+        return getCount(sc);
+    }
+
+    @Override
+    public List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType) {
+        PreparedStatement pstmt = null;
+        List<String> result = new ArrayList<>();
+        try {
+            TransactionLegacy txn = TransactionLegacy.currentTxn();
+            pstmt = txn.prepareAutoCloseStatement(GET_ORDERED_HW_VERSIONS_IN_DC);
+            pstmt.setString(1, Objects.toString(hypervisorType));
+            pstmt.setLong(2, datacenterId);
+            ResultSet resultSet = pstmt.executeQuery();
+            while (resultSet.next()) {
+                result.add(resultSet.getString(1));
+            }
+        } catch (SQLException e) {
+            s_logger.error("Error trying to obtain hypervisor version on datacenter", e);
+        }
+        return result;
     }
 
     @Override

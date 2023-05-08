@@ -26,6 +26,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.AccountVlanMapVO;
@@ -62,6 +64,9 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     protected SearchBuilder<VlanVO> ZoneWideNonDedicatedVlanSearch;
     protected SearchBuilder<VlanVO> VlanGatewaysearch;
     protected SearchBuilder<VlanVO> DedicatedVlanSearch;
+    protected SearchBuilder<VlanVO> ZoneVlanIp6Search;
+    protected SearchBuilder<VlanVO> ZoneIp6Search;
+    protected SearchBuilder<VlanVO> ZoneVlansSearch;
 
     protected SearchBuilder<AccountVlanMapVO> AccountVlanMapSearch;
     protected SearchBuilder<DomainVlanMapVO> DomainVlanMapSearch;
@@ -255,6 +260,23 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         DedicatedVlanSearch.done();
         AccountVlanMapSearch.done();
 
+        ZoneVlanIp6Search = createSearchBuilder();
+        ZoneVlanIp6Search.and("zoneId", ZoneVlanIp6Search.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneVlanIp6Search.and("vlanId", ZoneVlanIp6Search.entity().getVlanTag(), SearchCriteria.Op.EQ);
+        ZoneVlanIp6Search.and("ip6Gateway", ZoneVlanIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
+        ZoneVlanIp6Search.and("ip6Cidr", ZoneVlanIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
+        ZoneVlanIp6Search.done();
+
+        ZoneIp6Search = createSearchBuilder();
+        ZoneIp6Search.and("zoneId", ZoneIp6Search.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneIp6Search.and("ip6Gateway", ZoneIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
+        ZoneIp6Search.and("ip6Cidr", ZoneIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
+        ZoneIp6Search.done();
+
+        ZoneVlansSearch = createSearchBuilder();
+        ZoneVlansSearch.and("zoneId", ZoneVlansSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneVlansSearch.and("vlan", ZoneVlansSearch.entity().getVlanTag(), SearchCriteria.Op.IN);
+        ZoneVlansSearch.done();
         return result;
     }
 
@@ -384,6 +406,31 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     public List<VlanVO> listDedicatedVlans(long accountId) {
         SearchCriteria<VlanVO> sc = DedicatedVlanSearch.create();
         sc.setJoinParameters("AccountVlanMapSearch", "accountId", accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VlanVO> listIpv6RangeByZoneIdAndVlanId(long zoneId, String vlanId) {
+        SearchCriteria<VlanVO> sc = ZoneVlanIp6Search.create();
+        sc.setParameters("zoneId", zoneId);
+        if(StringUtils.isNotEmpty(vlanId)) {
+            sc.setParameters("vlanId", vlanId);
+        }
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VlanVO> listIpv6SupportingVlansByZone(long zoneId) {
+        SearchCriteria<VlanVO> sc = ZoneIp6Search.create();
+        sc.setParameters("zoneId", zoneId);
+        List<VlanVO> vlanVOS = listBy(sc);
+        Object[] vlanIds = vlanVOS.stream().map(VlanVO::getVlanTag).toArray();
+        if (ArrayUtils.isEmpty(vlanIds)) {
+            return new ArrayList<>();
+        }
+        sc = ZoneVlansSearch.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("vlan", vlanIds);
         return listBy(sc);
     }
 

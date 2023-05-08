@@ -63,6 +63,10 @@ public class HypervisorCapabilitiesResponse extends BaseResponse {
     @Param(description = "true if VM snapshots are enabled for this hypervisor")
     private boolean isVmSnapshotEnabled;
 
+    public HypervisorCapabilitiesResponse(){
+        super("hypervisorcapabilities");
+    }
+
     public String getId() {
         return id;
     }

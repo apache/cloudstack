@@ -926,7 +926,7 @@ class TestRemoveNetworkFromVirtualMachine(cloudstackTestCase):
         # 'deployVirtualMachine' api with 'ipaddress' as one of the parameters.
         # 4. Acquire public IP in n3 network.
         # 5. Configure PF on the acquired IP and assign it to vm v2
-        # 6. Try to remove nic  n2 from v1. Should be successfull
+        # 6. Try to remove nic  n2 from v1. Should be successful
         # There was a bug due to both vms has same ip address, so not allowing to remove nic
 
         vm1 = self.virtual_machine

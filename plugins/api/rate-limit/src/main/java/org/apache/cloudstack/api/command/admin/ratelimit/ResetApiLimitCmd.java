@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 public class ResetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 
-    private static final String s_name = "resetapilimitresponse";
 
     @Inject
     ApiRateLimitService _apiLimitService;
@@ -72,11 +71,6 @@ public class ResetApiLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

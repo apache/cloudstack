@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -35,6 +36,7 @@ import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
@@ -47,7 +49,6 @@ import com.cloud.user.Account;
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
-    private static final String s_name = "creatediskofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -56,7 +57,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISK_SIZE, type = CommandType.LONG, required = false, description = "size of the disk offering in GB (1GB = 1,073,741,824 bytes)")
     private Long diskSize;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "alternate display text of the disk offering", length = 4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "An alternate display text of the disk offering, defaults to 'name'.", length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the disk offering")
@@ -162,8 +163,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DISK_SIZE_STRICTNESS, type = CommandType.BOOLEAN, description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.17")
     private Boolean diskSizeStrictness;
 
+    @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, required=false, description = "Volumes using this offering should be encrypted", since = "4.18")
+    private Boolean encrypt;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "details to specify disk offering parameters", since = "4.16")
     private Map details;
+
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -174,7 +180,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? offeringName : displayText;
     }
 
     public String getOfferingName() {
@@ -199,6 +205,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public boolean getEncrypt() {
+        if (encrypt == null) {
+            return false;
+        }
+        return encrypt;
     }
 
     public List<Long> getDomainIds() {
@@ -314,11 +327,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -333,5 +341,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create disk offering");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.DiskOffering;
     }
 }

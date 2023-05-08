@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -44,7 +45,6 @@ import com.cloud.user.Account;
 public class CreateSnapshotPolicyCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotPolicyCmd.class.getName());
 
-    private static final String s_name = "createsnapshotpolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -112,11 +112,6 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume == null) {
@@ -162,5 +157,15 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot policy");
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getVolumeId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Volume;
     }
 }

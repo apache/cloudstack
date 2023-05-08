@@ -21,14 +21,36 @@
       <template #title>
         {{ $t('label.view.console') }}
       </template>
-      <console :resource="resource" :size="size" />
+      <console
+        style="margin-top: -5px;"
+        :resource="resource"
+        size="default"
+        v-if="resource.id"
+        icon="code"
+      />
+    </a-tooltip>
+    <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
+      <template #title>
+        {{ $t('label.copy.consoleurl') }}
+      </template>
+      <console
+        copyUrlToClipboard
+        style="margin-top: -5px;"
+        :resource="resource"
+        size="default"
+        v-if="resource.id"
+        icon="copy"
+      />
     </a-tooltip>
     <a-tooltip
       v-for="(action, actionIndex) in actions"
       :key="actionIndex"
       arrowPointAtCenter
       placement="bottomRight">
-      <template #title>
+      <template v-if="action.hoverLabel" #title>
+        {{ $t(action.hoverLabel) }}
+      </template>
+      <template v-else #title>
         {{ $t(action.label) }}
       </template>
       <a-badge
@@ -42,9 +64,9 @@
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
-          :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+          :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
           :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
-          :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
+          :danger="dangerIconList.includes(action.icon)"
           style="margin-left: 5px"
           :size="size"
           @click="execAction(action)">
@@ -62,8 +84,8 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
-        :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
-        :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
+        :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
+        :danger="dangerIconList.includes(action.icon)"
         :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
@@ -80,13 +102,11 @@
 
 <script>
 import { api } from '@/api'
-import RenderIcon from '@/utils/renderIcon'
 import Console from '@/components/widgets/Console'
 
 export default {
   name: 'ActionButton',
   components: {
-    RenderIcon,
     Console
   },
   data () {
@@ -94,7 +114,7 @@ export default {
       actionBadge: {}
     }
   },
-  mounted () {
+  created () {
     this.handleShowBadge()
   },
   props: {
@@ -144,6 +164,14 @@ export default {
         }
         this.handleShowBadge()
       }
+    }
+  },
+  computed: {
+    primaryIconList () {
+      return ['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
+    },
+    dangerIconList () {
+      return ['DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
     }
   },
   methods: {

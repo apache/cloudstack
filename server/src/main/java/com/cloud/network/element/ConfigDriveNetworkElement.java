@@ -48,6 +48,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
@@ -68,6 +69,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
@@ -391,7 +394,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
             if (userVm != null) {
                 final boolean isWindows = isWindows(userVm.getGuestOSId());
-                List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
+                List<String[]> vmData = _networkModel.generateVmData(userVm.getUserData(), userVm.getUserDataDetails(), _serviceOfferingDao.findById(userVm.getServiceOfferingId()).getName(), userVm.getDataCenterId(), userVm.getInstanceName(), vm.getHostName(), vm.getId(),
                         vm.getUuid(), nic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, VirtualMachineManager.getHypervisorHostname(dest.getHost() != null ? dest.getHost().getName() : ""));
                 vm.setVmData(vmData);
                 vm.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
@@ -497,7 +500,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             agentId = dest.getHost().getId();
         }
         if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(dest.getDataCenter().getId()) &&
-                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId())) {
+                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId()) && dataStore != null) {
             agentId = findAgentIdForImageStore(dataStore);
         }
         return agentId;
@@ -533,9 +536,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -563,6 +568,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         LOG.debug("Deleting config drive ISO for vm: " + vm.getInstanceName() + " on host: " + hostId);
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, null, false, true, false);
+        HostVO hostVO = _hostDao.findById(hostId);
+        if (hostVO == null) {
+            LOG.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
+            return false;
+        }
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
         if (answer == null) {
@@ -587,9 +597,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);
@@ -603,6 +615,23 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
+        UserVmVO userVm = _userVmDao.findById(vmId);
+        String userDataDetails = userVm.getUserDataDetails();
+        Map<String,String> customUserdataParamMap = new HashMap<>();
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                customUserdataParamMap.put(keyValue.first(), keyValue.second());
+            }
+        }
+
+        return customUserdataParamMap;
     }
 
     private DataStore getDatastoreForConfigDriveIso(DiskTO disk, VirtualMachineProfile profile, DeployDestination dest) {
@@ -630,6 +659,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
+        if (hostId == null) {
+            LOG.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
+            return true;
+        }
         if (location == Location.HOST) {
             return deleteConfigDriveIsoOnHostCache(vm, hostId);
         }
@@ -639,7 +672,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         if (location == Location.SECONDARY) {
             dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(vm.getDataCenterId());
-            agentId = findAgentIdForImageStore(dataStore);
+            if (dataStore != null) {
+                agentId = findAgentIdForImageStore(dataStore);
+            }
         } else if (location == Location.PRIMARY) {
             List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             if (volumes != null && volumes.size() > 0) {
@@ -711,7 +746,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             } else {
                 destHostname = VirtualMachineManager.getHypervisorHostname(dest.getHost().getName());
             }
-            final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
+            final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), vm.getUserDataDetails(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                     vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows, destHostname);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());

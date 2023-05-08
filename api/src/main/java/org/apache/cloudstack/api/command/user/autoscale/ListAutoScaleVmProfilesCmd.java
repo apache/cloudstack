@@ -39,7 +39,6 @@ import com.cloud.network.as.AutoScaleVmProfile;
 public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAutoScaleVmProfilesCmd.class.getName());
 
-    private static final String s_name = "listautoscalevmprofilesresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -99,11 +98,6 @@ public class ListAutoScaleVmProfilesCmd extends BaseListProjectAndAccountResourc
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() {

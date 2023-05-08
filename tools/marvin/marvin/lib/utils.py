@@ -44,7 +44,7 @@ from marvin.codes import (
 
 def _configure_ssh_credentials(hypervisor):
     ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
-    
+
     if (str(hypervisor).lower() == 'vmware'
         or str(hypervisor).lower() == 'hyperv'):
         ssh_command = "ssh -i /var/cloudstack/management/.ssh/id_rsa -ostricthostkeychecking=no "
@@ -436,9 +436,9 @@ def verifyElementInList(inp, toverify, responsevar=None,  pos=0):
     at a given pos
     @Input:
              I   : Input to be verified whether its a list or not
-             II  : Element to verify whether it exists in the list 
-             III : variable name in response object to verify 
-                   default to None, if None, we will verify for the complete 
+             II  : Element to verify whether it exists in the list
+             III : variable name in response object to verify
+                   default to None, if None, we will verify for the complete
                    first element EX: state of response object object
              IV  : Position in the list at which the input element to verify
                    default to 0
@@ -480,7 +480,7 @@ def checkVolumeSize(ssh_handle=None,
     @Desc : provides facility to verify the volume size against the size to verify
     @Input: 1. ssh_handle : machine against which to execute the disk size cmd
             2. volume_name : The name of the volume against which to verify the size
-            3. cmd_inp : Input command used to veify the size
+            3. cmd_inp : Input command used to verify the size
             4. size_to_verify: size against which to compare.
     @Output: Returns FAILED in case of an issue, else SUCCESS
     '''
@@ -509,7 +509,7 @@ def checkVolumeSize(ssh_handle=None,
               "%s" %GetDetailExceptionInfo(e))
         return [FAILED,GetDetailExceptionInfo(e)]
 
-        
+
 def verifyRouterState(apiclient, routerid, allowedstates):
     """List the router and verify that its state is in allowed states
     @output: List, containing [Result, Reason]
@@ -541,7 +541,7 @@ def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
     if callback is None:
         raise ("Bad value for callback method !")
 
-    wait_result = False 
+    wait_result = False
     for i in range(0,no_of_times):
         time.sleep(retry_interval)
         wait_result, return_val = callback(*callback_args)
@@ -551,4 +551,3 @@ def wait_until(retry_interval=2, no_of_times=2, callback=None, *callback_args):
             break
 
     return wait_result, return_val
-

@@ -18,6 +18,9 @@
  */
 package org.apache.cloudstack.storage.volume;
 
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -25,11 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.resource.StorageProcessor;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
@@ -64,6 +70,7 @@ import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.MoveVolumeCommand;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -122,8 +129,11 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.NumbersUtil;
@@ -133,9 +143,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.commons.lang3.StringUtils;
-
-import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
-import java.util.concurrent.ExecutionException;
 
 @Component
 public class VolumeServiceImpl implements VolumeService {
@@ -194,6 +201,10 @@ public class VolumeServiceImpl implements VolumeService {
     private StorageManager _storageMgr;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private SnapshotApiService snapshotApiService;
+    @Inject
+    private PassphraseDao passphraseDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -354,7 +365,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
         if (volumeStore != null) {
             if (volumeStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
-                String msg = "Volume: " + volume.getName() + " is currently being uploaded; cant' delete it.";
+                String msg = "Volume: " + volume.getName() + " is currently being uploaded; can't delete it.";
                 s_logger.debug(msg);
                 result.setSuccess(false);
                 result.setResult(msg);
@@ -443,14 +454,19 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             if (result.isSuccess()) {
                 vo.processEvent(Event.OperationSuccessed);
+
+                if (vo.getPassphraseId() != null) {
+                    vo.deletePassphrase();
+                }
+
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
                 }
 
-                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+                List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 
-                if (snapStoreVo != null) {
+                for (SnapshotDataStoreVO snapStoreVo : snapStoreVOs) {
                     long storagePoolId = snapStoreVo.getDataStoreId();
                     StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
@@ -468,6 +484,7 @@ public class VolumeServiceImpl implements VolumeService {
                         _snapshotStoreDao.remove(snapStoreVo.getId());
                     }
                 }
+                snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
             } else {
                 vo.processEvent(Event.OperationFailed);
                 apiResult.setResult(result.getResult());
@@ -794,7 +811,7 @@ public class VolumeServiceImpl implements VolumeService {
             // hack for Vmware: host is down, previously download template to the host needs to be re-downloaded, so we need to reset
             // template_spool_ref entry here to NOT_DOWNLOADED and Allocated state
             Answer ans = result.getAnswer();
-            if (ans != null && ans instanceof CopyCmdAnswer && ans.getDetails().contains(REQUEST_TEMPLATE_RELOAD)) {
+            if (ans instanceof CopyCmdAnswer && ans.getDetails().contains(StorageProcessor.REQUEST_TEMPLATE_RELOAD)) {
                 if (tmplOnPrimary != null) {
                     s_logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
                     VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId(), deployAsIsConfiguration);
@@ -2738,5 +2755,51 @@ public class VolumeServiceImpl implements VolumeService {
             vol.stateTransit(Volume.Event.OperationSucceeded);
             volDao.remove(vol.getId());
         }
+    }
+
+    @Override
+    public void moveVolumeOnSecondaryStorageToAnotherAccount(Volume volume, Account sourceAccount, Account destAccount) {
+        VolumeDataStoreVO volumeStore = _volumeStoreDao.findByVolume(volume.getId());
+
+        if (volumeStore == null) {
+            s_logger.debug(String.format("Volume [%s] is not present in the secondary storage. Therefore we do not need to move it in the secondary storage.", volume));
+            return;
+        }
+        s_logger.debug(String.format("Volume [%s] is present in secondary storage. It will be necessary to move it from the source account's [%s] folder to the destination "
+                        + "account's [%s] folder.",
+                volume.getUuid(), sourceAccount, destAccount));
+
+        VolumeInfo volumeInfo = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
+        String datastoreUri = volumeInfo.getDataStore().getUri();
+        Path srcPath = Paths.get(volumeInfo.getPath());
+        String destPath = buildVolumePath(destAccount.getAccountId(), volume.getId());
+
+        EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
+
+        MoveVolumeCommand cmd = new MoveVolumeCommand(volume.getUuid(), volume.getName(), destPath, srcPath.getParent().toString(), datastoreUri);
+
+        Answer answer = ssvm.sendMessage(cmd);
+
+        if (!answer.getResult()) {
+            String msg = String.format("Unable to move volume [%s] from [%s] (source account's [%s] folder) to [%s] (destination account's [%s] folder) in the secondary storage, due "
+                            + "to [%s].",
+                    volume.getUuid(), srcPath.getParent(), sourceAccount, destPath, destAccount, answer.getDetails());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        s_logger.debug(String.format("Volume [%s] was moved from [%s] (source account's [%s] folder) to [%s] (destination account's [%s] folder) in the secondary storage.",
+                volume.getUuid(), srcPath.getParent(), sourceAccount, destPath, destAccount));
+
+        volumeStore.setInstallPath(String.format("%s/%s", destPath, srcPath.getFileName().toString()));
+        if (!_volumeStoreDao.update(volumeStore.getId(), volumeStore)) {
+            String msg = String.format("Unable to update volume [%s] install path in the DB.", volumeStore.getVolumeId());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    protected String buildVolumePath(long accountId, long volumeId) {
+        return String.format("%s/%s/%s", TemplateConstants.DEFAULT_VOLUME_ROOT_DIR, accountId, volumeId);
     }
 }

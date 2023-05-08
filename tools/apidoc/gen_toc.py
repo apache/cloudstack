@@ -87,6 +87,52 @@ known_categories = {
     'OpenDaylight': 'Network',
     'createServiceInstance': 'Network',
     'addGloboDnsHost': 'Network',
+    'createTungstenFabricProvider': 'Tungsten',
+    'listTungstenFabricProviders': 'Tungsten',
+    'configTungstenFabricService': 'Tungsten',
+    'createTungstenFabricPublicNetwork': 'Tungsten',
+    'synchronizeTungstenFabricData': 'Tungsten',
+    'addTungstenFabricPolicyRule': 'Tungsten',
+    'createTungstenFabricPolicy': 'Tungsten',
+    'deleteTungstenFabricPolicy': 'Tungsten',
+    'removeTungstenFabricPolicyRule': 'Tungsten',
+    'listTungstenFabricTag': 'Tungsten',
+    'listTungstenFabricTagType': 'Tungsten',
+    'listTungstenFabricPolicy': 'Tungsten',
+    'listTungstenFabricPolicyRule': 'Tungsten',
+    'listTungstenFabricNetwork': 'Tungsten',
+    'listTungstenFabricVm': 'Tungsten',
+    'listTungstenFabricNic': 'Tungsten',
+    'createTungstenFabricTag': 'Tungsten',
+    'createTungstenFabricTagType': 'Tungsten',
+    'deleteTungstenFabricTag': 'Tungsten',
+    'deleteTungstenFabricTagType': 'Tungsten',
+    'applyTungstenFabricPolicy': 'Tungsten',
+    'applyTungstenFabricTag': 'Tungsten',
+    'removeTungstenFabricTag': 'Tungsten',
+    'removeTungstenFabricPolicy': 'Tungsten',
+    'createTungstenFabricApplicationPolicySet': 'Tungsten',
+    'createTungstenFabricFirewallPolicy': 'Tungsten',
+    'createTungstenFabricFirewallRule': 'Tungsten',
+    'createTungstenFabricServiceGroup': 'Tungsten',
+    'createTungstenFabricAddressGroup': 'Tungsten',
+    'createTungstenFabricLogicalRouter': 'Tungsten',
+    'addTungstenFabricNetworkGatewayToLogicalRouter': 'Tungsten',
+    'listTungstenFabricApplicationPolicySet': 'Tungsten',
+    'listTungstenFabricFirewallPolicy': 'Tungsten',
+    'listTungstenFabricFirewallRule': 'Tungsten',
+    'listTungstenFabricServiceGroup': 'Tungsten',
+    'listTungstenFabricAddressGroup': 'Tungsten',
+    'listTungstenFabricLogicalRouter': 'Tungsten',
+    'deleteTungstenFabricApplicationPolicySet': 'Tungsten',
+    'deleteTungstenFabricFirewallPolicy': 'Tungsten',
+    'deleteTungstenFabricFirewallRule': 'Tungsten',
+    'deleteTungstenFabricAddressGroup': 'Tungsten',
+    'deleteTungstenFabricServiceGroup': 'Tungsten',
+    'deleteTungstenFabricLogicalRouter': 'Tungsten',
+    'removeTungstenFabricNetworkGatewayFromLogicalRouter': 'Tungsten',
+    'updateTungstenFabricLBHealthMonitor': 'Tungsten',
+    'listTungstenFabricLBHealthMonitor': 'Tungsten',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
@@ -201,7 +247,9 @@ known_categories = {
     'UnmanagedInstance': 'Virtual Machine',
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
-    'listVsphereStoragePolicies' : 'vSphere storage policies'
+    'listVsphereStoragePolicies' : 'vSphere storage policies',
+    'ConsoleEndpoint': 'Console Endpoint',
+    'Shutdown': 'Shutdown'
 }
 
 
@@ -221,7 +269,7 @@ for f in sys.argv:
     dirname, fn = os.path.split(f)
     if not fn.endswith('.xml'):
         continue
-    if fn.endswith('Summary.xml'):
+    if fn.endswith('Summary.xml') and fn != 'quotaSummary.xml':
         continue
     if fn.endswith('SummarySorted.xml'):
         continue
@@ -234,6 +282,7 @@ for f in sys.argv:
             dom = minidom.parse(data)
         name = dom.getElementsByTagName('name')[0].firstChild.data
         isAsync = dom.getElementsByTagName('isAsync')[0].firstChild.data
+        isDeprecated = dom.getElementsByTagName('isDeprecated')[0].firstChild.data
         category = choose_category(fn)
         if category not in categories:
             categories[category] = []
@@ -241,6 +290,7 @@ for f in sys.argv:
             'name': name,
             'dirname': dirname_to_dirname[dirname],
             'async': isAsync == 'true',
+            'deprecated': isDeprecated == 'true',
             'user': dirname_to_user[dirname],
             })
     except ExpatError as e:
@@ -252,9 +302,10 @@ for f in sys.argv:
 def xml_for(command):
     name = command['name']
     isAsync = command['async'] and ' (A)' or ''
+    isDeprecated = command['deprecated'] and ' (D)' or ''
     dirname = command['dirname']
     return '''<xsl:if test="name=\'%(name)s\'">
-<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s</a></li>
+<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s %(isDeprecated)s</a></li>
 </xsl:if>
 ''' % locals()
 

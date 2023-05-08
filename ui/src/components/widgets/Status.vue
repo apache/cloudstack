@@ -16,14 +16,16 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom" :title="getTooltip(text)">
-    <a-badge
-      :style="getStyle()"
-      :title="text"
-      :color="getStatusColor(text)"
-      :status="getBadgeStatus(text)"
-      :text="getText()" />
-  </a-tooltip>
+  <div style="display: inline-flex;">
+    <a-tooltip placement="bottom" :title="getTooltip(text)">
+      <a-badge
+        :style="getStyle()"
+        :title="text"
+        :color="getStatusColor(text)"
+        :status="getBadgeStatus(text)"
+        :text="getText()" />
+    </a-tooltip>
+  </div>
 </template>
 
 <script>
@@ -156,6 +158,8 @@ export default {
       switch (state.toLowerCase()) {
         case 'scheduled':
           return 'blue'
+        case 'reserved':
+          return 'orange'
         default:
           return null
       }

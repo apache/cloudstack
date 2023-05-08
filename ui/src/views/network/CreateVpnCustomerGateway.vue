@@ -62,9 +62,9 @@
         <a-select
           v-model:value="form.ikeEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
@@ -75,9 +75,9 @@
         <a-select
           v-model:value="form.ikeHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
@@ -91,9 +91,9 @@
         <a-select
           v-model:value="form.ikeversion"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="vers" v-for="(vers, idx) in ikeVersions" :key="idx">
             {{ vers }}
@@ -106,9 +106,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
+          <a-select-option
+            :value="DHGroups[group]"
+            v-for="(group, idx) in Object.keys(DHGroups)"
+            :key="idx"
+            :label="group + '(' + DHGroups[group] + ')'">
             <div v-if="group !== ''">
               {{ group+"("+DHGroups[group]+")" }}
             </div>
@@ -119,9 +123,9 @@
         <a-select
           v-model:value="form.espEncryption"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="algo" v-for="(algo, idx) in encryptionAlgo" :key="idx">
             {{ algo }}
@@ -132,9 +136,9 @@
         <a-select
           v-model:value="form.espHash"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option :value="h" v-for="(h, idx) in hash" :key="idx">
             {{ h }}
@@ -147,9 +151,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option :value="DHGroups[group]" v-for="(group, idx) in Object.keys(DHGroups)" :key="idx">
+          <a-select-option
+            :value="DHGroups[group]"
+            v-for="(group, idx) in Object.keys(DHGroups)"
+            :key="idx"
+            :label="group === '' ? DHGroups[group] : group + '(' + DHGroups[group] + ')'">
             <div v-if="group === ''">
               {{ DHGroups[group] }}
             </div>
@@ -179,7 +187,7 @@
         <template #label>
           <tooltip-label :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
         </template>
-        <a-switch v-model:checked="form.name"/>
+        <a-switch v-model:checked="form.dpd"/>
       </a-form-item>
       <a-form-item ref="splitconnections" name="splitconnections" v-if="form.ikeversion !== 'ikev1'">
         <template #label>
@@ -197,7 +205,7 @@
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" html-type="submit">
+        <a-button type="primary" @click="handleSubmit" html-type="submit">
           {{ $t('label.ok') }}
         </a-button>
       </div>
@@ -207,10 +215,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVpnCustomerGateway',
+  mixins: [mixinForm],
   components: {
     TooltipLabel
   },
@@ -292,7 +302,8 @@ export default {
       e.preventDefault()
       if (this.isSubmitted) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         let ikepolicy = values.ikeEncryption + '-' + values.ikeHash + ';'
         ikepolicy += (values.ikeDh !== this.ikeDhGroupInitialValue) ? values.ikeDh : (values.ikeDh.split('(')[1]).split(')')[0]
         let esppolicy = values.espEncryption + '-' + values.espHash
@@ -338,7 +349,7 @@ export default {
           this.formRef.value.resetFields()
         }).catch(error => {
           console.error(error)
-          this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
+          this.$message.error(this.$t('message.add.vpn.customer.gateway.failed'))
           this.isSubmitted = false
         })
       }).catch(error => {

@@ -26,8 +26,6 @@ from marvin.cloudstackAPI import (recoverVirtualMachine,
                                   updateConfiguration,
                                   migrateVirtualMachine,
                                   migrateVirtualMachineWithVolume,
-                                  unmanageVirtualMachine,
-                                  listUnmanagedInstances,
                                   listNics,
                                   listVolumes)
 from marvin.lib.utils import *
@@ -49,7 +47,6 @@ from marvin.lib.common import (get_domain,
                                get_suitable_test_template,
                                get_test_ovf_templates,
                                list_hosts,
-                               list_virtual_machines,
                                get_vm_vapp_configs)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
@@ -409,7 +406,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         self.assertEqual(
@@ -443,7 +440,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         self.debug(
@@ -553,7 +550,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         self.assertEqual(
@@ -593,7 +590,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.assertNotEqual(
             len(list_vm_response),
             0,
-            "Check VM avaliable in List Virtual Machines"
+            "Check VM available in List Virtual Machines"
         )
 
         self.assertEqual(
@@ -638,7 +635,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         if self.hypervisor.lower() in ["kvm", "simulator"]:
             # identify suitable host
             clusters = [h.clusterid for h in hosts]
-            # find hosts withe same clusterid
+            # find hosts with same clusterid
             clusters = [cluster for index, cluster in enumerate(clusters) if clusters.count(cluster) > 1]
 
             if len(clusters) <= 1:
@@ -876,6 +873,88 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         self.assertEqual(Volume.list(self.apiclient, id=vol1.id), None, "List response contains records when it should not")
 
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_12_start_vm_multiple_volumes_allocated(self):
+        """Test attaching multiple datadisks and start VM
+        """
+
+        # Validate the following
+        # 1. Deploys a VM without starting it and attaches multiple datadisks to it
+        # 2. Start VM successfully
+        # 3. Destroys the VM with DataDisks option
+
+        custom_disk_offering = DiskOffering.list(self.apiclient, name='Custom')[0]
+
+        # Create VM without starting it
+        vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["small"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.small_offering.id,
+            startvm=False
+        )
+        self.cleanup.append(vm)
+
+        hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor=self.hypervisor,
+            state='Up')
+
+        if self.hypervisor.lower() in ["simulator"] or not hosts[0].hypervisorversion:
+            hypervisor_version = "default"
+        else:
+            hypervisor_version = hosts[0].hypervisorversion
+
+        res = self.dbclient.execute("select max_data_volumes_limit from hypervisor_capabilities where "
+                                    "hypervisor_type='%s' and hypervisor_version='%s';" %
+                                    (self.hypervisor.lower(), hypervisor_version))
+        if isinstance(res, list) and len(res) > 0:
+            max_volumes = res[0][0]
+            if max_volumes > 14:
+                max_volumes = 14
+        else:
+            max_volumes = 6
+
+        # Create and attach volumes
+        self.services["custom_volume"]["customdisksize"] = 1
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        for i in range(max_volumes):
+            volume = Volume.create_custom_disk(
+                self.apiclient,
+                self.services["custom_volume"],
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=custom_disk_offering.id
+            )
+            self.cleanup.append(volume)
+            VirtualMachine.attach_volume(vm, self.apiclient, volume)
+
+        # Start the VM
+        self.debug("Starting VM - ID: %s" % vm.id)
+        vm.start(self.apiclient)
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=vm.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm_response),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        self.assertEqual(
+            list_vm_response[0].state,
+            "Running",
+            "Check virtual machine is in running state"
+        )
+
 
 class TestSecuredVmMigration(cloudstackTestCase):
 
@@ -1012,6 +1091,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
+                      sed -i 's/vnc_tls.*/vnc_tls=0/g' /etc/libvirt/qemu.conf && \
                       service libvirtd start ; \
                       service libvirt-bin start ; \
                       sleep 30 ; \
@@ -1603,155 +1683,6 @@ class TestKVMLiveMigration(cloudstackTestCase):
         self.assertEqual(response.hostid,
                          target_host.id,
                          "HostID not as expected")
-
-
-class TestUnmanageVM(cloudstackTestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        testClient = super(TestUnmanageVM, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()
-        cls.hypervisor = testClient.getHypervisorInfo()
-        cls._cleanup = []
-
-        # Get Zone, Domain and templates
-        cls.domain = get_domain(cls.apiclient)
-        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
-        cls.template = get_suitable_test_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"],
-            cls.hypervisor
-        )
-        if cls.template == FAILED:
-            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
-
-        cls.hypervisorNotSupported = cls.hypervisor.lower() != "vmware"
-
-        cls.services["small"]["zoneid"] = cls.zone.id
-        cls.services["small"]["template"] = cls.template.id
-
-        cls.account = Account.create(
-            cls.apiclient,
-            cls.services["account"],
-            domainid=cls.domain.id
-        )
-
-        cls.small_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["small"]
-        )
-
-        cls.network_offering = NetworkOffering.create(
-            cls.apiclient,
-            cls.services["l2-network_offering"],
-        )
-        cls.network_offering.update(cls.apiclient, state='Enabled')
-
-        cls._cleanup = [
-            cls.small_offering,
-            cls.network_offering,
-            cls.account
-        ]
-
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.services["network"]["networkoffering"] = self.network_offering.id
-
-        self.network = Network.create(
-            self.apiclient,
-            self.services["l2-network"],
-            zoneid=self.zone.id,
-            networkofferingid=self.network_offering.id
-        )
-
-        self.cleanup = [
-            self.network
-        ]
-
-    @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="false")
-    @skipTestIf("hypervisorNotSupported")
-    def test_01_unmanage_vm_cycle(self):
-        """
-        Test the following:
-        1. Deploy VM
-        2. Unmanage VM
-        3. Verify VM is not listed in CloudStack
-        4. Verify VM is listed as part of the unmanaged instances
-        5. Import VM
-        6. Destroy VM
-        """
-
-        # 1 - Deploy VM
-        self.virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            templateid=self.template.id,
-            serviceofferingid=self.small_offering.id,
-            networkids=self.network.id,
-            zoneid=self.zone.id
-        )
-        vm_id = self.virtual_machine.id
-        vm_instance_name = self.virtual_machine.instancename
-        hostid = self.virtual_machine.hostid
-        hosts = Host.list(
-            self.apiclient,
-            id=hostid
-        )
-        host = hosts[0]
-        clusterid = host.clusterid
-
-        list_vm = list_virtual_machines(
-            self.apiclient,
-            id=vm_id
-        )
-        self.assertEqual(
-            isinstance(list_vm, list),
-            True,
-            "Check if virtual machine is present"
-        )
-        vm_response = list_vm[0]
-
-        self.assertEqual(
-            vm_response.state,
-            "Running",
-            "VM state should be running after deployment"
-        )
-
-        # 2 - Unmanage VM from CloudStack
-        self.virtual_machine.unmanage(self.apiclient)
-
-        list_vm = list_virtual_machines(
-            self.apiclient,
-            id=vm_id
-        )
-
-        self.assertEqual(
-            list_vm,
-            None,
-            "VM should not be listed"
-        )
-
-        unmanaged_vms = VirtualMachine.listUnmanagedInstances(
-            self.apiclient,
-            clusterid=clusterid,
-            name=vm_instance_name
-        )
-
-        self.assertEqual(
-            len(unmanaged_vms),
-            1,
-            "Unmanaged VMs matching instance name list size is 1"
-        )
-
-        unmanaged_vm = unmanaged_vms[0]
-        self.assertEqual(
-            unmanaged_vm.powerstate,
-            "PowerOn",
-            "Unmanaged VM is still running"
-        )
 
 
 class TestVAppsVM(cloudstackTestCase):

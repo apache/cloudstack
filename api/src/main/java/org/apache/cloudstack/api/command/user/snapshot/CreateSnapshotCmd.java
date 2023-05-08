@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -49,7 +49,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
-    private static final String s_name = "createsnapshotresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -153,11 +152,6 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public static String getResultObjectName() {
         return ApiConstants.SNAPSHOT;
     }
@@ -196,8 +190,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Snapshot;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Snapshot;
     }
 
     @Override
@@ -226,6 +220,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Snapshot from volume [%s] was not found in database.", getVolumeUuid()));
             }
         } catch (Exception e) {
+            if (e.getCause() instanceof UnsupportedOperationException) {
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, String.format("Failed to create snapshot due to unsupported operation: %s", e.getCause().getMessage()));
+            }
+
             String errorMessage = "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid();
             s_logger.error(errorMessage, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);

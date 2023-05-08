@@ -30,6 +30,14 @@ public interface VMSnapshotStrategy {
     StrategyPriority canHandle(VMSnapshot vmSnapshot);
 
     /**
+     * Verifies if the strategy can handle the VM snapshot. This method is used only for KVM hypervisors when allocating a VM snapshot.
+     * @param vmId the ID of the virtual machine
+     * @param snapshotMemory for VM snapshots with memory
+     * @return StrategyPriority
+     */
+    StrategyPriority canHandle(Long vmId, Long poolId, boolean snapshotMemory);
+
+    /**
      * Delete vm snapshot only from database. Introduced as a Vmware optimization in which vm snapshots are deleted when
      * the vm gets deleted on hypervisor (no need to delete each vm snapshot before deleting vm, just mark them as deleted on DB)
      * @param vmSnapshot vm snapshot to be marked as deleted.

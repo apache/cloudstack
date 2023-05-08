@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -32,6 +33,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateLocation;
+import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 
 /**
@@ -39,8 +41,14 @@ import com.cloud.utils.script.Script;
  * and the methods wrapped here.
  */
 public class LibvirtUtilitiesHelper {
+    private static final Logger s_logger = Logger.getLogger(LibvirtUtilitiesHelper.class);
 
     public static final int TIMEOUT = 10000;
+
+    /**
+     * Although the flag '--delete' for command 'virsh blockcommit' already exists in Libvirt 1.2.9, its functionality was only implemented on 6.0.0.
+     */
+    private static final int LIBVIRT_VERSION_THAT_SUPPORTS_FLAG_DELETE_ON_COMMAND_VIRSH_BLOCKCOMMIT = 6000000;
 
     public Connect getConnectionByVmName(final String vmName) throws LibvirtException {
         return LibvirtConnection.getConnectionByVmName(vmName);
@@ -108,5 +116,32 @@ public class LibvirtUtilitiesHelper {
                 + domainXmlDesc
                 + "</domainsnapshot>";
         return vmSnapshotXML;
+    }
+
+    /**
+     * Validates if the libvirt's version is equal or higher than the parameter.
+     * @param conn The libvirt connection to retrieve the version.
+     * @param version The version to validate against.
+     */
+    protected static Pair<String, Boolean> isLibvirtVersionEqualOrHigherThanVersionInParameter(Connect conn, long version) {
+        try {
+            long currentLibvirtVersion = conn.getLibVirVersion();
+            return new Pair<>(String.valueOf(currentLibvirtVersion), currentLibvirtVersion >= version);
+        } catch (LibvirtException ex) {
+            String exceptionMessage = ex.getMessage();
+            s_logger.error(String.format("Unable to validate if the Libvirt's version is equal or higher than [%s] due to [%s]. Returning 'false' as default'.", version,
+                    exceptionMessage), ex);
+            return new Pair<>(String.format("Unknown due to [%s]", exceptionMessage), false);
+        }
+    }
+
+    /**
+     * Validates if Libvirt supports the flag '--delete' on command 'virsh blockcommit'.
+     */
+    public static boolean isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Connect conn) {
+        Pair<String, Boolean> result = isLibvirtVersionEqualOrHigherThanVersionInParameter(conn, LIBVIRT_VERSION_THAT_SUPPORTS_FLAG_DELETE_ON_COMMAND_VIRSH_BLOCKCOMMIT);
+        s_logger.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
+                result.second() ? "" : " does not"));
+        return result.second();
     }
 }

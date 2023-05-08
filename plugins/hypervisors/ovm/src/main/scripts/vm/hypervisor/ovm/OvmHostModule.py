@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -44,11 +44,11 @@ class OvmHostEncoder(json.JSONEncoder):
         safeDictSet(obj, dct, 'dom0KernelVersion')
         safeDictSet(obj, dct, 'hypervisorVersion')
         return dct
-        
+
 
 def fromOvmHost(host):
     return normalizeToGson(json.dumps(host, cls=OvmHostEncoder))
-    
+
 class OvmHost(OvmObject):
     masterIp = ''
     cpuNum = 0
@@ -64,7 +64,7 @@ class OvmHost(OvmObject):
     def _getVmPathFromPrimaryStorage(self, vmName):
         '''
         we don't have a database to store vm states, so there is no way to retrieve information of a vm
-        when it was already stopped. The trick is to try to find the vm path in primary storage then we 
+        when it was already stopped. The trick is to try to find the vm path in primary storage then we
         can read information from its configure file.
         '''
         mps = OvmStoragePool()._getAllMountPoints()
@@ -76,18 +76,18 @@ class OvmHost(OvmObject):
             logger.error(self._getVmPathFromPrimaryStorage, "Cannot find link for %s in any primary storage, the vm was really gone!"%vmName)
             raise Exception("Cannot find link for %s in any primary storage, the vm was really gone!"%vmName)
         return vmPath
-    
+
     def _vmNameToPath(self, vmName):
         # the xen_get_vm_path always sucks!!!
         #return successToMap((vmName))['path']
         return self._getVmPathFromPrimaryStorage(vmName)
-    
+
     def _getAllDomains(self):
         stdout = timeout_command(["xm", "list"])
         l = [ line.split()[:2] for line in stdout.splitlines() ]
         l = [ (name, id) for (name, id) in l if name not in ("Name", "Domain-0") ]
         return l
-    
+
     def _getDomainIdByName(self, vmName):
         l = self._getAllDomains()
         for name, id in l:
@@ -108,7 +108,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.registerAsPrimary, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.registerAsPrimary), errmsg)
-    
+
     @staticmethod
     def registerAsVmServer(hostname, username="oracle", password="password", port=8899, isSsl=False):
         try:
@@ -121,7 +121,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.registerAsVmServer, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.registerAsVmServer), errmsg)
-    
+
     @staticmethod
     def ping(hostname):
         try:
@@ -133,7 +133,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.ping, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.ping, errmsg))
-        
+
     @staticmethod
     def getDetails():
         try:
@@ -166,7 +166,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.getDetails, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.getDetails), errmsg)
-    
+
     @staticmethod
     def getPerformanceStats(bridgeName):
         try:
@@ -188,20 +188,20 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.getPerformanceStats, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.getPerformanceStats), errmsg)
-    
+
     @staticmethod
     def getAllVms():
         def scanStoppedVmOnPrimaryStorage(vms):
             def isMyVmDirLink(path):
                 return (islink(path) and exists(join(path, 'vm.cfg')) and ('-' in basename(path)) and (exists(join(path, makeOwnerFileName()))))
-                    
+
             mps = OvmStoragePool()._getAllMountPoints()
             for mountPoint in mps:
                 runningPool = join(mountPoint, 'running_pool')
                 if not exists(runningPool):
                     logger.debug(OvmHost.getAllVms, "Primary storage %s not existing, skip it. this should be first getAllVms() called from Ovm resource configure"%runningPool)
                     continue
-                    
+
                 for dir in os.listdir(runningPool):
                     vmDir = join(runningPool, dir)
                     if not isMyVmDirLink(vmDir):
@@ -210,11 +210,11 @@ class OvmHost(OvmObject):
                     if vms.has_key(dir):
                         logger.debug(OvmHost.getAllVms, "%s is already in running list, skip it"%dir)
                         continue
-                    
+
                     logger.debug(OvmHost.getAllVms, "Found a stopped vm %s on primary storage %s, report it to management server" % (dir, mountPoint))
                     vms[dir] = "DOWN"
-                    
-                    
+
+
         try:
             l = OvmHost()._getAllDomains()
             dct = {}
@@ -227,7 +227,7 @@ class OvmHost(OvmObject):
                 except Exception, e:
                     logger.debug(OvmHost.getAllVms, "Cannot find link for %s on primary storage, treat it as Error"%name)
                     dct[name] = 'ERROR'
-                        
+
             scanStoppedVmOnPrimaryStorage(dct)
             rs = toGson(dct)
             logger.info(OvmHost.getAllVms, rs)
@@ -236,13 +236,13 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.getAllVms, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.getAllVms), errmsg)
-    
+
     @staticmethod
     def fence(ip):
         # try 3 times to avoid race condition that read when heartbeat file is being written
         def getTimeStamp(hbFile):
             for i in range(1, 3):
-                f = open(hbFile, 'r') 
+                f = open(hbFile, 'r')
                 str = f.readline()
                 items = re.findall(HEARTBEAT_TIMESTAMP_PATTERN, str)
                 if len(items) == 0:
@@ -253,7 +253,7 @@ class OvmHost(OvmObject):
                     f.close()
                     timestamp = items[0]
                     return timestamp.lstrip('<timestamp>').rstrip('</timestamp>')
-            
+
         # totally check in 6 mins, the update frequency is 2 mins
         def check(hbFile):
             for i in range(1, 6):
@@ -263,7 +263,7 @@ class OvmHost(OvmObject):
                 if ts != nts: return True
                 else: logger.debug(OvmHost.fence, '%s is not updated, old value=%s, will retry %s times'%(hbFile, ts, 6-i))
             return False
-                
+
         try:
             mountpoints = OvmStoragePool()._getAllMountPoints()
             hbFile = None
@@ -272,7 +272,7 @@ class OvmHost(OvmObject):
                 if exists(p):
                     hbFile = p
                     break
-                
+
             if not hbFile: raise Exception('Can not find heartbeat file for %s in pools %s'%(ip, mountpoints))
             rs = toGson({"isLive":check(hbFile)})
             logger.debug(OvmHost.fence, rs)
@@ -281,7 +281,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.fence, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.fence), errmsg)
-    
+
     @staticmethod
     def setupHeartBeat(poolUuid, ip):
         try:
@@ -292,7 +292,7 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.setupHeartBeat, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.setupHeartBeat), errmsg)
-    
+
     @staticmethod
     def pingAnotherHost(ip):
         try:
@@ -302,6 +302,6 @@ class OvmHost(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmHost.pingAnotherHost, errmsg)
             raise XmlRpcFault(toErrCode(OvmHost, OvmHost.pingAnotherHost), errmsg)
-        
+
 if __name__ == "__main__":
     print OvmHost.getAllVms()

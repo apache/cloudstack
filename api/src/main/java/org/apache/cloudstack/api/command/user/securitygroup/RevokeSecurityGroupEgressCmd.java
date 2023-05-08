@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.securitygroup;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupEgressCmd.class.getName());
 
-    private static final String s_name = "revokesecuritygroupegressresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -60,11 +59,6 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     public static String getResultObjectName() {
         return "revokesecuritygroupegress";
@@ -105,12 +99,12 @@ public class RevokeSecurityGroupEgressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.SecurityGroup;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.SecurityGroup;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 }

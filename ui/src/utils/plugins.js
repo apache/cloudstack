@@ -133,23 +133,25 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
+          let onClose = () => {}
           if (!bulkAction) {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: errMessage,
-              description: desc,
-              key: jobId,
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            onClose = () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
           }
+          notification.error({
+            top: '65px',
+            message: errMessage,
+            description: desc,
+            key: jobId,
+            duration: 0,
+            onClose: onClose
+          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -303,6 +305,18 @@ export const toLocaleDatePlugin = {
       dateWithOffset = dateWithOffset.substring(0, dateWithOffset.length - 4)
       return dateWithOffset
     }
+
+    app.config.globalProperties.$toLocalDate = function (date) {
+      var timezoneOffset = this.$store.getters.timezoneoffset
+      if (this.$store.getters.usebrowsertimezone) {
+        // Since GMT+530 is returned as -330 (mins to GMT)
+        timezoneOffset = new Date().getTimezoneOffset() / -60
+      }
+      var milliseconds = Date.parse(date)
+      // e.g. "Tue, 08 Jun 2010 19:13:49 GMT", "Tue, 25 May 2010 12:07:01 UTC"
+      var dateWithOffset = new Date(milliseconds + (timezoneOffset * 60 * 60 * 1000))
+      return dateWithOffset.toISOString()
+    }
   }
 }
 
@@ -353,6 +367,63 @@ export const resourceTypePlugin = {
       } else {
         return type
       }
+    }
+
+    app.config.globalProperties.$getRouteFromResourceType = function (resourceType) {
+      switch (resourceType) {
+        case 'VirtualMachine':
+          return 'vm'
+        case 'DomainRouter':
+          return 'router'
+        case 'ConsoleProxy':
+          return 'systemvm'
+        case 'User':
+          return 'accountuser'
+        case 'Network':
+          return 'guestnetwork'
+        case 'ServiceOffering':
+          return 'computeoffering'
+        case 'IpAddress':
+          return 'publicip'
+        case 'NetworkAcl':
+          return 'acllist'
+        case 'SystemVm':
+        case 'PhysicalNetwork':
+        case 'Backup':
+        case 'SecurityGroup':
+        case 'StoragePool':
+        case 'ImageStore':
+        case 'Template':
+        case 'Iso':
+        case 'Host':
+        case 'Volume':
+        case 'Account':
+        case 'Snapshot':
+        case 'Project':
+        case 'Domain':
+        case 'DiskOffering':
+        case 'NetworkOffering':
+        case 'VpcOffering':
+        case 'BackupOffering':
+        case 'Zone':
+        case 'Vpc':
+        case 'VmSnapshot':
+        case 'Pod':
+        case 'Cluster':
+        case 'Role':
+        case 'AffinityGroup':
+        case 'VpnCustomerGateway':
+        case 'AutoScaleVmGroup':
+          return resourceType.toLowerCase()
+      }
+      return ''
+    }
+
+    app.config.globalProperties.$getIconFromResourceType = function (resourceType) {
+      var routePath = this.$getRouteFromResourceType(resourceType)
+      if (!routePath) return ''
+      var route = this.$router.resolve('/' + routePath)
+      return route?.meta?.icon || ''
     }
   }
 }
@@ -405,4 +476,30 @@ export const fileSizeUtilPlugin = {
       }
     }
   }
+}
+
+export const genericUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isValidUuid = function (uuid) {
+      const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
+      return regexExp.test(uuid)
+    }
+  }
+}
+
+export function createPathBasedOnVmType (vmtype, virtualmachineid) {
+  let path = ''
+  switch (vmtype) {
+    case 'ConsoleProxy':
+    case 'SecondaryStorageVm':
+      path = '/systemvm/'
+      break
+    case 'DomainRouter':
+      path = '/router/'
+      break
+    default:
+      path = '/vm/'
+  }
+
+  return path + virtualmachineid
 }

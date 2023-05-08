@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.address;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -41,7 +41,6 @@ import com.cloud.user.Account;
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
-    private static final String s_name = "disassociateipaddressresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,11 +65,6 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public void execute() throws InsufficientAddressCapacityException {
@@ -141,12 +135,12 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.IpAddress;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getIpAddressId();
     }
 

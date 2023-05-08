@@ -20,7 +20,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseResponse;
@@ -44,7 +44,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterTemplateCmd.class.getName());
-    private static final String s_name = "upgraderoutertemplateresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -108,17 +107,12 @@ public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd 
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.DomainRouter;
+    public ApiCommandResourceType getInstanceType() {
+        return ApiCommandResourceType.DomainRouter;
     }
 
     public Long getInstanceId() {

@@ -26,11 +26,13 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
+import com.cloud.resource.ResourceState;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
@@ -128,6 +130,12 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     @Column(name = "host_name", nullable = false)
     private String hostName;
+
+    @Column(name = "host_status")
+    private Status hostStatus;
+
+    @Column(name = "host_resource_state")
+    private ResourceState hostResourceState;
 
     @Column(name="hypervisor_type")
     @Enumerated(value=EnumType.STRING)
@@ -251,6 +259,12 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Enumerated(value = EnumType.STRING)
     private VirtualRouter.Role role;
 
+    @Column(name = "software_version")
+    private String softwareVersion;
+
+    @Column(name = "mtu")
+    private Integer mtu;
+
     public DomainRouterJoinVO() {
     }
 
@@ -346,6 +360,14 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Status getHostStatus() {
+        return hostStatus;
+    }
+
+    public ResourceState getHostResourceState() {
+        return hostResourceState;
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
@@ -533,5 +555,13 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public Integer getMtu() {
+        return mtu;
     }
 }

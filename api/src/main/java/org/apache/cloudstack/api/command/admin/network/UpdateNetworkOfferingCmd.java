@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -39,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
-    private static final String s_name = "updatenetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -194,13 +194,18 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getCommandName() {
-        return s_name;
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkOffering;
     }
 
     @Override

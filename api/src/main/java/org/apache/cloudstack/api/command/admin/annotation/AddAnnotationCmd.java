@@ -33,16 +33,15 @@ import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = AddAnnotationCmd.APINAME, description = "add an annotation.", responseObject = AnnotationResponse.class,
+@APICommand(name = "addAnnotation", description = "add an annotation.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
 public class AddAnnotationCmd extends BaseCmd {
 
-    public static final String APINAME = "addAnnotation";
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "the annotation text")
     private String annotation;
 
-    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "the entity type (only HOST is allowed atm)")
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, description = "The following entity types are allowed VM, VOLUME, SNAPSHOT, VM_SNAPSHOT, INSTANCE_GROUP, SSH_KEYPAIR, USER_DATA, NETWORK, VPC, PUBLIC_IP_ADDRESS, VPN_CUSTOMER_GATEWAY, TEMPLATE, ISO, KUBERNETES_CLUSTER, SERVICE_OFFERING, DISK_OFFERING, NETWORK_OFFERING, ZONE, POD, CLUSTER, HOST, DOMAIN, PRIMARY_STORAGE, SECONDARY_STORAGE, VR, SYSTEM_VM, AUTOSCALE_VM_GROUP, MANAGEMENT_SERVER")
     private String entityType;
 
     @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, description = "the id of the entity to annotate")
@@ -79,15 +78,10 @@ public class AddAnnotationCmd extends BaseCmd {
             throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
         Preconditions.checkNotNull(getEntityUuid(),"I have to have an entity to set an annotation on!");
-        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is ot a valid EntityType to put annotations on", entityType);
+        Preconditions.checkState(AnnotationService.EntityType.contains(entityType),(java.lang.String)"'%s' is not a valid EntityType to put annotations on", entityType);
         AnnotationResponse annotationResponse = annotationService.addAnnotation(this);
         annotationResponse.setResponseName(getCommandName());
         this.setResponseObject(annotationResponse);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

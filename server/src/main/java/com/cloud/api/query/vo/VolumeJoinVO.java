@@ -272,6 +272,9 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "chain_info", length = 65535)
     String chainInfo;
 
+    @Column(name = "external_uuid")
+    private String externalUuid = null;
+
     public VolumeJoinVO() {
     }
 
@@ -597,6 +600,14 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getChainInfo() {
         return chainInfo;
+    }
+
+    public String getExternalUuid() {
+        return externalUuid;
+    }
+
+    public void setExternalUuid(String externalUuid) {
+        this.externalUuid = externalUuid;
     }
 
     @Override

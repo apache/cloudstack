@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -134,21 +134,21 @@ class TestUserProjectCreation(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -170,21 +170,21 @@ class TestUserProjectCreation(cloudstackTestCase):
         self.debug("Created project with domain user with ID: %s" %
                                                             project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -298,21 +298,21 @@ class TestProjectCreationNegative(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -421,21 +421,21 @@ class TestProjectInviteRequired(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -457,24 +457,24 @@ class TestProjectInviteRequired(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
                                             account=self.user.name,
                                             )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                             account.role,
@@ -573,21 +573,21 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -609,24 +609,24 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -740,21 +740,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -776,24 +776,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -814,24 +814,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                                       self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
                                             account=self.user.name,
                                             )
 
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                             account.role,
@@ -866,21 +866,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -902,24 +902,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -945,24 +945,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                                       self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
 
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -997,21 +997,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -1033,24 +1033,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -1074,24 +1074,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -1126,21 +1126,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )
@@ -1162,24 +1162,24 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                            )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = ProjectInvitation.list(
+        accounts_response = ProjectInvitation.list(
                                         self.apiclient,
                                         state='Pending',
                                         account=self.user.name,
                                         domainid=self.user.domainid
                                         )
         self.assertEqual(
-                            isinstance(accounts_reponse, list),
+                            isinstance(accounts_response, list),
                             True,
                             "Check for a valid list accounts response"
                             )
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
                     account.state,
@@ -1199,13 +1199,13 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                                                       self.user.name
                                                       ))
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
                                             self.apiclient,
                                             projectid=project.id,
                                             account=self.user.name,
                                             )
         self.assertEqual(
-                            accounts_reponse,
+                            accounts_response,
                             None,
                             "Check for a valid list accounts response"
                             )
@@ -1213,7 +1213,7 @@ class TestProjectInviteTimeout(cloudstackTestCase):
 
     def test_09_invite_to_project_by_email(self):
         """Test invite user to project by email"""
-        
+
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project
@@ -1253,21 +1253,21 @@ class TestProjectInviteTimeout(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                        len(list_projects_reponse),
+                        len(list_projects_response),
                         0,
                         "Check list project response returns a valid project"
                         )

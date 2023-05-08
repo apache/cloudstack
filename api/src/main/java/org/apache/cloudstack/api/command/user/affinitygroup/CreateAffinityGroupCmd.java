@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -39,7 +39,6 @@ import com.cloud.user.Account;
 public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAffinityGroupCmd.class.getName());
 
-    private static final String s_name = "createaffinitygroupresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -105,11 +104,6 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -169,8 +163,8 @@ public class CreateAffinityGroupCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AffinityGroup;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.AffinityGroup;
     }
 
 }

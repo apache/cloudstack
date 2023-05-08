@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.iso;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 public class ExtractIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
-    private static final String s_name = "extractisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,11 +86,6 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public String getEventType() {
         return EventTypes.EVENT_ISO_EXTRACT;
     }
@@ -112,17 +106,13 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return "extracting ISO: " + getId() + " from zone: " + getZoneId();
     }
 
-    public static String getStaticName() {
-        return s_name;
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Iso;
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Iso;
-    }
-
-    @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 

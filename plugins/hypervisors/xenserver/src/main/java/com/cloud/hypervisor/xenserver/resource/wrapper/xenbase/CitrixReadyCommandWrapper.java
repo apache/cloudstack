@@ -19,14 +19,19 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.hypervisor.xenserver.resource.CitrixHelper;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -44,6 +49,7 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
     public Answer execute(final ReadyCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
         final Long dcId = command.getDataCenterId();
+        Map<String, String> hostDetails = new HashMap<String, String>();
         // Ignore the result of the callHostPlugin. Even if unmounting the
         // snapshots dir fails, let Ready command
         // succeed.
@@ -55,6 +61,11 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
             final Host host = Host.getByUuid(conn, citrixResourceBase.getHost().getUuid());
             final Set<VM> vms = host.getResidentVMs(conn);
             citrixResourceBase.destroyPatchVbd(conn, vms);
+
+            final Host.Record hr = host.getRecord(conn);
+            if (isUefiSupported(CitrixHelper.getProductVersion(hr))) {
+                hostDetails.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
         } catch (final Exception e) {
         }
         try {
@@ -70,6 +81,6 @@ public final class CitrixReadyCommandWrapper extends CommandWrapper<ReadyCommand
             return new ReadyAnswer(command, "Unable to cleanup halted vms");
         }
 
-        return new ReadyAnswer(command);
+        return new ReadyAnswer(command, hostDetails);
     }
 }

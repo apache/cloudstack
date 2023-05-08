@@ -35,7 +35,6 @@ public class QuotaUpdateCmd extends BaseCmd {
 
     public static final Logger s_logger = Logger.getLogger(QuotaUpdateCmd.class);
 
-    private static final String s_name = "quotaupdateresponse";
 
     @Inject
     QuotaManager _manager;
@@ -46,11 +45,6 @@ public class QuotaUpdateCmd extends BaseCmd {
 
     public QuotaUpdateCmd() {
         super();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

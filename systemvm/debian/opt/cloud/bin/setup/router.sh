@@ -43,23 +43,6 @@ setup_router() {
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
 
-  if [ -n "$ETH2_IP" ]; then
-    setup_common eth0 eth1 eth2
-
-    if [ -n "$EXTRA_PUBNICS" ]; then
-      for ((i = 3; i < 3 + $EXTRA_PUBNICS; i++)); do
-        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-      done
-    fi
-  else
-    setup_common eth0 eth1
-    if [ -n "$EXTRA_PUBNICS" ]; then
-      for ((i = 2; i < 2 + $EXTRA_PUBNICS; i++)); do
-        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-      done
-    fi
-  fi
-
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
   then
@@ -88,8 +71,7 @@ setup_router() {
   enable_fwding 1
   enable_rpsrfs 1
   enable_passive_ftp 1
-  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
-  setup_sshd $ETH1_IP "eth1"
+  restore_ipv6
 
   # Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
@@ -100,9 +82,10 @@ setup_router() {
     mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
   fi
 
-  # Setup hourly lograte in systemd timer
-  sed -i 's/OnCalendar=daily/OnCalendar=hourly/g' /usr/lib/systemd/system/logrotate.timer
-  sed -i 's/AccuracySec=12h/AccuracySec=5m/g' /usr/lib/systemd/system/logrotate.timer
+  # As ACS is changing the file, the description will also change to make it clear that ACS is handling this.
+  sed -i "s#^Description=.*#Description=Cloudstack configuration time for rotation of log files#g" /usr/lib/systemd/system/logrotate.timer
+  sed -i "s#^OnCalendar=.*#OnCalendar=$LOGROTATE_FREQUENCY#g" /usr/lib/systemd/system/logrotate.timer
+  sed -i 's#^AccuracySec=.*#AccuracySec=5m#g' /usr/lib/systemd/system/logrotate.timer
 
   # reload daemon
   /usr/bin/systemctl daemon-reload

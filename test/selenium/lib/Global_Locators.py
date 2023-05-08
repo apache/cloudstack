@@ -73,7 +73,7 @@ serviceOfferings_xpath = "//div[@id='navigation']/ul/li[12]/span[2]"
 ################################################################################################################################################################################################
 
 ## Instances Page
-## Instances Main page 
+## Instances Main page
 
 
 # Add Instance Button on top right corner of Instances page
@@ -166,7 +166,7 @@ Offering_edit_css = "a[alt=\"Edit\"] > span.icon"
 Offering_editname_name = "name"
 
 # Edit description box
-Offering_editdescription_name = "displaytext" 
+Offering_editdescription_name = "displaytext"
 
 # Edit finished click ok
 Offering_editdone_css="div.button.done"
@@ -220,5 +220,3 @@ login_password_css = "body.login > div.login > form > div.fields > div.field.pas
 
 # Click ok to login
 login_submit_css = "body.login > div.login > form > div.fields > input[type=\"submit\"]" # Login>Login Button (Submit button)
-
-

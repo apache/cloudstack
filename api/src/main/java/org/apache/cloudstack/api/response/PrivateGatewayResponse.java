@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.VpcGateway;
@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 
 @EntityReference(value = VpcGateway.class)
 @SuppressWarnings("unused")
-public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse {
+public class PrivateGatewayResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the private gateway")
@@ -94,7 +94,7 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     private String state;
 
     @SerializedName(ApiConstants.SOURCE_NAT_SUPPORTED)
-    @Param(description = "Souce Nat enable status")
+    @Param(description = "Source Nat enable status")
     private Boolean sourceNat;
 
     @SerializedName(ApiConstants.ACL_ID)
@@ -190,5 +190,4 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     public void setAclName(String aclName) {
         this.aclName = aclName;
     }
-
 }

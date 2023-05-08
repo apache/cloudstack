@@ -39,16 +39,10 @@ import java.net.InetAddress;
 public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
     public static final Logger s_logger = Logger.getLogger(DefaultLogoutAPIAuthenticatorCmd.class.getName());
-    private static final String s_name = "logoutresponse";
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

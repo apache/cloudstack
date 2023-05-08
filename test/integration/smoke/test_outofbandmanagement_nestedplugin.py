@@ -52,7 +52,7 @@ class MockedCloudStackServer(BaseHTTPRequestHandler):
         apiRequests.append(command)
 
         self.send_response(200)
-        self.send_header('Content-type','application/json')
+        self.send_header('content-type','application/json')
         self.end_headers()
 
         json = "{\"listvirtualmachinesresponse\":{\"count\":1,\"virtualmachine\":[{\"id\":\"some-uuid\",\"name\":\"test-vm\",\"state\":\"%s\"}]}}" % state

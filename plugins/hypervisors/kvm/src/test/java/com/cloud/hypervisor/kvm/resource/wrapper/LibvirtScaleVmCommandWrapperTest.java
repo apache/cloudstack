@@ -76,9 +76,10 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
         vmTo = new VirtualMachineTO(1, "Test 1", VirtualMachine.Type.User, 2, 1000, 67108864, 67108864, VirtualMachineTemplate.BootloaderType.External, "Other Linux (64x)", true, true, "test123");
 
-        long memory = ByteScaleUtils.bytesToKib(vmTo.getMaxRam());
+        long memory = ByteScaleUtils.bytesToKibibytes(vmTo.getMaxRam());
         int vcpus = vmTo.getCpus();
-        scalingDetails = String.format("%s memory to [%s KiB] and CPU cores to [%s]", vmTo.toString(), memory, vcpus);
+        int cpuShares = vcpus * vmTo.getSpeed();
+        scalingDetails = String.format("%s memory to [%s KiB], CPU cores to [%s] and cpu_shares to [%s]", vmTo.toString(), memory, vcpus, cpuShares);
 
         PowerMockito.mockStatic(LibvirtComputingResource.class);
     }
@@ -240,5 +241,41 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         Mockito.doThrow(Exception.class).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
 
         libvirtScaleVmCommandWrapperSpy.execute(scaleVmCommandMock, libvirtComputingResourceMock);
+    }
+
+    @Test
+    public void updateCpuSharesTestOldSharesLessThanNewSharesUpdateShares() throws LibvirtException {
+        int oldShares = 2000;
+        int newShares = 3000;
+
+        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
+
+        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(1));
+        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
+    }
+
+    @Test
+    public void updateCpuSharesTestOldSharesHigherThanNewSharesDoNothing() throws LibvirtException {
+        int oldShares = 3000;
+        int newShares = 2000;
+
+        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
+
+        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(0));
+        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
+    }
+
+    @Test
+    public void updateCpuSharesTestOldSharesEqualsNewSharesDoNothing() throws LibvirtException {
+        int oldShares = 2000;
+        int newShares = 2000;
+
+        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
+
+        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(0));
+        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
     }
 }

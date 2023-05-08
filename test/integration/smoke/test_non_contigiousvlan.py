@@ -88,4 +88,3 @@ class TestUpdatePhysicalNetwork(cloudstackTestCase):
         updateResponse = self.network.update(self.apiClient, id = self.networkid, vlan=self.existing_vlan)
         self.assertTrue(updateResponse.vlan.find(self.vlan["full_range"]) < 0,
             "VLAN was not removed successfully")
-

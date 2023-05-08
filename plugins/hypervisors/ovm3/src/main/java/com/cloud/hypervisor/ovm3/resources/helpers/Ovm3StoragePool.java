@@ -251,7 +251,7 @@ public class Ovm3StoragePool {
     }
 
     /**
-     * Adding members to a pool, this is seperate from cluster configuration in
+     * Adding members to a pool, this is separate from cluster configuration in
      * OVM.
      *
      * @return
@@ -311,7 +311,7 @@ public class Ovm3StoragePool {
             LOGGER.debug(
                     "Delete storage pool on host "
                             + config.getAgentHostname()
-                            + " failed, however, we leave to user for cleanup and tell managment server it succeeded",
+                            + " failed, however, we leave to user for cleanup and tell management server it succeeded",
                     e);
         }
 

@@ -38,13 +38,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ capitalise($t('label.all')) }}</a-select-option>
-            <a-select-option value="protocolnumber">{{ capitalise($t('label.protocol.number')) }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all" :label="$t('label.all')">{{ capitalise($t('label.all')) }}</a-select-option>
+            <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ capitalise($t('label.protocol.number')) }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -82,7 +82,7 @@
           </div>
         </template>
         <div class="form__item" style="flex: 0">
-          <a-button :disabled="!('authorizeSecurityGroupInress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('authorizeSecurityGroupIngress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -94,38 +94,40 @@
       :dataSource="rules"
       :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #account="{ record }">
-        <div v-if="record.account && record.securitygroupname">
-          {{ record.account }} - {{ record.securitygroupname }}
-        </div>
-      </template>
-      <template #startport="{text, record}">
-        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
-        <div v-else>{{ text }}</div>
-      </template>
-      <template #endport="{text, record}">
-        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
-        <div v-else>{{ text }}</div>
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record)" />
-        <a-popconfirm
-          :title="$t('label.delete') + '?'"
-          @confirm="handleDeleteRule(record)"
-          :okText="$t('label.yes')"
-          :cancelText="$t('label.no')"
-        >
-          <tooltip-button
-            :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            buttonClass="rule-action" />
-        </a-popconfirm>
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'account'">
+          <div v-if="record.account && record.securitygroupname">
+            {{ record.account }} - {{ record.securitygroupname }}
+          </div>
+        </template>
+        <template v-if="column.key === 'startport'">
+          <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+          <div v-else>{{ text }}</div>
+        </template>
+        <template v-if="column.key === 'endport'">
+          <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+          <div v-else>{{ text }}</div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record)" />
+          <a-popconfirm
+            :title="$t('label.delete') + '?'"
+            @confirm="handleDeleteRule(record)"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')"
+          >
+            <tooltip-button
+              :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              buttonClass="rule-action" />
+          </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -222,18 +224,18 @@ export default {
       pagesize: 10,
       columns: [
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
+          key: 'startport',
           title: this.$t('label.startport'),
-          dataIndex: 'startport',
-          slots: { customRender: 'startport' }
+          dataIndex: 'startport'
         },
         {
+          key: 'endport',
           title: this.$t('label.endport'),
-          dataIndex: 'endport',
-          slots: { customRender: 'endport' }
+          dataIndex: 'endport'
         },
         {
           title: this.$t('label.icmptype'),
@@ -248,12 +250,12 @@ export default {
           dataIndex: 'cidr'
         },
         {
-          title: this.$t('label.account.and.security.group'),
-          slots: { customRender: 'account' }
+          key: 'account',
+          title: this.$t('label.account.and.security.group')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ],
       isSubmitted: false
@@ -279,12 +281,12 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
     },
     fetchData () {
-      this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
+      this.tabType = this.$route.query.tab === 'ingress.rule' ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     getCapitalise (val) {
@@ -463,7 +465,6 @@ export default {
     },
     openTagsModal (rule) {
       this.selectedRule = rule
-      this.initForm()
       this.fetchTags(this.selectedRule)
       this.tagsModalVisible = true
     },

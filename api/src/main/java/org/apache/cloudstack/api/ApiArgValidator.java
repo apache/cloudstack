@@ -18,6 +18,18 @@
 package org.apache.cloudstack.api;
 
 public enum ApiArgValidator {
-    NotNullOrEmpty, // does StringUtils.isEmpty check
-    PositiveNumber, // does != null and > 0 check
+    /**
+     * Validates if the parameter is null or empty with the method {@link Strings#isNullOrEmpty(String)}.
+     */
+    NotNullOrEmpty,
+
+    /**
+     * Validates if the parameter is different from null (parameter != null) and greater than zero (parameter > 0).
+     */
+    PositiveNumber,
+
+    /**
+     * Validates if the parameter is an UUID with the method {@link UuidUtils#isUuid(String)}.
+     */
+    UuidString,
 }

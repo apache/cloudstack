@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.host;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,7 +35,6 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
-    private static final String s_name = "updatehostresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -104,11 +102,6 @@ public class UpdateHostCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public static String getResultObjectName() {
         return "updatehost";
     }
@@ -123,9 +116,6 @@ public class UpdateHostCmd extends BaseCmd {
         Host result;
         try {
             result = _resourceService.updateHost(this);
-            if(getAnnotation() != null) {
-                annotationService.addAnnotation(getAnnotation(), AnnotationService.EntityType.HOST, result.getUuid(), true);
-            }
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);

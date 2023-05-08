@@ -25,15 +25,24 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
     </parent>
     <repositories>
         <repository>
             <id>juniper-contrail</id>
             <url>https://juniper.github.io/contrail-maven/snapshots</url>
         </repository>
+        <repository>
+            <id>juniper-tungsten-api</id>
+            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
+        </repository>
     </repositories>
     <dependencies>
+        <dependency>
+            <groupId>net.juniper.tungsten</groupId>
+            <artifactId>juniper-tungsten-api</artifactId>
+            <version>2.0</version>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -95,6 +104,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-storpool</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -169,6 +183,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-two-factor-authenticator-totp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-two-factor-authenticator-staticpin</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -195,6 +219,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-ovs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-network-tungsten</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -475,6 +504,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-non-strict-host-anti-affinity</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-non-strict-host-affinity</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-api-solidfire-intg-test</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -505,9 +544,19 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-backup-networker</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-integrations-kubernetes-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+           <groupId>org.apache.cloudstack</groupId>
+           <artifactId>cloud-plugin-shutdown</artifactId>
+           <version>${project.version}</version>
+       </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -755,6 +804,18 @@
                                     <artifactId>bcpkix-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
+			        </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.cloudstack</groupId>
+                                    <artifactId>cloud-plugin-storage-volume-storpool</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.cloudstack</groupId>
+                                    <artifactId>cloud-plugin-storage-volume-linstor</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
@@ -799,6 +860,8 @@
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
                                     <exclude>mysql:mysql-connector-java</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
@@ -878,32 +941,6 @@
                 </dependency>
             </dependencies>
             <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.7</version>
-                        <executions>
-                            <!-- Copy the systemvm in the package phase as it is generated by console-proxy in the package
-                                phase. -->
-                            <execution>
-                                <id>copy-systemvm</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <target>
-                                        <copy todir="${basedir}/target/common/vms">
-                                            <fileset dir="${basedir}/../systemvm/dist">
-                                                <include name="systemvm.iso" />
-                                            </fileset>
-                                        </copy>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
         <profile>
@@ -917,21 +954,6 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>srx</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.cloudstack</groupId>
-                    <artifactId>cloud-plugin-network-srx</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -1000,6 +1022,32 @@
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>quality</id>
+            <activation>
+                <property>
+                    <name>quality</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                  <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${cs.jacoco-plugin.version}</version>
+                    <executions>
+                      <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                          <goal>report-aggregate</goal>
+                        </goals>
+                      </execution>
+                    </executions>
+                  </plugin>
+                </plugins>
+              </build>
         </profile>
     </profiles>
 </project>

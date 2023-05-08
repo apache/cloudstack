@@ -26,11 +26,10 @@ import com.cloud.host.Host;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -41,11 +40,10 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 
 import javax.inject.Inject;
 
-@APICommand(name = IssueOutOfBandManagementPowerActionCmd.APINAME, description = "Initiates the specified power action to the host's out-of-band management interface",
+@APICommand(name = "issueOutOfBandManagementPowerAction", description = "Initiates the specified power action to the host's out-of-band management interface",
         responseObject = OutOfBandManagementResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0", authorized = {RoleType.Admin})
 public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
-    public static final String APINAME = "issueOutOfBandManagementPowerAction";
 
     @Inject
     private OutOfBandManagementService outOfBandManagementService;
@@ -86,11 +84,6 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccountId();
     }
@@ -118,7 +111,7 @@ public class IssueOutOfBandManagementPowerActionCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Host;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Host;
     }
 }

@@ -28,7 +28,7 @@ import select
 class wget(object):
     def __init__(self, filename, url, path=None):
         pass
-    
+
     def background(self, handler):
         pass
 
@@ -44,7 +44,7 @@ class remoteSSHClient(object):
             self.ssh.connect(str(host),int(port), user, passwd)
         except paramiko.SSHException as sshex:
             logging.debug(repr(sshex))
-        
+
     def execute(self, command):
         stdin, stdout, stderr = self.ssh.exec_command(command)
         output = stdout.readlines()
@@ -54,13 +54,13 @@ class remoteSSHClient(object):
             if errors is not None and len(errors) > 0:
                 for error in errors:
                     results.append(error.rstrip())
-            
+
         else:
             for strOut in output:
                 results.append(strOut.rstrip())
-    
+
         return results
-    
+
     def execute_buffered(self, command, bufsize=512):
         transport = self.ssh.get_transport()
         channel = transport.open_session()
@@ -71,9 +71,9 @@ class remoteSSHClient(object):
                 if len(rl) > 0:
                   logging.debug(channel.recv(bufsize))
         except paramiko.SSHException as e:
-            logging.debug(repr(e))    
+            logging.debug(repr(e))
 
-            
+
     def scp(self, srcFile, destPath):
         transport = paramiko.Transport((self.host, int(self.port)))
         transport.connect(username = self.user, password=self.passwd)
@@ -110,24 +110,24 @@ class bash:
                     alarm(0)
             except Alarm:
                 os.kill(self.process.pid, SIGKILL)
-                
+
 
             self.success = self.process.returncode == 0
         except:
             pass
 
-        if not self.success: 
+        if not self.success:
             logging.debug("Failed to execute:" + self.getErrMsg())
 
     def isSuccess(self):
         return self.success
-    
+
     def getStdout(self):
         try:
             return self.stdout.strip("\n")
         except AttributeError:
             return ""
-    
+
     def getLines(self):
         return self.stdout.split("\n")
 
@@ -136,13 +136,12 @@ class bash:
             return self.stderr.strip("\n")
         except AttributeError:
             return ""
-    
+
     def getErrMsg(self):
         if self.isSuccess():
             return ""
-        
+
         if self.getStderr() is None or self.getStderr() == "":
             return self.getStdout()
         else:
             return self.getStderr()
-

@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.storage;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 
-    private static final String s_name = "liststoragepoolsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,6 +66,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
     private String scope;
 
+    @Parameter(name = ApiConstants.STATUS, type = CommandType.STRING, description = "the status of the storage pool")
+    private String status;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -95,6 +97,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         return zoneId;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
     public Long getId() {
         return id;
     }
@@ -102,18 +108,13 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     public void setId(Long id) {
         this.id = id;
     }
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.StoragePool;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.StoragePool;
     }
 
     @Override

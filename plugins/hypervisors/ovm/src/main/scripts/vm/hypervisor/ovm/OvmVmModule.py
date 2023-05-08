@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -71,7 +71,7 @@ class OvmVmEncoder(json.JSONEncoder):
         disks = fromOvmDiskList(obj.disks)
         dct['disks'] = disks
         return dct
-        
+
 def toOvmVm(jStr):
     return json.loads(jStr, cls=OvmVmDecoder)
 
@@ -88,7 +88,7 @@ class OvmVm(OvmObject):
     name = ''
     bootDev = ''
     type = ''
-        
+
     def _getVifs(self, vmName):
         vmPath = OvmHost()._vmNameToPath(vmName)
         domId = OvmHost()._getDomainIdByName(vmName)
@@ -104,9 +104,9 @@ class OvmVm(OvmObject):
             safeSetAttr(vif, 'bridge', bridge)
             safeSetAttr(vif, 'type', type)
             lst.append(vif)
-            
+
         return lst
-    
+
     def _getVifsFromConfig(self, vmPath):
         vifs = successToMap(xen_get_vifs(vmPath))
         lst = []
@@ -120,16 +120,16 @@ class OvmVm(OvmObject):
             safeSetAttr(vif, 'type', type)
             lst.append(vif)
         return lst
-    
+
     def _getIsoMountPath(self, vmPath):
         vmName = basename(vmPath)
         priStoragePath = vmPath.rstrip(join('running_pool', vmName))
         return join(priStoragePath, 'iso_pool', vmName)
-    
+
     def _getVmTypeFromConfigFile(self, vmPath):
         vmType = successToMap(xen_get_vm_type(vmPath))['type']
         return vmType.replace('hvm', 'HVM').replace('para', 'PV')
-    
+
     def _tapAOwnerFile(self, vmPath):
         # Create a file with name convention 'host_ip_address' in vmPath
         # Because xm list doesn't return vm that has been stopped, we scan
@@ -140,30 +140,30 @@ class OvmVm(OvmObject):
         fd = open(join(vmPath, ownerFileName), 'w')
         fd.write(ownerFileName)
         fd.close()
-    
+
     def _cleanUpOwnerFile(self, vmPath):
         for f in os.listdir(vmPath):
             fp = join(vmPath, f)
             if isfile(fp) and f.startswith(OWNER_FILE_PREFIX):
                 os.remove(fp)
-    
+
     @staticmethod
-    def create(jsonString):    
+    def create(jsonString):
         def dumpCfg(vmName, cfgPath):
             cfgFd = open(cfgPath, 'r')
             cfg = cfgFd.readlines()
             cfgFd.close()
             logger.info(OvmVm.create, "Start %s with configure:\n\n%s\n"%(vmName, "".join(cfg)))
-        
+
         def setVifsType(vifs, type):
             for vif in vifs:
                 vif.type = type
-                
+
         def hddBoot(vm, vmPath):
             vmType = vm.type
             if vmType == "FROMCONFIGFILE":
                 vmType = OvmVm()._getVmTypeFromConfigFile(vmPath)
-                
+
             cfgDict = {}
             if vmType == "HVM":
                 cfgDict['builder'] = "'hvm'"
@@ -175,7 +175,7 @@ class OvmVm(OvmObject):
             else:
                 cfgDict['bootloader'] = "'/usr/bin/pygrub'"
                 vifType = 'netfront'
-            
+
             cfgDict['name'] = "'%s'"%vm.name
             cfgDict['disk'] = "[]"
             cfgDict['vcpus'] = "''"
@@ -183,17 +183,17 @@ class OvmVm(OvmObject):
             cfgDict['on_crash'] = "'destroy'"
             cfgDict['on_reboot'] = "'restart'"
             cfgDict['vif'] = "[]"
-            
+
             items = []
             for k in cfgDict.keys():
                 item = " = ".join([k, cfgDict[k]])
                 items.append(item)
             vmSpec = "\n".join(items)
-                
+
             vmCfg = open(join(vmPath, 'vm.cfg'), 'w')
             vmCfg.write(vmSpec)
             vmCfg.close()
-            
+
             setVifsType(vm.vifs, vifType)
             raiseExceptionIfFail(xen_set_vcpus(vmPath, vm.cpuNum))
             raiseExceptionIfFail(xen_set_memory(vmPath, BytesToM(vm.memory)))
@@ -201,7 +201,7 @@ class OvmVm(OvmObject):
             vifs = [OvmVif.toXenString(v) for v in vm.vifs]
             for vif in vifs:
                 raiseExceptionIfFail(xen_set_vifs(vmPath, vif))
-                
+
             for disk in vm.disks:
                 raiseExceptionIfFail(xen_add_disk(vmPath, disk.path, mode=disk.type))
 
@@ -215,7 +215,7 @@ class OvmVm(OvmObject):
                 # it's tricky !
                 raiseExceptionIfFail(xen_config_boot_sequence(vmPath, 'd'))
                 raiseExceptionIfFail(xen_config_boot_sequence(vmPath, 'c'))
-                
+
             raiseExceptionIfFail(xen_correct_cfg(cfgFile, vmPath))
             xen_correct_qos_cfg(cfgFile)
             dumpCfg(vm.name, cfgFile)
@@ -223,7 +223,7 @@ class OvmVm(OvmObject):
             raiseExceptionIfFail(start_vm(vmPath, server))
             rs = SUCC()
             return rs
-        
+
         def cdBoot(vm, vmPath):
             isoMountPath = None
             try:
@@ -233,7 +233,7 @@ class OvmVm(OvmObject):
                         cdrom = disk
                         break
                 if not cdrom: raise Exception("Cannot find Iso in disks")
-                
+
                 isoOnSecStorage = dirname(cdrom.path)
                 isoName = basename(cdrom.path)
                 isoMountPath = OvmVm()._getIsoMountPath(vmPath)
@@ -241,10 +241,10 @@ class OvmVm(OvmObject):
                 isoPath = join(isoMountPath, isoName)
                 if not exists(isoPath):
                     raise Exception("Cannot found iso %s at %s which mounts to %s"%(isoName, isoOnSecStorage, isoMountPath))
-                
+
                 stdout = run_cmd(args=['file', isoPath])
                 if not stdout.strip().endswith("(bootable)"): raise Exception("ISO %s is not bootable"%cdrom.path)
-                
+
                 #now alter cdrom to correct path
                 cdrom.path = isoPath
                 if len(vm.vifs) != 0:
@@ -253,7 +253,7 @@ class OvmVm(OvmObject):
                     vifCfg = ','.join([vif.mac, vif.bridge, 'ioemu'])
                 else:
                     vifCfg = ''
-                
+
                 rootDiskSize = os.path.getsize(vm.rootDisk.path)
                 rooDiskCfg = ':'.join([join(vmPath, basename(vm.rootDisk.path)), str(BytesToG(rootDiskSize)), 'True'])
                 disks = [rooDiskCfg]
@@ -264,7 +264,7 @@ class OvmVm(OvmObject):
                     disks.append(cfg)
                 disksCfg = ','.join(disks)
                 server = successToMap(get_master_ip())['ip']
-                   
+
                 raiseExceptionIfFail(install_vm_hvm(vmPath, BytesToM(vm.memory), vm.cpuNum, vifCfg, disksCfg, cdrom.path, vncpassword='', dedicated_server=server))
                 rs = SUCC()
                 return rs
@@ -273,13 +273,13 @@ class OvmVm(OvmObject):
                     doCmd(['umount', '-f', isoMountPath])
                 errmsg = fmt_err_msg(e)
                 raise Exception(errmsg)
-        
+
         try:
             vm = toOvmVm(jsonString)
             logger.debug(OvmVm.create, "creating vm, spec:%s"%jsonString)
             rootDiskPath = vm.rootDisk.path
             if not exists(rootDiskPath): raise Exception("Cannot find root disk %s"%rootDiskPath)
-    
+
             rootDiskDir = dirname(rootDiskPath)
             vmPath = join(dirname(rootDiskDir), vm.name)
             if not exists(vmPath):
@@ -287,7 +287,7 @@ class OvmVm(OvmObject):
             vmNameFile = open(join(rootDiskDir, 'vmName'), 'w')
             vmNameFile.write(vm.name)
             vmNameFile.close()
-            
+
             OvmVm()._tapAOwnerFile(rootDiskDir)
             # set the VM to DOWN before starting, OVS agent will check this status
             set_vm_status(vmPath, 'DOWN')
@@ -302,7 +302,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.create, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.create), errmsg)
-    
+
     @staticmethod
     def stop(vmName):
         try:
@@ -311,7 +311,7 @@ class OvmVm(OvmObject):
             except NoVmFoundException, e:
                 logger.info(OvmVm.stop, "vm %s is already stopped"%vmName)
                 return SUCC()
-                
+
             logger.info(OvmVm.stop, "Stop vm %s"%vmName)
             try:
                 vmPath = OvmHost()._vmNameToPath(vmName)
@@ -327,7 +327,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.stop, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.stop), errmsg)
-    
+
     @staticmethod
     def reboot(vmName):
         try:
@@ -347,12 +347,12 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.reboot, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.reboot), errmsg)
-    
+
     @staticmethod
-    def getDetails(vmName):          
+    def getDetails(vmName):
         try:
             vm = OvmVm()
-            
+
             try:
                 OvmHost()._getDomainIdByName(vmName)
                 vmPath = OvmHost()._vmNameToPath(vmName)
@@ -360,10 +360,10 @@ class OvmVm(OvmObject):
             except NoVmFoundException, e:
                 vmPath = OvmHost()._getVmPathFromPrimaryStorage(vmName)
                 vifsFromConfig = True
-                
-            
+
+
             if not isdir(vmPath):
-                # The case is, when vm starting was not completed at primaryStroageDownload or createVolume(e.g. mgmt server stop), the mgmt
+                # The case is, when vm starting was not completed at primaryStorageDownload or createVolume(e.g. mgmt server stop), the mgmt
                 # server will keep vm state in staring, then a stop command will be sent. The stop command will delete bridges that vm attaches,
                 # by retriving birdge info by OvmVm.getDetails(). In this case, the vm doesn't exists, so returns a fake object here.
                 fakeDisk = OvmDisk()
@@ -373,7 +373,7 @@ class OvmVm(OvmObject):
                     vm.vifs.extend(vm._getVifsFromConfig(vmPath))
                 else:
                     vm.vifs.extend(vm._getVifs(vmName))
-                    
+
                 safeSetAttr(vm, 'name', vmName)
                 disks = successToMap(xen_get_vdisks(vmPath))['vdisks'].split(',')
                 rootDisk = None
@@ -398,7 +398,7 @@ class OvmVm(OvmObject):
                 safeSetAttr(vm, 'powerState',  vmStatus['status'])
                 vmType = successToMap(xen_get_vm_type(vmPath))['type'].replace('hvm', 'HVM').replace('para', 'PV')
                 safeSetAttr(vm, 'type', vmType)
-                
+
             rs = fromOvmVm(vm)
             logger.info(OvmVm.getDetails, rs)
             return rs
@@ -406,7 +406,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.getDetails, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.getDetails), errmsg)
-    
+
     @staticmethod
     def getVmStats(vmName):
         def getVcpuNumAndUtils():
@@ -421,7 +421,7 @@ class OvmVm(OvmObject):
                 nvCpus = len(items)
                 if nvCpus == 0:
                     raise Exception("vm %s has 0 vcpus !!!"%vmName)
-                
+
                 xmInfo = successToMap(xen_get_xm_info())
                 nCpus = int(xmInfo['nr_cpus'])
                 totalUtils = 0.0
@@ -432,8 +432,8 @@ class OvmVm(OvmObject):
                 return (nvCpus, avgUtils)
             finally:
                 session_logout()
-                
-                
+
+
         try:
             try:
                 OvmHost()._getDomainIdByName(vmName)
@@ -456,15 +456,15 @@ class OvmVm(OvmObject):
                 avgUtils = 0
                 rxBytes = 0
                 txBytes = 0
-            
+
             rs = toGson({"cpuNum":nvcpus, "cpuUtil":avgUtils, "rxBytes":rxBytes, "txBytes":txBytes})
             logger.debug(OvmVm.getVmStats, rs)
-            return rs           
+            return rs
         except Exception, e:
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.getVmStats, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.getVmStats), errmsg)
-    
+
     @staticmethod
     def migrate(vmName, targetHost):
         try:
@@ -477,7 +477,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.migrate, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.migrate), errmsg)
-    
+
     @staticmethod
     def register(vmName):
         try:
@@ -492,7 +492,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.register, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.register), errmsg)
-    
+
     @staticmethod
     def getVncPort(vmName):
         try:
@@ -504,7 +504,7 @@ class OvmVm(OvmObject):
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.getVncPort, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.getVncPort), errmsg)
-        
+
     @staticmethod
     def detachOrAttachIso(vmName, iso, isAttach):
         try:
@@ -514,11 +514,11 @@ class OvmVm(OvmObject):
             else:
                 scope = 'cfg'
                 vmPath = OvmHost()._getVmPathFromPrimaryStorage(vmName)
-            
+
             vmType = OvmVm()._getVmTypeFromConfigFile(vmPath)
             if vmType != 'HVM':
                 raise Exception("Only HVM supports attaching/detaching ISO")
-            
+
             if not isAttach:
                 iso = ''
             else:
@@ -527,14 +527,14 @@ class OvmVm(OvmObject):
                 isoOnSecStorage = dirname(iso)
                 OvmStoragePool()._mount(isoOnSecStorage, isoMountPoint)
                 iso = join(isoMountPoint, isoName)
-                       
+
             exceptionIfNoSuccess(xen_change_vm_cdrom(vmPath, iso, scope))
             return SUCC()
         except Exception, e:
             errmsg = fmt_err_msg(e)
             logger.error(OvmVm.detachOrAttachIso, errmsg)
             raise XmlRpcFault(toErrCode(OvmVm, OvmVm.detachOrAttachIso), errmsg)
-        
+
 if __name__ == "__main__":
     import sys
     print OvmVm.getDetails(sys.argv[1])

@@ -62,12 +62,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
             @change="val => { handleDomainChanged(domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label=" opt.path || opt.name || opt.description || ''">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -104,9 +104,11 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 
 export default {
   name: 'CreateSSHKeyPair',
+  mixins: [mixinForm],
   props: {},
   data () {
     return {
@@ -177,7 +179,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {
           name: values.name

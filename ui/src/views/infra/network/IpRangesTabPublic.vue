@@ -34,50 +34,65 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #account="{record}" v-if="!basicGuestNetwork">
-        <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
-      </template>
-      <template #actions="{record}">
-        <div class="actions">
-          <tooltip-button
-            v-if="record.account === 'system' && !basicGuestNetwork"
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.add.account')"
-            icon="user-add-outlined"
-            @onClick="() => handleOpenAddAccountModal(record)"
-            :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            v-if="record.account !== 'system' && !basicGuestNetwork"
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.release.account')"
-            icon="user-delete-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="() => handleRemoveAccount(record.id)"
-            :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.update.ip.range')"
-            icon="edit-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="() => handleUpdateIpRangeModal(record)"
-            :disabled="!('updateVlanIpRange' in $store.getters.apis)" />
-          <tooltip-button
-            tooltipPlacement="bottom"
-            :tooltip="$t('label.remove.ip.range')"
-            icon="delete-outlined"
-            type="primary"
-            :danger="true"
-            @onClick="handleDeleteIpRange(record.id)"
-            :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'gateway'">
+          {{ record.gateway || record.ip6gateway }}
+        </template>
+        <template v-if="column.key === 'cidr'">
+          {{ record.cidr || record.ip6cidr }}
+        </template>
+        <template v-if="column.key === 'startip'">
+          {{ record.startip || record.startipv6 }}
+        </template>
+        <template v-if="column.key === 'endip'">
+          {{ record.endip || record.endipv6 }}
+        </template>
+        <template v-if="column.key === 'account' && !basicGuestNetwork">
+          <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div
+            class="actions"
+            style="text-align: right" >
+            <tooltip-button
+              v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.add.account')"
+              icon="user-add-outlined"
+              @onClick="() => handleOpenAddAccountModal(record)"
+              :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              v-if="record.account !== 'system' && !basicGuestNetwork"
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.release.account')"
+              icon="user-delete-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="() => handleRemoveAccount(record.id)"
+              :disabled="!('releasePublicIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.update.ip.range')"
+              icon="edit-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="() => handleUpdateIpRangeModal(record)"
+              :disabled="!('updateVlanIpRange' in $store.getters.apis)" />
+            <tooltip-button
+              tooltipPlacement="bottom"
+              :tooltip="$t('label.remove.ip.range')"
+              icon="delete-outlined"
+              type="primary"
+              :danger="true"
+              @onClick="handleDeleteIpRange(record.id)"
+              :disabled="!('deleteVlanIpRange' in $store.getters.apis)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
       class="row-element pagination"
       size="small"
-      style="overflow-y: auto"
       :current="page"
       :pageSize="pageSize"
       :total="total"
@@ -139,12 +154,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.path || domain.name || domain.description }}
+              :value="domain.id"
+              :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -174,36 +190,58 @@
         class="form"
 
       >
+        <a-form-item name="iptype" ref="iptype" :label="$t('label.ip.range.type')" class="form__item">
+          <a-radio-group
+            v-model:value="form.iptype"
+            buttonStyle="solid">
+            <a-radio-button value="">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="ip6">
+              {{ $t('label.ip.v6') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-form-item name="podid" ref="podid" :label="$t('label.podid')" class="form__item" v-if="basicGuestNetwork">
           <a-select
             v-model:value="form.podid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true">
-            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id" :label="pod.name">{{ pod.name }}</a-select-option>
           </a-select>
-        </a-form-item>
-        <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
-          <a-input v-model:value="form.gateway" />
-        </a-form-item>
-        <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
-          <a-input v-model:value="form.netmask" />
         </a-form-item>
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
           <a-input v-model:value="form.vlan" />
         </a-form-item>
-        <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
-          <a-input v-model:value="form.startip" />
-        </a-form-item>
-        <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
-          <a-input v-model:value="form.endip" />
-        </a-form-item>
-        <div class="form__item" v-if="!basicGuestNetwork">
+        <div v-if="form.iptype==='ip6'">
+          <a-form-item name="ip6gateway" ref="ip6gateway" :label="$t('label.gateway')" class="form__item">
+            <a-input v-model:value="form.ip6gateway" />
+          </a-form-item>
+          <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
+            <a-input v-model:value="form.ip6cidr" />
+          </a-form-item>
+        </div>
+        <div v-else>
+          <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
+            <a-input v-model:value="form.gateway" />
+          </a-form-item>
+          <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
+            <a-input v-model:value="form.netmask" />
+          </a-form-item>
+          <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
+            <a-input v-model:value="form.startip" />
+          </a-form-item>
+          <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
+            <a-input v-model:value="form.endip" />
+          </a-form-item>
+        </div>
+        <div class="form__item" v-if="!basicGuestNetwork && form.iptype != 'ip6'">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
-          <a-switch @change="handleShowAccountFields" />
+          <a-switch v-model:checked="showAccountFields" @change="handleShowAccountFields" />
         </div>
         <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
           <div v-html="$t('label.set.reservation.desc')"></div>
@@ -220,12 +258,13 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
+                  :value="domain.id"
+                  :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
@@ -256,21 +295,31 @@
         class="form"
 
       >
-        <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
-          <a-input v-focus="true" v-model:value="form.startip"></a-input>
-        </a-form-item>
-        <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
-          <a-input v-model:value="form.endip"></a-input>
-        </a-form-item>
-        <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
-          <a-input v-model:value="form.gateway"></a-input>
-        </a-form-item>
-        <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
-          <a-input v-model:value="form.netmask"></a-input>
-        </a-form-item>
-        <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
-          <a-switch v-model:checked="form.forsystemvms"></a-switch>
-        </a-form-item>
+        <div v-if="selectedItem.ip6gateway && !selectedItem.gateway">
+          <a-form-item name="ip6gateway" ref="ip6gateway" :label="$t('label.gateway')" class="form__item">
+            <a-input v-model:value="formUpdRange.ip6gateway" />
+          </a-form-item>
+          <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
+            <a-input v-model:value="formUpdRange.ip6cidr" />
+          </a-form-item>
+        </div>
+        <div v-else>
+          <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
+            <a-input v-focus="true" v-model:value="formUpdRange.startip"></a-input>
+          </a-form-item>
+          <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
+            <a-input v-model:value="formUpdRange.endip"></a-input>
+          </a-form-item>
+          <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
+            <a-input v-model:value="formUpdRange.gateway"></a-input>
+          </a-form-item>
+          <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
+            <a-input v-model:value="formUpdRange.netmask"></a-input>
+          </a-form-item>
+          <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
+            <a-switch v-model:checked="formUpdRange.forsystemvms"></a-switch>
+          </a-form-item>
+        </div>
 
         <div :span="24" class="action-button">
           <a-button @click="updateIpRangeModal = false">{{ $t('label.cancel') }}</a-button>
@@ -332,38 +381,40 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('label.gateway'),
-          dataIndex: 'gateway'
+          key: 'gateway',
+          title: this.$t('label.gateway')
         },
         {
-          title: this.$t('label.netmask'),
-          dataIndex: 'netmask'
+          key: 'cidr',
+          title: this.$t('label.cidr')
         },
         {
           title: this.$t('label.vlan'),
           dataIndex: 'vlan'
         },
         {
-          title: this.$t('label.startip'),
-          dataIndex: 'startip'
+          key: 'startip',
+          title: this.$t('label.startip')
         },
         {
-          title: this.$t('label.endip'),
-          dataIndex: 'endip'
+          key: 'endip',
+          title: this.$t('label.endip')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }
   },
   created () {
+    this.initFormUpdateRange()
+    this.initAddIpRangeForm()
     if (!this.basicGuestNetwork) {
-      this.columns.splice(5, 0,
+      this.columns.splice(6, 0,
         {
-          title: this.$t('label.account'),
-          slots: { customRender: 'account' }
+          key: 'account',
+          title: this.$t('label.account')
         }
       )
     } else {
@@ -385,13 +436,17 @@ export default {
   methods: {
     initAddIpRangeForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        iptype: ''
+      })
       this.rules = reactive({
         podid: [{ required: true, message: this.$t('label.required') }],
         gateway: [{ required: true, message: this.$t('label.required') }],
         netmask: [{ required: true, message: this.$t('label.required') }],
         startip: [{ required: true, message: this.$t('label.required') }],
-        endip: [{ required: true, message: this.$t('label.required') }]
+        endip: [{ required: true, message: this.$t('label.required') }],
+        ip6gateway: [{ required: true, message: this.$t('label.required') }],
+        ip6cidr: [{ required: true, message: this.$t('label.required') }]
       })
     },
     initFormUpdateRange () {
@@ -401,7 +456,9 @@ export default {
         startip: [{ required: true, message: this.$t('label.required') }],
         endip: [{ required: true, message: this.$t('label.required') }],
         gateway: [{ required: true, message: this.$t('label.required') }],
-        netmask: [{ required: true, message: this.$t('label.required') }]
+        netmask: [{ required: true, message: this.$t('label.required') }],
+        ip6gateway: [{ required: true, message: this.$t('label.required') }],
+        ip6cidr: [{ required: true, message: this.$t('label.required') }]
       })
     },
     fetchData () {
@@ -463,12 +520,17 @@ export default {
         return
       }
 
-      api('dedicatePublicIpRange', {
+      var params = {
         id: this.selectedItem.id,
         zoneid: this.selectedItem.zoneid,
-        domainid: this.addAccount.domain,
-        account: this.addAccount.account
-      }).catch(error => {
+        domainid: this.addAccount.domain
+      }
+
+      if (this.addAccount.account) {
+        params.account = this.addAccount.account
+      }
+
+      api('dedicatePublicIpRange', params).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.addAccountModal = false
@@ -496,12 +558,9 @@ export default {
       this.fetchDomains()
     },
     handleShowAccountFields () {
-      if (this.showAccountFields === false) {
-        this.showAccountFields = true
+      if (this.showAccountFields) {
         this.fetchDomains()
-        return
       }
-      this.showAccountFields = false
     },
     handleOpenAddIpRangeModal () {
       this.initAddIpRangeForm()
@@ -517,6 +576,8 @@ export default {
       this.formUpdRange.gateway = this.selectedItem?.gateway || ''
       this.formUpdRange.netmask = this.selectedItem?.netmask || ''
       this.formUpdRange.forsystemvms = this.selectedItem?.forsystemvms || false
+      this.formUpdRange.ip6gateway = this.selectedItem?.ip6gateway || ''
+      this.formUpdRange.ip6cidr = this.selectedItem?.ip6cidr || ''
     },
     handleDeleteIpRange (id) {
       this.componentLoading = true
@@ -537,11 +598,13 @@ export default {
         const values = toRaw(this.form)
         this.componentLoading = true
         this.addIpRangeModal = false
-        var params = {
-          gateway: values.gateway,
-          netmask: values.netmask,
-          startip: values.startip,
-          endip: values.endip
+        var ipRangeKeys = ['gateway', 'netmask', 'startip', 'endip']
+        if (values.iptype === 'ip6') {
+          ipRangeKeys = ['ip6gateway', 'ip6cidr']
+        }
+        var params = {}
+        for (const key of ipRangeKeys) {
+          params[key] = values[key]
         }
         if (!this.basicGuestNetwork) {
           params.zoneId = this.resource.zoneid
@@ -582,11 +645,14 @@ export default {
         this.updateIpRangeModal = false
         var params = {
           id: this.selectedItem.id,
-          gateway: values.gateway,
-          netmask: values.netmask,
-          startip: values.startip,
-          endip: values.endip,
           forsystemvms: values.forsystemvms
+        }
+        var ipRangeKeys = ['gateway', 'netmask', 'startip', 'endip']
+        if (this.selectedItem.ip6gateway && !this.selectedItem.gateway) {
+          ipRangeKeys = ['ip6gateway', 'ip6cidr']
+        }
+        for (const key of ipRangeKeys) {
+          params[key] = values[key]
         }
         api('updateVlanIpRange', params).then(() => {
           this.$notification.success({

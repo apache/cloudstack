@@ -31,7 +31,7 @@ class serviceCfgBase(object):
         self.syscfg = syscfg
         self.netMgrRunning = False
 
-    def configration(self):
+    def configuration(self):
         writeProgressBar("Configure " + self.serviceName + " ...", None)
         result = False
         try:
@@ -374,6 +374,9 @@ class networkConfigSUSE(serviceCfgBase, networkConfigBase):
         if self.syscfg.env.bridgeType == "openvswitch":
             if cfo.getEntry("IPADDR"):
                 cfo.rmEntry("IPADDR", cfo.getEntry("IPADDR"))
+        elif self.syscfg.env.bridgeType == "native":
+            # Bridge is linked to the dev in SUSE not the other way round
+            pass
         else:
             raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
         cfo.save()
@@ -584,6 +587,23 @@ class securityPolicyConfigRedhat(serviceCfgBase):
 class securityPolicyConfigSUSE(securityPolicyConfigRedhat):
     pass
 
+
+def configure_libvirt_tls(tls_enabled=False, cfo=None):
+    save = False
+    if not cfo:
+        cfo = configFileOps("/etc/libvirt/qemu.conf")
+        save = True
+
+    if tls_enabled:
+        cfo.addEntry("vnc_tls", "1")
+        cfo.addEntry("vnc_tls_x509_verify", "1")
+        cfo.addEntry("vnc_tls_x509_cert_dir", "\"/etc/pki/libvirt-vnc\"")
+    else:
+        cfo.addEntry("vnc_tls", "0")
+
+    if save:
+        cfo.save()
+
 def configureLibvirtConfig(tls_enabled = True, cfg = None):
     cfo = configFileOps("/etc/libvirt/libvirtd.conf", cfg)
     if tls_enabled:
@@ -614,11 +634,20 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket");
-                bash("/bin/systemctl mask libvirtd-ro.socket");
-                bash("/bin/systemctl mask libvirtd-admin.socket");
-                bash("/bin/systemctl mask libvirtd-tls.socket");
-                bash("/bin/systemctl mask libvirtd-tcp.socket");
+                bash("/bin/systemctl mask \
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
+            if os.path.exists("/lib/systemd/system/virtqemud.socket"):
+                bash("/bin/systemctl mask \
+                    virtqemud.socket \
+                    virtqemud-ro.socket \
+                    virtqemud-admin.socket \
+                    virtqemud \
+                    virtnetworkd \
+                    virtstoraged");
 
             filename = "/etc/libvirt/qemu.conf"
 
@@ -627,6 +656,7 @@ class libvirtConfigRedhat(serviceCfgBase):
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
+            configure_libvirt_tls(self.syscfg.env.secure, cfo)
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
@@ -647,11 +677,12 @@ class libvirtConfigSUSE(serviceCfgBase):
             configureLibvirtConfig(self.syscfg.env.secure, self)
 
             if os.path.exists("/usr/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket");
-                bash("/bin/systemctl mask libvirtd-ro.socket");
-                bash("/bin/systemctl mask libvirtd-admin.socket");
-                bash("/bin/systemctl mask libvirtd-tls.socket");
-                bash("/bin/systemctl mask libvirtd-tcp.socket");
+                bash("/bin/systemctl mask \
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
@@ -663,6 +694,7 @@ class libvirtConfigSUSE(serviceCfgBase):
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
             cfo.addEntry("vnc_listen", "\"0.0.0.0\"")
+            configure_libvirt_tls(self.syscfg.env.secure, cfo)
             cfo.save()
 
             self.syscfg.svo.stopService("libvirtd")
@@ -691,11 +723,20 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo = configFileOps("/etc/default/libvirtd", self)
             cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
             if os.path.exists("/lib/systemd/system/libvirtd.socket"):
-                bash("/bin/systemctl mask libvirtd.socket");
-                bash("/bin/systemctl mask libvirtd-ro.socket");
-                bash("/bin/systemctl mask libvirtd-admin.socket");
-                bash("/bin/systemctl mask libvirtd-tls.socket");
-                bash("/bin/systemctl mask libvirtd-tcp.socket");
+                bash("/bin/systemctl mask \
+                    libvirtd.socket \
+                    libvirtd-ro.socket \
+                    libvirtd-admin.socket \
+                    libvirtd-tls.socket \
+                    libvirtd-tcp.socket");
+            if os.path.exists("/lib/systemd/system/virtqemud.socket"):
+                bash("/bin/systemctl mask \
+                    virtqemud.socket \
+                    virtqemud-ro.socket \
+                    virtqemud-admin.socket \
+                    virtqemud \
+                    virtnetworkd \
+                    virtstoraged");
 
     def config(self):
         try:
@@ -707,6 +748,7 @@ class libvirtConfigUbuntu(serviceCfgBase):
             cfo.addEntry("security_driver", "\"none\"")
             cfo.addEntry("user", "\"root\"")
             cfo.addEntry("group", "\"root\"")
+            configure_libvirt_tls(self.syscfg.env.secure, cfo)
             cfo.save()
 
             if os.path.exists("/lib/systemd/system/libvirtd.service"):

@@ -41,6 +41,8 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/storage/volume/storpool/target/cloud-plugin-storage-volume-storpool-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/storage/volume/linstor/target/cloud-plugin-storage-volume-linstor-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
@@ -116,11 +118,13 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
 	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/util $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/vm $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
 	install -D client/target/utilities/bin/cloud-migrate-databases $(DESTDIR)/usr/bin/cloudstack-migrate-databases
 	install -D client/target/utilities/bin/cloud-set-guest-password $(DESTDIR)/usr/bin/cloudstack-set-guest-password
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin/cloudstack-set-guest-sshkey
@@ -128,9 +132,10 @@ override_dh_auto_install:
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin/cloudstack-setup-management
 	install -D client/target/utilities/bin/cloud-setup-encryption $(DESTDIR)/usr/bin/cloudstack-setup-encryption
 	install -D client/target/utilities/bin/cloud-sysvmadm $(DESTDIR)/usr/bin/cloudstack-sysvmadm
-	install -D systemvm/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.3.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	install -D utils/target/cloud-utils-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib/$(PACKAGE)-utils.jar
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/share/pyshared

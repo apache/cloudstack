@@ -21,14 +21,11 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.projects.Project;
-import com.cloud.utils.db.EntityManager;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -38,12 +35,17 @@ import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.dispatch.DispatchChain;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
+import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
@@ -62,6 +64,9 @@ public class ApiDispatcher {
 
     @Inject()
     protected DispatchChainFactory dispatchChainFactory;
+
+    @Inject
+    AsyncJobManagerImpl asyncJobManager;
 
     protected DispatchChain standardDispatchChain;
 
@@ -85,7 +90,11 @@ public class ApiDispatcher {
     }
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
-        asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
+        if (asyncJobManager.isAsyncJobsEnabled()) {
+            asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
+        } else {
+            throw new CloudRuntimeException("A shutdown has been triggered. Can not accept new jobs");
+        }
     }
 
     private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
@@ -114,6 +123,13 @@ public class ApiDispatcher {
         if(params.get(ApiConstants.PROJECT_ID) != null) {
             Project project = _entityMgr.findByUuidIncludingRemoved(Project.class, params.get(ApiConstants.PROJECT_ID));
             ctx.setProject(project);
+        }
+        if (cmd.getApiResourceId() != null) {
+            ctx.setEventResourceId(cmd.getApiResourceId());
+        }
+        final ApiCommandResourceType resourceType = cmd.getApiResourceType();
+        if (resourceType != null && !ApiCommandResourceType.None.equals(resourceType)) {
+            ctx.setEventResourceType(resourceType);
         }
 
         // TODO This if shouldn't be here. Use polymorphism and move it to validateSpecificParameters

@@ -70,6 +70,9 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     @Column(name = "scheme")
     Scheme scheme;
 
+    @Column(name = "cidr_list")
+    String cidrList = null;
+
     public ApplicationLoadBalancerRuleVO() {
     }
 
@@ -135,6 +138,11 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     @Override
     public int getInstancePort() {
         return defaultPortStart;
+    }
+
+    @Override
+    public String getCidrList(){
+        return cidrList;
     }
 
 }

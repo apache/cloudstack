@@ -32,11 +32,10 @@ import org.apache.cloudstack.api.response.ProjectRolePermissionResponse;
 import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = CreateProjectRolePermissionCmd.APINAME, description = "Adds API permissions to a project role", responseObject = ProjectRolePermissionResponse.class,
+@APICommand(name = "createProjectRolePermission", description = "Adds API permissions to a project role", responseObject = ProjectRolePermissionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
-    public static final String APINAME = "createProjectRolePermission";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,11 +77,6 @@ public class CreateProjectRolePermissionCmd extends BaseRolePermissionCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create project role permission");
         }
         setupResponse(projectRolePermission, projectRole);
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override

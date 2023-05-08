@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.admin.region;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -45,7 +45,6 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
 
-    private static final String s_name = "createportableiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -102,11 +101,6 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -148,7 +142,7 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.PortableIpAddress;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.PortableIpAddress;
     }
 }

@@ -47,7 +47,7 @@ export default {
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
           'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
-          'account', 'domain', 'created']
+          'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype', 'url')
         }
@@ -70,6 +70,12 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
       },
       {
+        name: 'events',
+        resourceType: 'Template',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
@@ -87,6 +93,7 @@ export default {
           api: 'registerTemplate',
           icon: 'cloud-upload-outlined',
           label: 'label.upload.template.from.local',
+          show: () => { return 'getUploadParamsForTemplate' in store.getters.apis },
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
@@ -95,7 +102,7 @@ export default {
         {
           api: 'updateTemplate',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.action.edit.template',
           dataView: true,
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
@@ -135,11 +142,11 @@ export default {
           dataView: true,
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
-              (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
+              ((record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
               (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
               record.templatetype !== 'SYSTEM' &&
-              record.isready &&
-              record.isextractable
+              record.isextractable) &&
+              record.isready
           },
           args: ['zoneid', 'mode'],
           mapping: {
@@ -189,7 +196,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
@@ -202,6 +209,12 @@ export default {
       }, {
         name: 'zones',
         component: shallowRef(defineAsyncComponent(() => import('@/views/image/IsoZones.vue')))
+      },
+      {
+        name: 'events',
+        resourceType: 'Iso',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',
@@ -221,6 +234,7 @@ export default {
           api: 'registerIso',
           icon: 'cloud-upload-outlined',
           label: 'label.upload.iso.from.local',
+          show: () => { return 'getUploadParamsForIso' in store.getters.apis },
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
@@ -238,7 +252,8 @@ export default {
               !(record.account === 'system' && record.domainid === 1) &&
               record.isready
           },
-          args: ['name', 'displaytext', 'bootable', 'ostypeid']
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateISO.vue')))
         },
         {
           api: 'updateIsoPermissions',
@@ -311,7 +326,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

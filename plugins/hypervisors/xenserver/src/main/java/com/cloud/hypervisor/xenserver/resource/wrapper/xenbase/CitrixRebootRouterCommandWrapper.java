@@ -40,7 +40,7 @@ public final class CitrixRebootRouterCommandWrapper extends CommandWrapper<Reboo
         final Answer answer = wrapper.execute(rebootCommand, citrixResourceBase);
 
         if (answer.getResult()) {
-            final String cnct = citrixResourceBase.connect(conn, command.getVmName(), command.getPrivateIpAddress());
+            final String cnct = citrixResourceBase.connect(conn, command.getVmName(), command.getPrivateIpAddress(), 0);
             citrixResourceBase.networkUsage(conn, command.getPrivateIpAddress(), "create", null);
 
             if (cnct == null) {

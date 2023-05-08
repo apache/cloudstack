@@ -143,20 +143,26 @@ class Vcenter():
             parsedObject['name'] = obj.name
         return parsedObject
 
-    def _get_obj(self, vimtype, name=None):
+    def _get_obj(self, vimtype, name=None, parse=True):
         """
         Get the vsphere object associated with a given text name
         """
-        obj = None
         content = self.service_instance.RetrieveContent()
         container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+        result = []
         for c in container.view:
             if name is not None:
                 if c.name == name:
-                    obj = c
-                    return [self.parse_details(obj, vimtype)]
+                    result.append(c)
+                    break
             else:
-                return [self.parse_details(c, vimtype) for c in container.view]
+                result.append(c)
+        container.Destroy()
+        if len(result) == 0:
+            return None
+        if parse:
+            return [self.parse_details(c, vimtype) for c in result]
+        return result
 
     def get_dvswitches(self, name=None):
         """
@@ -186,11 +192,30 @@ class Vcenter():
 
     def get_vms(self, name=None):
         """
-        :param name:
+        Get VMs in vCenter
+        :param name: Name of the VM in vCenter
         :return:
         """
         vms = self._get_obj([vim.VirtualMachine], name)
         return vms
+
+
+    def delete_vm(self, name):
+        """
+        Deletes a VM in vCenter
+        :param name: Name of the VM in vCenter
+        :return:
+        """
+        vms = self._get_obj([vim.VirtualMachine], name, False)
+        if type(vms) is not list or len(vms) != 1:
+            return False
+        vm = vms[0]
+        print("Deleting VM with name: %s; vm: %s" % (name, vm))
+        task = vm.PowerOffVM_Task()
+        self.wait_for_task(task)
+        task = vm.Destroy_Task()
+        self.wait_for_task(task)
+        return True
 
     def get_clusters(self, dc, clus=None):
         """
@@ -350,7 +375,7 @@ class Vcenter():
         out = p3.stdout.read()
         ssl_thumbprint = out.split('=')[-1].strip()
         return ssl_thumbprint
-    
+
 if __name__ == '__main__':
     vc_object = Vcenter("10.x.x.x", "username", "password")
 

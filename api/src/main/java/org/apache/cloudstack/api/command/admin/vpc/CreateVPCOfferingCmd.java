@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -48,7 +49,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
-    private static final String s_name = "createvpcofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,7 +57,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the vpc offering")
     private String vpcOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of " + "the vpc offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the vpc offering, defaults to the 'name'")
     private String displayText;
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
@@ -72,7 +72,13 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     private Map<String, ? extends Map<String, String>> serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_CAPABILITY_LIST, type = CommandType.MAP, description = "desired service capabilities as part of vpc offering", since = "4.4")
-    private Map<String, List<String>> serviceCapabilitystList;
+    private Map<String, List<String>> serviceCapabilityList;
+
+    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
+            type = CommandType.STRING,
+            description = "The internet protocol of the offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create an offering that supports both IPv4 and IPv6",
+            since = "4.17.0")
+    private String internetProtocol;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
                type = CommandType.UUID,
@@ -110,7 +116,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? vpcOfferingName : displayText;
     }
 
     public List<String> getSupportedServices() {
@@ -145,8 +151,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return serviceProviderMap;
     }
 
-    public Map<String, List<String>> getServiceCapabilitystList() {
-        return serviceCapabilitystList;
+    public Map<String, List<String>> getServiceCapabilityList() {
+        return serviceCapabilityList;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
     }
 
     public Long getServiceOfferingId() {
@@ -209,11 +219,6 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return "creating VPC offering. Id: " + getEntityId();
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -48,10 +48,12 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }">
-            <router-link :to="{ path: '/acllist/' + record.id }">
-              {{ text }}
-            </router-link>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <router-link :to="{ path: '/acllist/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -75,7 +77,7 @@
           :footer="null"
           :maskClosable="false"
           :closable="true"
-          @cancel="modals.networkAcl = fetchAclList">
+          @cancel="modals.networkAcl = false">
           <a-form
             layout="vertical"
             :ref="formRef"
@@ -117,11 +119,13 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #ipaddress="{ text, record }">
-            <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
-          </template>
-          <template #state="{ record }">
-            <status :text="record.state" displayText></status>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'ipaddress'">
+              <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="record.state" displayText></status>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -156,21 +160,21 @@
               :model="form"
               :rules="rules"
              >
-              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
+              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork" v-if="this.isAdmin()">
                 <a-select
                   v-model:value="form.physicalnetwork"
                   v-focus="true"
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.vlan')" :required="true" ref="vlan" name="vlan">
+              <a-form-item :label="$t('label.vlan')" ref="vlan" name="vlan" v-if="this.isAdmin()">
                 <a-input
                   :placeholder="placeholders.vlan"
                   v-model:value="form.vlan"
@@ -180,24 +184,41 @@
                 ref="bypassvlanoverlapcheck"
                 name="bypassvlanoverlapcheck"
                 :label="$t('label.bypassvlanoverlapcheck')"
-                v-if="$store.getters.apis.createPrivateGateway && $store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
+                v-if="this.isAdmin()">
                 <a-checkbox
                   v-model:checked="form.bypassvlanoverlapcheck"
                 ></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.publicip')" :required="true" ref="ipaddress" name="ipaddress">
+              <a-form-item :label="$t('label.associatednetwork')" ref="associatednetworkid" name="associatednetworkid">
+                <a-select
+                  v-model:value="form.associatednetworkid"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
+                  <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
+                    <span>
+                      <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <user-outlined style="margin-right: 5px" />
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item :label="$t('label.publicip')" ref="ipaddress" name="ipaddress">
                 <a-input
                   :placeholder="placeholders.ipaddress"
-                  v-model:value="form.name"
+                  v-model:value="form.ipaddress"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.gateway')" :required="true" ref="gateway" name="gateway">
+              <a-form-item :label="$t('label.gateway')" ref="gateway" name="gateway">
                 <a-input
                   :placeholder="placeholders.gateway"
                   v-model:value="form.gateway"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.netmask')" :required="true" ref="netmask" name="netmask">
+              <a-form-item :label="$t('label.netmask')" ref="netmask" name="netmask">
                 <a-input
                   :placeholder="placeholders.netmask"
                   v-model:value="form.netmask"
@@ -269,13 +290,15 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <template #publicip="{text, record}">
-            <router-link :to="{ path: '/s2svpnconn/' + record.id }">
-              {{ text }}
-            </router-link>
-          </template>
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText />
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'publicip'">
+              <router-link :to="{ path: '/s2svpnconn/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -315,9 +338,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -336,6 +359,9 @@
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="resource" resourceType="Vpc" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -356,7 +382,9 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'VpcTab',
@@ -366,7 +394,9 @@ export default {
     IpAddressesTab,
     RoutersTab,
     VpcTiersTab,
-    AnnotationsTab
+    EventsTab,
+    AnnotationsTab,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   props: {
@@ -383,6 +413,7 @@ export default {
     return {
       fetchLoading: false,
       privateGateways: [],
+      associatedNetworks: [],
       vpnGateways: [],
       vpnConnections: [],
       networkAcls: [],
@@ -403,14 +434,14 @@ export default {
       vpncustomergateways: [],
       privateGatewaysColumns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -427,14 +458,14 @@ export default {
       ],
       vpnConnectionsColumns: [
         {
+          key: 'publicip',
           title: this.$t('label.ip'),
-          dataIndex: 'publicip',
-          slots: { customRender: 'publicip' }
+          dataIndex: 'publicip'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -447,9 +478,9 @@ export default {
       ],
       networkAclsColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.description'),
@@ -491,6 +522,9 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
+    },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
     },
     setCurrentTab () {
       this.currentTab = this.$route?.query?.tab || 'details'
@@ -558,6 +592,22 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.associatedNetworks = []
+      api('listNetworks', {
+        domainid: this.resource.domainid,
+        account: this.resource.account,
+        listAll: true,
+        networkfilter: 'Account'
+      }).then(json => {
+        var networks = json.listnetworksresponse.network || []
+        for (const network of networks) {
+          if (network.type === 'Isolated' || network.type === 'L2') {
+            this.associatedNetworks.push(network)
+          }
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchVpnGateways () {
       this.fetchLoading = true
@@ -565,7 +615,7 @@ export default {
         vpcid: this.resource.id,
         listAll: true
       }).then(json => {
-        this.vpnGateways = json.listvpngatewaysresponse.vpngateway ? json.listvpngatewaysresponse.vpngateway : []
+        this.vpnGateways = json?.listvpngatewaysresponse?.vpngateway || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -609,6 +659,10 @@ export default {
     },
     fetchPhysicalNetworks () {
       this.modals.gatewayLoading = true
+      if (!this.isAdmin()) {
+        this.modals.gatewayLoading = false
+        return
+      }
       api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
@@ -623,9 +677,9 @@ export default {
     fetchVpnCustomerGateways () {
       this.modals.vpnConnectionLoading = true
       api('listVpnCustomerGateways', { listAll: true }).then(json => {
-        this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway
+        this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway || []
         if (this.modals.vpnConnection === true) {
-          this.form.vpncustomergateway = this.vpncustomergateways[0].id
+          this.form.vpncustomergateway = this.vpncustomergateways[0]?.id
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -638,11 +692,19 @@ export default {
 
       switch (e) {
         case 'privateGateways':
-          this.rules = {
-            vlan: [{ required: true, message: this.$t('label.required') }],
-            ipaddress: [{ required: true, message: this.$t('label.required') }],
-            gateway: [{ required: true, message: this.$t('label.required') }],
-            netmask: [{ required: true, message: this.$t('label.required') }]
+          if (this.isAdmin()) {
+            this.rules = {
+              ipaddress: [{ required: true, message: this.$t('label.required') }],
+              gateway: [{ required: true, message: this.$t('label.required') }],
+              netmask: [{ required: true, message: this.$t('label.required') }]
+            }
+          } else {
+            this.rules = {
+              ipaddress: [{ required: true, message: this.$t('label.required') }],
+              gateway: [{ required: true, message: this.$t('label.required') }],
+              netmask: [{ required: true, message: this.$t('label.required') }],
+              associatednetworkid: [{ required: true, message: this.$t('label.required') }]
+            }
           }
           this.modals.gateway = true
           this.fetchAclList()
@@ -676,11 +738,16 @@ export default {
           ipaddress: data.ipaddress,
           gateway: data.gateway,
           netmask: data.netmask,
-          vlan: data.vlan,
           aclid: data.acl
         }
         if (data.bypassvlanoverlapcheck) {
           params.bypassvlanoverlapcheck = data.bypassvlanoverlapcheck
+        }
+        if (data.vlan && String(data.vlan).length > 0) {
+          params.vlan = data.vlan
+        }
+        if (data.associatednetworkid) {
+          params.associatednetworkid = data.associatednetworkid
         }
 
         api('createPrivateGateway', params).then(response => {
@@ -763,7 +830,6 @@ export default {
     handleNetworkAclFormSubmit () {
       if (this.fetchLoading) return
       this.fetchLoading = true
-      this.modals.networkAcl = false
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -793,6 +859,7 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
+          this.modals.networkAcl = false
           this.fetchLoading = false
           this.fetchAclList()
         })

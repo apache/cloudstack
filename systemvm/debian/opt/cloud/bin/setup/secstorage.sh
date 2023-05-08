@@ -25,7 +25,6 @@ setup_secstorage() {
   echo "conntrackd keepalived haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 
-  setup_common eth0 eth1 eth2
   setup_storage_network
   setup_system_rfc1918_internal
 
@@ -36,14 +35,6 @@ setup_secstorage() {
 
   log_it "Applying iptables rules"
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
-
-  log_it "Configuring sshd"
-  local hyp=$HYPERVISOR
-  if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then
-    setup_sshd $ETH1_IP "eth1"
-  else
-    setup_sshd $ETH0_IP "eth0"
-  fi
 
   log_it "Configuring apache2"
   setup_apache2 $ETH2_IP
@@ -59,15 +50,33 @@ setup_secstorage() {
   a2enmod proxy_http
   a2enmod headers
 
-  cat >/etc/apache2/cors.conf <<CORS
+  if [ -z $USEHTTPS ] | $USEHTTPS ; then
+    if [ -f /etc/apache2/http.conf ]; then
+      rm -rf /etc/apache2/http.conf
+    fi
+      cat >/etc/apache2/https.conf <<HTTPS
 RewriteEngine On
 RewriteCond %{HTTPS} =on
 RewriteCond %{REQUEST_METHOD} =POST
 RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
 Header always set Access-Control-Allow-Origin "*"
 Header always set Access-Control-Allow-Methods "POST, OPTIONS"
-Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
-CORS
+Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+HTTPS
+  else
+    if [ -f /etc/apache2/https.conf ]; then
+      rm -rf /etc/apache2/https.conf
+    fi
+      cat >/etc/apache2/http.conf <<HTTP
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} =POST
+RewriteRule ^/upload/(.*) http://127.0.0.1:8210/upload?uuid=\$1 [P,L]
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "x-requested-with, content-type, origin, authorization, accept, client-security-token, x-signature, x-metadata, x-expires"
+HTTP
+  fi
+
 
   disable_rpfilter
   enable_fwding 0

@@ -43,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteNetscalerLoadBalancerCmd.class.getName());
-    private static final String s_name = "deletenetscalerloadbalancerresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;
 
@@ -97,11 +96,6 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         return EventTypes.EVENT_EXTERNAL_NCC_DEVICE_DELETE;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

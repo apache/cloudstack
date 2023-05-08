@@ -69,7 +69,7 @@ public class ReleasePodIpCmdByAdmin extends BaseCmd {
         boolean result = _networkService.releasePodIp(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setDisplayText("IP is released sucessfully");
+            response.setDisplayText("IP is released successfully");
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release  Pod ip ");

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +40,6 @@ import com.cloud.user.User;
 public class DeleteUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 
-    private static final String s_name = "deleteuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +63,6 @@ public class DeleteUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getId());
         if (user != null) {
@@ -75,6 +70,16 @@ public class DeleteUserCmd extends BaseCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.User;
     }
 
     @Override

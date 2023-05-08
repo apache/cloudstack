@@ -22,10 +22,23 @@ import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.network.vpc.VpcOfferingDetailsVO;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 public class VpcOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<VpcOfferingDetailsVO> implements VpcOfferingDetailsDao {
+    private final SearchBuilder<VpcOfferingDetailsVO> ValueSearch;
+
+    public VpcOfferingDetailsDaoImpl() {
+        ValueSearch = createSearchBuilder();
+        ValueSearch.select(null, SearchCriteria.Func.DISTINCT, ValueSearch.entity().getValue());
+        ValueSearch.and("resourceId", ValueSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        ValueSearch.and("name", ValueSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ValueSearch.and("display", ValueSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
+        ValueSearch.done();
+    }
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
@@ -54,5 +67,18 @@ public class VpcOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<VpcOfferin
             }
         }
         return zoneIds;
+    }
+
+    @Override
+    public String getDetail(long offeringId, String detailName) {
+        SearchCriteria<VpcOfferingDetailsVO> sc = ValueSearch.create();
+        sc.setParameters("name", detailName);
+        sc.setParameters("resourceId", offeringId);
+        List<VpcOfferingDetailsVO> results = search(sc, null);
+        if (CollectionUtils.isEmpty(results)) {
+            return null;
+        } else {
+            return results.get(0).getValue();
+        }
     }
 }

@@ -46,7 +46,7 @@ public final class CitrixCheckSshCommandWrapper extends CommandWrapper<CheckSshC
         }
 
         try {
-            final String result = citrixResourceBase.connect(conn, command.getName(), privateIp, cmdPort);
+            final String result = citrixResourceBase.connect(conn, command.getName(), privateIp, cmdPort, 0);
             if (result != null) {
                 return new CheckSshAnswer(command, "Can not ping System vm " + vmName + "due to:" + result);
             }

@@ -31,7 +31,6 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 
 public class GetVolumeiScsiNameCmd extends BaseCmd {
     private static final Logger LOGGER = Logger.getLogger(GetVolumeiScsiNameCmd.class.getName());
-    private static final String NAME = "getvolumeiscsinameresponse";
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.STRING, description = "CloudStack Volume UUID", required = true)
     private String volumeUuid;
@@ -41,11 +40,6 @@ public class GetVolumeiScsiNameCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return NAME;
-    }
 
     @Override
     public long getEntityOwnerId() {

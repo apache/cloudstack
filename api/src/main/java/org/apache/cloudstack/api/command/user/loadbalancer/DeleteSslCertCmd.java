@@ -42,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DeleteSslCertCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSslCertCmd.class.getName());
 
-    private static final String s_name = "deletesslcertresponse";
 
     @Inject
     CertService _certService;
@@ -78,11 +77,6 @@ public class DeleteSslCertCmd extends BaseCmd {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

@@ -39,7 +39,7 @@ setup(
 
     py_modules = ['xunitmultiprocess'],
     zip_safe = False,
-    
+
     entry_points = {
         'nose.plugins': ['xunitmultiprocess = xunitmultiprocess:Xunitmp']
         },

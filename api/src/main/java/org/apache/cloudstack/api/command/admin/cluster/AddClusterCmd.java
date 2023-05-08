@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +44,6 @@ import com.cloud.user.Account;
 public class AddClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
-    private static final String s_name = "addclusterresponse";
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
     private String clusterName;
@@ -180,11 +180,6 @@ public class AddClusterCmd extends BaseCmd {
         return hypervisor;
     }
 
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     public String getClusterType() {
         return clusterType;
     }
@@ -204,6 +199,11 @@ public class AddClusterCmd extends BaseCmd {
 
     public void setAllocationState(String allocationState) {
         this.allocationState = allocationState;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Cluster;
     }
 
     @Override

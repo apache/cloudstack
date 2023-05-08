@@ -22,8 +22,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import net.sf.ehcache.Cache;
-
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericDao;
@@ -31,6 +29,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+import net.sf.ehcache.Cache;
 
 @SuppressWarnings("unchecked")
 public class EntityManagerImpl extends ManagerBase implements EntityManager {
@@ -122,4 +122,9 @@ public class EntityManagerImpl extends ManagerBase implements EntityManager {
         dao.remove(id);
     }
 
+    @Override
+    public <T> boolean validEntityType(Class<T> entityType) {
+        GenericDao<T, ? extends Serializable> dao = (GenericDao<T, ? extends Serializable>)GenericDaoBase.getDao(entityType);
+        return dao != null;
+    }
 }

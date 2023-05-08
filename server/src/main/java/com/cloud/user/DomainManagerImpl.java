@@ -220,11 +220,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
 
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
                 return domain;
             }
         });
-
+        if (domain != null) {
+            _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+            _messageBus.publish(_name, MESSAGE_CREATE_TUNGSTEN_DOMAIN_EVENT, PublishScope.LOCAL, domain);
+        }
         return domain;
     }
 

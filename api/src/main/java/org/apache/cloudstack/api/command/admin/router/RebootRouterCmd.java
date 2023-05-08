@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.router;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -40,7 +40,6 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RebootRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
-    private static final String s_name = "rebootrouterresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,11 +64,6 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         VirtualRouter router = _entityMgr.findById(VirtualRouter.class, getId());
         if (router != null) {
@@ -90,12 +84,12 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.DomainRouter;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.DomainRouter;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 

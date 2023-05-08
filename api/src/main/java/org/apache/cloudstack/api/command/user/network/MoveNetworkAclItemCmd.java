@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.network;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -99,5 +100,10 @@ public class MoveNetworkAclItemCmd extends BaseAsyncCustomIdCmd {
 
     public String getAclConsistencyHash() {
         return aclConsistencyHash;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAclItem;
     }
 }

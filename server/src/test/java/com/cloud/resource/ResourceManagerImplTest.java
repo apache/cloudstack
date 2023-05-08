@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -48,9 +47,9 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -60,6 +59,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -160,7 +160,7 @@ public class ResourceManagerImplTest {
         when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(new ArrayList<>());
         when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(new ArrayList<>());
         PowerMockito.mockStatic(ActionEventUtils.class);
-        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong()))
+        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
                 .willReturn(1L);
         when(getVncPortAnswerVm1.getAddress()).thenReturn(vm1VncAddress);
         when(getVncPortAnswerVm1.getPort()).thenReturn(vm1VncPort);

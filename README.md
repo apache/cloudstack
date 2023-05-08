@@ -1,4 +1,4 @@
-# Apache CloudStack [![Build Status](https://app.travis-ci.com/apache/cloudstack.svg?branch=main)](https://app.travis-ci.com/apache/cloudstack) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apachecloudstack) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=apachecloudstack&metric=ncloc)](https://sonarcloud.io/dashboard?id=apachecloudstack) ![GitHub language count](https://img.shields.io/github/languages/count/apache/cloudstack.svg) ![GitHub top language](https://img.shields.io/github/languages/top/apache/cloudstack.svg)
+# Apache CloudStack [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
 ![Apache CloudStack](tools/logo/apache_cloudstack.png)
 
@@ -29,13 +29,20 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 
 * See our [case studies](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Case+Studies) highlighting successful deployments of Apache CloudStack.
 
-* See the up-to-date list of current [users](http://cloudstack.apache.org/users.html).
+* See the up-to-date list of current [users](https://cloudstack.apache.org/users.html).
 
-* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](http://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+* If you are using CloudStack in your organization and your company is not listed above, please complete our brief adoption [survey](https://cloudstack.apache.org/survey.html). We're happy to keep your company name anonymous if you require.
+
+## Demo
+
+![Screenshot](ui/docs/screenshot-dashboard.png)
+
+See the project user-interface QA website that runs CloudStack against simulator hypervisor:
+https://qa.cloudstack.cloud/simulator/ (admin:password)
 
 ## Getting Started
 
-* Download a released [version](http://cloudstack.apache.org/downloads.html)
+* Download a released [version](https://cloudstack.apache.org/downloads.html)
 * Build from source with the instructions in the [INSTALL.md](INSTALL.md) file.
 
 ## Getting Source Repository
@@ -44,23 +51,29 @@ Apache CloudStack project uses Git. The official Git repository is at:
 
     https://gitbox.apache.org/repos/asf/cloudstack.git
 
-And a mirror is hosted on Github:
+And a mirror is hosted on GitHub:
 
     https://github.com/apache/cloudstack
 
-The Github mirror is strictly read only and provides convenience to users and
+The GitHub mirror is strictly read only and provides convenience to users and
 developers to explore the code and for the community to accept contributions
-via Github pull requests.
+via GitHub pull requests.
 
-## Links
+## Documentation
 
-* [Documentation](http://docs.cloudstack.apache.org)
+* [Project Documentation](https://docs.cloudstack.apache.org)
+* [Release notes](https://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
-* [Release notes](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
 * How to [contribute](CONTRIBUTING.md)
-* Check the [YouTube channel](https://www.youtube.com/ApacheCloudStack) for presentations, interviews, and more
+
+## News and Events
+
+* [Blog](https://blogs.apache.org/cloudstack)
+* [Twitter](https://twitter.com/cloudstack)
+* [Events and meetup](http://cloudstackcollab.org/)
+* [YouTube channel](https://www.youtube.com/ApacheCloudStack)
 
 ## Getting Involved and Contributing
 
@@ -82,20 +95,15 @@ Mailing lists:
 - [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
 - [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
 
-Report and/or check bugs on [Github](https://github.com/apache/cloudstack/issues) and check our
-developer [page](http://cloudstack.apache.org/developers.html) for contributing code.
-
-## News and Events
-
-* [Blog](https://blogs.apache.org/cloudstack)
-* [Twitter](https://twitter.com/cloudstack)
-* [Events and meetup](http://cloudstackcollab.org/)
+Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
+developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
 
 ## Reporting Security Vulnerabilities
 
 If you've found an issue that you believe is a security vulnerability in a
-released version of CloudStack, please report it to `security@cloudstack.apache.org` with details about the vulnerability, how it
-might be exploited, and any additional information that might be useful.
+released version of CloudStack, please report it to `security@apache.org` with
+details about the vulnerability, how it might be exploited, and any additional
+information that might be useful.
 
 For more details, please visit our security [page](http://cloudstack.apache.org/security.html).
 

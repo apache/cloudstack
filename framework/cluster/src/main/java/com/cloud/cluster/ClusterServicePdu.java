@@ -20,6 +20,7 @@ public class ClusterServicePdu {
     public final static int PDU_TYPE_MESSAGE = 0;
     public final static int PDU_TYPE_REQUEST = 1;
     public final static int PDU_TYPE_RESPONSE = 2;
+    public final static int PDU_TYPE_STATUS_UPDATE = 3;
 
     private long sequenceId;
     private long ackSequenceId;

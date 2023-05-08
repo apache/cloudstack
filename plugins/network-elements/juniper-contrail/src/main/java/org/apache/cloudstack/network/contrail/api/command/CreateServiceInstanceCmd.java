@@ -20,6 +20,7 @@ package org.apache.cloudstack.network.contrail.api.command;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -55,7 +56,6 @@ import com.cloud.user.Account;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
-    private static final String s_name = "createserviceinstanceresponse";
 
     /// API parameters
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -185,11 +185,6 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
@@ -199,4 +194,8 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
         return accountId;
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.SystemVm;
+    }
 }

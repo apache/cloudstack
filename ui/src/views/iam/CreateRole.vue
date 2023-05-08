@@ -67,9 +67,9 @@
             v-model:value="form.type"
             :placeholder="apiParams.type.description"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
@@ -87,12 +87,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="role in roles"
               :value="role.id"
-              :key="role.id">
+              :key="role.id"
+              :label="role.name">
               {{ role.name }}
             </a-select-option>
           </a-select>
@@ -110,10 +111,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateRole',
+  mixins: [mixinForm],
   components: {
     TooltipLabel
   },
@@ -159,7 +162,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         const params = {}
         for (const key in values) {
           if (key === 'using') {

@@ -22,7 +22,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -43,7 +43,6 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteGlobalLoadBalancerRuleCmd.class.getName());
 
-    private static final String s_name = "deletegloballoadbalancerruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Inject
     public GlobalLoadBalancingRulesService _gslbService;
@@ -119,7 +113,7 @@ public class DeleteGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.GlobalLoadBalancerRule;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.GlobalLoadBalancerRule;
     }
 }

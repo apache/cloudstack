@@ -25,5 +25,6 @@ public interface DirectDownloadCertificate extends InternalIdentity, Identity {
     String getCertificate();
     String getAlias();
     Hypervisor.HypervisorType getHypervisorType();
+    Long getZoneId();
 
 }

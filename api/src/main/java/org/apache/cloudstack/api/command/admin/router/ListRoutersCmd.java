@@ -20,7 +20,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -42,7 +42,6 @@ import com.cloud.vm.VirtualMachine;
 public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 
-    private static final String s_name = "listroutersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -155,13 +154,8 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.DomainRouter;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.DomainRouter;
     }
 
     @Override

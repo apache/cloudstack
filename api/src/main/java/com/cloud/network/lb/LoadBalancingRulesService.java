@@ -54,6 +54,10 @@ public interface LoadBalancingRulesService {
         Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException;
 
+    LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
+            Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay, List<String> cidrList) throws NetworkRuleConflictException,
+            InsufficientAddressCapacityException;
+
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
     boolean deleteLoadBalancerRule(long lbRuleId, boolean apply);
@@ -65,8 +69,8 @@ public interface LoadBalancingRulesService {
      * @param cmd
      *            the command specifying the stickiness method name, params (name,value pairs), policy name and
      *            description.
-     * @return the newly created stickiness policy if successfull, null otherwise
-     * @thows NetworkRuleConflictException
+     * @return the newly created stickiness policy if successful, null otherwise
+     * @throws NetworkRuleConflictException
      */
     public StickinessPolicy createLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws NetworkRuleConflictException;
 
@@ -81,9 +85,9 @@ public interface LoadBalancingRulesService {
      * @param cmd
      *            the command specifying the stickiness method name, params
      *            (name,value pairs), policy name and description.
-     * @return the newly created stickiness policy if successfull, null
+     * @return the newly created stickiness policy if successful, null
      *         otherwise
-     * @thows NetworkRuleConflictException
+     * @throws NetworkRuleConflictException
      */
     public HealthCheckPolicy createLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd);
 
@@ -94,11 +98,11 @@ public interface LoadBalancingRulesService {
     /**
      * Assign a virtual machine or list of virtual machines, or Map of <vmId vmIp> to a load balancer.
      */
-    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap);
+    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM);
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 
-    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap);
+    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM);
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 

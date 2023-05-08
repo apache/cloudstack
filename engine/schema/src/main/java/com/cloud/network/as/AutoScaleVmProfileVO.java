@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -35,6 +37,8 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
@@ -63,7 +67,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     private long accountId;
 
     @Column(name = "autoscale_user_id")
-    private long autoscaleUserId;
+    private Long autoscaleUserId;
 
     @Column(name = "service_offering_id", updatable = true, nullable = false)
     private Long serviceOfferingId;
@@ -74,11 +78,15 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = "other_deploy_params", updatable = true, length = 1024)
     private String otherDeployParams;
 
-    @Column(name = "destroy_vm_grace_period", updatable = true)
-    private Integer destroyVmGraceperiod = NetUtils.DEFAULT_AUTOSCALE_VM_DESTROY_TIME;
+    @Column(name = "expunge_vm_grace_period", updatable = true)
+    private Integer expungeVmGracePeriod = NetUtils.DEFAULT_AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD;
 
     @Column(name = "counter_params", updatable = true)
     private String counterParams;
+
+    @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
+    @Basic(fetch = FetchType.LAZY)
+    private String userData;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
@@ -92,20 +100,22 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
-            Integer destroyVmGraceperiod, long autoscaleUserId) {
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId,
+                                Map<String, HashMap<String, String>> otherDeployParamsMap, Map counterParamList,
+                                String userData, Integer expungeVmGracePeriod, Long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
         this.accountId = accountId;
         this.serviceOfferingId = serviceOfferingId;
         this.templateId = templateId;
-        this.otherDeployParams = otherDeployParams;
         this.autoscaleUserId = autoscaleUserId;
-        if (destroyVmGraceperiod != null) {
-            this.destroyVmGraceperiod = destroyVmGraceperiod;
+        if (expungeVmGracePeriod != null) {
+            this.expungeVmGracePeriod = expungeVmGracePeriod;
         }
+        this.userData = userData;
         setCounterParamsForUpdate(counterParamList);
+        setOtherDeployParamsForUpdate(otherDeployParamsMap);
     }
 
     @Override
@@ -127,29 +137,61 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return serviceOfferingId;
     }
 
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
     @Override
     public String getOtherDeployParams() {
         return otherDeployParams;
+    }
+
+    @Override
+    public List<Pair<String, String>> getOtherDeployParamsList() {
+        List<Pair<String, String>> paramsList = new ArrayList<>();
+        if (otherDeployParams != null) {
+            String[] params = otherDeployParams.split("[=&]");
+            for (int i = 0; i < (params.length - 1); i = i + 2) {
+                paramsList.add(new Pair<>(params[i], params[i + 1]));
+            }
+        }
+        return paramsList;
     }
 
     public void setOtherDeployParams(String otherDeployParams) {
         this.otherDeployParams = otherDeployParams;
     }
 
+    public void setOtherDeployParamsForUpdate(Map<String, HashMap<String, String>> otherDeployParamsMap) {
+        if (MapUtils.isNotEmpty(otherDeployParamsMap)) {
+            List<String> params = new ArrayList<>();
+            for (HashMap<String, String> paramKVpair : otherDeployParamsMap.values()) {
+                String paramName = paramKVpair.get("name");
+                String paramValue = paramKVpair.get("value");
+                params.add(paramName + "=" + paramValue);
+            }
+            setOtherDeployParams(StringUtils.join(params, "&"));
+        }
+    }
+
     @Override
     public List<Pair<String, String>> getCounterParams() {
-        List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
+        List<Pair<String, String>> paramsList = new ArrayList<>();
         if (counterParams != null) {
             String[] params = counterParams.split("[=&]");
             for (int i = 0; i < (params.length - 1); i = i + 2) {
-                paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
+                paramsList.add(new Pair<>(params[i], params[i + 1]));
             }
         }
         return paramsList;
     }
 
+    public String getCounterParamsString() {
+        return this.counterParams;
+    }
+
     public void setCounterParams(String counterParam) {
-        counterParams = counterParam;
+        this.counterParams = counterParam;
     }
 
     public void setCounterParamsForUpdate(Map counterParamList) {
@@ -177,12 +219,21 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         setCounterParams(sb.toString());
     }
 
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    @Override
+    public String getUserData() {
+        return userData;
+    }
+
     @Override
     public String getUuid() {
         return uuid;
     }
 
-    public void setAutoscaleUserId(long autoscaleUserId) {
+    public void setAutoscaleUserId(Long autoscaleUserId) {
         this.autoscaleUserId = autoscaleUserId;
     }
 
@@ -207,16 +258,16 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public Integer getDestroyVmGraceperiod() {
-        return destroyVmGraceperiod;
+    public Integer getExpungeVmGracePeriod() {
+        return expungeVmGracePeriod;
     }
 
-    public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {
-        this.destroyVmGraceperiod = destroyVmGraceperiod;
+    public void setExpungeVmGracePeriod(Integer expungeVmGracePeriod) {
+        this.expungeVmGracePeriod = expungeVmGracePeriod;
     }
 
     @Override
-    public long getAutoScaleUserId() {
+    public Long getAutoScaleUserId() {
         return autoscaleUserId;
     }
 

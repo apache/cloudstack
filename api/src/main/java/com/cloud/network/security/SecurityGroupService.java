@@ -17,6 +17,7 @@
 package com.cloud.network.security;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -48,7 +49,15 @@ public interface SecurityGroupService {
 
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
 
+    List<? extends SecurityRule> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort,
+        Integer endPort, Integer icmpType, Integer icmpCode, final List<String> cidrList, Map groupList, final SecurityRule.SecurityRuleType ruleType);
+
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 
     public boolean securityGroupRulesForVmSecIp(long nicId, String secondaryIp, boolean ruleAction);
+
+    String MESSAGE_CREATE_TUNGSTEN_SECURITY_GROUP_EVENT = "Message.CreateTungstenSecurityGroup.Event";
+    String MESSAGE_DELETE_TUNGSTEN_SECURITY_GROUP_EVENT = "Message.DeleteTungstenSecurityGroup.Event";
+    String MESSAGE_ADD_SECURITY_GROUP_RULE_EVENT = "Message.AddSecurityGroupRule.Event";
+    String MESSAGE_REMOVE_SECURITY_GROUP_RULE_EVENT = "Message.RemoveSecurityGroupRule.Event";
 }

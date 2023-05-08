@@ -27,7 +27,7 @@
           :rules="rules"
           layout="vertical"
          >
-          <a-form-item name="" ref="">
+          <a-form-item name="account" ref="account">
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.addAccountToProject.account.description"/>
             </template>
@@ -36,7 +36,7 @@
               :placeholder="apiParams.addAccountToProject.account.description"
               v-focus="true" />
           </a-form-item>
-          <a-form-item name="" ref="">
+          <a-form-item name="email" ref="email">
             <template #label>
               <tooltip-label :title="$t('label.email')" :tooltip="apiParams.addAccountToProject.email.description"/>
             </template>
@@ -44,7 +44,7 @@
               v-model:value="form.email"
               :placeholder="apiParams.addAccountToProject.email.description"></a-input>
           </a-form-item>
-          <a-form-item v-if="apiParams.addAccountToProject.projectroleid">
+          <a-form-item name="projectroleid" ref="projectroleid" v-if="apiParams.addAccountToProject.projectroleid">
             <template #label>
               <tooltip-label :title="$t('label.project.role')" :tooltip="apiParams.addAccountToProject.projectroleid.description"/>
             </template>
@@ -55,24 +55,24 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="apiParams.addAccountToProject.roletype">
+          <a-form-item name="roletype" ref="roletype" v-if="apiParams.addAccountToProject.roletype">
             <template #label>
-              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
+              <tooltip-label :title="$t('label.roletype')" :tooltip="apiParams.addAccountToProject.roletype.description"/>
             </template>
             <a-select
               v-model:value="form.roletype"
               :placeholder="apiParams.addAccountToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
@@ -128,9 +128,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
@@ -143,9 +143,9 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addUserToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>

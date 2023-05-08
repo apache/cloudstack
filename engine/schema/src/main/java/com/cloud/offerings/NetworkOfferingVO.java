@@ -133,6 +133,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_vpc")
     boolean forVpc;
 
+    @Column(name = "for_tungsten")
+    boolean forTungsten = false;
+
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
 
@@ -147,6 +150,9 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     @Column(name="supports_public_access")
     boolean supportsPublicAccess = false;
+
+    @Column(name = "supports_vm_autoscaling")
+    boolean supportsVmAutoScaling = false;
 
     @Override
     public String getDisplayText() {
@@ -178,6 +184,15 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setForVpc(boolean isForVpc) {
         this.forVpc = isForVpc;
+    }
+
+    @Override
+    public boolean isForTungsten() {
+        return forTungsten;
+    }
+
+    public void setForTungsten(boolean forTungsten) {
+        this.forTungsten = forTungsten;
     }
 
     @Override
@@ -402,12 +417,12 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.state = State.Enabled;
     }
 
-    public NetworkOfferingVO(String name, Network.GuestType guestType) {
+    public NetworkOfferingVO(String name, Network.GuestType guestType, boolean specifyVlan) {
         this(name,
             "System Offering for " + name,
             TrafficType.Guest,
             true,
-            true,
+            specifyVlan,
             0,
             0,
             true,
@@ -533,5 +548,14 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public String getServicePackage() {
         return servicePackageUuid;
+    }
+
+    public void setSupportsVmAutoScaling(boolean supportsVmAutoScaling) {
+        this.supportsVmAutoScaling = supportsVmAutoScaling;
+    }
+
+    @Override
+    public boolean isSupportsVmAutoScaling() {
+        return supportsVmAutoScaling;
     }
 }

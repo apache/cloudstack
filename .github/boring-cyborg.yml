@@ -1,0 +1,221 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+labelPRBasedOnFilePath:
+  "component:agent":
+    - agent/*
+    - engine/orchestration/src/main/java/com/cloud/agent/manager/*
+  "component:api":
+    - api/*
+    - core/src/main/java/com/cloud/agent/api/*
+    - ./server/src/main/java/com/cloud/api/*
+  "component:backup":
+    - plugins/backup/*
+    - server/src/main/java/org/apache/cloudstack/backup/*
+  "component:build":
+    - pom.xml
+    - "**/pom.xml"
+  "component:ceph":
+    - engine/storage/snapshot/src/main/java/org/apache/cloudstack/storage/snapshot/CephSnapshotStrategy.java
+  "component:compute":
+    - engine/orchestration/src/main/java/com/cloud/vm/*
+    - engine/api/src/main/java/com/cloud/vm/*
+  "component:console-proxy":
+    - services/console-proxy/*
+    - systemvm/agent/noVNC/*
+  "component:database":
+    - framework/db/*
+  "component:dhcp":
+    - systemvm/debian/etc/dnsmasq.conf.tmpl
+    - systemvm/debian/opt/cloud/bin/dnsmasq.sh
+    - systemvm/debian/etc/vpcdnsmasq.conf
+  "component:dpdk":
+    - server/src/main/java/com/cloud/hypervisor/kvm/dpdk/*
+    - plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/dpdk/*
+  "component:hyperv":
+    - plugins/hypervisors/hyperv/*
+  "component:integration-test":
+    - test/integration/*
+  "component:ipv6":
+    - server/src/main/java/com/cloud/network/Ipv6*
+    - "**/Ipv6*"
+  "component:iscsi":
+    - plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/storage/Iscsi*
+  "component:kubernetes":
+    - plugins/integrations/kubernetes-service/*
+  "component:kvm":
+    - plugins/hypervisors/kvm/*
+    - server/src/main/java/com/cloud/hypervisor/kvm/*
+    - server/src/test/java/com/cloud/hypervisor/kvm/*
+    - scripts/vm/hypervisor/kvm/*
+  "component:LDAP":
+    - plugins/user-authenticators/ldap/*
+  "component:local-storage":
+    - server/src/main/java/com/cloud/storage/LocalStoragePoolListener.java
+    - engine/storage/src/main/java/org/apache/cloudstack/storage/allocator/LocalStoragePoolAllocator.java
+  "component:logging":
+    - client/conf/log4j-cloud.xml.in
+    - utils/src/main/java/com/cloud/utils/log/*
+  "component:management-server":
+    - server/src/main/java/com/cloud/server/*
+    - client/src/main/*
+  "component:marvin":
+    - tools/marvin/*
+  "component:mysql":
+    - plugins/database/mysql-ha/*
+  "component:networking":
+    - plugins/network-elements/*
+    - core/src/main/java/com/cloud/agent/resource/virtualnetwork/*
+    - server/src/main/java/org/apache/cloudstack/network/*
+    - server/src/main/java/com/cloud/network/*
+    - scripts/network/*
+    - scripts/vm/network/*
+    - api/src/main/java/org/apache/cloudstack/api/command/user/network/*
+    - engine/schema/src/main/java/com/cloud/network/*
+    - engine/components-api/src/main/java/com/cloud/network/*
+    - systemvm/debian/opt/cloud/bin/*
+  "component:orchestration":
+    - engine/orchestration/*
+  "component:packaging":
+    - packaging/*
+  "component:primary-storage":
+    - plugins/storage/volume/*
+  "component:projects":
+    - plugins/acl/project-role-based/*
+    - server/src/main/java/com/cloud/projects/*
+    - server/src/main/java/org/apache/cloudstack/acl/ProjectRoleManagerImpl.java
+  "component:quota":
+    - framework/quota/*
+    - plugins/database/quota/*
+  "component:saml":
+    - plugins/user-authenticators/saml2/*
+  "component:secondary-storage":
+    - plugins/storage/image/*
+    - server/src/main/java/com/cloud/storage/secondary/*
+    - services/secondary-storage/*
+  "component:security":
+    - framework/security/*
+    - utils/src/main/java/org/apache/cloudstack/utils/security/*
+  "component:security-group":
+    - server/src/test/java/com/cloud/network/security/*
+    - server/src/main/java/com/cloud/network/security/*
+    - engine/schema/src/main/java/com/cloud/network/security/*
+    - engine/components-api/src/main/java/com/cloud/network/security/*
+  "component:simulator":
+    - plugins/hypervisors/simulator/*
+  "component:solidfire":
+    - plugins/storage/volume/solidfire/*
+  "component:ssvm":
+    - services/secondary-storage/*
+  "component:storage":
+    - plugins/storage/*
+    - plugins/storage-allocators/*
+    - server/src/main/java/com/cloud/storage/*
+    - server/src/main/java/org/apache/cloudstack/storage/*
+    - engine/api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/*
+    - engine/api/src/main/java/org/apache/cloudstack/storage/*
+    - engine/schema/src/main/java/com/cloud/storage/*
+    - engine/schema/src/main/java/org/apache/cloudstack/storage/*
+    - engine/storage/*
+    - scripts/storage/*
+  "component:systemd":
+    - packaging/systemd/*
+    - systemvm/debian/etc/systemd/*
+  "component:templates":
+    - tools/appliance/*
+  "component:integration":
+    - ".github/workflows/*"
+  "component:UI":
+    - ui/*
+  "component:unit-test":
+    - "../*Test.java"
+  "component:upgrade":
+    - "../Upgrade*.java"
+  "component:usage-server":
+    - usage/*
+  "component:virtual-router":
+    - systemvm/debian/*
+  "component:vmware":
+    - vmware-base/*
+    - plugins/hypervisors/vmware/*
+    - plugins/api/vmware-sioc/*
+  "component:vpc":
+    - server/src/main/java/com/cloud/network/vpc/*
+    - server/src/test/java/com/cloud/vpc/*
+    - server/src/main/java/com/cloud/network/router/Vpc*
+    - api/src/main/java/org/apache/cloudstack/api/command/admin/vpc/*
+    - api/src/main/java/org/apache/cloudstack/api/command/user/vpc/*
+    - engine/schema/src/main/java/com/cloud/network/vpc/*
+    - engine/components-api/src/main/java/com/cloud/network/vpc/*
+  "component:vxlan":
+    - plugins/network-elements/vxlan/*
+    - scripts/vm/network/vnet/modifyvxlan.sh
+  "component:XenServer":
+    - scripts/vm/hypervisor/xenserver/*
+    - plugins/hypervisors/xenserver/*
+  "distro:ubuntu":
+    - debian/*
+    - packaging/debian/*
+    - packaging/systemd/*
+  "distro:centos":
+    - packaging/centos*/*
+    - packaging/systemd/*
+  "docker":
+    - tools/docker/*
+    - ui/Dockerfile
+  "Python":
+    - "**/*.py"
+  "systemvm-template-change":
+    - tools/appliance/*
+
+labelerFlags:
+  labelOnPRUpdates: true
+
+firstPRWelcomeComment: >
+  Congratulations on your first Pull Request and welcome to the Apache CloudStack community!
+  If you have any issues or are unsure about any anything please check our
+  Contribution Guide (https://github.com/apache/cloudstack/blob/main/CONTRIBUTING.md)
+
+  Here are some useful points:
+
+  - In case of a new feature add useful documentation (raise doc PR at https://github.com/apache/cloudstack-documentation)
+
+  - Be patient and persistent. It might take some time to get a review or get the final approval from the committers.
+
+  - Pay attention to the quality of your code, ensure tests are passing and your PR doesn't have conflicts.
+
+  - Please follow [ASF Code of Conduct](https://github.com/apache/.github/blob/main/.github/CODE_OF_CONDUCT.md) for all
+  communication including (but not limited to) comments on Pull Requests, Issues, Mailing list and Slack.
+
+  - Be sure to read the [CloudStack Coding Conventions](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Coding+conventions).
+
+  Apache CloudStack is a community-driven project and together we are making it better 🚀.
+
+  In case of doubts contact the developers at:
+
+  Mailing List: dev@cloudstack.apache.org (https://cloudstack.apache.org/mailing-lists.html)
+
+  Slack: https://apachecloudstack.slack.com/
+
+firstPRMergeComment: >
+  Awesome work, congrats on your first merged pull request!
+
+firstIssueWelcomeComment: >
+  Thanks for opening your first issue here! Be sure to follow the issue template!
+
+checkUpToDate:
+  targetBranch: main

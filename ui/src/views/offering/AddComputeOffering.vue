@@ -51,17 +51,18 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.systemvmtype.description">
-            <a-select-option key="domainrouter">{{ $t('label.domain.router') }}</a-select-option>
-            <a-select-option key="consoleproxy">{{ $t('label.console.proxy') }}</a-select-option>
-            <a-select-option key="secondarystoragevm">{{ $t('label.secondary.storage.vm') }}</a-select-option>
+            <a-select-option key="domainrouter" :label="$t('label.domain.router')">{{ $t('label.domain.router') }}</a-select-option>
+            <a-select-option key="consoleproxy" :label="$t('label.console.proxy')">{{ $t('label.console.proxy') }}</a-select-option>
+            <a-select-option key="secondarystoragevm" :label="$t('label.secondary.storage.vm')">{{ $t('label.secondary.storage.vm') }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
           <a-radio-group
             v-model:value="form.offeringtype"
+            @change="selected => { handleComputeOfferingTypeChange(selected.target.value) }"
             buttonStyle="solid">
             <a-radio-button value="fixed">
               {{ $t('label.fixed') }}
@@ -152,7 +153,7 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
-            <a-form-item v-if="isAdmin()" name="hosttags" ref="hosttags">
+            <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="hosttags" ref="hosttags">
               <template #label>
                 <tooltip-label :title="$t('label.hosttags')" :tooltip="apiParams.hosttags.description"/>
               </template>
@@ -208,38 +209,6 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="!isSystem && isAdmin()" name="storagetags" ref="storagetags">
-          <template #label>
-            <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
-          </template>
-          <a-select
-            mode="tags"
-            v-model:value="form.storagetags"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="storageTagLoading"
-            :placeholder="apiParams.tags.description"
-            v-if="isAdmin()">
-            <a-select-option v-for="opt in storageTags" :key="opt">
-              {{ opt }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="limitcpuuse" ref="limitcpuuse">
-          <template #label>
-            <tooltip-label :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
-          </template>
-          <a-switch v-model:checked="form.limitcpuuse" />
-        </a-form-item>
-        <a-form-item name="isvolatile" ref="isvolatile" v-if="!isSystem">
-          <template #label>
-            <tooltip-label :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
-          </template>
-          <a-switch v-model:checked="form.isvolatile" />
-        </a-form-item>
         <a-form-item name="deploymentplanner" ref="deploymentplanner" v-if="!isSystem && isAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
@@ -249,12 +218,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="deploymentPlannerLoading"
             :placeholder="apiParams.deploymentplanner.description"
             @change="val => { handleDeploymentPlannerChange(val) }">
-            <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name">
+            <a-select-option v-for="(opt) in deploymentPlanners" :key="opt.name" :label="opt.name || opt.description || ''">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -290,10 +259,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.vgputype')">
-            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in vGpuTypes" :key="optIndex" :label="opt">
               {{ opt }}
             </a-select-option>
           </a-select>
@@ -362,16 +331,16 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="policy in storagePolicies" :key="policy.id">
+            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id || ''">
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
-            {{ $t('label.computeonly.offering') }}
+            <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
@@ -539,7 +508,7 @@
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item v-if="isAdmin()" name="storagetags" ref="storagetags">
+                <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="storagetags" ref="storagetags">
                   <template #label>
                     <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
                   </template>
@@ -547,13 +516,13 @@
                     mode="tags"
                     v-model:value="form.storagetags"
                     showSearch
-                    optionFilterProp="label"
+                    optionFilterProp="value"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="storageTagLoading"
                     :placeholder="apiParams.tags.description"
-                    v-if="isAdmin()">
+                    v-if="isAdmin() || isDomainAdminAllowedToInformTags">
                     <a-select-option v-for="opt in storageTags" :key="opt">
                       {{ opt }}
                     </a-select-option>
@@ -561,6 +530,12 @@
                 </a-form-item>
               </a-col>
             </a-row>
+            <a-form-item name="encryptdisk" ref="encryptdisk">
+              <template #label>
+                <tooltip-label :title="$t('label.encrypt')" :tooltip="apiParams.encryptroot.description" />
+              </template>
+              <a-switch v-model:checked="form.encryptdisk" :checked="encryptdisk" @change="val => { encryptdisk = val }" />
+            </a-form-item>
           </span>
           <span v-if="!computeonly">
             <a-form-item>
@@ -591,9 +566,9 @@
               </a-form-item>
             </a-form-item>
           </span>
-          <a-form-item>
+          <a-form-item name="diskofferingstrictness" ref="diskofferingstrictness">
             <template #label>
-              <tooltip-label :title="$t('label.diskofferingstrictness')"/>
+              <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
             </template>
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
@@ -612,11 +587,14 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import store from '@/store'
 
 export default {
   name: 'AddServiceOffering',
+  mixins: [mixinForm],
   components: {
     AddDiskOffering,
     ResourceIcon,
@@ -680,11 +658,13 @@ export default {
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
+      encryptdisk: false,
       computeonly: true,
       diskOfferingLoading: false,
       diskOfferings: [],
       selectedDiskOfferingId: '',
-      qosType: ''
+      qosType: '',
+      isDomainAdminAllowedToInformTags: false
     }
   },
   beforeCreate () {
@@ -703,6 +683,7 @@ export default {
     this.initForm()
     this.fetchData()
     this.isPublic = isAdmin()
+    this.form.ispublic = this.isPublic
   },
   methods: {
     initForm () {
@@ -721,11 +702,11 @@ export default {
         qostype: this.qosType,
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
-        diskofferingstrictness: this.diskofferingstrictness
+        diskofferingstrictness: this.diskofferingstrictness,
+        encryptdisk: this.encryptdisk
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         cpunumber: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
@@ -782,6 +763,11 @@ export default {
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
+      } else if (this.isDomainAdmin()) {
+        this.checkIfDomainAdminIsAllowedToInformTag()
+        if (this.isDomainAdminAllowedToInformTags) {
+          this.fetchStorageTagData()
+        }
       }
       this.fetchDiskOfferings()
     },
@@ -813,6 +799,15 @@ export default {
     isAdmin () {
       return isAdmin()
     },
+    isDomainAdmin () {
+      return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    checkIfDomainAdminIsAllowedToInformTag () {
+      const params = { id: store.getters.userInfo.accountid }
+      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+        this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
+      })
+    },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
@@ -831,22 +826,21 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
       })
     },
     fetchStorageTagData () {
-      const params = {}
-      params.listAll = true
       this.storageTagLoading = true
       this.storageTags = []
-      api('listStorageTags', params).then(json => {
+      api('listStorageTags').then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -858,10 +852,8 @@ export default {
       })
     },
     fetchDeploymentPlannerData () {
-      const params = {}
-      params.listAll = true
       this.deploymentPlannerLoading = true
-      api('listDeploymentPlanners', params).then(json => {
+      api('listDeploymentPlanners').then(json => {
         const planners = json.listdeploymentplannersresponse.deploymentPlanner
         this.deploymentPlanners = this.deploymentPlanners.concat(planners)
         this.deploymentPlanners.unshift({ name: '' })
@@ -912,9 +904,9 @@ export default {
     },
     handleGpuChange (val) {
       this.vGpuTypes = []
-      for (var i in this.gpuTypes) {
-        if (this.gpuTypes[i].value === val) {
-          this.vGpuTypes = this.gpuTypes[i].vgpu
+      for (var gpuType of this.gpuTypes) {
+        if (gpuType.value === val) {
+          this.vGpuTypes = gpuType.vgpu
           break
         }
       }
@@ -927,7 +919,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           issystem: this.isSystem,
           name: values.name,
@@ -939,7 +932,8 @@ export default {
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true,
           dynamicscalingenabled: values.dynamicscalingenabled,
-          diskofferingstrictness: values.diskofferingstrictness
+          diskofferingstrictness: values.diskofferingstrictness,
+          encryptroot: values.encryptdisk
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
@@ -1025,9 +1019,7 @@ export default {
           params['serviceofferingdetails[1].key'] = 'pciDevice'
           params['serviceofferingdetails[1].value'] = values.pcidevice
         }
-        if ('vgputype' in values &&
-          this.vGpuTypes !== null && this.vGpuTypes !== undefined &&
-          values.vgputype > this.vGpuTypes.length) {
+        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
           params['serviceofferingdetails[2].key'] = 'vgpuType'
           params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
         }

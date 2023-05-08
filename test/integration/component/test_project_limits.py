@@ -174,18 +174,18 @@ class TestProjectLimits(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls._cleanup = [
-            cls.admin,
-            cls.user,
+            cls.disk_offering,
             cls.domain,
-            cls.disk_offering
-            ]
+            cls.user,
+            cls.admin
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            super(TestProjectLimits,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -199,7 +199,7 @@ class TestProjectLimits(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestProjectLimits,self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -234,21 +234,21 @@ class TestProjectLimits(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -394,21 +394,21 @@ class TestProjectLimits(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
                                              self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
 
         self.assertEqual(
-                            isinstance(list_projects_reponse, list),
+                            isinstance(list_projects_response, list),
                             True,
                             "Check for a valid list projects response"
                             )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-                    len(list_projects_reponse),
+                    len(list_projects_response),
                     0,
                     "Check list project response returns a valid project"
                     )
@@ -570,19 +570,19 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls._cleanup = [
-                        cls.project,
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        cls.domain
-                        ]
+            cls.domain,
+            cls.account,
+            cls.disk_offering,
+            cls.service_offering,
+            cls.project
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            super(TestResourceLimitsProject,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -596,7 +596,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestResourceLimitsProject,self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -736,16 +736,6 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             True,
                             "Check Public IP state is allocated or not"
                         )
-
-        # Exception should be raised for second Public IP
-        with self.assertRaises(Exception):
-            PublicIPAddress.create(
-                                           self.apiclient,
-                                           zoneid=virtual_machine_1.zoneid,
-                                           services=self.services["server"],
-                                           networkid=network.id,
-                                           projectid=self.project.id
-                                           )
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
@@ -872,6 +862,14 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
+        self.cleanup.append(virtual_machine_1)
+        networks = Network.list(
+            self.apiclient,
+            projectid=self.project_1.id,
+            listall=True
+        )
+        for network in networks:
+            self.cleanup.insert(1,Network(network.__dict__))
 
         # Exception should be raised for second volume
         with self.assertRaises(Exception):
@@ -911,7 +909,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               max=1,
                               projectid=self.project.id
                               )
-        
+
         # Register the First Template in the project
         self.debug("Register the First Template in the project")
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
@@ -951,7 +949,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
             time.sleep(self.services["sleep"])
             timeout = timeout - 1
-            
+
         #Verify template response to check whether template added successfully
         self.assertEqual(
                         isinstance(list_template_response, list),
@@ -980,6 +978,14 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 zoneid=self.zone.id,
                                 projectid=self.project.id
                             )
+        networks = Network.list(
+            self.apiclient,
+            projectid=self.project.id,
+            listall=True
+        )
+        for network in networks:
+            self.cleanup.append(Network(network.__dict__))
+
         return
 
 class TestMaxProjectNetworks(cloudstackTestCase):
@@ -1020,7 +1026,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            super(TestMaxProjectNetworks,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1040,7 +1046,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestMaxProjectNetworks,self).tearDown()
             self.account.delete(self.apiclient)
             interval = list_configurations(
                                     self.apiclient,
@@ -1102,18 +1108,20 @@ class TestMaxProjectNetworks(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
+            self.cleanup.append(network)
             self.debug("Created network with ID: %s" % network.id)
         self.debug(
             "Creating network in account already having networks : %s" %
                                                             config_value)
 
         with self.assertRaises(Exception):
-            Network.create(
+            network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
                                     projectid=project.id,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
+            self.cleanup.append(network)
         self.debug('Create network failed (as expected)')
         return

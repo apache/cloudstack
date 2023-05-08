@@ -33,16 +33,10 @@ import com.cloud.user.Account;
 public class ListAffinityGroupTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListAffinityGroupTypesCmd.class.getName());
 
-    private static final String s_name = "listaffinitygrouptypesresponse";
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

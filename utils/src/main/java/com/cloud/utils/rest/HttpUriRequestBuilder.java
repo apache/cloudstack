@@ -102,7 +102,7 @@ public class HttpUriRequestBuilder {
     private void validate() {
         Assert.notNull(method, "HTTP Method cannot be null");
         Assert.hasText(path, "target path must be defined");
-        Assert.isTrue(path.startsWith("/"), "targte path must start with a '/' character");
+        Assert.isTrue(path.startsWith("/"), "target path must start with a '/' character");
     }
 
     private URI buildUri() {

@@ -18,4 +18,3 @@
 class CloudStackPage(object):
     def __init__():
         self.browser = None
-

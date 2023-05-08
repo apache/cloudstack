@@ -31,17 +31,19 @@
           :label="$t('migrate.from')">
           <a-select
             v-model:value="form.srcpool"
+            @change="filterStores"
             :loading="loading"
             v-focus="true"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="store in imageStores"
               :key="store.id"
-            >{{ store.name || opt.url }}</a-select-option>
+              :label="store.name || opt.url"> {{ store.name || opt.url }}
+            </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
@@ -55,13 +57,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
-              v-for="store in imageStores"
-              v-if="store.id !== this.form.srcpool"
+              v-for="store in destStores"
               :key="store.id"
-            >{{ store.name || opt.url }}</a-select-option>
+              :label="store.name || opt.url"> {{ store.name || opt.url }}
+            </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="migrationtype" ref="migrationtype" :label="$t('migrationPolicy')">
@@ -71,10 +73,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
-            <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
+            <a-select-option value="Complete" :label="$t('label.complete')">{{ $t('label.complete') }}</a-select-option>
+            <a-select-option value="Balance" :label="$t('label.balance')">{{ $t('label.balance') }}</a-select-option>
           </a-select>
         </a-form-item>
         <div :span="24" class="action-button">
@@ -95,12 +97,14 @@ export default {
   data () {
     return {
       imageStores: [],
+      destStores: [],
       loading: false
     }
   },
-  created () {
+  async created () {
     this.initForm()
-    this.fetchImageStores()
+    await this.fetchImageStores()
+    this.filterStores()
   },
   methods: {
     initForm () {
@@ -115,13 +119,21 @@ export default {
       })
     },
     fetchImageStores () {
-      this.loading = true
-      api('listImageStores').then(json => {
-        this.imageStores = json.listimagestoresresponse.imagestore || []
-        this.form.srcpool = this.imageStores[0].id || ''
-      }).finally(() => {
-        this.loading = false
+      return new Promise((resolve, reject) => {
+        this.loading = true
+        api('listImageStores').then(json => {
+          this.imageStores = json.listimagestoresresponse.imagestore || []
+          this.form.srcpool = this.imageStores[0].id || ''
+          resolve(this.imageStores)
+        }).catch((error) => {
+          reject(error)
+        }).finally(() => {
+          this.loading = false
+        })
       })
+    },
+    filterStores () {
+      this.destStores = this.imageStores.filter(store => { return store.id !== this.form.srcpool })
     },
     handleSubmit (e) {
       e.preventDefault()

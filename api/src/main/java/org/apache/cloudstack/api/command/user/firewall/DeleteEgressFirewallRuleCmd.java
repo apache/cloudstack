@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -42,7 +42,6 @@ import com.cloud.network.rules.FirewallRule;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteEgressFirewallRuleCmd.class.getName());
-    private static final String s_name = "deleteegressfirewallruleresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,11 +66,6 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_FIREWALL_EGRESS_CLOSE;
@@ -122,7 +116,7 @@ public class DeleteEgressFirewallRuleCmd extends BaseAsyncCmd {
      }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.FirewallRule;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.FirewallRule;
     }
 }

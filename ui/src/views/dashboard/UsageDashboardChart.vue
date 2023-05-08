@@ -27,7 +27,7 @@
           :bordered="false"
           :loading="loading"
           :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
-          <router-link v-if="stat.path" :to="{ path: stat.path }">
+          <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
             <div
               class="usage-dashboard-chart-card-inner">
               <h3>{{ stat.name }}</h3>
@@ -44,11 +44,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'UsageDashboardChart',
-  components: { RenderIcon },
   props: {
     stats: {
       type: Array,

@@ -1961,11 +1961,11 @@ class TestUsage(cloudstackTestCase):
         # 3. Create LB rule for the IP address and verify LB rule usage
              is generated for the account
         # 4. Create another LB rule with different ports and verify
-             seperate usage is generated for new LB rule
+             separate usage is generated for new LB rule
 
         # 5. Create egress firewall rule for VM and SSH to VM
         # 6. Ping external network from the VM and verify that
-             network byte usage is genrated correctly
+             network byte usage is generated correctly
         # 7. Delete one LB rule and verify that the usage
              is stopped for the LB rule
         # 8. Stop the network router and
@@ -2394,19 +2394,19 @@ class TestUsage(cloudstackTestCase):
         """
         Steps:
         # 1.  Add VM in VPC network, verify that
-        #     usage is genrated for source nat ip pf network in vpc
+        #     usage is generated for source nat ip pf network in vpc
         # 2.  Acquire a public ip in VPC network and verify
-              usage is genrated for the public ip
+              usage is generated for the public ip
         # 3.  Create multiple PF rule on this ip in VPC network,
               and verify that usage is generated for both pf rules
         # 4.  Enable vpn on source nat ip in vpc network
         # 5.  Add 2 vpn user
-              And verify that usage is genrated for both the vpn users
+              And verify that usage is generated for both the vpn users
         # 6.  Delete one VPn user, and verify that usage is stopped
               for deleted user
         # 7.  Open Egress rules on this VPC network
         # 8.  Create network traffic on this network ping www.google.com,
-              and verify that usage is genrated for network traffic
+              and verify that usage is generated for network traffic
         # 9.  Delete onePF rule in VPC network
               And verify that usage is stopped for the pf rule
         # 10. Stop  router for VPC network

@@ -50,7 +50,19 @@ def get_command():
         else:
             return cmd + " -c 4"
 
+    elif cmd_type == 'ping6':
+        if '-c' in arguments:
+            return cmd
+        else:
+            return cmd + " -c 4"
+
     elif cmd_type == 'traceroute':
+        if '-m' in arguments:
+            return cmd
+        else:
+            return cmd + " -m 20"
+
+    elif cmd_type == 'traceroute6':
         if '-m' in arguments:
             return cmd
         else:

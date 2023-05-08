@@ -83,6 +83,7 @@
 
   .sider.light {
     background: @dark-secondary-bgColor;
+    padding-top: 15px;
 
     .logo {
       background-color: @dark-secondary-bgColor;
@@ -138,6 +139,10 @@
       .ant-menu-item:not(.ant-menu-item-selected, :hover) > a {
         color: @dark-text-color-3;
       }
+    }
+
+    &-inline, &-vertical, &-vertical-left {
+      border-color: transparent;
     }
   }
 
@@ -283,11 +288,15 @@
       & > tr:hover.ant-table-row-selected > td,
       & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
       & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
-        background-color: @table-body-hover-bgColor;
+        background-color: @table-body-hover-bgColor !important;
       }
 
       & > tr > th.ant-table-column-sort {
         background-color: @dark-bgColor;
+      }
+
+      & > tr.ant-table-row:hover > td, & > tr > td.ant-table-cell-row-hover {
+        background: transparent;
       }
     }
 
@@ -334,6 +343,12 @@
 
       &-btns {
         border-color: @dark-border-color;
+      }
+    }
+
+    &-small {
+      .ant-table-thead > tr > th {
+        background-color: transparent;
       }
     }
   }
@@ -524,12 +539,16 @@
       background-color: #1890ff;
     }
 
-    &-loading-icon, &:after {
+    &-loading-icon, &::before {
       background-color: @dark-secondary-bgColor;
     }
 
     &:disabled {
       background-color: @disabled-bgColor;
+    }
+
+    &-handle::before {
+      background-color: @dark-secondary-bgColor;
     }
   }
 
@@ -551,7 +570,7 @@
       &-option-active:not(.ant-select-item-option-disabled),
       &:hover:not(.ant-select-item-disabled),
       &-active:hover:not(.ant-select-item-disabled) {
-        background-color: @dropdown-hover-bgColor;
+        background-color: @dropdown-hover-bgColor !important;
       }
     }
   }
@@ -714,7 +733,7 @@
 
     &-item:not(.ant-dropdown-menu-item-selected):hover,
     &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
-      background-color: @dropdown-hover-bgColor;
+      background-color: @dropdown-hover-bgColor !important;
     }
 
     &-title-content > a,
@@ -783,7 +802,7 @@
     background-color: @dark-secondary-bgColor;
   }
 
-  .ant-upload.ant-upload-drag {
+  .ant-form-item .ant-upload.ant-upload-drag {
     background-color: transparent;
     border-color: @dark-border-color;
   }
@@ -792,12 +811,43 @@
     color: @dark-text-color-3;
   }
 
-  .ant-tree.ant-tree-show-line li span.ant-tree-switcher {
+  .ant-upload-list {
+    color: @dark-text-color-3;
+
+    &-item {
+      &:hover {
+        .ant-upload-list-item-info {
+          background: @dark-bgColor;
+        }
+
+        .ant-upload-list-item-card-actions-btn {
+          border-color: transparent;
+        }
+
+        .ant-upload-list-item-card-actions .anticon {
+          color: @dark-text-color-3;
+        }
+      }
+    }
+  }
+
+  .ant-upload-list-item-info {
+    .anticon-loading .anticon,
+    .ant-upload-text-icon .anticon {
+      color: rgba(255, 255, 255, 0.65);
+    }
+  }
+
+  .ant-tree {
+    background: transparent;
+  }
+
+  .ant-tree-show-line .ant-tree-switcher {
     background-color: transparent;
     color: @dark-text-color-3;
   }
 
-  .ant-tree li .ant-tree-node-content-wrapper {
+  .ant-tree .ant-tree-node-content-wrapper {
     color: @dark-text-color-3;
   }
 
@@ -806,7 +856,7 @@
     background-color: transparent;
   }
 
-  .ant-tree li .ant-tree-node-content-wrapper.ant-tree-node-selected {
+  .ant-tree .ant-tree-node-content-wrapper.ant-tree-node-selected {
     .ant-tree-icon__customize {
       color: #000;
     }
@@ -814,7 +864,7 @@
     color: #000;
   }
 
-  .ant-tree li .ant-tree-node-content-wrapper:hover {
+  .ant-tree .ant-tree-node-content-wrapper:hover {
     .ant-tree-icon__customize {
       color: #000;
     }

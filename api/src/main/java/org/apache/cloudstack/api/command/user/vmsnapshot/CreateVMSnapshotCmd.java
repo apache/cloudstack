@@ -17,12 +17,11 @@
 
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.vm.VirtualMachine;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -31,10 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "createVMSnapshot", description = "Creates snapshot for a vm.", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
@@ -42,7 +43,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreateVMSnapshotCmd.class.getName());
-    private static final String s_name = "createvmsnapshotresponse";
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the vm")
@@ -90,9 +90,16 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VMSnapshot vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
+        VMSnapshot vmsnapshot;
+        try {
+            vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot: " + e.getMessage(), e);
+        }
+
         if (vmsnapshot != null) {
             setEntityId(vmsnapshot.getId());
+            setEntityUuid(vmsnapshot.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot");
         }
@@ -122,14 +129,13 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         UserVm userVM = _userVmService.getUserVm(vmId);
         return userVM.getAccountId();
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VmSnapshot;
+    }
 }

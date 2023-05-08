@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,7 +23,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
-    
+
 from OvmObjectModule import *
 import types
 import logging
@@ -55,7 +55,7 @@ def setAttrFromDict(obj, name, refDict, convertFunc=None):
 def safeSetAttr(obj, name, value):
     if not hasattr(obj, name): raise Exception("%s doesn't have attribute %s"%(obj.__class__.__name__, name))
     setattr(obj, name, value)
-    
+
 def toAscii(jstr):
     return str(jstr).encode('ascii', 'ignore')
 
@@ -68,7 +68,7 @@ def toAsciiHook(dct):
         k = toAscii(k)
         dct[k] = v
     return dct
-    
+
 def asciiLoads(jStr):
     jStr = str(jStr).replace("'", '"').replace('False', 'false').replace('True', 'true')
     return json.loads(jStr, object_hook=toAsciiHook)
@@ -90,7 +90,7 @@ def jsonSuccessToMap(str):
     dct = json.loads(str)
     if dct['status'] != 'SUCC': raise Exception(str)
     return dct['value']
-    
+
 def safeDictSet(obj, dct, name):
     if not hasattr(obj, name): raise Exception("%s has no attribute %s for encoding"%(obj.__class__.__name__, name))
     dct[name] = getattr(obj, name)
@@ -133,7 +133,7 @@ def execute(cmd):
 
 def getDomId(vm_name):
     return execute("xm list | grep " + vm_name + " | awk '{print $2}'").strip()
-    
+
 def raiseExceptionIfFail(res):
     if not "success" in res and not "SUCC" in res: raise Exception(res)
 
@@ -156,4 +156,3 @@ def makeOwnerFileName():
     hostIp = successToMap(get_master_ip())['ip']
     ownerFileName = OWNER_FILE_PREFIX + hostIp.replace('.', '_')
     return ownerFileName
-    

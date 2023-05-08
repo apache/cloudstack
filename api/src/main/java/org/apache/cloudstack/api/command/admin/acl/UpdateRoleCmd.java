@@ -17,11 +17,11 @@
 
 package org.apache.cloudstack.api.command.admin.acl;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,12 +30,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = UpdateRoleCmd.APINAME, description = "Updates a role", responseObject = RoleResponse.class,
+import com.cloud.user.Account;
+
+@APICommand(name = "updateRole", description = "Updates a role", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
 public class UpdateRoleCmd extends RoleCmd {
-    public static final String APINAME = "updateRole";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -51,6 +52,9 @@ public class UpdateRoleCmd extends RoleCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "The description of the role")
     private String roleDescription;
 
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Indicates whether the role will be visible to all users (public) or only to root admins (private).")
+    private Boolean publicRole;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,14 +67,13 @@ public class UpdateRoleCmd extends RoleCmd {
         return roleName;
     }
 
+    public Boolean isPublicRole() {
+        return publicRole;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -84,7 +87,17 @@ public class UpdateRoleCmd extends RoleCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
         CallContext.current().setEventDetails("Role: " + getRoleName() + ", type:" + getRoleType() + ", description: " + getRoleDescription());
-        role = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription());
+        role = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription(), isPublicRole());
         setupResponse(role);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getRoleId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Role;
     }
 }

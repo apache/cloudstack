@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -42,7 +42,6 @@ import com.cloud.user.Account;
 public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 
-    private static final String s_name = "updatenetworkserviceproviderresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -80,11 +79,6 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -112,8 +106,8 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.PhysicalNetworkServiceProvider;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.PhysicalNetworkServiceProvider;
     }
 
 }

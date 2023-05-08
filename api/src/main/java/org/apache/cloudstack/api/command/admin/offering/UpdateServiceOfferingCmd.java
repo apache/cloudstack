@@ -19,8 +19,8 @@ package org.apache.cloudstack.api.command.admin.offering;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -40,7 +40,6 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
-    private static final String s_name = "updateserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -76,14 +75,12 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_TAGS,
             type = CommandType.STRING,
             description = "comma-separated list of tags for the service offering, tags should match with existing storage pool tags",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String storageTags;
 
     @Parameter(name = ApiConstants.HOST_TAGS,
             type = CommandType.STRING,
             description = "the host tag for this service offering.",
-            authorized = {RoleType.Admin},
             since = "4.16")
     private String hostTags;
 
@@ -180,13 +177,18 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getCommandName() {
-        return s_name;
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ServiceOffering;
     }
 
     @Override

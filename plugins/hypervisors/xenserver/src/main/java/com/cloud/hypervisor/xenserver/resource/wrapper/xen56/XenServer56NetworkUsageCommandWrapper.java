@@ -47,7 +47,7 @@ public final class XenServer56NetworkUsageCommandWrapper extends CommandWrapper<
                 final NetworkUsageAnswer answer = new NetworkUsageAnswer(command, result, 0L, 0L);
                 return answer;
             }
-            final long[] stats = xenServer56.getNetworkStats(conn, command.getPrivateIP());
+            final long[] stats = xenServer56.getNetworkStats(conn, command.getPrivateIP(), null);
             final NetworkUsageAnswer answer = new NetworkUsageAnswer(command, "", stats[0], stats[1]);
             return answer;
         } catch (final Exception ex) {

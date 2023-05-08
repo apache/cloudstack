@@ -39,7 +39,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.test.utils.SpringUtils;

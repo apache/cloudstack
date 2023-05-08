@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.vpc;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -42,7 +42,6 @@ import com.cloud.network.vpc.VpcGateway;
 @APICommand(name = "createStaticRoute", description = "Creates a static route", responseObject = StaticRouteResponse.class, entityType = {StaticRoute.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
-    private static final String s_name = "createstaticrouteresponse";
     public static final Logger s_logger = Logger.getLogger(CreateStaticRouteCmd.class.getName());
 
     @Parameter(name = ApiConstants.GATEWAY_ID,
@@ -116,11 +115,6 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         VpcGateway gateway = _entityMgr.findById(VpcGateway.class, gatewayId);
         if (gateway == null) {
@@ -144,7 +138,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.StaticRoute;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.StaticRoute;
     }
 }

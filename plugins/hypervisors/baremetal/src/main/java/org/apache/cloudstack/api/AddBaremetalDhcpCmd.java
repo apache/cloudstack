@@ -38,7 +38,6 @@ import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name = "addBaremetalDhcp", description = "adds a baremetal dhcp server", responseObject = BaremetalDhcpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
-    private static final String s_name = "addbaremetaldhcpresponse";
     public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);
 
     @Inject
@@ -88,11 +87,6 @@ public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
             s_logger.warn("Unable to add external dhcp server with url: " + getUrl(), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
     }
 
     @Override

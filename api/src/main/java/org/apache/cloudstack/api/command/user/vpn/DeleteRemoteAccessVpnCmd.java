@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -39,7 +40,6 @@ import com.cloud.network.RemoteAccessVpn;
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteRemoteAccessVpnCmd.class.getName());
 
-    private static final String s_name = "deleteremoteaccessvpnresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,11 +63,6 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {
@@ -110,4 +105,13 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         return _ravService.getRemoteAccessVpn(publicIpId).getNetworkId();
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return publicIpId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
+    }
 }

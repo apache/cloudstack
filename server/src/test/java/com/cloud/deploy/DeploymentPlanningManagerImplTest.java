@@ -21,31 +21,38 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.host.Host;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
@@ -64,22 +71,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -90,26 +89,46 @@ import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceManager;
 import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.host.dao.HostDetailsDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -161,12 +180,36 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     HostPodDao hostPodDao;
 
+    @Inject
+    VolumeDao volDao;
+
+    @Inject
+    HostDao hostDao;
+
+    @Inject
+    CapacityManager capacityMgr;
+
+    @Inject
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
+
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
+
     @Mock
     Host host;
 
-    private static long dataCenterId = 1L;
-    private static long hostId = 1l;
-    private static final long ADMIN_ACCOUNT_ROLE_ID = 1l;
+    @Mock
+    ConfigurationDao configDao;
+
+    private static final long dataCenterId = 1L;
+    private static final long instanceId = 123L;
+    private static final long hostId = 0L;
+    private static final long podId = 2L;
+    private static final long clusterId = 3L;
+    private static final long ADMIN_ACCOUNT_ROLE_ID = 1L;
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
@@ -178,7 +221,7 @@ public class DeploymentPlanningManagerImplTest {
 
         ComponentContext.initComponentsLifeCycle();
 
-        PlannerHostReservationVO reservationVO = new PlannerHostReservationVO(200L, 1L, 2L, 3L, PlannerResourceUsage.Shared);
+        PlannerHostReservationVO reservationVO = new PlannerHostReservationVO(hostId, dataCenterId, podId, clusterId, PlannerResourceUsage.Shared);
         Mockito.when(_plannerHostReserveDao.persist(Matchers.any(PlannerHostReservationVO.class))).thenReturn(reservationVO);
         Mockito.when(_plannerHostReserveDao.findById(Matchers.anyLong())).thenReturn(reservationVO);
         Mockito.when(_affinityGroupVMMapDao.countAffinityGroupsForVm(Matchers.anyLong())).thenReturn(0L);
@@ -189,8 +232,11 @@ public class DeploymentPlanningManagerImplTest {
 
         VMInstanceVO vm = new VMInstanceVO();
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
+        Mockito.when(vmProfile.getId()).thenReturn(instanceId);
 
         Mockito.when(vmDetailsDao.listDetailsKeyPairs(Matchers.anyLong())).thenReturn(null);
+
+        Mockito.when(volDao.findByInstance(Matchers.anyLong())).thenReturn(new ArrayList<>());
 
         Mockito.when(_dcDao.findById(Matchers.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
@@ -435,6 +481,321 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertTrue(avoids.getClustersToAvoid().contains(expectedClusterId));
     }
 
+    @Test
+    public void volumesRequireEncryptionTest() {
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path", Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        VolumeVO vol2 = new VolumeVO("vol2", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.DATADISK);
+        VolumeVO vol3 = new VolumeVO("vol3", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.DATADISK);
+        vol2.setPassphraseId(1L);
+
+        List<VolumeVO> volumes = List.of(vol1, vol2, vol3);
+        Assert.assertTrue("Volumes require encryption, but not reporting", _dpm.anyVolumeRequiresEncryption(volumes));
+    }
+
+    @Test
+    public void volumesDoNotRequireEncryptionTest() {
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        VolumeVO vol2 = new VolumeVO("vol2", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.DATADISK);
+        VolumeVO vol3 = new VolumeVO("vol3", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.DATADISK);
+
+        List<VolumeVO> volumes = List.of(vol1, vol2, vol3);
+        Assert.assertFalse("Volumes do not require encryption, but reporting they do", _dpm.anyVolumeRequiresEncryption(volumes));
+    }
+
+    /**
+     * Root requires encryption, chosen host supports it
+     */
+    @Test
+    public void passEncRootProvidedHostSupportingEncryptionTest() {
+        HostVO host = new HostVO("host");
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "true");
+        }};
+        host.setDetails(hostDetails);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, hostId, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertEquals(dest.getHost(), host);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Root requires encryption, chosen host does not support it
+     */
+    @Test
+    public void failEncRootProvidedHostNotSupportingEncryptionTest() {
+        HostVO host = new HostVO("host");
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "false");
+        }};
+        host.setDetails(hostDetails);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, hostId, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertNull("Destination should be null since host doesn't support encryption and root requires it", dest);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Root does not require encryption, chosen host does not support it
+     */
+    @Test
+    public void passNoEncRootProvidedHostNotSupportingEncryptionTest() {
+        HostVO host = new HostVO("host");
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "false");
+        }};
+        host.setDetails(hostDetails);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, hostId, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertEquals(dest.getHost(), host);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Root does not require encryption, chosen host does support it
+     */
+    @Test
+    public void passNoEncRootProvidedHostSupportingEncryptionTest() {
+        HostVO host = new HostVO("host");
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "true");
+        }};
+        host.setDetails(hostDetails);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, hostId, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertEquals(dest.getHost(), host);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Root requires encryption, last host supports it
+     */
+    @Test
+    public void passEncRootLastHostSupportingEncryptionTest() {
+        HostVO host = Mockito.spy(new HostVO("host"));
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "true");
+        }};
+        host.setDetails(hostDetails);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        VMInstanceVO vm = (VMInstanceVO) vmProfile.getVirtualMachine();
+        vm.setLastHostId(hostId);
+
+        // host id is null here so we pick up last host id
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertEquals(dest.getHost(), host);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Root requires encryption, last host does not support it
+     */
+    @Test
+    public void failEncRootLastHostNotSupportingEncryptionTest() {
+        HostVO host = Mockito.spy(new HostVO("host"));
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "false");
+        }};
+        host.setDetails(hostDetails);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        VMInstanceVO vm = (VMInstanceVO) vmProfile.getVirtualMachine();
+        vm.setLastHostId(hostId);
+        // host id is null here so we pick up last host id
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
+            Assert.assertNull("Destination should be null since last host doesn't support encryption and root requires it", dest);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Test
+    public void passEncRootPlannerHostSupportingEncryptionTest() {
+        HostVO host = Mockito.spy(new HostVO("host"));
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "true");
+        }};
+        host.setDetails(hostDetails);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        DeploymentClusterPlanner planner = setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        // host id is null here so we pick up last host id
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, planner);
+            Assert.assertEquals(host, dest.getHost());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Test
+    public void failEncRootPlannerHostSupportingEncryptionTest() {
+        HostVO host = Mockito.spy(new HostVO("host"));
+        Map<String, String> hostDetails = new HashMap<>() {{
+            put(Host.HOST_VOLUME_ENCRYPTION, "false");
+        }};
+        host.setDetails(hostDetails);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+
+        VolumeVO vol1 = new VolumeVO("vol1", dataCenterId,podId,1L,1L, instanceId,"folder","path",Storage.ProvisioningType.THIN, (long)10<<30, Volume.Type.ROOT);
+        vol1.setPassphraseId(1L);
+
+        DeploymentClusterPlanner planner = setupMocksForPlanDeploymentHostTests(host, vol1);
+
+        // host id is null here so we pick up last host id
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+
+        try {
+            DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, planner);
+            Assert.assertNull("Destination should be null since last host doesn't support encryption and root requires it", dest);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    // This is so ugly but everything is so intertwined...
+    private DeploymentClusterPlanner setupMocksForPlanDeploymentHostTests(HostVO host, VolumeVO vol1) {
+        long diskOfferingId = 345L;
+        List<VolumeVO> volumeVOs = new ArrayList<>();
+        List<Volume> volumes = new ArrayList<>();
+        vol1.setDiskOfferingId(diskOfferingId);
+        volumes.add(vol1);
+        volumeVOs.add(vol1);
+
+        DiskOfferingVO diskOffering = new DiskOfferingVO();
+        diskOffering.setEncrypt(true);
+
+        VMTemplateVO template = new VMTemplateVO();
+        template.setFormat(Storage.ImageFormat.QCOW2);
+
+        host.setClusterId(clusterId);
+
+        StoragePool pool = new StoragePoolVO();
+
+        Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<>() {{
+            put(vol1, List.of(pool));
+        }};
+
+        Pair<Map<Volume, List<StoragePool>>, List<Volume>> suitable = new Pair<>(suitableVolumeStoragePools, volumes);
+
+        ServiceOfferingVO svcOffering = new ServiceOfferingVO("test", 1, 256, 1, 1, 1, false, "vm", false, Type.User, false);
+        Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
+        Mockito.when(vmProfile.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.doNothing().when(hostDao).loadDetails(host);
+        Mockito.doReturn(volumeVOs).when(volDao).findByInstance(ArgumentMatchers.anyLong());
+        Mockito.doReturn(suitable).when(_dpm).findSuitablePoolsForVolumes(
+            ArgumentMatchers.any(VirtualMachineProfile.class),
+            ArgumentMatchers.any(DataCenterDeployment.class),
+            ArgumentMatchers.any(ExcludeList.class),
+            ArgumentMatchers.anyInt()
+        );
+
+        ClusterVO clusterVO = new ClusterVO();
+        clusterVO.setHypervisorType(HypervisorType.KVM.toString());
+        Mockito.when(_clusterDao.findById(ArgumentMatchers.anyLong())).thenReturn(clusterVO);
+
+        Mockito.doReturn(List.of(host)).when(_dpm).findSuitableHosts(
+            ArgumentMatchers.any(VirtualMachineProfile.class),
+            ArgumentMatchers.any(DeploymentPlan.class),
+            ArgumentMatchers.any(ExcludeList.class),
+            ArgumentMatchers.anyInt()
+        );
+
+        Map<Volume, StoragePool> suitableVolumeStoragePoolMap = new HashMap<>() {{
+            put(vol1, pool);
+        }};
+        Mockito.doReturn(true).when(_dpm).hostCanAccessSPool(ArgumentMatchers.any(Host.class), ArgumentMatchers.any(StoragePool.class));
+
+        Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
+
+        Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host)).thenReturn(false);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.anyLong(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
+        Mockito.when(capacityMgr.checkIfHostHasCapacity(
+            ArgumentMatchers.anyLong(),
+            ArgumentMatchers.anyInt(),
+            ArgumentMatchers.anyLong(),
+            ArgumentMatchers.anyBoolean(),
+            ArgumentMatchers.anyFloat(),
+            ArgumentMatchers.anyFloat(),
+            ArgumentMatchers.anyBoolean()
+        )).thenReturn(true);
+        Mockito.when(serviceOfferingDetailsDao.findDetail(vmProfile.getServiceOfferingId(), GPU.Keys.vgpuType.toString())).thenReturn(null);
+
+        Mockito.doReturn(true).when(_dpm).checkVmProfileAndHost(vmProfile, host);
+        Mockito.doReturn(true).when(_dpm).checkIfHostFitsPlannerUsage(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(PlannerResourceUsage.class));
+        Mockito.when(clusterDetailsDao.findDetail(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString())).thenReturn(new ClusterDetailsVO(clusterId, "mock", "1"));
+
+        DeploymentClusterPlanner planner = Mockito.spy(new FirstFitPlanner());
+        try {
+            Mockito.doReturn(List.of(clusterId), List.of()).when(planner).orderClusters(
+                ArgumentMatchers.any(VirtualMachineProfile.class),
+                ArgumentMatchers.any(DeploymentPlan.class),
+                ArgumentMatchers.any(ExcludeList.class)
+            );
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return planner;
+    }
+
     private DataCenter prepareAvoidDisabledTests() {
         DataCenter dc = Mockito.mock(DataCenter.class);
         Mockito.when(dc.getId()).thenReturn(123l);
@@ -675,5 +1036,130 @@ public class DeploymentPlanningManagerImplTest {
                 return SpringUtils.includedInBasePackageClasses(mdr.getClassMetadata().getClassName(), cs);
             }
         }
+    }
+
+    @Test
+    public void testReorderHostsByPriority() {
+        Map<Long, Integer> priorities = new LinkedHashMap<>();
+        priorities.put(1L, 3);
+        priorities.put(2L, -6);
+        priorities.put(3L, 5);
+        priorities.put(5L, 8);
+        priorities.put(6L, -1);
+        priorities.put(8L, 5);
+        priorities.put(9L, DataCenterDeployment.PROHIBITED_HOST_PRIORITY);
+
+        Host host1 = Mockito.mock(Host.class);
+        Mockito.when(host1.getId()).thenReturn(1L);
+        Host host2 = Mockito.mock(Host.class);
+        Mockito.when(host2.getId()).thenReturn(2L);
+        Host host3 = Mockito.mock(Host.class);
+        Mockito.when(host3.getId()).thenReturn(3L);
+        Host host4 = Mockito.mock(Host.class);
+        Mockito.when(host4.getId()).thenReturn(4L);
+        Host host5 = Mockito.mock(Host.class);
+        Mockito.when(host5.getId()).thenReturn(5L);
+        Host host6 = Mockito.mock(Host.class);
+        Mockito.when(host6.getId()).thenReturn(6L);
+        Host host7 = Mockito.mock(Host.class);
+        Mockito.when(host7.getId()).thenReturn(7L);
+        Host host8 = Mockito.mock(Host.class);
+        Mockito.when(host8.getId()).thenReturn(8L);
+        Host host9 = Mockito.mock(Host.class);
+        Mockito.when(host9.getId()).thenReturn(9L);
+
+        List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3, host4, host5, host6, host7, host8, host9));
+        _dpm.reorderHostsByPriority(priorities, hosts);
+
+        Assert.assertEquals(8, hosts.size());
+
+        Assert.assertEquals(5, hosts.get(0).getId());
+        Assert.assertEquals(3, hosts.get(1).getId());
+        Assert.assertEquals(8, hosts.get(2).getId());
+        Assert.assertEquals(1, hosts.get(3).getId());
+        Assert.assertEquals(4, hosts.get(4).getId());
+        Assert.assertEquals(7, hosts.get(5).getId());
+        Assert.assertEquals(6, hosts.get(6).getId());
+        Assert.assertEquals(2, hosts.get(7).getId());
+    }
+
+    private List<Long> prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(boolean configValue, boolean mockVolumes, boolean mockClusterStoreVolume) {
+        try {
+            Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+            f.setAccessible(true);
+            f.set(ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS, String.valueOf(configValue));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        List<Long> allClusters = List.of(101L, 102L, 103L, 104L);
+        Mockito.when(_clusterDao.listAllClusters(Mockito.anyLong())).thenReturn(allClusters);
+        if (mockVolumes) {
+            VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+            Mockito.when(vol1.getPoolId()).thenReturn(1L);
+            VolumeVO vol2 = Mockito.mock(VolumeVO.class);
+            Mockito.when(vol2.getPoolId()).thenReturn(2L);
+            StoragePoolVO pool1 = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(pool1.getScope()).thenReturn(ScopeType.ZONE);
+            Mockito.when(primaryDataStoreDao.findById(1L)).thenReturn(pool1);
+            StoragePoolVO pool2 = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(pool2.getScope()).thenReturn(mockClusterStoreVolume ? ScopeType.CLUSTER : ScopeType.GLOBAL);
+            Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(pool2);
+            Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(vol1, vol2));
+        } else {
+            Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(new ArrayList<>());
+        }
+        return allClusters;
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledNonValidHost() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false, false, false);
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        ExcludeList excludeList = new ExcludeList();
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, null, excludeList);
+        Assert.assertTrue(CollectionUtils.isEmpty(excludeList.getClustersToAvoid()));
+
+        Host lastHost = Mockito.mock(Host.class);
+        Mockito.when(lastHost.getClusterId()).thenReturn(null);
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, excludeList);
+        Assert.assertTrue(CollectionUtils.isEmpty(excludeList.getClustersToAvoid()));
+    }
+
+    private Set<Long> runAvoidOtherClustersForDeploymentIfMigrationDisabledTest() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        ExcludeList excludeList = new ExcludeList();
+        Host lastHost = Mockito.mock(Host.class);
+        Long sourceClusterId = 101L;
+        Mockito.when(lastHost.getClusterId()).thenReturn(sourceClusterId);
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, excludeList);
+        return excludeList.getClustersToAvoid();
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledConfigAllows() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(true,false, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledNoVmVolumes() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,false, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledVmVolumesNonValidScope() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,true, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledValid() {
+        List<Long> allClusters = prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,true, true);
+        Set<Long> avoidedClusters = runAvoidOtherClustersForDeploymentIfMigrationDisabledTest();
+        Assert.assertTrue(CollectionUtils.isNotEmpty(avoidedClusters));
+        Assert.assertEquals(allClusters.size()-1, avoidedClusters.size());
+        Assert.assertFalse(avoidedClusters.contains(allClusters.get(0)));
     }
 }

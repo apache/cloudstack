@@ -18,7 +18,6 @@ package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -43,6 +41,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +49,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.host.ControlState;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -88,6 +91,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private VpcDao vpcDao;
+    @Inject
     UserStatisticsDao userStatsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
@@ -118,7 +123,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, Set<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+            Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
@@ -128,7 +134,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setName(userVm.getName());
 
         if (userVm.getDisplayName() != null) {
-        userVmResponse.setDisplayName(userVm.getDisplayName());
+            userVmResponse.setDisplayName(userVm.getDisplayName());
         } else {
             userVmResponse.setDisplayName(userVm.getName());
         }
@@ -166,6 +172,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
             userVmResponse.setHostName(userVm.getHostName());
+        }
+        if (userVm.getHostStatus() != null) {
+            userVmResponse.setHostControlState(ControlState.getControlState(userVm.getHostStatus(), userVm.getHostResourceState()).toString());
         }
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.tmpl)) {
@@ -228,7 +237,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             // stats calculation
-            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId(), accumulateStats);
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
                 userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
@@ -291,6 +300,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 if (userVm.getGuestType() != null) {
                     nicResponse.setType(userVm.getGuestType().toString());
                 }
+
+                if (userVm.getVpcUuid() != null) {
+                    nicResponse.setVpcId(userVm.getVpcUuid());
+                    VpcVO vpc = vpcDao.findByUuidIncludingRemoved(userVm.getVpcUuid());
+                    nicResponse.setVpcName(vpc.getName());
+                }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
                 nicResponse.setDeviceId(String.valueOf(userVm.getNicDeviceId()));
                 List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(userVm.getNicId());
@@ -337,6 +352,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
         }
 
+        if (BooleanUtils.isTrue(showUserData)) {
+            userVmResponse.setUserData(userVm.getUserData());
+        }
+
         // set resource details map
         // Allow passing details to end user
         // Honour the display field and only return if display is set to true
@@ -381,6 +400,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(false);
         } else {
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
+        }
+
+        if (userVm.getAutoScaleVmGroupName() != null) {
+            userVmResponse.setAutoScaleVmGroupName(userVm.getAutoScaleVmGroupName());
+        }
+        if (userVm.getAutoScaleVmGroupUuid() != null) {
+            userVmResponse.setAutoScaleVmGroupId(userVm.getAutoScaleVmGroupUuid());
+        }
+
+        if (userVm.getUserDataId() != null) {
+            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataName(userVm.getUserDataName());
+            userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
+            userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
         }
 
         addVmRxTxDataToResponse(userVm, userVmResponse);
@@ -434,7 +467,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             nicResponse.setId(uvo.getNicUuid());
             /*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-            /*3: vmId makes no sense on a nested nic object so it is ommited here */
+            /*3: vmId makes no sense on a nested nic object so it is omitted here */
 
             if (uvo.getTrafficType() != null) {
             /*4: trafficType*/

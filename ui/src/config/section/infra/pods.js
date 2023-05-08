@@ -16,10 +16,13 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
+
 export default {
   name: 'pod',
   title: 'label.pods',
   icon: 'appstore-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-pods',
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
@@ -33,12 +36,21 @@ export default {
     param: 'podid'
   }],
   resourceType: 'Pod',
+  filters: () => {
+    const filters = ['enabled', 'disabled']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'resources',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))
+  }, {
+    name: 'events',
+    resourceType: 'Pod',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))

@@ -129,6 +129,20 @@ public class ReflectionToStringBuilderUtils {
           .collect(Collectors.joining(multipleValuesSeparator == null ? DEFAULT_MULTIPLE_VALUES_SEPARATOR : multipleValuesSeparator)));
     }
 
+
+    /**
+     * Similar to {@link ReflectionToStringBuilderUtils#reflectOnlySelectedFields(Object, ToStringStyle, String, String...)}, but reflecting the whole collection.<br><br>
+     * This method must be called only to {@link Collection}, as it will reflect the objects contained in it.<br>
+     * To reflect the Collection itself or other objects, see {@link ReflectionToStringBuilder}.
+     * @param object Collection to be reflected.
+     * @return If <b>object</b> is null or is not a Collection, returns null.<br>
+     * If <b>object</b> is a Collection, returns a <b>style</b> formatted string containing the not null elements, else, returns the object as the <b>style</b> parameter.<br>
+     */
+    public static String reflectCollection(Object object){
+        String[] excludeFields = null;
+        return reflectCollection(object, DEFAULT_STYLE, DEFAULT_MULTIPLE_VALUES_SEPARATOR, excludeFields);
+    }
+
     /**
      * Verify if object is a Collection.
      * @param object

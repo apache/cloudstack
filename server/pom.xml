@@ -24,8 +24,15 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
     </parent>
+    <repositories>
+        <repository>
+            <id>juniper-tungsten-api</id>
+            <url>https://github.com/radu-todirica/tungsten-api/raw/master</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>mysql</groupId>
@@ -170,6 +177,21 @@
             <groupId>org.influxdb</groupId>
             <artifactId>influxdb-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.codahale.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.codahale.metrics</groupId>
+            <artifactId>metrics-jvm</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>net.juniper.tungsten</groupId>
+            <artifactId>juniper-tungsten-api</artifactId>
+            <version>2.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -196,7 +218,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Xmx2048m -XX:MaxPermSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
+                    <argLine>@{argLine} -Xmx2048m -XX:MaxPermSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
                     <excludes>
                         <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
                         <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
