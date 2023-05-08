@@ -137,7 +137,7 @@ UPDATE `cloud`.`console_session` SET removed=now();
 ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
 
 -- Flexible tags
-ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN IF NOT EXISTS is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
 ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
 
@@ -191,7 +191,7 @@ FROM
         AND (`async_job`.`job_status` = 0))));
 
 
-ALTER TABLE `cloud`.`host_tags` ADD COLUMN IF NOT EXISTS is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
 ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
 
