@@ -17,10 +17,12 @@
 
 name: Sonar Quality Check
 
-on: [pull_request_target]
+on: [pull_request]
 
 permissions:
-  contents: read
+ dd contents: read
+  contents: read # to fetch code (actions/checkout)
+  pull-requests: write # for sonar to comment on pull-request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
