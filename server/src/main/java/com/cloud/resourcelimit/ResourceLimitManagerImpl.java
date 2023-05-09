@@ -433,8 +433,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                 long currentResourceReservation = reservationDao.getDomainReservation(domainId, type);
                 long requestedDomainResourceCount = currentDomainResourceCount + currentResourceReservation + numResources;
-                String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
-                        + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
+
+                String convDomainResourceLimit = String.valueOf(domainResourceLimit);
+                String convCurrentDomainResourceCount = String.valueOf(currentDomainResourceCount);
+                String convCurrentResourceReservation = String.valueOf(currentResourceReservation);
+                String convNumResources = String.valueOf(numResources);
+
+                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                    convDomainResourceLimit = toHumanReadableSize(domainResourceLimit);
+                    convCurrentDomainResourceCount = toHumanReadableSize(currentDomainResourceCount);
+                    convCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
+                    convNumResources = toHumanReadableSize(numResources);
+                }
+
+                String messageSuffix = String.format(
+                        " domain resource limits of Type '%s' for Domain Id = %s is exceeded: Domain Resource Limit = %s, " +
+                        "Current Domain Resource Amount = %s, Current Resource Reservation = %s, Requested Resource Amount = %s.",
+                        type, domainId, convDomainResourceLimit,
+                        convCurrentDomainResourceCount, convCurrentResourceReservation, convNumResources
+                );
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Checking if" + messageSuffix);
@@ -460,17 +477,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
+        String convertedCurrentResourceReservation = String.valueOf(currentResourceReservation);
         String convertedNumResources = String.valueOf(numResources);
 
         if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
+            convertedCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
             convertedNumResources = toHumanReadableSize(numResources);
         }
 
-        String messageSuffix = " amount of resources of Type = '" + type + "' for " + (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName())
-                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + convertedAccountResourceLimit + ", Current Account Resource Amount = " + convertedCurrentResourceCount
-                + ", Requested Resource Amount = " + convertedNumResources + ".";
+        String messageSuffix = String.format(
+                " amount of resources of Type = '%s' for %s in Domain Id = %s is exceeded: " +
+                "Account Resource Limit = %s, Current Account Resource Amount = %s, Current Account Resource Reservation = %s, Requested Resource Amount = %s.",
+                type, (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName()), account.getDomainId(),
+                convertedAccountResourceLimit, convertedCurrentResourceCount, convertedCurrentResourceReservation, convertedNumResources
+        );
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if" + messageSuffix);
