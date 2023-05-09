@@ -20,7 +20,6 @@ name: Sonar Quality Check
 on: [pull_request]
 
 permissions:
- dd contents: read
   contents: read # to fetch code (actions/checkout)
   pull-requests: write # for sonar to comment on pull-request
 
