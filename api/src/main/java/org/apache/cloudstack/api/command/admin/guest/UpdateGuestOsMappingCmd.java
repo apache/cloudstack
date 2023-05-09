@@ -47,7 +47,7 @@ public class UpdateGuestOsMappingCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.OS_NAME_FOR_HYPERVISOR, type = CommandType.STRING, required = true, description = "Hypervisor specific name for this Guest OS")
     private String osNameForHypervisor;
 
-    @Parameter(name = ApiConstants.OS_MAPPING_CHECK_ENABLED, type = CommandType.BOOLEAN, required = false, description = "When set to true, checks the guest os mapping name in the hypervisor (supports VMware and XenServer only)", since = "4.18.0")
+    @Parameter(name = ApiConstants.OS_MAPPING_CHECK_ENABLED, type = CommandType.BOOLEAN, required = false, description = "When set to true, checks for the correct guest os mapping name in the provided hypervisor (supports VMware and XenServer only. At least one hypervisor host with the version specified must be available. Default version will not work.)", since = "4.19.0")
     private Boolean osMappingCheckEnabled;
 
 /////////////////////////////////////////////////////

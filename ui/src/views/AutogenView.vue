@@ -1113,6 +1113,14 @@ export default {
                 description: self.$t('label.confirmpassword.description')
               }
             }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
+              }
+            }
             return paramFields.filter(function (param) {
               return param.name.toLowerCase() === arg.toLowerCase()
             })[0]

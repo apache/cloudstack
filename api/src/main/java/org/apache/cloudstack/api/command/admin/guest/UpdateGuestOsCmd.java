@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -71,7 +72,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
 
     public Map getDetails() {
         Map<String, String> detailsMap = new HashMap<String, String>();;
-        if (!details.isEmpty()) {
+        if (MapUtils.isNotEmpty(detailsMap)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {

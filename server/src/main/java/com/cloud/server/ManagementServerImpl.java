@@ -2727,11 +2727,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (hypervisor != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisor);
+            sc.addAnd("hypervisorType", SearchCriteria.Op.LIKE, "%" + hypervisor + "%");
         }
 
         if (hypervisorVersion != null) {
-            sc.addAnd("hypervisorVersion", SearchCriteria.Op.EQ, hypervisorVersion);
+            sc.addAnd("hypervisorVersion", SearchCriteria.Op.LIKE, "%" + hypervisorVersion + "%");
         }
 
         if (osDisplayName != null) {
@@ -2823,7 +2823,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
         if (host == null) {
-            throw new CloudRuntimeException(String.format("No host exists with hypervisor: %s and version: %s, please specify available hypervisor and version", hypervisorType.toString(), hypervisorVersion));
+            throw new CloudRuntimeException(String.format("No %s hypervisor with version: %s exists, please specify available hypervisor and version", hypervisorType.toString(), hypervisorVersion));
         }
         CheckGuestOsMappingAnswer answer = (CheckGuestOsMappingAnswer) _agentMgr.easySend(host.getId(), new CheckGuestOsMappingCommand(guestOsName, guestOsNameForHypervisor, hypervisorVersion));
         if (answer == null || !answer.getResult()) {
@@ -2851,7 +2851,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, getHypervisorGuestOsNamesCmd.getHypervisorVersion());
         if (host == null) {
-            throw new CloudRuntimeException(String.format("No host exists with hypervisor: %s and version: %s, please specify available hypervisor and version", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+            throw new CloudRuntimeException(String.format("No %s hypervisor with version: %s exists, please specify available hypervisor and version", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
         }
         GetHypervisorGuestOsNamesAnswer answer = (GetHypervisorGuestOsNamesAnswer) _agentMgr.easySend(host.getId(), new GetHypervisorGuestOsNamesCommand(getHypervisorGuestOsNamesCmd.getKeyword()));
         if (answer == null || !answer.getResult()) {

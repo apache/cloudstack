@@ -101,7 +101,6 @@ export default {
         title: 'label.guest.os.hypervisor.mappings',
         param: 'ostypeid'
       }],
-      searchFilters: ['name'],
       actions: [
         {
           api: 'addGuestOs',

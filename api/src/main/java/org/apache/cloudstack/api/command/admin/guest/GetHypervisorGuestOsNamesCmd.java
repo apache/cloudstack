@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 @APICommand(name = GetHypervisorGuestOsNamesCmd.APINAME, description = "Gets the guest OS names in the hypervisor", responseObject = HypervisorGuestOsNamesResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0", authorized = {RoleType.Admin})
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0", authorized = {RoleType.Admin})
 public class GetHypervisorGuestOsNamesCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(GetHypervisorGuestOsNamesCmd.class.getName());
 
