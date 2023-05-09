@@ -264,6 +264,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.IO_DRIVER_POLICY, type = CommandType.STRING, description = "Controls specific policies on IO")
     private String ioDriverPolicy;
 
+    @Parameter(name = ApiConstants.NIC_MULTIQUEUE_NUMBER, type = CommandType.INTEGER, since = "4.18",
+            description = "The number of queues for multiqueue NICs.")
+    private Integer nicMultiqueueNumber;
+
+    @Parameter(name = ApiConstants.NIC_PACKED_VIRTQUEUES_ENABLED, type = CommandType.BOOLEAN, since = "4.18",
+            description = "Enable packed virtqueues or not.")
+    private Boolean nicPackedVirtQueues;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -336,6 +344,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
         if (BooleanUtils.toBoolean(iothreadsEnabled)) {
             customparameterMap.put(VmDetailConstants.IOTHREADS, BooleanUtils.toStringTrueFalse(iothreadsEnabled));
+        }
+
+        if (nicMultiqueueNumber != null) {
+            customparameterMap.put(VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber.toString());
+        }
+
+        if (BooleanUtils.toBoolean(nicPackedVirtQueues)) {
+            customparameterMap.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, BooleanUtils.toStringTrueFalse(nicPackedVirtQueues));
         }
 
         return customparameterMap;
