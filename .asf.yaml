@@ -44,10 +44,10 @@ github:
     rebase: false
 
   collaborators:
-    - acs-robot
     - kiranchavala
     - rajujith
     - alexandremattioli
     - vishesh92
+    - acs-robot
 
   protected_branches: ~
