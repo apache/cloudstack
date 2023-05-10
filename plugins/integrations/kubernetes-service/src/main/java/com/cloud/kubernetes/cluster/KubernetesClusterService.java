@@ -38,7 +38,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.service.enabled",
-            "false",
+            "true",
             "Indicates whether Kubernetes Service plugin is enabled or not. Management server restart needed on change",
             false);
     static final ConfigKey<String> KubernetesClusterNetworkOffering = new ConfigKey<String>("Advanced", String.class,
