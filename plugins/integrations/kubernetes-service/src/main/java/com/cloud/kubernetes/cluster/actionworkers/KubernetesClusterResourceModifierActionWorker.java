@@ -448,7 +448,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void provisionPublicIpPortForwardingRule(IpAddress publicIp, Network network, Account account,
-                                                       final long vmId, final int sourcePort) throws NetworkRuleConflictException, ResourceUnavailableException {
+                                                       final long vmId, final int sourcePort, final int destPort) throws NetworkRuleConflictException, ResourceUnavailableException {
         final long publicIpId = publicIp.getId();
         final long networkId = network.getId();
         final long accountId = account.getId();
@@ -460,7 +460,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     new PortForwardingRuleVO(null, publicIpId,
                             sourcePort, sourcePort,
                             vmIp,
-                            DEFAULT_SSH_PORT, DEFAULT_SSH_PORT,
+                            destPort, destPort,
                             "tcp", networkId, accountId, domainId, vmId);
             newRule.setDisplay(true);
             newRule.setState(FirewallRule.State.Add);
@@ -491,7 +491,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             NetworkRuleConflictException {
         if (!CollectionUtils.isEmpty(clusterVMIds)) {
             for (int i = 0; i < clusterVMIds.size(); ++i) {
-                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), CLUSTER_NODES_DEFAULT_START_SSH_PORT + i);
+                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), CLUSTER_NODES_DEFAULT_START_SSH_PORT + i, DEFAULT_SSH_PORT);
             }
         }
     }
@@ -568,6 +568,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         CreateNetworkACLCmd rule = new CreateNetworkACLCmd();
         rule = ComponentContext.inject(rule);
         Map<String, Object> fieldValues = Map.of(
+                "number", 1,
                 "protocol", "TCP",
                 "publicStartPort", startPort,
                 "publicEndPort", endPorts,
@@ -730,7 +731,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         createVpcTierAclRules(network);
         // Add port forwarding for API access
         try {
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT);
+            provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT, CLUSTER_API_PORT);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
