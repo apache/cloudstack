@@ -469,7 +469,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         });
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Provisioned SSH port forwarding rule: %s from port %d to 22 on %s to the VM IP : %s in Kubernetes cluster : %s", pfRule.getUuid(), sourcePort, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
+            LOGGER.info(String.format("Provisioned SSH port forwarding rule: %s from port %d to %d on %s to the VM IP : %s in Kubernetes cluster : %s", pfRule.getUuid(), sourcePort, destPort, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
         }
     }
 
