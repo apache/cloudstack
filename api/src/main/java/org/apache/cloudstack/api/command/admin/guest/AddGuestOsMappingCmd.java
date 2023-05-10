@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -88,14 +89,11 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
     }
 
     public Boolean getOsMappingCheckEnabled() {
-        if (osMappingCheckEnabled == null) {
-            return false;
-        }
-        return osMappingCheckEnabled;
+        return BooleanUtils.toBooleanDefaultIfNull(osMappingCheckEnabled, false);
     }
 
     public boolean isForced() {
-        return (forced != null) ? forced : false;
+        return BooleanUtils.toBooleanDefaultIfNull(forced, false);
     }
 
     /////////////////////////////////////////////////////

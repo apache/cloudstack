@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -48,7 +49,7 @@ public final class CitrixGetHypervisorGuestOsNamesCommandWrapper extends Command
         try {
             s_logger.info("Getting guest os names in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
-            if (vms == null || vms.isEmpty()) {
+            if (CollectionUtils.isEmpty(vms)) {
                 return new GetHypervisorGuestOsNamesAnswer(command, "Guest os names not found in the hypervisor");
             }
             List<Pair<String, String>> hypervisorGuestOsNames = new ArrayList<>();

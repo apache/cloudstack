@@ -211,7 +211,7 @@ public class GuestOsMapper {
             return false;
         }
 
-        if (StringUtils.isBlank(srcVersion) || StringUtils.isBlank(destVersion)) {
+        if (StringUtils.isAnyBlank(srcVersion, destVersion)) {
             LOG.warn("Unable to copy, invalid hypervisor version details");
             return false;
         }

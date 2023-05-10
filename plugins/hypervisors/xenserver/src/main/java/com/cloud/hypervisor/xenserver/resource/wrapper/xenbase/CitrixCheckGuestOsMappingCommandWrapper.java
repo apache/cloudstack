@@ -21,6 +21,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Set;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -45,7 +46,7 @@ public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrappe
         try {
             s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
-            if (vms == null || vms.isEmpty()) {
+            if (CollectionUtils.isEmpty(vms)) {
                 return new CheckGuestOsMappingAnswer(command, "Unable to match guest os mapping name: " + guestOsMappingName + " in the hypervisor");
             }
             for (VM vm : vms) {
