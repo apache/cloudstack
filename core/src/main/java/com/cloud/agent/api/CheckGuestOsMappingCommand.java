@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import java.util.Objects;
+
 public class CheckGuestOsMappingCommand extends Command {
     String guestOsName;
     String guestOsHypervisorMappingName;
@@ -50,5 +52,14 @@ public class CheckGuestOsMappingCommand extends Command {
 
     public String getHypervisorVersion() {
         return hypervisorVersion;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CheckGuestOsMappingCommand that = (CheckGuestOsMappingCommand) o;
+        return Objects.equals(guestOsName, that.guestOsName) && Objects.equals(guestOsHypervisorMappingName, that.guestOsHypervisorMappingName) && Objects.equals(hypervisorVersion, that.hypervisorVersion);
     }
 }

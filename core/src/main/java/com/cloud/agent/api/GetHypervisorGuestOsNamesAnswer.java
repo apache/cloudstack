@@ -20,6 +20,7 @@
 package com.cloud.agent.api;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.cloud.utils.Pair;
 
@@ -44,5 +45,14 @@ public class GetHypervisorGuestOsNamesAnswer extends Answer {
 
     public List<Pair<String, String>> getHypervisorGuestOsNames() {
         return hypervisorGuestOsNames;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        GetHypervisorGuestOsNamesAnswer that = (GetHypervisorGuestOsNamesAnswer) o;
+        return Objects.equals(hypervisorGuestOsNames, that.hypervisorGuestOsNames);
     }
 }

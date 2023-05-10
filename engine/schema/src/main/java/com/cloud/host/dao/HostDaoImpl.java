@@ -116,7 +116,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ResourceStateSearch;
     protected SearchBuilder<HostVO> NameLikeSearch;
     protected SearchBuilder<HostVO> NameSearch;
-    protected SearchBuilder<HostVO> HostHypervisorTypeAndVersionSearch;
+    protected SearchBuilder<HostVO> hostHypervisorTypeAndVersionSearch;
     protected SearchBuilder<HostVO> SequenceSearch;
     protected SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -312,12 +312,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
 
-        HostHypervisorTypeAndVersionSearch = createSearchBuilder();
-        HostHypervisorTypeAndVersionSearch.and("hypervisorType", HostHypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        HostHypervisorTypeAndVersionSearch.and("hypervisorVersion", HostHypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
-        HostHypervisorTypeAndVersionSearch.and("type", HostHypervisorTypeAndVersionSearch.entity().getType(), SearchCriteria.Op.EQ);
-        HostHypervisorTypeAndVersionSearch.and("status", HostHypervisorTypeAndVersionSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        HostHypervisorTypeAndVersionSearch.done();
+        hostHypervisorTypeAndVersionSearch = createSearchBuilder();
+        hostHypervisorTypeAndVersionSearch.and("hypervisorType", hostHypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("hypervisorVersion", hostHypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("type", hostHypervisorTypeAndVersionSearch.entity().getType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("status", hostHypervisorTypeAndVersionSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.done();
 
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -1430,7 +1430,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion) {
-        SearchCriteria<HostVO> sc = HostHypervisorTypeAndVersionSearch.create();
+        SearchCriteria<HostVO> sc = hostHypervisorTypeAndVersionSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
         sc.setParameters("type", Host.Type.Routing);

@@ -43,7 +43,10 @@ public class GuestOSResponse extends BaseResponse {
     @Param(description = "the name of the OS type")
     private String name;
 
-    @Deprecated
+    /**
+     * @deprecated description, as name is the correct interpretation and is needed for UI forms
+     */
+    @Deprecated(since = "4.19")
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "the name/description of the OS type")
     private String description;

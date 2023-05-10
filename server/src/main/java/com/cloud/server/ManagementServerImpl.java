@@ -2696,9 +2696,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(final ListGuestOsMappingCmd cmd) {
+        final String guestOsId = "guestOsId";
         final Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(GuestOSHypervisorVO.class, "hypervisorVersion", false);
-        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "guestOsId", true);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, guestOsId, true);
         searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false);
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
@@ -2719,7 +2720,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (osTypeId != null) {
-            sc.addAnd("guestOsId", SearchCriteria.Op.EQ, osTypeId);
+            sc.addAnd(guestOsId, SearchCriteria.Op.EQ, osTypeId);
         }
 
         if (osNameForHypervisor != null) {
@@ -2738,7 +2739,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
             if (CollectionUtils.isNotEmpty(guestOSVOS)) {
                 List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
-                sc.addAnd("guestOsId", SearchCriteria.Op.IN, guestOSids.toArray());
+                sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
             }
         }
 
@@ -2757,7 +2758,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String osNameForHypervisor = cmd.getOsNameForHypervisor();
         GuestOS guestOs = null;
 
-        if (osTypeId == null && (osStdName == null || osStdName.isEmpty())) {
+        if (osTypeId == null && StringUtils.isEmpty(osStdName)) {
             throw new InvalidParameterValueException("Please specify either a guest OS name or UUID");
         }
 
@@ -2791,7 +2792,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                         "Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : " + guestOs.getDisplayName() + " already exists!");
             }
 
-            if (cmd.getOsMappingCheckEnabled()) {
+            if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
                 checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
             }
 
@@ -2804,7 +2805,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return null;
         }
 
-        if (cmd.getOsMappingCheckEnabled()) {
+        if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
             checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
         }
 
@@ -2981,7 +2982,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined Guest OS mapping");
         }
 
-        if (cmd.getOsMappingCheckEnabled()) {
+        if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
             GuestOS guestOs = ApiDBUtils.findGuestOSById(guestOsHypervisorHandle.getGuestOsId());
             if (guestOs == null) {
                 throw new InvalidParameterValueException("Unable to find the guest OS for the mapping");

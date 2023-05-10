@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import java.util.Objects;
+
 public class GetHypervisorGuestOsNamesCommand extends Command {
     String keyword;
 
@@ -38,5 +40,14 @@ public class GetHypervisorGuestOsNamesCommand extends Command {
 
     public String getKeyword() {
         return keyword;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        GetHypervisorGuestOsNamesCommand that = (GetHypervisorGuestOsNamesCommand) o;
+        return Objects.equals(keyword, that.keyword);
     }
 }
