@@ -99,7 +99,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         # py2 didn't insert any new-lines
         # so we now do the encoding in the stored userdata string and remove the '\n's
         # to get a good easy string compare in the assert later on.
-        cls.userdata = base64.encodestring(cls.userdata.encode()).decode().replace('\n', '')
+        cls.userdata = base64.encodebytes(cls.userdata.encode()).decode().replace('\n', '')
         cls.user_data_2k= ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(2000))
         cls.user_data_2kl = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(1900))
 

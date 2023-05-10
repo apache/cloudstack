@@ -17,7 +17,7 @@
 
 name: Sonar Quality Check
 
-on: [pull_request_target]
+on: [pull_request]
 
 permissions:
   contents: read
