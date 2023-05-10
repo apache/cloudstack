@@ -19,3 +19,5 @@
 -- Schema upgrade from 4.18.0.0 to 4.18.1.0
 --;
 
+-- Update conserve_mode of the default network offering for Tungsten Fabric (this fixes issue #7241)
+UPDATE `cloud`.`network_offerings` SET conserve_mode = 0 WHERE unique_name ='DefaultTungstenFarbicNetworkOffering';
