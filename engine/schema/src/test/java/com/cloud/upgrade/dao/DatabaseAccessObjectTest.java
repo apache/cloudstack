@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DatabaseAccessObjectTest {
@@ -53,7 +52,7 @@ public class DatabaseAccessObjectTest {
 
     @Before
     public void setup() {
-        Whitebox.setInternalState(dao.getClass(), "logger", loggerMock);
+        dao.logger = loggerMock;
     }
 
     @Test
