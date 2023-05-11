@@ -172,8 +172,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 */
 public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>,
         ResourceStateAdapter, Configurable {
-
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS = 30000;
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS = 180;
     private static final int STARTUP_DELAY_IN_MILLISECONDS = 60000;
 
@@ -250,8 +248,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
-
-    private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -297,6 +293,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public boolean generateSetupCommand(Long ssHostId) {
         HostVO cssHost = _hostDao.findById(ssHostId);
         Long zoneId = cssHost.getDataCenterId();
+        boolean result = true;
         if (cssHost.getType() == Host.Type.SecondaryStorageVM) {
             String hostName = cssHost.getName();
 
@@ -338,12 +335,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     logger.debug(String.format("Successfully programmed secondary storage [%s] in secondary storage VM [%s].", ssStore.getName(), secStorageVm.getInstanceName()));
                 } else {
                     logger.debug(String.format("Unable to program secondary storage [%s] in secondary storage VM [%s] due to [%s].", ssStore.getName(), secStorageVm.getInstanceName(), answer == null ? "null answer" : answer.getDetails()));
-                    return false;
+                    result = false;
                 }
             }
         }
 
-        return true;
+        return result;
     }
 
     @Override
@@ -870,10 +867,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         _allowedInternalSites = _configDao.getValue("secstorage.allowed.internal.sites");
-
-        String value = configs.get("secstorage.capacityscan.interval");
-        _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS);
-
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -881,7 +874,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
-        value = agentMgrConfigs.get("port");
+        String value = agentMgrConfigs.get("port");
         _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
         _listener = new SecondaryStorageListener(this);
@@ -923,7 +916,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         if (_useServiceVM) {
             _loadScanner = new SystemVmLoadScanner<>(this);
-            _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, _capacityScanInterval);
+            _loadScanner.initScan(STARTUP_DELAY_IN_MILLISECONDS, SecondaryStorageCapacityScanInterval.value());
         }
 
         _httpProxy = configs.get(Config.SecStorageProxy.key());
@@ -1456,7 +1449,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration};
+        return new ConfigKey<?>[] {NTPServerConfig, MaxNumberOfSsvmsForMigration, SecondaryStorageCapacityScanInterval};
     }
 
 }
