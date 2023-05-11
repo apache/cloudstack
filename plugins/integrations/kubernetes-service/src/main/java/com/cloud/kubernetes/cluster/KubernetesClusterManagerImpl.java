@@ -124,6 +124,7 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -352,7 +353,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return  template;
     }
 
-    private void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
+    protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
         List<FirewallRuleVO> rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose);
         for (FirewallRuleVO rule : rules) {
             Integer startPort = rule.getSourcePortStart();
@@ -363,7 +364,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
                 throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting %s rules to provision Kubernetes cluster for API access", network.getUuid(), purpose.toString().toLowerCase()));
             }
-            if (startPort <= KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT && KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterTotalNodeCount <= endPort) {
+            int expectedSshStart = KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+            int expectedSshEnd = expectedSshStart + clusterTotalNodeCount - 1;
+            if (Math.max(expectedSshStart, startPort) <= Math.min(expectedSshEnd, endPort)) {
                 throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting %s rules to provision Kubernetes cluster for node VM SSH access", network.getUuid(), purpose.toString().toLowerCase()));
             }
         }
@@ -382,6 +385,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         validateIsolatedNetworkIpRules(sourceNatIp.getId(), FirewallRule.Purpose.Firewall, network, clusterTotalNodeCount);
         validateIsolatedNetworkIpRules(sourceNatIp.getId(), FirewallRule.Purpose.PortForwarding, network, clusterTotalNodeCount);
+    }
+
+    protected void validateVpcTier(Network network) {
+        if (Network.State.Allocated.equals(network.getState())) { // Allocated networks won't have IP and rules
+            return;
+        }
+        if (network.getNetworkACLId() == NetworkACL.DEFAULT_DENY) {
+            throw new InvalidParameterValueException(String.format("Network ID: %s can not be used for Kubernetes cluster as it uses default deny ACL", network.getUuid()));
+        }
     }
 
     private void validateNetwork(Network network, int clusterTotalNodeCount) {
@@ -403,6 +415,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(String.format("Network ID: %s does not support DHCP that is required for Kubernetes cluster", network.getUuid()));
         }
         if (network.getVpcId() != null) {
+            validateVpcTier(network);
             return;
         }
         validateIsolatedNetwork(network, clusterTotalNodeCount);

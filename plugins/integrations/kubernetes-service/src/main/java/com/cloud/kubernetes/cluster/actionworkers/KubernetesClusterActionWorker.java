@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -70,8 +69,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.projects.ProjectService;
-import com.cloud.server.ResourceTag;
-import com.cloud.server.TaggedResourceService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
@@ -156,8 +153,6 @@ public class KubernetesClusterActionWorker {
     protected LaunchPermissionDao launchPermissionDao;
     @Inject
     public ProjectService projectService;
-    @Inject
-    public TaggedResourceService taggedResourceService;
     @Inject
     public VpcService vpcService;
 
@@ -359,33 +354,28 @@ public class KubernetesClusterActionWorker {
     }
 
     protected IpAddress getVpcTierKubernetesPublicIp(Network network) {
-        List<? extends IpAddress> addresses = ipAddressDao.listByAssociatedVpc(network.getVpcId(), false);
-        for (IpAddress address : addresses) {
-            List <? extends ResourceTag> tags = taggedResourceService.listByResourceTypeAndId(
-                    ResourceTag.ResourceObjectType.PublicIpAddress, address.getId());
-            if (tags.stream().anyMatch(x -> (x.getKey().equalsIgnoreCase(KubernetesCluster.class.getSimpleName())) &&
-                    kubernetesCluster.getUuid().equals(x.getValue()))) {
-                return address;
-            }
+        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
+        if (detailsVO == null || StringUtils.isEmpty(detailsVO.getValue())) {
+            return null;
         }
-        return null;
+        IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
+        if (address == null || network.getVpcId() != address.getVpcId()) {
+            LOGGER.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
+            return null;
+        }
+        return address;
     }
 
     protected IpAddress acquireVpcTierKubernetesPublicIp(Network network) throws
             InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
         IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
-        if (ip != null) {
-            ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
-            ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
-            if (ip != null) {
-                taggedResourceService.createTags(List.of(ip.getUuid()),
-                        ResourceTag.ResourceObjectType.PublicIpAddress,
-                        Map.of(KubernetesCluster.class.getSimpleName().toLowerCase(), kubernetesCluster.getUuid()),
-                        null);
-                return ip;
-            }
+        if (ip == null) {
+            return null;
         }
-        return null;
+        ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
+        ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        return ip;
     }
 
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForIsolatedNetwork(Network network) {
@@ -398,7 +388,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForSharedNetwork(UserVm controlVm) {
-        int port = 22;
+        int port = DEFAULT_SSH_PORT;
         controlVm = fetchControlVmIfMissing(controlVm);
         if (controlVm == null) {
             LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));

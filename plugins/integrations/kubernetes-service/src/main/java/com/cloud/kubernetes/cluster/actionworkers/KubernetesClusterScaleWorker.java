@@ -150,7 +150,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
         } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        };
+        }
     }
 
     /**

@@ -19,13 +19,13 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
@@ -45,7 +45,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -233,9 +232,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
             return;
         }
         networkService.releaseIpAddress(address.getId());
-        taggedResourceService.deleteTags(List.of(address.getUuid()),
-                ResourceTag.ResourceObjectType.PublicIpAddress,
-                Map.of(KubernetesCluster.class.getSimpleName().toLowerCase(), kubernetesCluster.getUuid()));
+        kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
     }
 
     public boolean destroy() throws CloudRuntimeException {

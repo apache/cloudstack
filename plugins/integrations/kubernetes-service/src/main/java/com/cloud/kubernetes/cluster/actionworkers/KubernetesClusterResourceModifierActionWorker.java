@@ -52,9 +52,11 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -78,6 +80,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
@@ -565,10 +568,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected void provisionVpcTierAllowPortACLRule(final Network network, int startPort, int endPorts) throws NoSuchFieldException,
             IllegalAccessException, ResourceUnavailableException {
+        List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
+        aclItems = aclItems.stream().filter(x -> !NetworkACLItem.State.Revoke.equals(x.getState())).collect(Collectors.toList());
         CreateNetworkACLCmd rule = new CreateNetworkACLCmd();
         rule = ComponentContext.inject(rule);
         Map<String, Object> fieldValues = Map.of(
-                "number", 1,
                 "protocol", "TCP",
                 "publicStartPort", startPort,
                 "publicEndPort", endPorts,
@@ -577,14 +581,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 "aclId", network.getNetworkACLId(),
                 "action", NetworkACLItem.Action.Allow.toString()
         );
-
         for (Map.Entry<String, Object> entry : fieldValues.entrySet()) {
             Field field = rule.getClass().getDeclaredField(entry.getKey());
             field.setAccessible(true);
             field.set(rule, entry.getValue());
         }
-
         NetworkACLItem aclRule = networkACLService.createNetworkACLItem(rule);
+        networkACLService.moveRuleToTheTopInACLList(aclRule);
         networkACLService.applyNetworkACL(aclRule.getAclId());
     }
 
@@ -682,6 +685,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void createVpcTierAclRules(Network network) throws ManagementServerException {
+        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+            return;
+        }
         // ACL rule for API access for control node VMs
         try {
             provisionVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
@@ -689,7 +695,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         CLUSTER_API_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
         try {
@@ -698,12 +704,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         DEFAULT_SSH_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
-        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
     }
 
     protected void removeVpcTierAclRules(Network network) throws ManagementServerException {
+        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+            return;
+        }
         // ACL rule for API access for control node VMs
         try {
             removeVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
