@@ -641,7 +641,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
         }
 
-        if (sshKeyPair != null && !sshKeyPair.isEmpty()) {
+        if (!Strings.isNullOrEmpty(sshKeyPair)) {
             SSHKeyPairVO sshKeyPairVO = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshKeyPairVO == null) {
                 throw new InvalidParameterValueException(String.format("Given SSH key pair with name: %s was not found for the account %s", sshKeyPair, owner.getAccountName()));
@@ -1151,7 +1151,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         addKubernetesClusterDetails(cluster, network, cmd);
 
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
+            LOGGER.info(String.format("Kubernetes cluster with name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
         return cluster;
     }
