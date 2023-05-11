@@ -25,7 +25,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -70,6 +72,11 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         //ToDo check bucket exists
         long ownerId = cmd.getEntityOwnerId();
         Account owner = _accountMgr.getActiveAccountById(ownerId);
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
+        ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+        if(!objectStore.createUser(ownerId)) {
+            throw new CloudRuntimeException("Failed to create user in objectstore "+ objectStore.getName());
+        }
         BucketVO bucket = new BucketVO(ownerId, owner.getDomainId(), cmd.getObjectStoragePoolId(), cmd.getBucketName());
         _bucketDao.persist(bucket);
         return bucket;
@@ -79,7 +86,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     public Bucket createBucket(CreateBucketCmd cmd) {
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        objectStore.createBucket(cmd.getBucketName());
+        objectStore.createBucket(cmd.getBucketName(), cmd.getEntityOwnerId());
         BucketVO bucket = _bucketDao.findById(cmd.getEntityId());
         bucket.setState(Bucket.State.Created);
         _bucketDao.update(bucket.getId(), bucket);
@@ -88,6 +95,33 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
     @Override
     public boolean deleteBucket(long bucketId, Account caller) {
-        return false;
+        Bucket bucket = _bucketDao.findById(bucketId);
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
+        ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+        return objectStore.deleteBucket(bucket.getName());
+    }
+
+    @Override
+    public boolean updateBucket(UpdateBucketCmd cmd) {
+        Bucket bucket = _bucketDao.findById(cmd.getId());
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
+        ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+        if(cmd.getEncryption() != null) {
+            if(cmd.getEncryption()) {
+                objectStore.setBucketEncryption(bucket.getName());
+            } else {
+                objectStore.deleteBucketEncryption(bucket.getName());
+            }
+        }
+
+        if(cmd.getVersioning() != null) {
+            if(cmd.getVersioning()) {
+                objectStore.setBucketVersioning(bucket.getName());
+            } else {
+                objectStore.deleteBucketVersioning(bucket.getName());
+            }
+        }
+
+        return true;
     }
 }

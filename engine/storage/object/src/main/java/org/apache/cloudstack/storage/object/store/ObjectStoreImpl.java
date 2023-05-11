@@ -98,13 +98,47 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
 
     @Override
     public DataObject create(DataObject obj) {
-        driver.createBucket("name", objectStoreVO.getId());
+        //ToDo remove this?
+        driver.createBucket("name", objectStoreVO.getId(), 1L);
         return null;
     }
 
     @Override
-    public Bucket createBucket(String bucketName) {
-        return driver.createBucket(bucketName, objectStoreVO.getId());
+    public Bucket createBucket(String bucketName, long accountId) {
+        return driver.createBucket(bucketName, objectStoreVO.getId(), accountId);
+    }
+
+    @Override
+    public boolean deleteBucket(String bucketName) {
+        return driver.deleteBucket(bucketName, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean setBucketEncryption(String bucketName) {
+        return driver.setBucketEncryption(bucketName, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean deleteBucketEncryption(String bucketName) {
+        return driver.deleteBucketEncryption(bucketName, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean setBucketVersioning(String bucketName) {
+        return driver.setBucketVersioning(bucketName, objectStoreVO.getId());
+    }
+
+    @Override
+    public boolean deleteBucketVersioning(String bucketName) {
+        return driver.deleteBucketVersioning(bucketName, objectStoreVO.getId());
+    }
+
+    /*
+    Create user if not exists
+     */
+    @Override
+    public boolean createUser(long accountId) {
+        return driver.createUser(accountId, objectStoreVO.getId());
     }
 
     @Override

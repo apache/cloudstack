@@ -51,7 +51,7 @@ public class ObjectStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ObjectStor
         txn.start();
         expunge(sc);
         for (Map.Entry<String, String> entry : details.entrySet()) {
-            ObjectStoreDetailVO detail = new ObjectStoreDetailVO(storeId, entry.getKey(), entry.getValue(), true);
+            ObjectStoreDetailVO detail = new ObjectStoreDetailVO(storeId, entry.getKey(), entry.getValue());
             persist(detail);
         }
         txn.commit();
@@ -97,7 +97,8 @@ public class ObjectStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ObjectStor
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new ObjectStoreDetailVO(resourceId, key, value, display));
+        // ToDo: Add Display
+        super.addDetail(new ObjectStoreDetailVO(resourceId, key, value));
     }
 
 }

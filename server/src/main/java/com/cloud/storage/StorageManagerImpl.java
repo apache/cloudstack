@@ -3661,6 +3661,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("name", name);
         params.put("providerName", storeProvider.getName());
         params.put("role", DataStoreRole.Object);
+        params.put("details", details);
 
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
 

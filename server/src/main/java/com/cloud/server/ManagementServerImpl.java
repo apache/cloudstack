@@ -365,6 +365,7 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.DeleteBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -3918,6 +3919,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddObjectStoragePoolCmd.class);
         cmdList.add(ListObjectStoragePoolsCmd.class);
         cmdList.add(CreateBucketCmd.class);
+        cmdList.add(UpdateBucketCmd.class);
         cmdList.add(DeleteBucketCmd.class);
         cmdList.add(ListBucketsCmd.class);
         return cmdList;

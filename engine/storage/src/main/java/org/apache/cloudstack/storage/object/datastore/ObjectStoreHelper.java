@@ -88,7 +88,7 @@ public class ObjectStoreHelper {
             while (keyIter.hasNext()) {
                 String key = keyIter.next().toString();
                 String value = details.get(key);
-                ObjectStoreDetailVO detail = new ObjectStoreDetailVO(store.getId(), key, value, true);
+                ObjectStoreDetailVO detail = new ObjectStoreDetailVO(store.getId(), key, value);
                 ObjectStoreDetailsDao.persist(detail);
             }
         }

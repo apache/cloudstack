@@ -26,11 +26,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import java.util.List;
 
 public interface ObjectStoreDriver extends DataStoreDriver {
-    Bucket createBucket(String bucketName, long storeId);
+    Bucket createBucket(String bucketName, long storeId, long accountId);
 
     List<Bucket> listBuckets(long storeId);
 
-    void deleteBucket(String bucketName,long storeId);
+    boolean deleteBucket(String bucketName, long storeId);
 
     AccessControlList getBucketAcl(String bucketName, long storeId);
 
@@ -41,4 +41,15 @@ public interface ObjectStoreDriver extends DataStoreDriver {
     BucketPolicy getBucketPolicy(String bucketName, long storeId);
 
     void deleteBucketPolicy(String bucketName, long storeId);
+
+    boolean createUser(long accountId, long storeId);
+
+    boolean setBucketEncryption(String bucketName, long id);
+
+    boolean deleteBucketEncryption(String bucketName, long id);
+
+
+    boolean setBucketVersioning(String bucketName, long id);
+
+    boolean deleteBucketVersioning(String bucketName, long id);
 }

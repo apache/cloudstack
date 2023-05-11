@@ -70,6 +70,8 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
+        String accessKey = details.get("accesskey");
+        String secretKey = details.get("secretkey");
 
 
         Map<String, Object> objectStoreParameters = new HashMap();
@@ -79,12 +81,14 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
         objectStoreParameters.put("protocol", protocol);
         objectStoreParameters.put("providerName", providerName);
+        objectStoreParameters.put("accesskey", accessKey);
+        objectStoreParameters.put("secretkey", secretKey);
 
         //check credentials
         MinioClient minioClient =
                 MinioClient.builder()
-                        .endpoint("http://172.23.22.219:9000")
-                        .credentials("Gw0Ib6dqvFV4E755","B80AclQmt19XQ3LSES3jiZyWFogcpY4U")
+                        .endpoint(url)
+                        .credentials(accessKey,secretKey)
                         .build();
         try {
             // Test connection by listing buckets

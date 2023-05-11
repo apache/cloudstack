@@ -200,6 +200,12 @@
             <version>8.5.2</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio-admin</artifactId>
+            <version>8.5.2</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>

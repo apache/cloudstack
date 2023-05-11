@@ -23,5 +23,17 @@ import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 public interface ObjectStoreEntity extends DataStore, ObjectStore {
-    Bucket createBucket(String bucketName);
+    Bucket createBucket(String bucketName, long accountId);
+
+    boolean createUser(long accountId);
+
+    boolean deleteBucket(String name);
+
+    boolean setBucketEncryption(String name);
+
+    boolean deleteBucketEncryption(String name);
+
+    boolean setBucketVersioning(String name);
+
+    boolean deleteBucketVersioning(String name);
 }

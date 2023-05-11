@@ -42,19 +42,13 @@ public class ObjectStoreDetailVO implements ResourceDetail {
     @Column(name = "value")
     String value;
 
-    @Column(name = "display")
-    private boolean display = true;
-
     public ObjectStoreDetailVO() {
     }
-
-    public ObjectStoreDetailVO(long storeId, String name, String value, boolean display) {
+    public ObjectStoreDetailVO(long storeId, String name, String value) {
         this.resourceId = storeId;
         this.name = name;
         this.value = value;
-        this.display = display;
     }
-
     @Override
     public long getId() {
         return id;
@@ -77,7 +71,7 @@ public class ObjectStoreDetailVO implements ResourceDetail {
 
     @Override
     public boolean isDisplay() {
-        return display;
+        return true;
     }
 
 }

@@ -1050,6 +1050,9 @@ public class ApiConstants {
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
     public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String VERSIONING = "versioning";
+    public static final String OBJECT_LOCKING = "objectlocking";
+    public static final String ENCRYPTION = "encryption";
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";

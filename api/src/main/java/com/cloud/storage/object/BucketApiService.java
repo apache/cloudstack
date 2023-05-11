@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Bucket;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 
 public interface BucketApiService {
 
@@ -48,4 +49,5 @@ public interface BucketApiService {
 
     boolean deleteBucket(long bucketId, Account caller);
 
+    boolean updateBucket(UpdateBucketCmd cmd);
 }
