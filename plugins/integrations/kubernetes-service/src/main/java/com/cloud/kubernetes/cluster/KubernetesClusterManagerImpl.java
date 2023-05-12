@@ -803,6 +803,34 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    protected void validateKubernetesClusterScaleSize(final KubernetesClusterVO kubernetesCluster, final Long clusterSize, final int maxClusterSize, final DataCenter zone) {
+        if (clusterSize == null) {
+            return;
+        }
+        if (clusterSize == kubernetesCluster.getNodeCount()) {
+            return;
+        }
+        if (kubernetesCluster.getState().equals(KubernetesCluster.State.Stopped)) { // Cannot scale stopped cluster currently for cluster size
+            throw new PermissionDeniedException(String.format("Kubernetes cluster : %s is in %s state", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
+        }
+        if (clusterSize < 1) {
+            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled for size, %d", kubernetesCluster.getName(), clusterSize));
+        }
+        if (clusterSize + kubernetesCluster.getControlNodeCount() > maxClusterSize) {
+            throw new InvalidParameterValueException(
+                    String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
+        }
+        if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
+            VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
+            if (template == null) {
+                throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
+            }
+            if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
+                throw new InvalidParameterValueException(String.format("Template : %s associated with Kubernetes cluster : %s is not in Ready state for datacenter : %s", template.getName(), kubernetesCluster.getName(), zone.getName()));
+            }
+        }
+    }
+
     private void validateKubernetesClusterScaleParameters(ScaleKubernetesClusterCmd cmd) {
         final Long kubernetesClusterId = cmd.getId();
         final Long serviceOfferingId = cmd.getServiceOfferingId();
@@ -921,30 +949,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        if (clusterSize != null) {
-            if (clusterSize == kubernetesCluster.getNodeCount()) {
-                return;
-            }
-            if (kubernetesCluster.getState().equals(KubernetesCluster.State.Stopped)) { // Cannot scale stopped cluster currently for cluster size
-                throw new PermissionDeniedException(String.format("Kubernetes cluster : %s is in %s state", kubernetesCluster.getName(), kubernetesCluster.getState().toString()));
-            }
-            if (clusterSize < 1) {
-                throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s cannot be scaled for size, %d", kubernetesCluster.getName(), clusterSize));
-            }
-            if (clusterSize + kubernetesCluster.getControlNodeCount() > maxClusterSize) {
-                throw new InvalidParameterValueException(
-                    String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
-            }
-            if (clusterSize > kubernetesCluster.getNodeCount()) { // Upscale
-                VMTemplateVO template = templateDao.findById(kubernetesCluster.getTemplateId());
-                if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Invalid template associated with Kubernetes cluster : %s",  kubernetesCluster.getName()));
-                }
-                if (CollectionUtils.isEmpty(templateJoinDao.newTemplateView(template, zone.getId(), true))) {
-                    throw new InvalidParameterValueException(String.format("Template : %s associated with Kubernetes cluster : %s is not in Ready state for datacenter : %s", template.getName(), kubernetesCluster.getName(), zone.getName()));
-                }
-            }
-        }
+        validateKubernetesClusterScaleSize(kubernetesCluster, clusterSize, maxClusterSize, zone);
     }
 
     private void validateKubernetesClusterUpgradeParameters(UpgradeKubernetesClusterCmd cmd) {
