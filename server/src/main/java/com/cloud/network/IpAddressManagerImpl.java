@@ -785,17 +785,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
             throws InsufficientAddressCapacityException {
-        return assignPublicIpAddress(dcId, podId, owner, type, null, networkId, requestedIp, isSystem, forSystemVms);
-    }
-
-    @Override
-    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long vmId, Long networkId, String requestedIp, boolean isSystem, boolean forSystemVms)
-            throws InsufficientAddressCapacityException {
-        PublicIp ip = fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, null, isSystem, null, null, forSystemVms);
-        if (vmId != null) {
-            updateAssociatedVmIdForAllocatedIp(ip.getId(), vmId);
-        }
-        return ip;
+        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, null, isSystem, null, null, forSystemVms);
     }
 
     @Override
@@ -2363,13 +2353,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
         NetworkDetailVO networkDetail = _networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
         return networkDetail != null && "true".equals(networkDetail.getValue());
-    }
-
-    @Override
-    public void updateAssociatedVmIdForAllocatedIp(long ipId, long vmId) {
-        IPAddressVO ip = _ipAddressDao.createForUpdate(ipId);
-        ip.setAssociatedWithVmId(vmId);
-        _ipAddressDao.update(ipId, ip);
     }
 
     public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
