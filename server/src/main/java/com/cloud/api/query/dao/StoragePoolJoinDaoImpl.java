@@ -93,7 +93,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         findByDatacenterAndScopeSb = createSearchBuilder();
         findByDatacenterAndScopeSb.and("zoneId", findByDatacenterAndScopeSb.entity().getZoneId(), SearchCriteria.Op.EQ);
         findByDatacenterAndScopeSb.and("clusterId", findByDatacenterAndScopeSb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        findByDatacenterAndScopeSb.and("podId", findByDatacenterAndScopeSb.entity().getPodId(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.and().op("nullpod", findByDatacenterAndScopeSb.entity().getPodId(), SearchCriteria.Op.NULL);
+        findByDatacenterAndScopeSb.or("podId", findByDatacenterAndScopeSb.entity().getPodId(), SearchCriteria.Op.EQ);
+        findByDatacenterAndScopeSb.cp();
         findByDatacenterAndScopeSb.and("scope", findByDatacenterAndScopeSb.entity().getScope(), SearchCriteria.Op.EQ);
         findByDatacenterAndScopeSb.and("status", findByDatacenterAndScopeSb.entity().getStatus(), SearchCriteria.Op.EQ);
         findByDatacenterAndScopeSb.and("is_tag_a_rule", findByDatacenterAndScopeSb.entity().getIsTagARule(), SearchCriteria.Op.EQ);
