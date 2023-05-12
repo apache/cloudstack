@@ -136,11 +136,12 @@
       :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
+      class="tags-modal"
       @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else v-ctrl-enter="handleAddTag">
-        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags">
+        <a-form :ref="formRef" :model="form" :rules="formRules" class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
             <a-form-item ref="key" name="key">
@@ -155,7 +156,7 @@
               <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
-          <a-button type="primary">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;" />
@@ -278,7 +279,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
-      this.rules = reactive({
+      this.formRules = reactive({
         key: [{ required: true, message: this.$t('message.specify.tag.key') }],
         value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
