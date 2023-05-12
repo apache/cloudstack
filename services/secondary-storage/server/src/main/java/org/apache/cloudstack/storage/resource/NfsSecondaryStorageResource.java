@@ -2034,6 +2034,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             // delete snapshot in the directory if exists
             String lPath = absoluteSnapshotPath + "/*" + snapshotName + "*";
+            if (absoluteSnapshotPath.endsWith(snapshotName)) {
+                s_logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, absoluteSnapshotPath));
+                lPath = absoluteSnapshotPath;
+            }
             String result = deleteLocalFile(lPath);
             if (result != null) {
                 details = "failed to delete snapshot " + lPath + " , err=" + result;
