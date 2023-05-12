@@ -457,16 +457,19 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
-            <PictureOutlined v-else />
-            <div v-if="resource.isoid">
+            <SaveOutlined v-else />
+            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.isoid">
+          <div class="resource-detail-item__label">{{ $t('label.iso') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <UsbOutlined v-else />
               <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
-            </div>
-            <div v-else>
-              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
-            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
