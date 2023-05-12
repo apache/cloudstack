@@ -39,8 +39,8 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVmsToKubernetesClusterCmd;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVmsFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
@@ -264,7 +264,7 @@ public class KubernetesClusterManagerImplTest {
     public void addVmsToCluster() {
         KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
-        AddVmsToKubernetesClusterCmd cmd = Mockito.mock(AddVmsToKubernetesClusterCmd.class);
+        AddVirtualMachinesToKubernetesClusterCmd cmd = Mockito.mock(AddVirtualMachinesToKubernetesClusterCmd.class);
         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
 
         Mockito.when(cmd.getId()).thenReturn(1L);
@@ -278,7 +278,7 @@ public class KubernetesClusterManagerImplTest {
     @Test
     public void removeVmsFromCluster() {
         KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
-        RemoveVmsFromKubernetesClusterCmd cmd = Mockito.mock(RemoveVmsFromKubernetesClusterCmd.class);
+        RemoveVirtualMachinesFromKubernetesClusterCmd cmd = Mockito.mock(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
 
         Mockito.when(cmd.getId()).thenReturn(1L);

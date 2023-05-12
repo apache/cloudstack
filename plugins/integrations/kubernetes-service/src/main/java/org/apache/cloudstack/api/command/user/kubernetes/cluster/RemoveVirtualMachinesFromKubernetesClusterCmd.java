@@ -35,12 +35,13 @@ import javax.inject.Inject;
 import java.util.List;
 
 
-@APICommand(name = "removeVmsFromKubernetesCluster",
+@APICommand(name = "removeVirtualMachinesFromKubernetesCluster",
         description = "Remove VMs from a kubernetes cluster",
         responseObject = SuccessResponse.class,
+        since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RemoveVmsFromKubernetesClusterCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(RemoveVmsFromKubernetesClusterCmd.class.getName());
+public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
+    public static final Logger LOGGER = Logger.getLogger(RemoveVirtualMachinesFromKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;

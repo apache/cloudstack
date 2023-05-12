@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -44,12 +45,12 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVmsToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVmsFromKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
@@ -662,16 +663,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
         }
 
-        if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress)) {
-            if (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress)) {
-                throw new InvalidParameterValueException("Invalid external load balancer IP address");
-            }
-            if (network == null) {
-                throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s parameter", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, ApiConstants.NETWORK_ID));
-            }
-            if (Network.GuestType.Shared.equals(network.getGuestType())) {
-                throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s type of network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared.toString()));
-            }
+        if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress) && (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress))) {
+            throw new InvalidParameterValueException("Invalid external load balancer IP address");
         }
     }
 
@@ -694,7 +687,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
 
         if (name == null || name.isEmpty()) {
-            throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name:" + name);
+            throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
         }
 
         if (controlNodeCount < 1) {
@@ -855,7 +848,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 List<KubernetesClusterDetailsVO> details = new ArrayList<>();
                 long kubernetesClusterId = kubernetesCluster.getId();
 
-                if (network != null && Network.GuestType.Shared.equals(network.getGuestType())) {
+                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || !cmd.getManaged()) {
                     addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, externalLoadBalancerIpAddress, true);
                 }
 
@@ -1044,10 +1037,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
         }
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!kubernetesCluster.getManaged()) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is not managed by Apache CloudStack", kubernetesCluster.getName()));
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is not in running state", kubernetesCluster.getName()));
         }
@@ -1121,27 +1114,26 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final KubernetesSupportedVersion clusterKubernetesVersion = kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId());
 
         final Network network = networkDao.findById(cmd.getNetworkId());
-        long cores;
-        long memory;
+        long cores = 0;
+        long memory = 0;
         Long serviceOfferingId = null;
         if (serviceOffering != null) {
             serviceOfferingId = serviceOffering.getId();
             cores = serviceOffering.getCpu() * (controlNodeCount + clusterSize);
             memory = serviceOffering.getRamSize() * (controlNodeCount + clusterSize);
-        } else {
-            cores = 0;
-            memory = 0;
         }
 
         final Long finalServiceOfferingId = serviceOfferingId;
         final Long defaultNetworkId = network == null ? null : network.getId();
         final Long clusterKubernetesVersionId = clusterKubernetesVersion == null ? null : clusterKubernetesVersion.getId();
+        final long finalCores = cores;
+        final long finalMemory = memory;
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersionId,
                         finalServiceOfferingId, null, defaultNetworkId, owner.getDomainId(),
-                        owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Running, cmd.getSSHKeyPairName(), cores, memory,
+                        owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Running, cmd.getSSHKeyPairName(), finalCores, finalMemory,
                         cmd.getNodeRootDiskSize(), "", false);
                 kubernetesClusterDao.persist(newCluster);
                 return newCluster;
@@ -1252,7 +1244,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (!kubernetesCluster.getManaged()) {
-            LOGGER.debug(String.format("Kubernetes cluster : %s is not managed by CloudStack", kubernetesCluster.getName()));
+            LOGGER.debug(String.format("Start Kubernetes cluster : %s is not supported for an unmanaged cluster", kubernetesCluster.getName()));
             return true;
         }
         if (kubernetesCluster.getRemoved() != null) {
@@ -1323,7 +1315,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is not managed by CloudStack", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Stop kubernetes cluster : %s is not supported for an unmanaged cluster", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
@@ -1493,23 +1485,24 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean addVmsToCluster(AddVmsToKubernetesClusterCmd cmd) {
+    public boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         List<Long> vmIds = cmd.getVmIds();
         Long clusterId = cmd.getId();
 
-        if (vmIds == null || vmIds.isEmpty() || clusterId == null) {
-            throw new InvalidParameterValueException("Invalid parameters specified");
-        }
-
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
+        if (kubernetesCluster.getManaged()) {
+            throw new InvalidParameterValueException("VM cannot be added to a managed Kubernetes cluster");
+        }
+
         // User should have access to both VM and Kubernetes cluster
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+
         for (Long vmId : vmIds) {
             VMInstanceVO vmInstance = vmInstanceDao.findById(vmId);
             if (vmInstance == null) {
@@ -1518,21 +1511,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, vmInstance);
         }
 
-        if (kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException("VM cannot be added to a managed Kubernetes cluster");
-        }
-
         KubernetesClusterVmMapVO clusterVmMap = null;
         List<KubernetesClusterVmMapVO> clusterVmMapList = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(clusterId, vmIds);
         ArrayList<Long> alreadyExistingVmIds = new ArrayList<>();
         for (KubernetesClusterVmMapVO clusterVmMapVO : clusterVmMapList) {
             alreadyExistingVmIds.add(clusterVmMapVO.getVmId());
         }
-
+        vmIds.removeAll(alreadyExistingVmIds);
         for (Long vmId : vmIds) {
-            if (alreadyExistingVmIds.contains(vmId)) {
-                continue;
-            }
             clusterVmMap = new KubernetesClusterVmMapVO(clusterId, vmId, cmd.isControlNode());
             kubernetesClusterVmMapDao.persist(clusterVmMap);
         }
@@ -1540,26 +1526,21 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean removeVmsFromCluster(RemoveVmsFromKubernetesClusterCmd cmd) {
+    public boolean removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
         List<Long> vmIds = cmd.getVmIds();
         Long clusterId = cmd.getId();
 
-        if (vmIds == null || vmIds.isEmpty() || clusterId == null) {
-            throw new InvalidParameterValueException("Invalid parameters specified");
-        }
-
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
-
         if (kubernetesCluster.getManaged()) {
             throw new InvalidParameterValueException("VM cannot be removed from a managed Kubernetes cluster");
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
 
         List<KubernetesClusterVmMapVO> clusterVmMapList = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(clusterId, vmIds);
         for (KubernetesClusterVmMapVO clusterVmMapVO : clusterVmMapList) {
@@ -1582,8 +1563,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(GetKubernetesClusterConfigCmd.class);
         cmdList.add(ScaleKubernetesClusterCmd.class);
         cmdList.add(UpgradeKubernetesClusterCmd.class);
-        cmdList.add(AddVmsToKubernetesClusterCmd.class);
-        cmdList.add(RemoveVmsFromKubernetesClusterCmd.class);
+        cmdList.add(AddVirtualMachinesToKubernetesClusterCmd.class);
+        cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         return cmdList;
     }
 

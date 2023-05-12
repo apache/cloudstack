@@ -35,12 +35,13 @@ import javax.inject.Inject;
 import java.util.List;
 
 
-@APICommand(name = "addVmsToKubernetesCluster",
+@APICommand(name = "addVirtualMachinesToKubernetesCluster",
         description = "Add VM to a kubernetes cluster",
         responseObject = SuccessResponse.class,
+        since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class AddVmsToKubernetesClusterCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(AddVmsToKubernetesClusterCmd.class.getName());
+public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
+    public static final Logger LOGGER = Logger.getLogger(AddVirtualMachinesToKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
