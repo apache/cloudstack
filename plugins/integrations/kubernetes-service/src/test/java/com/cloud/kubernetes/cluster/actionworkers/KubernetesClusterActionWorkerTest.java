@@ -104,8 +104,6 @@ public class KubernetesClusterActionWorkerTest {
 
     @Test
     public void testGetVpcTierKubernetesPublicIpNullVpc() {
-        Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getVpcId()).thenReturn(DEFAULT_ID);
         String uuid = mockClusterPublicIpDetail(false);
         IPAddressVO address = Mockito.mock(IPAddressVO.class);
         Mockito.when(ipAddressDao.findByUuid(uuid)).thenReturn(address);
@@ -115,8 +113,6 @@ public class KubernetesClusterActionWorkerTest {
 
     @Test
     public void testGetVpcTierKubernetesPublicIpDifferentVpc() {
-        Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getVpcId()).thenReturn(DEFAULT_ID);
         String uuid = mockClusterPublicIpDetail(false);
         IPAddressVO address = Mockito.mock(IPAddressVO.class);
         Mockito.when(address.getVpcId()).thenReturn(2L);
@@ -127,8 +123,6 @@ public class KubernetesClusterActionWorkerTest {
 
     @Test
     public void testGetVpcTierKubernetesPublicIpValid() {
-        Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getVpcId()).thenReturn(DEFAULT_ID);
         String uuid = mockClusterPublicIpDetail(false);
         IPAddressVO address = Mockito.mock(IPAddressVO.class);
         Mockito.when(address.getVpcId()).thenReturn(DEFAULT_ID);
