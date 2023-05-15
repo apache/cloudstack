@@ -30,6 +30,7 @@ export default {
       name: 'guestnetwork',
       title: 'label.guest.networks',
       icon: 'apartment-outlined',
+      docHelp: 'adminguide/networking_and_traffic.html#adding-an-additional-guest-network',
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
@@ -129,6 +130,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
@@ -138,6 +140,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           args: (record, store, isGroupAction) => {
             var fields = []
             if (isGroupAction || record.vpcid == null) {
@@ -176,6 +179,7 @@ export default {
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -655,9 +659,8 @@ export default {
     {
       name: 'vpnuser',
       title: 'label.vpn.users',
-      icon: 'user-alt-outlined',
+      icon: 'user-switch-outlined',
       permission: ['listVpnUsers'],
-      hidden: true,
       columns: ['username', 'state', 'account', 'domain'],
       details: ['username', 'state', 'account', 'domain'],
       actions: [
@@ -906,6 +909,7 @@ export default {
       name: 'guestvlans',
       title: 'label.guest.vlan',
       icon: 'folder-outlined',
+      docHelp: 'conceptsandterminology/network_setup.html#vlan-allocation-example',
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],

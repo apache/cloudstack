@@ -35,11 +35,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.scope.description" >
-            <a-select-option :value="'cluster'"> {{ $t('label.clusterid') }} </a-select-option>
-            <a-select-option :value="'zone'"> {{ $t('label.zoneid') }} </a-select-option>
+            <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
+            <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
           </a-select>
         </a-form-item>
         <div v-if="form.scope === 'zone'">
@@ -50,9 +50,9 @@
             <a-select
               v-model:value="form.hypervisor"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.hypervisor.description" >
               <a-select-option :value="hypervisor" v-for="(hypervisor, idx) in hypervisors" :key="idx">
@@ -93,10 +93,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.podid.description">
-              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id">
+              <a-select-option :value="pod.id" v-for="(pod) in pods" :key="pod.id" :label="pod.name">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
@@ -111,10 +111,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.clusterid.description">
-              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id">
+              <a-select-option :value="cluster.id" v-for="cluster in clusters" :key="cluster.id" :label="cluster.name">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
@@ -127,9 +127,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id">
+              <a-select-option :value="host.id" v-for="host in hosts" :key="host.id" :label="host.name">
                 {{ host.name }}
               </a-select-option>
             </a-select>
@@ -148,9 +148,9 @@
           <a-select
             v-model:value="form.protocol"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.clusterid.description">
             <a-select-option :value="protocol" v-for="(protocol,idx) in protocols" :key="idx">
@@ -218,9 +218,9 @@
               v-model:value="form.provider"
               @change="updateProviderAndProtocol"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :placeholder="apiParams.provider.description">
               <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">

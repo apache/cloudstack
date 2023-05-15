@@ -84,11 +84,31 @@
               <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
                 {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
               </a-tag>
+              <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
+                {{ $t('label.archived') }}
+              </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
                   <span>{{ $t('label.view.console') }}</span>
                 </template>
-                <console style="margin-top: -5px;" :resource="resource" size="default" v-if="resource.id" />
+                <console
+                  style="margin-top: -5px;"
+                  :resource="resource"
+                  size="default"
+                  v-if="resource.id"
+                />
+              </a-tooltip>
+              <a-tooltip placement="right" >
+                <template #title>
+                  <span>{{ $t('label.copy.consoleurl') }}</span>
+                </template>
+                <console
+                  copyUrlToClipboard
+                  style="margin-top: -5px;"
+                  :resource="resource"
+                  size="default"
+                  v-if="resource.id"
+                />
               </a-tooltip>
             </div>
           </slot>
@@ -124,7 +144,7 @@
               icon="barcode-outlined"
               type="dashed"
               size="small"
-              :copyResource="resource.id"
+              :copyResource="String(resource.id)"
               @onClick="$message.success($t('label.copied.clipboard'))" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
@@ -849,8 +869,13 @@ export default {
       return this.resource.templateid
     },
     resourceIcon () {
-      if (this.$showIcon() && this.resource?.icon?.base64image) {
-        return this.resource.icon.base64image
+      if (this.$showIcon()) {
+        if (this.resource?.icon?.base64image) {
+          return this.resource.icon.base64image
+        }
+        if (this.resource?.resourceIcon?.base64image) {
+          return this.resource.resourceIcon.base64image
+        }
       }
       return null
     },

@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.quota.dao;
 
-import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
 
-import com.cloud.utils.db.GenericDao;
+package org.apache.cloudstack.shutdown.command;
 
-public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> {
-    ServiceOfferingVO findServiceOffering(Long vmId, long serviceOfferingId);
+public class PrepareForShutdownManagementServerHostCommand extends BaseShutdownManagementServerHostCommand {
+
+    public PrepareForShutdownManagementServerHostCommand(long msId) {
+        super(msId);
+    }
 }
