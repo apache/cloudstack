@@ -164,7 +164,7 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String domain;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the network belongs to", since = "4.18.1")
+    @Param(description = "path of the Domain the network belongs to", since = "4.19.0.0")
     private String domainPath;
 
     @SerializedName("isdefault")
