@@ -52,36 +52,38 @@
         size="middle"
         :columns="selectedColumns"
         :dataSource="tableChanged ? filteredItems : selectedItems"
-        :rowKey="(record, idx) => ($route.path.includes('/template') || $route.path.includes('/iso')) ? record.zoneid: record.id"
+        :rowKey="record => ($route.path.includes('/template') || $route.path.includes('/iso')) ? record.zoneid: record.id"
         :pagination="true"
         @change="handleTableChange"
         style="overflow-y: auto">
-        <template #status="{text}">
-          <status :text=" text ? text : $t('state.inprogress') " displayText></status>
-        </template>
-        <template #algorithm="{record}">
-          {{ returnAlgorithmName(record.algorithm) }}
-        </template>
-        <template #privateport="{record}">
-          {{ record.privateport }} - {{ record.privateendport }}
-        </template>
-        <template #publicport="{record}">
-          {{ record.publicport }} - {{ record.publicendport }}
-        </template>
-        <template #protocol="{record}">
-          {{ capitalise(record.protocol) }}
-        </template>
-        <template #startport="{record}">
-          {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
-        </template>
-        <template #endport="{record}">
-          {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
-        </template>
-        <template #vm="{record}">
-          <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
-        </template>
-        <template #cidrlist="{ record }">
-          <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'status'">
+            <status :text=" text ? text : $t('state.inprogress') " displayText></status>
+          </template>
+          <template v-if="column.key === 'algorithm'">
+            {{ returnAlgorithmName(record.algorithm) }}
+          </template>
+          <template v-if="column.key === 'privateport'">
+            {{ record.privateport }} - {{ record.privateendport }}
+          </template>
+          <template v-if="column.key === 'publicport'">
+            {{ record.publicport }} - {{ record.publicendport }}
+          </template>
+          <template v-if="column.key === 'protocol'">
+            {{ capitalise(record.protocol) }}
+          </template>
+          <template v-if="column.key === 'startport'">
+            {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
+          </template>
+          <template v-if="column.key === 'endport'">
+            {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
+          </template>
+          <template v-if="column.key === 'vm'">
+            <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          </template>
+          <template v-if="column.key === 'cidrlist'">
+            <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(" ", "\n") }}</span>
+          </template>
         </template>
       </a-table>
       <br/>

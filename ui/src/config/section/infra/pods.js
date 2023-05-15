@@ -22,6 +22,7 @@ export default {
   name: 'pod',
   title: 'label.pods',
   icon: 'appstore-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-pods',
   permission: ['listPods'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
@@ -35,6 +36,10 @@ export default {
     param: 'podid'
   }],
   resourceType: 'Pod',
+  filters: () => {
+    const filters = ['enabled', 'disabled']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))

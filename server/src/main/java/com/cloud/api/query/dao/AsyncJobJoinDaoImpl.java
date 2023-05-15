@@ -53,6 +53,11 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
     public AsyncJobResponse newAsyncJobResponse(final AsyncJobJoinVO job) {
         final AsyncJobResponse jobResponse = new AsyncJobResponse();
         jobResponse.setAccountId(job.getAccountUuid());
+        jobResponse.setAccount(job.getAccountName());
+        jobResponse.setDomainId(job.getDomainUuid());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(job.getDomainPath())).deleteCharAt(domainPath.length() - 1);
+        jobResponse.setDomainPath(domainPath.toString());
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
@@ -60,6 +65,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
+        jobResponse.setMsid(job.getExecutingMsid());
 
         if (job.getInstanceType() != null && job.getInstanceId() != null) {
             jobResponse.setJobInstanceType(job.getInstanceType().toString());
