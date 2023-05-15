@@ -34,7 +34,7 @@ Description: CloudStack agent
 
 Package: cloudstack-usage
 Architecture: all
-Depends: openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), init-system-helpers
+Depends: openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | openjdk-11-jre-headless | zulu-11, cloudstack-common (= ${source:Version}), cloudstack-management (= ${source:Version}), init-system-helpers
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
