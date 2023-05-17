@@ -126,7 +126,7 @@ export default {
         dataView: true,
         params: { issystem: 'true' },
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete-outlined',
