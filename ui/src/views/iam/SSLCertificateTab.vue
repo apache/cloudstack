@@ -28,23 +28,25 @@
           :pagination="false"
           v-if="!quickview"
         >
-          <template #action="{ record }" class="cert-button-action">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.quickview')"
-              type="primary"
-              icon="eye-outlined"
-              size="small"
-              @onClick="onQuickView(record.id)" />
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.delete.sslcertificate')"
-              :disabled="!('deleteSslCert' in $store.getters.apis)"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined"
-              size="small"
-              @onClick="onShowConfirm(record)" />
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'actions'" class="cert-button-action">
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.quickview')"
+                type="primary"
+                icon="eye-outlined"
+                size="small"
+                @onClick="onQuickView(record.id)" />
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.delete.sslcertificate')"
+                :disabled="!('deleteSslCert' in $store.getters.apis)"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                size="small"
+                @onClick="onShowConfirm(record)" />
+            </template>
           </template>
         </a-table>
 
@@ -128,22 +130,22 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
-        dataIndex: 'name',
-        slots: { customRender: 'name' }
+        dataIndex: 'name'
       },
       {
+        key: 'id',
         title: this.$t('label.certificateid'),
         dataIndex: 'id',
-        width: 450,
-        slots: { customRender: 'id' }
+        width: 450
       },
       {
-        title: this.$t('label.action'),
-        dataIndex: 'action',
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
         fixed: 'right',
-        width: 80,
-        slots: { customRender: 'action' }
+        width: 80
       }
     ]
     this.detailColumn = ['name', 'certificate', 'certchain']

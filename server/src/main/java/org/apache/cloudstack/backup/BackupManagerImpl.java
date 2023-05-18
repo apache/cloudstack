@@ -27,6 +27,9 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.cloud.storage.VolumeApiService;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -53,6 +56,7 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -147,6 +151,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private ApiDispatcher apiDispatcher;
     @Inject
     private AsyncJobManager asyncJobManager;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private VolumeApiService volumeApiService;
+    @Inject
+    private VolumeOrchestrationService volumeOrchestrationService;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -223,7 +233,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Filter searchFilter = new Filter(BackupOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<BackupOfferingVO> sb = backupOfferingDao.createSearchBuilder();
         sb.and("zone_id", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
         final SearchCriteria<BackupOfferingVO> sc = sb.create();
 
@@ -585,15 +595,98 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(vm.getBackupOfferingId());
         if (offering == null) {
-            throw new CloudRuntimeException("Failed to find backup offering of the VM backup");
+            throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
         }
 
-        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        if (!backupProvider.restoreVMFromBackup(vm, backup)) {
-            throw new CloudRuntimeException("Error restoring VM from backup ID " + backup.getId());
-        }
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "vmId", "type", "status", "date");
+        tryRestoreVM(backup, vm, offering, backupDetailsInMessage);
+        updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
+        updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
+
         return importRestoredVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
                 vm.getInstanceName(), vm.getHypervisorType(), backup);
+    }
+
+    /**
+     * Tries to restore a VM from a backup. <br/>
+     * First update the VM state to {@link VirtualMachine.Event#RestoringRequested} and its volume states to {@link Volume.Event#RestoreRequested}, <br/>
+     * and then try to restore the backup. <br/>
+     *
+     * If restore fails, then update the VM state to {@link VirtualMachine.Event#RestoringFailed}, and its volumes to {@link Volume.Event#RestoreFailed} and throw an {@link CloudRuntimeException}.
+     */
+    protected void tryRestoreVM(BackupVO backup, VMInstanceVO vm, BackupOffering offering, String backupDetailsInMessage) {
+        try {
+            updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
+            updateVolumeState(vm, Volume.Event.RestoreRequested, Volume.State.Restoring);
+            final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+            if (!backupProvider.restoreVMFromBackup(vm, backup)) {
+                throw new CloudRuntimeException(String.format("Error restoring %s from backup [%s].", vm, backupDetailsInMessage));
+            }
+        // The restore process is executed by a backup provider outside of ACS, I am using the catch-all (Exception) to
+        // ensure that no provider-side exception is missed. Therefore, we have a proper handling of exceptions, and rollbacks if needed.
+        } catch (Exception e) {
+            LOG.error(String.format("Failed to restore backup [%s] due to: [%s].", backupDetailsInMessage, e.getMessage()), e);
+            updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
+            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
+            throw new CloudRuntimeException(String.format("Error restoring VM from backup [%s].", backupDetailsInMessage));
+        }
+    }
+
+    /**
+     * Tries to update the state of given VM, given specified event
+     * @param vm The VM to update its state
+     * @param event The event to update the VM state
+     * @param next The desired state, just needed to add more context to the logs
+     */
+    private void updateVmState(VMInstanceVO vm, VirtualMachine.Event event, VirtualMachine.State next) {
+        LOG.debug(String.format("Trying to update state of VM [%s] with event [%s].", vm, event));
+        Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<VMInstanceVO>) status -> {
+            try {
+                if (!virtualMachineManager.stateTransitTo(vm, event, vm.getHostId())) {
+                    throw new CloudRuntimeException(String.format("Unable to change state of VM [%s] to [%s].", vm, next));
+                }
+            } catch (NoTransitionException e) {
+                String errMsg = String.format("Failed to update state of VM [%s] with event [%s] due to [%s].", vm, event, e.getMessage());
+                LOG.error(errMsg, e);
+                throw new RuntimeException(errMsg);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Tries to update all volume states of given VM, given specified event
+     * @param vm The VM to which the volumes belong
+     * @param event The event to update the volume states
+     * @param next The desired state, just needed to add more context to the logs
+     */
+    private void updateVolumeState(VMInstanceVO vm, Volume.Event event, Volume.State next) {
+        Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<VolumeVO>) status -> {
+            for (VolumeVO volume : volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), null)) {
+                tryToUpdateStateOfSpecifiedVolume(volume, event, next);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Tries to update the state of just one volume using any passed {@link Volume.Event}. Throws an {@link RuntimeException} when fails.
+     * @param volume The volume to update it state
+     * @param event The event to update the volume state
+     * @param next The desired state, just needed to add more context to the logs
+     *
+     */
+    private void tryToUpdateStateOfSpecifiedVolume(VolumeVO volume, Volume.Event event, Volume.State next) {
+        LOG.debug(String.format("Trying to update state of volume [%s] with event [%s].", volume, event));
+        try {
+            if (!volumeApiService.stateTransitTo(volume, event)) {
+                throw new CloudRuntimeException(String.format("Unable to change state of volume [%s] to [%s].", volume, next));
+            }
+        } catch (NoTransitionException e) {
+            String errMsg = String.format("Failed to update state of volume [%s] with event [%s] due to [%s].", volume, event, e.getMessage());
+            LOG.error(errMsg, e);
+            throw new RuntimeException(errMsg);
+        }
     }
 
     private Backup.VolumeInfo getVolumeInfo(List<Backup.VolumeInfo> backedUpVolumes, String volumeUuid) {
@@ -652,16 +745,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
         String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
 
+        updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
         Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues);
 
         if (BooleanUtils.isFalse(result.first())) {
+            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
         if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
                             backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
+            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
         }
+        updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
         return true;
     }
 

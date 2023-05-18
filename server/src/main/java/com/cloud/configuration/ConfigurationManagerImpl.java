@@ -602,6 +602,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         });
     }
 
+    protected void validateIpAddressRelatedConfigValues(final String configName, final String value) {
+        if (!configName.endsWith(".ip") && !configName.endsWith(".ipaddress") && !configName.endsWith(".iprange")) {
+            return;
+        }
+        if (StringUtils.isEmpty(value)) {
+            return;
+        }
+        final ConfigKey<?> configKey = _configDepot.get(configName);
+        if (configKey == null || !String.class.equals(configKey.type())) {
+            return;
+        }
+        boolean err = (configName.endsWith(".ip") || configName.endsWith(".ipaddress")) && !NetUtils.isValidIp4(value);
+        if (configName.endsWith(".iprange")) {
+            err = true;
+            if (value.contains("-")) {
+                String[] ips = value.split("-");
+                if (ips.length == 2 && NetUtils.isValidIp4(ips[0]) && NetUtils.isValidIp4(ips[1])) {
+                    err = false;
+                }
+            }
+        }
+        if (err) {
+            throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value");
+        }
+    }
+
     @Override
     public boolean start() {
 
@@ -873,6 +899,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             catergory = config.getCategory();
         }
+
+        validateIpAddressRelatedConfigValues(name, value);
 
         if (value == null) {
             return _configDao.findByName(name);
