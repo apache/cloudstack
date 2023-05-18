@@ -663,7 +663,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s], and in states [%s, %s].", vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped));
         VMInstanceVO vm = virtualMachineDao.findVMInStatesAndWithInternalNameIncludingRemoved(vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped);
         if (vm == null) {
-            s_logger.debug(String.format("Cannot find any existing VM with internalName [%s] in any of this [%s, %s] states. Assuming VM is destroyed in ACS and recreated in restore process.",
+            s_logger.debug(String.format("Cannot find any existing VM with internalName [%s] in any of these [%s, %s] states. Assuming VM is destroyed in ACS and recreated in restore process.",
                     vmInternalName, VirtualMachine.State.Running, VirtualMachine.State.Stopped));
 
             long id = userVmDao.getNextInSequence(Long.class, "id");
