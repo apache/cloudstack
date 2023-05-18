@@ -30,13 +30,15 @@
         :columns="columns"
         :pagination="false"
         style="margin-bottom: 24px; width: 100%" >
-        <template #actions="{ record }">
-          <tooltip-button
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            @onClick="onDelete(record.key)" />
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              @onClick="onDelete(record.key)" />
+          </template>
         </template>
         <template #footer>
           <a-form
@@ -193,9 +195,9 @@ export default {
           width: 140
         },
         {
+          key: 'actions',
           title: '',
           dataIndex: 'actions',
-          slots: { customRender: 'actions' },
           width: 70
         }
       ],

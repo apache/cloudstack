@@ -45,12 +45,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp'))  }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ capitalise($t('label.tcp'))  }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ capitalise($t('label.icmp')) }}</a-select-option>
+            <a-select-option value="all" :label="$t('label.all')">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -97,23 +97,25 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #startport="{ record }">
-        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
-      </template>
-      <template #endport="{ record }">
-        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteRule(record)" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'startport'">
+          {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+        </template>
+        <template v-if="column.key === 'endport'">
+          {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="deleteRule(record)" />
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -176,7 +178,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.egress.firewall.rules'),
@@ -207,20 +209,20 @@ export default {
           dataIndex: 'destcidrlist'
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
-          title: this.$t('label.icmptype.start.port'),
-          slots: { customRender: 'startport' }
+          key: 'startport',
+          title: this.$t('label.icmptype.start.port')
         },
         {
-          title: this.$t('label.icmpcode.end.port'),
-          slots: { customRender: 'endport' }
+          key: 'endport',
+          title: this.$t('label.icmpcode.end.port')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }
@@ -291,9 +293,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
