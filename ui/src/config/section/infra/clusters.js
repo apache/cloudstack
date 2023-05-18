@@ -22,6 +22,7 @@ export default {
   name: 'cluster',
   title: 'label.clusters',
   icon: 'cluster-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-clusters',
   permission: ['listClustersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
@@ -40,6 +41,10 @@ export default {
     param: 'clusterid'
   }],
   resourceType: 'Cluster',
+  filters: () => {
+    const filters = ['enabled', 'disabled']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))

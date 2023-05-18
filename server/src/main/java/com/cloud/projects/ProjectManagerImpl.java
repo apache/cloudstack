@@ -18,9 +18,11 @@ package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -33,26 +35,20 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.ProjectRoleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -72,11 +68,19 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.State;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.projects.dao.ProjectInvitationDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -95,14 +99,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.utils.mailing.MailAddress;
-import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
-import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.commons.lang3.BooleanUtils;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Component
 public class ProjectManagerImpl extends ManagerBase implements ProjectManager, Configurable {
@@ -650,7 +650,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName) throws ResourceAllocationException {
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         //check that the project exists
@@ -666,10 +666,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateProjectNameAndDisplayText(project, name, displayText);
 
                 if (newOwnerName != null) {
                     //check that the new owner exists
@@ -717,7 +714,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PROJECT_UPDATE, eventDescription = "updating project", async = true)
-    public Project updateProject(final long projectId, final String displayText, final String newOwnerName, Long userId,
+    public Project updateProject(final long projectId, String name, final String displayText, final String newOwnerName, Long userId,
                                  Role newRole) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -737,10 +734,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) throws ResourceAllocationException {
-                if (displayText != null) {
-                    project.setDisplayText(displayText);
-                    _projectDao.update(projectId, project);
-                }
+                updateProjectNameAndDisplayText(project, name, displayText);
+
                 if (newOwnerName != null) {
                     //check that the new owner exists
                     Account updatedAcc = _accountMgr.getActiveAccountByName(newOwnerName, project.getDomainId());
@@ -1442,5 +1437,18 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ProjectSmtpEnabledSecurityProtocols, ProjectSmtpUseStartTLS};
+    }
+
+    protected void updateProjectNameAndDisplayText(final ProjectVO project, String name, String displayText) {
+        if (name == null && displayText == null){
+            return;
+        }
+        if (name != null) {
+            project.setName(name);
+        }
+        if (displayText != null) {
+            project.setDisplayText(displayText);
+        }
+        _projectDao.update(project.getId(), project);
     }
 }

@@ -27,11 +27,13 @@
       :rowKey="record => record.name"
       :rowClassName="getRowClassName" >
 
-      <template #name="{ record }">
-        <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
-      </template>
-      <template #value="{ record }">
-        <ConfigurationValue :configrecord="record" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+        </template>
+        <template v-if="column.key === 'value'">
+          <ConfigurationValue :configrecord="record" />
+        </template>
       </template>
     </a-table>
     <a-pagination

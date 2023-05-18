@@ -155,7 +155,8 @@ public class NoVncClient {
         }
 
         // Proxy that we support RFB 3.3 only
-        return RfbConstants.RFB_PROTOCOL_VERSION + "\n";
+        return String.format("%s%s\n", RfbConstants.RFB_PROTOCOL_VERSION_MAJOR,
+                RfbConstants.VNC_PROTOCOL_VERSION_MINOR_TUNNEL);
     }
 
     /**
@@ -471,18 +472,13 @@ public class NoVncClient {
         return new Pair<>(result, message);
     }
 
-    public void processSecurityResultMsg(int securityType) {
+    public void processSecurityResultMsg() {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Processing security result message");
         }
 
-        int result;
-        if (securityType == RfbConstants.NO_AUTH) {
-            result = RfbConstants.VNC_AUTH_OK;
-        } else {
-            nioSocketConnection.waitForBytesAvailableForReading(1);
-            result = nioSocketConnection.readUnsignedInteger(32);
-        }
+        nioSocketConnection.waitForBytesAvailableForReading(1);
+        int result = nioSocketConnection.readUnsignedInteger(32);
 
         Pair<Boolean, String> securityResultType = processSecurityResultType(result);
         boolean success = BooleanUtils.toBoolean(securityResultType.first());
