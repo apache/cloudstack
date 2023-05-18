@@ -32,8 +32,10 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template #account><user-outlined /> {{ $t('label.account') }}</template>
-      <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'account'"><user-outlined /> {{ $t('label.account') }}</template>
+        <template v-if="column.key === 'domain'"><block-outlined /> {{ $t('label.domain') }}</template>
+      </template>
     </a-table>
   </div>
 </template>
@@ -81,13 +83,13 @@ export default {
           width: '40%'
         },
         {
+          key: 'account',
           dataIndex: 'account',
-          slots: { title: 'account' },
           width: '30%'
         },
         {
+          key: 'domain',
           dataIndex: 'domain',
-          slots: { title: 'domain' },
           width: '30%'
         }
       ],

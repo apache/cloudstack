@@ -139,8 +139,10 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <template #state="{text}">
-                    <status :text="text ? text : ''" displayText />
+                  <template #bodyCell="{ column, text }">
+                    <template v-if="column.key === 'state'">
+                      <status :text="text ? text : ''" displayText />
+                    </template>
                   </template>
                 </a-table>
                 <div class="instances-card-footer">
@@ -205,11 +207,13 @@
                   size="middle"
                   :rowClassName="getRowClassName"
                 >
-                  <template #name="{text, record}" href="javascript:;">
-                    <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
-                  </template>
-                  <template #state="{text}">
-                    <status :text="text ? text : ''" displayText />
+                  <template #bodyCell="{ column, text, record }">
+                    <template v-if="column.key === 'name'">
+                      <router-link :to="{ path: '/vm/' + record.id }">{{ text }}</router-link>
+                    </template>
+                    <template v-if="column.key === 'state'">
+                      <status :text="text ? text : ''" displayText />
+                    </template>
                   </template>
                 </a-table>
                 <div class="instances-card-footer">
@@ -295,9 +299,9 @@ export default {
         width: 100
       },
       {
+        key: 'state',
         title: this.$t('label.state'),
-        dataIndex: 'powerstate',
-        slots: { customRender: 'state' }
+        dataIndex: 'powerstate'
       },
       {
         title: this.$t('label.hostname'),
@@ -310,19 +314,19 @@ export default {
     ]
     const managedInstancesColumns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: 100,
-        slots: { customRender: 'name' }
+        width: 100
       },
       {
         title: this.$t('label.instancename'),
         dataIndex: 'instancename'
       },
       {
+        key: 'state',
         title: this.$t('label.state'),
-        dataIndex: 'state',
-        slots: { customRender: 'state' }
+        dataIndex: 'state'
       },
       {
         title: this.$t('label.hostname'),
@@ -505,7 +509,7 @@ export default {
     },
     filterOption (input, option) {
       return (
-        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     fetchOptions (param, name, exclude) {

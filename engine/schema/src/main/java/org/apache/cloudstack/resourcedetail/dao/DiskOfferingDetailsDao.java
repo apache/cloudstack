@@ -29,4 +29,3 @@ public interface DiskOfferingDetailsDao extends GenericDao<DiskOfferingDetailVO,
     String getDetail(Long diskOfferingId, String key);
     List<Long> findOfferingIdsByDomainIds(List<Long> domainIds);
 }
-

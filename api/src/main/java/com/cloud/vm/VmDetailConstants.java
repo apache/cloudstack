@@ -48,6 +48,10 @@ public interface VmDetailConstants {
     String IOTHREADS = "iothreads";
     String IO_POLICY = "io.policy";
 
+    // KVM specific, the number of queues for multiqueue NICs
+    String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
+    String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
+
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
     String FIRMWARE = "firmware";

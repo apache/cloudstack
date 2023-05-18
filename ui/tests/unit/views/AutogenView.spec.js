@@ -16,6 +16,7 @@
 // under the License.
 
 import { flushPromises } from '@vue/test-utils'
+import { ref } from 'vue'
 
 import mockAxios from '../../mock/mockAxios'
 import AutogenView from '@/views/AutogenView'
@@ -180,6 +181,7 @@ router.push('/')
 describe('Views > AutogenView.vue', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
 
     delete window.ResizeObserver
     delete window.ls
@@ -252,6 +254,9 @@ describe('Views > AutogenView.vue', () => {
             break
           case 'RefValidateFields':
             wrapper.vm.formRef.value.validateFields = originalFunc[key]
+            break
+          case 'formRef':
+            wrapper.vm.formRef = originalFunc[key]
             break
           case 'switchProject':
             wrapper.vm.switchProject = originalFunc[key]
@@ -549,10 +554,13 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(wrapper.vm.columns.length).toEqual(2)
+        expect(wrapper.vm.columns[0].key).toEqual('name')
         expect(wrapper.vm.columns[0].title).toEqual('name-en')
         expect(wrapper.vm.columns[0].dataIndex).toEqual('name')
-        expect(wrapper.vm.columns[0].slots).toEqual({ customRender: 'name' })
         expect(typeof wrapper.vm.columns[0].sorter).toBe('function')
+        expect(wrapper.vm.columns[1].key).toEqual('filtercolumn')
+        expect(wrapper.vm.columns[1].dataIndex).toEqual('filtercolumn')
+        expect(wrapper.vm.columns[1].customFilterDropdown).toBeTruthy()
         done(0)
       })
 
@@ -623,7 +631,7 @@ describe('Views > AutogenView.vue', () => {
       //   })
       //   await router.push({ name: 'testRouter12', params: { id: 'test-id' } })
       //   await flushPromises()
-      //
+
       //   expect(mockAxios).toHaveBeenCalled()
       //   expect(mockAxios).toHaveBeenLastCalledWith({
       //     url: '/',
@@ -731,14 +739,12 @@ describe('Views > AutogenView.vue', () => {
         expect(wrapper.vm.items).toEqual([{
           id: 'test-id',
           name: 'test-name-value',
-          key: 0,
-          column1: 'test-name-value'
+          key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
           id: 'test-id',
           name: 'test-name-value',
-          key: 0,
-          column1: 'test-name-value'
+          key: 0
         })
         done()
       })
@@ -920,7 +926,7 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(router.currentRoute.value.path).toEqual('/role')
-        expect(router.currentRoute.value.query).toEqual({ name: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        expect(router.currentRoute.value.query).toEqual({ keyword: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
         done()
       })
 
@@ -2288,8 +2294,17 @@ describe('Views > AutogenView.vue', () => {
       it('formRef makes validation calls when handleSubmit() is called in list view', async (done) => {
         originalFunc.callGroupApi = wrapper.vm.callGroupApi
         originalFunc.fetchData = wrapper.vm.fetchData
+        originalFunc.formRef = wrapper.vm.formRef
         wrapper.vm.fetchData = jest.fn()
         wrapper.vm.callGroupApi = jest.fn((params, resourceName) => {
+          return new Promise(resolve => {
+            resolve()
+          })
+        })
+        if (!wrapper.vm.formRef) {
+          wrapper.vm.formRef = ref()
+        }
+        wrapper.vm.formRef.value.validate = jest.fn((params, resourceName) => {
           return new Promise(resolve => {
             resolve()
           })
@@ -2312,6 +2327,11 @@ describe('Views > AutogenView.vue', () => {
           items: [{
             id: 'test-id-value-1',
             name: 'test-name-value-1'
+          }],
+          columns: [{
+            key: 'column1',
+            dataIndex: 'column1',
+            title: 'column1'
           }]
         })
         await wrapper.vm.handleSubmit(event)
