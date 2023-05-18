@@ -82,7 +82,7 @@ public class LogUtils {
     /**
      * Tries to convert message parameters to JSON format and use them in the message.
      * @param formatMessage message to format.
-     * @param objects objects to convert to JSON. An null object will be defaulted to the String "null";
+     * @param objects objects to convert to JSON. A null object will be defaulted to the String "null";
      * if it is not possible to convert an object to JSON, the object's 'toString' will be used instead.
      * @return the formatted message.
      */
