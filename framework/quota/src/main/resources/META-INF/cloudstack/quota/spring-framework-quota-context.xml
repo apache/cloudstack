@@ -25,7 +25,6 @@
 	<bean id="QuotaEmailTemplatesDao"
 		class="org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDaoImpl" />
 	<bean id="QuotaUsageDao" class="org.apache.cloudstack.quota.dao.QuotaUsageDaoImpl" />
-    <bean id="ServiceOfferingDao" class="org.apache.cloudstack.quota.dao.ServiceOfferingDaoImpl" />
     <bean id="UserVmDetailsDao" class="org.apache.cloudstack.quota.dao.UserVmDetailsDaoImpl" />
 
 	<bean id="QuotaManager" class="org.apache.cloudstack.quota.QuotaManagerImpl" />

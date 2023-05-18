@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -115,6 +115,8 @@
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
+        <module>shutdown</module>
+
         <module>storage/image/default</module>
         <module>storage/image/s3</module>
         <module>storage/image/sample</module>
@@ -138,7 +140,11 @@
         <module>user-authenticators/plain-text</module>
         <module>user-authenticators/saml2</module>
         <module>user-authenticators/sha256salted</module>
-   </modules>
+
+        <module>user-two-factor-authenticators/totp</module>
+        <module>user-two-factor-authenticators/static-pin</module>
+
+    </modules>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -159,6 +165,16 @@
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-framework-config</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.taimos</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

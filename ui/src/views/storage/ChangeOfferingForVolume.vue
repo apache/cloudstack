@@ -41,13 +41,14 @@
         showSearch
         optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }"
         @change="id => onChangeDiskOffering(id)">
         <a-select-option
           v-for="(offering, index) in diskOfferings"
           :value="offering.id"
-          :key="index">
+          :key="index"
+          :label="offering.displaytext || offering.name">
           {{ offering.displaytext || offering.name }}
         </a-select-option>
       </a-select>

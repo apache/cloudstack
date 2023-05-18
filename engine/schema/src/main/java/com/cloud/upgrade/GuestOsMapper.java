@@ -102,8 +102,16 @@ public class GuestOsMapper {
         guestOS = guestOSDao.persist(guestOS);
         return (guestOS != null);
     }
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long category, String displayName) {
+        long guestOsId =  getGuestOsId(category, displayName);
+        if (guestOsId == 0) {
+            LOG.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
+        } else {
+            addGuestOsHypervisorMapping(mapping, guestOsId);
+        }
+    }
 
-    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+    private void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
         if(!isValidGuestOSHypervisorMapping(mapping)) {
             return;
         }
