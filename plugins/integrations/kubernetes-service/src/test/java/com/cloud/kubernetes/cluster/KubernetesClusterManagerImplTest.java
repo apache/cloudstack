@@ -1,7 +1,5 @@
 package com.cloud.kubernetes.cluster;
 
-import static org.junit.Assert.*;
-
 import java.util.List;
 
 import org.junit.Test;
