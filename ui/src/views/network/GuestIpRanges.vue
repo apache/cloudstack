@@ -36,19 +36,21 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
-          <a-popconfirm
-            :title="$t('message.confirm.remove.ip.range')"
-            @confirm="removeIpRange(record.id)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')" >
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.action.delete.ip.range')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'actions'">
+            <a-popconfirm
+              :title="$t('message.confirm.remove.ip.range')"
+              @confirm="removeIpRange(record.id)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')" >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.action.delete.ip.range')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </template>
         </template>
 
       </a-table>
@@ -140,8 +142,8 @@ export default {
           dataIndex: 'netmask'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ]
     }

@@ -50,9 +50,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
+            <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index" :label="diskOffering.displaytext">
               {{ diskOffering.displaytext }}
             </a-select-option>
           </a-select>
@@ -193,6 +193,8 @@ export default {
       }
       api('migrateVolume', params).then(response => {
         this.$pollJob({
+          title: this.$t('label.migrate.volume'),
+          description: this.resource.id,
           jobId: response.migratevolumeresponse.jobid,
           successMessage: this.$t('message.success.migrate.volume'),
           errorMessage: this.$t('message.migrate.volume.failed'),

@@ -29,99 +29,124 @@
       :columns="columns"
       :pagination="false"
       style="margin-bottom: 24px; width: 100%">
-      <template #name="{ text, record }">
-        <a-input :value="text" @change="e => onCellChange(record.key, 'name', e.target.value)" v-focus="true" />
-      </template>
-      <template #isolationMethod="{ text, record }">
-        <a-select
-          style="width: 100%"
-          :defaultValue="text"
-          @change="value => onCellChange(record.key, 'isolationMethod', value)"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option value="VLAN"> VLAN </a-select-option>
-          <a-select-option value="VXLAN"> VXLAN </a-select-option>
-          <a-select-option value="GRE"> GRE </a-select-option>
-          <a-select-option value="STT"> STT </a-select-option>
-          <a-select-option value="BCF_SEGMENT"> BCF_SEGMENT </a-select-option>
-          <a-select-option value="ODL"> ODL </a-select-option>
-          <a-select-option value="L3VPN"> L3VPN </a-select-option>
-          <a-select-option value="VSP"> VSP </a-select-option>
-          <a-select-option value="VCS"> VCS </a-select-option>
-        </a-select>
-      </template>
-      <template #traffics="{ record }">
-        <div v-for="traffic in record.traffics" :key="traffic.type">
-          <a-tag
-            :color="trafficColors[traffic.type]"
-            style="margin:2px"
-          >
-            {{ traffic.type.toUpperCase() }}
-            <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
-            <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
-          </a-tag>
-        </div>
-        <div v-if="isShowAddTraffic(record.traffics)">
-          <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
-            <a-select
-              :defaultValue="trafficLabelSelected"
-              @change="val => { trafficLabelSelected = val }"
-              style="min-width: 120px;"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option
-                v-for="(traffic, index) in availableTrafficToAdd"
-                :value="traffic"
-                :key="index"
-                :disabled="isDisabledTraffic(record.traffics, traffic)"
-              >
-                {{ traffic.toUpperCase() }}
-              </a-select-option>
-            </a-select>
-            <tooltip-button
-              :tooltip="$t('label.add')"
-              buttonClass="icon-button"
-              icon="plus-outlined"
-              size="small"
-              @onClick="trafficAdded" />
-            <tooltip-button
-              :tooltip="$t('label.cancel')"
-              buttonClass="icon-button"
-              type="primary"
-              :danger="true"
-              icon="close-outlined"
-              size="small"
-              @onClick="() => { addingTrafficForKey = null }" />
+      <template #bodyCell="{ column, text, record, index }">
+        <template v-if="column.key === 'name'">
+          <a-input
+            :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+            :value="text"
+            @change="e => onCellChange(record.key, 'name', e.target.value)"
+            v-focus="true">
+            <template #suffix>
+              <a-tooltip
+                v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+                :title="$t('message.no.support.tungsten.fabric')">
+                <warning-outlined style="color: #f5222d" />
+              </a-tooltip>
+            </template>
+          </a-input>
+        </template>
+        <template v-if="column.key === 'isolationMethod'">
+          <a-select
+            :disabled="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+            style="width: 100%"
+            :defaultValue="text"
+            @change="value => onCellChange(record.key, 'isolationMethod', value)"
+            showSearch
+            optionFilterProp="value"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="VLAN"> VLAN </a-select-option>
+            <a-select-option value="VXLAN"> VXLAN </a-select-option>
+            <a-select-option value="GRE"> GRE </a-select-option>
+            <a-select-option value="STT"> STT </a-select-option>
+            <a-select-option value="BCF_SEGMENT"> BCF_SEGMENT </a-select-option>
+            <a-select-option value="ODL"> ODL </a-select-option>
+            <a-select-option value="L3VPN"> L3VPN </a-select-option>
+            <a-select-option value="VSP"> VSP </a-select-option>
+            <a-select-option value="VCS"> VCS </a-select-option>
+            <a-select-option value="TF"> TF </a-select-option>
+
+            <template #suffixIcon>
+              <a-tooltip
+                v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+                :title="$t('message.no.support.tungsten.fabric')">
+                <warning-outlined style="color: #f5222d" />
+              </a-tooltip>
+            </template>
+          </a-select>
+        </template>
+        <template v-if="column.key === 'traffics'">
+          <div v-for="traffic in record.traffics" :key="traffic.type">
+            <a-tag
+              :color="trafficColors[traffic.type]"
+              style="margin:2px"
+            >
+              {{ traffic.type.toUpperCase() }}
+              <edit-outlined class="traffic-type-action" @click="editTraffic(record.key, traffic, $event)"/>
+              <delete-outlined class="traffic-type-action" @click="deleteTraffic(record.key, traffic, $event)"/>
+            </a-tag>
           </div>
-          <a-tag
-            key="addingTraffic"
-            style="margin:2px;"
-            v-else
-          >
-            <a @click="addingTraffic(record.key, record.traffics)">
-              <plus-outlined />
-              {{ $t('label.add.traffic') }}
-            </a>
-          </a-tag>
-        </div>
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          v-if="physicalNetworks.indexOf(record) > 0"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="onDelete(record)" />
+          <div v-if="isShowAddTraffic(record.traffics, index)">
+            <div class="traffic-select-item" v-if="addingTrafficForKey === record.key">
+              <a-select
+                :defaultValue="trafficLabelSelected"
+                @change="val => { trafficLabelSelected = val }"
+                style="min-width: 120px;"
+                showSearch
+                optionFilterProp="value"
+                :filterOption="(input, option) => {
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option
+                  v-for="(traffic, index) in availableTrafficToAdd"
+                  :value="traffic"
+                  :key="index"
+                  :disabled="isDisabledTraffic(record.traffics, traffic)"
+                >
+                  {{ traffic.toUpperCase() }}
+                </a-select-option>
+              </a-select>
+              <tooltip-button
+                :tooltip="$t('label.add')"
+                buttonClass="icon-button"
+                icon="plus-outlined"
+                size="small"
+                @onClick="trafficAdded" />
+              <tooltip-button
+                :tooltip="$t('label.cancel')"
+                buttonClass="icon-button"
+                type="primary"
+                :danger="true"
+                icon="close-outlined"
+                size="small"
+                @onClick="() => { addingTrafficForKey = null }" />
+            </div>
+            <a-tag
+              key="addingTraffic"
+              style="margin:2px;"
+              v-else
+            >
+              <a @click="addingTraffic(record.key, record.traffics)">
+                <plus-outlined />
+                {{ $t('label.add.traffic') }}
+              </a>
+            </a-tag>
+          </div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            v-if="tungstenNetworkIndex === -1 ? index > 0 : tungstenNetworkIndex !== index"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="onDelete(record)" />
+        </template>
       </template>
       <template #footer v-if="isAdvancedZone">
         <a-button
+          :disabled="tungstenNetworkIndex > -1"
           @click="handleAddPhysicalNetwork">
           {{ $t('label.add.physical.network') }}
         </a-button>
@@ -196,11 +221,17 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
-              <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
-              <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
+              <a-select-option
+                value="nexusdvs"
+                :label="$t('label.vswitch.type.nexusdvs')">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
+              <a-select-option
+                value="vmwaresvs"
+                :label="$t('label.vswitch.type.vmwaresvs')">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
+              <a-select-option
+                value="vmwaredvs"
+                :label="$t('label.vswitch.type.vmwaredvs')">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
             </a-select>
           </a-form-item>
         </span>
@@ -267,29 +298,28 @@ export default {
     columns () {
       const columns = []
       columns.push({
+        key: 'name',
         title: this.$t('label.network.name'),
         dataIndex: 'name',
-        width: 175,
-        slots: { customRender: 'name' }
+        width: 175
       })
       columns.push({
+        key: 'isolationMethod',
         title: this.$t('label.isolation.method'),
         dataIndex: 'isolationMethod',
-        width: 150,
-        slots: { customRender: 'isolationMethod' }
+        width: 150
       })
       columns.push({
-        title: this.$t('label.traffic.types'),
         key: 'traffics',
+        title: this.$t('label.traffic.types'),
         dataIndex: 'traffics',
-        width: 250,
-        slots: { customRender: 'traffics' }
+        width: 250
       })
       if (this.isAdvancedZone) {
         columns.push({
+          key: 'actions',
           title: '',
           dataIndex: 'actions',
-          slots: { customRender: 'actions' },
           width: 70
         })
       }
@@ -330,6 +360,10 @@ export default {
         traffics.push('public')
       }
       return traffics
+    },
+    tungstenNetworkIndex () {
+      const tungstenNetworkIndex = this.physicalNetworks.findIndex(network => network.isolationMethod === 'TF')
+      return tungstenNetworkIndex
     },
     hypervisor () {
       return this.prefillContent.hypervisor || null
@@ -420,12 +454,16 @@ export default {
       this.hasUnusedPhysicalNetwork = this.getHasUnusedPhysicalNetwork()
     },
     isValidSetup () {
-      const shouldHaveLabels = this.physicalNetworks.length > 1
+      let physicalNetworks = this.physicalNetworks
+      if (this.tungstenNetworkIndex > -1) {
+        physicalNetworks = [this.physicalNetworks[this.tungstenNetworkIndex]]
+      }
+      const shouldHaveLabels = physicalNetworks.length > 1
       let isValid = true
       this.requiredTrafficTypes.forEach(type => {
         if (!isValid) return false
         let foundType = false
-        this.physicalNetworks.forEach(net => {
+        physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
             if (!isValid) return false
             if (traffic.type === type) {
@@ -570,7 +608,10 @@ export default {
 
       return false
     },
-    isShowAddTraffic (traffics) {
+    isShowAddTraffic (traffics, index) {
+      if (this.tungstenNetworkIndex > -1 && this.tungstenNetworkIndex !== index) {
+        return false
+      }
       if (!this.availableTrafficToAdd || this.availableTrafficToAdd.length === 0) {
         return false
       }
@@ -616,6 +657,21 @@ export default {
   .traffic-select-item {
     :deep(.icon-button) {
       margin: 0 0 0 5px;
+    }
+  }
+
+  .disabled-traffic {
+    position: relative;
+
+    &::before {
+      content: ' ';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      cursor: not-allowed;
     }
   }
 </style>

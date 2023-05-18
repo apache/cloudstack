@@ -245,4 +245,3 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
         MessageType: 0x1, MUST be set to SYNCMSGTYPE_SYNC (1)
         TargetUser: 1002 (0x3EA)
  */
-

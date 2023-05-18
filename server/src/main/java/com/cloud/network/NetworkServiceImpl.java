@@ -1402,6 +1402,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
         } else {
+            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
             owner = caller;
         }
 
@@ -4410,12 +4411,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         vlanOwnerId = vlanOwner.getAccountId();
 
-        // Verify physical network isolation type is VLAN
+        // Verify physical network isolation methods contain VLAN or VXLAN
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
             throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
-        } else if (!physicalNetwork.getIsolationMethods().isEmpty() && !physicalNetwork.getIsolationMethods().contains("VLAN")) {
-            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN");
+        } else if (!physicalNetwork.getIsolationMethods().isEmpty() &&
+                !physicalNetwork.getIsolationMethods().contains("VLAN") &&
+                !physicalNetwork.getIsolationMethods().contains("VXLAN")) {
+            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN nor VXLAN");
         }
 
         // Get the start and end vlan

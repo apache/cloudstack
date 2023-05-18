@@ -133,4 +133,14 @@ public interface AsyncJobManager extends Manager {
     List<AsyncJobVO> findFailureAsyncJobs(String... cmds);
 
     long countPendingJobs(String havingInfo, String... cmds);
+
+    // Returns the number of pending jobs for the given Management server msids.
+    // NOTE: This is the msid and NOT the id
+    long countPendingNonPseudoJobs(Long... msIds);
+
+    void enableAsyncJobs();
+
+    void disableAsyncJobs();
+
+    boolean isAsyncJobsEnabled();
 }

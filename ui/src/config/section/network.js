@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 
 export default {
@@ -29,6 +30,7 @@ export default {
       name: 'guestnetwork',
       title: 'label.guest.networks',
       icon: 'apartment-outlined',
+      docHelp: 'adminguide/networking_and_traffic.html#adding-an-additional-guest-network',
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
@@ -76,6 +78,18 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }, {
+        name: 'network.policy',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkPolicyTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricPolicy' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
+      }, {
+        name: 'tungsten.logical.router',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/LogicalRouterTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricLogicalRouter' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
+      }, {
         name: 'network.permissions',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/NetworkPermissions.vue'))),
         show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) && !record.projectid }
@@ -116,6 +130,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
@@ -125,6 +140,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           args: (record, store, isGroupAction) => {
             var fields = []
             if (isGroupAction || record.vpcid == null) {
@@ -163,6 +179,7 @@ export default {
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -642,9 +659,8 @@ export default {
     {
       name: 'vpnuser',
       title: 'label.vpn.users',
-      icon: 'user-alt-outlined',
+      icon: 'user-switch-outlined',
       permission: ['listVpnUsers'],
-      hidden: true,
       columns: ['username', 'state', 'account', 'domain'],
       details: ['username', 'state', 'account', 'domain'],
       actions: [
@@ -748,9 +764,152 @@ export default {
       ]
     },
     {
+      name: 'tungstenfabric',
+      title: 'label.tungsten.fabric',
+      icon: shallowRef(tungsten),
+      permission: ['listTungstenFabricProviders'],
+      columns: [
+        {
+          field: 'name',
+          customTitle: 'tungsten.fabric.provider'
+        },
+        'zonename'
+      ],
+      details: ['name', 'tungstengateway', 'tungstenproviderhostname', 'tungstenproviderintrospectport', 'tungstenproviderport', 'tungstenprovideruuid', 'tungstenprovidervrouterport', 'zonename'],
+      resourceType: 'TungstenFabric',
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'tungsten.fabric',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabric.vue'))),
+          show: (record) => { return !record.securitygroupsenabled }
+        }
+      ]
+    },
+    {
+      name: 'tungstenpolicy',
+      title: 'label.network.policy',
+      icon: shallowRef(tungsten),
+      hidden: true,
+      permission: ['listTungstenFabricPolicy'],
+      columns: ['name', 'zonename'],
+      details: ['name', 'zonename'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'rule',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricPolicyRule.vue')))
+        },
+        {
+          name: 'tag',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricPolicyTag.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'deleteTungstenFabricPolicy',
+          icon: 'delete-outlined',
+          label: 'label.delete.tungsten.policy',
+          message: 'label.confirm.delete.tungsten.policy',
+          dataView: true,
+          mapping: {
+            policyuuid: {
+              value: (record) => { return record.uuid }
+            },
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            }
+          }
+        }
+      ]
+    },
+    {
+      name: 'tungstenpolicyset',
+      title: 'label.application.policy.set',
+      icon: shallowRef(tungsten),
+      hidden: true,
+      permission: ['listTungstenFabricApplicationPolicySet'],
+      columns: ['name', 'zonename'],
+      details: ['name', 'zonename'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'firewall.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallPolicyTab.vue')))
+        },
+        {
+          name: 'tag',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallTagTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'deleteTungstenFabricApplicationPolicySet',
+          icon: 'delete-outlined',
+          label: 'label.delete.tungsten.policy.set',
+          message: 'label.confirm.delete.tungsten.policy.set',
+          dataView: true,
+          mapping: {
+            applicationpolicysetuuid: {
+              value: (record) => { return record.uuid }
+            },
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            }
+          }
+        }
+      ]
+    },
+    {
+      name: 'tungstenfirewallpolicy',
+      title: 'label.firewall.policy',
+      icon: shallowRef(tungsten),
+      hidden: true,
+      permission: ['listTungstenFabricFirewallPolicy'],
+      columns: ['name', 'zonename'],
+      details: ['uuid', 'name', 'zonename'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'firewallrule',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallRuleTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'deleteTungstenFabricFirewallPolicy',
+          icon: 'delete-outlined',
+          label: 'label.delete.tungsten.firewall.policy',
+          message: 'label.confirm.delete.tungsten.firewall.policy',
+          dataView: true,
+          mapping: {
+            firewallpolicyuuid: {
+              value: (record) => { return record.uuid }
+            },
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            }
+          }
+        }
+      ]
+    },
+    {
       name: 'guestvlans',
       title: 'label.guest.vlan',
       icon: 'folder-outlined',
+      docHelp: 'conceptsandterminology/network_setup.html#vlan-allocation-example',
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],

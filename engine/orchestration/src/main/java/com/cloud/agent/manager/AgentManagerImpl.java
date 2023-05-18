@@ -42,6 +42,7 @@ import com.cloud.configuration.Config;
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -50,6 +51,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 
@@ -1249,6 +1251,52 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             super(type, link, data);
         }
 
+        private void processHostHealthCheckResult(Boolean hostHealthCheckResult, long hostId) {
+            if (hostHealthCheckResult == null) {
+                return;
+            }
+            HostVO host = _hostDao.findById(hostId);
+            if (host == null) {
+                s_logger.error(String.format("Unable to find host with ID: %s", hostId));
+                return;
+            }
+            if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
+                s_logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
+                        "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName()));
+                return;
+            }
+
+            ResourceState.Event resourceEvent = hostHealthCheckResult ? ResourceState.Event.Enable : ResourceState.Event.Disable;
+
+            try {
+                s_logger.info(String.format("Host health check %s, auto %s KVM host: %s",
+                        hostHealthCheckResult ? "succeeds" : "fails",
+                        hostHealthCheckResult ? "enabling" : "disabling",
+                        host.getName()));
+                _resourceMgr.autoUpdateHostAllocationState(hostId, resourceEvent);
+            } catch (NoTransitionException e) {
+                s_logger.error(String.format("Cannot Auto %s host: %s", resourceEvent, host.getName()), e);
+            }
+        }
+
+        private void processStartupRoutingCommand(StartupRoutingCommand startup, long hostId) {
+            if (startup == null) {
+                s_logger.error("Empty StartupRoutingCommand received");
+                return;
+            }
+            Boolean hostHealthCheckResult = startup.getHostHealthCheckResult();
+            processHostHealthCheckResult(hostHealthCheckResult, hostId);
+        }
+
+        private void processPingRoutingCommand(PingRoutingCommand pingRoutingCommand, long hostId) {
+            if (pingRoutingCommand == null) {
+                s_logger.error("Empty PingRoutingCommand received");
+                return;
+            }
+            Boolean hostHealthCheckResult = pingRoutingCommand.getHostHealthCheckResult();
+            processHostHealthCheckResult(hostHealthCheckResult, hostId);
+        }
+
         protected void processRequest(final Link link, final Request request) {
             final AgentAttache attache = (AgentAttache)link.attachment();
             final Command[] cmds = request.getCommands();
@@ -1290,6 +1338,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 try {
                     if (cmd instanceof StartupRoutingCommand) {
                         final StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
+                        processStartupRoutingCommand(startup, hostId);
                         answer = new StartupAnswer(startup, attache.getId(), mgmtServiceConf.getPingInterval());
                     } else if (cmd instanceof StartupProxyCommand) {
                         final StartupProxyCommand startup = (StartupProxyCommand) cmd;
@@ -1321,6 +1370,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             // if the router is sending a ping, verify the
                             // gateway was pingable
                             if (cmd instanceof PingRoutingCommand) {
+                                processPingRoutingCommand((PingRoutingCommand) cmd, hostId);
                                 final boolean gatewayAccessible = ((PingRoutingCommand)cmd).isGatewayAccessible();
                                 final HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
 
@@ -1747,8 +1797,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
-            DirectAgentThreadCap };
+        return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
+                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -1783,6 +1833,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     Map<String, String> params = new HashMap<String, String>();
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
+                    params.put(NetworkOrchestrationService.TUNGSTEN_ENABLED.key(), String.valueOf(NetworkOrchestrationService.TUNGSTEN_ENABLED.valueIn(host.getDataCenterId())));
 
                     try {
                         SetHostParamsCommand cmds = new SetHostParamsCommand(params);

@@ -108,6 +108,8 @@ class Role:
             cmd.roleid = services["roleid"]
         if "description" in services:
             cmd.description = services["description"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.createRole(cmd).__dict__)
 
@@ -122,6 +124,8 @@ class Role:
             cmd.description = services["description"]
         if "forced" in services:
             cmd.type = services["forced"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.importRole(cmd).__dict__)
 
@@ -522,7 +526,8 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
+               userdataid=None, userdatadetails=None, extraconfig=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -677,6 +682,9 @@ class VirtualMachine:
 
         if boottype:
             cmd.boottype = boottype
+
+        if extraconfig:
+            cmd.extraconfig = extraconfig
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 

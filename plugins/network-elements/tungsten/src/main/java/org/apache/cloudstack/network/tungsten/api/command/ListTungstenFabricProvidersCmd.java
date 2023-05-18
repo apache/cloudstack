@@ -85,4 +85,3 @@ public class ListTungstenFabricProvidersCmd extends BaseListCmd {
         setResponseObject(listResponse);
     }
 }
-
