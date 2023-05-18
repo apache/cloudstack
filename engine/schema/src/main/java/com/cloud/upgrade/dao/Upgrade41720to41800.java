@@ -283,14 +283,18 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
         // Pass Guest OS Ids to update pre-4.14 mappings
         // Add support CentOS 8 for Xenserver 8.1.0
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "CentOS 8"), 297);
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "CentOS 8"),
+                1, "CentOS 8");
 
         // Add support for Debian Buster 10 for Xenserver 8.1.0
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "Debian Buster 10"), 292);
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "Debian Buster 10"), 293);
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "Debian Buster 10"),
+                2, "Debian GNU/Linux 10 (32-bit)");
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "Debian Buster 10"),
+                2, "Debian GNU/Linux 10 (64-bit)");
 
         // Add support for SUSE Linux Enterprise 15 (64-bit) for Xenserver 8.1.0
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "SUSE Linux Enterprise 15 (64-bit)"), 291);
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("Xenserver", "8.1.0", "SUSE Linux Enterprise 15 (64-bit)"),
+                5, "SUSE Linux Enterprise Server 15 (64-bit)");
 
         // Add support for Ubuntu Focal Fossa 20.04 for Xenserver 8.2.0
         mappings.add(new GuestOSHypervisorMapping("Xenserver", "8.2.0", "Ubuntu Focal Fossa 20.04"));
@@ -313,7 +317,8 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.clear();
 
         // Add support for windows2019srv_64Guest from VMware 7.0
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "7.0", "windows2019srv_64Guest"), 276);
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "7.0", "windows2019srv_64Guest"),
+                6, "Windows Server 2019 (64-bit)");
 
         // Add support for amazonlinux3_64Guest from VMware 7.0.1.0
         mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "amazonlinux3_64Guest"));
@@ -373,7 +378,8 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.clear();
 
         // Add support for windows2019srvNext_64Guest from VMware 7.0.1.0 - Pass Guest OS Ids to update pre-4.14 mappings
-        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "windows2019srvNext_64Guest"), 276);
+        guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "windows2019srvNext_64Guest"),
+                6, "Windows Server 2019 (64-bit)");
 
         // The below existing Guest OS Ids must be used for updating the guest OS hypervisor mappings
         // CentOS - 1, Debian - 2, Oracle - 3, RedHat - 4, SUSE - 5, Windows - 6, Other - 7, Novel - 8, Unix - 9, Ubuntu - 10, None - 11

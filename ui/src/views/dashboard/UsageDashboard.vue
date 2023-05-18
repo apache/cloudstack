@@ -175,7 +175,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
+        this.stats.splice(0, 1, { name: this.$t('label.running.vms'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
@@ -183,7 +183,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped.vms'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0

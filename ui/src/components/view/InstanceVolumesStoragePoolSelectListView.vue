@@ -26,16 +26,18 @@
       :dataSource="volumes"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #size="{ record }">
-        <span v-if="record.size">
-          {{ $bytesToHumanReadableSize(record.size) }}
-        </span>
-      </template>
-      <template #selectedstorage="{ record }">
-        <span>{{ record.selectedstoragename || '' }}</span>
-      </template>
-      <template #select="{ record }">
-        <div style="display: flex; justify-content: flex-end;"><a-button @click="openVolumeStoragePoolSelector(record)">{{ record.selectedstorageid ? $t('label.change') : $t('label.select') }}</a-button></div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'size'">
+          <span v-if="record.size">
+            {{ $bytesToHumanReadableSize(record.size) }}
+          </span>
+        </template>
+        <template v-if="column.key === 'selectedstorage'">
+          <span>{{ record.selectedstoragename || '' }}</span>
+        </template>
+        <template v-if="column.key === 'select'">
+          <div style="display: flex; justify-content: flex-end;"><a-button @click="openVolumeStoragePoolSelector(record)">{{ record.selectedstorageid ? $t('label.change') : $t('label.select') }}</a-button></div>
+        </template>
       </template>
     </a-table>
 
@@ -86,24 +88,26 @@ export default {
       volumesLoading: false,
       volumeColumns: [
         {
+          key: 'name',
           title: this.$t('label.volumeid'),
           dataIndex: 'name'
         },
         {
+          key: 'type',
           title: this.$t('label.type'),
           dataIndex: 'type'
         },
         {
-          title: this.$t('label.size'),
-          slots: { customRender: 'size' }
+          key: 'size',
+          title: this.$t('label.size')
         },
         {
-          title: this.$t('label.storage'),
-          slots: { customRender: 'selectedstorage' }
+          key: 'selectedstorage',
+          title: this.$t('label.storage')
         },
         {
-          title: '',
-          slots: { customRender: 'select' }
+          key: 'select',
+          title: ''
         }
       ],
       selectedVolumeForStoragePoolSelection: {},

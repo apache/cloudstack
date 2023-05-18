@@ -88,10 +88,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @change="handleVpcOfferingChange" >
-            <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
+            <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id" :label="offering.name">
               {{ offering.name }}
             </a-select-option>
           </a-select>
@@ -222,7 +222,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
         cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
