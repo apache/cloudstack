@@ -177,6 +177,7 @@
                 :maxCpu="getMaxCpu()"
                 :minMemory="getMinMemory()"
                 :maxMemory="getMaxMemory()"
+                :cpuSpeed="getCPUSpeed()"
                 @update-iops-value="updateFieldValue"
                 @update-compute-cpunumber="updateFieldValue"
                 @update-compute-cpuspeed="updateFieldValue"
@@ -194,10 +195,10 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     @change="val => { selectedRootDiskIndex = val }">
-                    <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex">
+                    <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex" :label="opt.label || opt.id">
                       {{ opt.label || opt.id }}
                     </a-select-option>
                   </a-select>
@@ -521,6 +522,15 @@ export default {
         return this.resource.memory
       }
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
+    },
+    getCPUSpeed () {
+      if (!this.computeOffering) {
+        return 0
+      }
+      if (this.computeOffering.cpuspeed) {
+        return this.computeOffering.cpuspeed * 1
+      }
+      return this.resource.cpuspeed * 1 || 0
     },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {

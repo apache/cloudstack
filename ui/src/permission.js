@@ -26,7 +26,7 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER, CURRENT_PROJECT } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -104,7 +104,8 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
-              store.dispatch('ToggleTheme', 'light')
+              const project = vueProps.$localStorage.get(CURRENT_PROJECT)
+              store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
             })
           })
           .catch(() => {

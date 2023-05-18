@@ -4580,7 +4580,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
