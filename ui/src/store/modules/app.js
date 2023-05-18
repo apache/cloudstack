@@ -121,6 +121,9 @@ const app = {
     SET_CUSTOM_COLUMNS: (state, customColumns) => {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
+    },
+    SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
+      state.shutdownTriggered = shutdownTriggered
     }
   },
   actions: {
@@ -177,6 +180,9 @@ const app = {
     },
     SetCustomColumns ({ commit }, bool) {
       commit('SET_CUSTOM_COLUMNS', bool)
+    },
+    SetShutdownTriggered ({ commit }, bool) {
+      commit('SET_SHUTDOWN_TRIGGERED', bool)
     }
   }
 }

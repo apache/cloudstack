@@ -59,9 +59,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
-                <a-select-option v-for="opt in filters" :key="opt.id" >
+                <a-select-option v-for="opt in filters" :key="opt.id" :label="opt.name">
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
@@ -73,9 +73,9 @@
                 :loading="domainLoading"
                 @change="fetchListLdapUsers($event)"
                 showSearch
-                optionFilterProp="label"
+                optionFilterProp="value"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in listDomains" :key="opt.name">
                   {{ opt.name }}
@@ -94,9 +94,9 @@
                 :placeholder="apiParams.roleid.description"
                 :loading="roleLoading"
                 showSearch
-                optionFilterProp="label"
+                optionFilterProp="value"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
                 <a-select-option v-for="opt in listRoles" :key="opt.name">
                   {{ opt.name }}
@@ -111,9 +111,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
-                <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -142,9 +142,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }">
-                  <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
+                  <a-select-option v-for="(idp, idx) in listIdps" :key="idx" :label="idp.orgName">
                     {{ idp.orgName }}
                   </a-select-option>
                 </a-select>
@@ -212,26 +212,26 @@ export default {
     this.listIdps = []
     this.columns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: 120,
-        slots: { customRender: 'name' }
+        width: 120
       },
       {
+        key: 'username',
         title: this.$t('label.username'),
         dataIndex: 'username',
-        width: 120,
-        slots: { customRender: 'username' }
+        width: 120
       },
       {
+        key: 'email',
         title: this.$t('label.email'),
-        dataIndex: 'email',
-        slots: { customRender: 'email' }
+        dataIndex: 'email'
       },
       {
+        key: 'conflictingusersource',
         title: this.$t('label.user.conflict'),
-        dataIndex: 'conflictingusersource',
-        slots: { customRender: 'conflictingusersource' }
+        dataIndex: 'conflictingusersource'
       }
     ]
     this.filters = [
@@ -487,9 +487,9 @@ export default {
     },
     handleEntityRule () {
       if (this.form.samlEnable) {
-        this.rules.push({
-          samlEntity: [{ required: true, message: `${this.$t('message.error.select')}` }]
-        })
+        this.rules.samlEntity = [{ required: true, message: `${this.$t('message.error.select')}` }]
+      } else {
+        delete this.rules.samlEntity
       }
     }
   }

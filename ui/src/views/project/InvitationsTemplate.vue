@@ -36,26 +36,28 @@
           :pagination="false"
           :rowKey="record => record.id || record.account"
           @change="onChangeTable">
-          <template #state="{ text }">
-            <status :text="text ? text : ''" displayText />
-          </template>
-          <template #action="{ record }">
-            <div v-if="record.state===stateAllow" class="account-button-action">
-              <tooltip-button
-                tooltipPlacement="top"
-                :tooltip="$t('label.accept.project.invitation')"
-                icon="check-outlined"
-                size="small"
-                @onClick="onShowConfirmAcceptInvitation(record)"/>
-              <tooltip-button
-                tooltipPlacement="top"
-                :tooltip="$t('label.decline.invitation')"
-                type="primary"
-                :danger="true"
-                icon="close-outlined"
-                size="small"
-                @onClick="onShowConfirmRevokeInvitation(record)"/>
-            </div>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
+            <template v-if="column.key === 'actions'">
+              <div v-if="record.state===stateAllow" class="account-button-action">
+                <tooltip-button
+                  tooltipPlacement="top"
+                  :tooltip="$t('label.accept.project.invitation')"
+                  icon="check-outlined"
+                  size="small"
+                  @onClick="onShowConfirmAcceptInvitation(record)"/>
+                <tooltip-button
+                  tooltipPlacement="top"
+                  :tooltip="$t('label.decline.invitation')"
+                  type="primary"
+                  :danger="true"
+                  icon="close-outlined"
+                  size="small"
+                  @onClick="onShowConfirmRevokeInvitation(record)"/>
+              </div>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -108,25 +110,25 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'project',
         title: this.$t('label.project'),
-        dataIndex: 'project',
-        slots: { customRender: 'project' }
+        dataIndex: 'project'
       },
       {
+        key: 'account',
         title: this.$t('label.account'),
-        dataIndex: 'account',
-        slots: { customRender: 'account' }
+        dataIndex: 'account'
       },
       {
+        key: 'domain',
         title: this.$t('label.domain'),
-        dataIndex: 'domain',
-        slots: { customRender: 'domain' }
+        dataIndex: 'domain'
       },
       {
+        key: 'state',
         title: this.$t('label.state'),
         dataIndex: 'state',
         width: 130,
-        slots: { customRender: 'state' },
         filters: [
           {
             text: this.$t('state.pending'),
@@ -148,10 +150,10 @@ export default {
         filterMultiple: false
       },
       {
-        title: this.$t('label.action'),
-        dataIndex: 'action',
-        width: 80,
-        slots: { customRender: 'action' }
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions',
+        width: 80
       }
     ]
 
@@ -161,9 +163,9 @@ export default {
     this.apiParams = this.$getApiParams('listProjectInvitations')
     if (this.apiParams.userid) {
       this.columns.splice(2, 0, {
+        key: 'user',
         title: this.$t('label.user'),
-        dataIndex: 'userid',
-        slots: { customRender: 'user' }
+        dataIndex: 'userid'
       })
     }
     this.fetchData()
