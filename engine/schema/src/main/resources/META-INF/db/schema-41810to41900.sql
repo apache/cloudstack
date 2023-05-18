@@ -131,3 +131,7 @@ CREATE VIEW `cloud`.`async_job_view` AS
             left join
         `cloud`.`autoscale_vmgroups` ON async_job.instance_id = autoscale_vmgroups.id;
 
+-- Invalidate existing console_session records
+UPDATE `cloud`.`console_session` SET removed=now();
+-- Modify acquired column in console_session to datetime type
+ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
