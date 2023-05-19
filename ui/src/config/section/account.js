@@ -31,6 +31,10 @@ export default {
     title: 'label.users',
     param: 'account'
   }],
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'locked']
+    return filters
+  },
   tabs: [
     {
       name: 'details',
