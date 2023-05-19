@@ -543,8 +543,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return true;
     }
 
-    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-            ConcurrentOperationException {
+    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = CallContext.current().getCallingAccount();
         long callerUserId = CallContext.current().getCallingUserId();
         // check permissions
@@ -746,11 +745,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } catch (ResourceUnavailableException e) {
                 throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
-        } else {
-            if (ip.getState() == IpAddress.State.Releasing) {
-                publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
-                _ipAddressDao.unassignIpAddress(ip.getId());
-            }
+        } else if (ip.getState() == State.Releasing) {
+            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
+            _ipAddressDao.unassignIpAddress(ip.getId());
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(), ip.getUuid());
@@ -760,10 +757,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 releasePortableIpAddress(addrId);
             }
             s_logger.debug("Released a public ip id=" + addrId);
-        } else {
-            if (publicIpQuarantine != null) {
-                removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
-            }
+        } else if (publicIpQuarantine != null) {
+            removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
         }
 
         return success;
