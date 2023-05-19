@@ -2474,19 +2474,4 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         publicIpQuarantineDao.persist(publicIpQuarantineVO);
         return publicIpQuarantineVO;
     }
-
-    @Override
-    public void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc) {
-        long accountId = CallContext.current().getCallingAccount().getAccountId();
-        SearchBuilder<PublicIpQuarantineVO> listAllIpsInQuarantine = publicIpQuarantineDao.createSearchBuilder();
-        listAllIpsInQuarantine.and("quarantineEndDate", listAllIpsInQuarantine.entity().getEndDate(), SearchCriteria.Op.GT);
-        listAllIpsInQuarantine.and("previousOwnerId", listAllIpsInQuarantine.entity().getPreviousOwnerId(), Op.NEQ);
-
-        SearchCriteria<PublicIpQuarantineVO> searchCriteria = listAllIpsInQuarantine.create();
-        searchCriteria.setParameters("quarantineEndDate", new Date());
-        searchCriteria.setParameters("previousOwnerId", accountId);
-        Object[] quarantinedIpsIdsAllowedToUser = publicIpQuarantineDao.search(searchCriteria, null).stream().map(PublicIpQuarantineVO::getPublicIpAddressId).toArray();
-
-        sc.setParametersIfNotNull("quarantinedPublicIpsIdsNIN", quarantinedIpsIdsAllowedToUser);
-    }
 }

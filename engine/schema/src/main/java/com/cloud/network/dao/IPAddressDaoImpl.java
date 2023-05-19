@@ -24,6 +24,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.network.IpAddress.State;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
@@ -68,6 +70,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     ResourceTagDao _tagsDao;
     @Inject
     UserIpAddressDetailsDao _detailsDao;
+
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     // make it public for JUnit test
     public IPAddressDaoImpl() {
@@ -533,5 +538,20 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("network", networkId);
         sc.setParameters("state", State.Allocated);
         return listBy(sc);
+    }
+
+    @Override
+    public void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc) {
+        long accountId = CallContext.current().getCallingAccount().getAccountId();
+        SearchBuilder<PublicIpQuarantineVO> listAllIpsInQuarantine = publicIpQuarantineDao.createSearchBuilder();
+        listAllIpsInQuarantine.and("quarantineEndDate", listAllIpsInQuarantine.entity().getEndDate(), SearchCriteria.Op.GT);
+        listAllIpsInQuarantine.and("previousOwnerId", listAllIpsInQuarantine.entity().getPreviousOwnerId(), Op.NEQ);
+
+        SearchCriteria<PublicIpQuarantineVO> searchCriteria = listAllIpsInQuarantine.create();
+        searchCriteria.setParameters("quarantineEndDate", new Date());
+        searchCriteria.setParameters("previousOwnerId", accountId);
+        Object[] quarantinedIpsIdsAllowedToUser = publicIpQuarantineDao.search(searchCriteria, null).stream().map(PublicIpQuarantineVO::getPublicIpAddressId).toArray();
+
+        sc.setParametersIfNotNull("quarantinedPublicIpsIdsNIN", quarantinedIpsIdsAllowedToUser);
     }
 }

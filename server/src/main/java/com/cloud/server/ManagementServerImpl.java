@@ -2491,7 +2491,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
             setParameters(sc2, cmd, vlanType, isAllocated);
             sc2.setParameters("ids", freeAddrIds.toArray());
-            _ipAddressMgr.buildQuarantineSearchCriteria(sc2);
+            _publicIpAddressDao.buildQuarantineSearchCriteria(sc2);
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
         Collections.sort(addrs, Comparator.comparing(IPAddressVO::getAddress));

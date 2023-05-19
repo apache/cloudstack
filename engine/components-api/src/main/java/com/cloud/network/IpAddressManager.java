@@ -36,7 +36,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -281,6 +280,4 @@ public interface IpAddressManager {
      * @return the updated quarantine object.
      */
     PublicIpQuarantine updatePublicIpAddressInQuarantine(Long quarantineProcessId, Date endDate);
-
-    void buildQuarantineSearchCriteria(SearchCriteria<IPAddressVO> sc);
 }

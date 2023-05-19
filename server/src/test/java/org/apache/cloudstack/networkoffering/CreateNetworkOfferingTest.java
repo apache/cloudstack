@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -103,6 +104,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     AnnotationDao annotationDao;
+
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     @Override
     @Before
