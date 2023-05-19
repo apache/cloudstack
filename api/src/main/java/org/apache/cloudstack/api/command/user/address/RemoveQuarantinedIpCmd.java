@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 
 @APICommand(name = "removeQuarantinedIp", responseObject = IpQuarantineResponse.class, description = "Removes a public IP address from quarantine. Only IPs in active " +
         "quarantine can be removed.",
-        since = "4.18.0", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.18.1.0", entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class RemoveQuarantinedIpCmd extends BaseCmd {
 
