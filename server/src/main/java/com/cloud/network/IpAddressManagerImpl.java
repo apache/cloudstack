@@ -720,7 +720,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         boolean success = true;
         IPAddressVO ipToBeDisassociated = _ipAddressDao.findById(addrId);
 
-        PublicIpQuarantine publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
+        PublicIpQuarantine publicIpQuarantine = null;
         // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
@@ -748,6 +748,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         } else {
             if (ip.getState() == IpAddress.State.Releasing) {
+                publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
                 _ipAddressDao.unassignIpAddress(ip.getId());
             }
         }
@@ -989,7 +990,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 if (lockOneRow) {
                     assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
                     IpAddress ipAddress = addrs.get(0);
-                    boolean ipCanBeAllocated = checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddress, owner);
+                    boolean ipCanBeAllocated = canPublicIpAddressBeAllocated(ipAddress, owner);
 
                     if (!ipCanBeAllocated) {
                         throw new InsufficientAddressCapacityException(String.format("Failed to allocate public IP address [%s] as it is in quarantine.", ipAddress.getAddress()),
@@ -2385,7 +2386,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public boolean checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(IpAddress ip, Account newOwner) {
+    public boolean canPublicIpAddressBeAllocated(IpAddress ip, Account newOwner) {
         PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findByPublicIpAddressId(ip.getId());
 
         if (publicIpQuarantineVO == null) {

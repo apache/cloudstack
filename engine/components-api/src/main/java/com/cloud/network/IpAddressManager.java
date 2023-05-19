@@ -255,7 +255,7 @@ public interface IpAddressManager {
      * @param account used to identify the new owner of the public IP.
      * @return true if the IP can be allocated, and false otherwise.
      */
-    boolean checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(IpAddress ip, Account account);
+    boolean canPublicIpAddressBeAllocated(IpAddress ip, Account account);
 
     /**
      * Adds the given public IP address to quarantine for the duration of the global configuration `public.ip.address.quarantine.duration` value.

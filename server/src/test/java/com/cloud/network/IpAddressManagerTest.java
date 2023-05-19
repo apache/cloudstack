@@ -339,7 +339,7 @@ public class IpAddressManagerTest {
         Mockito.when(ipAddressMock.getId()).thenReturn(dummyID);
         Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(null);
 
-        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, account);
+        boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, account);
 
         Assert.assertTrue(result);
     }
@@ -350,7 +350,7 @@ public class IpAddressManagerTest {
         Mockito.when(publicIpQuarantineDaoMock.findByPublicIpAddressId(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
         Mockito.doReturn(false).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
 
-        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+        boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
 
         Assert.assertTrue(result);
     }
@@ -368,7 +368,7 @@ public class IpAddressManagerTest {
         Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
         Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID);
 
-        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+        boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
 
         Assert.assertTrue(result);
     }
@@ -387,7 +387,7 @@ public class IpAddressManagerTest {
         Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
         Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID_2);
 
-        boolean result = ipAddressManager.checkIfPublicIpAddressIsNotInQuarantineAndCanBeAllocated(ipAddressMock, newOwnerMock);
+        boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
 
         Assert.assertFalse(result);
     }
