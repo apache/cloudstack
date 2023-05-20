@@ -33,7 +33,7 @@ github:
     - vmware
     - xenserver
     - xcp-ng
-    - orchestartion
+    - orchestration
     - virtualization
     - virtual-machine
     - kubernetes
