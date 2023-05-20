@@ -27,11 +27,16 @@ github:
     - infrastructure
     - java
     - python
-    - hosting
     - kvm
+    - libvirt
     - vsphere
+    - vmware
     - xenserver
     - xcp-ng
+    - orchestartion
+    - virtualization
+    - virtual-machine
+    - kubernetes
 
   features:
     wiki: true
