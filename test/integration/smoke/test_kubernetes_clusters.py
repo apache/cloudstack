@@ -37,11 +37,13 @@ from marvin.cloudstackAPI import (listInfrastructure,
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
+                             NetworkOffering,
                              Network,
                              ServiceOffering,
                              Account,
                              StoragePool,
                              Configurations,
+                             VpcOffering,
                              VPC,
                              NetworkACLList,
                              NetworkACL)
@@ -351,11 +353,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestKubernetesCluster, self).tearDown()
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorNotSupported")
@@ -605,6 +603,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         k8s_cluster = self.getValidKubernetesCluster(1, 1)
 
         self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % k8s_cluster.id)
+        k8s_cluster = None
         return
 
     def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1):
