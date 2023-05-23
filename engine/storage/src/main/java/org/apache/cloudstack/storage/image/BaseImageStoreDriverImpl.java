@@ -331,7 +331,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception ex) {
-            LOGGER.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
+            LOGGER.debug("Unable to destroy " + data.getType().toString() + ": " + data.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);

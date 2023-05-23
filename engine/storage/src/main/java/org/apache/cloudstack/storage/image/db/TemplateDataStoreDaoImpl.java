@@ -302,7 +302,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
-        // get all elgible image stores
+        // get all eligible image stores
         List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (imgStores != null) {
             List<TemplateDataStoreVO> result = new ArrayList<TemplateDataStoreVO>();
@@ -329,7 +329,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, Status... status) {
-        // get all elgible image stores
+        // get all eligible image stores
         List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (imgStores != null) {
             for (DataStore store : imgStores) {
@@ -345,7 +345,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public TemplateDataStoreVO findByTemplateZoneStagingDownloadStatus(long templateId, Long zoneId, Status... status) {
-        // get all elgible image stores
+        // get all eligible image stores
         List<DataStore> cacheStores = _storeMgr.getImageCacheStores(new ZoneScope(zoneId));
         if (cacheStores != null) {
             for (DataStore store : cacheStores) {
@@ -436,7 +436,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public TemplateDataStoreVO findByTemplateZone(long templateId, Long zoneId, DataStoreRole role) {
-        // get all elgible image stores
+        // get all eligible image stores
         List<DataStore> imgStores = null;
         if (role == DataStoreRole.Image) {
             imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));

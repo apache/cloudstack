@@ -86,7 +86,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                     boolean noDuplicate = true;
                     StringBuffer helpInfo = new StringBuffer();
                     String note =
-                        "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
+                        "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same local storage, please contact CloudStack support team for solution. Below are detailed info, please attach all of them to CloudStack support. Thank you\n";
                     helpInfo.append(note);
                     while (rs.next()) {
                         try ( PreparedStatement sel_pstmt =

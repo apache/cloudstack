@@ -1927,7 +1927,7 @@ CREATE TABLE `cloud`.`keystore` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'unique name for the certifiation',
   `certificate` text NOT NULL COMMENT 'the actual certificate being stored in the db',
-  `key` text COMMENT 'private key associated wih the certificate',
+  `key` text COMMENT 'private key associated with the certificate',
   `domain_suffix` varchar(256) NOT NULL COMMENT 'DNS domain suffix associated with the certificate',
   `seq` int,
   PRIMARY KEY (`id`),
