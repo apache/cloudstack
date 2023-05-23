@@ -56,6 +56,7 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
 
         expungeJobForScheduleSearch = createSearchBuilder();
         expungeJobForScheduleSearch.and(VM_SCHEDULE_ID, expungeJobForScheduleSearch.entity().getVmScheduleId(), SearchCriteria.Op.IN);
+        expungeJobForScheduleSearch.and(SCHEDULED_TIMESTAMP, expungeJobForScheduleSearch.entity().getScheduledTime(), SearchCriteria.Op.GTEQ);
         expungeJobForScheduleSearch.done();
     }
 
@@ -76,9 +77,12 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
     }
 
     @Override
-    public int expungeJobsForSchedules(List<Long> vmScheduleIds) {
+    public int expungeJobsForSchedules(List<Long> vmScheduleIds, Date dateAfter) {
         SearchCriteria<VMScheduledJobVO> sc = expungeJobForScheduleSearch.create();
         sc.setParameters(VM_SCHEDULE_ID, vmScheduleIds.toArray());
+        if (dateAfter != null) {
+            sc.setParameters(SCHEDULED_TIMESTAMP, dateAfter);
+        }
         return expunge(sc);
     }
 

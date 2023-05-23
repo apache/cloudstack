@@ -63,7 +63,6 @@
     :footer="null"
     @cancel="closeModal">
     <a-form
-      class="form-layout"
       layout="vertical"
       :ref="formRef"
       :model="form"
@@ -95,26 +94,28 @@
         <template #label>
           <tooltip-label :title="$t('label.schedule')" :tooltip="apiParams.schedule.description"/>
         </template>
+        <label>{{ $t('label.advanced.mode') }}</label>
         <a-switch
           v-model:checked="form.useCronFormat"
-          :checked-children="$t('label.cron')"
-          :un-checked-children="$t('label.select')"
           >
         </a-switch>
         <br/>
         <span v-if="!form.useCronFormat">
-        <cron-light
+        <cron-ant
           v-model="form.schedule"
+          :periods="periods"
+          :button-props="{ type: 'primary', size: 'small', disabled: form.useCronFormat }"
           @error="error=$event"/>
-        <br/>
-        <label>{{ $t('label.cron') }}: {{form.schedule}}</label>
       </span>
       <span v-if="form.useCronFormat">
-        <a-input
-          v-model:value="form.schedule"
-          v-focus="true" />
         <label>{{ generateHumanReadableSchedule(form.schedule) }}</label>
+        <br/>
       </span>
+        <a-input
+          :addonBefore="$t('label.cron')"
+          v-model:value="form.schedule"
+          :disabled="!form.useCronFormat"
+          v-focus="true" />
       </a-form-item>
       <a-form-item name="timezone" ref="timezone">
         <template #label>
@@ -132,6 +133,26 @@
             {{ opt.name || opt.description }}
           </a-select-option>
         </a-select>
+      </a-form-item>
+      <a-form-item name="startDate" ref="startDate">
+        <template #label>
+          <tooltip-label :title="$t('label.start.date.and.time')" :tooltip="apiParams.startdate.description"/>
+        </template>
+        <a-date-picker
+          v-model:value="form.startDate"
+          show-time
+          :locale="this.$i18n.locale"
+          :placeholder="$t('message.select.start.date.and.time')"/>
+      </a-form-item>
+      <a-form-item name="endDate" ref="endDate">
+        <template #label>
+          <tooltip-label :title="$t('label.end.date.and.time')" :tooltip="apiParams.enddate.description"/>
+        </template>
+        <a-date-picker
+          v-model:value="form.endDate"
+          show-time
+          :locale="this.$i18n.locale"
+          :placeholder="$t('message.select.end.date.and.time')"/>
       </a-form-item>
       <a-form-item name="enabled" ref="enabled">
         <template #label>
@@ -170,6 +191,7 @@ import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import cronstrue from 'cronstrue/i18n'
+import moment from 'moment'
 
 export default {
   name: 'InstanceSchedules',
@@ -205,13 +227,20 @@ export default {
         { value: 'FORCE_STOP', label: 'label.force.stop' },
         { value: 'FORCE_REBOOT', label: 'label.force.reboot' }
       ],
+      periods: [
+        { id: 'year', value: ['month', 'day', 'dayOfWeek', 'hour', 'minute'] },
+        { id: 'month', value: ['day', 'dayOfWeek', 'hour', 'minute'] },
+        { id: 'week', value: ['dayOfWeek', 'hour', 'minute'] },
+        { id: 'day', value: ['hour', 'minute'] }
+      ],
       page: 1,
       pageSize: 20,
       totalCount: 0,
       showModal: false,
       isSubmitted: false,
       isEdit: false,
-      error: ''
+      error: '',
+      pattern: 'YYYY-MM-DD HH:mm:ss'
     }
   },
   beforeCreate () {
@@ -251,13 +280,17 @@ export default {
         schedule: '* * * * *',
         description: '',
         timezone: 'UTC',
+        startDate: '',
+        endDate: '',
         enabled: true,
         useCronFormat: false
       })
       this.rules = reactive({
         schedule: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
         action: [{ type: 'string', required: true, message: this.$t('message.error.required.input') }],
-        timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        timezone: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        startDate: [{ required: false, message: `${this.$t('message.error.select')}` }],
+        endDate: [{ required: false, message: `${this.$t('message.error.select')}` }]
       })
     },
     createVMSchedule (schedule) {
@@ -286,6 +319,8 @@ export default {
       this.resetForm()
       this.isEdit = true
       Object.assign(this.form, schedule)
+      this.form.startDate = moment(schedule.startdate)
+      this.form.endDate = schedule.enddate ? moment(schedule.enddate) : ''
       this.showAddModal()
     },
     showAddModal () {
@@ -303,7 +338,9 @@ export default {
           timezone: values.timezone,
           action: values.action,
           virtualmachineid: this.virtualmachine.id,
-          enabled: values.enabled
+          enabled: values.enabled,
+          startdate: (values.startDate !== '') ? values.startDate.format(this.pattern) : null,
+          enddate: (values.endDate !== '') ? values.endDate.format(this.pattern) : null
         }
         let command = null
         if (this.form.id === null || this.form.id === undefined) {
@@ -326,7 +363,10 @@ export default {
           this.isSubmitted = false
         })
       }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
+        this.$notifyError(error)
+        if (error.errorFields !== undefined) {
+          this.formRef.value.scrollToField(error.errorFields[0].name)
+        }
       }).finally(() => {
         this.isSubmitted = false
       })
@@ -414,22 +454,3 @@ export default {
   }
 }
 </script>
-
-<style scoped lang="less">
-.form-layout {
-  width: 80vw;
-
-  @media (min-width: 600px) {
-    width: 450px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
-  }
-}
-</style>

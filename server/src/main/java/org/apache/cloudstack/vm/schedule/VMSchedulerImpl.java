@@ -46,7 +46,6 @@ import org.springframework.scheduling.support.CronExpression;
 
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +88,8 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             LOGGER.debug("Removed 0 scheduled jobs");
             return;
         }
-        int rowsRemoved = vmScheduledJobDao.expungeJobsForSchedules(vmScheduleIds);
+        Date now = new Date();
+        int rowsRemoved = vmScheduledJobDao.expungeJobsForSchedules(vmScheduleIds, now);
         LOGGER.debug(String.format("Removed %s VM scheduled jobs", rowsRemoved));
     }
 
@@ -127,8 +127,13 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             return null;
         }
 
-        Date now = new Date();
-        if (endDate != null && now.after(endDate)) {
+        ZonedDateTime now = ZonedDateTime.now(vmSchedule.getTimeZoneId());
+        ZonedDateTime zonedStartDate = ZonedDateTime.ofInstant(startDate.toInstant(), vmSchedule.getTimeZoneId());
+        ZonedDateTime zonedEndDate = null;
+        if (endDate != null) {
+            zonedEndDate = ZonedDateTime.ofInstant(endDate.toInstant(), vmSchedule.getTimeZoneId());
+        }
+        if (zonedEndDate != null && now.isAfter(zonedEndDate)) {
             LOGGER.info(String.format("End time is less than current time. Disabling VM schedule [id=%s] for VM [id=%s].", vmSchedule.getUuid(), vmSchedule.getVmId()));
             vmSchedule.setEnabled(false);
             vmScheduleDao.persist(vmSchedule);
@@ -136,11 +141,10 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         }
 
         ZonedDateTime ts = null;
-        ZoneId tz = vmSchedule.getTimeZoneId();
-        if (startDate.after(now)) {
-            ts = cron.next(ZonedDateTime.ofInstant(startDate.toInstant(), tz));
+        if (zonedStartDate.isAfter(now)) {
+            ts = cron.next(zonedStartDate);
         } else {
-            ts = cron.next(ZonedDateTime.ofInstant(now.toInstant(), tz));
+            ts = cron.next(now);
         }
 
         if (ts == null) {

@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import org.springframework.scheduling.support.CronExpression;
 
 import javax.inject.Inject;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -98,23 +99,18 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         String cmdTimeZone = cmd.getTimeZone();
         TimeZone timeZone = TimeZone.getTimeZone(cmdTimeZone);
         String timeZoneId = timeZone.getID();
-
-        Date startDate;
-        int offset;
+        Date startDate = DateUtils.addMinutes(new Date(), 1);
         if (cmdStartDate != null) {
-            offset = TimeZone.getDefault().getOffset(cmdStartDate.getTime()) - timeZone.getOffset(cmdStartDate.getTime());
-            startDate = DateUtils.addMilliseconds(cmdStartDate, offset);
-        } else startDate = DateUtils.addMinutes(new Date(), 1);
-
-        Date endDate;
+            startDate = Date.from(DateUtil.getZoneDateTime(cmdStartDate, timeZone.toZoneId()).toInstant());
+        }
+        Date endDate = null;
         if (cmdEndDate != null) {
-            offset = TimeZone.getDefault().getOffset(cmdEndDate.getTime()) - timeZone.getOffset(cmdEndDate.getTime());
-            endDate = DateUtils.addMilliseconds(cmdEndDate, offset);
-        } else endDate = null;
+            endDate = Date.from(DateUtil.getZoneDateTime(cmdEndDate, timeZone.toZoneId()).toInstant());
+        }
 
         CronExpression cronExpression = DateUtil.parseSchedule(cmd.getSchedule());
 
-        validateStartDateEndDate(startDate, endDate);
+        validateStartDateEndDate(startDate, endDate, timeZone);
 
         String description = null;
         if (StringUtils.isBlank(cmd.getDescription())) {
@@ -125,9 +121,11 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         String finalDescription = description;
         VMSchedule.Action finalAction = action;
+        Date finalStartDate = startDate;
+        Date finalEndDate = endDate;
 
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
-            VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, startDate, endDate, cmd.getEnabled()));
+            VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, finalStartDate, finalEndDate, cmd.getEnabled()));
             vmScheduler.scheduleNextJob(vmSchedule);
 
             return createResponse(vmSchedule);
@@ -223,21 +221,18 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
             timeZoneId = vmSchedule.getTimeZone();
             timeZone = TimeZone.getTimeZone(timeZoneId);
         }
-        Date startDate = null;
-        if (cmdStartDate != null) {
-            int offset = TimeZone.getDefault().getOffset(cmdStartDate.getTime()) - timeZone.getOffset(cmdStartDate.getTime());
-            startDate = DateUtils.addMilliseconds(cmdStartDate, offset);
-        }
 
-        Date endDate = null;
+        Date startDate = vmSchedule.getStartDate().before(DateUtils.addMinutes(new Date(), 1)) ? DateUtils.addMinutes(new Date(), 1) : vmSchedule.getStartDate();
+        Date endDate = vmSchedule.getEndDate();
         if (cmdEndDate != null) {
-            int offset = TimeZone.getDefault().getOffset(cmdEndDate.getTime()) - timeZone.getOffset(cmdEndDate.getTime());
-            endDate = DateUtils.addMilliseconds(cmdEndDate, offset);
-        } else {
-            endDate = vmSchedule.getEndDate();
+            endDate = Date.from(DateUtil.getZoneDateTime(cmdEndDate, timeZone.toZoneId()).toInstant());
         }
 
-        validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)), endDate);
+        if (cmdStartDate != null) {
+            startDate = Date.from(DateUtil.getZoneDateTime(cmdStartDate, timeZone.toZoneId()).toInstant());
+        }
+
+        validateStartDateEndDate(Objects.requireNonNullElse(startDate, DateUtils.addMinutes(new Date(), 1)), endDate, timeZone);
 
         if (enabled != null) {
             vmSchedule.setEnabled(enabled);
@@ -245,10 +240,10 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (description != null) {
             vmSchedule.setDescription(description);
         }
-        if (endDate != null) {
+        if (cmdEndDate != null) {
             vmSchedule.setEndDate(endDate);
         }
-        if (startDate != null) {
+        if (cmdStartDate != null) {
             vmSchedule.setStartDate(startDate);
         }
         vmSchedule.setSchedule(cronExpression.toString());
@@ -260,18 +255,21 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         });
     }
 
-    void validateStartDateEndDate(Date startDate, Date endDate) {
-        Date now = new Date();
-        if (startDate.before(now)) {
-            throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be less than current time [%s].", startDate, now));
+    void validateStartDateEndDate(Date startDate, Date endDate, TimeZone tz) {
+        ZonedDateTime now = ZonedDateTime.now(tz.toZoneId());
+        ZonedDateTime zonedStartDate = DateUtil.getZoneDateTime(startDate, tz.toZoneId());
+
+        if (zonedStartDate.isBefore(now)) {
+            throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be less than current time [%s].", zonedStartDate, now));
         }
 
         if (endDate != null) {
-            if (endDate.before(now)) {
-                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than current time [%s].", endDate, now));
+            ZonedDateTime zonedEndDate = DateUtil.getZoneDateTime(endDate, tz.toZoneId());
+            if (zonedEndDate.isBefore(now)) {
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than current time [%s].", zonedEndDate, now));
             }
-            if (endDate.before(startDate)) {
-                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than start date [%s].", endDate, startDate));
+            if (zonedEndDate.isBefore(zonedStartDate)) {
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than start date [%s].", zonedEndDate, zonedStartDate));
             }
         }
     }

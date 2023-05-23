@@ -22,6 +22,9 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -317,5 +320,20 @@ public class DateUtil {
         CronParser parser = new CronParser(cronDefinition);
         CronDescriptor descriptor = CronDescriptor.instance();
         return descriptor.describe(parser.parse(schedule.toString()));
+    }
+
+    public static ZonedDateTime getZoneDateTime(Date date, ZoneId tzId) {
+        if (date == null) {
+            return null;
+        }
+        ZonedDateTime zonedDate = ZonedDateTime.ofInstant(date.toInstant(), tzId);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), TimeZone.getDefault().toZoneId());
+        zonedDate = zonedDate.withYear(localDateTime.getYear())
+                .withMonth(localDateTime.getMonthValue())
+                .withDayOfMonth(localDateTime.getDayOfMonth())
+                .withHour(localDateTime.getHour())
+                .withMinute(localDateTime.getMinute())
+                .withSecond(localDateTime.getSecond());
+        return zonedDate;
     }
 }

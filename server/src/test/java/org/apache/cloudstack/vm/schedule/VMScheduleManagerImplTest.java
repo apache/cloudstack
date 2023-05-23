@@ -49,6 +49,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import static org.junit.Assert.assertNotNull;
@@ -229,18 +230,18 @@ public class VMScheduleManagerImplTest {
         // Start date is before end date
         Date startDate = DateUtils.addDays(new Date(), 1);
         Date endDate = DateUtils.addDays(new Date(), 2);
-        vmScheduleManager.validateStartDateEndDate(startDate, endDate);
+        vmScheduleManager.validateStartDateEndDate(startDate, endDate, TimeZone.getDefault());
 
         // Valid Scenario 2
         // Start date is before current date and end date is null
         endDate = null;
-        vmScheduleManager.validateStartDateEndDate(startDate, endDate);
+        vmScheduleManager.validateStartDateEndDate(startDate, endDate, TimeZone.getDefault());
 
         // Invalid Scenario 2
         // Start date is before current date
         startDate = DateUtils.addDays(new Date(), -1);
         try {
-            vmScheduleManager.validateStartDateEndDate(startDate, endDate);
+            vmScheduleManager.validateStartDateEndDate(startDate, endDate, TimeZone.getDefault());
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for start date. Start date") &&
@@ -252,7 +253,7 @@ public class VMScheduleManagerImplTest {
         startDate = DateUtils.addDays(new Date(), 2);
         endDate = DateUtils.addDays(new Date(), 1);
         try {
-            vmScheduleManager.validateStartDateEndDate(startDate, endDate);
+            vmScheduleManager.validateStartDateEndDate(startDate, endDate, TimeZone.getDefault());
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for end date. End date") &&
@@ -264,7 +265,7 @@ public class VMScheduleManagerImplTest {
         startDate = DateUtils.addDays(new Date(), 1);
         endDate = DateUtils.addDays(new Date(), -1);
         try {
-            vmScheduleManager.validateStartDateEndDate(startDate, endDate);
+            vmScheduleManager.validateStartDateEndDate(startDate, endDate, TimeZone.getDefault());
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for end date. End date") &&

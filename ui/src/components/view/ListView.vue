@@ -306,11 +306,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="column.key === 'created'">
-        {{ $toLocaleDate(text) }}
-      </template>
-      <template v-if="column.key === 'sent'">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'startdate', 'enddate', 'sent'].includes(column.key)">
+        {{ !(text ===  null || text === undefined || text === '') ? $toLocaleDate(text) : '' }}
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">

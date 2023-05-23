@@ -68,8 +68,8 @@ import {
 import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
 
-import cronLight from '@vue-js-cron/light'
-import '@vue-js-cron/light/dist/light.css'
+import cronAnt from '@vue-js-cron/ant'
+import '@vue-js-cron/ant/dist/ant.css'
 
 export default {
   install: (app) => {
@@ -80,6 +80,7 @@ export default {
     app.config.globalProperties.$error = Modal.error
     app.config.globalProperties.$warning = Modal.warning
 
+    app.use(cronAnt)
     app.use(VueClipboard, { autoSetContainer: true })
     app.use(VueCropper)
     app.use(ConfigProvider)
@@ -130,6 +131,5 @@ export default {
     app.use(Collapse)
     app.use(Descriptions)
     app.use(Space)
-    app.use(cronLight)
   }
 }
