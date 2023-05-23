@@ -4087,7 +4087,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (String vlanRange : listOfRanges) {
             String[] VnetRange = vlanRange.split("-");
 
-            // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shoudn't be used.
+            // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shouldn't be used.
             long minVnet = MIN_VLAN_ID;
             long maxVnet = MAX_VLAN_ID;
 
@@ -4411,12 +4411,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         vlanOwnerId = vlanOwner.getAccountId();
 
-        // Verify physical network isolation type is VLAN
+        // Verify physical network isolation methods contain VLAN or VXLAN
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
             throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
-        } else if (!physicalNetwork.getIsolationMethods().isEmpty() && !physicalNetwork.getIsolationMethods().contains("VLAN")) {
-            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN");
+        } else if (!physicalNetwork.getIsolationMethods().isEmpty() &&
+                !physicalNetwork.getIsolationMethods().contains("VLAN") &&
+                !physicalNetwork.getIsolationMethods().contains("VXLAN")) {
+            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN nor VXLAN");
         }
 
         // Get the start and end vlan

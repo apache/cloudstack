@@ -324,6 +324,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.VmDiskStatisticsVO;
@@ -333,7 +334,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
-import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Journal;
@@ -4811,9 +4811,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "starting Vm", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
+        if (!cmd.getStartVm()) {
+            return getUserVm(vmId);
+        }
         Long podId = null;
         Long clusterId = null;
         Long hostId = cmd.getHostId();
@@ -7555,7 +7558,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _accountMgr.checkAccess(caller, null, true, template);
                 if (isISO) {
                     if (!template.getFormat().equals(ImageFormat.ISO)) {
-                        throw new InvalidParameterValueException("Invalid ISO id provided to restore the VM ");
+                        throw new InvalidParameterValueException("VM has been created using an ISO therefore it can not be re-installed with a template");
                     }
                 } else {
                     if (template.getFormat().equals(ImageFormat.ISO)) {

@@ -1821,49 +1821,20 @@ class TestProjectSuspendActivate(cloudstackTestCase):
             )
         return
 
-class TestProjectWithEmptyDisplayText(cloudstackTestCase):
-
+class TestProjectWithNameDisplayTextAction(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(
-            TestProjectWithEmptyDisplayText,
+            TestProjectWithNameDisplayTextAction,
             cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.api_client)
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_test_template(
-            cls.api_client,
-            cls.zone.id,
-            cls.hypervisor
-        )
         cls._cleanup = []
-        cls.isGlobalSettingInvalid = False
-        configs = Configurations.list(
-            cls.api_client,
-            name='project.invite.required'
-        )
 
-        if (configs[0].value).lower() != 'false':
-            cls.isGlobalSettingInvalid = True
-            return
-
-        # Create account, service offering, disk offering etc.
-        cls.disk_offering = DiskOffering.create(
-            cls.api_client,
-            cls.services["disk_offering"]
-        )
-        cls._cleanup.append(cls.disk_offering)
-        cls.service_offering = ServiceOffering.create(
-            cls.api_client,
-            cls.services["service_offering"],
-            domainid=cls.domain.id
-        )
-        cls._cleanup.append(cls.service_offering)
         cls.account = Account.create(
             cls.api_client,
             cls.services["account"],
@@ -1871,40 +1842,19 @@ class TestProjectWithEmptyDisplayText(cloudstackTestCase):
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
-        cls.user = Account.create(
-            cls.api_client,
-            cls.services["account"],
-            admin=True,
-            domainid=cls.domain.id
-        )
-        cls._cleanup.append(cls.user)
-
-        # Create project as a domain admin
-        cls.project = Project.create(
-            cls.api_client,
-            cls.services["project"],
-            account=cls.account.name,
-            domainid=cls.account.domainid
-        )
-        cls._cleanup.append(cls.project)
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         return
 
     @classmethod
     def tearDownClass(cls):
-        super(TestProjectWithEmptyDisplayText, cls).tearDownClass()
+        super(TestProjectWithNameDisplayTextAction, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        if self.isGlobalSettingInvalid:
-            self.skipTest("'project.invite.required' should be set to false")
-        return
-
     def tearDown(self):
-        super(TestProjectWithEmptyDisplayText, self).tearDown()
+        super(TestProjectWithNameDisplayTextAction, self).tearDown()
 
     @attr(
         tags=[
@@ -1919,20 +1869,17 @@ class TestProjectWithEmptyDisplayText(cloudstackTestCase):
         """ create Project with Empty DisplayText
         """
         # Validate the following
-        # 1. Create a project.
-        # 2. Give empty displayText
-        # 3. Verify displayText takes content of Project name.
+        # 1. Create a project while giving empty displayText
+        # 2. Verify displayText takes content of Project name.
 
         self.services["project"]["displaytext"] = ""
 
-        # Create project as a domain admin
         project = Project.create(
             self.apiclient,
             self.services["project"],
             account=self.account.name,
             domainid=self.account.domainid
         )
-
         self.cleanup.append(project)
 
         self.assertEqual(
@@ -1940,5 +1887,49 @@ class TestProjectWithEmptyDisplayText(cloudstackTestCase):
             project.name,
             "displayText does not matches project name"
         )
+        return
 
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
+    def test_12_update_project_name_display_text(self):
+        """ Create Project and update its name
+        """
+        # Validate the following
+        # 1. Create a project
+        # 2. Update project name and display text
+        # 2. Verify name and display text for the project are updated
+
+        project = Project.create(
+            self.apiclient,
+            self.services["project"],
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(project)
+
+        new_name = "NewName"
+        new_display_text = "NewDisplayText"
+        project.update(self.apiclient, name=new_name, displaytext=new_display_text)
+        updated_project = Project.list(
+            self.apiclient,
+            id=project.id,
+            listall=True
+        )[0]
+        self.assertEqual(
+            updated_project.name,
+            new_name,
+            "Project name not updated"
+        )
+        self.assertEqual(
+            updated_project.displaytext,
+            new_display_text,
+            "Project displaytext not updated"
+        )
         return

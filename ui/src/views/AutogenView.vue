@@ -17,10 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="78">
+    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
             <breadcrumb :resource="resource">
               <template #end>
                 <a-button
@@ -34,14 +34,14 @@
                 </a-button>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
@@ -53,13 +53,8 @@
                   <a-select
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
-                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                        ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name)
-                        ? 'all' : ['volume'].includes($route.name)
-                        ? 'user' : 'self')"
-                    style="min-width: 120px; margin-left: 10px"
+                    :value="filterValue"
+                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -68,7 +63,9 @@
                     }" >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
-                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name) ||
+                      ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
                       {{ $t('label.all') }}
@@ -87,7 +84,7 @@
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
@@ -102,6 +99,7 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
+              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -395,44 +393,46 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView" style="margin-top: -10px">
-      <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
-      <resource-view
-        v-else
-        :resource="resource"
-        :loading="loading"
-        :tabs="$route.meta.tabs" />
-    </div>
-    <div class="row-element" v-else>
-      <list-view
-        :loading="loading"
-        :columns="columns"
-        :items="items"
-        :actions="actions"
-        :columnKeys="columnKeys"
-        :selectedColumns="selectedColumns"
-        ref="listview"
-        @update-selected-columns="updateSelectedColumns"
-        @selection-change="onRowSelectionChange"
-        @refresh="fetchData"
-        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
-      <a-pagination
-        class="row-element"
-        style="margin-top: 10px"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="itemCount"
-        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="pageSizeOptions"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger
-        showQuickJumper>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
+      <div v-if="dataView" style="margin-top: -10px">
+        <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
+        <resource-view
+          v-else
+          :resource="resource"
+          :loading="loading"
+          :tabs="$route.meta.tabs" />
+      </div>
+      <div class="row-element" v-else>
+        <list-view
+          :loading="loading"
+          :columns="columns"
+          :items="items"
+          :actions="actions"
+          :columnKeys="columnKeys"
+          :selectedColumns="selectedColumns"
+          ref="listview"
+          @update-selected-columns="updateSelectedColumns"
+          @selection-change="onRowSelectionChange"
+          @refresh="fetchData"
+          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        <a-pagination
+          class="row-element"
+          style="margin-top: 10px"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="itemCount"
+          :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="pageSizeOptions"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger
+          showQuickJumper>
+          <template #buildOptionText="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
     </div>
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
@@ -670,6 +670,25 @@ export default {
       return [...new Set(sizes)].sort(function (a, b) {
         return a - b
       }).map(String)
+    },
+    filterValue () {
+      if (this.$route.query.filter) {
+        return this.$route.query.filter
+      }
+      const routeName = this.$route.name
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans'].includes(routeName)) {
+        return 'all'
+      }
+      if (['publicip'].includes(routeName)) {
+        return 'allocated'
+      }
+      if (['volume'].includes(routeName)) {
+        return 'user'
+      }
+      if (['event'].includes(routeName)) {
+        return 'active'
+      }
+      return 'self'
     }
   },
   methods: {
@@ -1417,13 +1436,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1576,8 +1595,33 @@ export default {
         } else {
           query.networkfilter = filter
         }
-      } else if (this.$route.name === 'publicip') {
-        query.state = filter
+      } else if (['account', 'publicip', 'systemvm', 'router'].includes(this.$route.name)) {
+        if (filter !== 'all') {
+          query.state = filter
+        }
+      } else if (this.$route.name === 'storagepool') {
+        if (filter === 'all') {
+          delete query.status
+        } else {
+          query.status = filter
+        }
+      } else if (['pod', 'cluster'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.allocationstate
+        } else {
+          query.allocationstate = filter
+        }
+      } else if (['host'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.resourcestate
+          delete query.state
+        } else if (['up', 'down', 'alert'].includes(filter)) {
+          delete query.resourcestate
+          query.state = filter
+        } else {
+          delete query.state
+          query.resourcestate = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
@@ -1592,6 +1636,12 @@ export default {
           query.allocatedonly = 'false'
         } else if (filter === 'allocatedonly') {
           query.allocatedonly = 'true'
+        }
+      } else if (this.$route.name === 'event') {
+        if (filter === 'archived') {
+          query.archived = true
+        } else {
+          delete query.archived
         }
       }
       query.filter = filter
@@ -1614,9 +1664,7 @@ export default {
         if ('searchQuery' in opts) {
           const value = opts.searchQuery
           if (value && value.length > 0) {
-            if (this.$route.name === 'role') {
-              query.name = value
-            } else if (this.$route.name === 'quotaemailtemplate') {
+            if (this.$route.name === 'quotaemailtemplate') {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
