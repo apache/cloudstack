@@ -947,7 +947,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             /**
              * private transaction method to run over the objects and determine nic requirements
-             * @return the total numer of nics required
+             * @return the total number of nics required
              */
             private int determineNumberOfNicsRequired() {
                 int size = 0;
@@ -1181,7 +1181,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     /**
-     * Validates the locked IP, throwing an exeption if the locked IP is null or the locked IP is not in 'Free' state.
+     * Validates the locked IP, throwing an exception if the locked IP is null or the locked IP is not in 'Free' state.
      */
     protected void validateLockedRequestedIp(IPAddressVO ipVO, IPAddressVO lockedIpVO) {
         if (lockedIpVO == null) {
@@ -1603,7 +1603,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Asking " + element.getName() + " to implemenet " + network);
+                    logger.debug("Asking " + element.getName() + " to implement " + network);
                 }
 
                 if (!element.implement(network, offering, dest, context)) {
@@ -2496,7 +2496,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //remove the secondary ip addresses corresponding to to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
-            logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
+            logger.debug("Removing nic " + nic.getId() + " secondary ip addresses failed");
         }
     }
 

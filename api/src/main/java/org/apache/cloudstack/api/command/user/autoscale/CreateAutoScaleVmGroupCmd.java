@@ -230,7 +230,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                 responseObject.setResponseName(getCommandName());
             }
         } catch (Exception ex) {
-            // TODO what will happen if Resource Layer fails in a step inbetween
+            // TODO what will happen if Resource Layer fails in a step in between
             logger.warn("Failed to create autoscale vm group", ex);
         } finally {
             if (!success || vmGroup == null) {

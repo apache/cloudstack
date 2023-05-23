@@ -99,7 +99,7 @@ public class CitrixResourceBaseTest {
 
     }
 
-    public void testGetPathFilesExeption() {
+    public void testGetPathFilesException() {
         String patch = citrixResourceBase.getPatchFilePath();
 
         PowerMockito.mockStatic(Script.class);

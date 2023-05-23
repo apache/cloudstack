@@ -279,7 +279,7 @@ public class DatastoreMO extends BaseMO {
                 return false;
             }
         } catch (Exception e) {
-            logger.error(String.format("Cannot move file to destination datastore due to file %s due to exeception %s", srcFullPath, e.getMessage()));
+            logger.error(String.format("Cannot move file to destination datastore due to file %s due to exception %s", srcFullPath, e.getMessage()));
             return false;
         }
 
@@ -305,7 +305,7 @@ public class DatastoreMO extends BaseMO {
         String url = getContext().composeDatastoreBrowseUrl(dcPair.second(), fullPath);
 
         // TODO, VMware currently does not have a formal API to list Datastore directory content,
-        // folloing hacking may have performance hit if datastore has a large number of files
+        // following hacking may have performance hit if datastore has a large number of files
         return _context.listDatastoreDirContent(url);
     }
 

@@ -254,11 +254,11 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
             if (obj != null) {
                 State st = obj.getState();
 
-                long miliSeconds = 10000;
+                long milliSeconds = 10000;
                 long timeoutSeconds = 3600;
-                long timeoutMiliSeconds = timeoutSeconds * 1000;
+                long timeoutMilliSeconds = timeoutSeconds * 1000;
                 Date now = new Date();
-                long expiredEpoch = now.getTime() + timeoutMiliSeconds;
+                long expiredEpoch = now.getTime() + timeoutMilliSeconds;
                 Date expiredDate = new Date(expiredEpoch);
 
                 /*
@@ -274,7 +274,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                      */
                     logger.debug("waiting cache copy completion type: " + typeName + ", id: " + obj.getObjectId() + ", lock: " + lock.hashCode());
                     try {
-                        lock.wait(miliSeconds);
+                        lock.wait(milliSeconds);
                     } catch (InterruptedException e) {
                         logger.debug("[ignored] interrupted while waiting for cache copy completion.");
                     }

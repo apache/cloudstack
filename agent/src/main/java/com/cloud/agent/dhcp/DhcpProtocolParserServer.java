@@ -53,7 +53,6 @@ public class DhcpProtocolParserServer extends Thread {
                     byte[] buf = new byte[bufferSize];
                     DatagramPacket dgp = new DatagramPacket(buf, buf.length);
                     dhcpSocket.receive(dgp);
-                    // _executor.execute(new DhcpPacketParser(buf));
                 }
             } catch (IOException e) {
                 logger.debug(e.getMessage());

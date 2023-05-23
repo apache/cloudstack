@@ -157,11 +157,11 @@ public class HttpNfcLeaseMO extends BaseMO {
         public void run() {
             while (!_done) {
                 try {
-                    Thread.sleep(1000);            // update progess every 1 second
+                    Thread.sleep(1000);            // update progress every 1 second
                     updateLeaseProgress(_percent);
                 } catch (InterruptedException e) {
                     if (logger.isInfoEnabled())
-                        logger.info("ProgressReporter is interrupted, quiting");
+                        logger.info("ProgressReporter is interrupted, quitting");
                     break;
                 } catch (Exception e) {
                     logger.warn("Unexpected exception ", e);
