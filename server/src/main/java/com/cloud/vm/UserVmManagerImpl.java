@@ -129,6 +129,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -6355,7 +6356,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
-        return isVmVolumesUsingLocalStorage(volumes);
+        return isAnyVmVolumeUsingLocalStorage(volumes);
     }
 
     @Override
@@ -6737,23 +6738,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return implicitPlannerUsed;
     }
 
-    private boolean isVmVolumesUsingLocalStorage(final List<VolumeVO> volumes) {
-        if (CollectionUtils.isEmpty(volumes)) {
-            return false;
-        }
-        for (Volume volume : volumes) {
-            if (volume == null || volume.getPoolId() == null) {
-                return false;
+    private boolean isAnyVmVolumeUsingLocalStorage(final List<VolumeVO> volumes) {
+        for (VolumeVO vol : volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+            if (diskOffering.isUseLocalStorage()) {
+                return true;
             }
-            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (pool == null || !ScopeType.ZONE.equals(pool.getScope())) {
-                return false;
+            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
+            if (storagePool.isLocal()) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
-    private boolean isVmVolumesOnZoneWideStore(final List<VolumeVO> volumes) {
+    private boolean isAllVmVolumesOnZoneWideStore(final List<VolumeVO> volumes) {
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
@@ -6900,6 +6899,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return volToPoolObjectMap;
     }
 
+    protected Host chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost, Map<Long, Long> volToPoolObjectMap) {
+        Long poolId = null;
+        if (MapUtils.isNotEmpty(volToPoolObjectMap)) {
+            poolId = new ArrayList<>(volToPoolObjectMap.values()).get(0);
+        }
+        DeployDestination deployDestination = chooseVmMigrationDestination(vm, srcHost, poolId);
+        if (ObjectUtils.anyNull(deployDestination, deployDestination.getHost())) {
+            throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
+        }
+        return deployDestination.getHost();
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
     public VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool) throws ResourceUnavailableException,
@@ -6945,8 +6956,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Host srcHost = sourceDestinationHosts.first();
 
         final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
-        if (!isVmVolumesUsingLocalStorage(volumes) && MapUtils.isEmpty(volumeToPool) && destinationHost != null
-                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isVmVolumesOnZoneWideStore(volumes))) {
+        if (!isAnyVmVolumeUsingLocalStorage(volumes) && MapUtils.isEmpty(volumeToPool) && destinationHost != null
+                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isAllVmVolumesOnZoneWideStore(volumes))) {
             // If volumes do not have to be migrated
             // call migrateVirtualMachine for non-user VMs else throw exception
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
@@ -6959,15 +6970,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, Long> volToPoolObjectMap = getVolumePoolMappingForMigrateVmWithStorage(vm, volumeToPool);
 
         if (destinationHost == null) {
-            Long poolId = null;
-            if (MapUtils.isNotEmpty(volToPoolObjectMap)) {
-                poolId = new ArrayList<>(volToPoolObjectMap.values()).get(0);
-            }
-            DeployDestination deployDestination = chooseVmMigrationDestination(vm, srcHost, poolId);
-            if (deployDestination == null) {
-                throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
-            }
-            destinationHost = deployDestination.getHost();
+            destinationHost = chooseVmMigrationDestination(vm, srcHost, volToPoolObjectMap);
         }
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
