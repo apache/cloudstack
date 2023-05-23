@@ -229,6 +229,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1335,7 +1336,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                  continue;
                              }
                         }
-                        if (isVolumeSuspectedDestroyDuplicate(vol)) {
+                        if (isVolumeSuspectedDestroyDuplicateOfVmVolume(vol)) {
                             s_logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
                             continue;
                         }
@@ -1470,8 +1471,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
-    private boolean isVolumeSuspectedDestroyDuplicate(VolumeVO gcVolume) {
-        if (Volume.State.Destroy.equals(gcVolume.getState())) {
+    protected boolean isVolumeSuspectedDestroyDuplicateOfVmVolume(VolumeVO gcVolume) {
+        if (gcVolume.getPath() == null) {
+            return false;
+        }
+        if (gcVolume.getPoolId() == null) {
             return false;
         }
         Long vmId = gcVolume.getInstanceId();
@@ -1484,7 +1488,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         List<VolumeVO> vmUsableVolumes = _volumeDao.findUsableVolumesForInstance(vmId);
         for (VolumeVO vol : vmUsableVolumes) {
-            if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath() != null && gcVolume.getPath().equals(vol.getPath())) {
+            if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
                 s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
                 return true;
             }
