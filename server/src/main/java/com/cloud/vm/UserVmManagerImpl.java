@@ -6902,7 +6902,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return volToPoolObjectMap;
     }
 
-    protected Host chooseVmMigrationDestination(VMInstanceVO vm, Host srcHost, Map<Long, Long> volToPoolObjectMap) {
+    protected Host chooseVmMigrationDestinationUsingVolumePoolMap(VMInstanceVO vm, Host srcHost, Map<Long, Long> volToPoolObjectMap) {
         Long poolId = null;
         if (MapUtils.isNotEmpty(volToPoolObjectMap)) {
             poolId = new ArrayList<>(volToPoolObjectMap.values()).get(0);
@@ -6973,7 +6973,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, Long> volToPoolObjectMap = getVolumePoolMappingForMigrateVmWithStorage(vm, volumeToPool);
 
         if (destinationHost == null) {
-            destinationHost = chooseVmMigrationDestination(vm, srcHost, volToPoolObjectMap);
+            destinationHost = chooseVmMigrationDestinationUsingVolumePoolMap(vm, srcHost, volToPoolObjectMap);
         }
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
