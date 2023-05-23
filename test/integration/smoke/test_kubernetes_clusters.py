@@ -594,6 +594,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        global k8s_cluster
         if k8s_cluster != None and k8s_cluster.id != None:
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
         self.createVpcOffering()
