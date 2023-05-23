@@ -158,25 +158,24 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
 
         VirtualMachine virtualMachine = _userVmService.getVm(getVirtualMachineId());
         if (!VirtualMachine.State.Running.equals(virtualMachine.getState()) && (hostId != null || Boolean.TRUE.equals(autoSelect))) {
-            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to a new host", virtualMachine));
+            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", virtualMachine));
         }
 
         if (!VirtualMachine.State.Stopped.equals(virtualMachine.getState()) && hostId == null && Boolean.FALSE.equals(autoSelect)) {
-            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use %s or %s parameter to migrate it to a new host",
+            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s or %s parameter to migrate it to a new host.",
                     virtualMachine, ApiConstants.HOST_ID,ApiConstants.AUTO_SELECT));
         }
 
         try {
             VirtualMachine migratedVm = null;
-
             if (getHostId() != null || Boolean.TRUE.equals(autoSelect)) {
                 Host destinationHost = null;
-                if (Boolean.FALSE.equals(autoSelect)) {
+                if (!Boolean.TRUE.equals(autoSelect)) {
                     destinationHost = _resourceService.getHost(getHostId());
                     // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
                     if (destinationHost == null) {
                         s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
-                        throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id =" + getHostId());
+                        throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
                     }
                 }
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
