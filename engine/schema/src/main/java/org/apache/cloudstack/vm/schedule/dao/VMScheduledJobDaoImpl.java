@@ -61,7 +61,7 @@ public class VMScheduledJobDaoImpl extends GenericDaoBase<VMScheduledJobVO, Long
     }
 
     /**
-     * Execution of job wouldn't be at exact seconds. So, we round off and then execute. Should we use truncate or round off here?
+     * Execution of job wouldn't be at exact seconds. So, we round off and then execute.
      */
     @Override
     public List<VMScheduledJobVO> listJobsToStart(Date currentTimestamp) {

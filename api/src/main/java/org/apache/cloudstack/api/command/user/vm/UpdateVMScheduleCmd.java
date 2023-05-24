@@ -117,6 +117,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
     @Override
     public void execute() {
         VMScheduleResponse response = vmScheduleManager.updateSchedule(this);

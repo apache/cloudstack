@@ -142,7 +142,6 @@ public class VMScheduleManagerImplTest {
         Mockito.when(vmSchedule1.getVmId()).thenReturn(1L);
         Mockito.when(vmSchedule2.getVmId()).thenReturn(1L);
 
-
         ListVMScheduleCmd cmd = Mockito.mock(ListVMScheduleCmd.class);
         Mockito.when(cmd.getVmId()).thenReturn(1L);
 
@@ -223,7 +222,6 @@ public class VMScheduleManagerImplTest {
         Mockito.verify(vmScheduleDao, Mockito.times(1)).removeSchedulesForVmIdAndIds(Mockito.anyLong(), Mockito.anyList());
         Assert.assertEquals(1L, (long) rowsRemoved);
     }
-
 
     @Test
     public void validateStartDateEndDate() {

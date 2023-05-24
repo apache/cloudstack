@@ -96,7 +96,6 @@ public class VMSchedulerImplTest {
                 Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
     }
 
-
     private void prepareMocksForProcessJob(VirtualMachine vm, VMScheduledJob vmScheduledJob, VirtualMachine.State vmState, VMSchedule.Action action, Long executeJobReturnValue) {
         Mockito.when(vm.getState()).thenReturn(vmState);
         Mockito.when(vmScheduledJob.getAction()).thenReturn(action);
@@ -196,7 +195,6 @@ public class VMSchedulerImplTest {
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
 
-
     @Test
     public void testScheduleNextJobScheduleFutureScheduleWithTimeZoneChecks() throws Exception {
         // Ensure that Date vmSchedulerImpl.scheduleNextJob(VMScheduleVO vmSchedule) generates
@@ -231,7 +229,6 @@ public class VMSchedulerImplTest {
         Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
-
 
     @Test
     public void testScheduleNextJobScheduleCurrentSchedule() {
@@ -397,6 +394,4 @@ public class VMSchedulerImplTest {
 
         Assert.assertEquals(1L, jobId);
     }
-
-
 }

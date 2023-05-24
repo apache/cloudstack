@@ -193,11 +193,6 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         };
 
         vmSchedulerTimer = new Timer("VMSchedulerPollTask");
-        /*
-         TODO: Check if we should use schedule or scheduleAtFixedRate here?
-          scheduleAtFixedRate can result in issues if the task is taking more than 1 minute
-          schedule might result in skipping of some scheduled jobs
-        */
         vmSchedulerTimer.schedule(schedulerPollTask, 5000L, 60 * 1000L);
         return true;
     }

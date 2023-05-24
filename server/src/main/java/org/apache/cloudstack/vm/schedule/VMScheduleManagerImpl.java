@@ -181,7 +181,6 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return response;
     }
 
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_UPDATE, eventDescription = "Updating VM Schedule")
     public VMScheduleResponse updateSchedule(UpdateVMScheduleCmd cmd) {
