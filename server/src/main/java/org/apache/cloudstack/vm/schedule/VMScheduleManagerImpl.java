@@ -32,6 +32,7 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.vm.CreateVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.DeleteVMScheduleCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMScheduleCmd;
@@ -77,7 +78,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_CREATE, eventDescription = "Creating VM Schedule")
+    @ActionEvent(eventType = EventTypes.EVENT_VM_SCHEDULE_CREATE, eventDescription = "Creating VM Schedule", create = true)
     public VMScheduleResponse createSchedule(CreateVMScheduleCmd cmd) {
         VirtualMachine vm = userVmManager.getUserVm(cmd.getVmId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, false, vm);
@@ -127,7 +128,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
             VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, finalStartDate, finalEndDate, cmd.getEnabled()));
             vmScheduler.scheduleNextJob(vmSchedule);
-
+            CallContext.current().setEventResourceId(vm.getId());
+            CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
             return createResponse(vmSchedule);
         });
     }
@@ -251,6 +253,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
             vmScheduleDao.update(cmd.getId(), vmSchedule);
             vmScheduler.updateScheduledJob(vmSchedule);
+            CallContext.current().setEventResourceId(vm.getId());
+            CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
             return createResponse(vmSchedule);
         });
     }
@@ -287,6 +291,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         if (expunge) {
             return vmScheduleDao.expunge(sc);
         }
+        CallContext.current().setEventResourceId(vmId);
+        CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
         return vmScheduleDao.remove(sc);
     }
 
@@ -303,6 +309,8 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
         return Transaction.execute((TransactionCallback<Long>) status -> {
             vmScheduler.removeScheduledJobs(ids);
+            CallContext.current().setEventResourceId(vm.getId());
+            CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
             return vmScheduleDao.removeSchedulesForVmIdAndIds(vm.getId(), ids);
         });
     }
