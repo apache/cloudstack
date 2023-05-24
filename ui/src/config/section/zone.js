@@ -23,6 +23,7 @@ export default {
   title: 'label.zones',
   icon: 'global-outlined',
   permission: ['listZones'],
+  params: { showicon: true },
   show: () => {
     return ['DomainAdmin', 'User'].includes(store.getters.userInfo.roletype)
   },
