@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -642,7 +641,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
         }
 
-        if (!Strings.isNullOrEmpty(sshKeyPair)) {
+        if (!StringUtils.isBlank(sshKeyPair)) {
             SSHKeyPairVO sshKeyPairVO = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshKeyPairVO == null) {
                 throw new InvalidParameterValueException(String.format("Given SSH key pair with name: %s was not found for the account %s", sshKeyPair, owner.getAccountName()));
@@ -848,7 +847,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 List<KubernetesClusterDetailsVO> details = new ArrayList<>();
                 long kubernetesClusterId = kubernetesCluster.getId();
 
-                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || !cmd.getManaged()) {
+                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || !cmd.isManaged()) {
                     addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, externalLoadBalancerIpAddress, true);
                 }
 
@@ -1375,7 +1374,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String state = cmd.getState();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
-        final Boolean managed = cmd.getManaged();
+        final Boolean managed = cmd.isManaged();
         List<KubernetesClusterResponse> responsesList = new ArrayList<KubernetesClusterResponse>();
         List<Long> permittedAccounts = new ArrayList<Long>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);

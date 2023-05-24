@@ -81,7 +81,7 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
         return name;
     }
 
-    public Boolean getManaged() {
+    public Boolean isManaged() {
         return managed;
     }
 

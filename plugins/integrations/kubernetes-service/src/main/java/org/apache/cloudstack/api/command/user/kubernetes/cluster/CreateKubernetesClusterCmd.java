@@ -237,11 +237,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         }
     }
 
-    public boolean getManaged() {
-        if (managed == null) {
-            return true;
-        }
-        return managed;
+    public boolean isManaged() {
+        return managed == null || managed;
     }
 
     /////////////////////////////////////////////////////
@@ -290,7 +287,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         try {
-            if (getManaged() && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
+            if (isManaged() && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
             }
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());
@@ -305,7 +302,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public void create() throws CloudRuntimeException {
         try {
             KubernetesCluster cluster;
-            if (getManaged()) {
+            if (isManaged()) {
                 cluster = kubernetesClusterService.createManagedKubernetesCluster(this);
             } else {
                 cluster = kubernetesClusterService.createUnmanagedKubernetesCluster(this);

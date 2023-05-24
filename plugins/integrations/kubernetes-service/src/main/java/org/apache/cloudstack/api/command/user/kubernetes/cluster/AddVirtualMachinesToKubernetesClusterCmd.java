@@ -59,7 +59,7 @@ public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
             collectionType=CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "the IDs of the VMs to add to the cluster")
     private List<Long> vmIds;
 
     @Parameter(name = "isControlNode", type = CommandType.BOOLEAN,
@@ -79,10 +79,7 @@ public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
     }
 
     public boolean isControlNode() {
-        if (isControlNode == null) {
-            return false;
-        }
-        return isControlNode;
+        return (isControlNode != null) && isControlNode;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

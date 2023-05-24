@@ -59,7 +59,7 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
             collectionType=CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "the ID of the Kubernetes cluster")
+            description = "the IDs of the VMs to remove from the cluster")
     private List<Long> vmIds;
 
     /////////////////////////////////////////////////////
