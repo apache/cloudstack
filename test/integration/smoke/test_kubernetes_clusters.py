@@ -33,7 +33,9 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   scaleKubernetesCluster,
                                   getKubernetesClusterConfig,
                                   destroyVirtualMachine,
-                                  deleteNetwork)
+                                  deleteNetwork,
+                                  addVirtualMachinesToKubernetesCluster,
+                                  removeVirtualMachinesFromKubernetesCluster)
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
@@ -86,6 +88,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls._cleanup = []
         cls.kubernetes_version_ids = []
         cls.vpcAllowAllAclDetailsMap = {}
+        cls.initial_configuration_cks_enabled = None
 
         if cls.hypervisorNotSupported == False:
             cls.endpoint_url = Configurations.list(cls.apiclient, name="endpoint.url")[0].value
@@ -128,13 +131,14 @@ class TestKubernetesCluster(cloudstackTestCase):
                                                                   cks_offering_data
                                                                  )
                 cls._cleanup.append(cls.cks_service_offering)
-                cls.domain = get_domain(cls.apiclient)
-                cls.account = Account.create(
-                    cls.apiclient,
-                    cls.services["account"],
-                    domainid=cls.domain.id
-                )
-                cls._cleanup.append(cls.account)
+
+        cls.domain = get_domain(cls.apiclient)
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
 
         cls.default_network = None
         if str(cls.zone.securitygroupsenabled) == "True":
@@ -162,7 +166,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore CKS enabled
-            if cls.initial_configuration_cks_enabled not in ["true", True]:
+            if cls.initial_configuration_cks_enabled not in ["true", True, None]:
                 cls.debug("Restoring Kubernetes Service enabled value")
                 Configurations.update(cls.apiclient,
                                       "cloud.kubernetes.service.enabled",
@@ -610,18 +614,60 @@ class TestKubernetesCluster(cloudstackTestCase):
         k8s_cluster = None
         return
 
-    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1):
+    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    def test_11_test_unmanaged_cluster_lifecycle(self):
+        """Test all operations on unmanaged Kubernetes cluster
+
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. stopKubernetesCluster doesn't work
+        # 4. startKubernetesCluster doesn't work
+        # 5. upgradeKubernetesCluster doesn't work
+        # 6. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
+        """
+        self.cks_service_offering = None
+        cluster = self.createKubernetesCluster("test-unmanaged-cluster", None,
+                                               managed=False)
+        self.verifyKubernetesClusterState(cluster, 'Running')
+        self.debug("Stopping unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.stopKubernetesCluster(cluster.id)
+            self.fail("Should not be able to stop unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        self.debug("Starting unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.startKubernetesCluster(cluster.id)
+            self.fail("Should not be able to start unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        self.debug("Upgrading unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.upgradeKubernetesCluster(cluster.id, self.kubernetes_version_1_24_0.id)
+            self.fail("Should not be able to upgrade unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        self.debug("Deleting unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        self.deleteKubernetesClusterAndVerify(cluster.id)
+        return
+
+    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, managed=True):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
         createKubernetesClusterCmd.description = name + "-description"
         createKubernetesClusterCmd.kubernetesversionid = version_id
         createKubernetesClusterCmd.size = size
         createKubernetesClusterCmd.controlnodes = control_nodes
-        createKubernetesClusterCmd.serviceofferingid = self.cks_service_offering.id
+        createKubernetesClusterCmd.serviceofferingid = self.cks_service_offering.id if self.cks_service_offering else None
         createKubernetesClusterCmd.zoneid = self.zone.id
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
+        createKubernetesClusterCmd.managed = managed
         if self.default_network:
             createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
