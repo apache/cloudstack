@@ -135,12 +135,7 @@ class TestVMSchedule(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVMSchedule, self).tearDown()
 
     @attr(tags=["advanced", "basic"], required_hardware="false")
     def test_01_vmschedule_create(self):
