@@ -173,6 +173,7 @@ public class VMScheduleManagerImplTest {
         Mockito.when(vmScheduleDao.findById(Mockito.anyLong())).thenReturn(vmSchedule);
         Mockito.when(vmScheduleDao.update(Mockito.eq(cmd.getId()), Mockito.any(VMScheduleVO.class))).thenReturn(true);
         Mockito.when(vmSchedule.getVmId()).thenReturn(1L);
+        Mockito.when(vmSchedule.getStartDate()).thenReturn(DateUtils.addDays(new Date(), 1));
         Mockito.when(userVmManager.getUserVm(vmSchedule.getVmId())).thenReturn(vm);
 
         VMScheduleResponse response = vmScheduleManager.updateSchedule(cmd);
