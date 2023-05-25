@@ -630,7 +630,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
 
         if (name == null || name.isEmpty()) {
-            throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name:" + name);
+            throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
         }
 
         DataCenter zone = dataCenterDao.findById(zoneId);
@@ -927,7 +927,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Account caller = CallContext.current().getCallingAccount();
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster %s is not managed by Apache CloudStack", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Scale kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
         }
 
         final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -1038,7 +1038,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
         }
         if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is not managed by Apache CloudStack", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Upgrade kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
@@ -1243,8 +1243,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (!kubernetesCluster.getManaged()) {
-            LOGGER.debug(String.format("Start Kubernetes cluster : %s is not supported for an unmanaged cluster", kubernetesCluster.getName()));
-            return true;
+            throw new InvalidParameterValueException(String.format("Start Kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
@@ -1314,7 +1313,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
         if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Stop kubernetes cluster : %s is not supported for an unmanaged cluster", kubernetesCluster.getName()));
+            throw new InvalidParameterValueException(String.format("Stop kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));

@@ -49,11 +49,13 @@ from marvin.lib.base import (Template,
                              VPC,
                              NetworkACLList,
                              NetworkACL)
+                             VirtualMachine)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
                               random_gen)
 from marvin.lib.common import (get_zone,
-                               get_domain)
+                               get_domain,
+                               get_template)
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
@@ -131,14 +133,13 @@ class TestKubernetesCluster(cloudstackTestCase):
                                                                   cks_offering_data
                                                                  )
                 cls._cleanup.append(cls.cks_service_offering)
-
-        cls.domain = get_domain(cls.apiclient)
-        cls.account = Account.create(
-            cls.apiclient,
-            cls.services["account"],
-            domainid=cls.domain.id
-        )
-        cls._cleanup.append(cls.account)
+                cls.domain = get_domain(cls.apiclient)
+                cls.account = Account.create(
+                    cls.apiclient,
+                    cls.services["account"],
+                    domainid=cls.domain.id
+                )
+                cls._cleanup.append(cls.account)
 
         cls.default_network = None
         if str(cls.zone.securitygroupsenabled) == "True":
@@ -166,7 +167,7 @@ class TestKubernetesCluster(cloudstackTestCase):
                 cls.debug("Error: Exception during cleanup for added Kubernetes supported versions: %s" % e)
         try:
             # Restore CKS enabled
-            if cls.initial_configuration_cks_enabled not in ["true", True, None]:
+            if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Restoring Kubernetes Service enabled value")
                 Configurations.update(cls.apiclient,
                                       "cloud.kubernetes.service.enabled",
@@ -624,9 +625,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         # 3. stopKubernetesCluster doesn't work
         # 4. startKubernetesCluster doesn't work
         # 5. upgradeKubernetesCluster doesn't work
-        # 6. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
+        # 6. Adding & removing vm from cluster works
+        # 7. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
         """
-        self.cks_service_offering = None
         cluster = self.createKubernetesCluster("test-unmanaged-cluster", None,
                                                managed=False)
         self.verifyKubernetesClusterState(cluster, 'Running')
@@ -651,9 +652,45 @@ class TestKubernetesCluster(cloudstackTestCase):
         except Exception as e:
             self.debug("Expected exception: %s" % e)
 
+        template = get_template(self.apiclient,
+                                    self.zone.id,
+                                    self.services["ostype"])
+
+        self.services["virtual_machine"]["template"] = template.id
+        virtualMachine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"], zoneid=self.zone.id,
+                                                            accountid=self.account.name, domainid=self.account.domainid,
+                                                            serviceofferingid=self.cks_service_offering.id)
+        self.debug("Adding VM %s to unmanaged Kubernetes cluster with ID: %s" % (virtualMachine.id, cluster.id))
+        self.addVirtualMachinesToKubernetesCluster(cluster.id, [virtualMachine.id])
+        cluster = self.listKubernetesCluster(cluster.id)
+        self.assertEqual(virtualMachine.id, cluster.virtualmachines[0].id, "VM should be part of the kubernetes cluster")
+        self.assertEqual(1, len(cluster.virtualmachines), "Only one VM should be part of the kubernetes cluster")
+
+        self.debug("Removing VM %s from unmanaged Kubernetes cluster with ID: %s" % (virtualMachine.id, cluster.id))
+        self.removeVirtualMachinesFromKubernetesCluster(cluster.id, [virtualMachine.id])
+        cluster = self.listKubernetesCluster(cluster.id)
+        self.assertEqual(0, len(cluster.virtualmachines), "No VM should be part of the kubernetes cluster")
+
         self.debug("Deleting unmanaged Kubernetes cluster with ID: %s" % cluster.id)
         self.deleteKubernetesClusterAndVerify(cluster.id)
         return
+
+    def addVirtualMachinesToKubernetesCluster(self, cluster_id, vm_list):
+        cmd = addVirtualMachinesToKubernetesCluster.addVirtualMachinesToKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.virtualmachineids = vm_list
+
+        return self.apiclient.addVirtualMachinesToKubernetesCluster(cmd).success
+        return response
+
+    def removeVirtualMachinesFromKubernetesCluster(self, cluster_id, vm_list):
+        cmd = removeVirtualMachinesFromKcubernetesCluster.removeVirtualMachinesFromKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.virtualmachineids = vm_list
+
+        return self.apiclient.removeVirtualMachinesFromKubernetesCluster(cmd).success
+        return response
+
 
     def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, managed=True):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
@@ -662,7 +699,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.kubernetesversionid = version_id
         createKubernetesClusterCmd.size = size
         createKubernetesClusterCmd.controlnodes = control_nodes
-        createKubernetesClusterCmd.serviceofferingid = self.cks_service_offering.id if self.cks_service_offering else None
+        createKubernetesClusterCmd.serviceofferingid = self.cks_service_offering.id
         createKubernetesClusterCmd.zoneid = self.zone.id
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
