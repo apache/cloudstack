@@ -27,14 +27,11 @@
       </a-tab-pane>
       <a-tab-pane v-if="clusterConfig !== ''" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
-          <div v-if="clusterConfig !== ''">
+          <div>
             <a-textarea :value="clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
               <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ $t('label.download.kubernetes.cluster.config') }}</a-button>
             </div>
-          </div>
-          <div v-else>
-            <p>{{ $t('message.kubeconfig.cluster.not.available') }}</p>
           </div>
         </a-card>
         <a-card :title="$t('label.using.cli')" :loading="versionLoading">

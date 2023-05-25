@@ -34,7 +34,6 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.List;
 
-
 @APICommand(name = "removeVirtualMachinesFromKubernetesCluster",
         description = "Remove VMs from a kubernetes cluster",
         responseObject = SuccessResponse.class,
@@ -49,6 +48,7 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
             required = true,

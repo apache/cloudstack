@@ -155,6 +155,9 @@
       <template v-if="column.key === 'traffictype'">
         {{ text }}
       </template>
+      <template v-if="column.key === 'managed'">
+        {{ $t(text ? 'label.yes': 'label.no') }}
+      </template>
       <template v-if="column.key === 'vmname'">
         <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
       </template>

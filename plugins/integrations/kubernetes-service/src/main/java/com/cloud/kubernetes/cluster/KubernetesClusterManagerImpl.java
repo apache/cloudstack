@@ -604,6 +604,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
         response.setMinSize(kubernetesCluster.getMinSize());
         response.setMaxSize(kubernetesCluster.getMaxSize());
+        response.setManaged(kubernetesCluster.getManaged());
         response.setCreated(kubernetesCluster.getCreated());
         return response;
     }
@@ -1146,7 +1147,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         return cluster;
     }
-
 
     @Override
     public KubernetesCluster createManagedKubernetesCluster(CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
