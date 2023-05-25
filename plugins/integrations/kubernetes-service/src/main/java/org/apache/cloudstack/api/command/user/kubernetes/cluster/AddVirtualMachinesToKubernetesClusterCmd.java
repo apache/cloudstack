@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import java.util.List;
 
 @APICommand(name = "addVirtualMachinesToKubernetesCluster",
-        description = "Add VM to a kubernetes cluster",
+        description = "Add VMs to a kubernetes cluster",
         responseObject = SuccessResponse.class,
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
@@ -94,7 +94,7 @@ public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         try {
             if (!kubernetesClusterService.addVmsToCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VM to cluster");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VMs to cluster");
             }
             final SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());
