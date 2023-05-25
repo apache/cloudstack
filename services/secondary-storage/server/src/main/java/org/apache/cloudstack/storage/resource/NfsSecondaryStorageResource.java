@@ -1998,9 +1998,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String getSnapshotFilepathForDelete(String path, String snapshotName) {
-        String finalPath = path + "/*" + snapshotName + "*";
         if (!path.endsWith(snapshotName)) {
-            return finalPath;
+            return path + "/*" + snapshotName + "*";
         }
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, path));
