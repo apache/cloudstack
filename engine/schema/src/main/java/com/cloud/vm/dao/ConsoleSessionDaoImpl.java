@@ -19,21 +19,16 @@
 
 package com.cloud.vm.dao;
 
-import java.sql.PreparedStatement;
 import java.util.Date;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.ConsoleSessionVO;
-import org.apache.log4j.Logger;
 
 public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
     private final SearchBuilder<ConsoleSessionVO> searchByRemovedDate;
-    private static final String ACQUIRE_CONSOLE_SESSION = "UPDATE console_session SET acquired = ? WHERE id = ?";
-    private static final Logger LOGGER = Logger.getLogger(ConsoleSessionDaoImpl.class);
 
     public ConsoleSessionDaoImpl() {
         searchByRemovedDate = createSearchBuilder();
@@ -65,20 +60,9 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
 
     @Override
     public void acquireSession(String sessionUuid) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
         ConsoleSessionVO consoleSessionVO = findByUuid(sessionUuid);
-        long consoleSessionId = consoleSessionVO.getId();
-        try {
-            txn.start();
-            PreparedStatement preparedStatement = txn.prepareAutoCloseStatement(ACQUIRE_CONSOLE_SESSION);
-            preparedStatement.setDate(1, new java.sql.Date(-1L));
-            preparedStatement.setLong(2, consoleSessionId);
-            preparedStatement.executeUpdate();
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            LOGGER.warn(String.format("Failed acquiring console session id = %s: %s", consoleSessionId, e.getMessage()), e);
-        }
+        consoleSessionVO.setAcquired(new Date());
+        update(consoleSessionVO.getId(), consoleSessionVO);
     }
 
 
