@@ -26,7 +26,7 @@
               @click="showUploadModal(true)"
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
-              <div class="ant-upload-preview" v-if="$showIcon()">
+              <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
                 <camera-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">

@@ -345,7 +345,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
         return true
       } else {
         return false
