@@ -137,18 +137,18 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
             private void persistNetworkServiceMapAvoidingDuplicates(Network network,
                                                                     NetworkServiceMapVO mapVO) {
                 if (mapVO == null) {
-                    s_logger.error("Expected a network-service-provider mapping entity to be persisted");
+                    logger.error("Expected a network-service-provider mapping entity to be persisted");
                     return;
                 }
                 Network.Service service = Network.Service.getService(mapVO.getService());
                 Network.Provider provider = Network.Provider.getProvider(mapVO.getProvider());
                 if (service == null || provider == null) {
-                    s_logger.error(String.format("Could not obtain the service or the provider " +
+                    logger.error(String.format("Could not obtain the service or the provider " +
                             "from the network-service-provider map with ID = %s", mapVO.getId()));
                     return;
                 }
                 if (networkServiceMapDao.canProviderSupportServiceInNetwork(network.getId(), service, provider)) {
-                    s_logger.debug(String.format("A mapping between the network, service and provider (%s, %s, %s) " +
+                    logger.debug(String.format("A mapping between the network, service and provider (%s, %s, %s) " +
                                     "already exists, skipping duplicated entry",
                             network.getId(), service.getName(), provider.getName()));
                     return;
