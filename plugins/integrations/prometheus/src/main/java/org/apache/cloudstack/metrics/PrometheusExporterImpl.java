@@ -215,9 +215,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         List<String> hostTags = new ArrayList<>();
         hostTagVOS.forEach(hostTagVO -> hostTags.add(hostTagVO.getTag()));
         markTags(hostTags,totalHosts);
-        if (host.getStatus() == Status.Up) {
+        if (host.getStatus() == Status.Up && !host.isInMaintenanceStates()) {
             markTags(hostTags, upHosts);
-        } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
+        } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down || host.isInMaintenanceStates()) {
             markTags(hostTags, downHosts);
         }
         return StringUtils.join(hostTags, ",");

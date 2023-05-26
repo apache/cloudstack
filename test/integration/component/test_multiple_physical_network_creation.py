@@ -39,11 +39,11 @@ from marvin.lib.common import (get_domain,
 
 import logging
 
-class TestMulipleNetworkCreation(cloudstackTestCase):
+class TestMultipleNetworkCreation(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(
-            TestMulipleNetworkCreation,
+            TestMultipleNetworkCreation,
             cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.testdata = cls.testClient.getParsedTestDataConfig()
@@ -54,7 +54,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
         cls.template = get_template(cls.apiclient, cls.zone.id)
         cls._cleanup = []
 
-        cls.logger = logging.getLogger("TestMulipleNetworkCreation")
+        cls.logger = logging.getLogger("TestMultipleNetworkCreation")
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
@@ -127,7 +127,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
                 allocationstate="Enabled"
             )
             # Cleanup resources used
-            super(TestMulipleNetworkCreation, cls).tearDownClass()
+            super(TestMultipleNetworkCreation, cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -139,7 +139,7 @@ class TestMulipleNetworkCreation(cloudstackTestCase):
         return
 
     def tearDown(self):
-        super(TestMulipleNetworkCreation, self).tearDown()
+        super(TestMultipleNetworkCreation, self).tearDown()
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_add_traffictype_for_untagged_networks(self):

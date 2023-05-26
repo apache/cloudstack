@@ -27,6 +27,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "console_session")
@@ -56,6 +58,7 @@ public class ConsoleSessionVO {
     private long hostId;
 
     @Column(name = "acquired")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date acquired;
 
     @Column(name = "removed")

@@ -1088,7 +1088,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         HostListSummaryQuickStats stats = getHostQuickStats();
         if (stats.getOverallCpuUsage() == null || stats.getOverallMemoryUsage() == null)
-            throw new Exception("Unable to get valid overal CPU/Memory usage data, host may be disconnected");
+            throw new Exception("Unable to get valid overall CPU/Memory usage data, host may be disconnected");
 
         resourceSummary.setEffectiveCpu(totalCpu - stats.getOverallCpuUsage());
 
