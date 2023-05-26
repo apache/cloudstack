@@ -88,15 +88,16 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     }
 
     @Test
-    public void executeTestHostIdIsNullAndMigrateVolumeToIsNullThrowsInvalidParameterValueException() {
+    public void executeTestRequiredArgsNullThrowsInvalidParameterValueException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", null);
+        ReflectionTestUtils.setField(cmdSpy, "autoSelect", null);
 
         try {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO);
+            String expected = String.format("Either %s or %s must be passed or %s must be true for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
@@ -120,7 +121,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     }
 
     @Test
-    public void executeTestVMIsRunningAndHostIdIsNullThrowsInvalidParameterValueException() {
+    public void executeTestVMIsRunningHostIdIsNullAndAutoSelectIsFalseThrowsInvalidParameterValueException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
         ReflectionTestUtils.setField(cmdSpy, "autoSelect", false);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);

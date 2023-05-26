@@ -129,7 +129,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -6741,7 +6740,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return implicitPlannerUsed;
     }
 
-    private boolean isAnyVmVolumeUsingLocalStorage(final List<VolumeVO> volumes) {
+    protected boolean isAnyVmVolumeUsingLocalStorage(final List<VolumeVO> volumes) {
         for (VolumeVO vol : volumes) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             if (diskOffering.isUseLocalStorage()) {
@@ -6755,7 +6754,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return false;
     }
 
-    private boolean isAllVmVolumesOnZoneWideStore(final List<VolumeVO> volumes) {
+    protected boolean isAllVmVolumesOnZoneWideStore(final List<VolumeVO> volumes) {
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
@@ -6908,7 +6907,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             poolId = new ArrayList<>(volToPoolObjectMap.values()).get(0);
         }
         DeployDestination deployDestination = chooseVmMigrationDestination(vm, srcHost, poolId);
-        if (ObjectUtils.anyNull(deployDestination, deployDestination.getHost())) {
+        if (deployDestination == null || deployDestination.getHost() == null) {
             throw new CloudRuntimeException("Unable to find suitable destination to migrate VM " + vm.getInstanceName());
         }
         return deployDestination.getHost();
