@@ -287,6 +287,23 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    protected boolean isSkipTemplateStoreDownload(VMTemplateVO template, Long zoneId) {
+        if (template.isPublicTemplate()) {
+            return false;
+        }
+        if (template.isFeatured()) {
+            return false;
+        }
+        if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
+            return false;
+        }
+        if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
+            s_logger.debug(String.format("Template %s is not present on any image store for the zone ID: %d, its download cannot be skipped", template.getUniqueName(), zoneId));
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void handleTemplateSync(DataStore store) {
         if (store == null) {
@@ -514,7 +531,7 @@ public class TemplateServiceImpl implements TemplateService {
                                 continue;
                             }
                             // if this is private template, skip sync to a new image store
-                            if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
+                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
                                 logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
                             }
