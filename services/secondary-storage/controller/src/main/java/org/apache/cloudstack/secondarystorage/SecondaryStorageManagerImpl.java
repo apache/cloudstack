@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1197,20 +1198,30 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             String url = dataStore.getTO().getUrl();
             String[] urlArray = url.split("/");
 
-            s_logger.debug(String.format("Found [%s] as secondary storage [%s] URL for SSVM [%s].", dataStore.getName(), url, vmName));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Found [%s] as secondary storage [%s] URL for SSVM [%s].", dataStore.getName(), url, vmName));
+            }
             if (ArrayUtils.getLength(urlArray) < 3) {
-                s_logger.debug(String.format("Could not retrieve secondary storage [%s] address from URL [%s] of SSVM [%s].", dataStore.getName(), url, vmName));
-                return;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Could not retrieve secondary storage [%s] address from URL [%s] of SSVM [%s].", dataStore.getName(), url, vmName));
+                }
+                continue;
             }
 
             String address = urlArray[2];
-            s_logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
-            addresses.add(address);
+            s_logger.info(String.format("Using [%s] as address of secondary storage [%s] of SSVM [%s].", address, dataStore.getName(), vmName));
+            if (!addresses.contains(address)) {
+                addresses.add(address);
+            }
 
         }
-        if (!addresses.isEmpty()) {
-            buffer.append(" secondaryStorageServerAddress=").append(StringUtils.join(addresses, ","));
+        if (addresses.isEmpty()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("No address found for the secondary storages: [%s] of SSVM: [%s]", StringUtils.join(dataStores.stream().map(DataStore::getName).collect(Collectors.toList()), ","), vmName));
+            }
+            return;
         }
+        buffer.append(" secondaryStorageServerAddress=").append(StringUtils.join(addresses, ","));
     }
 
     @Override
