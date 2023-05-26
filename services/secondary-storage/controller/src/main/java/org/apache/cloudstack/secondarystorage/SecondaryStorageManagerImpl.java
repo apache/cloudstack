@@ -1183,29 +1183,34 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         s_logger.debug(String.format("Setting UseHttpsToUpload config on cmdline with [%s] value.", useHttpsToUpload));
         buf.append(" useHttpsToUpload=").append(useHttpsToUpload);
 
-        for (DataStore secStore : secStores) {
-            addSecondaryStorageServerAddressToBuffer(buf, secStore, vmName);
-        }
+        addSecondaryStorageServerAddressToBuffer(buf, secStores, vmName);
 
         return true;
     }
 
     /**
-     * Adds the secondary storage address to the buffer if it is in the following pattern: <protocol>//<address>/...
+     * Adds the secondary storages address to the buffer if it is in the following pattern: <protocol>//<address>/...
      */
-    protected void addSecondaryStorageServerAddressToBuffer(StringBuilder buffer, DataStore dataStore, String vmName) {
-        String url = dataStore.getTO().getUrl();
-        String[] urlArray = url.split("/");
+    protected void addSecondaryStorageServerAddressToBuffer(StringBuilder buffer, List<DataStore> dataStores, String vmName) {
+        List<String> addresses = new ArrayList<>();
+        for (DataStore dataStore: dataStores) {
+            String url = dataStore.getTO().getUrl();
+            String[] urlArray = url.split("/");
 
-        s_logger.debug(String.format("Found [%s] as secondary storage's URL for SSVM [%s].", url, vmName));
-        if (ArrayUtils.getLength(urlArray) < 3) {
-            s_logger.debug(String.format("Could not retrieve secondary storage address from URL [%s] of SSVM [%s].", url, vmName));
-            return;
+            s_logger.debug(String.format("Found [%s] as secondary storage [%s] URL for SSVM [%s].", dataStore.getName(), url, vmName));
+            if (ArrayUtils.getLength(urlArray) < 3) {
+                s_logger.debug(String.format("Could not retrieve secondary storage [%s] address from URL [%s] of SSVM [%s].", dataStore.getName(), url, vmName));
+                return;
+            }
+
+            String address = urlArray[2];
+            s_logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
+            addresses.add(address);
+
         }
-
-        String address = urlArray[2];
-        s_logger.info(String.format("Using [%s] as address of secondary storage of SSVM [%s].", address, vmName));
-        buffer.append(" secondaryStorageServerAddress=").append(address);
+        if (!addresses.isEmpty()) {
+            buffer.append(" secondaryStorageServerAddress=").append(StringUtils.join(addresses, ","));
+        }
     }
 
     @Override
