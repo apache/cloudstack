@@ -36,4 +36,6 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
     boolean setBucketVersioning(String name);
 
     boolean deleteBucketVersioning(String name);
+
+    void setBucketPolicy(String name, String policy);
 }

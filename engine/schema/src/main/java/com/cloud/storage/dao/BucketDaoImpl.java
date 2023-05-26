@@ -18,22 +18,45 @@ package com.cloud.storage.dao;
 
 import com.cloud.storage.BucketVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.naming.ConfigurationException;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements BucketDao {
     public static final Logger s_logger = Logger.getLogger(BucketDaoImpl.class.getName());
+    private SearchBuilder<BucketVO> searchFilteringStoreId;
+
+    private static final String STORE_ID = "store_id";
+    private static final String STATE = "state";
 
     public BucketDaoImpl() {
 
     }
+
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        searchFilteringStoreId = createSearchBuilder();
+        searchFilteringStoreId.and(STORE_ID, searchFilteringStoreId.entity().getObjectStoreId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreId.and(STATE, searchFilteringStoreId.entity().getState(), SearchCriteria.Op.NEQ);
+        searchFilteringStoreId.done();
+
+        return true;
+    }
+        @Override
     public List<BucketVO> listByObjectStoreId(long objectStoreId) {
-        return null;
+        SearchCriteria<BucketVO> sc = searchFilteringStoreId.create();
+        sc.setParameters(STORE_ID, objectStoreId);
+        sc.setParameters(STATE, BucketVO.State.Destroyed);
+        return listBy(sc);
     }
 
     @Override

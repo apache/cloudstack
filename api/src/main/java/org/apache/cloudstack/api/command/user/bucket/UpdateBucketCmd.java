@@ -53,6 +53,9 @@ public class UpdateBucketCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENCRYPTION, type = CommandType.BOOLEAN, description = "Enable/Disable Bucket encryption")
     private Boolean encryption;
 
+    @Parameter(name = ApiConstants.POLICY, type = CommandType.STRING, description = "Bucket Access Policy")
+    private String policy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -67,6 +70,10 @@ public class UpdateBucketCmd extends BaseCmd {
 
     public Boolean getEncryption() {
         return encryption;
+    }
+
+    public String getPolicy() {
+        return policy;
     }
 
     /////////////////////////////////////////////////////

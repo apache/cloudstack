@@ -32,6 +32,7 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.RemoveBucketArgs;
 import io.minio.SetBucketEncryptionArgs;
+import io.minio.SetBucketPolicyArgs;
 import io.minio.SetBucketVersioningArgs;
 import io.minio.admin.MinioAdminClient;
 import io.minio.admin.UserInfo;
@@ -45,13 +46,10 @@ import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.inject.Inject;
-import java.io.IOException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -176,7 +174,41 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
     @Override
     public void setBucketPolicy(String bucketName, String policyText, long storeId) {
+        String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
 
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\n");
+        builder.append("    \"Statement\": [\n");
+        builder.append("        {\n");
+        builder.append("            \"Action\": [\n");
+        builder.append("                \"s3:GetBucketLocation\",\n");
+        builder.append("                \"s3:ListBucket\"\n");
+        builder.append("            ],\n");
+        builder.append("            \"Effect\": \"Allow\",\n");
+        builder.append("            \"Principal\": \"*\",\n");
+        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"\"\n");
+        builder.append("        },\n");
+        builder.append("        {\n");
+        builder.append("            \"Action\": \"s3:GetObject\",\n");
+        builder.append("            \"Effect\": \"Allow\",\n");
+        builder.append("            \"Principal\": \"*\",\n");
+        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"/*\"\n");
+        builder.append("        }\n");
+        builder.append("    ],\n");
+        builder.append("    \"Version\": \"2012-10-17\"\n");
+        builder.append("}\n");
+
+        String publicPolicy = builder.toString();
+
+        String policy = (policyText == "public")? publicPolicy : privatePolicy;
+
+        MinioClient minioClient = getMinIOClient(storeId);
+        try {
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build());
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override
@@ -285,6 +317,44 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return true;
     }
 
+    public void setBucketPolicy(String bucketName, long storeId) {
+
+        String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\n");
+        builder.append("    \"Statement\": [\n");
+        builder.append("        {\n");
+        builder.append("            \"Action\": [\n");
+        builder.append("                \"s3:GetBucketLocation\",\n");
+        builder.append("                \"s3:ListBucket\"\n");
+        builder.append("            ],\n");
+        builder.append("            \"Effect\": \"Allow\",\n");
+        builder.append("            \"Principal\": \"*\",\n");
+        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"\"\n");
+        builder.append("        },\n");
+        builder.append("        {\n");
+        builder.append("            \"Action\": \"s3:GetObject\",\n");
+        builder.append("            \"Effect\": \"Allow\",\n");
+        builder.append("            \"Principal\": \"*\",\n");
+        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"/*\"\n");
+        builder.append("        }\n");
+        builder.append("    ],\n");
+        builder.append("    \"Version\": \"2012-10-17\"\n");
+        builder.append("}\n");
+
+        String publicPolicy = builder.toString();
+
+        MinioClient minioClient = getMinIOClient(storeId);
+        try {
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder().bucket(bucketName).config(publicPolicy).build());
+
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     private MinioClient getMinIOClient(long storeId) {
         ObjectStoreVO store = _storeDao.findById(storeId);
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
@@ -312,22 +382,4 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         .build();
         return minioAdminClient;
     }
-
-    private void createUser(long storeId) {
-        MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
-        String accessKey = "abcd";
-        try {
-            minioAdminClient.addUser(accessKey, UserInfo.Status.ENABLED, "", "", new ArrayList<String>());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidCipherTextException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
 }

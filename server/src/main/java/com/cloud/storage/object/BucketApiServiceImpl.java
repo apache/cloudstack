@@ -122,6 +122,10 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             }
         }
 
+        if(cmd.getPolicy() != null) {
+            objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+        }
+
         return true;
     }
 }

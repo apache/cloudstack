@@ -54,9 +54,11 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -105,6 +107,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -194,6 +197,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -356,7 +360,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected UserVmManager userVmManager;
     @Inject
-    protected ObjectStoreDao _objectStoreDao = null;
+    protected ObjectStoreDao _objectStoreDao;
+
+    @Inject
+    protected ObjectStoreDetailsDao _objectStoreDetailsDao;
+
+    @Inject
+    protected BucketDao _bucketDao;
     protected List<StoragePoolDiscoverer> _discoverers;
 
     public List<StoragePoolDiscoverer> getDiscoverers() {
@@ -3676,5 +3686,48 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (ObjectStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Object);
+    }
+
+    @Override
+    public boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd) {
+        final long storeId = cmd.getId();
+        // Verify that object store exists
+        ObjectStoreVO store = _objectStoreDao.findById(storeId);
+        if (store == null) {
+            throw new InvalidParameterValueException("Object store with id " + storeId + " doesn't exist");
+        }
+
+        // Verify that there are no buckets in the store
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreId(storeId);
+        if(buckets != null && buckets.size() > 0) {
+            throw new InvalidParameterValueException("Cannot delete object store with buckets");
+        }
+
+        // ready to delete
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _objectStoreDetailsDao.deleteDetails(storeId);
+                _objectStoreDao.remove(storeId);
+            }
+        });
+        s_logger.debug("Successfully deleted object store with Id: "+storeId);
+        return true;
+    }
+
+    @Override
+    public ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd) {
+
+        // Input validation
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(id);
+        if (objectStoreVO == null) {
+            throw new IllegalArgumentException("Unable to find object store with ID: " + id);
+        }
+        if(cmd.getName() != null ) {
+            objectStoreVO.setName(cmd.getName());
+        }
+        _objectStoreDao.update(id, objectStoreVO);
+        s_logger.debug("Successfully updated object store with Id: "+id);
+        return objectStoreVO;
     }
 }

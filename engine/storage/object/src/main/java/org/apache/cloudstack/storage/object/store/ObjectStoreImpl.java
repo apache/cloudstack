@@ -133,6 +133,11 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
         return driver.deleteBucketVersioning(bucketName, objectStoreVO.getId());
     }
 
+    @Override
+    public void setBucketPolicy(String bucketName, String policy) {
+        driver.setBucketPolicy(bucketName, policy, objectStoreVO.getId());
+    }
+
     /*
     Create user if not exists
      */
