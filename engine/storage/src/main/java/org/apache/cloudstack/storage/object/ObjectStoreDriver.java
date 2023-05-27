@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import java.util.List;
 
 public interface ObjectStoreDriver extends DataStoreDriver {
-    Bucket createBucket(String bucketName, long storeId, long accountId);
+    Bucket createBucket(Bucket bucket);
 
     List<Bucket> listBuckets(long storeId);
 

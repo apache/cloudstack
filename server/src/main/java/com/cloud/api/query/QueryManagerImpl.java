@@ -5145,14 +5145,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (id != null) {
-            sc.setParameters("id", id);
+            BucketVO bucket = bucketDao.findById((Long)id);
+            List<BucketVO> buckets = new ArrayList<>();
+            buckets.add(bucket);
+            return buckets;
+            //sc.setParameters("id", id);
         }
 
         if (name != null) {
             sc.setParameters("name", name);
         }
 
-        List<BucketVO> buckets = bucketDao.search(sc, searchFilter);
+        List<BucketVO> buckets = bucketDao.listAll();
+        //search(sc, searchFilter);
         return buckets;
     }
 

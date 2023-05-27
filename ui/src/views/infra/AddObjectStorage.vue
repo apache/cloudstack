@@ -122,13 +122,10 @@ export default {
 
         data.provider = provider
         data.url = values.url
-        var details = []
-        details[0].key = 'accesskey'
-        details[0].value = values.accessKey
-        details[1].key = 'secretkey'
-        details[1].value = values.secretKey
-
-        data.details = details
+        data['details[0].key'] = 'accesskey'
+        data['details[0].value'] = values.accessKey
+        data['details[1].key'] = 'secretkey'
+        data['details[1].value'] = values.secretKey
 
         this.loading = true
 

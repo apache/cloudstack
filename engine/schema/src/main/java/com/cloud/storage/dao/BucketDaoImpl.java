@@ -36,7 +36,7 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
     private static final String STORE_ID = "store_id";
     private static final String STATE = "state";
 
-    public BucketDaoImpl() {
+    protected BucketDaoImpl() {
 
     }
 
@@ -64,6 +64,16 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         BucketResponse bucketResponse = new BucketResponse();
         bucketResponse.setName(bucket.getName());
         bucketResponse.setId(bucket.getUuid());
+        bucketResponse.setCreated(bucket.getCreated());
+        bucketResponse.setSize(bucket.getSize());
+        bucketResponse.setQuota(bucket.getQuota());
+        bucketResponse.setVersioning(bucket.isVersioning());
+        bucketResponse.setEncryption(bucket.isEncryption());
+        bucketResponse.setObjectLock(bucket.isObjectLock());
+        bucketResponse.setPolicy(bucket.getPolicy());
+        bucketResponse.setBucketURL(bucket.getBucketURL());
+        bucketResponse.setAccessKey(bucket.getAccessKey());
+        bucketResponse.setSecretKey(bucket.getSecretKey());
         //ToDo change to UUID
         bucketResponse.setObjectStoragePoolId(""+bucket.getObjectStoreId());
         bucketResponse.setObjectName("bucket");

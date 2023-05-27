@@ -58,6 +58,42 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "id of the object storage hosting the Bucket; returned to admin user only")
     private String objectStoragePoolId;
 
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "Total size of objects in Bucket")
+    private Long size;
+
+    @SerializedName(ApiConstants.QUOTA)
+    @Param(description = "Bucket Quota in GB")
+    private Long quota;
+
+    @SerializedName(ApiConstants.ENCRYPTION)
+    @Param(description = "Bucket Encryption")
+    private Boolean encryption;
+
+    @SerializedName(ApiConstants.VERSIONING)
+    @Param(description = "Bucket Versioning")
+    private Boolean versioning;
+
+    @SerializedName(ApiConstants.OBJECT_LOCKING)
+    @Param(description = "Bucket Object Locking")
+    private Boolean objectLock;
+
+    @SerializedName(ApiConstants.POLICY)
+    @Param(description = "Bucket Access Policy")
+    private String policy;
+
+    @SerializedName(ApiConstants.URL)
+    @Param(description = "Bucket URL")
+    private String bucketURL;
+
+    @SerializedName(ApiConstants.ACCESS_KEY)
+    @Param(description = "Bucket Access Key")
+    private String accessKey;
+
+    @SerializedName(ApiConstants.SECRET_KEY)
+    @Param(description = "Bucket Secret Key")
+    private String secretKey;
+
     public BucketResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -147,4 +183,76 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     public String getObjectStoragePoolId() {
         return objectStoragePoolId;
     }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+    public long getQuota() {
+        return quota;
+    }
+
+    public void setQuota(long quota) {
+        this.quota = quota;
+    }
+
+    public boolean isVersioning() {
+        return versioning;
+    }
+
+    public void setVersioning(boolean versioning) {
+        this.versioning = versioning;
+    }
+
+    public boolean isEncryption() {
+        return encryption;
+    }
+
+    public void setEncryption(boolean encryption) {
+        this.encryption = encryption;
+    }
+
+    public boolean isObjectLock() {
+        return objectLock;
+    }
+
+    public void setObjectLock(boolean objectLock) {
+        this.objectLock = objectLock;
+    }
+
+    public String getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(String policy) {
+        this.policy = policy;
+    }
+
+    public String getBucketURL() {
+        return bucketURL;
+    }
+
+    public void setBucketURL(String bucketURL) {
+        this.bucketURL = bucketURL;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
 }

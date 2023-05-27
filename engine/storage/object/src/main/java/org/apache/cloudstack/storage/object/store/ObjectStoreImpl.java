@@ -99,13 +99,13 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     @Override
     public DataObject create(DataObject obj) {
         //ToDo remove this?
-        driver.createBucket("name", objectStoreVO.getId(), 1L);
+        //driver.createBucket();
         return null;
     }
 
     @Override
-    public Bucket createBucket(String bucketName, long accountId) {
-        return driver.createBucket(bucketName, objectStoreVO.getId(), accountId);
+    public Bucket createBucket(Bucket bucket) {
+        return driver.createBucket(bucket);
     }
 
     @Override

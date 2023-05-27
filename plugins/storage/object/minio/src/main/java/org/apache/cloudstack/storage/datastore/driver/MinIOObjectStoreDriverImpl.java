@@ -22,6 +22,8 @@ import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.Bucket;
+import com.cloud.storage.BucketVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.dao.AccountDao;
@@ -69,6 +71,9 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     ObjectStoreDao _storeDao;
 
     @Inject
+    BucketDao _bucketDao;
+
+    @Inject
     ObjectStoreDetailsDao _storeDetailsDao;
 
     private static final String ACCESS_KEY = "accesskey";
@@ -83,8 +88,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public Bucket createBucket(String bucketName, long storeId, long accountId) {
+    public Bucket createBucket(Bucket bucket) {
         //ToDo Client pool mgmt
+        String bucketName = bucket.getName();
+        long storeId = bucket.getObjectStoreId();
+        long accountId = bucket.getAccountId();
         MinioClient minioClient = getMinIOClient(storeId);
         Account account = _accountDao.findById(accountId);
         try {
@@ -99,8 +107,6 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
-        Bucket bucket = new BucketObject();
-        bucket.setName(bucketName);
 
         String policy = " {\n" +
                 "     \"Statement\": [\n" +
@@ -122,7 +128,14 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
-
+        String accessKey = _accountDetailsDao.findDetail(accountId, MINIO_ACCESS_KEY).getValue();
+        String secretKey = _accountDetailsDao.findDetail(accountId, MINIO_SECRET_KEY).getValue();
+        ObjectStoreVO store = _storeDao.findById(storeId);
+        BucketVO bucketVO = _bucketDao.findById(bucket.getId());
+        bucketVO.setAccessKey(accessKey);
+        bucketVO.setSecretKey(secretKey);
+        bucketVO.setBucketURL(store.getUrl()+"/"+bucketName);
+        _bucketDao.update(bucket.getId(), bucketVO);
         return bucket;
     }
 

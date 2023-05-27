@@ -72,6 +72,21 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "Id of the Object Storage Pool where bucket is created")
     private long objectStoragePoolId;
 
+    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER,description = "Bucket Quota in GB")
+    private int quota;
+
+    @Parameter(name = ApiConstants.ENCRYPTION, type = CommandType.BOOLEAN, description = "Enable bucket encryption")
+    private boolean encryption;
+
+    @Parameter(name = ApiConstants.VERSIONING, type = CommandType.BOOLEAN, description = "Enable bucket versioning")
+    private boolean versioning;
+
+    @Parameter(name = ApiConstants.OBJECT_LOCKING, type = CommandType.BOOLEAN, description = "Enable object locking in bucket")
+    private boolean objectLocking;
+
+    @Parameter(name = ApiConstants.POLICY, type = CommandType.STRING,description = "The Bucket access policy")
+    private String policy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -94,6 +109,26 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public long getObjectStoragePoolId() {
         return objectStoragePoolId;
+    }
+
+    public int getQuota() {
+        return quota;
+    }
+
+    public boolean isEncryption() {
+        return encryption;
+    }
+
+    public boolean isVersioning() {
+        return versioning;
+    }
+
+    public boolean isObjectLocking() {
+        return objectLocking;
+    }
+
+    public String getPolicy() {
+        return policy;
     }
 
     /////////////////////////////////////////////////////

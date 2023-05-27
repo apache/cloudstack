@@ -62,6 +62,30 @@ public class BucketVO implements Bucket {
     @Column(name = "size")
     long size;
 
+    @Column(name = "quota")
+    long quota;
+
+    @Column(name = "versioning")
+    boolean versioning;
+
+    @Column(name = "encryption")
+    boolean encryption;
+
+    @Column(name = "object_lock")
+    boolean objectLock;
+
+    @Column(name = "policy")
+    String policy;
+
+    @Column(name = "bucket_url")
+    String bucketURL;
+
+    @Column(name = "access_key")
+    String accessKey;
+
+    @Column(name = "secret_key")
+    String secretKey;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
@@ -72,10 +96,10 @@ public class BucketVO implements Bucket {
     String uuid;
 
     public BucketVO() {
-        uuid = UUID.randomUUID().toString();
     }
 
-    public BucketVO(long accountId, long domainId, long objectStoreId, String name)
+    public BucketVO(long accountId, long domainId, long objectStoreId, String name, long quota, boolean versioning,
+                    boolean encryption, boolean objectLock, String policy)
     {
         this.accountId = accountId;
         this.domainId = domainId;
@@ -83,6 +107,11 @@ public class BucketVO implements Bucket {
         this.name = name;
         state = State.Allocated;
         uuid = UUID.randomUUID().toString();
+        this.quota = quota;
+        this.versioning = versioning;
+        this.encryption = encryption;
+        this.objectLock = objectLock;
+        this.policy = policy;
     }
 
     @Override
@@ -144,6 +173,69 @@ public class BucketVO implements Bucket {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public long getQuota() {
+        return quota;
+    }
+
+    public void setQuota(long quota) {
+        this.quota = quota;
+    }
+
+    public boolean isVersioning() {
+        return versioning;
+    }
+
+    public void setVersioning(boolean versioning) {
+        this.versioning = versioning;
+    }
+
+    public boolean isEncryption() {
+        return encryption;
+    }
+
+    public void setEncryption(boolean encryption) {
+        this.encryption = encryption;
+    }
+
+    public boolean isObjectLock() {
+        return objectLock;
+    }
+
+    public void setObjectLock(boolean objectLock) {
+        this.objectLock = objectLock;
+    }
+
+    public String getPolicy() {
+        return policy;
+    }
+
+    public void setPolicy(String policy) {
+        this.policy = policy;
+    }
+
+    public String getBucketURL() {
+        return bucketURL;
+    }
+    public void setBucketURL(String bucketURL) {
+        this.bucketURL = bucketURL;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
 
     @Override
