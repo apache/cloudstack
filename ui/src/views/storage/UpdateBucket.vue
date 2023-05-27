@@ -47,22 +47,22 @@
           :checked="objectlocking"
           @change="val => { objectlocking = val }"/>
       </a-form-item>
-      <div class="form__label">{{ $t('label.bucket.policy') }}</div>
-      <a-select
-        v-model:value="policy"
-        @change="resetAllFields"
-        showSearch
-        optionFilterProp="value"
-        :filterOption="(input, option) => {
-            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-        <a-select-option
-          v-for="policy in policyList"
-          :value="policy"
-          :key="policy">
-          {{ policy }}
-        </a-select-option>
-      </a-select>
+      <a-form-item name="Bucket Policy" ref="bucketpolicy" :label="$t('label.bucket.policy')">
+        <a-select
+          v-model:value="form.bucketpolicy"
+          @change="val => { form.bucketpolicy = val }"
+          showSearch
+          optionFilterProp="value"
+          :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+          <a-select-option
+            :value="policy"
+            v-for="(policy,idx) in policyList"
+            :key="idx"
+          >{{ policy }}</a-select-option>
+        </a-select>
+      </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -102,9 +102,6 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        size: [{ required: true, message: this.$t('message.error.size') }],
-        miniops: [{ required: true, message: this.$t('message.error.number') }],
-        maxiops: [{ required: true, message: this.$t('message.error.number') }]
       })
     },
     fetchData () {
