@@ -47,7 +47,7 @@ public class KubernetesClusterManagerImplTest {
 
     @Mock
     FirewallRulesDao firewallRulesDao;
-    
+
     @Mock
     VMTemplateDao templateDao;
 
