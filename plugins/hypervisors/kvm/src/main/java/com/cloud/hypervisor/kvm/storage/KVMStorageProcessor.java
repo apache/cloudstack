@@ -2467,6 +2467,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String path = destPrimaryStore.isManaged() ? destVolumeName : destVolumePath + File.separator + destVolumeName;
             newVol.setPath(path);
             newVol.setFormat(destFormat);
+            newVol.setEncryptFormat(destVol.getEncryptFormat());
             return new CopyCmdAnswer(newVol);
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Failed to copyVolumeFromPrimaryToPrimary: ", e);
