@@ -50,4 +50,6 @@ public interface BucketApiService {
     boolean deleteBucket(long bucketId, Account caller);
 
     boolean updateBucket(UpdateBucketCmd cmd);
+
+    void getBucketUsage();
 }

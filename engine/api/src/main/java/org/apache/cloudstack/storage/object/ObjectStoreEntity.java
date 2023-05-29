@@ -22,6 +22,8 @@ import com.cloud.storage.Bucket;
 import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
+import java.util.Map;
+
 public interface ObjectStoreEntity extends DataStore, ObjectStore {
     Bucket createBucket(Bucket bucket, boolean objectLock);
 
@@ -40,4 +42,6 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
     void setBucketPolicy(String name, String policy);
 
     void setQuota(String name, int quota);
+
+    Map<String, Long> getAllBucketsUsage();
 }

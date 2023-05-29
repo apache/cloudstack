@@ -282,3 +282,21 @@ CREATE TABLE `cloud`.`bucket` (
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket_statistics`;
+CREATE TABLE `cloud`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud_usage`.`bucket_statistics`;
+CREATE TABLE `cloud_usage`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

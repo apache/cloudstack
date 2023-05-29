@@ -239,6 +239,10 @@ public class BucketVO implements Bucket {
         this.secretKey = secretKey;
     }
 
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return Bucket.class;

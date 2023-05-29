@@ -21,22 +21,33 @@ import com.cloud.storage.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.BucketDao;
+import com.cloud.usage.BucketStatisticsVO;
+import com.cloud.usage.dao.BucketStatisticsDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class BucketApiServiceImpl extends ManagerBase implements BucketApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(BucketApiServiceImpl.class);
@@ -51,10 +62,34 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @Inject
     private AccountManager _accountMgr;
 
+    @Inject
+    private BucketStatisticsDao _bucketStatisticsDao;
+
+    private ScheduledExecutorService _executor = null;
+
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;
+
     protected BucketApiServiceImpl() {
 
     }
 
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Bucket-Usage"));
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        _executor.scheduleWithFixedDelay(new BucketUsageTask(), 60L, 3600L, TimeUnit.SECONDS);
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        _executor.shutdown();
+        return true;
+    }
 
     @Override
     public String getConfigComponentName() {
@@ -163,4 +198,69 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
         return true;
     }
+
+    public void getBucketUsage() {
+        //ToDo track usage one last time when object store or bucket is removed
+        List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
+        for(ObjectStoreVO objectStoreVO: objectStores) {
+            ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+            Map<String, Long> bucketSizes = objectStore.getAllBucketsUsage();
+            List<BucketVO> buckets = _bucketDao.listByObjectStoreId(objectStoreVO.getId());
+            for(BucketVO bucket : buckets) {
+                Long size = bucketSizes.get(bucket.getName());
+                if( size != null){
+                    bucket.setSize(size);
+                    _bucketDao.update(bucket.getId(), bucket);
+                }
+            }
+        }
+    }
+
+    private class BucketUsageTask extends ManagedContextRunnable {
+        public BucketUsageTask() {
+        }
+
+        @Override
+        protected void runInContext() {
+            GlobalLock scanLock = GlobalLock.getInternLock("BucketUsage");
+            try {
+                if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                    try {
+                        List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
+                        for(ObjectStoreVO objectStoreVO: objectStores) {
+                            ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+                            Map<String, Long> bucketSizes = objectStore.getAllBucketsUsage();
+                            List<BucketVO> buckets = _bucketDao.listByObjectStoreId(objectStoreVO.getId());
+                            for(BucketVO bucket : buckets) {
+                                Long size = bucketSizes.get(bucket.getName());
+                                if( size != null){
+                                    bucket.setSize(size);
+                                    _bucketDao.update(bucket.getId(), bucket);
+
+                                    //Update Bucket Usage stats
+                                    BucketStatisticsVO bucketStatisticsVO = _bucketStatisticsDao.findBy(bucket.getAccountId(), bucket.getId());
+                                    if(bucketStatisticsVO != null) {
+                                        bucketStatisticsVO.setSize(size);
+                                        _bucketStatisticsDao.update(bucketStatisticsVO.getId(), bucketStatisticsVO);
+                                    } else {
+                                        bucketStatisticsVO = new BucketStatisticsVO(bucket.getAccountId(), bucket.getId());
+                                        bucketStatisticsVO.setSize(size);
+                                        _bucketStatisticsDao.persist(bucketStatisticsVO);
+                                    }
+                                }
+                            }
+                        }
+                        s_logger.debug("Completed updating bucket usage for all object stores");
+                    } catch (Exception e) {
+                        s_logger.error("Error while fetching bucket usage", e);
+                    } finally {
+                        scanLock.unlock();
+                    }
+                }
+            } finally {
+                scanLock.releaseRef();
+            }
+        }
+    }
+
 }

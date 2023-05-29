@@ -39,6 +39,7 @@ import io.minio.SetBucketVersioningArgs;
 import io.minio.admin.MinioAdminClient;
 import io.minio.admin.QuotaUnit;
 import io.minio.admin.UserInfo;
+import io.minio.admin.messages.DataUsageInfo;
 import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -384,6 +385,17 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
         try {
             minioAdminClient.setBucketQuota(bucketName, size, QuotaUnit.GB);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    @Override
+    public Map<String, Long> getAllBucketsUsage(long storeId) {
+        MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
+        try {
+            DataUsageInfo dataUsageInfo = minioAdminClient.getDataUsageInfo();
+            return dataUsageInfo.bucketsSizes();
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

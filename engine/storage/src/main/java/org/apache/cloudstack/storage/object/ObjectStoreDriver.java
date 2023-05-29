@@ -24,6 +24,7 @@ import com.cloud.storage.Bucket;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ObjectStoreDriver extends DataStoreDriver {
     Bucket createBucket(Bucket bucket, boolean objectLock);
@@ -54,4 +55,6 @@ public interface ObjectStoreDriver extends DataStoreDriver {
     boolean deleteBucketVersioning(String bucketName, long storeId);
 
     void setBucketQuota(String bucketName, long storeId, long size);
+
+    Map<String, Long> getAllBucketsUsage(long storeId);
 }

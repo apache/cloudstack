@@ -32,6 +32,7 @@ import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.log4j.Logger;
 
 import java.util.Date;
+import java.util.Map;
 
 public class ObjectStoreImpl implements ObjectStoreEntity {
     private static final Logger s_logger = Logger.getLogger(ObjectStoreImpl.class);
@@ -142,6 +143,12 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     public void setQuota(String bucketName, int quota) {
         driver.setBucketQuota(bucketName, objectStoreVO.getId(), quota);
     }
+
+    @Override
+    public Map<String, Long> getAllBucketsUsage() {
+        return driver.getAllBucketsUsage(objectStoreVO.getId());
+    }
+
 
     /*
     Create user if not exists
