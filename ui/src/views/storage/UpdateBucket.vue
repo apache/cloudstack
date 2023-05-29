@@ -41,16 +41,10 @@
           :checked="versioning"
           @change="val => { versioning = val }"/>
       </a-form-item>
-      <a-form-item name="objectlocking" ref="objectlocking" :label="$t('label.objectlocking')">
-        <a-switch
-          v-model:checked="form.objectlocking"
-          :checked="objectlocking"
-          @change="val => { objectlocking = val }"/>
-      </a-form-item>
-      <a-form-item name="Bucket Policy" ref="bucketpolicy" :label="$t('label.bucket.policy')">
+      <a-form-item name="Bucket Policy" ref="policy" :label="$t('label.bucket.policy')">
         <a-select
-          v-model:value="form.bucketpolicy"
-          @change="val => { form.bucketpolicy = val }"
+          v-model:value="form.policy"
+          @change="val => { form.policy = val }"
           showSearch
           optionFilterProp="value"
           :filterOption="(input, option) => {
@@ -92,6 +86,9 @@ export default {
       customDiskOfferingIops: false
     }
   },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('updateBucket')
+  },
   created () {
     this.initForm()
     this.policyList = ['Public', 'Private']
@@ -106,31 +103,49 @@ export default {
     },
     fetchData () {
       this.loading = false
+      this.fillEditFormFieldValues()
+    },
+    fillEditFormFieldValues () {
+      const form = this.form
+      this.loading = true
+      Object.keys(this.apiParams).forEach(item => {
+        const field = this.apiParams[item]
+        let fieldValue = null
+        let fieldName = null
+
+        if (field.type === 'list' || field.name === 'account') {
+          fieldName = field.name.replace('ids', 'name').replace('id', 'name')
+        } else {
+          fieldName = field.name
+        }
+        fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
+        if (fieldValue) {
+          form[field.name] = fieldValue
+        }
+      })
+      this.loading = false
     },
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+
+        var data = {
+          id: this.resource.id,
+          quota: values.quota,
+          encryption: values.encryption,
+          versioning: values.versioning,
+          objectlocking: values.objectlocking,
+          policy: values.policy
+        }
+
         this.loading = true
-        values.id = this.resource.id
-        api('updateBucket', values).then(response => {
-          this.$pollJob({
-            jobId: response.updatebucketresponse.jobid,
-            title: this.$t('label.action.bucket.update'),
-            description: values.name,
-            successMessage: this.$t('message.success.bucket.update'),
-            successMethod: () => {},
-            errorMessage: this.$t('message.bucket.update.failed'),
-            errorMethod: () => {
-              this.closeModal()
-            },
-            loadingMessage: this.$t('message.update.bucket.processing'),
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            catchMethod: () => {
-              this.loading = false
-              this.closeModal()
-            }
+        api('updateBucket', data).then(response => {
+          this.$emit('refresh-data')
+          this.$notification.success({
+            message: this.$t('label.bucket.update'),
+            description: `${this.$t('message.success.update.bucket')}`
           })
           this.closeModal()
         }).catch(error => {

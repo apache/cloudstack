@@ -89,7 +89,28 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         BucketVO bucket = _bucketDao.findById(cmd.getEntityId());
-        objectStore.createBucket(bucket);
+        boolean objectLock = false;
+        if(cmd.isObjectLocking()) {
+            objectLock = true;
+        }
+        objectStore.createBucket(bucket, objectLock);
+
+        if(cmd.isVersioning()) {
+            objectStore.setBucketVersioning(bucket.getName());
+        }
+
+        if(cmd.isEncryption()) {
+            objectStore.setBucketEncryption(bucket.getName());
+        }
+
+        if(cmd.getQuota() != null) {
+            objectStore.setQuota(bucket.getName(), cmd.getQuota());
+        }
+
+        if(cmd.getPolicy() != null) {
+            objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+        }
+
         bucket.setState(Bucket.State.Created);
         _bucketDao.update(bucket.getId(), bucket);
         return bucket;
@@ -100,12 +121,15 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         Bucket bucket = _bucketDao.findById(bucketId);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        return objectStore.deleteBucket(bucket.getName());
+        if (objectStore.deleteBucket(bucket.getName())) {
+            return _bucketDao.remove(bucketId);
+        }
+        return false;
     }
 
     @Override
     public boolean updateBucket(UpdateBucketCmd cmd) {
-        Bucket bucket = _bucketDao.findById(cmd.getId());
+        BucketVO bucket = _bucketDao.findById(cmd.getId());
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         if(cmd.getEncryption() != null) {
@@ -114,6 +138,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             } else {
                 objectStore.deleteBucketEncryption(bucket.getName());
             }
+            bucket.setEncryption(cmd.getEncryption());
         }
 
         if(cmd.getVersioning() != null) {
@@ -122,11 +147,19 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             } else {
                 objectStore.deleteBucketVersioning(bucket.getName());
             }
+            bucket.setVersioning(cmd.getVersioning());
         }
 
         if(cmd.getPolicy() != null) {
             objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+            bucket.setPolicy(cmd.getPolicy());
         }
+
+        if(cmd.getQuota() != null) {
+            objectStore.setQuota(bucket.getName(), cmd.getQuota());
+            bucket.setQuota(cmd.getQuota());
+        }
+        _bucketDao.update(bucket.getId(), bucket);
 
         return true;
     }

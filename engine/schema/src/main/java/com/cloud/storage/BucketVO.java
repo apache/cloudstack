@@ -60,10 +60,10 @@ public class BucketVO implements Bucket {
     private State state;
 
     @Column(name = "size")
-    long size;
+    Long size;
 
     @Column(name = "quota")
-    long quota;
+    Integer quota;
 
     @Column(name = "versioning")
     boolean versioning;
@@ -98,7 +98,7 @@ public class BucketVO implements Bucket {
     public BucketVO() {
     }
 
-    public BucketVO(long accountId, long domainId, long objectStoreId, String name, long quota, boolean versioning,
+    public BucketVO(long accountId, long domainId, long objectStoreId, String name, Integer quota, boolean versioning,
                     boolean encryption, boolean objectLock, String policy)
     {
         this.accountId = accountId;
@@ -112,6 +112,7 @@ public class BucketVO implements Bucket {
         this.encryption = encryption;
         this.objectLock = objectLock;
         this.policy = policy;
+        this.size = 0L;
     }
 
     @Override
@@ -175,11 +176,11 @@ public class BucketVO implements Bucket {
         this.uuid = uuid;
     }
 
-    public long getQuota() {
+    public Integer getQuota() {
         return quota;
     }
 
-    public void setQuota(long quota) {
+    public void setQuota(Integer quota) {
         this.quota = quota;
     }
 

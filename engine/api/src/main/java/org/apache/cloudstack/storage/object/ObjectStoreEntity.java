@@ -23,7 +23,7 @@ import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 public interface ObjectStoreEntity extends DataStore, ObjectStore {
-    Bucket createBucket(Bucket bucket);
+    Bucket createBucket(Bucket bucket, boolean objectLock);
 
     boolean createUser(long accountId);
 
@@ -38,4 +38,6 @@ public interface ObjectStoreEntity extends DataStore, ObjectStore {
     boolean deleteBucketVersioning(String name);
 
     void setBucketPolicy(String name, String policy);
+
+    void setQuota(String name, int quota);
 }

@@ -73,7 +73,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
     private long objectStoragePoolId;
 
     @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER,description = "Bucket Quota in GB")
-    private int quota;
+    private Integer quota;
 
     @Parameter(name = ApiConstants.ENCRYPTION, type = CommandType.BOOLEAN, description = "Enable bucket encryption")
     private boolean encryption;
@@ -111,7 +111,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
         return objectStoragePoolId;
     }
 
-    public int getQuota() {
+    public Integer getQuota() {
         return quota;
     }
 

@@ -21,9 +21,12 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.BucketResponse;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +38,9 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
 
     private static final String STORE_ID = "store_id";
     private static final String STATE = "state";
+
+    @Inject
+    ObjectStoreDao _objectStoreDao;
 
     protected BucketDaoImpl() {
 
@@ -66,7 +72,9 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketResponse.setId(bucket.getUuid());
         bucketResponse.setCreated(bucket.getCreated());
         bucketResponse.setSize(bucket.getSize());
-        bucketResponse.setQuota(bucket.getQuota());
+        if(bucket.getQuota() != null) {
+            bucketResponse.setQuota(bucket.getQuota());
+        }
         bucketResponse.setVersioning(bucket.isVersioning());
         bucketResponse.setEncryption(bucket.isEncryption());
         bucketResponse.setObjectLock(bucket.isObjectLock());
@@ -74,8 +82,9 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketResponse.setBucketURL(bucket.getBucketURL());
         bucketResponse.setAccessKey(bucket.getAccessKey());
         bucketResponse.setSecretKey(bucket.getSecretKey());
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         //ToDo change to UUID
-        bucketResponse.setObjectStoragePoolId(""+bucket.getObjectStoreId());
+        bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
         bucketResponse.setObjectName("bucket");
         return bucketResponse;
     }

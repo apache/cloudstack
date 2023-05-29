@@ -37,6 +37,7 @@ import io.minio.SetBucketEncryptionArgs;
 import io.minio.SetBucketPolicyArgs;
 import io.minio.SetBucketVersioningArgs;
 import io.minio.admin.MinioAdminClient;
+import io.minio.admin.QuotaUnit;
 import io.minio.admin.UserInfo;
 import io.minio.messages.SseConfiguration;
 import io.minio.messages.VersioningConfiguration;
@@ -88,7 +89,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public Bucket createBucket(Bucket bucket) {
+    public Bucket createBucket(Bucket bucket, boolean objectLock) {
         //ToDo Client pool mgmt
         String bucketName = bucket.getName();
         long storeId = bucket.getObjectStoreId();
@@ -103,7 +104,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
         try {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).objectLock(objectLock).build());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -160,8 +161,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     public boolean deleteBucket(String bucketName, long storeId) {
         MinioClient minioClient = getMinIOClient(storeId);
         try {
-            if(minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
-                throw new CloudRuntimeException("Bucket with name %s doesn't exist "+ bucketName);
+            if(!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
+                throw new CloudRuntimeException("Bucket doesn't exist: "+ bucketName);
             }
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
@@ -172,7 +173,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -186,7 +187,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
-    public void setBucketPolicy(String bucketName, String policyText, long storeId) {
+    public void setBucketPolicy(String bucketName, String policy, long storeId) {
         String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
 
         StringBuilder builder = new StringBuilder();
@@ -213,12 +214,13 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
 
         String publicPolicy = builder.toString();
 
-        String policy = (policyText == "public")? publicPolicy : privatePolicy;
+        //ToDo Support custom policy
+        String policyConfig = (policy.equalsIgnoreCase("public"))? publicPolicy : privatePolicy;
 
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build());
+                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policyConfig).build());
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -330,7 +332,8 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return true;
     }
 
-    public void setBucketPolicy(String bucketName, long storeId) {
+    /*
+    public void setBucketPolicy(String bucketName, long storeId, String policy) {
 
         String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
 
@@ -357,12 +360,30 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         builder.append("}\n");
 
         String publicPolicy = builder.toString();
+        //Default to private policy
+        //ToDo Support custom policy
+        String policyConfig = privatePolicy;
+
+        if(policy.equals("public")) {
+            policyConfig = publicPolicy;
+        }
 
         MinioClient minioClient = getMinIOClient(storeId);
         try {
             minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(bucketName).config(publicPolicy).build());
+                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policyConfig).build());
 
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+    } */
+
+    @Override
+    public void setBucketQuota(String bucketName, long storeId, long size) {
+
+        MinioAdminClient minioAdminClient = getMinIOAdminClient(storeId);
+        try {
+            minioAdminClient.setBucketQuota(bucketName, size, QuotaUnit.GB);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

@@ -65,10 +65,10 @@
             :checked="objectlocking"
             @change="val => { objectlocking = val }"/>
         </a-form-item>
-        <a-form-item name="Bucket Policy" ref="bucketpolicy" :label="$t('label.bucket.policy')">
+        <a-form-item name="Bucket Policy" ref="policy" :label="$t('label.bucket.policy')">
           <a-select
-            v-model:value="form.bucketpolicy"
-            @change="val => { form.bucketpolicy = val }"
+            v-model:value="form.policy"
+            @change="val => { form.policy = val }"
             showSearch
             optionFilterProp="value"
             :filterOption="(input, option) => {
@@ -161,9 +161,7 @@ export default {
           objectlocking: values.objectlocking,
           policy: values.policy
         }
-
         this.loading = true
-
         try {
           await this.createBucket(data)
 

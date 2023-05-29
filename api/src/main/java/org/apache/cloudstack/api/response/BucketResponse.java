@@ -64,7 +64,7 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.QUOTA)
     @Param(description = "Bucket Quota in GB")
-    private Long quota;
+    private Integer quota;
 
     @SerializedName(ApiConstants.ENCRYPTION)
     @Param(description = "Bucket Encryption")
@@ -195,7 +195,7 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
         return quota;
     }
 
-    public void setQuota(long quota) {
+    public void setQuota(Integer quota) {
         this.quota = quota;
     }
 

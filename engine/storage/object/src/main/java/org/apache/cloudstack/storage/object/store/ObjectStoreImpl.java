@@ -104,8 +104,8 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     }
 
     @Override
-    public Bucket createBucket(Bucket bucket) {
-        return driver.createBucket(bucket);
+    public Bucket createBucket(Bucket bucket, boolean objectLock) {
+        return driver.createBucket(bucket, objectLock);
     }
 
     @Override
@@ -136,6 +136,11 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     @Override
     public void setBucketPolicy(String bucketName, String policy) {
         driver.setBucketPolicy(bucketName, policy, objectStoreVO.getId());
+    }
+
+    @Override
+    public void setQuota(String bucketName, int quota) {
+        driver.setBucketQuota(bucketName, objectStoreVO.getId(), quota);
     }
 
     /*

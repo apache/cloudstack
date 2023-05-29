@@ -86,6 +86,7 @@ public class DeleteBucketCmd extends BaseCmd {
         CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
         boolean result = _bucketService.deleteBucket(id, CallContext.current().getCallingAccount());
         SuccessResponse response = new SuccessResponse(getCommandName());
-        setResponseObject(result);
+        response.setSuccess(result);
+        setResponseObject(response);
     }
 }

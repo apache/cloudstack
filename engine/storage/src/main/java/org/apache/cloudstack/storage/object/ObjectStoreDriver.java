@@ -26,7 +26,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import java.util.List;
 
 public interface ObjectStoreDriver extends DataStoreDriver {
-    Bucket createBucket(Bucket bucket);
+    Bucket createBucket(Bucket bucket, boolean objectLock);
 
     List<Bucket> listBuckets(long storeId);
 
@@ -36,7 +36,7 @@ public interface ObjectStoreDriver extends DataStoreDriver {
 
     void setBucketAcl(String bucketName, AccessControlList acl, long storeId);
 
-    void setBucketPolicy(String bucketName, String policyText, long storeId);
+    void setBucketPolicy(String bucketName, String policyType, long storeId);
 
     BucketPolicy getBucketPolicy(String bucketName, long storeId);
 
@@ -44,12 +44,14 @@ public interface ObjectStoreDriver extends DataStoreDriver {
 
     boolean createUser(long accountId, long storeId);
 
-    boolean setBucketEncryption(String bucketName, long id);
+    boolean setBucketEncryption(String bucketName, long storeId);
 
-    boolean deleteBucketEncryption(String bucketName, long id);
+    boolean deleteBucketEncryption(String bucketName, long storeId);
 
 
-    boolean setBucketVersioning(String bucketName, long id);
+    boolean setBucketVersioning(String bucketName, long storeId);
 
-    boolean deleteBucketVersioning(String bucketName, long id);
+    boolean deleteBucketVersioning(String bucketName, long storeId);
+
+    void setBucketQuota(String bucketName, long storeId, long size);
 }
