@@ -415,6 +415,19 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         kubernetesCluster = updateKubernetesClusterEntry(clusterSize, null);
     }
 
+    private boolean isAutoscalingChanged() {
+        if (this.isAutoscalingEnabled == null) {
+            return false;
+        }
+        if (this.isAutoscalingEnabled != kubernetesCluster.getAutoscalingEnabled()) {
+            return true;
+        }
+        if (minSize != null && (!minSize.equals(kubernetesCluster.getMinSize()))) {
+            return true;
+        }
+        return maxSize != null && (!maxSize.equals(kubernetesCluster.getMaxSize()));
+    }
+
     public boolean scaleCluster() throws CloudRuntimeException {
         init();
         if (LOGGER.isInfoEnabled()) {
@@ -426,11 +439,17 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         if (existingServiceOffering == null) {
             logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
         }
-
-        if (this.isAutoscalingEnabled != null) {
-            return autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
-        }
+        final boolean autscalingChanged = isAutoscalingChanged();
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();
+
+        if (autscalingChanged) {
+            boolean autoScaled = autoscaleCluster(this.isAutoscalingEnabled, minSize, maxSize);
+            if (autoScaled && serviceOfferingScalingNeeded) {
+                scaleKubernetesClusterOffering();
+            }
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+            return autoScaled;
+        }
         final boolean clusterSizeScalingNeeded = clusterSize != null && clusterSize != originalClusterSize;
         final long newVMRequired = clusterSize == null ? 0 : clusterSize - originalClusterSize;
         if (serviceOfferingScalingNeeded && clusterSizeScalingNeeded) {

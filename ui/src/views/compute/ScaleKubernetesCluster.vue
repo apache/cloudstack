@@ -28,6 +28,25 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
+        <a-form-item name="serviceofferingid" ref="serviceofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          </template>
+          <a-select
+            id="offering-selection"
+            v-model:value="form.serviceofferingid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="serviceOfferingLoading"
+            :placeholder="apiParams.serviceofferingid.description">
+            <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="autoscalingenabled" ref="autoscalingenabled" v-if="apiParams.autoscalingenabled">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
@@ -53,26 +72,7 @@
           </a-form-item>
         </span>
         <span v-else>
-          <a-form-item name="serviceofferingid" ref="serviceofferingid">
-            <template #label>
-              <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
-            </template>
-            <a-select
-              id="offering-selection"
-              v-model:value="form.serviceofferingid"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="serviceOfferingLoading"
-              :placeholder="apiParams.serviceofferingid.description">
-              <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
-                {{ opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item name="size" ref="size">
+          <a-form-item name="size" ref="size" v-if="['Created', 'Running'].includes(resource.state)">
             <template #label>
               <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
             </template>
@@ -152,6 +152,10 @@ export default {
       })
     },
     fetchData () {
+      if (this.resource.state === 'Running') {
+        this.fetchKubernetesClusterServiceOfferingData()
+        return
+      }
       this.fetchKubernetesVersionData()
     },
     isValidValueForKey (obj, key) {
@@ -163,13 +167,28 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
+    fetchKubernetesClusterServiceOfferingData () {
+      const params = {}
+      if (!this.isObjectEmpty(this.resource)) {
+        params.id = this.resource.serviceofferingid
+      }
+      api('listServiceOfferings', params).then(json => {
+        var items = json?.listserviceofferingsresponse?.serviceoffering || []
+        if (this.arrayHasItems(items) && !this.isObjectEmpty(items[0])) {
+          this.minCpu = items[0].cpunumber
+          this.minMemory = items[0].memory
+        }
+      }).finally(() => {
+        this.fetchServiceOfferingData()
+      })
+    },
     fetchKubernetesVersionData () {
       const params = {}
       if (!this.isObjectEmpty(this.resource)) {
         params.id = this.resource.kubernetesversionid
       }
       api('listKubernetesSupportedVersions', params).then(json => {
-        const versionObjs = json.listkubernetessupportedversionsresponse.kubernetessupportedversion
+        const versionObjs = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
         if (this.arrayHasItems(versionObjs) && !this.isObjectEmpty(versionObjs[0])) {
           this.minCpu = versionObjs[0].mincpunumber
           this.minMemory = versionObjs[0].minmemory
@@ -180,14 +199,16 @@ export default {
     },
     fetchServiceOfferingData () {
       this.serviceOfferings = []
-      const params = {}
+      const params = {
+        cpunumber: this.minCpu,
+        memory: this.minMemory
+      }
       this.serviceOfferingLoading = true
       api('listServiceOfferings', params).then(json => {
-        var items = json.listserviceofferingsresponse.serviceoffering
-        if (items != null) {
+        var items = json?.listserviceofferingsresponse?.serviceoffering || []
+        if (this.arrayHasItems(items)) {
           for (var i = 0; i < items.length; i++) {
-            if (items[i].iscustomized === false &&
-                items[i].cpunumber >= this.minCpu && items[i].memory >= this.minMemory) {
+            if (items[i].iscustomized === false) {
               this.serviceOfferings.push(items[i])
             }
           }
@@ -220,7 +241,7 @@ export default {
         if (this.isValidValueForKey(values, 'size') && values.size > 0) {
           params.size = values.size
         }
-        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings) && this.autoscalingenabled == null) {
+        if (this.isValidValueForKey(values, 'serviceofferingid') && this.arrayHasItems(this.serviceOfferings)) {
           params.serviceofferingid = this.serviceOfferings[values.serviceofferingid].id
         }
         if (this.isValidValueForKey(values, 'minsize')) {

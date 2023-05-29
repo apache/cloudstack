@@ -857,7 +857,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         } finally {
             // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
             updateLoginUserDetails(null);
-            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
     }
 }
