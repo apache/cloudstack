@@ -6901,6 +6901,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return volToPoolObjectMap;
     }
 
+    protected boolean isVmCanBeMigratedWithoutStorage(Host srcHost, Host destinationHost, List<VolumeVO> volumes,
+          Map<String, String> volumeToPool) {
+        return !isAnyVmVolumeUsingLocalStorage(volumes) &&
+                MapUtils.isEmpty(volumeToPool) && destinationHost != null
+                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isAllVmVolumesOnZoneWideStore(volumes));
+    }
+
     protected Host chooseVmMigrationDestinationUsingVolumePoolMap(VMInstanceVO vm, Host srcHost, Map<Long, Long> volToPoolObjectMap) {
         Long poolId = null;
         if (MapUtils.isNotEmpty(volToPoolObjectMap)) {
@@ -6958,8 +6965,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Host srcHost = sourceDestinationHosts.first();
 
         final List<VolumeVO> volumes = _volsDao.findCreatedByInstance(vm.getId());
-        if (!isAnyVmVolumeUsingLocalStorage(volumes) && MapUtils.isEmpty(volumeToPool) && destinationHost != null
-                && (destinationHost.getClusterId().equals(srcHost.getClusterId()) || isAllVmVolumesOnZoneWideStore(volumes))) {
+        if (isVmCanBeMigratedWithoutStorage(srcHost, destinationHost, volumes, volumeToPool)) {
             // If volumes do not have to be migrated
             // call migrateVirtualMachine for non-user VMs else throw exception
             if (!VirtualMachine.Type.User.equals(vm.getType())) {

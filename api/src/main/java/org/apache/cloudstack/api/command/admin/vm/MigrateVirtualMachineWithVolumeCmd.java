@@ -170,7 +170,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
             VirtualMachine migratedVm = null;
             if (getHostId() != null || Boolean.TRUE.equals(autoSelect)) {
                 Host destinationHost = null;
-                if (!Boolean.TRUE.equals(autoSelect)) {
+                if (getHostId() != null) {
                     destinationHost = _resourceService.getHost(getHostId());
                     // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
                     if (destinationHost == null) {
