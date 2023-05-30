@@ -504,7 +504,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volume.setFolder(scaleIOVolume.getVtreeId());
             volume.setSize(scaleIOVolume.getSizeInKb() * 1024);
             volume.setPoolType(Storage.StoragePoolType.PowerFlex);
-            volume.setFormat(Storage.ImageFormat.RAW);
+            if (volumeInfo.getVolumeType().equals(Volume.Type.ROOT)) {
+                volume.setFormat(volumeInfo.getFormat());
+            } else {
+                volume.setFormat(Storage.ImageFormat.RAW);
+            }
             volume.setPoolId(storagePoolId);
             VolumeObject createdObject = VolumeObject.getVolumeObject(volumeInfo.getDataStore(), volume);
             createdObject.update();
