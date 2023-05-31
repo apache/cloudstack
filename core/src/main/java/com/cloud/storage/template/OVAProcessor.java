@@ -171,7 +171,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             LOGGER.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
         }
         command = new Script("chmod", 0, LOGGER);
-        command.add("777", templatePath);
+        command.add("1777", templatePath);
         result = command.execute();
         if (result != null) {
             LOGGER.warn("Unable to set permissions for " + templatePath + " due to " + result);

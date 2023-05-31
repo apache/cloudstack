@@ -2042,7 +2042,7 @@ public class TestClientWithAPI {
 
                 try {
                     SCPClient scp = new SCPClient(conn);
-                    scp.put("wget.exe", "wget.exe", "C:\\Users\\Administrator", "0777");
+                    scp.put("wget.exe", "wget.exe", "C:\\Users\\Administrator", "1777");
                     s_logger.info("Successfully put wget.exe file");
                 } catch (Exception ex) {
                     s_logger.error("Unable to put wget.exe " + ex);
