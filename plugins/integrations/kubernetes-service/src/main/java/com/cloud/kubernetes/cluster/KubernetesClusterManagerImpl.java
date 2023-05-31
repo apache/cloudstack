@@ -604,7 +604,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setAutoscalingEnabled(kubernetesCluster.getAutoscalingEnabled());
         response.setMinSize(kubernetesCluster.getMinSize());
         response.setMaxSize(kubernetesCluster.getMaxSize());
-        response.setManaged(kubernetesCluster.getManaged());
+        response.setClusterType(kubernetesCluster.getClusterType());
         response.setCreated(kubernetesCluster.getCreated());
         return response;
     }
@@ -679,7 +679,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String sshKeyPair = cmd.getSSHKeyPairName();
         final Long controlNodeCount = cmd.getControlNodes();
         final Long clusterSize = cmd.getClusterSize();
-        final long totalNodeCount = controlNodeCount + clusterSize;
         final String dockerRegistryUserName = cmd.getDockerRegistryUserName();
         final String dockerRegistryPassword = cmd.getDockerRegistryPassword();
         final String dockerRegistryUrl = cmd.getDockerRegistryUrl();
@@ -693,12 +692,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (controlNodeCount < 1) {
             throw new InvalidParameterValueException("Invalid cluster control nodes count: " + controlNodeCount);
         }
-
-        if (clusterSize < 1) {
+        if (clusterSize == null || clusterSize < 1) {
             throw new InvalidParameterValueException("Invalid cluster size: " + clusterSize);
         }
 
         int maxClusterSize = KubernetesMaxClusterSize.valueIn(owner.getId());
+        final long totalNodeCount = controlNodeCount + clusterSize;
         if (totalNodeCount > maxClusterSize) {
             throw new InvalidParameterValueException(
                 String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
@@ -848,14 +847,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 List<KubernetesClusterDetailsVO> details = new ArrayList<>();
                 long kubernetesClusterId = kubernetesCluster.getId();
 
-                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || !cmd.isManaged()) {
+                if ((network != null && Network.GuestType.Shared.equals(network.getGuestType())) || kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
                     addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, externalLoadBalancerIpAddress, true);
                 }
 
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_USER_NAME, dockerRegistryUserName, true);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_PASSWORD, dockerRegistryPassword, false);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_URL, dockerRegistryUrl, true);
-                if (kubernetesCluster.getManaged()) {
+                if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
                     details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, "networkCleanup", String.valueOf(networkCleanup), true));
                 }
                 kubernetesClusterDetailsDao.saveDetails(details);
@@ -926,8 +925,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         Account caller = CallContext.current().getCallingAccount();
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
-        if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Scale kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+            throw new InvalidParameterValueException(String.format("Scale kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
 
         final KubernetesSupportedVersion clusterVersion = kubernetesSupportedVersionDao.findById(kubernetesCluster.getKubernetesVersionId());
@@ -1037,8 +1036,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
         }
-        if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Upgrade kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+            throw new InvalidParameterValueException(String.format("Upgrade kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         if (!KubernetesCluster.State.Running.equals(kubernetesCluster.getState())) {
@@ -1134,7 +1133,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersionId,
                         finalServiceOfferingId, null, defaultNetworkId, owner.getDomainId(),
                         owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Running, cmd.getSSHKeyPairName(), finalCores, finalMemory,
-                        cmd.getNodeRootDiskSize(), "", false);
+                        cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.ExternalManaged);
                 kubernetesClusterDao.persist(newCluster);
                 return newCluster;
             }
@@ -1204,7 +1203,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersion.getId(),
                         serviceOffering.getId(), finalTemplate.getId(), defaultNetwork.getId(), owner.getDomainId(),
                         owner.getAccountId(), controlNodeCount, clusterSize, KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
-                        cmd.getNodeRootDiskSize(), "", true);
+                        cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);
                 if (zone.isSecurityGroupEnabled()) {
                     newCluster.setSecurityGroupId(finalSecurityGroupVO.getId());
                 }
@@ -1242,8 +1241,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
-        if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Start Kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+            throw new InvalidParameterValueException(String.format("Start Kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
@@ -1312,8 +1311,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
-        if (!kubernetesCluster.getManaged()) {
-            throw new InvalidParameterValueException(String.format("Stop kubernetes cluster is not supported for an unmanaged cluster (%s)", kubernetesCluster.getName()));
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+            throw new InvalidParameterValueException(String.format("Stop kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
@@ -1346,7 +1345,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid cluster id specified");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, cluster);
-        if (cluster.getManaged()) {
+        if (cluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
             KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(cluster, this);
             destroyWorker = ComponentContext.inject(destroyWorker);
             return destroyWorker.destroy();
@@ -1373,7 +1372,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String state = cmd.getState();
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
-        final Boolean managed = cmd.isManaged();
+        final String cmdClusterType = cmd.getClusterType();
         List<KubernetesClusterResponse> responsesList = new ArrayList<KubernetesClusterResponse>();
         List<Long> permittedAccounts = new ArrayList<Long>();
         Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -1381,6 +1380,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        KubernetesCluster.ClusterType clusterType = null;
+
+        if (cmdClusterType != null) {
+            try {
+             clusterType = KubernetesCluster.ClusterType.valueOf(cmdClusterType);
+            } catch (IllegalArgumentException exception) {
+                throw new InvalidParameterValueException("Unable to resolve cluster type " + cmdClusterType + " to a supported value (CloudManaged, ExternalManaged)");
+            }
+        }
+
         Filter searchFilter = new Filter(KubernetesClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<KubernetesClusterVO> sb = kubernetesClusterDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -1388,7 +1398,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
-        sb.and("managed", sb.entity().getManaged(), SearchCriteria.Op.EQ);
+        sb.and("cluster_type", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         SearchCriteria<KubernetesClusterVO> sc = sb.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         if (state != null) {
@@ -1403,8 +1413,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (name != null) {
             sc.setParameters("name", name);
         }
-        if (managed != null) {
-            sc.setParameters("managed", managed);
+        if (clusterType != null) {
+            sc.setParameters("cluster_type", clusterType);
         }
         List<KubernetesClusterVO> kubernetesClusters = kubernetesClusterDao.search(sc, searchFilter);
         for (KubernetesClusterVO cluster : kubernetesClusters) {
@@ -1494,7 +1504,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
-        if (kubernetesCluster.getManaged()) {
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
             throw new InvalidParameterValueException("VM cannot be added to a managed Kubernetes cluster");
         }
 
@@ -1535,7 +1545,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
-        if (kubernetesCluster.getManaged()) {
+        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
             throw new InvalidParameterValueException("VM cannot be removed from a managed Kubernetes cluster");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);

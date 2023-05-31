@@ -20,6 +20,7 @@ import java.security.InvalidParameterException;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -144,9 +145,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
-    @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN,
-            description = "Is the cluster managed by Cloudstack or not. Default is true.")
-    private Boolean managed;
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged")
+    private String clusterType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -237,8 +237,11 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         }
     }
 
-    public boolean isManaged() {
-        return managed == null || managed;
+    public String getClusterType() {
+        if (clusterType == null) {
+            return KubernetesCluster.ClusterType.CloudManaged.toString();
+        }
+        return clusterType;
     }
 
     /////////////////////////////////////////////////////
@@ -287,7 +290,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         try {
-            if (isManaged() && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
+            if (KubernetesCluster.ClusterType.valueOf(getClusterType()) == KubernetesCluster.ClusterType.CloudManaged
+                    && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
             }
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());
@@ -300,9 +304,16 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws CloudRuntimeException {
+        KubernetesCluster cluster;
+        KubernetesCluster.ClusterType type;
         try {
-            KubernetesCluster cluster;
-            if (isManaged()) {
+            type = KubernetesCluster.ClusterType.valueOf(getClusterType());
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("Unable to resolve cluster type " + getClusterType() + " to a supported value (CloudManaged, ExternalManaged)");
+        }
+
+        try {
+            if (type == KubernetesCluster.ClusterType.CloudManaged) {
                 cluster = kubernetesClusterService.createManagedKubernetesCluster(this);
             } else {
                 cluster = kubernetesClusterService.createUnmanagedKubernetesCluster(this);

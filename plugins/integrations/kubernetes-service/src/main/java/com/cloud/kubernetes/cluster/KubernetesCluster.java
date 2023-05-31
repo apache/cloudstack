@@ -32,6 +32,10 @@ import com.cloud.utils.fsm.StateMachine2;
  */
 public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm.StateObject<KubernetesCluster.State>, Identity, InternalIdentity, Displayable {
 
+    enum ClusterType {
+        CloudManaged, ExternalManaged;
+    };
+
     enum Event {
         StartRequested,
         StopRequested,
@@ -137,5 +141,5 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     Long getMinSize();
     Long getMaxSize();
     Long getSecurityGroupId();
-    boolean getManaged();
+    ClusterType getClusterType();
 }

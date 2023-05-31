@@ -44,12 +44,12 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         GarbageCollectedSearch = createSearchBuilder();
         GarbageCollectedSearch.and("gc", GarbageCollectedSearch.entity().isCheckForGc(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.and("state", GarbageCollectedSearch.entity().getState(), SearchCriteria.Op.EQ);
-        GarbageCollectedSearch.and("is_managed", GarbageCollectedSearch.entity().getManaged(), SearchCriteria.Op.EQ);
+        GarbageCollectedSearch.and("cluster_type", GarbageCollectedSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.done();
 
         ManagedStateSearch = createSearchBuilder();
         ManagedStateSearch.and("state", ManagedStateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        ManagedStateSearch.and("is_managed", ManagedStateSearch.entity().getManaged(), SearchCriteria.Op.EQ);
+        ManagedStateSearch.and("cluster_type", ManagedStateSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
         ManagedStateSearch.done();
 
         SameNetworkSearch = createSearchBuilder();
@@ -73,7 +73,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         SearchCriteria<KubernetesClusterVO> sc = GarbageCollectedSearch.create();
         sc.setParameters("gc", true);
         sc.setParameters("state", KubernetesCluster.State.Destroying);
-        sc.setParameters("is_managed", true);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 
@@ -81,7 +81,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
     public List<KubernetesClusterVO> findManagedKubernetesClustersInState(KubernetesCluster.State state) {
         SearchCriteria<KubernetesClusterVO> sc = ManagedStateSearch.create();
         sc.setParameters("state", state);
-        sc.setParameters("is_managed", true);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 

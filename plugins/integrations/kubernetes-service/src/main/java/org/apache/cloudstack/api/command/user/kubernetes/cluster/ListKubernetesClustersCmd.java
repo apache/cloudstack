@@ -61,9 +61,8 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
             " (a substring match is made against the parameter value, data for all matching Kubernetes clusters will be returned)")
     private String name;
 
-    @Parameter(name = ApiConstants.MANAGED, type = CommandType.BOOLEAN,
-            description = "Is the cluster managed by Cloudstack or not. Default is true.")
-    private Boolean managed;
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged")
+    private String clusterType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -81,8 +80,8 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
         return name;
     }
 
-    public Boolean isManaged() {
-        return managed;
+    public String getClusterType() {
+        return clusterType;
     }
 
     /////////////////////////////////////////////////////

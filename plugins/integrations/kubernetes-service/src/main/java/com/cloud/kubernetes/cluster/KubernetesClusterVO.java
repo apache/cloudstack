@@ -114,8 +114,8 @@ public class KubernetesClusterVO implements KubernetesCluster {
     @Column(name = "security_group_id")
     private Long securityGroupId;
 
-    @Column(name = "is_managed")
-    private boolean managed;
+    @Column(name = "cluster_type")
+    private ClusterType clusterType;
 
     @Override
     public long getId() {
@@ -353,13 +353,12 @@ public class KubernetesClusterVO implements KubernetesCluster {
         return securityGroupId;
     }
 
-    @Override
-    public boolean getManaged() {
-        return managed;
+    public ClusterType getClusterType() {
+        return clusterType;
     }
 
-    public void setManaged(boolean managed) {
-        this.managed = managed;
+    public void setClusterType(ClusterType clusterType) {
+        this.clusterType = clusterType;
     }
 
     public KubernetesClusterVO() {
@@ -368,7 +367,7 @@ public class KubernetesClusterVO implements KubernetesCluster {
 
     public KubernetesClusterVO(String name, String description, long zoneId, Long kubernetesVersionId, Long serviceOfferingId, Long templateId,
                                Long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state,
-                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint, boolean managed) {
+                               String keyPair, long cores, long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
@@ -389,15 +388,15 @@ public class KubernetesClusterVO implements KubernetesCluster {
             this.nodeRootDiskSize = nodeRootDiskSize;
         }
         this.endpoint = endpoint;
-        this.managed = managed;
+        this.clusterType = clusterType;
         this.checkForGc = false;
     }
 
     public KubernetesClusterVO(String name, String description, long zoneId, long kubernetesVersionId, long serviceOfferingId, long templateId,
         long networkId, long domainId, long accountId, long controlNodeCount, long nodeCount, State state, String keyPair, long cores,
-        long memory, Long nodeRootDiskSize, String endpoint, boolean managed, boolean autoscalingEnabled, Long minSize, Long maxSize) {
+        long memory, Long nodeRootDiskSize, String endpoint, ClusterType clusterType, boolean autoscalingEnabled, Long minSize, Long maxSize) {
         this(name, description, zoneId, kubernetesVersionId, serviceOfferingId, templateId, networkId, domainId, accountId, controlNodeCount,
-            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint, managed);
+            nodeCount, state, keyPair, cores, memory, nodeRootDiskSize, endpoint, clusterType);
         this.autoscalingEnabled = autoscalingEnabled;
         this.minSize = minSize;
         this.maxSize = maxSize;
