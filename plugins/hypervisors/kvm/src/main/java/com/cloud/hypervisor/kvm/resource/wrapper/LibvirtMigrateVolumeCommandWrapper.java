@@ -165,12 +165,12 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             if (blockJobInfo != null) {
                 LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% current value:%s end value:%s", diskLabel, srcPath, (blockJobInfo.end == 0)? 0 : 100*(blockJobInfo.cur / (double) blockJobInfo.end), blockJobInfo.cur, blockJobInfo.end));
                 if (blockJobInfo.cur == blockJobInfo.end) {
-                    LOGGER.debug(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
+                    LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
                     dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
                     break;
                 }
             } else {
-                LOGGER.debug("Failed to get the block copy status, trying to abort the job");
+                LOGGER.info("Failed to get the block copy status, trying to abort the job");
                 dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
             }
             waitTimeInSec--;
