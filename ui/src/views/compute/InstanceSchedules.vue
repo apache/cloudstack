@@ -426,7 +426,7 @@ export default {
       this.updateColumns()
     },
     generateHumanReadableSchedule (schedule) {
-      return cronstrue.toString(schedule, { locale: this.$i18n.locale })
+      return cronstrue.toString(schedule, { locale: this.$i18n.locale, throwExceptionOnParseError: false })
     },
     updateColumns () {
       this.columns = []
