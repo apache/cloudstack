@@ -258,6 +258,27 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
+    public void revokeVolumeAccess(String volumePath, Host host, DataStore dataStore) {
+        if (host == null) {
+            LOGGER.warn("Declining to revoke access to PowerFlex volume when a host is not provided");
+            return;
+        }
+
+        try {
+            LOGGER.debug("Revoking access for PowerFlex volume: " + volumePath);
+
+            final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
+            if (StringUtils.isBlank(sdcId)) {
+                throw new CloudRuntimeException("Unable to revoke access for volume: " + volumePath + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
+            }
+
+            final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+            client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
+        }
+    }
+
     private void revokeAccess(DataObject dataObject, EndPoint ep, DataStore dataStore) {
         Host host = hostDao.findById(ep.getId());
         revokeAccess(dataObject, host, dataStore);
@@ -687,7 +708,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (isSameScaleIOStorageInstance(srcStore, destStore)) {
                         answer = migrateVolume(srcData, destData);
                     } else {
-                        answer = copyVolume(srcData, destData);
+                        String vmName = ((VolumeInfo) srcData).getAttachedVmName();
+                        if (vmName == null || !vmInstanceDao.findVMByInstanceName(vmName).getState().equals(VirtualMachine.State.Running)) {
+                            answer = copyOfflineVolume(srcData, destData, destHost);
+                        } else {
+                            answer = liveMigrateVolume(srcData, destData);
+                        }
                     }
                 } else {
                     errMsg = "Unsupported copy operation from src object: (" + srcData.getType() + ", " + srcData.getDataStore() + "), dest object: ("
@@ -761,7 +787,29 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    public Answer copyVolume(DataObject srcData, DataObject destData) {
+    private Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
+        // Copy PowerFlex/ScaleIO volume
+        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
+        String value = configDao.getValue(Config.CopyVolumeWait.key());
+        int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
+
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), copyVolumeWait, VirtualMachineManager.ExecuteInSequence.value());
+
+        Answer answer = null;
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
+        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData, encryptionRequired);
+        if (ep == null) {
+            String errorMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
+            LOGGER.error(errorMsg);
+            answer = new Answer(cmd, false, errorMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+
+        return answer;
+    }
+
+    public Answer liveMigrateVolume(DataObject srcData, DataObject destData) {
         // Volume migration across different PowerFlex/ScaleIO clusters
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
@@ -887,7 +935,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void deleteSourceVolumeAfterSuccessfulBlockCopy(DataObject srcData, Host host) {
         DataStore srcStore = srcData.getDataStore();
         String srcVolumePath = srcData.getTO().getPath();
-        revokeAccess(srcData, host, srcData.getDataStore());
+        revokeVolumeAccess(srcVolumePath, host, srcData.getDataStore());
         String errMsg;
         try {
             String scaleIOVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);

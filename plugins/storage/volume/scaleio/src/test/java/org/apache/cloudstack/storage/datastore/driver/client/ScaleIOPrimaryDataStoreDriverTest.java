@@ -203,7 +203,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Mockito.doNothing().when(scaleIOPrimaryDataStoreDriver)
                 .deleteSourceVolumeAfterSuccessfulBlockCopy(any(), any());
 
-        Answer answer = scaleIOPrimaryDataStoreDriver.copyVolume(srcData, destData);
+        Answer answer = scaleIOPrimaryDataStoreDriver.liveMigrateVolume(srcData, destData);
 
         Assert.assertTrue(answer.getResult());
     }
@@ -243,7 +243,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Mockito.doNothing().when(scaleIOPrimaryDataStoreDriver)
                 .revertBlockCopyVolumeOperations(any(), any(), any(), any());
 
-        Answer answer = scaleIOPrimaryDataStoreDriver.copyVolume(srcData, destData);
+        Answer answer = scaleIOPrimaryDataStoreDriver.liveMigrateVolume(srcData, destData);
 
         Assert.assertFalse(answer.getResult());
     }
@@ -422,7 +422,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getDataStore()).thenReturn(srcStore);
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
-        doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
+        doNothing().when(scaleIOPrimaryDataStoreDriver).revokeVolumeAccess(any(), any(), any());
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
@@ -445,7 +445,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getDataStore()).thenReturn(srcStore);
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
-        doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
+        doNothing().when(scaleIOPrimaryDataStoreDriver).revokeVolumeAccess(any(), any(), any());
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
