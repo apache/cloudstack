@@ -1133,7 +1133,7 @@ class DeleteDataCenters:
             print("\n====DeployDC: CleanUp Started====")
             ret = FAILED
             if self.__dcCfgFile:
-                file_to_read = open(self.__dcCfgFile, 'r')
+                file_to_read = open(self.__dcCfgFile, 'rb')
                 if file_to_read:
                     self.__dcCfg = pickle.load(file_to_read)
             if self.__dcCfg:

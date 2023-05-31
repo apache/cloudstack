@@ -24,6 +24,7 @@ on:
 
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     name: Main Sonar JaCoCo Build
     runs-on: ubuntu-22.04
     steps:
