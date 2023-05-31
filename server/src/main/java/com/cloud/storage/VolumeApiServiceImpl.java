@@ -92,7 +92,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
@@ -2970,10 +2969,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             vm = _vmInstanceDao.findById(instanceId);
         }
 
-        if (vol.getPassphraseId() != null) {
-            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
-        }
-
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
@@ -3020,14 +3015,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             if (!cmd.isLiveMigrate()) {
                 throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
-            }
-        }
-
-        // Offline volume migration check for scaleIO volumes across scaleio clusters
-        if (vm == null || !State.Running.equals(vm.getState())) {
-            StoragePoolVO sourceStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
-            if (sourceStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && isScaleIOVolumeOnDifferentScaleIOStorageInstances(vol.getPoolId(), storagePoolId)) {
-                throw new InvalidParameterValueException("Volume needs to be attached to a running VM to move across ScaleIO storages in different ScaleIO clusters");
             }
         }
 
@@ -3162,31 +3149,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
-    }
-
-    protected boolean isScaleIOVolumeOnDifferentScaleIOStorageInstances(long srcPoolId, long destPoolId) {
-        String SCALEIO_STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
-        String srcPoolSystemId = null;
-        StoragePoolDetailVO srcPoolSystemIdDetail = storagePoolDetailsDao.findDetail(srcPoolId, SCALEIO_STORAGE_POOL_SYSTEM_ID);
-        if (srcPoolSystemIdDetail != null) {
-            srcPoolSystemId = srcPoolSystemIdDetail.getValue();
-        }
-
-        String destPoolSystemId = null;
-        StoragePoolDetailVO destPoolSystemIdDetail = storagePoolDetailsDao.findDetail(destPoolId, SCALEIO_STORAGE_POOL_SYSTEM_ID);
-        if (destPoolSystemIdDetail != null) {
-            destPoolSystemId = destPoolSystemIdDetail.getValue();
-        }
-
-        if (StringUtils.isAnyEmpty(srcPoolSystemId, destPoolSystemId)) {
-            throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration as storage instance details are not available");
-        }
-
-        if (!srcPoolSystemId.equals(destPoolSystemId)) {
-            return true;
-        }
-
-        return false;
     }
 
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
