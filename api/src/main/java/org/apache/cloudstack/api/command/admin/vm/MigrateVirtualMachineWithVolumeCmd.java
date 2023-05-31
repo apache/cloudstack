@@ -150,6 +150,19 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         return ApiCommandResourceType.VirtualMachine;
     }
 
+    private Host getDestinationHost() {
+        if (getHostId() == null) {
+            return null;
+        }
+        Host destinationHost = _resourceService.getHost(getHostId());
+        // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
+        if (destinationHost == null) {
+            s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
+        }
+        return destinationHost;
+    }
+
     @Override
     public void execute() {
         if (hostId == null && MapUtils.isEmpty(migrateVolumeTo) && !Boolean.TRUE.equals(autoSelect)) {
@@ -169,15 +182,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         try {
             VirtualMachine migratedVm = null;
             if (getHostId() != null || Boolean.TRUE.equals(autoSelect)) {
-                Host destinationHost = null;
-                if (getHostId() != null) {
-                    destinationHost = _resourceService.getHost(getHostId());
-                    // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
-                    if (destinationHost == null) {
-                        s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
-                        throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
-                    }
-                }
+                Host destinationHost = getDestinationHost();
                 migratedVm = _userVmService.migrateVirtualMachineWithVolume(getVirtualMachineId(), destinationHost, getVolumeToPool());
             } else if (MapUtils.isNotEmpty(migrateVolumeTo)) {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), getVolumeToPool());
