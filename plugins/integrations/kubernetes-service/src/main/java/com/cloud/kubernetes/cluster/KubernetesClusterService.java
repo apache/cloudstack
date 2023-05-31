@@ -91,7 +91,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     boolean stopKubernetesCluster(long kubernetesClusterId) throws CloudRuntimeException;
 
-    boolean deleteKubernetesCluster(Long kubernetesClusterId) throws CloudRuntimeException;
+    boolean deleteKubernetesCluster(Long kubernetesClusterId, boolean cleanup) throws CloudRuntimeException;
 
     ListResponse<KubernetesClusterResponse> listKubernetesClusters(ListKubernetesClustersCmd cmd);
 

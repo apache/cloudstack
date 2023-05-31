@@ -1660,9 +1660,9 @@ export default {
         }
       } else if (this.$route.name === 'kubernetes') {
         if (filter === 'all') {
-          delete query.managed
+          delete query.clustertype
         } else {
-          query.managed = filter === 'managed'
+          query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
       }
       query.filter = filter

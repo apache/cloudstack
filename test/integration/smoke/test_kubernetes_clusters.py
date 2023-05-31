@@ -629,7 +629,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         # 7. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
         """
         cluster = self.createKubernetesCluster("test-unmanaged-cluster", None,
-                                               managed=False)
+                                               cluster_type="ExternalManaged")
         self.verifyKubernetesClusterState(cluster, 'Running')
         self.debug("Stopping unmanaged Kubernetes cluster with ID: %s" % cluster.id)
         try:
@@ -692,7 +692,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         return response
 
 
-    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, managed=True):
+    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, cluster_type='CloudManaged'):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
         createKubernetesClusterCmd.description = name + "-description"
@@ -704,7 +704,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
-        createKubernetesClusterCmd.managed = managed
+        createKubernetesClusterCmd.clustertype = cluster_type
         if self.default_network:
             createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)

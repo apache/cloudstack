@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -246,6 +248,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private SecurityGroupManager securityGroupManager;
     @Inject
     public SecurityGroupService securityGroupService;
+
+    @Inject
+    private UserVmService userVmService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -1336,7 +1341,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean deleteKubernetesCluster(Long kubernetesClusterId) throws CloudRuntimeException {
+    public boolean deleteKubernetesCluster(Long kubernetesClusterId, boolean cleanup) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1350,6 +1355,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             destroyWorker = ComponentContext.inject(destroyWorker);
             return destroyWorker.destroy();
         } else {
+            if (cleanup) {
+                List<KubernetesClusterVmMapVO> vmMapList = kubernetesClusterVmMapDao.listByClusterId(kubernetesClusterId);
+                for (KubernetesClusterVmMapVO vmMap : vmMapList) {
+                    try {
+                        userVmService.destroyVm(vmMap.getVmId(), false);
+                    } catch (ResourceUnavailableException exception) {
+                        logMessage(Level.WARN, String.format("Failed to destroy vm %d", vmMap.getVmId()), exception);
+                    }
+                }
+            }
             return Transaction.execute(new TransactionCallback<Boolean>() {
                 @Override
                 public Boolean doInTransaction(TransactionStatus status) {
@@ -1505,7 +1520,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
         if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
-            throw new InvalidParameterValueException("VM cannot be added to a managed Kubernetes cluster");
+            throw new InvalidParameterValueException("VM cannot be added to a CloudStack managed Kubernetes cluster");
         }
 
         // User should have access to both VM and Kubernetes cluster
@@ -1546,7 +1561,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
         if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
-            throw new InvalidParameterValueException("VM cannot be removed from a managed Kubernetes cluster");
+            throw new InvalidParameterValueException("VM cannot be removed from a CloudStack Managed Kubernetes cluster");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
 

@@ -92,6 +92,9 @@
           </span>
         </span>
       </template>
+      <template v-if="record.clustertype === 'ExternalManaged' && $route.path.split('/')[1] === 'kubernetes' && ['cpunumber', 'memory', 'size'].includes(column.key)">
+        <span>{{ text <= 0 ? 'N/A' : text }}</span>
+      </template>
       <template v-if="column.key === 'templatetype'">
         <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
       </template>
@@ -154,9 +157,6 @@
       </template>
       <template v-if="column.key === 'traffictype'">
         {{ text }}
-      </template>
-      <template v-if="column.key === 'managed'">
-        {{ $t(text ? 'label.yes': 'label.no') }}
       </template>
       <template v-if="column.key === 'vmname'">
         <router-link :to="{ path: createPathBasedOnVmType(record.vmtype, record.virtualmachineid) }">{{ text }}</router-link>
