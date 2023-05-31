@@ -196,6 +196,8 @@ export default {
           title: this.$t('label.migrate.volume'),
           description: this.resource.id,
           jobId: response.migratevolumeresponse.jobid,
+          description: this.resource.name,
+          title: this.$t('label.migrate.volume'),
           successMessage: this.$t('message.success.migrate.volume'),
           errorMessage: this.$t('message.migrate.volume.failed'),
           errorMethod: () => {
