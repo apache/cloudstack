@@ -135,6 +135,8 @@ CREATE VIEW `cloud`.`async_job_view` AS
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
 ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
+-- create_public_parameter_on_roles. #6960
+ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
 
 -- Flexible tags
 ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
