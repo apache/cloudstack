@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
@@ -347,7 +350,7 @@ public class KubernetesClusterActionWorker {
         if (CollectionUtils.isNotEmpty(addresses)) {
             return addresses.get(0);
         }
-        LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+        logger.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
         return null;
     }
 
@@ -358,7 +361,7 @@ public class KubernetesClusterActionWorker {
         }
         IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
         if (address == null || network.getVpcId() != address.getVpcId()) {
-            LOGGER.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
+            logger.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
             return null;
         }
         return address;
@@ -389,7 +392,7 @@ public class KubernetesClusterActionWorker {
         int port = DEFAULT_SSH_PORT;
         controlVm = fetchControlVmIfMissing(controlVm);
         if (controlVm == null) {
-            LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
         return new Pair<>(controlVm.getPrivateIpAddress(), port);
@@ -409,7 +412,7 @@ public class KubernetesClusterActionWorker {
                 return new Pair<>(address.getAddress().addr(), port);
             }
         }
-        LOGGER.warn(String.format("No public IP found for the the VPC tier: %s, Kubernetes cluster : %s", network, kubernetesCluster.getName()));
+        logger.warn(String.format("No public IP found for the the VPC tier: %s, Kubernetes cluster : %s", network, kubernetesCluster.getName()));
         return new Pair<>(null, port);
     }
 
@@ -441,7 +444,7 @@ public class KubernetesClusterActionWorker {
         try {
             return getKubernetesClusterServerIpSshPort(controlVm, false);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException | ResourceUnavailableException e) {
-            LOGGER.debug("This exception should not have occurred", e);
+            logger.debug("This exception should not have occurred", e);
         }
         return new Pair<>(null, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
     }

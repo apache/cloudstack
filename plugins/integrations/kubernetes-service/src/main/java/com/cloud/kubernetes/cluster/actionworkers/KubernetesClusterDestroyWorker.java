@@ -297,7 +297,7 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     releaseVpcTierPublicIpIfNeeded();
                 } catch (InsufficientAddressCapacityException e) {
                     String msg = String.format("Failed to release public IP for VPC tier used by Kubernetes cluster : %s", kubernetesCluster.getName());
-                    LOGGER.warn(msg, e);
+                    logger.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);
                 }

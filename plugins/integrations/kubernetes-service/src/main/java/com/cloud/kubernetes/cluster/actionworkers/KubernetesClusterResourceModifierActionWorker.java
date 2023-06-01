@@ -40,7 +40,6 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
@@ -110,6 +109,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
@@ -471,8 +471,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return newRule;
         });
         rulesService.applyPortForwardingRules(publicIp.getId(), account);
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Provisioned SSH port forwarding rule: %s from port %d to %d on %s to the VM IP : %s in Kubernetes cluster : %s", pfRule.getUuid(), sourcePort, destPort, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Provisioned SSH port forwarding rule: %s from port %d to %d on %s to the VM IP : %s in Kubernetes cluster : %s", pfRule.getUuid(), sourcePort, destPort, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
         }
     }
 
@@ -631,8 +631,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         try {
             int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
             provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
             throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
@@ -643,8 +643,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         // Firewall rule for API access for control node VMs
         try {
             provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
                         CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
@@ -691,8 +691,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         // ACL rule for API access for control node VMs
         try {
             provisionVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         CLUSTER_API_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
@@ -700,8 +700,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
         try {
             provisionVpcTierAllowPortACLRule(network, DEFAULT_SSH_PORT, DEFAULT_SSH_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         DEFAULT_SSH_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
@@ -716,8 +716,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         // ACL rule for API access for control node VMs
         try {
             removeVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         CLUSTER_API_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
@@ -726,8 +726,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         // ACL rule for SSH access for all node VMs
         try {
             removeVpcTierAllowPortACLRule(network, DEFAULT_SSH_PORT, DEFAULT_SSH_PORT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
                         DEFAULT_SSH_PORT, publicIpAddress, kubernetesCluster.getName()));
             }
         } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {

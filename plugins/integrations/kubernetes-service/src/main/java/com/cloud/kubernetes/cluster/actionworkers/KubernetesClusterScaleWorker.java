@@ -163,8 +163,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
      */
     private void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
         if (!Network.GuestType.Isolated.equals(network.getGuestType())) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
             }
             return;
         }

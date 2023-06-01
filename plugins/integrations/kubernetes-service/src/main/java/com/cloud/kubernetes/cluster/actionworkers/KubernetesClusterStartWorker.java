@@ -36,7 +36,6 @@ import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
@@ -74,6 +73,7 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
+import org.apache.logging.log4j.Level;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 

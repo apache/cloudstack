@@ -356,8 +356,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         for (FirewallRuleVO rule : rules) {
             Integer startPort = rule.getSourcePortStart();
             Integer endPort = rule.getSourcePortEnd();
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Validating rule with purpose: %s for network: %s with ports: %d-%d", purpose.toString(), network.getUuid(), startPort, endPort));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Validating rule with purpose: %s for network: %s with ports: %d-%d", purpose.toString(), network.getUuid(), startPort, endPort));
             }
             if (startPort <= KubernetesClusterActionWorker.CLUSTER_API_PORT && KubernetesClusterActionWorker.CLUSTER_API_PORT <= endPort) {
                 throw new InvalidParameterValueException(String.format("Network ID: %s has conflicting %s rules to provision Kubernetes cluster for API access", network.getUuid(), purpose.toString().toLowerCase()));

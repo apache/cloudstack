@@ -2002,8 +2002,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!path.endsWith(snapshotName)) {
             return path + "/*" + snapshotName + "*";
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, path));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, path));
         }
         return path;
     }
