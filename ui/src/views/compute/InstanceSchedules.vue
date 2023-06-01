@@ -339,8 +339,8 @@ export default {
           action: values.action,
           virtualmachineid: this.virtualmachine.id,
           enabled: values.enabled,
-          startdate: (values.startDate !== '') ? values.startDate.format(this.pattern) : null,
-          enddate: (values.endDate !== '') ? values.endDate.format(this.pattern) : null
+          startdate: (values.startDate) ? values.startDate.format(this.pattern) : null,
+          enddate: (values.endDate) ? values.endDate.format(this.pattern) : null
         }
         let command = null
         if (this.form.id === null || this.form.id === undefined) {
@@ -388,6 +388,7 @@ export default {
     },
     closeModal () {
       this.resetForm()
+      this.initForm()
       this.showModal = false
     },
     fetchData () {

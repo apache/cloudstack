@@ -306,8 +306,11 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'startdate', 'enddate', 'sent'].includes(column.key)">
-        {{ !(text ===  null || text === undefined || text === '') ? $toLocaleDate(text) : '' }}
+      <template v-if="['created', 'sent'].includes(column.key)">
+        {{ $toLocaleDate(text) }}
+      </template>
+      <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm'].includes($route.path.split('/')[1])">
+        {{ text.split("+")[0] }}
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
