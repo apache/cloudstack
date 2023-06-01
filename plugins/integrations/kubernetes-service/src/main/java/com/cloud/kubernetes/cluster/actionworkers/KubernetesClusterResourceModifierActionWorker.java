@@ -27,12 +27,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
@@ -47,11 +49,14 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -71,9 +76,15 @@ import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
@@ -114,6 +125,10 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected FirewallRulesDao firewallRulesDao;
     @Inject
     protected FirewallService firewallService;
+    @Inject
+    protected NetworkACLService networkACLService;
+    @Inject
+    protected  NetworkACLItemDao networkACLItemDao;
     @Inject
     protected LoadBalancingRulesService lbService;
     @Inject
@@ -403,19 +418,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return nodeVm;
     }
 
-    protected IpAddress getSourceNatIp(Network network) {
-        List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
-        if (CollectionUtils.isEmpty(addresses)) {
-            return null;
-        }
-        for (IpAddress address : addresses) {
-            if (address.isSourceNat()) {
-                return address;
-            }
-        }
-        return null;
-    }
-
     protected void provisionFirewallRules(final IpAddress publicIp, final Account account, int startPort, int endPort) throws NoSuchFieldException,
             IllegalAccessException, ResourceUnavailableException, NetworkRuleConflictException {
         List<String> sourceCidrList = new ArrayList<String>();
@@ -448,52 +450,51 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         firewallService.applyIngressFwRules(publicIp.getId(), account);
     }
 
+    protected void provisionPublicIpPortForwardingRule(IpAddress publicIp, Network network, Account account,
+                                                       final long vmId, final int sourcePort, final int destPort) throws NetworkRuleConflictException, ResourceUnavailableException {
+        final long publicIpId = publicIp.getId();
+        final long networkId = network.getId();
+        final long accountId = account.getId();
+        final long domainId = account.getDomainId();
+        Nic vmNic = networkModel.getNicInNetwork(vmId, networkId);
+        final Ip vmIp = new Ip(vmNic.getIPv4Address());
+        PortForwardingRuleVO pfRule = Transaction.execute((TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>) status -> {
+            PortForwardingRuleVO newRule =
+                    new PortForwardingRuleVO(null, publicIpId,
+                            sourcePort, sourcePort,
+                            vmIp,
+                            destPort, destPort,
+                            "tcp", networkId, accountId, domainId, vmId);
+            newRule.setDisplay(true);
+            newRule.setState(FirewallRule.State.Add);
+            newRule = portForwardingRulesDao.persist(newRule);
+            return newRule;
+        });
+        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info(String.format("Provisioned SSH port forwarding rule: %s from port %d to %d on %s to the VM IP : %s in Kubernetes cluster : %s", pfRule.getUuid(), sourcePort, destPort, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
+        }
+    }
+
     /**
      * To provision SSH port forwarding rules for the given Kubernetes cluster
      * for its given virtual machines
+     *
      * @param publicIp
      * @param network
      * @param account
-     * @param List<Long> clusterVMIds (when empty then method must be called while
-     *                  down-scaling of the KubernetesCluster therefore no new rules
-     *                  to be added)
-     * @param firewallRuleSourcePortStart
+     * @param clusterVMIds (when empty then method must be called while
+     *                     down-scaling of the KubernetesCluster therefore no new rules
+     *                     to be added)
      * @throws ResourceUnavailableException
      * @throws NetworkRuleConflictException
      */
     protected void provisionSshPortForwardingRules(IpAddress publicIp, Network network, Account account,
-                                                   List<Long> clusterVMIds, int firewallRuleSourcePortStart) throws ResourceUnavailableException,
+                                                   List<Long> clusterVMIds) throws ResourceUnavailableException,
             NetworkRuleConflictException {
         if (!CollectionUtils.isEmpty(clusterVMIds)) {
-            final long publicIpId = publicIp.getId();
-            final long networkId = network.getId();
-            final long accountId = account.getId();
-            final long domainId = account.getDomainId();
             for (int i = 0; i < clusterVMIds.size(); ++i) {
-                long vmId = clusterVMIds.get(i);
-                Nic vmNic = networkModel.getNicInNetwork(vmId, networkId);
-                final Ip vmIp = new Ip(vmNic.getIPv4Address());
-                final long vmIdFinal = vmId;
-                final int srcPortFinal = firewallRuleSourcePortStart + i;
-                PortForwardingRuleVO pfRule = Transaction.execute(new TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>() {
-                    @Override
-                    public PortForwardingRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
-                        PortForwardingRuleVO newRule =
-                                new PortForwardingRuleVO(null, publicIpId,
-                                        srcPortFinal, srcPortFinal,
-                                        vmIp,
-                                        22, 22,
-                                        "tcp", networkId, accountId, domainId, vmIdFinal);
-                        newRule.setDisplay(true);
-                        newRule.setState(FirewallRule.State.Add);
-                        newRule = portForwardingRulesDao.persist(newRule);
-                        return newRule;
-                    }
-                });
-                rulesService.applyPortForwardingRules(publicIp.getId(), account);
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(String.format("Provisioned SSH port forwarding rule from port %d to 22 on %s to the VM IP : %s in Kubernetes cluster : %s", srcPortFinal, publicIp.getAddress().addr(), vmIp.toString(), kubernetesCluster.getName()));
-                }
+                provisionPublicIpPortForwardingRule(publicIp, network, account, clusterVMIds.get(i), CLUSTER_NODES_DEFAULT_START_SSH_PORT + i, DEFAULT_SSH_PORT);
             }
         }
     }
@@ -552,16 +553,202 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
-                                           final Account account, final int port) throws ResourceUnavailableException {
+                                           final Account account) throws ResourceUnavailableException {
         List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
         for (LoadBalancerVO rule : rules) {
             if (rule.getNetworkId() == network.getId() &&
                     rule.getAccountId() == account.getId() &&
-                    rule.getSourcePortStart() == port &&
-                    rule.getSourcePortEnd() == port) {
+                    rule.getSourcePortStart() == CLUSTER_API_PORT &&
+                    rule.getSourcePortEnd() == CLUSTER_API_PORT) {
                 lbService.deleteLoadBalancerRule(rule.getId(), true);
                 break;
             }
+        }
+    }
+
+    protected void provisionVpcTierAllowPortACLRule(final Network network, int startPort, int endPorts) throws NoSuchFieldException,
+            IllegalAccessException, ResourceUnavailableException {
+        List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
+        aclItems = aclItems.stream().filter(x -> !NetworkACLItem.State.Revoke.equals(x.getState())).collect(Collectors.toList());
+        CreateNetworkACLCmd rule = new CreateNetworkACLCmd();
+        rule = ComponentContext.inject(rule);
+        Map<String, Object> fieldValues = Map.of(
+                "protocol", "TCP",
+                "publicStartPort", startPort,
+                "publicEndPort", endPorts,
+                "trafficType", NetworkACLItem.TrafficType.Ingress.toString(),
+                "networkId", network.getId(),
+                "aclId", network.getNetworkACLId(),
+                "action", NetworkACLItem.Action.Allow.toString()
+        );
+        for (Map.Entry<String, Object> entry : fieldValues.entrySet()) {
+            Field field = rule.getClass().getDeclaredField(entry.getKey());
+            field.setAccessible(true);
+            field.set(rule, entry.getValue());
+        }
+        NetworkACLItem aclRule = networkACLService.createNetworkACLItem(rule);
+        networkACLService.moveRuleToTheTopInACLList(aclRule);
+        networkACLService.applyNetworkACL(aclRule.getAclId());
+    }
+
+    protected void removeVpcTierAllowPortACLRule(final Network network, int startPort, int endPort) throws NoSuchFieldException,
+            IllegalAccessException, ResourceUnavailableException {
+        List<NetworkACLItemVO> aclItems = networkACLItemDao.listByACL(network.getNetworkACLId());
+        aclItems = aclItems.stream().filter(x -> (x.getProtocol() != null &&
+                        x.getProtocol().equals("TCP") &&
+                        x.getSourcePortStart() != null &&
+                        x.getSourcePortStart().equals(startPort) &&
+                        x.getSourcePortEnd() != null &&
+                        x.getSourcePortEnd().equals(endPort) &&
+                        x.getAction().equals(NetworkACLItem.Action.Allow)))
+                .collect(Collectors.toList());
+
+        for (NetworkACLItemVO aclItem : aclItems) {
+            networkACLService.revokeNetworkACLItem(aclItem.getId());
+        }
+    }
+
+    protected void provisionLoadBalancerRule(final IpAddress publicIp, final Network network,
+                                             final Account account, final List<Long> clusterVMIds, final int port) throws NetworkRuleConflictException,
+            InsufficientAddressCapacityException {
+        LoadBalancer lb = lbService.createPublicLoadBalancerRule(null, "api-lb", "LB rule for API access",
+                port, port, port, port,
+                publicIp.getId(), NetUtils.TCP_PROTO, "roundrobin", network.getId(),
+                account.getId(), false, NetUtils.TCP_PROTO, true);
+
+        Map<Long, List<String>> vmIdIpMap = new HashMap<>();
+        for (int i = 0; i < kubernetesCluster.getControlNodeCount(); ++i) {
+            List<String> ips = new ArrayList<>();
+            Nic controlVmNic = networkModel.getNicInNetwork(clusterVMIds.get(i), kubernetesCluster.getNetworkId());
+            ips.add(controlVmNic.getIPv4Address());
+            vmIdIpMap.put(clusterVMIds.get(i), ips);
+        }
+        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
+    }
+
+    protected void createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
+        // Firewall rule for SSH access on each node VM
+        try {
+            int endPort = CLUSTER_NODES_DEFAULT_START_SSH_PORT + clusterVMIds.size() - 1;
+            provisionFirewallRules(publicIp, owner, CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d to %d on %s for Kubernetes cluster : %s", CLUSTER_NODES_DEFAULT_START_SSH_PORT, endPort, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        if (!apiRule) {
+            return;
+        }
+        // Firewall rule for API access for control node VMs
+        try {
+            provisionFirewallRules(publicIp, owner, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned firewall rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIp.getAddress().addr(), kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    /**
+     * Setup network rules for Kubernetes cluster
+     * Open up firewall port CLUSTER_API_PORT, secure port on which Kubernetes
+     * API server is running. Also create load balancing rule to forward public
+     * IP traffic to control VMs' private IP.
+     * Open up  firewall ports NODES_DEFAULT_START_SSH_PORT to NODES_DEFAULT_START_SSH_PORT+n
+     * for SSH access. Also create port-forwarding rule to forward public IP traffic to all
+     * @param network
+     * @param clusterVMIds
+     * @throws ManagementServerException
+     */
+    protected void setupKubernetesClusterIsolatedNetworkRules(IpAddress publicIp, Network network, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
+        createFirewallRules(publicIp, clusterVMIds, apiRule);
+
+        // Port forwarding rule for SSH access on each node VM
+        try {
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+
+        if (!apiRule) {
+            return;
+        }
+        // Load balancer rule for API access for control node VMs
+        try {
+            provisionLoadBalancerRule(publicIp, network, owner, clusterVMIds, CLUSTER_API_PORT);
+        } catch (NetworkRuleConflictException | InsufficientAddressCapacityException e) {
+            throw new ManagementServerException(String.format("Failed to provision load balancer rule for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    protected void createVpcTierAclRules(Network network) throws ManagementServerException {
+        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+            return;
+        }
+        // ACL rule for API access for control node VMs
+        try {
+            provisionVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIpAddress, kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        try {
+            provisionVpcTierAllowPortACLRule(network, DEFAULT_SSH_PORT, DEFAULT_SSH_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Provisioned ACL rule to open up port %d on %s for Kubernetes cluster %s",
+                        DEFAULT_SSH_PORT, publicIpAddress, kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException | InvalidParameterValueException | PermissionDeniedException e) {
+            throw new ManagementServerException(String.format("Failed to provision firewall rules for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    protected void removeVpcTierAclRules(Network network) throws ManagementServerException {
+        if (network.getNetworkACLId() == NetworkACL.DEFAULT_ALLOW) {
+            return;
+        }
+        // ACL rule for API access for control node VMs
+        try {
+            removeVpcTierAllowPortACLRule(network, CLUSTER_API_PORT, CLUSTER_API_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
+                        CLUSTER_API_PORT, publicIpAddress, kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
+            throw new ManagementServerException(String.format("Failed to remove network ACL rule for API access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        // ACL rule for SSH access for all node VMs
+        try {
+            removeVpcTierAllowPortACLRule(network, DEFAULT_SSH_PORT, DEFAULT_SSH_PORT);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info(String.format("Removed network ACL rule to open up port %d on %s for Kubernetes cluster %s",
+                        DEFAULT_SSH_PORT, publicIpAddress, kubernetesCluster.getName()));
+            }
+        } catch (NoSuchFieldException | IllegalAccessException | ResourceUnavailableException e) {
+            throw new ManagementServerException(String.format("Failed to remove network ACL rules for SSH access for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+    }
+
+    protected void setupKubernetesClusterVpcTierRules(IpAddress publicIp, Network network, List<Long> clusterVMIds) throws ManagementServerException {
+        // Create ACL rules
+        createVpcTierAclRules(network);
+        // Add port forwarding for API access
+        try {
+            provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT, CLUSTER_API_PORT);
+        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+        }
+        // Add port forwarding rule for SSH access on each node VM
+        try {
+            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
         }
     }
 
