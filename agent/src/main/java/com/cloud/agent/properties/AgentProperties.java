@@ -715,11 +715,11 @@ public class AgentProperties{
     public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<>("vm.memballoon.stats.period", 0);
 
     /**
-     * The number of iothreads
-     * Data type: Integer.<br>
-     * Default value: <code>1</code>
+     * BGP controll CIDR
+     * Data type: String.<br>
+     * Default value: <code>169.254.0.0/16</code>
      */
-    public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
+    public static final Property<String> CONTROLL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
 
     public static class Property <T>{
         private String name;

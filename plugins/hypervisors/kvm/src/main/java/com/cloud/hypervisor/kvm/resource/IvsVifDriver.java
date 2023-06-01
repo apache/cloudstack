@@ -71,10 +71,7 @@ public class IvsVifDriver extends VifDriverBase {
         }
         _ivsIfUpPath = Script.findScript(utilScriptsDir, "qemu-ivs-ifup");
 
-        String controlCidr = (String)params.get("control.cidr");
-        if (StringUtils.isNotBlank(controlCidr)) {
-            _controlCidr = controlCidr;
-        }
+        _controlCidr = getControllCidr(_controlCidr, params);
     }
 
     @Override
