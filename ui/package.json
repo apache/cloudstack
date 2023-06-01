@@ -55,6 +55,7 @@
     "md5": "^2.2.1",
     "mitt": "^2.1.0",
     "moment": "^2.26.0",
+    "moment-timezone": "^0.5.43",
     "npm-check-updates": "^6.0.1",
     "nprogress": "^0.2.0",
     "qrious": "^4.0.2",

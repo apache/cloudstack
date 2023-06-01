@@ -310,7 +310,7 @@
         {{ $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm'].includes($route.path.split('/')[1])">
-        {{ text.split("+")[0] }}
+        {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
@@ -430,6 +430,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
 import cronstrue from 'cronstrue/i18n'
+import moment from 'moment-timezone'
 
 export default {
   name: 'ListView',
@@ -546,6 +547,9 @@ export default {
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)
+    },
+    getDateAtTimeZone (date, timezone) {
+      return moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss')
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {

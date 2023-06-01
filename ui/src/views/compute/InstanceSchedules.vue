@@ -191,7 +191,7 @@ import { mixinForm } from '@/utils/mixin'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import cronstrue from 'cronstrue/i18n'
-import moment from 'moment'
+import moment from 'moment-timezone'
 
 export default {
   name: 'InstanceSchedules',
@@ -319,8 +319,8 @@ export default {
       this.resetForm()
       this.isEdit = true
       Object.assign(this.form, schedule)
-      this.form.startDate = moment(schedule.startdate)
-      this.form.endDate = schedule.enddate ? moment(schedule.enddate) : ''
+      this.form.startDate = moment(schedule.startdate).tz(schedule.timezone)
+      this.form.endDate = schedule.enddate ? moment(schedule.enddate).tz(schedule.timezone) : ''
       this.showAddModal()
     },
     showAddModal () {
