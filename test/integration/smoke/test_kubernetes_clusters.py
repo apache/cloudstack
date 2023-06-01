@@ -684,7 +684,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         return response
 
     def removeVirtualMachinesFromKubernetesCluster(self, cluster_id, vm_list):
-        cmd = removeVirtualMachinesFromKcubernetesCluster.removeVirtualMachinesFromKubernetesClusterCmd()
+        cmd = removeVirtualMachinesFromKubernetesCluster.removeVirtualMachinesFromKubernetesClusterCmd()
         cmd.id = cluster_id
         cmd.virtualmachineids = vm_list
 
