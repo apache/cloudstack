@@ -34,12 +34,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
-import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -104,8 +102,8 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -148,6 +146,8 @@ import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
@@ -2778,31 +2778,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String errorMsg = "Failed to detach volume " + volume.getName() + " from VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
 
-        Long hostId = vm.getHostId();
-
-        if (hostId == null) {
-            hostId = vm.getLastHostId();
-            HostVO host = _hostDao.findById(hostId);
-
-            if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
-                sendCommand = true;
-            }
-        }
-
-        HostVO host = null;
         StoragePoolVO volumePool = _storagePoolDao.findByIdIncludingRemoved(volume.getPoolId());
-
-        if (hostId != null) {
-            host = _hostDao.findById(hostId);
-
-            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumePool != null && volumePool.isManaged()) {
-                sendCommand = true;
-            }
-        }
-
-        if (volumePool == null) {
-            sendCommand = false;
-        }
+        HostVO host = getHostForVmVolumeAttachDetach(vm, volumePool);
+        Long hostId = host != null ? host.getId() : null;
+        sendCommand = sendCommand || isSendCommandForVmVolumeAttachDetach(host, volumePool);
 
         Answer answer = null;
 
@@ -4080,15 +4059,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return "clustered file systems";
     }
 
-    private HostVO getHostForVmVolumeAttach(UserVmVO vm, StoragePoolVO volumeToAttachStoragePool) {
+    private HostVO getHostForVmVolumeAttachDetach(VirtualMachine vm, StoragePoolVO volumeStoragePool) {
         HostVO host = null;
         Pair<Long, Long> clusterAndHostId =  virtualMachineManager.findClusterAndHostIdForVm(vm.getId());
         Long hostId = clusterAndHostId.second();
         Long clusterId = clusterAndHostId.first();
         if (hostId == null && clusterId != null &&
                 State.Stopped.equals(vm.getState()) &&
-                volumeToAttachStoragePool != null &&
-                !ScopeType.HOST.equals(volumeToAttachStoragePool.getScope())) {
+                volumeStoragePool != null &&
+                !ScopeType.HOST.equals(volumeStoragePool.getScope())) {
             List<HostVO> hosts = _hostDao.findHypervisorHostInCluster(clusterId);
             if (!hosts.isEmpty()) {
                 host = hosts.get(0);
@@ -4100,6 +4079,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return host;
     }
 
+    protected boolean isSendCommandForVmVolumeAttachDetach(HostVO host, StoragePoolVO volumeStoragePool) {
+        if (host == null || volumeStoragePool == null) {
+            return false;
+        }
+        boolean sendCommand = HypervisorType.VMware.equals(host.getHypervisorType());
+        if (HypervisorType.XenServer.equals(host.getHypervisorType()) &&
+                volumeStoragePool.isManaged()) {
+            sendCommand = true;
+        }
+        return sendCommand;
+    }
+
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
         String errorMsg = "Failed to attach volume " + volumeToAttach.getName() + " to VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
@@ -4108,16 +4099,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (s_logger.isTraceEnabled() && volumeToAttachStoragePool != null) {
             s_logger.trace(String.format("storage is gotten from volume to attach: %s/%s",volumeToAttachStoragePool.getName(),volumeToAttachStoragePool.getUuid()));
         }
-        HostVO host = getHostForVmVolumeAttach(vm, volumeToAttachStoragePool);
-        Long hostId = host == null ? null : host.getId();
-        if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
-            sendCommand = true;
-        }
-
-        if (host != null && host.getHypervisorType() == HypervisorType.XenServer &&
-                volumeToAttachStoragePool != null && volumeToAttachStoragePool.isManaged()) {
-            sendCommand = true;
-        }
+        HostVO host = getHostForVmVolumeAttachDetach(vm, volumeToAttachStoragePool);
+        Long hostId = host != null ? host.getId() : null;
+        sendCommand = sendCommand || isSendCommandForVmVolumeAttachDetach(host, volumeToAttachStoragePool);
 
         if (host != null) {
             _hostDao.loadDetails(host);
