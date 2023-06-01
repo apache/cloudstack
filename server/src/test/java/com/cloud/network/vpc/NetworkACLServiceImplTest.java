@@ -26,7 +26,9 @@ import static org.mockito.Mockito.times;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
@@ -1264,6 +1266,8 @@ public class NetworkACLServiceImplTest {
     @Test
     public void updateAclRuleToNewPositionAndExecuteShiftIfNecessaryTest() {
         Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
+        Mockito.when(previousAclRuleMock.getId()).thenReturn(50l);
+
 
         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(11);
         Mockito.when(nextAclRuleMock.getId()).thenReturn(50l);
@@ -1290,18 +1294,33 @@ public class NetworkACLServiceImplTest {
         allAclRules.add(aclRuleBeingMovedMock);
 
         Mockito.doNothing().when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
-        Mockito.doReturn(null).when(networkAclItemDaoMock).findById(Mockito.anyLong());
 
-        networkAclServiceImpl.updateAclRuleToNewPositionAndExecuteShiftIfNecessary(aclRuleBeingMovedMock, 11, allAclRules, 1);
+        Map<Long, NetworkACLItemVO> updatedItems = new HashMap<>();
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            Long id = (Long)invocation.getArguments()[0];
+            int position = (int)invocation.getArguments()[1];
+            NetworkACLItemVO item = new NetworkACLItemVO();
+            item.setNumber(position);
+            updatedItems.put(id, item);
+            return null;
+        }).when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
+        Mockito.doAnswer((Answer<NetworkACLItemVO>) invocation -> {
+            Long id = (Long)invocation.getArguments()[0];
+            return updatedItems.get(id);
+        }).when(networkAclItemDaoMock).findById(Mockito.anyLong());
 
-        Mockito.verify(aclRuleBeingMovedMock).setNumber(11);
-        Mockito.verify(nextAclRuleMock).setNumber(12);
+        NetworkACLItem result = networkAclServiceImpl.updateAclRuleToNewPositionAndExecuteShiftIfNecessary(aclRuleBeingMovedMock, 11, allAclRules, 1);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(11, result.getNumber());
+        Assert.assertEquals(11, updatedItems.get(aclRuleBeingMovedMock.getId()).getNumber());
+        Assert.assertEquals(12, updatedItems.get(nextAclRuleMock.getId()).getNumber());
         Mockito.verify(networkAclItemDaoMock).updateNumberFieldNetworkItem(1l, 11);
         Mockito.verify(networkAclItemDaoMock).updateNumberFieldNetworkItem(50l, 12);
 
-        Assert.assertEquals(13, networkACLItemVO12.getNumber());
-        Assert.assertEquals(14, networkACLItemVO13.getNumber());
-        Assert.assertEquals(15, networkACLItemVO14.getNumber());
+        Assert.assertEquals(networkACLItemVO12.getNumber() + 1, updatedItems.get(networkACLItemVO12.getId()).getNumber());
+        Assert.assertEquals(networkACLItemVO13.getNumber() + 1, updatedItems.get(networkACLItemVO13.getId()).getNumber());
+        Assert.assertEquals(networkACLItemVO14.getNumber() + 1, updatedItems.get(networkACLItemVO14.getId()).getNumber());
     }
 
     @Test

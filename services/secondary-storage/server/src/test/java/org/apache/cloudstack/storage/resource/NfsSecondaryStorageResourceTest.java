@@ -91,4 +91,21 @@ public class NfsSecondaryStorageResourceTest {
         Mockito.verify(loggerMock, times(1)).debug("Failed to clean up staging area:", exception);
 
     }
+
+    private void performGetSnapshotFilepathForDeleteTest(String expected, String path, String name) {
+        Assert.assertEquals("Incorrect resultant snapshot delete path", expected, resource.getSnapshotFilepathForDelete(path, name));
+    }
+
+    @Test
+    public void testGetSnapshotFilepathForDelete() {
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/somename",
+                "/snapshots/2/10/somename",
+                "somename");
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/diffName/*diffname*",
+                "/snapshots/2/10/diffName",
+                "diffname");
+        performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/*somename*",
+                "/snapshots/2/10",
+                "somename");
+    }
 }
