@@ -542,6 +542,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 router.setDynamicallyScalable(template.isDynamicallyScalable());
                 router.setRole(Role.VIRTUAL_ROUTER);
+                router.setLimitCpuUse(routerOffering.getLimitCpuUse());
                 router = _routerDao.persist(router);
 
                 reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);

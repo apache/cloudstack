@@ -504,7 +504,7 @@ export default {
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running'].includes(record.state) },
+          show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
         },

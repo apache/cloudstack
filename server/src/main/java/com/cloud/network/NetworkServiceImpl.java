@@ -4087,7 +4087,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (String vlanRange : listOfRanges) {
             String[] VnetRange = vlanRange.split("-");
 
-            // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shoudn't be used.
+            // Init with [min,max] of VLAN. Actually 0x000 and 0xFFF are reserved by IEEE, shouldn't be used.
             long minVnet = MIN_VLAN_ID;
             long maxVnet = MAX_VLAN_ID;
 
