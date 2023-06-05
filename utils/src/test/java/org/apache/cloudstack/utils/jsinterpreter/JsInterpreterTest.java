@@ -91,7 +91,6 @@ public class JsInterpreterTest {
     public void executeScriptTestReturnResultOfScriptExecution() {
         String script = "5";
         Object expected = new Object();
-        Mockito.doReturn(script).when(jsInterpreterSpy).addVariablesToScript(Mockito.anyString());
         Mockito.doReturn(expected).when(jsInterpreterSpy).executeScript(Mockito.anyString());
 
         Object result = jsInterpreterSpy.executeScript(script);

@@ -136,10 +136,8 @@ public class SshHelperTest {
     @Test
     public void openConnectionSessionTest() throws IOException, InterruptedException {
         Connection conn = Mockito.mock(Connection.class);
-        MockedStatic<Thread> threadMocked = Mockito.mockStatic(Thread.class);
         SshHelper.openConnectionSession(conn);
 
         Mockito.verify(conn).openSession();
-        threadMocked.close();
     }
 }
