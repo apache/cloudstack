@@ -950,12 +950,16 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private void addSystemVmInfoToIpResponse(NicVO nic, IPAddressResponse ipResponse) {
         final boolean isAdmin = Account.Type.ADMIN.equals(CallContext.current().getCallingAccount().getType());
-        VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
-        if (vm != null && isAdmin) {
-            ipResponse.setVirtualMachineId(vm.getUuid());
-            ipResponse.setVirtualMachineName(vm.getHostName());
-            ipResponse.setVirtualMachineType(vm.getType().toString());
+        if (!isAdmin) {
+            return;
         }
+        VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
+        if (vm == null) {
+            return;
+        }
+        ipResponse.setVirtualMachineId(vm.getUuid());
+        ipResponse.setVirtualMachineName(vm.getHostName());
+        ipResponse.setVirtualMachineType(vm.getType().toString());
     }
 
     private void addUserVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
