@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-@APICommand(name = "listQuarantinedIps", responseObject = IpQuarantineResponse.class, description = "List public IP addresses in quarantine.", since = "4.18.1.0",
+@APICommand(name = "listQuarantinedIps", responseObject = IpQuarantineResponse.class, description = "List public IP addresses in quarantine.", since = "4.19",
         entityType = {PublicIpQuarantine.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class ListQuarantinedIpsCmd extends BaseListCmd {
 
