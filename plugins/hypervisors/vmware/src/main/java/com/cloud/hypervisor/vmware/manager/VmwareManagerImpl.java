@@ -1171,12 +1171,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Association of VMware DC to zone is not allowed if zone already has resources added.
         validateZoneWithResources(zoneId, "add VMware datacenter to zone");
 
-        // Check if DC is already part of zone
-        // In that case vmware_data_center table should have the DC
-        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
-        if (vmwareDc != null) {
-            throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
-        }
+        checkIfDcIsUsed(vCenterHost, vmwareDcName, zoneId);
 
         VmwareContext context = null;
         DatacenterMO dcMo = null;
@@ -1241,6 +1236,26 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
+    }
+
+    /**
+     * Check if DC is already part of zone
+     * In that case vmware_data_center table should have the DC and a dc zone mapping should exist
+     *
+     * @param vCenterHost
+     * @param vmwareDcName
+     * @param zoneId
+     * @throws ResourceInUseException if the DC can not be used.
+     */
+    private void checkIfDcIsUsed(String vCenterHost, String vmwareDcName, Long zoneId) throws ResourceInUseException {
+        VmwareDatacenterVO vmwareDc;
+        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        if (vmwareDc != null) {
+            VmwareDatacenterZoneMapVO mapping = vmwareDatacenterZoneMapDao.findByVmwareDcId(vmwareDc.getId());
+            if (mapping != null && Long.compare(zoneId, mapping.getZoneId()) == 0) {
+                throw new ResourceInUseException(String.format("This DC (%s) is already part of other CloudStack zone (%d). Cannot add this DC to more zones.", vmwareDc.getUuid(), zoneId));
+            }
+        }
     }
 
     @Override
