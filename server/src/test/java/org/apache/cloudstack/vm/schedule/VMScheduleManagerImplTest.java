@@ -244,7 +244,7 @@ public class VMScheduleManagerImplTest {
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for start date. Start date") &&
-                    e.getMessage().contains("can't be less than current time"));
+                    e.getMessage().contains("can't be before current time"));
         }
 
         // Invalid Scenario 2
@@ -256,7 +256,7 @@ public class VMScheduleManagerImplTest {
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for end date. End date") &&
-                    e.getMessage().contains("can't be less than start date"));
+                    e.getMessage().contains("can't be before start date"));
         }
 
         // Invalid Scenario 3
@@ -268,7 +268,7 @@ public class VMScheduleManagerImplTest {
             Assert.fail("Should have thrown InvalidParameterValueException");
         } catch (InvalidParameterValueException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid value for end date. End date") &&
-                    e.getMessage().contains("can't be less than current time"));
+                    e.getMessage().contains("can't be before current time"));
         }
     }
 }
