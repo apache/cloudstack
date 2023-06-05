@@ -45,7 +45,7 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
-          mvn -P quality -Dsimulator -Dnoredist clean install
+          mvn -P quality -Dsimulator -Dnoredist clean install -T$(nproc)
 
       - uses: codecov/codecov-action@v3
         with:

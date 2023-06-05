@@ -238,7 +238,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
+          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
 
       - name: Setup Simulator Prerequisites
         run: |
