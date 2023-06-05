@@ -549,7 +549,7 @@ export default {
       ].includes(this.$route.name)
     },
     getDateAtTimeZone (date, timezone) {
-      return moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss')
+      return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
