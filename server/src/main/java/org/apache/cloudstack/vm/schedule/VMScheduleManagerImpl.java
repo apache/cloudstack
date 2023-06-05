@@ -263,16 +263,16 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         ZonedDateTime zonedStartDate = ZonedDateTime.ofInstant(startDate.toInstant(), tz.toZoneId());
 
         if (zonedStartDate.isBefore(now)) {
-            throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be less than current time [%s].", zonedStartDate, now));
+            throw new InvalidParameterValueException(String.format("Invalid value for start date. Start date [%s] can't be before current time [%s].", zonedStartDate, now));
         }
 
         if (endDate != null) {
             ZonedDateTime zonedEndDate = ZonedDateTime.ofInstant(endDate.toInstant(), tz.toZoneId());
             if (zonedEndDate.isBefore(now)) {
-                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than current time [%s].", zonedEndDate, now));
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be before current time [%s].", zonedEndDate, now));
             }
             if (zonedEndDate.isBefore(zonedStartDate)) {
-                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be less than start date [%s].", zonedEndDate, zonedStartDate));
+                throw new InvalidParameterValueException(String.format("Invalid value for end date. End date [%s] can't be before start date [%s].", zonedEndDate, zonedStartDate));
             }
         }
     }
