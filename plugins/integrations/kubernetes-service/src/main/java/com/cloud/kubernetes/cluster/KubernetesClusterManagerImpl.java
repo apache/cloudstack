@@ -622,6 +622,38 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException(error);
         }
     }
+
+    private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId) {
+        DataCenter zone = dataCenterDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by ID: " + zoneId);
+        }
+        if (zone.getAllocationState() == Grouping.AllocationState.Disabled) {
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
+        }
+        return zone;
+    }
+
+    private void validateSshKeyPairForKubernetesCreateParameters(String sshKeyPair, Account owner) {
+        if (!StringUtils.isBlank(sshKeyPair)) {
+            SSHKeyPairVO sshKeyPairVO = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
+            if (sshKeyPairVO == null) {
+                throw new InvalidParameterValueException(String.format("Given SSH key pair with name: %s was not found for the account %s", sshKeyPair, owner.getAccountName()));
+            }
+        }
+    }
+
+    private Network validateAndGetNetworkForKubernetesCreateParameters(Long networkId) {
+        Network network = null;
+        if (networkId != null) {
+            network = networkService.getNetwork(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network with given ID");
+            }
+        }
+        return network;
+    }
+
     private void validateUnmanagedKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
@@ -638,21 +670,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
         }
 
-        DataCenter zone = dataCenterDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by ID: " + zoneId);
-        }
-
-        if (zone.getAllocationState() == Grouping.AllocationState.Disabled) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
-        }
-
-        if (!StringUtils.isBlank(sshKeyPair)) {
-            SSHKeyPairVO sshKeyPairVO = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (sshKeyPairVO == null) {
-                throw new InvalidParameterValueException(String.format("Given SSH key pair with name: %s was not found for the account %s", sshKeyPair, owner.getAccountName()));
-            }
-        }
+        validateAndGetZoneForKubernetesCreateParameters(zoneId);
+        validateSshKeyPairForKubernetesCreateParameters(sshKeyPair, owner);
 
         if (nodeRootDiskSize != null && nodeRootDiskSize <= 0) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s", ApiConstants.NODE_ROOT_DISK_SIZE));
@@ -660,13 +679,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl);
 
-        Network network = null;
-        if (networkId != null) {
-            network = networkService.getNetwork(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network with given ID");
-            }
-        }
+        validateAndGetNetworkForKubernetesCreateParameters(networkId);
 
         if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress) && (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress))) {
             throw new InvalidParameterValueException("Invalid external load balancer IP address");
@@ -708,14 +721,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
         }
 
-        DataCenter zone = dataCenterDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by ID: " + zoneId);
-        }
-
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
-        }
+        DataCenter zone = validateAndGetZoneForKubernetesCreateParameters(zoneId);
 
         if (!isKubernetesServiceConfigured(zone)) {
             throw new CloudRuntimeException("Kubernetes service has not been configured properly to provision Kubernetes clusters");
@@ -758,12 +764,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("No service offering with ID: " + serviceOfferingId);
         }
 
-        if (sshKeyPair != null && !sshKeyPair.isEmpty()) {
-            SSHKeyPairVO sshKeyPairVO = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
-            if (sshKeyPairVO == null) {
-                throw new InvalidParameterValueException(String.format("Given SSH key pair with name: %s was not found for the account %s", sshKeyPair, owner.getAccountName()));
-            }
-        }
+        validateSshKeyPairForKubernetesCreateParameters(sshKeyPair, owner);
 
         if (nodeRootDiskSize != null && nodeRootDiskSize <= 0) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s", ApiConstants.NODE_ROOT_DISK_SIZE));
@@ -775,13 +776,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         validateDockerRegistryParams(dockerRegistryUserName, dockerRegistryPassword, dockerRegistryUrl);
 
-        Network network = null;
-        if (networkId != null) {
-            network = networkService.getNetwork(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network with given ID");
-            }
-        }
+        Network network = validateAndGetNetworkForKubernetesCreateParameters(networkId);
 
         if (StringUtils.isNotEmpty(externalLoadBalancerIpAddress)) {
             if (!NetUtils.isValidIp4(externalLoadBalancerIpAddress) && !NetUtils.isValidIp6(externalLoadBalancerIpAddress)) {
