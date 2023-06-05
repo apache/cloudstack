@@ -52,7 +52,7 @@ public class DateUtil {
     };
 
     public static Date currentGMTTime() {
-        // Date object always stores miliseconds offset based on GMT internally
+        // Date object always stores milliseconds offset based on GMT internally
         return new Date();
     }
 

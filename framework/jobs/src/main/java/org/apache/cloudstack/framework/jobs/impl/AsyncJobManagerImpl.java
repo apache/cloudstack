@@ -758,7 +758,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMiliseconds, Predicate predicate) {
+    public boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate) {
 
         MessageDetector msgDetector = new MessageDetector();
         String[] topics = Arrays.copyOf(wakeupTopicsOnMessageBus, wakeupTopicsOnMessageBus.length + 1);
@@ -767,7 +767,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         msgDetector.open(_messageBus, topics);
         try {
             long startTick = System.currentTimeMillis();
-            while (timeoutInMiliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
+            while (timeoutInMilliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMilliseconds) {
                 msgDetector.waitAny(checkIntervalInMilliSeconds);
                 job = _jobDao.findById(job.getId());
                 if (job != null && job.getStatus().done()) {

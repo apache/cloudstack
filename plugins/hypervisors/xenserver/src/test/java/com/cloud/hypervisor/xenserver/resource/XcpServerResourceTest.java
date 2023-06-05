@@ -46,8 +46,8 @@ public class XcpServerResourceTest extends CitrixResourceBaseTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testGetFilesExeption() {
-        testGetPathFilesExeption();
+    public void testGetFilesException() {
+        testGetPathFilesException();
     }
 
     @Test
