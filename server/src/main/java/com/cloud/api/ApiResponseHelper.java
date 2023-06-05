@@ -937,7 +937,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     private void addVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
-        if (ipAddress.getAllocatedToAccountId() == Account.ACCOUNT_ID_SYSTEM) {
+        if (ipAddress.getAllocatedToAccountId() != null && ipAddress.getAllocatedToAccountId() == Account.ACCOUNT_ID_SYSTEM) {
             NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddress.getAddress().toString(), ipAddress.getNetworkId());
             if (nic != null) {
                 addSystemVmInfoToIpResponse(nic, response);
