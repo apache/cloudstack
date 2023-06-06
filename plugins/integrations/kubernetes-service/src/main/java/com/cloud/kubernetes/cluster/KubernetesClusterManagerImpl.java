@@ -45,6 +45,7 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
@@ -686,6 +687,31 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
+    public boolean isCommandSupported(KubernetesCluster cluster, String cmdName) {
+        switch (cluster.getClusterType()) {
+            case CloudManaged:
+                return Arrays.asList(
+                        BaseCmd.getCommandNameByClass(CreateKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(ListKubernetesClustersCmd.class),
+                        BaseCmd.getCommandNameByClass(DeleteKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(ScaleKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(StartKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(StopKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(UpgradeKubernetesClusterCmd.class)
+                ).contains(cmdName);
+            case ExternalManaged:
+                return Arrays.asList(
+                        BaseCmd.getCommandNameByClass(CreateKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(ListKubernetesClustersCmd.class),
+                        BaseCmd.getCommandNameByClass(DeleteKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(AddVirtualMachinesToKubernetesClusterCmd.class),
+                        BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class)
+                ).contains(cmdName);
+            default:
+                return false;
+        }
+    }
+
     private void validateManagedKubernetesClusterCreateParameters(final CreateKubernetesClusterCmd cmd) throws CloudRuntimeException {
         validateEndpointUrl();
         final String name = cmd.getName();
@@ -925,7 +951,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         Account caller = CallContext.current().getCallingAccount();
         accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
             throw new InvalidParameterValueException(String.format("Scale kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
 
@@ -1036,7 +1062,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null || kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
             throw new InvalidParameterValueException(String.format("Upgrade kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
@@ -1241,9 +1267,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
-            throw new InvalidParameterValueException(String.format("Start Kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
-        }
         if (kubernetesCluster.getRemoved() != null) {
             throw new InvalidParameterValueException(String.format("Kubernetes cluster : %s is already deleted", kubernetesCluster.getName()));
         }
@@ -1303,7 +1326,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean stopKubernetesCluster(long kubernetesClusterId) throws CloudRuntimeException {
+    public boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException {
+        long kubernetesClusterId = cmd.getId();
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1311,7 +1335,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Failed to find Kubernetes cluster with given ID");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
             throw new InvalidParameterValueException(String.format("Stop kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         if (kubernetesCluster.getRemoved() != null) {
@@ -1514,7 +1538,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
             throw new InvalidParameterValueException("VM cannot be added to a CloudStack managed Kubernetes cluster");
         }
 
@@ -1555,7 +1579,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
+        if (!isCommandSupported(kubernetesCluster, cmd.getActualCommandName())) {
             throw new InvalidParameterValueException("VM cannot be removed from a CloudStack Managed Kubernetes cluster");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);

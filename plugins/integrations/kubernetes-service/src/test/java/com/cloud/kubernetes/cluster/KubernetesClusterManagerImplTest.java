@@ -39,6 +39,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -270,6 +271,8 @@ public class KubernetesClusterManagerImplTest {
 
         Mockito.when(cmd.getId()).thenReturn(1L);
         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+        Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Mockito.when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vm);
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
@@ -284,6 +287,8 @@ public class KubernetesClusterManagerImplTest {
 
         Mockito.when(cmd.getId()).thenReturn(1L);
         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+        Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd));

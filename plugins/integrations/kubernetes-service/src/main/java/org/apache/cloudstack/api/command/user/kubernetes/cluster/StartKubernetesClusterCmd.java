@@ -99,7 +99,7 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         if (kubernetesCluster == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster was not found");
         }
-        if (kubernetesCluster.getClusterType() == KubernetesCluster.ClusterType.ExternalManaged) {
+        if (!kubernetesClusterService.isCommandSupported(kubernetesCluster, getActualCommandName())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     String.format("Start kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }

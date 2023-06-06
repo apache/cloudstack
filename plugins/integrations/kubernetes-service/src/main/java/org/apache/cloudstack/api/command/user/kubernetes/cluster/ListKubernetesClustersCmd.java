@@ -61,7 +61,8 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
             " (a substring match is made against the parameter value, data for all matching Kubernetes clusters will be returned)")
     private String name;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, since = "4.19.0",
+            description = "type of the cluster: CloudManaged, ExternalManaged")
     private String clusterType;
 
     /////////////////////////////////////////////////////
