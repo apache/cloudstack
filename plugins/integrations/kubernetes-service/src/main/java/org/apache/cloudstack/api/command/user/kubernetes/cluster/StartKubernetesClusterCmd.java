@@ -36,7 +36,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "startKubernetesCluster", description = "Starts a stopped Kubernetes cluster",
+@APICommand(name = "startKubernetesCluster", description = "Starts a stopped CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},

@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import java.util.List;
 
 @APICommand(name = "removeVirtualMachinesFromKubernetesCluster",
-        description = "Remove VMs from a kubernetes cluster",
+        description = "Remove VMs from an ExternalManaged kubernetes cluster. Not applicable for CloudManaged kubernetes clusters.",
         responseObject = SuccessResponse.class,
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})

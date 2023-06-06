@@ -35,7 +35,7 @@ import javax.inject.Inject;
 import java.util.List;
 
 @APICommand(name = "addVirtualMachinesToKubernetesCluster",
-        description = "Add VMs to a kubernetes cluster",
+        description = "Add VMs to an ExternalManaged kubernetes cluster. Not applicable for CloudManaged kubernetes clusters.",
         responseObject = SuccessResponse.class,
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
