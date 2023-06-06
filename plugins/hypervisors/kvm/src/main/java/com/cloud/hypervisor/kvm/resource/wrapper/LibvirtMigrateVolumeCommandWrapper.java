@@ -126,6 +126,11 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             String diskdef = generateDestinationDiskXML(dm, srcVolumeId, diskFilePath);
             destDiskLabel = generateDestinationDiskLabel(diskdef);
 
+            if (destVolumeObjectTO.getPassphrase() != null) {
+                libvirtComputingResource.createLibvirtVolumeSecret(conn, srcVolumeObjectTO.getPath(), srcVolumeObjectTO.getPassphrase());
+                libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
+            }
+
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
             TypedParameter[] parameters = new TypedParameter[1];
             parameters[0] = parameter;
