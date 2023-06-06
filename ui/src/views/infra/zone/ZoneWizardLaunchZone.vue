@@ -1218,8 +1218,6 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      console.log('cluster name recorded: ' + this.prefillContent?.clusterName)
-      console.log('are we in an edge zone: ' + this.isEdgeZone)
       let clusterName = this.prefillContent?.clusterName || null
       if (this.isEdgeZone) {
         clusterName = 'Cluster-' + this.stepData.zoneReturned.name
@@ -2053,7 +2051,6 @@ export default {
       })
     },
     addCluster (args) {
-      console.log(args)
       return new Promise((resolve, reject) => {
         let message = ''
 
