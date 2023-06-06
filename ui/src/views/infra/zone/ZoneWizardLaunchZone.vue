@@ -1220,7 +1220,10 @@ export default {
       params.podId = this.stepData.podReturned.id
       console.log('cluster name recorded: ' + this.prefillContent?.clusterName)
       console.log('are we in an edge zone: ' + this.isEdgeZone)
-      let clusterName = this.prefillContent?.clusterName || this.isEdgeZone ? 'Cluster-' + this.stepData.zoneReturned.name : null
+      let clusterName = this.prefillContent?.clusterName || null
+      if (this.isEdgeZone) {
+        clusterName = 'Cluster-' + this.stepData.zoneReturned.name
+      }
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
