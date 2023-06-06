@@ -319,8 +319,9 @@ export default {
       this.resetForm()
       this.isEdit = true
       Object.assign(this.form, schedule)
-      this.form.startDate = moment(schedule.startdate).tz(schedule.timezone)
-      this.form.endDate = schedule.enddate ? moment(schedule.enddate).tz(schedule.timezone) : ''
+      // Some weird issue when we directly pass in the moment with tz object
+      this.form.startDate = moment(moment(schedule.startdate).tz(schedule.timezone).format(this.pattern))
+      this.form.endDate = schedule.enddate ? moment(moment(schedule.enddate).tz(schedule.timezone).format(this.pattern)) : ''
       this.showAddModal()
     },
     showAddModal () {
