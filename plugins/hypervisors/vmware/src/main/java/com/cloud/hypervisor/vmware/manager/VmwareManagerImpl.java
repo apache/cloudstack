@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
@@ -1205,11 +1206,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 throw new ResourceInUseException("This DC is being managed by other CloudStack deployment. Cannot add this DC to zone.");
             }
 
-            // Add DC to database into vmware_data_center table
-            vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
-            vmwareDc = vmwareDcDao.persist(vmwareDc);
+            vmwareDc = createOrUpdateDc(guid, vmwareDcName, vCenterHost, userName, password);
 
-            // Map zone with vmware datacenter
+                // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
             vmwareDcZoneMap = vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
@@ -1235,6 +1234,26 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             context = null;
         }
         importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
+        return vmwareDc;
+    }
+
+    VmwareDatacenterVO createOrUpdateDc(String guid, String name, String host, String user, String password) {
+        VmwareDatacenterVO vmwareDc = new VmwareDatacenterVO(guid, name, host, user, password);
+        // Add DC to database into vmware_data_center table
+        try {
+            vmwareDc = vmwareDcDao.persist(vmwareDc);
+        } catch (EntityExistsException e) {
+            // if that fails just get the record as is
+            vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(guid);
+            // we could now update:
+//            vmwareDc.setPassword(password);
+//            vmwareDc.setUser(user);
+//            vmwareDc.setVmwareDatacenterName(name);
+//            vmwareDc.setVcenterHost(host);
+//            vmwareDcDao.update(vmwareDc.getId(), vmwareDc);
+            // but let's assume user error for now
+        }
+
         return vmwareDc;
     }
 
