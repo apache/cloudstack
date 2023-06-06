@@ -38,7 +38,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -1020,13 +1019,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private void destroyLocalStoragePoolVolumes(long poolId) {
         List<VolumeVO> volumes = volumeDao.findByPoolId(poolId);
         for (VolumeVO volume : volumes) {
-            if (volume.getState() != Volume.State.Destroy) {
-                volume.setState(Volume.State.Destroy);
-                volume.setPoolId(null);
-                volume.setInstanceId(null);
-                volumeDao.update(volume.getId(), volume);
-                volumeDao.remove(volume.getId());
-            }
+            volumeDao.updateAndRemoveVolume(volume);
         }
     }
 
