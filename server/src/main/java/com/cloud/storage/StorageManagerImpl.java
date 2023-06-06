@@ -1484,7 +1484,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (vm == null) {
             return false;
         }
-        List<VolumeVO> vmUsableVolumes = _volumeDao.findUsableVolumesForInstance(vmId);
+        List<VolumeVO> vmUsableVolumes = volumeDao.findUsableVolumesForInstance(vmId);
         for (VolumeVO vol : vmUsableVolumes) {
             if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
                 s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
