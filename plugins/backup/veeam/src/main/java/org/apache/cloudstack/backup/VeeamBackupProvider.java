@@ -322,6 +322,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setExternalId(restorePoint.getId());
                         backup.setType(restorePoint.getType());
                         backup.setDate(restorePoint.getCreated());
+                        backup.setBackupVolumes(createVolumeInfoFromVolumes(restorePoint.getPaths()));
                         backup.setStatus(Backup.Status.BackedUp);
                         if (metric != null) {
                             backup.setSize(metric.getBackupSize());
