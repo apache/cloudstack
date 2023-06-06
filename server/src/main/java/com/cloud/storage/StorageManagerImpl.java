@@ -1334,7 +1334,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                  continue;
                              }
                         }
-
+                        if (isVolumeSuspectedDestroyDuplicateOfVmVolume(vol)) {
+                            s_logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
+                            continue;
+                        }
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
                             // system, but not necessary.
@@ -1464,6 +1467,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } finally {
             scanLock.releaseRef();
         }
+    }
+
+    protected boolean isVolumeSuspectedDestroyDuplicateOfVmVolume(VolumeVO gcVolume) {
+        if (gcVolume.getPath() == null) {
+            return false;
+        }
+        if (gcVolume.getPoolId() == null) {
+            return false;
+        }
+        Long vmId = gcVolume.getInstanceId();
+        if (vmId == null) {
+            return false;
+        }
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return false;
+        }
+        List<VolumeVO> vmUsableVolumes = _volumeDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol : vmUsableVolumes) {
+            if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
+                s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
