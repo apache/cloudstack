@@ -88,6 +88,13 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <a-form-item name="considerlasthost" ref="considerlasthost">
+            <template #label>
+              <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
+            </template>
+            <a-switch v-model:checked="form.considerlasthost" />
+          </a-form-item>
         </div>
 
         <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
@@ -95,13 +102,6 @@
             <tooltip-label :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
           </template>
           <a-switch v-model:checked="form.bootintosetup" />
-        </a-form-item>
-
-        <a-form-item name="considerlasthost" ref="considerlasthost">
-          <template #label>
-            <tooltip-label :title="$t('label.considerlasthost')" :tooltip="apiParams.considerlasthost.description"/>
-          </template>
-          <a-switch v-model:checked="form.considerlasthost" />
         </a-form-item>
 
         <div :span="24" class="action-button">
