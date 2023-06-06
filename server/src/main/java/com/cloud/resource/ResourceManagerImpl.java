@@ -38,6 +38,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -294,6 +297,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private VolumeDao volumeDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -979,6 +984,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     final Long poolId = pool.getPoolId();
                     final StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
                     if (storagePool.isLocal() && isForceDeleteStorage) {
+                        destroyLocalStoragePoolVolumes(poolId);
                         storagePool.setUuid(null);
                         storagePool.setClusterId(null);
                         _storagePoolDao.update(poolId, storagePool);
@@ -1009,6 +1015,19 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return true;
+    }
+
+    private void destroyLocalStoragePoolVolumes(long poolId) {
+        List<VolumeVO> volumes = volumeDao.findByPoolId(poolId);
+        for (VolumeVO volume : volumes) {
+            if (volume.getState() != Volume.State.Destroy) {
+                volume.setState(Volume.State.Destroy);
+                volume.setPoolId(null);
+                volume.setInstanceId(null);
+                volumeDao.update(volume.getId(), volume);
+                volumeDao.remove(volume.getId());
+            }
+        }
     }
 
     /**
