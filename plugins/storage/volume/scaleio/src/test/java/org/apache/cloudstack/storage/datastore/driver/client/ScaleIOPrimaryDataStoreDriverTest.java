@@ -186,7 +186,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
-        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L);
+        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
@@ -231,7 +231,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
-        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L);
+        doReturn(createAnswer).when(scaleIOPrimaryDataStoreDriver).createVolume(destData, 2L, true);
         when(dataTO.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         doReturn(true).when(scaleIOPrimaryDataStoreDriver)
                 .grantAccess(any(), any(), any());
