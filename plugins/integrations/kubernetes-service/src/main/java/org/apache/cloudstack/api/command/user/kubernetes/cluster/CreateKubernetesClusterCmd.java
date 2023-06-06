@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -68,7 +69,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name for the Kubernetes cluster")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true, description = "description for the Kubernetes cluster")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "description for the Kubernetes cluster")
     private String description;
 
     @ACL(accessType = AccessType.UseEntry)
@@ -155,7 +156,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     }
 
     public String getDisplayName() {
-        return description;
+        return StringUtils.firstNonEmpty(description, name);
     }
 
     public Long getDomainId() {

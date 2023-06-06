@@ -89,6 +89,25 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item v-if="accountVisible" name="account" ref="account">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
+            <a-select
+             v-model:value="form.account"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="accountLoading"
+              :placeholder="apiParams.account.description"
+              @change="val => { handleAccountChange(accounts[val]) }">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -98,12 +117,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -164,14 +183,6 @@
               v-model:value="form.isolatedpvlan"
               :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="name">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-input
-              v-model:value="form.account"
-              :placeholder="apiParams.account.description"/>
-          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -227,13 +238,16 @@ export default {
       domains: [],
       domainLoading: false,
       selectedDomain: {},
+      accountVisible: isAdminOrDomainAdmin(),
+      accounts: [],
+      accountLoading: false,
+      selectedAccount: {},
       zones: [],
       zoneLoading: false,
       selectedZone: {},
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {},
-      accountVisible: isAdminOrDomainAdmin(),
       isolatePvlanType: 'none'
     }
   },
@@ -336,7 +350,11 @@ export default {
       this.accountVisible = domain.id !== '-1'
       if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
+        this.fetchAccounts()
       }
+    },
+    handleAccountChange (account) {
+      this.selectedAccount = account
     },
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
@@ -390,6 +408,31 @@ export default {
     handleNetworkOfferingChange (networkOffering) {
       this.selectedNetworkOffering = networkOffering
     },
+    fetchAccounts () {
+      this.accountLoading = true
+      var params = {}
+      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
+        params.domainid = this.selectedDomain.id
+      }
+      this.accounts = [
+        {
+          id: '-1',
+          name: ' '
+        }
+      ]
+      this.selectedAccount = {}
+      api('listAccounts', params).then(json => {
+        const listAccounts = json.listaccountsresponse.account || []
+        this.accounts = this.accounts.concat(listAccounts)
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.accountLoading = false
+        if (this.arrayHasItems(this.accounts)) {
+          this.form.account = null
+        }
+      })
+    },
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
@@ -410,8 +453,8 @@ export default {
         }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account')) {
-            params.account = values.account
+          if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
+            params.account = this.selectedAccount.name
           }
         }
         if (this.isValidValueForKey(values, 'isolatedpvlantype') && values.isolatedpvlantype !== 'none') {

@@ -53,7 +53,7 @@ jobs:
         run: echo "ACS_VERSION=$(grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 |cut -d'<' -f1)" >> $GITHUB_ENV
 
       - name: Set Docker image TAG
-        run: echo "TAG=$(if [[ "${ACS_VERSION}" =~ .*-SNAPSHOT ]];then echo ${ACS_VERSION}-$(date +'%Y%m%d-%H%M%S');else echo ${ACS_VERSION};fi)" >> $GITHUB_ENV
+        run: echo "TAG=$(if [ "${{ github.ref_type }}" = "tag" ];then echo ${{ github.ref_name }}; elif [[ "${ACS_VERSION}" =~ .*-SNAPSHOT ]];then echo ${ACS_VERSION}-$(date +'%Y%m%d-%H%M%S');else echo ${ACS_VERSION};fi)" >> $GITHUB_ENV
 
       - name: Set Docker image FULL TAG
         run: echo "FULL_TAG=$(if [ "${{ secrets.DOCKER_REGISTRY }}" = "" ];then echo ${DOCKER_REPOSITORY}/cloudstack-simulator:${TAG};else echo ${{ secrets.DOCKER_REGISTRY }}/${DOCKER_REPOSITORY}/cloudstack-simulator:${TAG};fi)" >> $GITHUB_ENV

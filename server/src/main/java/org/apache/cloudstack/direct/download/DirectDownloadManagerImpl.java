@@ -742,7 +742,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             executorService.scheduleWithFixedDelay(
                     new DirectDownloadCertificateUploadBackgroundTask(this, hostDao, dataCenterDao,
                             directDownloadCertificateDao, directDownloadCertificateHostMapDao),
-                    60L, DirectDownloadCertificateUploadInterval.value(), TimeUnit.HOURS);
+                    1L, DirectDownloadCertificateUploadInterval.value(), TimeUnit.HOURS);
         }
         return true;
     }

@@ -27,18 +27,6 @@
       @focus="fetchData"
       showSearch>
 
-      <template #suffixIcon>
-        <a-tooltip placement="bottom">
-          <template #title>
-            <span>{{ $t('label.projects') }}</span>
-          </template>
-          <span class="custom-suffix-icon">
-            <ProjectOutlined v-if="!loading" class="ant-select-suffix" />
-            <LoadingOutlined v-else />
-          </span>
-        </a-tooltip>
-      </template>
-
       <a-select-option
         v-for="(project, index) in projects"
         :key="index"

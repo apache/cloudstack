@@ -21,10 +21,10 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:util="http://www.springframework.org/schema/util"
-       
+
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans.xsd
-                      http://www.springframework.org/schema/aop 
+                      http://www.springframework.org/schema/aop
                       http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd
@@ -129,7 +129,7 @@
 
     <bean id="capacityManagerImpl" class="com.cloud.capacity.CapacityManagerImpl" />
 
-    <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >  
+    <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >
         <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
     </bean>
 
@@ -211,45 +211,45 @@
 
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
-    
+
     <bean id="virtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VirtualNetworkApplianceManagerImpl" />
-        
+
     <bean id="vpcManagerImpl" class="com.cloud.network.vpc.VpcManagerImpl" >
         <property name="vpcElements" value="#{vpcProvidersRegistry.registered}"></property>
     </bean>
-    
+
     <bean id="vpcTxCallable" class="com.cloud.network.vpc.VpcPrivateGatewayTransactionCallable" />
-    
+
     <bean id="vpcVirtualNetworkApplianceManagerImpl"
         class="com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl" />
-    
+
     <bean id="virtualNetworkApplianceFactory"
         class="com.cloud.network.rules.VirtualNetworkApplianceFactory" />
-    
+
     <bean id="topologyContext" class="org.apache.cloudstack.network.topology.NetworkTopologyContext" init-method="init" />
-    
+
     <bean id="basicNetworkTopology" class="org.apache.cloudstack.network.topology.BasicNetworkTopology" />
     <bean id="advancedNetworkTopology" class="org.apache.cloudstack.network.topology.AdvancedNetworkTopology" />
-    
+
     <bean id="basicNetworkVisitor" class="org.apache.cloudstack.network.topology.BasicNetworkVisitor" />
     <bean id="advancedNetworkVisitor" class="org.apache.cloudstack.network.topology.AdvancedNetworkVisitor" />
-    
+
     <bean id="commandSetupHelper"
         class="com.cloud.network.router.CommandSetupHelper" />
-    
+
     <bean id="routerControlHelper"
         class="com.cloud.network.router.RouterControlHelper" />
-        
+
     <bean id="networkHelper"
         class="com.cloud.network.router.NetworkHelperImpl" />
-        
+
     <bean id="vpcNetworkHelper"
         class="com.cloud.network.router.VpcNetworkHelperImpl" />
-        
+
     <bean id="nicProfileHelper"
         class="com.cloud.network.router.NicProfileHelperImpl" />
-        
+
     <bean id="routerDeploymentDefinitionBuilder"
         class="org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder" />
 
@@ -257,6 +257,9 @@
         <property name="name" value="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="shutdownManager" class="org.apache.cloudstack.shutdown.ShutdownManagerImpl" >
+        <property name="name" value="shutdownManager" />
+    </bean>
 
     <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
 
@@ -265,14 +268,14 @@
     <bean id="domainManagerImpl" class="com.cloud.user.DomainManagerImpl" />
 
     <bean id="downloadMonitorImpl" class="com.cloud.storage.download.DownloadMonitorImpl" />
-  
+
     <bean id="lBHealthCheckManagerImpl" class="com.cloud.network.lb.LBHealthCheckManagerImpl" />
 
     <bean id="volumeApiServiceImpl" class="com.cloud.storage.VolumeApiServiceImpl">
         <property name="storagePoolAllocators"
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
-    
+
     <bean id="ApplicationLoadBalancerService" class="org.apache.cloudstack.network.lb.ApplicationLoadBalancerManagerImpl" />
 
     <bean id="vMSnapshotManagerImpl" class="com.cloud.vm.snapshot.VMSnapshotManagerImpl" />
