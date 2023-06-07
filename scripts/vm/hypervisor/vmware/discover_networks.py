@@ -16,12 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyVim.connect import SmartConnect, SmartConnectNoSSL, Disconnect
+from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 import atexit
 import sys
 import argparse
 import json
+import ssl
 
 isDebugLogs = False
 hostClusterNameDict = {}
@@ -252,16 +253,16 @@ def main():
                                    'user %s: ' % (args.host, args.user))
     if args.debug:
         isDebugLogs = True
-    if args.disable_ssl_verification:
-        serviceInstance = SmartConnectNoSSL(host=args.host,
-                               user=args.user,
-                               pwd=password,
-                               port=int(args.port))
-    else:
-        serviceInstance = SmartConnect(host=args.host,
-                          user=args.user,
-                          pwd=password,
-                          port=int(args.port))
+
+    context = None
+    if args.disable_ssl_verification and hasattr(ssl, '_create_unverified_context'):
+        context = ssl._create_unverified_context()
+
+    serviceInstance = SmartConnect(host=args.host,
+                                   user=args.user,
+                                   pwd=password,
+                                   port=int(args.port),
+                                   sslContext=context)
 
     atexit.register(Disconnect, serviceInstance)
     content = serviceInstance.RetrieveContent()
