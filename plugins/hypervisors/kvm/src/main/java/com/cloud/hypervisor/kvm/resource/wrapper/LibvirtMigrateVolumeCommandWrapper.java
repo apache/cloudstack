@@ -174,7 +174,9 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 if (blockJobInfo.cur == blockJobInfo.end) {
                     LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
                     dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
-                    libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                    if (StringUtils.isNotEmpty(srcSecretUUID)) {
+                        libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
+                    }
                     break;
                 }
             } else {
