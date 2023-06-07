@@ -178,17 +178,17 @@ test_data = {
         "displaytext": "Disk offering",
         "disksize": 1
     },
-    'resized_disk_offering': {
+    "resized_disk_offering": {
         "displaytext": "Resized",
         "name": "Resized",
         "disksize": 3
     },
-    'disk_offering_shared_5GB': {
+    "disk_offering_shared_5GB": {
         "displaytext": "disk_offering_shared_5GB",
         "name": "disk_offering_shared_5GB",
         "disksize": 5
     },
-    'disk_offering_shared_15GB': {
+    "disk_offering_shared_15GB": {
         "displaytext": "disk_offering_shared_5GB",
         "name": "disk_offering_shared_5GB",
         "disksize": 15
@@ -218,7 +218,7 @@ test_data = {
         "guestiptype": "L2",
         "supportedservices": "",
         "traffictype": "GUEST",
-        "availability": "Optional'
+        "availability": "Optional"
     },
     "network_offering": {
         "name": "Test Network offering",
@@ -302,7 +302,7 @@ test_data = {
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
         "traffictype": "GUEST",
-        "availability": "Optional'",
+        "availability": "Optional",
         "tags": "native",
         "serviceProviderList": {
             "Dhcp": "VirtualRouter",
@@ -322,7 +322,7 @@ test_data = {
         "guestiptype": "L2",
         "traffictype": "GUEST",
         "ispersistent": "True",
-        "specifyVlan": "True'
+        "specifyVlan": "True"
     },
     "network_offering_vlan": {
         "name": "Test Network offering",
@@ -514,7 +514,7 @@ test_data = {
             "PortForwarding": "VpcVirtualRouter",
             "UserData": "VpcVirtualRouter",
             "StaticNat": "VpcVirtualRouter",
-            "NetworkACL": "VpcVirtualRouter'
+            "NetworkACL": "VpcVirtualRouter"
         }
     },
     "vpc": {
@@ -619,7 +619,7 @@ test_data = {
         "displaytext": "Network off-RVR services",
         "guestiptype": "Isolated",
         "supportedservices":
-            'Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat",
+            "Vpn,Dhcp,Dns,SourceNat,PortForwarding,Firewall,Lb,UserData,StaticNat",
         "traffictype": "GUEST",
         "ispersistent": "True",
         "availability": "Optional",
@@ -670,8 +670,8 @@ test_data = {
         "name": "Reduced Network for VPC",
         "displaytext": "Reduced Network for VPC",
         "guestiptype": "Isolated",
-        "supportedservices": "Dhcp,StaticNat,SourceNat,NetworkACL,UserData,'
-                             'Dns",
+        "supportedservices": "Dhcp,StaticNat,SourceNat,NetworkACL,UserData,"
+                             "Dns",
         "traffictype": "GUEST",
         "availability": "Optional",
         "tags": "native",
@@ -758,7 +758,7 @@ test_data = {
         "displaytext": "SharedSP",
         "guestiptype": "Isolated",
         "supportedservices":
-            'Dhcp,Dns,SourceNat,Lb,StaticNat",
+            "Dhcp,Dns,SourceNat,Lb,StaticNat",
         "traffictype": "GUEST",
         "availability": "Optional",
         "serviceProviderList": {
@@ -766,7 +766,7 @@ test_data = {
             "Dns": "VirtualRouter",
             "SourceNat": "VirtualRouter",
             "Lb": "Netscaler",
-            "StaticNat": "VirtualRouter'
+            "StaticNat": "VirtualRouter"
         }
     },
     "nw_off_ncc_DedicatedSP": {
@@ -774,7 +774,7 @@ test_data = {
         "displaytext": "DedicatedSP",
         "guestiptype": "Isolated",
         "supportedservices":
-            'Dhcp,Dns,SourceNat,Lb,StaticNat",
+            "Dhcp,Dns,SourceNat,Lb,StaticNat",
         "traffictype": "GUEST",
         "availability": "Optional",
         "serviceProviderList": {
@@ -782,7 +782,7 @@ test_data = {
             "Dns": "VirtualRouter",
             "SourceNat": "VirtualRouter",
             "Lb": "Netscaler",
-            "StaticNat": "VirtualRouter'
+            "StaticNat": "VirtualRouter"
         }
     },
     "NCC": {
@@ -792,7 +792,7 @@ test_data = {
         "NSIP": "10.102.195.210"
     },
     "NSDedicated": {
-        "NSIP": "10.102.195.212'
+        "NSIP": "10.102.195.212"
     },
     "servicepackage_shared": {
         "name": "SharedSP"
@@ -806,7 +806,7 @@ test_data = {
         "displaytext": "Netscaler",
         "guestiptype": "Isolated",
         "supportedservices":
-            'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
+            "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat",
         "traffictype": "GUEST",
         "ispersistent": "True",
         "availability": "Optional",
@@ -880,14 +880,14 @@ test_data = {
         "alg": "roundrobin",
         "privateport": 22,
         "publicport": 2222,
-        "protocol": "TCP'
+        "protocol": "TCP"
     },
     "vpclbrule": {
         "name": "SSH",
         "alg": "roundrobin",
         "privateport": 22,
         "publicport": 22,
-        "protocol": "TCP'
+        "protocol": "TCP"
     },
     "internal_lbrule": {
         "name": "SSH",
@@ -1275,8 +1275,8 @@ test_data = {
     "volume_offerings": {
         0: {"diskname": "TestDiskServ"}
     },
-    "diskdevice": ['/dev/vdc", '/dev/vdb", '/dev/hdb", '/dev/hdc",
-                   '/dev/xvdd", '/dev/cdrom", '/dev/sr0", '/dev/cdrom1'],
+    "diskdevice": ["/dev/vdc", "/dev/vdb", "/dev/hdb", "/dev/hdc",
+                   "/dev/xvdd", "/dev/cdrom", "/dev/sr0", "/dev/cdrom1"],
 
     # test_vpc_vpn.py
     "vpn_user": {
@@ -1511,8 +1511,8 @@ test_data = {
                     }
 
             },
-        "diskdevice": ['/dev/vdc", '/dev/vdb", '/dev/hdb", '/dev/hdc", '/dev/xvdd", '/dev/cdrom", '/dev/sr0",
-                       '/dev/cdrom1'],
+        "diskdevice": ["/dev/vdc", "/dev/vdb", "/dev/hdb", "/dev/hdc", "/dev/xvdd", "/dev/cdrom", "/dev/sr0",
+                       "/dev/cdrom1"],
         # Disk device where ISO is attached to instance
         "mount_dir": "/mnt/tmp",
         "sleep": 180,
@@ -1900,7 +1900,7 @@ test_data = {
             "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.qcow2",
             "checksum": "02de0576dd3a61ab59c03fd795fc86ac"
         },
-        'browser_resized_disk_offering': {
+        "browser_resized_disk_offering": {
             "displaytext": "Resizeddisk",
             "name": "Resizeddisk",
             "disksize": 3
@@ -2015,7 +2015,7 @@ test_data = {
                 "ispublic": False,
                 "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
                 "ostype": "Other Linux (64-bit)",
-                "mode": "HTTP_DOWNLOAD'
+                "mode": "HTTP_DOWNLOAD"
             },
         "setHostConfigurationForIngressRule": False,
         "restartManagementServerThroughTestCase": False,
@@ -2045,7 +2045,7 @@ test_data = {
                 "url": ""
             },
             "ostype": "CentOS 5.3 (64-bit)",
-            "mode": "HTTP_DOWNLOAD'
+            "mode": "HTTP_DOWNLOAD"
         }
     },
     "vpc_vpn": {
@@ -2082,7 +2082,7 @@ test_data = {
                 "PortForwarding": "VpcVirtualRouter",
                 "UserData": "VpcVirtualRouter",
                 "StaticNat": "VpcVirtualRouter",
-                "NetworkACL": "VpcVirtualRouter'
+                "NetworkACL": "VpcVirtualRouter"
             }
         },
         "network_offering_internal_lb": {
@@ -2096,7 +2096,7 @@ test_data = {
             "serviceCapabilityList": {
                 "Lb": {
                     "SupportedLbIsolation": "dedicated",
-                    "lbSchemes": "internal'
+                    "lbSchemes": "internal"
                 }
             },
             "serviceProviderList": {
@@ -2107,7 +2107,7 @@ test_data = {
                 "UserData": "VpcVirtualRouter",
                 "StaticNat": "VpcVirtualRouter",
                 "NetworkACL": "VpcVirtualRouter",
-                "Lb": "InternalLbVm'
+                "Lb": "InternalLbVm"
             },
             "egress_policy": "true"
         },
@@ -2129,28 +2129,28 @@ test_data = {
                 "Lb": "VpcVirtualRouter",
                 "UserData": "VpcVirtualRouter",
                 "StaticNat": "VpcVirtualRouter",
-                "NetworkACL": "VpcVirtualRouter'
+                "NetworkACL": "VpcVirtualRouter"
             },
             "serviceCapabilityList": {
                 "SourceNat": {
-                    "RedundantRouter": "true'
+                    "RedundantRouter": "true"
                 }
             }
         },
         "vpc": {
             "name": "TestVPC",
             "displaytext": "TestVPC",
-            "cidr": "10.254.0.0/16'
+            "cidr": "10.254.0.0/16"
         },
         "vpc1": {
             "name": "TestVPC",
             "displaytext": "VPC1",
-            "cidr": "10.254.0.0/16'
+            "cidr": "10.254.0.0/16"
         },
         "vpc2": {
             "name": "TestVPC",
             "displaytext": "VPC2",
-            "cidr": "10.253.0.0/16'
+            "cidr": "10.253.0.0/16"
         },
         "network_1": {
             "name": "Test Network",
