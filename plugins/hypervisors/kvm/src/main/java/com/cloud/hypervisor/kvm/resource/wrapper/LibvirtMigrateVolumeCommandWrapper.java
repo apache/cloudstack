@@ -123,13 +123,15 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getPoolType(), spool.getUuid());
             pool.connectPhysicalDisk(destVolumeObjectTO.getPath(), null);
 
-            String diskdef = generateDestinationDiskXML(dm, srcVolumeId, diskFilePath);
-            destDiskLabel = generateDestinationDiskLabel(diskdef);
-
+            String srcSecretUUID = null;
+            String destSecretUUID = null;
             if (destVolumeObjectTO.getPassphrase() != null) {
-                libvirtComputingResource.createLibvirtVolumeSecret(conn, srcVolumeObjectTO.getPath(), srcVolumeObjectTO.getPassphrase());
-                libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
+                srcSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, srcVolumeObjectTO.getPath(), srcVolumeObjectTO.getPassphrase());
+                destSecretUUID = libvirtComputingResource.createLibvirtVolumeSecret(conn, destVolumeObjectTO.getPath(), destVolumeObjectTO.getPassphrase());
             }
+
+            String diskdef = generateDestinationDiskXML(dm, srcVolumeId, diskFilePath, destSecretUUID);
+            destDiskLabel = generateDestinationDiskLabel(diskdef);
 
             TypedUlongParameter parameter = new TypedUlongParameter("bandwidth", 0);
             TypedParameter[] parameters = new TypedParameter[1];
@@ -138,7 +140,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
             dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.REUSE_EXT);
             LOGGER.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
 
-            return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath);
+            return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
 
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
@@ -162,7 +164,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         }
     }
 
-    private MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath) throws LibvirtException {
+    private MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath, LibvirtComputingResource libvirtComputingResource, Connect conn, String srcSecretUUID) throws LibvirtException {
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
         int waitTimeInSec = command.getWait();
         while (waitTimeInSec > 0) {
@@ -172,6 +174,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 if (blockJobInfo.cur == blockJobInfo.end) {
                     LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
                     dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
+                    libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
                     break;
                 }
             } else {
@@ -214,7 +217,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         return diskLabel;
     }
 
-    private String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+    private String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
         final String domXml = dm.getXMLDesc(0);
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -231,6 +234,9 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
                 String diskDev = getAttrValue("source", "dev", disk);
                 if (StringUtils.isNotEmpty(diskDev) && diskDev.contains(srcVolumeId)) {
                     setAttrValue("source", "dev", diskFilePath, disk);
+                    if (StringUtils.isNotEmpty(destSecretUUID)) {
+                        setAttrValue("secret", "uuid", destSecretUUID, disk);
+                    }
                     StringWriter diskSection = new StringWriter();
                     Transformer xformer = TransformerFactory.newInstance().newTransformer();
                     xformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
