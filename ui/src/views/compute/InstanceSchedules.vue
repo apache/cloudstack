@@ -302,6 +302,9 @@ export default {
         id: schedule.id,
         virtualmachineid: this.virtualmachine.id
       }).then(() => {
+        if (this.totalCount - 1 === this.pageSize * (this.page - 1)) {
+          this.page = this.page - 1 > 0 ? this.page - 1 : 1
+        }
         const message = `${this.$t('label.removing')} ${schedule.description}`
         this.$message.success(message)
       }).catch(error => {
