@@ -49,6 +49,15 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
+    "publicip6range": {
+        "ip6gateway": "fd17:ac56:1234:2000::1",
+        "ip6cidr": "fd17:ac56:1234:2000::/64",
+        "vlan": 301,
+        "forvirtualnetwork": "true"
+    },
+    "guestip6prefix": {
+        "prefix": "fd17:ac56:1234:1000::/52"
+    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",
@@ -94,14 +103,14 @@ test_data = {
         "displaytext": "Tiny Instance",
         "cpunumber": 1,
         "cpuspeed": 256,  # in MHz
-        "memory": 256,  # In MBs
+        "memory": 256  # In MBs
     },
     "service_offering_multiple_cores": {
         "name": "Tiny Instance",
         "displaytext": "Tiny Instance",
         "cpunumber": 4,
         "cpuspeed": 100,    # in MHz
-        "memory": 128,    # In MBs
+        "memory": 128    # In MBs
     },
     "service_offerings": {
         "tiny": {
@@ -1237,9 +1246,10 @@ test_data = {
             "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
         "name": "Primary iSCSI"
     },
-    "volume": {"diskname": "Test Volume",
-               "size": 1
-               },
+    "volume": {
+        "diskname": "Test Volume",
+        "size": 1
+    },
     "volume_write_path": {
         "diskname": "APP Data Volume",
         "size": 1,   # in GBs
