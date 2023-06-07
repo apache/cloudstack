@@ -1333,7 +1333,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                              }
                         }
                         if (isVolumeSuspectedDestroyDuplicateOfVmVolume(vol)) {
-                            s_logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
+                            logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
                             continue;
                         }
                         try {
@@ -1485,7 +1485,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<VolumeVO> vmUsableVolumes = volumeDao.findUsableVolumesForInstance(vmId);
         for (VolumeVO vol : vmUsableVolumes) {
             if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
-                s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
+                logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
                 return true;
             }
         }
