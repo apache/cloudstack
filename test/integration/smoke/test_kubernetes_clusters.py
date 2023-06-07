@@ -48,7 +48,7 @@ from marvin.lib.base import (Template,
                              VpcOffering,
                              VPC,
                              NetworkACLList,
-                             NetworkACL)
+                             NetworkACL,
                              VirtualMachine)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
@@ -708,8 +708,6 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.default_network:
             createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
-        if not clusterResponse:
-            self.cleanup.append(clusterResponse)
         return clusterResponse
 
     def startKubernetesCluster(self, cluster_id):
