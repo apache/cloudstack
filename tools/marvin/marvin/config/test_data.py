@@ -926,6 +926,14 @@ test_data = {
         "protocol": "TCP",
         "cidrlist": "0.0.0.0/0"
     },
+    "dns_rule": {
+        "privateport": 53,
+        "publicport": 53,
+        "startport": 53,
+        "endport": 53,
+        "protocol": "UDP",
+        "cidrlist": "0.0.0.0/0"
+    },
     "icmprule": {
         "icmptype": -1,
         "icmpcode": -1,
@@ -1200,9 +1208,12 @@ test_data = {
         "cidrlist": "0.0.0.0/0"
     },
     "vpncustomergateway": {
-        "esppolicy": "3des-md5;modp1536",
-        "ikepolicy": "3des-md5;modp1536",
-        "ipsecpsk": "ipsecpsk"
+        "ipsecpsk": "secreatKey",
+        "ikepolicy": "aes128-sha1",
+        "ikelifetime": "86400",
+        "esppolicy": "aes128-sha1",
+        "epslifetime": "3600",
+        "dpd": "false"
     },
     "vlan_ip_range": {
         "startip": "",
@@ -1242,8 +1253,7 @@ test_data = {
         "name": "Primary XEN 2"
     },
     "iscsi": {
-        "url":
-            "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
+        "url": "iscsi://192.168.100.21/iqn.2012-01.localdomain.clo-cstack-cos6:iser/1",
         "name": "Primary iSCSI"
     },
     "volume": {
@@ -1293,26 +1303,26 @@ test_data = {
         "username": "test",
         "password": "password"
     },
-    "vpc": {
+    "vpntest_vpc": {
         "name": "vpc_vpn",
         "displaytext": "vpc-vpn",
-        "cidr": "10.1.1.0/24"
+        "cidr": "10.254.1.0/24"
     },
     "ntwk": {
         "name": "tier1",
         "displaytext": "vpc-tier1",
-        "gateway": "10.1.1.1",
+        "gateway": "10.254.1.1",
         "netmask": "255.255.255.192"
     },
     "vpc2": {
         "name": "vpc2_vpn",
         "displaytext": "vpc2-vpn",
-        "cidr": "10.2.1.0/24"
+        "cidr": "10.253.1.0/24"
     },
     "ntwk2": {
         "name": "tier2",
         "displaytext": "vpc-tier2",
-        "gateway": "10.2.1.1",
+        "gateway": "10.253.1.1",
         "netmask": "255.255.255.192"
     },
     "privateport": 22,
