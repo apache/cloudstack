@@ -53,7 +53,8 @@ import com.cloud.vm.VirtualMachine;
 
 
 @APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 

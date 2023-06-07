@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -37,7 +38,8 @@ import java.util.Collections;
 import java.util.List;
 
 @APICommand(name = "deleteVMSchedule", description = "Delete VM Schedule.", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteVMScheduleCmd extends BaseCmd {
     @Inject
     VMScheduleManager vmScheduleManager;

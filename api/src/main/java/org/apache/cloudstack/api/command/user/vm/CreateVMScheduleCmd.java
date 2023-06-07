@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,7 +33,8 @@ import javax.inject.Inject;
 import java.util.Date;
 
 @APICommand(name = "createVMSchedule", description = "Create VM Schedule", responseObject = VMScheduleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMScheduleCmd extends BaseCmd {
 
     @Inject
