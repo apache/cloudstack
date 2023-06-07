@@ -1648,7 +1648,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private boolean canAccessVolumeStore(VolumeVO volume, DataStoreRole role) {
         if (volume == null) {
-            throw new CloudRuntimeException("Cannot find the volume");
+            throw new CloudRuntimeException("No volume given, cannot check access to volume store");
         }
         InternalIdentity pool = role == DataStoreRole.Primary ?
                 _storagePoolDao.findById(volume.getPoolId()) :
