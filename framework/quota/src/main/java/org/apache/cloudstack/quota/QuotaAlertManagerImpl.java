@@ -212,18 +212,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 userNames = userNames.substring(0, userNames.length() - 1);
             }
 
-            String currencyLocale = _configDao.getValue(QuotaConfig.QuotaCurrencyLocale.key());
             String currencySymbol = ObjectUtils.defaultIfNull(_configDao.getValue(QuotaConfig.QuotaCurrencySymbol.key()), QuotaConfig.QuotaCurrencySymbol.defaultValue());
+            NumberFormat localeFormat = getLocaleFormatIfCurrencyLocaleNotNull();
 
-            NumberFormat localeFormat = null;
-
-            if (currencyLocale != null) {
-                Locale locale = Locale.forLanguageTag(currencyLocale);
-                localeFormat = NumberFormat.getNumberInstance(locale);
-            }
-
-            String balanceStr = String.format("%s %s", currencySymbol, NumbersUtil.getBigDecimalFormattedToNumberFormatIfBothNotNull(balance, localeFormat));
-            String usageStr = String.format("%s %s", currencySymbol, NumbersUtil.getBigDecimalFormattedToNumberFormatIfBothNotNull(usage, localeFormat));
+            String balanceStr = String.format("%s %s", currencySymbol, NumbersUtil.formatBigDecimalAccordingToNumberFormat(balance, localeFormat));
+            String usageStr = String.format("%s %s", currencySymbol, NumbersUtil.formatBigDecimalAccordingToNumberFormat(usage, localeFormat));
 
             final Map<String, String> subjectOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, false);
             final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, true);
@@ -252,6 +245,16 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         } else {
             s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
         }
+    }
+
+    private NumberFormat getLocaleFormatIfCurrencyLocaleNotNull() {
+        String currencyLocale = _configDao.getValue(QuotaConfig.QuotaCurrencyLocale.key());
+        NumberFormat localeFormat = null;
+        if (currencyLocale != null) {
+            Locale locale = Locale.forLanguageTag(currencyLocale);
+            localeFormat = NumberFormat.getNumberInstance(locale);
+        }
+        return localeFormat;
     }
 
     /*

@@ -156,7 +156,7 @@ public class NumbersUtil {
      * <li>value.toString() if the numberFormat is null;</li>
      * <li>the value formatted if both parameters are not null;</li>
      */
-    public static String getBigDecimalFormattedToNumberFormatIfBothNotNull(BigDecimal value, NumberFormat numberFormat) {
+    public static String formatBigDecimalAccordingToNumberFormat(BigDecimal value, NumberFormat numberFormat) {
         if (value == null) {
             return null;
         }
