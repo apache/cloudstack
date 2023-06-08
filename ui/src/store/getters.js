@@ -28,6 +28,7 @@ const getters = {
   apis: state => state.user.apis,
   features: state => state.user.features,
   userInfo: state => state.user.info,
+  latestVersion: state => state.user.latestVersion,
   addRouters: state => state.permission.addRouters,
   multiTab: state => state.app.multiTab,
   listAllProjects: state => state.app.listAllProjects,
