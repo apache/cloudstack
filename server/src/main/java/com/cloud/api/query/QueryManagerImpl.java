@@ -1073,9 +1073,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         if (clusterId != null) {
-            sb.or().op("clusterHostId", sb.entity().getHostId(), Op.IN);
+            sb.and().op("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+            sb.or("clusterHostId", sb.entity().getHostId(), Op.IN);
             sb.or("clusterLastHostId", sb.entity().getLastHostId(), Op.IN);
             sb.cp();
         }
