@@ -199,6 +199,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -935,6 +936,42 @@ public class ApiResponseHelper implements ResponseGenerator {
         return userIpAddresVO != null ? userIpAddresVO.isForSystemVms() : false;
     }
 
+    private void addVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
+        if (ipAddress.getAllocatedToAccountId() != null && ipAddress.getAllocatedToAccountId() == Account.ACCOUNT_ID_SYSTEM) {
+            NicVO nic = ApiDBUtils.findByIp4AddressAndNetworkId(ipAddress.getAddress().toString(), ipAddress.getNetworkId());
+            if (nic != null) {
+                addSystemVmInfoToIpResponse(nic, response);
+            }
+        }
+        if (ipAddress.getAssociatedWithVmId() != null) {
+            addUserVmDetailsInIpResponse(response, ipAddress);
+        }
+    }
+
+    private void addSystemVmInfoToIpResponse(NicVO nic, IPAddressResponse ipResponse) {
+        final boolean isAdmin = Account.Type.ADMIN.equals(CallContext.current().getCallingAccount().getType());
+        if (!isAdmin) {
+            return;
+        }
+        VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
+        if (vm == null) {
+            return;
+        }
+        ipResponse.setVirtualMachineId(vm.getUuid());
+        ipResponse.setVirtualMachineName(vm.getHostName());
+        ipResponse.setVirtualMachineType(vm.getType().toString());
+    }
+
+    private void addUserVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
+        UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+        if (userVm != null) {
+            response.setVirtualMachineId(userVm.getUuid());
+            response.setVirtualMachineName(userVm.getHostName());
+            response.setVirtualMachineType(userVm.getType().toString());
+            response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+        }
+    }
+
     @Override
     public IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddr) {
         VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
@@ -963,18 +1000,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
-        if (ipAddr.getAssociatedWithVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
-            if (vm != null) {
-                ipResponse.setVirtualMachineId(vm.getUuid());
-                ipResponse.setVirtualMachineName(vm.getHostName());
-                if (vm.getDisplayName() != null) {
-                    ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
-                } else {
-                    ipResponse.setVirtualMachineDisplayName(vm.getHostName());
-                }
-            }
-        }
+        addVmDetailsInIpResponse(ipResponse, ipAddr);
         if (ipAddr.getVmIp() != null) {
             ipResponse.setVirtualMachineIp(ipAddr.getVmIp());
         }
@@ -1092,8 +1118,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                         ipResponse.setVirtualMachineDisplayName(vm.getHostName());
                     }
                 }
-            } else if (nic.getVmType() == VirtualMachine.Type.DomainRouter) {
+            } else if (nic.getVmType().isUsedBySystem()) {
                 ipResponse.setIsSystem(true);
+                addSystemVmInfoToIpResponse(nic, ipResponse);
             }
         }
     }

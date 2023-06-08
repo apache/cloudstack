@@ -78,7 +78,7 @@
 
           <template v-if="column.key === 'virtualmachineid'">
             <desktop-outlined v-if="record.virtualmachineid" />
-            <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
+            <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
           </template>
 
           <template v-if="column.key === 'associatednetworkname'">
@@ -441,6 +441,14 @@ export default {
           duration: 0
         })
       })
+    },
+    getVmRouteUsingType (record) {
+      switch (record.virtualmachinetype) {
+        case 'DomainRouter' : return '/router/'
+        case 'ConsoleProxy' :
+        case 'SecondaryStorageVm': return '/systemvm/'
+        default: return '/vm/'
+      }
     },
     async onShowAcquireIp () {
       this.showAcquireIp = true
