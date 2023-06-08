@@ -195,6 +195,7 @@ import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
@@ -1073,6 +1074,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        if (clusterId != null) {
+            sb.or().op("clusterHostId", sb.entity().getHostId(), Op.IN);
+            sb.or("clusterLastHostId", sb.entity().getLastHostId(), Op.IN);
+            sb.cp();
+        }
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -1268,6 +1274,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             if (clusterId != null) {
                 sc.setParameters("clusterId", clusterId);
+                List<HostJoinVO> hosts = _hostJoinDao.findByClusterId((Long)clusterId, Host.Type.Routing);
+                List<Long> hostIds = hosts.stream().map(HostJoinVO::getId).collect(Collectors.toList());
+                sc.setParameters("clusterHostId", hostIds.toArray());
+                sc.setParameters("clusterLastHostId", hostIds.toArray());
             }
 
             if (hostId != null) {

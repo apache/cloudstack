@@ -992,7 +992,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listByHostOrLastHostOrHostPod(List<Long> hostIds, long podId) {
         SearchBuilder<VMInstanceVO> sb = createSearchBuilder();
         sb.or().op("hostId", sb.entity().getHostId(), Op.IN);
-        sb.or("lastHostId", sb.entity().getLastHostId(), Op.EQ);
+        sb.or("lastHostId", sb.entity().getLastHostId(), Op.IN);
         sb.and().op("hostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
         sb.and("lastHostIdNull", sb.entity().getHostId(), SearchCriteria.Op.NULL);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), Op.EQ);
