@@ -24,6 +24,7 @@ import router from '@/router'
 import store from '@/store'
 import { oauthlogin, login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+import { axios } from '../../utils/request'
 
 import {
   ACCESS_TOKEN,
@@ -167,6 +168,9 @@ const user = {
     },
     SET_OAUTH_PROVIDER_USED_TO_LOGIN: (state, provider) => {
       vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
+    },
+    SET_LATEST_VERSION: (state, version) => {
+      state.latestVersion = version
     }
   },
 
@@ -212,6 +216,7 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          commit('SET_LATEST_VERSION', '')
           notification.destroy()
 
           resolve()
@@ -294,6 +299,20 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            if (result.rolename === 'Root Admin') {
+              axios.get(
+                'https://api.github.com/repos/apache/cloudstack/releases'
+              ).then(response => {
+                for (const release of response) {
+                  if (release.tag_name.toLowerCase().includes('rc')) {
+                    continue
+                  } else {
+                    commit('SET_LATEST_VERSION', release.tag_name)
+                    break
+                  }
+                }
+              }).catch(ignored => {})
+            }
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -332,6 +351,42 @@ const user = {
           }).catch(error => {
             reject(error)
           })
+
+          api('listNetworks', { restartrequired: true }).then(response => {
+            if (response.listnetworksresponse.count > 0) {
+              notification.info({
+                message: i18n.global.t('label.restartrequired'),
+                description: i18n.global.t('message.notification.restart.required.network'),
+                duration: 0,
+                onClick: () => {
+                  router.push({ path: '/guestnetwork', query: { restartrequired: true } })
+                },
+                onClose: () => {
+                  let countNotify = store.getters.countNotify
+                  countNotify > 0 ? countNotify-- : countNotify = 0
+                  store.commit('SET_COUNT_NOTIFY', countNotify)
+                }
+              })
+            }
+          }).catch(ignored => {})
+
+          api('listVPCs', { restartrequired: true }).then(response => {
+            if (response.listvpcsresponse.count > 0) {
+              notification.info({
+                message: i18n.global.t('label.restartrequired'),
+                description: i18n.global.t('message.notification.restart.required.vpc'),
+                duration: 0,
+                onClick: () => {
+                  router.push({ path: '/vpc', query: { restartrequired: true } })
+                },
+                onClose: () => {
+                  let countNotify = store.getters.countNotify
+                  countNotify > 0 ? countNotify-- : countNotify = 0
+                  store.commit('SET_COUNT_NOTIFY', countNotify)
+                }
+              })
+            }
+          }).catch(ignored => {})
         }
 
         api('listUsers', { username: Cookies.get('username') }).then(response => {

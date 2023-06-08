@@ -22,6 +22,15 @@
     </div>
     <div class="line" v-if="$store.getters.userInfo.roletype === 'Admin'">
       CloudStack {{ $store.getters.features.cloudstackversion }}
+      <span v-if="$store.getters.features.cloudstackversion && $store.getters.features.cloudstackversion.split('-')[0] !== $store.getters.latestVersion && $store.getters.latestVersion !== ''">
+        <a-divider type="vertical" />
+        <a
+          :href="'https://github.com/apache/cloudstack/releases/tag/' + $store.getters.latestVersion"
+          target="_blank">
+            <info-circle-outlined />
+            {{ $t('label.new.version.available') + ': ' + $store.getters.latestVersion }}
+        </a>
+      </span>
       <a-divider type="vertical" />
       <a href="https://github.com/apache/cloudstack/discussions" target="_blank">
         <github-outlined />
