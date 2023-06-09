@@ -108,8 +108,12 @@ export default {
     this.$store.watch(
       (state, getters) => getters.headerNotices,
       (newValue, oldValue) => {
-        if (oldValue !== newValue && newValue !== undefined) {
-          this.notices = newValue
+        if (newValue !== undefined) {
+          return
+        }
+        const reversedNewValue = newValue.reverse()
+        if (oldValue !== reversedNewValue) {
+          this.notices = reversedNewValue
         }
       }
     )
