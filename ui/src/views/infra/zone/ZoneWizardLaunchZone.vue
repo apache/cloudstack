@@ -837,8 +837,8 @@ export default {
       params.zoneId = this.stepData.zoneReturned.id
       params.name = this.prefillContent?.podName || null
       if (this.isEdgeZone) {
-        params.name =  'Pod-' + this.stepData.zoneReturned.name
-      }      
+        params.name = 'Pod-' + this.stepData.zoneReturned.name
+      }
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
