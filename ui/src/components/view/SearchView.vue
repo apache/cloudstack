@@ -275,7 +275,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type', 'restartrequired'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -357,6 +357,16 @@ export default {
         this.fields[entityTypeIndex].loading = true
         this.fields[entityTypeIndex].opts = this.fetchEntityType()
         this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('restartrequired')) {
+        const restartRequiredIndex = this.fields.findIndex(item => item.name === 'restartrequired')
+        this.fields[restartRequiredIndex].loading = true
+        this.fields[restartRequiredIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[restartRequiredIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
