@@ -284,7 +284,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         revokeAccess(dataObject, host, dataStore);
     }
 
-    private String getConnectedSdc(long poolId, long hostId) {
+    public String getConnectedSdc(long poolId, long hostId) {
         try {
             StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(poolId, hostId);
             if (poolHostVO == null) {
@@ -795,7 +795,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    private Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
+    protected Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
         LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         String value = configDao.getValue(Config.CopyVolumeWait.key());
@@ -869,7 +869,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return answer;
     }
 
-    public void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
+    protected void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {
         // destination volume is already created and volume path is set in database by this time at "CreateObjectAnswer createAnswer = createVolume((VolumeInfo) destData, destStore.getId());"
         final long srcVolumeId = srcData.getId();
         final long destVolumeId = destData.getId();
@@ -1411,7 +1411,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     /**
      * Does any object require encryption support?
      */
-    private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
+    protected boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
             if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
                 return true;

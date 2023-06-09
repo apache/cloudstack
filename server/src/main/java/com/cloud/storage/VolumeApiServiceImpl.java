@@ -1101,8 +1101,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                            +   "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                            +   "For more details please check out the Official Resizing Volumes documentation.");
+                                    +   "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                    +   "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1249,7 +1249,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              */
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
-                     +  "Need to sign off by supplying the shrinkok parameter with value of true.");
+                        +  "Need to sign off by supplying the shrinkok parameter with value of true.");
             }
 
             if (newSize > currentSize) {

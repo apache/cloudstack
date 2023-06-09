@@ -378,6 +378,17 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
+    public void allowVolumeMigrationsForPowerFlexStorage() {
+        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
+        Mockito.doReturn(Storage.StoragePoolType.PowerFlex).when(storagePoolVoMock).getPoolType();
+
+        virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolProvided(storagePoolVoMock, volumeVoMock, Mockito.mock(StoragePoolVO.class));
+
+        Mockito.verify(storagePoolVoMock).isManaged();
+        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getId();
+    }
+
+    @Test
     public void executeManagedStorageChecksWhenTargetStoragePoolProvidedTestCurrentStoragePoolEqualsTargetPool() {
         Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
         // return any storage type except powerflex/scaleio

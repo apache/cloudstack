@@ -54,7 +54,6 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -211,8 +210,6 @@ public class VolumeApiServiceImplTest {
     @Mock
     private ProjectManager projectManagerMock;
 
-    @Mock
-    private StoragePoolDetailsDao storagePoolDetailsDao;
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
@@ -1566,5 +1563,4 @@ public class VolumeApiServiceImplTest {
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Assert.assertFalse(volumeApiServiceImpl.isSendCommandForVmVolumeAttachDetach(host, Mockito.mock(StoragePoolVO.class)));
     }
-
 }

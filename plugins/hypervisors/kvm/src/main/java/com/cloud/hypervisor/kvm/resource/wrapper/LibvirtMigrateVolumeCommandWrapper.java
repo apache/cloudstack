@@ -67,7 +67,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 @ResourceWrapper(handles =  MigrateVolumeCommand.class)
-public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
+public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVolumeCommand, Answer, LibvirtComputingResource> {
     private static final Logger LOGGER = Logger.getLogger(LibvirtMigrateVolumeCommandWrapper.class);
 
     @Override
@@ -85,7 +85,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         return answer;
     }
 
-    private MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    protected MigrateVolumeAnswer migratePowerFlexVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
 
         // Source Details
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
@@ -164,7 +164,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         }
     }
 
-    private MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath, LibvirtComputingResource libvirtComputingResource, Connect conn, String srcSecretUUID) throws LibvirtException {
+    protected MigrateVolumeAnswer checkBlockJobStatus(MigrateVolumeCommand command, Domain dm, String diskLabel, String srcPath, String destPath, LibvirtComputingResource libvirtComputingResource, Connect conn, String srcSecretUUID) throws LibvirtException {
         int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
         int waitTimeInSec = command.getWait();
         while (waitTimeInSec > 0) {
@@ -219,7 +219,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         return diskLabel;
     }
 
-    private String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+    protected String generateDestinationDiskXML(Domain dm, String srcVolumeId, String diskFilePath, String destSecretUUID) throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
         final String domXml = dm.getXMLDesc(0);
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -270,7 +270,7 @@ public final class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<Mig
         node.setAttribute(attr, newValue);
     }
 
-    private MigrateVolumeAnswer migrateRegularVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    protected MigrateVolumeAnswer migrateRegularVolume(final MigrateVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         KVMStoragePoolManager storagePoolManager = libvirtComputingResource.getStoragePoolMgr();
 
         VolumeObjectTO srcVolumeObjectTO = (VolumeObjectTO)command.getSrcData();
