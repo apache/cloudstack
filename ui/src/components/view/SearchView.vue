@@ -303,7 +303,7 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'usagetype', 'restartrequired'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -393,6 +393,16 @@ export default {
         this.fields[providerIndex].loading = true
         this.fields[providerIndex].opts = this.fetchImageStoreProviders()
         this.fields[providerIndex].loading = false
+      }
+
+      if (arrayField.includes('restartrequired')) {
+        const restartRequiredIndex = this.fields.findIndex(item => item.name === 'restartrequired')
+        this.fields[restartRequiredIndex].loading = true
+        this.fields[restartRequiredIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[restartRequiredIndex].loading = false
       }
 
       if (arrayField.includes('resourcetype')) {
