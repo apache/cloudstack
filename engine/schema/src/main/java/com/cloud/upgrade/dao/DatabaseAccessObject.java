@@ -27,7 +27,7 @@ public class DatabaseAccessObject {
     private static Logger s_logger = Logger.getLogger(DatabaseAccessObject.class);
 
     public void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
-        String addForeignKeyStmt = String.format("CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('%s', '%s', '%s', '%s')", tableName, tableColumn, foreignTableName, foreignColumnName);
+        String addForeignKeyStmt = String.format("ALTER TABLE `cloud`.`%s` ADD CONSTRAINT `fk_%s__%s` FOREIGN KEY `fk_%s__%s`(`%s`) REFERENCES `%s`(`%s`)", tableName, tableName, tableColumn, tableName, tableColumn, tableColumn, foreignTableName, foreignColumnName);
         try(PreparedStatement pstmt = conn.prepareStatement(addForeignKeyStmt);)
         {
             pstmt.executeUpdate();
