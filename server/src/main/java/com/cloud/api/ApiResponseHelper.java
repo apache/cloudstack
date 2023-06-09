@@ -292,6 +292,7 @@ import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
@@ -456,6 +457,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserVmJoinDao userVmJoinDao;
     @Inject
     NetworkServiceMapDao ntwkSrvcDao;
+    @Inject
+    FirewallRulesDao firewallRulesDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1084,6 +1087,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setHasAnnotation(annotationDao.hasAnnotations(ipAddr.getUuid(), AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
+        ipResponse.setHasRules(firewallRulesDao.countRulesByIpId(ipAddr.getId()) > 0);
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
     }

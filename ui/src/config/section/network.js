@@ -228,7 +228,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext', 'publicmtu']
+          args: ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
         },
         {
           api: 'restartVPC',

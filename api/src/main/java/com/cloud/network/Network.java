@@ -256,7 +256,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public static class Capability {
 
-        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        private static List<Capability> supportedCapabilities = new ArrayList<>();
 
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");

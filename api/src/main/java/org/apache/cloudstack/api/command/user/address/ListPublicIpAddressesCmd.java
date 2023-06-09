@@ -192,8 +192,8 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
     @Override
     public void execute() {
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
-        ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
-        List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
+        ListResponse<IPAddressResponse> response = new ListResponse<>();
+        List<IPAddressResponse> ipAddrResponses = new ArrayList<>();
         for (IpAddress ipAddress : result.first()) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
             ipResponse.setObjectName("publicipaddress");

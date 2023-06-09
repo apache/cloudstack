@@ -80,7 +80,8 @@ jobs:
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization",
+                  smoke/test_nested_virtualization
+                  smoke/test_set_sourcenat",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
