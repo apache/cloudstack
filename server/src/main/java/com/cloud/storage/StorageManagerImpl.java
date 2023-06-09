@@ -234,10 +234,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
-import java.math.BigInteger;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.UUID;
 
 
 @Component
