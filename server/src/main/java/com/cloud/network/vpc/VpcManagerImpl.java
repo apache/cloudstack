@@ -1302,19 +1302,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcDao.update(vpcId, vpc) || restartRequired) { // Note that the update may fail because nothing has changed, other than the sourcenat ip
             logger.debug("Updated VPC id=" + vpcId);
             if (restartRequired) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("restarting vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("restarting vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
                 }
                 final User callingUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
                 restartVpc(vpcId, true, false, false, callingUser);
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("no restart needed.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("no restart needed.");
                 }
             }
             return vpcDao.findById(vpcId);
         } else {
-            s_logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
+            logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
             return null;
         }
     }
@@ -1330,7 +1330,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg, e);
             }
         }
@@ -1340,20 +1340,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Nullable
     protected IPAddressVO validateSourceNatip(Vpc vpc, String sourceNatIp) {
         if (sourceNatIp == null) {
-            s_logger.trace(String.format("no source NAT ip given to update vpc %s with.", vpc.getName()));
+            logger.trace(String.format("no source NAT ip given to update vpc %s with.", vpc.getName()));
             return null;
         } else {
-            s_logger.info(String.format("updating VPC %s to have source NAT ip %s", vpc.getName(), sourceNatIp));
+            logger.info(String.format("updating VPC %s to have source NAT ip %s", vpc.getName(), sourceNatIp));
         }
         IPAddressVO requestedIp = getIpAddressVO(vpc, sourceNatIp);
         if (requestedIp == null) return null;
         // check if it is the current source NAT address
         if (requestedIp.isSourceNat()) {
-            s_logger.info(String.format("IP address %s is already the source Nat address. Not updating!", sourceNatIp));
+            logger.info(String.format("IP address %s is already the source Nat address. Not updating!", sourceNatIp));
             return null;
         }
         if (_firewallDao.countRulesByIpId(requestedIp.getId()) > 0) {
-            s_logger.info(String.format("IP address %s has firewall/portforwarding rules. Not updating!", sourceNatIp));
+            logger.info(String.format("IP address %s has firewall/portforwarding rules. Not updating!", sourceNatIp));
             return null;
         }
         return requestedIp;
@@ -1364,7 +1364,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // check if the address is already aqcuired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
         if (requestedIp == null || requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
-            s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
+            logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
                     sourceNatIp, vpc.getName(), vpc.getUuid()));
             return null;
         }

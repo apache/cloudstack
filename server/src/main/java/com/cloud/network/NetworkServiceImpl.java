@@ -1673,7 +1673,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {
-            s_logger.debug(String.format("no source nat ip given for create network %s command, using something arbitrary.", cmd.getNetworkName()));
+            logger.debug(String.format("no source nat ip given for create network %s command, using something arbitrary.", cmd.getNetworkName()));
             return; // nothing to try
         }
         IpAddress ip = allocateIP(owner, cmd.getZoneId(), network.getId(), null, sourceNatIp);
@@ -1681,7 +1681,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             associateIPToNetwork(ip.getId(), network.getId());
         } catch (ResourceUnavailableException e) {
             String msg = String.format("can´t use %s as sourcenat IP address for network %s/%s as it is un available", sourceNatIp, network.getName(), network.getUuid());
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg,e);
         }
     }
@@ -1704,7 +1704,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             } catch (Exception e) { // pokemon execption from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), network.getName(), network.getUuid(), e.getLocalizedMessage());
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg, e);
             }
         }
@@ -1715,21 +1715,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private IPAddressVO checkSourceNatIpAddressForUpdate(UpdateNetworkCmd cmd, Network network) {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {
-            s_logger.trace(String.format("no source NAT ip given to update network %s with.", cmd.getNetworkName()));
+            logger.trace(String.format("no source NAT ip given to update network %s with.", cmd.getNetworkName()));
             return null;
         } else {
-            s_logger.info(String.format("updating network %s to have source NAT ip %s", cmd.getNetworkName(), sourceNatIp));
+            logger.info(String.format("updating network %s to have source NAT ip %s", cmd.getNetworkName(), sourceNatIp));
         }
         // check if the address is already aqcuired for this network
         IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
         if (requestedIp == null || requestedIp.getAssociatedWithNetworkId() == null || ! requestedIp.getAssociatedWithNetworkId().equals(network.getId())) {
-            s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
+            logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
                     sourceNatIp, network.getName(), network.getUuid()));
             return null;
         }
         // check if it is the current source NAT address
         if (requestedIp.isSourceNat()) {
-            s_logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
+            logger.info(String.format("IP address %s is allready the source Nat address. Not updating!", sourceNatIp));
             return null;
         }
         return requestedIp;
@@ -1858,7 +1858,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
         } else {
-            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
+            logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
             owner = caller;
         }
         return owner;
