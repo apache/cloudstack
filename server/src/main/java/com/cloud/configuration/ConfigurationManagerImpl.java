@@ -2508,11 +2508,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (final VlanVO vlan : vlans) {
                     _vlanDao.remove(vlan.getId());
                 }
-                // we should actually
-//                VmwareDatacenterZoneMapVO vmwareZoneMapping = _vmwareDatacenterZoneMapDao.findByZoneId(zoneId)
-//                if (vmwareZoneMapping != null) {
-//                    _vmwareDatacenterZoneMapDao.removeByZoneId(vmwareZoneMapping.getId());
-//                }
+                // we should actually find the mapping and remove if it exists
                 // but we don't know about vmware/plugin/hypervisors at this point
 
                 final boolean success = _zoneDao.remove(zoneId);
