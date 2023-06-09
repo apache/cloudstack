@@ -37,6 +37,7 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
+  LATEST_CS_VERSION,
   CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
@@ -154,6 +155,7 @@ const user = {
       state.loginFlag = flag
     },
     SET_LATEST_VERSION: (state, version) => {
+      vueProps.$localStorage.set(LATEST_CS_VERSION, version)
       state.latestVersion = version
     }
   },
@@ -200,7 +202,8 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
-          commit('SET_LATEST_VERSION', '')
+          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+          commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
 
           resolve()
@@ -219,10 +222,12 @@ const user = {
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
+        commit('SET_LATEST_VERSION', latestVersion)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -236,20 +241,7 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            if (result.rolename === 'Root Admin') {
-              axios.get(
-                'https://api.github.com/repos/apache/cloudstack/releases'
-              ).then(response => {
-                for (const release of response) {
-                  if (release.tag_name.toLowerCase().includes('rc')) {
-                    continue
-                  } else {
-                    commit('SET_LATEST_VERSION', release.tag_name)
-                    break
-                  }
-                }
-              }).catch(ignored => {})
-            }
+            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -327,6 +319,7 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
@@ -460,6 +453,22 @@ const user = {
     },
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
+    },
+    SetCsLatestVersion ({ commit }, rolename) {
+      if (rolename === 'Root Admin' && (+new Date() - store.getters.latestVersion.fetchedTs) > 24 * 60 * 60 * 1000) {
+        axios.get(
+          'https://api.github.com/repos/apache/cloudstack/releases'
+        ).then(response => {
+          for (const release of response) {
+            if (release.tag_name.toLowerCase().includes('rc')) {
+              continue
+            } else {
+              commit('SET_LATEST_VERSION', { version: release.tag_name, fetchedTs: (+new Date()) })
+              break
+            }
+          }
+        }).catch(ignored => {})
+      }
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
