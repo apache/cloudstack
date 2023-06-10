@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -148,6 +149,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
+    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count",
+            since = "4.19.0.0")
+    private Boolean retrieveOnlyResourceCount;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -255,18 +259,19 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     public Boolean getShowIcon() {
-        return showIcon != null ? showIcon : false;
+        return BooleanUtils.toBooleanDefaultIfNull(showIcon, false);
     }
 
     public Boolean getAccumulate() {
         return accumulate;
+    }
+
+    public Boolean getRetrieveOnlyResourceCount() {
+        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
     }
 
     /////////////////////////////////////////////////////

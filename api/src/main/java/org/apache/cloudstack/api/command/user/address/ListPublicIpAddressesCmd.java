@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -106,6 +107,10 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count",
+        since = "4.19.0.0")
+    private Boolean retrieveOnlyResourceCount;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -157,6 +162,10 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
         return vpcId;
     }
 
+    public Boolean getRetrieveOnlyResourceCount() {
+        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
+    }
+
     @Override
     public Boolean getDisplay() {
         if (display != null) {
@@ -171,10 +180,6 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
 
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
-    }
-
-    public Boolean getForLoadBalancing() {
-        return forLoadBalancing;
     }
 
     public String getState() {
@@ -194,10 +199,13 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<>();
-        for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
-            ipResponse.setObjectName("publicipaddress");
-            ipAddrResponses.add(ipResponse);
+
+        if (!getRetrieveOnlyResourceCount()) {
+            for (IpAddress ipAddress : result.first()) {
+                IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
+                ipResponse.setObjectName("publicipaddress");
+                ipAddrResponses.add(ipResponse);
+            }
         }
 
         response.setResponses(ipAddrResponses, result.second());
