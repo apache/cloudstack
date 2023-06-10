@@ -25,6 +25,8 @@
 "label.access": "Access",
 "label.access.kubernetes.nodes": "Access Kubernetes nodes",
 "label.accesskey": "Access key",
+"label.access.key": "Access key",
+"label.secret.key": "Secret key",
 "label.account": "Account",
 "label.account.and.security.group": "Account - security group",
 "label.account.id": "Account ID",

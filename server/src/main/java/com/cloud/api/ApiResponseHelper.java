@@ -40,6 +40,7 @@ import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Bucket;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -4314,6 +4315,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
+        } else if (usageRecord.getUsageType() == UsageTypes.BUCKET) {
+            BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(bucket.getUuid());
+            usageRecResponse.setResourceName(bucket.getName());
         }
         if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
              usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
