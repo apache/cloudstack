@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix :offsetTop="78 + (numberOfAlerts * 25)">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -393,7 +393,7 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
+    <div>
       <div v-if="dataView" style="margin-top: -10px">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
@@ -460,6 +460,7 @@ import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { numberOfAlerts } from '@/store/modules/user'
 
 export default {
   name: 'Resource',
@@ -659,6 +660,9 @@ export default {
     }
   },
   computed: {
+    numberOfAlerts () {
+      return numberOfAlerts()
+    },
     hasSelected () {
       return this.selectedRowKeys.length > 0
     },
