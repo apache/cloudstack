@@ -93,7 +93,7 @@
             <span v-if="['guestnetwork','vpc'].includes($route.path.split('/')[1]) && record.restartrequired">
               <a-tooltip>
                 <template #title>{{ $t('label.restartrequired') }}</template>
-                <warning-outlined />
+                <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
           </span>

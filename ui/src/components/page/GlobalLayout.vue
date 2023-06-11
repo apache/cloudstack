@@ -17,11 +17,54 @@
 
 <template>
   <div>
-    <a-affix v-if="this.$store.getters.shutdownTriggered" >
-      <a-alert :message="$t('message.shutdown.triggered')" type="error" banner :showIcon="false" class="shutdownHeader" />
+    <a-affix v-if="numberOfAlerts > 0" >
+      <a-alert
+        v-if="this.$store.getters.shutdownTriggered"
+        :message="$t('message.shutdown.triggered')"
+        type="error"
+        banner
+        :showIcon="false"
+        class="alertHeader" />
+
+        <a-alert
+        v-if="newVersionAvailable"
+        type="info"
+        banner
+        :showIcon="true"
+        class="alertHeader">
+          <template #message>
+              <a :href="'https://github.com/apache/cloudstack/releases/tag/' + this.$store.getters.latestVersion.version" target="_blank">
+                {{ $t('message.new.version.available') }}: {{  this.$store.getters.latestVersion.version }}
+              </a>
+          </template>
+      </a-alert>
+
+      <a-alert
+        v-if="this.$store.getters.networkRestartRequired"
+        type="warning"
+        :showIcon="true"
+        class="alertHeader">
+        <template #message>
+          <router-link to="/guestnetwork?restartrequired=true">
+                {{ $t('message.restart.required.network') }}
+          </router-link>
+        </template>
+      </a-alert>
+
+      <a-alert
+        v-if="this.$store.getters.vpcRestartRequired"
+        type="warning"
+        :showIcon="true"
+        class="alertHeader">
+        <template #message>
+          <router-link to="/vpc?restartrequired=true">
+                {{ $t('message.restart.required.vpc') }}
+          </router-link>
+        </template>
+      </a-alert>
     </a-affix>
     <a-layout class="layout" :class="[device]">
-      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
+      <a-affix style="z-index: 200" :offsetTop="numberOfAlerts * 25">
         <template v-if="isSideMenu()">
           <a-drawer
             v-if="isMobile()"
@@ -84,7 +127,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
+            :style="'margin-top: ' + numberOfAlerts * 25 + 'px;'"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"
@@ -125,6 +168,7 @@ import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import { isAdmin } from '@/role'
+import { numberOfAlerts, newVersionAvailable } from '@/store/modules/user'
 import { api } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
@@ -153,6 +197,12 @@ export default {
     }),
     isAdmin () {
       return isAdmin()
+    },
+    numberOfAlerts () {
+      return numberOfAlerts()
+    },
+    newVersionAvailable () {
+      return newVersionAvailable()
     },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
@@ -307,7 +357,7 @@ export default {
   }
 }
 
-.shutdownHeader {
+.alertHeader {
   font-weight: bold;
   height: 25px;
   text-align: center;
