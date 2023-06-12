@@ -784,7 +784,7 @@
         </repository>
         <repository>
             <id>libvirt.org.maven2</id>
-            <url>https://libvirt.org/maven2/</url>
+            <url>https://download.libvirt.org/maven2/</url>
         </repository>
     </repositories>
 
