@@ -1245,12 +1245,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         } catch (EntityExistsException e) {
             // if that fails just get the record as is
             vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(guid);
-            // we could now update:
-//            vmwareDc.setPassword(password);
-//            vmwareDc.setUser(user);
-//            vmwareDc.setVmwareDatacenterName(name);
-//            vmwareDc.setVcenterHost(host);
-//            vmwareDcDao.update(vmwareDc.getId(), vmwareDc);
+            // we could now update the `vmwareDC` with the user supplied `password`, `user`, `name` and `host`,
             // but let's assume user error for now
         }
 
