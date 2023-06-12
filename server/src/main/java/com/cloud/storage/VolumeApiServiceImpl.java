@@ -82,6 +82,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
@@ -295,6 +296,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     VirtualMachineManager virtualMachineManager;
     @Inject
     PassphraseDao _passphraseDao;
+    @Inject
+    protected StoragePoolDetailsDao storagePoolDetailsDao;
 
     protected Gson _gson;
 
@@ -1024,14 +1027,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (newSize != null) {
                 if (!diskOffering.isCustomized() && !volume.getVolumeType().equals(Volume.Type.ROOT)) {
                     throw new InvalidParameterValueException("To change a volume's size without providing a new disk offering, its current disk offering must be "
-                            + "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
+                         +  "customizable or it must be a root volume (if providing a disk offering, make sure it is different from the current disk offering).");
                 }
 
                 if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                    + "For more details please check out the Official Resizing Volumes documentation.");
+                                 +  "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                 +  "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1163,7 +1166,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              */
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
-                        + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                     +  "Need to sign off by supplying the shrinkok parameter with value of true.");
             }
 
             if (newSize > currentSize) {
@@ -2387,10 +2390,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             vm = _vmInstanceDao.findById(instanceId);
         }
 
-        if (vol.getPassphraseId() != null) {
-            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
-        }
-
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
@@ -2402,11 +2401,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
                 throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
-            }
-
-            StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
-            if (storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                throw new InvalidParameterValueException("Migrate volume of a running VM is unsupported on storage pool type " + storagePoolVO.getPoolType());
             }
 
             // Check if the underlying hypervisor supports storage motion.
@@ -2423,7 +2417,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     liveMigrateVolume = capabilities.isStorageMotionSupported();
                 }
 
-                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType())) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
+                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !storagePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                             "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                             "Use 'migrateVirtualMachineWithVolumes' instead.");
