@@ -16,6 +16,7 @@
 // under the License.
 
 import {
+  AimOutlined,
   ApartmentOutlined,
   ApiOutlined,
   AppstoreOutlined,
@@ -170,6 +171,7 @@ import renderIcon from '@/utils/renderIcon'
 
 export default {
   install: (app) => {
+    app.component('AimOutlined', AimOutlined)
     app.component('ApartmentOutlined', ApartmentOutlined)
     app.component('ApiOutlined', ApiOutlined)
     app.component('AppstoreOutlined', AppstoreOutlined)
