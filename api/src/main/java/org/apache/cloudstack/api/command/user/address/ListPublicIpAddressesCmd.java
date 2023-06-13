@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -43,7 +42,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
-public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
@@ -107,10 +106,6 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count",
-        since = "4.19.0.0")
-    private Boolean retrieveOnlyResourceCount;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -160,10 +155,6 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
 
     public Long getVpcId() {
         return vpcId;
-    }
-
-    public Boolean getRetrieveOnlyResourceCount() {
-        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
     }
 
     @Override

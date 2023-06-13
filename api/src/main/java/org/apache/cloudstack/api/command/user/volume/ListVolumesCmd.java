@@ -22,7 +22,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -42,7 +42,7 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListVolumesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
@@ -95,10 +95,6 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the volume. Possible values are: Ready, Allocated, Destroy, Expunging, Expunged.")
     private String state;
-
-    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count",
-            since = "4.19.0.0")
-    private Boolean retrieveOnlyResourceCount;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -155,10 +151,6 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     public String getState() {
         return state;
-    }
-
-    public Boolean getRetrieveOnlyResourceCount() {
-        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
     }
 
     /////////////////////////////////////////////////////

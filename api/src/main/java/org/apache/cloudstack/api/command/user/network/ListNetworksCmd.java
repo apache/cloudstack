@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -45,7 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String s_name = "listnetworksresponse";
 
@@ -118,10 +118,6 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
                     + "* shared : networks that have been granted to the calling user by another user. "
                     + "* all : all networks (account, domain and shared).")
     private String networkFilter;
-
-    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count",
-            since = "4.19.0.0")
-    private Boolean retrieveOnlyResourceCount;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -204,10 +200,6 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserC
 
     public String getNetworkFilter() {
         return networkFilter;
-    }
-
-    public Boolean getRetrieveOnlyResourceCount() {
-        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
     }
 
     /////////////////////////////////////////////////////
