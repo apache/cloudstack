@@ -23,11 +23,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -59,12 +56,9 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -94,8 +88,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Mock
     private StoragePoolAutomation storagePoolAutomation;
     @Mock
-    private HostDao hostDao;
-    @Mock
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
     private DataStoreProviderManager dataStoreProviderMgr;
@@ -107,10 +99,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     private PrimaryDataStore store;
     @Mock
     private TemplateManager templateMgr;
-    @Mock
-    private AgentManager agentMgr;
-    @Mock
-    ModifyStoragePoolAnswer answer;
 
     @InjectMocks
     private StorageManager storageMgr = new StorageManagerImpl();
