@@ -1063,6 +1063,7 @@
                             <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
                             <exclude>utils/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
+                            <exclude>plugins/storage/volume/scaleio/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
