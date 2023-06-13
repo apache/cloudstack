@@ -342,6 +342,9 @@
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
 
+    <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
+        <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
+    </bean>
     <bean id="resourceManagerUtilImpl"
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
