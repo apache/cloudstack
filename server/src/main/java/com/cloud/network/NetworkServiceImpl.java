@@ -80,6 +80,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -4264,23 +4265,37 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                // delete vlans for this zone
-                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
-                for (VlanVO vlan : vlans) {
-                    _vlanDao.remove(vlan.getId());
-                }
-
-                // Delete networks
-                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
-                if (networks != null && !networks.isEmpty()) {
-                    for (NetworkVO network : networks) {
-                        _networksDao.remove(network.getId());
-                    }
-                }
+                disablePhysicalNetwork(physicalNetworkId, pNetwork);
+                deleteVlans();
+                deleteNetworks();
+                deleteIpAddresses();
 
                 // delete vnets
                 _dcDao.deleteVnet(physicalNetworkId);
 
+                boolean x = deleteProviders();
+                if (!x) return false;
+
+                // delete traffic types
+                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+
+                return _physicalNetworkDao.remove(physicalNetworkId);
+            }
+
+            private void disablePhysicalNetwork(Long physicalNetworkId, PhysicalNetworkVO pNetwork) {
+                pNetwork.setState(PhysicalNetwork.State.Disabled);
+                _physicalNetworkDao.update(physicalNetworkId, pNetwork);
+            }
+
+            private void deleteIpAddresses() {
+                List<IPAddressVO> ipAddresses = _ipAddressDao.listByPhysicalNetworkId(physicalNetworkId);
+                for (IPAddressVO ipaddress : ipAddresses) {
+                    _ipAddressDao.remove(ipaddress.getId());
+                }
+            }
+
+            @Nullable
+            private boolean deleteProviders() {
                 // delete service providers
                 List<PhysicalNetworkServiceProviderVO> providers = _pNSPDao.listBy(physicalNetworkId);
 
@@ -4295,11 +4310,25 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         return false;
                     }
                 }
+                return true;
+            }
 
-                // delete traffic types
-                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+            private void deleteNetworks() {
+                // Delete networks
+                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
+                if (networks != null && !networks.isEmpty()) {
+                    for (NetworkVO network : networks) {
+                        _networksDao.remove(network.getId());
+                    }
+                }
+            }
 
-                return _physicalNetworkDao.remove(physicalNetworkId);
+            private void deleteVlans() {
+                // delete vlans for this zone
+                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
+                for (VlanVO vlan : vlans) {
+                    _vlanDao.remove(vlan.getId());
+                }
             }
         });
     }
