@@ -39,5 +39,10 @@
         <property name="typeClass"
             value="com.cloud.utils.component.PluggableService" />
     </bean>
-    
+
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="userDataProvidersRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.userdata.UserDataProvider" />
+    </bean>
+
 </beans>

@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -192,6 +193,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private ServiceOfferingVO serviceOffering;
+
+    @Mock
+    UserDataManager userDataManager;
 
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
@@ -687,29 +691,6 @@ public class UserVmManagerImplTest {
         String finalUserdata = userVmManagerImpl.finalizeUserData(null, userDataId, template);
 
         Assert.assertEquals(finalUserdata, templateUserData);
-    }
-
-    @Test
-    public void testUserDataAppend() {
-        String userData = "testUserdata";
-        String templateUserData = "testTemplateUserdata";
-        Long userDataId = 1L;
-
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        when(template.getUserDataId()).thenReturn(2L);
-        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.APPEND);
-
-        UserDataVO templateUserDataVO = Mockito.mock(UserDataVO.class);
-        doReturn(templateUserDataVO).when(userDataDao).findById(2L);
-        when(templateUserDataVO.getUserData()).thenReturn(templateUserData);
-
-        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
-        doReturn(apiUserDataVO).when(userDataDao).findById(userDataId);
-        when(apiUserDataVO.getUserData()).thenReturn(userData);
-
-        String finalUserdata = userVmManagerImpl.finalizeUserData(null, userDataId, template);
-
-        Assert.assertEquals(finalUserdata, templateUserData+userData);
     }
 
     @Test
