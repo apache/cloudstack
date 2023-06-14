@@ -170,7 +170,7 @@
       </span>
       <span v-else>{{ text }}</span>
     </template>
-    <template #osname="{ text, record }">
+    <template v-if="column.key === 'osname'">
       <span v-if="$route.name === 'guestos'">
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
