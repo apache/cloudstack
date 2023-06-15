@@ -66,7 +66,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
-    protected TableGenerator _tgMacAddress;
 
     @Inject
     protected DcDetailsDao _detailsDao;
@@ -185,9 +184,6 @@ public class EngineDataCenterDaoImpl extends GenericDaoBase<EngineDataCenterVO, 
         UUIDSearch = createSearchBuilder();
         UUIDSearch.and("uuid", UUIDSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         UUIDSearch.done();
-
-        _tgMacAddress = _tgs.get("macAddress");
-        assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
     @Override

@@ -83,7 +83,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     protected long _prefix;
     protected Random _rand = new Random(System.currentTimeMillis());
-    protected TableGenerator _tgMacAddress;
+
 
     @Override
     public DataCenterVO findByName(String name) {
@@ -329,9 +329,6 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
         TokenSearch = createSearchBuilder();
         TokenSearch.and("zoneToken", TokenSearch.entity().getZoneToken(), SearchCriteria.Op.EQ);
         TokenSearch.done();
-
-        _tgMacAddress = _tgs.get("macAddress");
-        assert _tgMacAddress != null : "Couldn't get mac address table generator";
     }
 
     @Override
