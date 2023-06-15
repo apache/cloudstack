@@ -90,7 +90,7 @@ public interface NetworkModel {
             INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, HYPERVISOR_HOST_NAME_FILE));
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<>("Advanced",Integer.class, "mac.identifier", "0",
-            "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
+            "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is zero (0) which means that the DB id of the zone will be used.", true, ConfigKey.Scope.Zone);
 
     static final ConfigKey<Boolean> AdminIsAllowedToDeployAnywhere = new ConfigKey<>("Advanced",Boolean.class, "admin.is.allowed.to.deploy.anywhere", "false",
             "This will determine if the root admin is allowed to deploy in networks in subdomains.", true, ConfigKey.Scope.Global);

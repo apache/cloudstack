@@ -593,7 +593,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
-        String mac = _networksDao.getNextAvailableMacAddress(networkId, MACIdentifier.value());
+        Integer zoneIdentifyer = MACIdentifier.value();
+        if (zoneIdentifyer.intValue() == 0) {
+            zoneIdentifyer = Long.valueOf(network.getDataCenterId()).intValue();
+        }
+        String mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifyer);
         if (mac == null) {
             throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
         }
