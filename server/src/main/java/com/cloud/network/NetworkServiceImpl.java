@@ -4273,8 +4273,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 // delete vnets
                 _dcDao.deleteVnet(physicalNetworkId);
 
-                boolean x = deleteProviders();
-                if (!x) return false;
+                if (!deleteProviders()) {
+                    return false;
+                }
 
                 // delete traffic types
                 _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
