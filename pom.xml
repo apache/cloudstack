@@ -1062,7 +1062,7 @@
                             <exclude>ui/public/**</exclude>
                             <exclude>ui/legacy/**</exclude>
                             <exclude>utils/testsmallfileinactive</exclude>
-                            <exclude>utils/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
+                            <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
