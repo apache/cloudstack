@@ -174,8 +174,6 @@ public class NetworkServiceImplTest {
     ServiceOfferingVO serviceOfferingVoMock;
 
     @Mock
-    IpAddressManager ipAddressManager;
-    @Mock
     ConfigKey<Integer> privateMtuKey;
     @Mock
     private CallContext callContextMock;
@@ -298,7 +296,7 @@ public class NetworkServiceImplTest {
         service.routerDao = routerDao;
         service.commandSetupHelper = commandSetupHelper;
         service.networkHelper = networkHelper;
-        service._ipAddrMgr = ipAddressManager;
+        service._ipAddrMgr = ipAddressManagerMock;
         PowerMockito.mockStatic(CallContext.class);
         CallContext callContextMock = PowerMockito.mock(CallContext.class);
         PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
@@ -1024,7 +1022,7 @@ public class NetworkServiceImplTest {
         when(networkVO.getId()).thenReturn(networkId);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
         try {
-            when(ipAddressManager.allocateIp(any(), anyBoolean(), any(), anyLong(), any(), any(), eq(srcNatIp))).thenReturn(ipAddress);
+            when(ipAddressManagerMock.allocateIp(any(), anyBoolean(), any(), anyLong(), any(), any(), eq(srcNatIp))).thenReturn(ipAddress);
             service.checkAndSetRouterSourceNatIp(account, createNetworkCmd, networkVO);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
             Assert.fail(e.getMessage());
