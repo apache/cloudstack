@@ -241,7 +241,7 @@ public class DirectAgentAttache extends AgentAttache {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(log(seq, "Executing request"));
                 }
-                ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
+                ArrayList<Answer> answers = new ArrayList<>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     Answer answer = null;
                     Command currentCmd = cmds[i];

@@ -34,6 +34,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.CleanProcessCommandCacheAnswer;
+import com.cloud.agent.api.CleanProcessedCacheCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.network.router.VirtualRouter;
@@ -141,6 +143,9 @@ public class VirtualRoutingResource {
 
             if (cmd instanceof UpdateNetworkCommand) {
                 return execute((UpdateNetworkCommand) cmd);
+            }
+            if (cmd instanceof CleanProcessedCacheCommand) {
+                return execute((CleanProcessedCacheCommand) cmd);
             }
 
             if (_vrAggregateCommandsSet.containsKey(routerName)) {
@@ -443,6 +448,15 @@ public class VirtualRoutingResource {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
+    }
+
+    private Answer execute(CleanProcessedCacheCommand cmd) {
+        int days = cmd.getDays();
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.CLEANUP_PROCESSED, Integer.toString(days));
+        if (!result.isSuccess()) {
+            return new CleanProcessCommandCacheAnswer(cmd, result.getDetails());
+        }
+        return new CleanProcessCommandCacheAnswer(cmd, result.getDetails(), true);
     }
 
     private Answer execute(DiagnosticsCommand cmd) {

@@ -1402,7 +1402,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @DB
     public Pair<NetworkGuru, NetworkVO> implementNetwork(final long networkId, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        final Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
+        final Pair<NetworkGuru, NetworkVO> implemented = new Pair<>(null, null);
 
         NetworkVO network = _networksDao.findById(networkId);
         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
@@ -1410,15 +1410,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             s_logger.debug("Network id=" + networkId + " is already implemented");
             implemented.set(guru, network);
             return implemented;
-        }
-
-        // Acquire lock only when network needs to be implemented
-        network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
-        if (network == null) {
-            // see NetworkVO.java
-            final ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
-            ex.addProxyObject(_entityMgr.findById(Network.class, networkId).getUuid());
-            throw ex;
+        } else {
+            // Acquire lock only when network needs to be implemented
+            network = _networksDao.acquireInLockTable(networkId, NetworkLockTimeout.value());
+            if (network == null) {
+                // see NetworkVO.java
+                final ConcurrentOperationException ex = new ConcurrentOperationException("Unable to acquire network configuration");
+                ex.addProxyObject(_entityMgr.findById(Network.class, networkId).getUuid());
+                throw ex;
+            }
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1426,6 +1426,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         try {
+            // fixme: why is this repetition of block 20 lines back needed
             if (isNetworkImplemented(network)) {
                 s_logger.debug("Network id=" + networkId + " is already implemented");
                 implemented.set(guru, network);
@@ -1472,10 +1473,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return implemented;
         } catch (final NoTransitionException e) {
             s_logger.error(e.getMessage());
-            return new Pair<NetworkGuru, NetworkVO>(null, null);
+            return new Pair<>(null, null);
         } catch (final CloudRuntimeException | OperationTimedoutException e) {
             s_logger.error("Caught exception: " + e.getMessage());
-            return new Pair<NetworkGuru, NetworkVO>(null, null);
+            return new Pair<>(null, null);
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
@@ -4416,12 +4417,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private Map<Service, Set<Provider>> getServiceProvidersMap(final long networkId) {
-        final Map<Service, Set<Provider>> map = new HashMap<Service, Set<Provider>>();
+        final Map<Service, Set<Provider>> map = new HashMap<>();
         final List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
         for (final NetworkServiceMapVO nsm : nsms) {
             Set<Provider> providers = map.get(Service.getService(nsm.getService()));
             if (providers == null) {
-                providers = new HashSet<Provider>();
+                providers = new HashSet<>();
             }
             providers.add(Provider.getProvider(nsm.getProvider()));
             map.put(Service.getService(nsm.getService()), providers);
@@ -4433,14 +4434,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public List<Provider> getProvidersForServiceInNetwork(final Network network, final Service service) {
         final Map<Service, Set<Provider>> service2ProviderMap = getServiceProvidersMap(network.getId());
         if (service2ProviderMap.get(service) != null) {
-            final List<Provider> providers = new ArrayList<Provider>(service2ProviderMap.get(service));
+            final List<Provider> providers = new ArrayList<>(service2ProviderMap.get(service));
             return providers;
         }
         return null;
     }
 
     protected List<NetworkElement> getElementForServiceInNetwork(final Network network, final Service service) {
-        final List<NetworkElement> elements = new ArrayList<NetworkElement>();
+        final List<NetworkElement> elements = new ArrayList<>();
         final List<Provider> providers = getProvidersForServiceInNetwork(network, service);
         //Only support one provider now
         if (providers == null) {

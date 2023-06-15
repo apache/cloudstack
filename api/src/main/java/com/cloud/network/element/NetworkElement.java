@@ -117,7 +117,7 @@ public interface NetworkElement extends Adapter {
     /**
      * The network service provider is being shutdown. This should shutdown all instances of this element deployed for this provider.
      * @param context
-     * @param networkServiceProvider
+     * @param provider
      * @return boolean success/failure
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException

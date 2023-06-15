@@ -34,6 +34,7 @@ import com.cloud.agent.api.to.MonitorServiceTO;
 public class SetMonitorServiceCommand extends NetworkElementCommand {
     public static final String ROUTER_MONITORING_ENABLED = "router.monitor.enabled";
     public static final String ROUTER_HEALTH_CHECKS_ENABLED = "router.health.checks.enabled";
+    public static final String ROUTER_PROCESSED_COMMANDS_CLEANUP_INTERVAL = "router.processed.commands.cleanup.interval";
     public static final String ROUTER_HEALTH_CHECKS_BASIC_INTERVAL = "router.health.checks.basic.interval";
     public static final String ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL = "router.health.checks.advanced.interval";
     public static final String ROUTER_HEALTH_CHECKS_EXCLUDED = "router.health.checks.excluded";

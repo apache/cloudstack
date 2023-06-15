@@ -28,6 +28,7 @@ public class MonitorService extends ConfigBase {
     public Integer healthChecksAdvancedRunInterval;
     public String excludedHealthChecks;
     public Map<String, String> healthChecksConfig;
+    public Integer deleteProcessedFilesInterval;
 
     public MonitorService() {
         super(ConfigBase.MONITORSERVICE);
@@ -35,9 +36,9 @@ public class MonitorService extends ConfigBase {
 
     public MonitorService(String config, String disableMonitoring, String healthChecksEnabled) {
         super(ConfigBase.MONITORSERVICE);
-        this.config = config;
-        this.disableMonitoring = disableMonitoring;
-        this.healthChecksEnabled = Boolean.parseBoolean(healthChecksEnabled);
+        this.setConfig(config);
+        this.setDisableMonitoring(disableMonitoring);
+        this.setHealthChecksEnabled(Boolean.parseBoolean(healthChecksEnabled));
     }
 
     public String getConfig() {
@@ -66,6 +67,10 @@ public class MonitorService extends ConfigBase {
 
     public Map<String, String> getHealthChecksConfig() {
         return healthChecksConfig;
+    }
+
+    public Integer getDeleteProcessedFilesInterval() {
+        return deleteProcessedFilesInterval;
     }
 
     public void setConfig(String config) {
@@ -98,5 +103,9 @@ public class MonitorService extends ConfigBase {
 
     public void setDeleteFromProcessedCache(boolean deleteFromProcessedCache) {
         this.deleteFromProcessedCache = deleteFromProcessedCache;
+    }
+
+    public void setDeleteProcessedFilesInterval(Integer deleteProcessedFilesInterval) {
+        this.deleteProcessedFilesInterval = deleteProcessedFilesInterval;
     }
 }

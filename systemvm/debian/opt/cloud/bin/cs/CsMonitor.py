@@ -26,6 +26,9 @@ HC_CONFIG = "/root/health_checks_data.json"
 class CsMonitor(CsDataBag):
     """ Manage Monitor script schedule and health checks for router """
 
+    def get_processed_dir_cleanup_interval(self):
+        return self.dbag["health_processed_dir_cleanup_interval"] if "health_processed_dir_cleanup_interval" in self.dbag else 60
+
     def get_basic_check_interval(self):
         return self.dbag["health_checks_basic_run_interval"] if "health_checks_basic_run_interval" in self.dbag else 3
 
@@ -43,6 +46,15 @@ class CsMonitor(CsDataBag):
                 for i in range(0, 4):
                     file.add(bits[i], -1)
             file.commit()
+
+    def setupCleanupProcessedDirCronJobs(self):
+        interval = self.get_processed_dir_cleanup_interval()
+        cron = CsFile("/etc/cron.d/process")
+        cron.deleteLine("root /usr/bin/bash /root/cleanup_processed.sh")
+        cron.add("SHELL=/bin/bash", 0)
+        cron.add("PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin", 1)
+        cron.add("17 5 * * * root /usr/bin/bash /root/cleanup_processed.sh " + interval, -1)
+        cron.commit()
 
     def setupHealthCheckCronJobs(self):
         cron_rep_basic = self.get_basic_check_interval()
@@ -81,3 +93,4 @@ class CsMonitor(CsDataBag):
         self.setupMonitorConfigFile()
         self.setupHealthChecksConfigFile()
         self.setupHealthCheckCronJobs()
+        self.setupCleanupProcessedDirCronJobs()

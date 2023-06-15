@@ -32,5 +32,7 @@ def merge(dbag, data):
         dbag["excluded_health_checks"] = data["excluded_health_checks"]
     if "health_checks_config" in data:
         dbag["health_checks_config"] = data["health_checks_config"]
+    if "delete_from_processed_cache" in data:
+        dbag["delete_from_processed_cache"] = data["delete_from_processed_cache"]
 
     return dbag

@@ -71,6 +71,7 @@ public class SetMonitorServiceConfigItem extends AbstractConfigItemFacade {
 
         monitorService.setExcludedHealthChecks(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_EXCLUDED));
         monitorService.setHealthChecksConfig(command.getHealthChecksConfig());
+        monitorService.setDeleteProcessedFilesInterval(Integer.valueOf(command.getAccessDetail(SetMonitorServiceCommand.ROUTER_PROCESSED_COMMANDS_CLEANUP_INTERVAL)));
     }
 
     @Override

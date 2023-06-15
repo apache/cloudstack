@@ -1626,6 +1626,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ENABLED, RouterHealthChecksEnabled.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_BASIC_INTERVAL, RouterHealthChecksBasicInterval.value().toString());
         command.setAccessDetail(SetMonitorServiceCommand.ROUTER_HEALTH_CHECKS_ADVANCED_INTERVAL, RouterHealthChecksAdvancedInterval.value().toString());
+        command.setAccessDetail(SetMonitorServiceCommand.ROUTER_PROCESSED_COMMANDS_CLEANUP_INTERVAL, RouterProcessedFilesCleanupInterval.value().toString());
         String excludedTests = RouterHealthChecksToExclude.valueIn(router.getDataCenterId());
         if (router.getIsRedundantRouter()) {
             // Disable gateway check if VPC has no tiers or no active VM's in it
@@ -2965,14 +2966,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
-        //clean up the update_state feild
-        if(router.getUpdateState()== VirtualRouter.UpdateState.UPDATE_FAILED){
-            router.setUpdateState(null);
-            _routerDao.update(router.getId(),router);
-        }
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
+        cleanupUpdatetState(router);
         _accountMgr.checkAccess(caller, null, true, router);
 
         final Account owner = _accountMgr.getAccount(router.getAccountId());
@@ -3015,6 +3012,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             throw new CloudRuntimeException("Failed to start router with id " + routerId);
         }
         return virtualRouter;
+    }
+
+    /**
+     * clean up the update_state field
+     *
+     * @param router the router that must not be in {code}UpdateState.UPDATE.FAILED{code}
+     */
+    private void cleanupUpdatetState(DomainRouterVO router) {
+        if(router.getUpdateState()== VirtualRouter.UpdateState.UPDATE_FAILED){
+            router.setUpdateState(null);
+            _routerDao.update(router.getId(), router);
+        }
     }
 
     @Override
@@ -3335,6 +3344,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksAdvancedInterval,
                 RouterHealthChecksConfigRefreshInterval,
                 RouterHealthChecksResultFetchInterval,
+                RouterProcessedFilesCleanupInterval,
                 RouterHealthChecksFailuresToRecreateVr,
                 RouterHealthChecksToExclude,
                 RouterHealthChecksFreeDiskSpaceThreshold,
