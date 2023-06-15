@@ -280,4 +280,6 @@ public interface IpAddressManager {
      * @return the updated quarantine object.
      */
     PublicIpQuarantine updatePublicIpAddressInQuarantine(Long quarantineProcessId, Date endDate);
+
+    void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception;
 }

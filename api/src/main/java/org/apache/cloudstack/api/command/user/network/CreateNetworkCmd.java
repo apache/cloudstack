@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.network.NetworkService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -43,10 +43,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -183,6 +183,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ip6Dns2;
 
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP,
+            type = CommandType.STRING,
+            description = "IPV4 address to be assigned to the public interface of the network router. " +
+                    "This address will be used as source NAT address for the network. " +
+                    "\nIf an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,",
+            since = "4.19")
+    private String sourceNatIP;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -264,6 +272,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getTungstenVirtualRouterUuid() {
         return tungstenVirtualRouterUuid;
+    }
+
+    public String getSourceNatIP() {
+        return sourceNatIP;
     }
 
     @Override
