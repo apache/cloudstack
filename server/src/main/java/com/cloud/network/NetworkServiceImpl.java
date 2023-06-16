@@ -4266,9 +4266,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 disablePhysicalNetwork(physicalNetworkId, pNetwork);
+                deleteIpAddresses();
                 deleteVlans();
                 deleteNetworks();
-                deleteIpAddresses();
 
                 // delete vnets
                 _dcDao.deleteVnet(physicalNetworkId);
