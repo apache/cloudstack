@@ -23,7 +23,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -39,10 +38,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * @config
