@@ -84,7 +84,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -147,7 +146,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -162,7 +160,6 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
@@ -380,8 +377,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AccountService _accountService;
     @Inject
-    NetworkAccountDao _networkAccountDao;
-    @Inject
     VirtualMachineManager vmManager;
     @Inject
     Ipv6Service ipv6Service;
@@ -390,15 +385,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AlertManager alertManager;
     @Inject
-    VirtualRouterProviderDao vrProviderDao;
-    @Inject
     DomainRouterDao routerDao;
     @Inject
     DomainRouterJoinDao routerJoinDao;
     @Inject
     CommandSetupHelper commandSetupHelper;
-    @Inject
-    AgentManager agentManager;
     @Inject
     ServiceOfferingDao serviceOfferingDao;
 
