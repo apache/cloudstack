@@ -132,7 +132,7 @@ function configure_services() {
 
   # Disable cloud init by default
 cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
-datasource_list: ['CloudStack']
+datasource_list: ['CloudStack', 'ConfigDrive']
 datasource:
   CloudStack:
     max_wait: 120
