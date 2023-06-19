@@ -114,6 +114,13 @@ public interface NetworkModel {
 
     List<? extends Nic> getNics(long vmId);
 
+    /**
+     * gets the next available MAC and checks it for global uniqueness in the nics table. It will keep looking till it fins a nic to use.
+     *
+     * @param networkConfigurationId the id of the network to use the nic in. used for finding the zone
+     * @return a string containing a MAC address
+     * @throws InsufficientAddressCapacityException if no MAC can be returned
+     */
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);

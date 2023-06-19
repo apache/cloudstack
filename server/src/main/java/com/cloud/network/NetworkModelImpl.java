@@ -80,7 +80,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -171,8 +170,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
-    @Inject
-    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao = null;
     @Inject
@@ -597,11 +594,18 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (zoneIdentifyer.intValue() == 0) {
             zoneIdentifyer = Long.valueOf(network.getDataCenterId()).intValue();
         }
-        String mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifyer);
-        if (mac == null) {
-            throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
-        }
+        String mac;
+        do {
+            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifyer);
+            if (mac == null) {
+                throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
+            }
+        } while(isMACUnique(mac));
         return mac;
+    }
+
+    private boolean isMACUnique(String mac) {
+        return (_nicDao.findByMacAddress(mac) == null);
     }
 
     @Override
