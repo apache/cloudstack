@@ -95,7 +95,7 @@ public class VMScheduleDaoImpl extends GenericDaoBase<VMScheduleVO, Long> implem
         }
         sc.setParameters(ApiConstants.VIRTUAL_MACHINE_ID, vmId);
 
-        Filter filter = new Filter(VMScheduleVO.class, ApiConstants.ID, true, offset, limit);
+        Filter filter = new Filter(VMScheduleVO.class, ApiConstants.ID, false, offset, limit);
         return searchAndCount(sc, filter);
     }
 

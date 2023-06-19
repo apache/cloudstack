@@ -149,6 +149,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
         response.setEnabled(vmSchedule.getEnabled());
         response.setStartDate(vmSchedule.getStartDate());
         response.setEndDate(vmSchedule.getEndDate());
+        response.setCreated(vmSchedule.getCreated());
         return response;
     }
 

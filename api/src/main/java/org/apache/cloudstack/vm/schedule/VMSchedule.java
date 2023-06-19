@@ -46,4 +46,6 @@ public interface VMSchedule extends Identity, InternalIdentity {
     Date getEndDate();
 
     ZoneId getTimeZoneId();
+
+    Date getCreated();
 }

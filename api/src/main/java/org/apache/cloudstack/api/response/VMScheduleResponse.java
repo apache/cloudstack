@@ -65,6 +65,10 @@ public class VMScheduleResponse extends BaseResponse {
     @Param(description = "Date after which the schedule becomes inactive")
     private Date endDate;
 
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "Date when the schedule was created")
+    private Date created;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -100,4 +104,6 @@ public class VMScheduleResponse extends BaseResponse {
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
+
+    public void setCreated(Date created) {this.created = created;}
 }

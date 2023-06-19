@@ -176,4 +176,8 @@ public class VMScheduleVO implements VMSchedule {
     public ZoneId getTimeZoneId() {
         return TimeZone.getTimeZone(getTimeZone()).toZoneId();
     }
+
+    public Date getCreated() {
+        return created;
+    }
 }

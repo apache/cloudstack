@@ -215,7 +215,7 @@ export default {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
     return {
       tabLoading: false,
-      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'startdate', 'enddate', 'vmScheduleActions'],
+      columnKeys: ['action', 'enabled', 'description', 'schedule', 'timezone', 'startdate', 'enddate', 'created', 'vmScheduleActions'],
       selectedColumnKeys: [],
       columns: [],
       schedules: [],
