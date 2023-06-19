@@ -2823,7 +2823,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
         }
 
-        morDs = firstHostDatastoreSystemMO.createVmfsDatastore(datastoreName, hostScsiDisk);
+        morDs = firstHostDatastoreSystemMO.findDatastoreByName(datastoreName);
+        if (morDs == null) {
+            morDs = firstHostDatastoreSystemMO.createVmfsDatastore(datastoreName, hostScsiDisk);
+        }
 
         if (morDs != null) {
             waitForAllHostsToMountDatastore(lstHosts, new DatastoreMO(context, morDs));
