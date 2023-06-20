@@ -94,7 +94,7 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     @Override
     public ImageStoreEntity getImageStore(String uuid) {
         ImageStoreVO dataStore = dataStoreDao.findByUuid(uuid);
-        return getImageStore(dataStore.getId());
+        return dataStore == null ? null : getImageStore(dataStore.getId());
     }
 
     @Override
@@ -246,6 +246,16 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
                     Math.round(_statsCollector.getImageStoreCapacityThreshold() * 100)));
         }
         return stores;
+    }
+
+    @Override
+    public List<DataStore> listImageStoresFilteringByZoneIds(Long... zoneIds) {
+        List<ImageStoreVO> stores = dataStoreDao.listImageStoresByZoneIds(zoneIds);
+        List<DataStore> imageStores = new ArrayList<>();
+        for (ImageStoreVO store : stores) {
+            imageStores.add(getImageStore(store.getId()));
+        }
+        return imageStores;
     }
 
     @Override

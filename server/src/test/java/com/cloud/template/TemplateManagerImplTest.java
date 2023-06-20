@@ -31,6 +31,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.projects.ProjectManager;
@@ -43,6 +44,7 @@ import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -71,6 +73,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -82,6 +85,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -89,6 +94,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -193,6 +199,9 @@ public class TemplateManagerImplTest {
 
     @Inject
     AccountManager _accountMgr;
+
+    @Inject
+    HeuristicRuleHelper heuristicRuleHelperMock;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -588,6 +597,50 @@ public class TemplateManagerImplTest {
         Assert.assertEquals(template, resultTemplate);
     }
 
+    @Test
+    public void getImageStoreTestStoreUuidIsNotNullShouldReturnAValidImageStoreIfValidUuid() {
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+
+        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(dataStore);
+
+        templateManager.getImageStore("UUID", 1L, volumeVO);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getImageStoreTestStoreUuidIsNotNullShouldThrowCloudRuntimeExceptionIfInvalidUuid() {
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+
+        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
+
+        templateManager.getImageStore("UUID", 1L, volumeVO);
+    }
+
+    @Test
+    public void getImageStoreTestStoreUuidIsNullAndThereIsNoActiveHeuristicRulesShouldCallGetImageStoreWithFreeCapacity() {
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+
+        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(VolumeVO.class))).thenReturn(null);
+        Mockito.when(dataStoreManager.getImageStoreWithFreeCapacity(Mockito.anyLong())).thenReturn(dataStore);
+
+        templateManager.getImageStore(null, 1L, volumeVO);
+        Mockito.verify(dataStoreManager, Mockito.times(1)).getImageStoreWithFreeCapacity(Mockito.anyLong());
+    }
+
+    @Test
+    public void getImageStoreTestStoreUuidIsNullAndThereIsActiveHeuristicRulesShouldNotCallGetImageStoreWithFreeCapacity() {
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+
+        Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(VolumeVO.class))).thenReturn(dataStore);
+
+        templateManager.getImageStore(null, 1L, volumeVO);
+        Mockito.verify(dataStoreManager, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());
+    }
+
     @Configuration
     @ComponentScan(basePackageClasses = {TemplateManagerImpl.class},
             includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
@@ -797,6 +850,16 @@ public class TemplateManagerImplTest {
         @Bean
         public SnapshotService snapshotService() {
             return Mockito.mock(SnapshotService.class);
+        }
+
+        @Bean
+        public SecondaryStorageHeuristicDao secondaryStorageHeuristicDao() {
+            return Mockito.mock(SecondaryStorageHeuristicDao.class);
+        }
+
+        @Bean
+        public HeuristicRuleHelper heuristicRuleHelper() {
+            return Mockito.mock(HeuristicRuleHelper.class);
         }
 
         public static class Library implements TypeFilter {

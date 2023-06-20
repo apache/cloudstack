@@ -80,4 +80,6 @@ public interface ImageStoreProviderManager {
     List<DataStore> listImageStoresWithFreeCapacity(List<DataStore> imageStores);
 
     List<DataStore> orderImageStoresOnFreeCapacity(List<DataStore> imageStores);
+
+    List<DataStore> listImageStoresFilteringByZoneIds(Long... zoneIds);
 }

@@ -906,6 +906,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return findOneIncludingRemovedBy(sc);
     }
 
+    @Override
+    @DB()
+    public T findOneIncludingRemovedBy(SearchCriteria<T> sc, final Filter filter) {
+        sc = checkAndSetRemovedIsNull(sc);
+        filter.setLimit(1L);
+        List<T> results = searchIncludingRemoved(sc, filter, null, false);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
     @DB()
     protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);

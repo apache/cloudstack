@@ -18,6 +18,7 @@ package com.cloud.template;
 
 import java.util.List;
 
+import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -114,7 +115,7 @@ public interface TemplateManager {
 
     Long getTemplateSize(long templateId, long zoneId);
 
-    DataStore getImageStore(String storeUuid, Long zoneId);
+    DataStore getImageStore(String storeUuid, Long zoneId, VolumeVO volume);
 
     String getChecksum(DataStore store, String templatePath, String algorithm);
 

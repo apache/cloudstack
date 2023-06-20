@@ -192,6 +192,9 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
+            "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
+
     /**
      * should we execute in sequence not involving any storages?
      * @return tru if commands should execute in sequence

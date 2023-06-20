@@ -43,10 +43,12 @@ import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.CreateSnapshotPayload;
@@ -82,6 +84,9 @@ public class SnapshotServiceImpl implements SnapshotService {
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
     VolumeDataFactory volFactory;
+
+    @Inject
+    private HeuristicRuleHelper heuristicRuleHelper;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -243,7 +248,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             fullSnapshot = snapshotFullBackup;
         }
         if (fullSnapshot) {
-            return dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
+            return getImageStoreForSnapshot(snapshot.getDataCenterId(), snapshot);
         } else {
             SnapshotInfo parentSnapshot = snapshot.getParent();
             // Note that DataStore information in parentSnapshot is for primary
@@ -254,10 +259,23 @@ public class SnapshotServiceImpl implements SnapshotService {
                 parentSnapshotOnBackupStore = _snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             }
             if (parentSnapshotOnBackupStore == null) {
-                return dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
+                return getImageStoreForSnapshot(snapshot.getDataCenterId(), snapshot);
             }
             return dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(), parentSnapshotOnBackupStore.getRole());
         }
+    }
+
+    /**
+     * Verify if the data center has heuristic rules for allocating snapshots; if there is then returns the {@link DataStore} returned by the JS script.
+     * Otherwise, returns {@link DataStore}s with free capacity.
+     */
+    protected DataStore getImageStoreForSnapshot(Long dataCenterId, SnapshotInfo snapshot) {
+        DataStore imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(dataCenterId, HeuristicPurpose.SNAPSHOT, snapshot);
+
+        if (imageStore == null) {
+            imageStore = dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
+        }
+        return imageStore;
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -58,6 +59,9 @@ import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.UpdateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -95,6 +99,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secstorage.HeuristicVO;
+import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
@@ -115,6 +123,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -342,6 +351,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
     @Inject
     private AnnotationDao annotationDao;
+
+    @Inject
+    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
 
     @Inject
     protected UserVmManager userVmManager;
@@ -1845,6 +1857,65 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new CloudRuntimeException(String.format("Unable to sync storage pool [%s] as there no connected hosts to the storage pool", pool.getUuid()));
         }
         return (PrimaryDataStoreInfo) _dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+
+    @Override
+    public Heuristic createSecondaryStorageHeuristic(CreateSecondaryStorageSelectorCmd cmd) {
+        String name = cmd.getName();
+        String description = cmd.getDescription();
+        long zoneId = cmd.getZoneId();
+        String heuristicRule = cmd.getHeuristicRule();
+        String purpose = cmd.getPurpose();
+        HeuristicPurpose formattedPurpose = EnumUtils.getEnumIgnoreCase(HeuristicPurpose.class, purpose);
+
+        if (formattedPurpose == null) {
+            throw new IllegalArgumentException(String.format("The given heuristic purpose [%s] is not valid for creating a new secondary storage selector." +
+                    " The valid options are %s.", purpose, Arrays.asList(HeuristicPurpose.values())));
+        }
+
+        HeuristicVO heuristic = secondaryStorageHeuristicDao.findByZoneIdAndPurpose(zoneId, formattedPurpose);
+
+        if (heuristic != null) {
+            DataCenterVO dataCenter = _dcDao.findById(zoneId);
+            throw new CloudRuntimeException(String.format("There is already a heuristic rule in the specified %s with purpose [%s].",
+                    dataCenter, purpose));
+        }
+
+        validateHeuristicRule(heuristicRule);
+
+        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedPurpose.toString(), heuristicRule, new Date(), null);
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public Heuristic updateSecondaryStorageHeuristic(UpdateSecondaryStorageSelectorCmd cmd) {
+        long heuristicId = cmd.getId();
+        String heuristicRule = cmd.getHeuristicRule();
+
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+        validateHeuristicRule(heuristicRule);
+        heuristicVO.setHeuristicRule(heuristicRule);
+
+        return secondaryStorageHeuristicDao.persist(heuristicVO);
+    }
+
+    @Override
+    public void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd) {
+        Long heuristicId = cmd.getId();
+        HeuristicVO heuristicVO = secondaryStorageHeuristicDao.findById(heuristicId);
+
+        if (heuristicVO != null) {
+            secondaryStorageHeuristicDao.remove(heuristicId);
+        } else {
+            throw new CloudRuntimeException(String.format("Unable to find an active heuristic with the specified UUID."));
+        }
+    }
+
+    protected void validateHeuristicRule(String heuristicRule) {
+        if (StringUtils.isBlank(heuristicRule)) {
+            throw new IllegalArgumentException("Unable to create a new secondary storage selector as the given heuristic rule is blank.");
+        }
     }
 
     public void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId) {
