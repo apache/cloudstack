@@ -26,25 +26,24 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
     @Mock
     ProjectAccountDao projectAccountDaoMock;
@@ -63,10 +62,19 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     List<String> apiNames = new ArrayList<>(Arrays.asList("apiName"));
 
+    MockedStatic<CallContext> callContextMocked;
+
     @Before
     public void setup() {
-
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
         Mockito.doReturn(true).when(roleServiceMock).isEnabled();
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        callContextMocked.close();
     }
 
     public Project getTestProject() {
@@ -88,8 +96,6 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     @Test
     public void getApisAllowedToUserTestProjectIsNullShouldReturnUnchangedApiList() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.doReturn(null).when(callContextMock).getProject();
 
@@ -99,8 +105,6 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     @Test (expected = PermissionDeniedException.class)
     public void getApisAllowedToUserTestProjectAccountIsNullThrowPermissionDeniedException() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.when(callContextMock.getProject()).thenReturn(getTestProject());
         Mockito.when(projectAccountDaoMock.findByProjectIdAccountId(Mockito.anyLong(), Mockito.anyLong())).thenReturn(null);
@@ -111,8 +115,6 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     @Test
     public void getApisAllowedToUserTestProjectAccountHasAdminRoleReturnsUnchangedApiList() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
@@ -124,8 +126,6 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     @Test
     public void getApisAllowedToUserTestProjectAccountNotPermittedForTheApiListShouldReturnEmptyList() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
@@ -139,8 +139,6 @@ public class ProjectRoleBasedApiAccessCheckerTest extends TestCase {
 
     @Test
     public void getApisAllowedToUserTestProjectAccountPermittedForTheApiListShouldReturnTheSameList() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
