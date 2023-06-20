@@ -838,4 +838,34 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(templateZoneDao.findByZoneTemplate(dcId, templateId)).thenReturn(Mockito.mock(VMTemplateZoneVO.class));
         virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
     }
+
+    @Test
+    public void checkAndAttemptMigrateVmAcrossClusterNonValid() {
+        // Below scenarios shouldn't result in VM migration
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.KVM);
+        virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, 1L, new HashMap<>());
+
+        Mockito.when(vm.getHypervisorType()).thenReturn(HypervisorType.VMware);
+        Mockito.when(vm.getLastHostId()).thenReturn(null);
+        virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, 1L, new HashMap<>());
+
+        Long destinationClusterId = 10L;
+        Mockito.when(vm.getLastHostId()).thenReturn(1L);
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        Mockito.when(hostVO.getClusterId()).thenReturn(destinationClusterId);
+        Mockito.when(hostDaoMock.findById(1L)).thenReturn(hostVO);
+        virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, destinationClusterId, new HashMap<>());
+
+        destinationClusterId = 20L;
+        Map<Volume, StoragePool> map = new HashMap<>();
+        StoragePool pool1 = Mockito.mock(StoragePool.class);
+        Mockito.when(pool1.getClusterId()).thenReturn(10L);
+        map.put(Mockito.mock(Volume.class), pool1);
+        StoragePool pool2 = Mockito.mock(StoragePool.class);
+        Mockito.when(pool2.getClusterId()).thenReturn(null);
+        map.put(Mockito.mock(Volume.class), pool2);
+        virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, destinationClusterId, map);
+    }
 }
