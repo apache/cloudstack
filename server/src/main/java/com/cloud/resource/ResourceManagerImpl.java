@@ -38,6 +38,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -1016,10 +1017,24 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return true;
     }
 
-    private void destroyLocalStoragePoolVolumes(long poolId) {
-        List<VolumeVO> volumes = volumeDao.findByPoolId(poolId);
-        for (VolumeVO volume : volumes) {
-            volumeDao.updateAndRemoveVolume(volume);
+    private void addVolumesToList(List<VolumeVO> volumes, List<VolumeVO> volumesToAdd) {
+        if (CollectionUtils.isNotEmpty(volumesToAdd)) {
+            volumes.addAll(volumesToAdd);
+        }
+    }
+
+    protected void destroyLocalStoragePoolVolumes(long poolId) {
+        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+
+        List<VolumeVO> volumes = new ArrayList<>();
+        addVolumesToList(volumes, rootDisks);
+        addVolumesToList(volumes, dataVolumes);
+
+        if (CollectionUtils.isNotEmpty(volumes)) {
+            for (VolumeVO volume : volumes) {
+                volumeDao.updateAndRemoveVolume(volume);
+            }
         }
     }
 
