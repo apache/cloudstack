@@ -533,8 +533,11 @@ export default {
           show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) },
           groupAction: true,
           popup: true,
-          args: ['cleanup'],
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
+          args: (record, store, group) => {
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
+              ? ['cleanup', 'expunge'] : ['cleanup']
+          },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge, cleanup: values.cleanup } }) }
         }
       ]
     },

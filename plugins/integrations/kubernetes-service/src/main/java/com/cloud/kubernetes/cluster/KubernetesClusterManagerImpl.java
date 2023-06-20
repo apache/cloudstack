@@ -17,6 +17,7 @@
 package com.cloud.kubernetes.cluster;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.vm.UserVmManager.AllowUserExpungeRecoverVm;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1360,10 +1361,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean deleteKubernetesCluster(Long kubernetesClusterId, boolean cleanup) throws CloudRuntimeException {
+    public boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
+        Long kubernetesClusterId = cmd.getId();
         KubernetesClusterVO cluster = kubernetesClusterDao.findById(kubernetesClusterId);
         if (cluster == null) {
             throw new InvalidParameterValueException("Invalid cluster id specified");
@@ -1374,11 +1376,19 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             destroyWorker = ComponentContext.inject(destroyWorker);
             return destroyWorker.destroy();
         } else {
+            boolean cleanup = cmd.getCleanup();
             if (cleanup) {
+                CallContext ctx = CallContext.current();
+                boolean expunge = cmd.getExpunge();
+
+                if (expunge && !accountManager.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
+                    throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
+                }
+
                 List<KubernetesClusterVmMapVO> vmMapList = kubernetesClusterVmMapDao.listByClusterId(kubernetesClusterId);
                 for (KubernetesClusterVmMapVO vmMap : vmMapList) {
                     try {
-                        userVmService.destroyVm(vmMap.getVmId(), false);
+                        userVmService.destroyVm(vmMap.getVmId(), expunge);
                     } catch (ResourceUnavailableException exception) {
                         logMessage(Level.WARN, String.format("Failed to destroy vm %d", vmMap.getVmId()), exception);
                     }
@@ -1526,6 +1536,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return upgradeWorker.upgradeCluster();
     }
 
+    private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
+        List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
+        kubernetesCluster.setNodeCount(nodeList.size());
+        kubernetesCluster.setNodeCount(nodeList.size());
+        kubernetesClusterDao.persist(kubernetesCluster);
+    }
+
     @Override
     public boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
@@ -1564,6 +1582,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             clusterVmMap = new KubernetesClusterVmMapVO(clusterId, vmId, cmd.isControlNode());
             kubernetesClusterVmMapDao.persist(clusterVmMap);
         }
+        updateNodeCount(kubernetesCluster);
         return true;
     }
 
@@ -1588,6 +1607,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         for (KubernetesClusterVmMapVO clusterVmMapVO : clusterVmMapList) {
             kubernetesClusterVmMapDao.remove(clusterVmMapVO.getId());
         }
+        updateNodeCount(kubernetesCluster);
         return true;
     }
 

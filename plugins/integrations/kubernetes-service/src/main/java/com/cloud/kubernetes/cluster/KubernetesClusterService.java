@@ -18,6 +18,7 @@ package com.cloud.kubernetes.cluster;
 
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.GetKubernetesClusterConfigCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ListKubernetesClustersCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
@@ -92,7 +93,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     boolean stopKubernetesCluster(StopKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
-    boolean deleteKubernetesCluster(Long kubernetesClusterId, boolean cleanup) throws CloudRuntimeException;
+    boolean deleteKubernetesCluster(DeleteKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean isCommandSupported(KubernetesCluster cluster, String cmdName);
 
