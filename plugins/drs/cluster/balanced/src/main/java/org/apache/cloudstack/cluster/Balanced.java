@@ -38,7 +38,7 @@ import java.util.Map;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshold;
 
-public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
+public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
 
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
@@ -49,7 +49,7 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
 
     @Override
     public String getName() {
-        return "condensed";
+        return "balanced";
     }
 
     /**
@@ -71,13 +71,13 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         String metric = ClusterDrsMetric.valueIn(clusterId);
         switch (metric) {
             case "cpu":
-                return cpuImbalance < threshold;
+                return cpuImbalance > threshold;
             case "memory":
-                return memoryImbalance < threshold;
+                return memoryImbalance > threshold;
             case "both":
-                return cpuImbalance < threshold && memoryImbalance < threshold;
+                return cpuImbalance > threshold && memoryImbalance > threshold;
             case "either":
-                return cpuImbalance < threshold || memoryImbalance < threshold;
+                return cpuImbalance > threshold || memoryImbalance > threshold;
             default:
                 throw new ConfigurationException(String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
         }
@@ -129,22 +129,22 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         Double postCpuImbalance = getClusterImbalance(postCpuList);
         Double postMemoryImbalance = getClusterImbalance(postMemoryList);
 
-
 //        cost = serviceOffering.getRamSize();
-//        benefit = (postMemoryImbalance - preMemoryImbalance) * destHost.getTotalMemory();
+//        benefit = (preMemoryImbalance - postMemoryImbalance) * destHost.getTotalMemory();
 
         String metric = ClusterDrsMetric.valueIn(clusterId);
-        double improvement;
+        final double improvement;
         switch (metric) {
             case "cpu":
-                improvement = postCpuImbalance - preCpuImbalance;
+                improvement = preCpuImbalance - postCpuImbalance;
                 break;
             case "memory":
-                improvement = postMemoryImbalance - preMemoryImbalance;
+                improvement = preMemoryImbalance - postMemoryImbalance;
                 break;
             default:
-                improvement = postCpuImbalance + postMemoryImbalance - preCpuImbalance + preMemoryImbalance;
+                improvement = preCpuImbalance + preMemoryImbalance - postCpuImbalance + postMemoryImbalance;
         }
+
         return new Ternary<>(improvement, cost, benefit);
     }
 }

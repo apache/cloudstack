@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
@@ -44,7 +43,7 @@ public class ScheduleDrsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long id;
 
-    @Parameter(name = "iterations", type = CommandType.LONG,
+    @Parameter(name = "iterations", type = CommandType.DOUBLE,
             description = "The maximum number of iterations in a DRS job defined as a percentage (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's drs.iterations setting")
     private Double iterations;
 
@@ -75,11 +74,7 @@ public class ScheduleDrsCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        Cluster cluster = _resourceService.getCluster(getId());
-        if (cluster == null) {
-            throw new InvalidParameterValueException("Unable to find the cluster by id=" + getId());
-        }
-        final SuccessResponse response = clusterDrsService.scheduleDrs(this);
+        final SuccessResponse response = clusterDrsService.executeDrs(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

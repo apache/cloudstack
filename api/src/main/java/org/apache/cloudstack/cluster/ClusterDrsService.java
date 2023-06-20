@@ -72,5 +72,14 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
                     "0.5",
                     "The cluster imbalance threshold (percentage as a value between 0 and 1) that is compared with the standard deviation percentage for a resource pool (cluster) utilization metric.",
                     true, ConfigKey.Scope.Cluster, null);
-    SuccessResponse scheduleDrs(ScheduleDrsCmd cmd);
+
+    ConfigKey<String> ClusterDrsMetric = new ConfigKey<String>(
+            String.class,
+            "drs.imbalance.metric",
+            ConfigKey.CATEGORY_ADVANCED,
+            "cpu",
+            "The cluster imbalance metric to use when checking the drs.imbalance.threshold. Possible values are memory, cpu, either (cpu OR memory crosses the threshold), both (cpu AND memory crosses the threshold).",
+            true, ConfigKey.Scope.Cluster, null, null, null, null, null, ConfigKey.Kind.Select, "memory,cpu,either,both");
+
+    SuccessResponse executeDrs(ScheduleDrsCmd cmd);
 }
