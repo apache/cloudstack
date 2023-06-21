@@ -62,7 +62,7 @@ public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
             description = "the IDs of the VMs to add to the cluster")
     private List<Long> vmIds;
 
-    @Parameter(name = "isControlNode", type = CommandType.BOOLEAN,
+    @Parameter(name = ApiConstants.IS_CONTROL_NODE, type = CommandType.BOOLEAN,
             description = "Is control node or not? Defaults to false.")
     private Boolean isControlNode;
 

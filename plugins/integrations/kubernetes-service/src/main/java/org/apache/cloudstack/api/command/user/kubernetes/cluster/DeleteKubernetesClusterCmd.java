@@ -67,7 +67,7 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.EXPUNGE,
             type = CommandType.BOOLEAN,
             since = "4.19.0",
-            description = "Expunge attached instances of the ExternalManaged Cluster. Always false, if cleanup is set to false. Default: false")
+            description = "Expunge attached instances of the ExternalManaged Cluster. If true, value of cleanup is ignored. Default: false")
     private Boolean expunge;
 
     /////////////////////////////////////////////////////
@@ -83,7 +83,7 @@ public class DeleteKubernetesClusterCmd extends BaseAsyncCmd {
     }
 
     public Boolean getExpunge() {
-        return getCleanup() && expunge != null && expunge;
+        return expunge != null && expunge;
     }
 
     /////////////////////////////////////////////////////

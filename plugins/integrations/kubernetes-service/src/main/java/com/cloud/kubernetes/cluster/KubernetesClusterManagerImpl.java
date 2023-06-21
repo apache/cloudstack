@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -1377,9 +1376,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             return destroyWorker.destroy();
         } else {
             boolean cleanup = cmd.getCleanup();
-            if (cleanup) {
+            boolean expunge = cmd.getExpunge();
+            if (cleanup || expunge) {
                 CallContext ctx = CallContext.current();
-                boolean expunge = cmd.getExpunge();
 
                 if (expunge && !accountManager.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
                     throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
@@ -1389,7 +1388,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 for (KubernetesClusterVmMapVO vmMap : vmMapList) {
                     try {
                         userVmService.destroyVm(vmMap.getVmId(), expunge);
-                    } catch (ResourceUnavailableException exception) {
+                        if (expunge) {
+                            userVmService.expungeVm(vmMap.getVmId());
+                        }
+                    } catch (Exception exception) {
                         logMessage(Level.WARN, String.format("Failed to destroy vm %d", vmMap.getVmId()), exception);
                     }
                 }
