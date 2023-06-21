@@ -2957,15 +2957,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (projectId == -1L) {
                     if (caller.getType() == Account.Type.ADMIN) {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
-                        if (listAll) {
-                            domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
-                        }
                     } else {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                         // permittedAccounts can be empty when the caller is not a part of any project (a domain account)
                         if (permittedAccounts.isEmpty()) {
                             permittedAccounts.add(caller.getId());
                         }
+                    }
+                    if (listAll) {
+                        domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
                     }
                 } else {
                     Project project = _projectMgr.getProject(projectId);
