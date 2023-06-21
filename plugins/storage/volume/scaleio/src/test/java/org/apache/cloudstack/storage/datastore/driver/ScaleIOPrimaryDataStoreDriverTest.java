@@ -49,28 +49,29 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(RemoteHostEndPoint.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Spy
@@ -92,6 +93,18 @@ public class ScaleIOPrimaryDataStoreDriverTest {
     HostDao hostDao;
     @Mock
     ConfigurationDao configDao;
+
+    static MockedStatic<RemoteHostEndPoint> remoteHostEndPointMock;
+
+    @BeforeClass
+    public static void init() {
+        remoteHostEndPointMock = mockStatic(RemoteHostEndPoint.class);
+    }
+
+    @AfterClass
+    public static void close() {
+        remoteHostEndPointMock.close();
+    }
 
     @Before
     public void initMocks() {
@@ -180,9 +193,8 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         VolumeObjectTO destVolTO = Mockito.mock(VolumeObjectTO.class);
         when(destData.getTO()).thenReturn(destVolTO);
         Host host = prepareEndpointForVolumeOperation(srcData);
-        PowerMockito.mockStatic(RemoteHostEndPoint.class);
         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
-        when(RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
+        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
@@ -225,9 +237,8 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         VolumeObjectTO destVolTO = Mockito.mock(VolumeObjectTO.class);
         when(destData.getTO()).thenReturn(destVolTO);
         Host host = prepareEndpointForVolumeOperation(srcData);
-        PowerMockito.mockStatic(RemoteHostEndPoint.class);
         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
-        when(RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
+        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
 
         DataTO dataTO = Mockito.mock(DataTO.class);
         CreateObjectAnswer createAnswer = new CreateObjectAnswer(dataTO);
@@ -493,9 +504,8 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Host destHost = Mockito.mock(Host.class);
 
         doReturn(false).when(scaleIOPrimaryDataStoreDriver).anyVolumeRequiresEncryption(srcData, destData);
-        PowerMockito.mockStatic(RemoteHostEndPoint.class);
         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
-        when(RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(ep);
+        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(ep);
         Answer answer = Mockito.mock(Answer.class);
         when(ep.sendMessage(any())).thenReturn(answer);
 
@@ -517,8 +527,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Host destHost = Mockito.mock(Host.class);
 
         doReturn(false).when(scaleIOPrimaryDataStoreDriver).anyVolumeRequiresEncryption(srcData, destData);
-        PowerMockito.mockStatic(RemoteHostEndPoint.class);
-        when(RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(null);
+        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(null);
 
         Answer answer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, destHost);
 
