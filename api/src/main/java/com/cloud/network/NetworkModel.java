@@ -115,7 +115,7 @@ public interface NetworkModel {
     List<? extends Nic> getNics(long vmId);
 
     /**
-     * gets the next available MAC and checks it for global uniqueness in the nics table. It will keep looking till it fins a nic to use.
+     * Gets the next available MAC and checks it for global uniqueness in the nics table. It will keep looking until it finds a MAC address that is unique.
      *
      * @param networkConfigurationId the id of the network to use the nic in. used for finding the zone
      * @return a string containing a MAC address
