@@ -4308,7 +4308,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             private void deleteNetworks() {
                 // Delete networks
                 List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
-                if (networks != null && !networks.isEmpty()) {
+                if (CollectionUtils.isNotEmpty(networks)) {
                     for (NetworkVO network : networks) {
                         _networksDao.remove(network.getId());
                     }
