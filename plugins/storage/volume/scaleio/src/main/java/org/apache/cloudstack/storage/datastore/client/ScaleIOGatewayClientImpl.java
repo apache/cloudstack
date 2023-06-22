@@ -762,7 +762,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
 
             String srcPoolId = volume.getStoragePoolId();
-            logger.debug("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
+            logger.info("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
                     " in the same PowerFlex cluster");
 
             post("/instances/Volume::" + srcVolumeId + "/action/migrateVTree",

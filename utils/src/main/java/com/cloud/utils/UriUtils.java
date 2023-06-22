@@ -417,7 +417,7 @@ public class UriUtils {
                     List<String> urls = metalinkUrls.get("url");
                     boolean validUrl = false;
                     for (String u : urls) {
-                        if (url.endsWith("torrent")) {
+                        if (u.endsWith("torrent")) {
                             continue;
                         }
                         try {

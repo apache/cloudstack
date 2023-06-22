@@ -29,10 +29,10 @@
         <span v-if="image">
           <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
         </span>
-        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: $config.theme['@primary-color'], color: 'white' }">
           {{ userInitials }}
         </a-avatar>
-        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: $config.theme['@primary-color'], color: 'white' }">
           <template #icon><user-outlined /></template>
         </a-avatar>
         <span>{{ nickname() }}</span>

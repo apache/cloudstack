@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
+import org.libvirt.Library;
 import org.libvirt.LibvirtException;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -45,6 +46,7 @@ public class LibvirtConnection {
         if (conn == null) {
             LOGGER.info("No existing libvirtd connection found. Opening a new one");
             conn = new Connect(hypervisorURI, false);
+            Library.initEventLoop();
             LOGGER.debug("Successfully connected to libvirt at: " + hypervisorURI);
             s_connections.put(hypervisorURI, conn);
         } else {
