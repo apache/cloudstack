@@ -122,6 +122,8 @@ public class UriUtilsTest {
         String url6 = String.format("rbd://%s:3300", host);
         String url7 = String.format("rbd://%s", host);
         String url8 = String.format("rbd://user@%s", host);
+        String url9 = String.format("rbd://user:AQC18pNko3r2GRAAh/3PxIr0lTKMzLL1CAaDww==@%s:3300/pool", host);
+        String url10 = String.format("rbd://user:AQC18pNko3r2GRAAh/3PxIr0lTKMzLL1CAaDww==@%s:3300/pool/volume2", host);
 
         testGetUriInfoInternal(url0, host);
         testGetUriInfoInternal(url1, host);
@@ -132,6 +134,8 @@ public class UriUtilsTest {
         testGetUriInfoInternal(url6, host);
         testGetUriInfoInternal(url7, host);
         testGetUriInfoInternal(url8, host);
+        testGetUriInfoInternal(url9, host);
+        testGetUriInfoInternal(url10, host);
     }
 
     @Test
