@@ -261,12 +261,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     public void revokeVolumeAccess(String volumePath, Host host, DataStore dataStore) {
         if (host == null) {
-            LOGGER.warn("Declining to revoke access to PowerFlex volume when a host is not provided");
+            logger.warn("Declining to revoke access to PowerFlex volume when a host is not provided");
             return;
         }
 
         try {
-            LOGGER.debug("Revoking access for PowerFlex volume: " + volumePath);
+            logger.debug("Revoking access for PowerFlex volume: " + volumePath);
 
             final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
             if (StringUtils.isBlank(sdcId)) {
@@ -276,7 +276,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
         } catch (Exception e) {
-            LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
+            logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
         }
     }
 
@@ -851,15 +851,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 updateVolumeAfterCopyVolume(srcData, destData);
                 updateSnapshotsAfterCopyVolume(srcData, destData);
                 deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
-                LOGGER.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
+                logger.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
                 answer = new Answer(null, true, null);
             } else {
                 String errorMsg = "Failed to migrate PowerFlex volume: " + srcVolumeId + " to storage pool " + destPoolId;
-                LOGGER.debug(errorMsg);
+                logger.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to migrate PowerFlex volume: " + srcVolumeId + " due to: " + e.getMessage());
+            logger.error("Failed to migrate PowerFlex volume: " + srcVolumeId + " due to: " + e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
@@ -952,11 +952,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
             if (!deleteResult) {
                 errMsg = "Failed to delete source PowerFlex volume with id: " + scaleIOVolumeId;
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
             }
         } catch (Exception e) {
             errMsg = "Unable to delete source PowerFlex volume: " + srcVolumePath + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);;
+            logger.warn(errMsg);;
         }
     }
 
@@ -973,12 +973,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
             if (!deleteResult) {
                 errMsg = "Failed to delete PowerFlex volume with id: " + scaleIOVolumeId;
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
             }
 
         } catch (Exception e) {
             errMsg = "Unable to delete destination PowerFlex volume: " + destVolumePath + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
 

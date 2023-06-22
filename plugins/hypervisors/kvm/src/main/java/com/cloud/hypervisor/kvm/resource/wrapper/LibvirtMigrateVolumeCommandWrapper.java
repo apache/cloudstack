@@ -137,18 +137,18 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
             parameters[0] = parameter;
 
             dm.blockCopy(destDiskLabel, diskdef, parameters, Domain.BlockCopyFlags.REUSE_EXT);
-            LOGGER.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
+            logger.info(String.format("Block copy has started for the volume %s : %s ", destDiskLabel, srcPath));
 
             return checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, srcSecretUUID);
 
         } catch (Exception e) {
             String msg = "Migrate volume failed due to " + e.toString();
-            LOGGER.warn(msg, e);
+            logger.warn(msg, e);
             if (destDiskLabel != null) {
                 try {
                     dm.blockJobAbort(destDiskLabel, Domain.BlockJobAbortFlags.ASYNC);
                 } catch (LibvirtException ex) {
-                    LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                    logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
                 }
             }
             return new MigrateVolumeAnswer(command, false, msg, null);
@@ -157,7 +157,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                 try {
                     dm.free();
                 } catch (LibvirtException l) {
-                    LOGGER.trace("Ignoring libvirt error.", l);
+                    logger.trace("Ignoring libvirt error.", l);
                 };
             }
         }
@@ -169,9 +169,9 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
         while (waitTimeInSec > 0) {
             DomainBlockJobInfo blockJobInfo = dm.getBlockJobInfo(diskLabel, 0);
             if (blockJobInfo != null) {
-                LOGGER.debug(String.format("Volume %s : %s block copy progress: %s%% current value:%s end value:%s", diskLabel, srcPath, (blockJobInfo.end == 0)? 0 : 100*(blockJobInfo.cur / (double) blockJobInfo.end), blockJobInfo.cur, blockJobInfo.end));
+                logger.debug(String.format("Volume %s : %s block copy progress: %s%% current value:%s end value:%s", diskLabel, srcPath, (blockJobInfo.end == 0)? 0 : 100*(blockJobInfo.cur / (double) blockJobInfo.end), blockJobInfo.cur, blockJobInfo.end));
                 if (blockJobInfo.cur == blockJobInfo.end) {
-                    LOGGER.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
+                    logger.info(String.format("Block copy completed for the volume %s : %s", diskLabel, srcPath));
                     dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.PIVOT);
                     if (StringUtils.isNotEmpty(srcSecretUUID)) {
                         libvirtComputingResource.removeLibvirtVolumeSecret(conn, srcSecretUUID);
@@ -179,7 +179,7 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
                     break;
                 }
             } else {
-                LOGGER.info("Failed to get the block copy status, trying to abort the job");
+                logger.info("Failed to get the block copy status, trying to abort the job");
                 dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
             }
             waitTimeInSec--;
@@ -193,11 +193,11 @@ public class LibvirtMigrateVolumeCommandWrapper extends CommandWrapper<MigrateVo
 
         if (waitTimeInSec <= 0) {
             String msg = "Block copy is taking long time, failing the job";
-            LOGGER.error(msg);
+            logger.error(msg);
             try {
                 dm.blockJobAbort(diskLabel, Domain.BlockJobAbortFlags.ASYNC);
             } catch (LibvirtException ex) {
-                LOGGER.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
+                logger.error("Migrate volume failed while aborting the block job due to " + ex.getMessage());
             }
             return new MigrateVolumeAnswer(command, false, msg, null);
         }

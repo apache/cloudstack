@@ -1066,7 +1066,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         Answer[] answer = attemptHypervisorMigration(vm, volumePoolMap, lastHost.getId());
         if (answer == null) {
-            s_logger.warn("Hypervisor inter-cluster migration during VM start failed");
+            logger.warn("Hypervisor inter-cluster migration during VM start failed");
             return;
         }
         // Other network related updates will be done using caller
@@ -2375,7 +2375,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 return  _agentMgr.send(hostId, commandsContainer);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
-                s_logger.warn(String.format("Hypervisor migration failed for the VM: %s", vm), e);
+                logger.warn(String.format("Hypervisor migration failed for the VM: %s", vm), e);
             }
         }
         return null;
