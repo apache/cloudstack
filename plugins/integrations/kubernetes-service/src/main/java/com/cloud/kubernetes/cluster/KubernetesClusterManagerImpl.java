@@ -1605,12 +1605,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
 
-        List<KubernetesClusterVmMapVO> clusterVmMapList = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(clusterId, vmIds);
-        for (KubernetesClusterVmMapVO clusterVmMapVO : clusterVmMapList) {
-            kubernetesClusterVmMapDao.remove(clusterVmMapVO.getId());
-        }
+        int removedCount = kubernetesClusterVmMapDao.removeByClusterIdAndVmIdsIn(clusterId, vmIds);
         updateNodeCount(kubernetesCluster);
-        return true;
+        return removedCount > 0;
     }
 
     @Override

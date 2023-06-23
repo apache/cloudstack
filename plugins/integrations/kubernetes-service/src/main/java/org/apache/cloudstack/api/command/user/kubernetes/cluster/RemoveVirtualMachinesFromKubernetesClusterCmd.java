@@ -87,7 +87,7 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         try {
             if (!kubernetesClusterService.removeVmsFromCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VMs from cluster");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "VMs are not part of the CKS cluster");
             }
             final SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());
