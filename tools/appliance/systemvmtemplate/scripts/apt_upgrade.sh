@@ -36,8 +36,8 @@ function add_backports() {
   sed -i '/deb-src/d' /etc/apt/sources.list
   sed -i '/backports/d' /etc/apt/sources.list
   sed -i '/security/d' /etc/apt/sources.list
-  echo 'deb http://http.debian.net/debian bullseye-backports main' >> /etc/apt/sources.list
-  echo 'deb http://security.debian.org/debian-security bullseye-security main' >> /etc/apt/sources.list
+  echo 'deb http://http.debian.net/debian bookworm-backports main' >> /etc/apt/sources.list
+  echo 'deb http://security.debian.org/debian-security bookworm-security main' >> /etc/apt/sources.list
 }
 
 function apt_upgrade() {
