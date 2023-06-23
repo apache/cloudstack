@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -88,6 +89,7 @@ import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -272,6 +274,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VMInstanceDao _vmInstanceDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private ImageStoreDao imageStoreDao;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -1619,6 +1623,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void expungeVolumesInPrimaryOrSecondary(VolumeVO volume, DataStoreRole role) throws InterruptedException, ExecutionException {
+        if (!canAccessVolumeStore(volume, role)) {
+            s_logger.debug(String.format("Cannot access the storage pool with role: %s " +
+                            "for the volume: %s, skipping expunge from storage",
+                    role.name(), volume.getName()));
+            return;
+        }
         VolumeInfo volOnStorage = volFactory.getVolume(volume.getId(), role);
         if (volOnStorage != null) {
             s_logger.info("Expunging volume " + volume.getId() + " from " + role + " data store");
@@ -1638,6 +1648,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
     }
+
+    private boolean canAccessVolumeStore(VolumeVO volume, DataStoreRole role) {
+        if (volume == null) {
+            throw new CloudRuntimeException("No volume given, cannot check access to volume store");
+        }
+        InternalIdentity pool = role == DataStoreRole.Primary ?
+                _storagePoolDao.findById(volume.getPoolId()) :
+                imageStoreDao.findById(volume.getPoolId());
+        return pool != null;
+    }
+
     /**
      * Clean volumes cache entries (if they exist).
      */
