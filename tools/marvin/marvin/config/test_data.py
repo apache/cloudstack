@@ -2248,6 +2248,18 @@ test_data = {
             "url": "http://download.cloudstack.org/cks/setup-1.24.0.iso",
             "mincpunumber": 2,
             "minmemory": 2048
+        },
+        "1.25.0": {
+            "semanticversion": "1.25.0",
+            "url": "http://download.cloudstack.org/cks/setup-1.25.0.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
+        },
+        "1.26.0": {
+            "semanticversion": "1.26.0",
+            "url": "http://download.cloudstack.org/cks/setup-1.26.0.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
         }
     },
     "cks_service_offering": {
