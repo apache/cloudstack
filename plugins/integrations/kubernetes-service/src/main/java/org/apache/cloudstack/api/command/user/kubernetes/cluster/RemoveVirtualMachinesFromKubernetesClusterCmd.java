@@ -23,10 +23,12 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -36,10 +38,10 @@ import java.util.List;
 
 @APICommand(name = "removeVirtualMachinesFromKubernetesCluster",
         description = "Remove VMs from an ExternalManaged kubernetes cluster. Not applicable for CloudManaged kubernetes clusters.",
-        responseObject = SuccessResponse.class,
+        responseObject = RemoveVirtualMachinesFromKubernetesClusterResponse.class,
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
+public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseListCmd {
     public static final Logger LOGGER = Logger.getLogger(RemoveVirtualMachinesFromKubernetesClusterCmd.class.getName());
 
     @Inject
@@ -49,7 +51,7 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
             required = true,
             description = "the ID of the Kubernetes cluster")
@@ -86,12 +88,14 @@ public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            if (!kubernetesClusterService.removeVmsFromCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "VMs are not part of the CKS cluster");
+            List<RemoveVirtualMachinesFromKubernetesClusterResponse> responseList = kubernetesClusterService.removeVmsFromCluster(this);
+            if (responseList.size() < 1) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Provided VMs are not part of the CKS cluster");
             }
-            final SuccessResponse response = new SuccessResponse();
-            response.setResponseName(getCommandName());
-            setResponseObject(response);
+            ListResponse<RemoveVirtualMachinesFromKubernetesClusterResponse> listResponse = new ListResponse<>();
+            listResponse.setResponseName(getCommandName());
+            listResponse.setResponses(responseList);
+            setResponseObject(listResponse);
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

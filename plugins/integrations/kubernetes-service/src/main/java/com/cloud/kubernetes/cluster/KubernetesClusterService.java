@@ -28,11 +28,14 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernet
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import java.util.List;
 
 public interface KubernetesClusterService extends PluggableService, Configurable {
     static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16.0";
@@ -109,5 +112,5 @@ public interface KubernetesClusterService extends PluggableService, Configurable
 
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 
-    boolean removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
+    List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
 }

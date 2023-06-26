@@ -26,9 +26,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -38,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.UserVmService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -60,6 +63,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernet
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -1589,7 +1593,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     @Override
-    public boolean removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd) {
+    public List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd) {
         if (!KubernetesServiceEnabled.value()) {
             logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
         }
@@ -1605,9 +1609,45 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
 
-        int removedCount = kubernetesClusterVmMapDao.removeByClusterIdAndVmIdsIn(clusterId, vmIds);
+        List<KubernetesClusterVmMapVO> kubernetesClusterVmMap = kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(clusterId, vmIds);
+        List<RemoveVirtualMachinesFromKubernetesClusterResponse> responseList = new ArrayList<>();
+
+        Set<Long> vmIdsRemoved = new HashSet<>();
+
+        for (KubernetesClusterVmMapVO clusterVmMap : kubernetesClusterVmMap) {
+            RemoveVirtualMachinesFromKubernetesClusterResponse response = new RemoveVirtualMachinesFromKubernetesClusterResponse();
+            UserVm vm = userVmService.getUserVm(clusterVmMap.getVmId());
+            response.setVmId(vm.getUuid());
+            response.setSuccess(kubernetesClusterVmMapDao.remove(clusterVmMap.getId()));
+            response.setObjectName(cmd.getCommandName());
+            responseList.add(response);
+            vmIdsRemoved.add(clusterVmMap.getVmId());
+        }
+
+        for (Long vmId : vmIds) {
+            if (!vmIdsRemoved.contains(vmId)) {
+                RemoveVirtualMachinesFromKubernetesClusterResponse response = new RemoveVirtualMachinesFromKubernetesClusterResponse();
+                VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+                if (vm == null) {
+                    response.setVmId(vmId.toString());
+                    response.setDisplayText("Not a valid vm id");
+                    vmIdsRemoved.add(vmId);
+                } else {
+                    response.setVmId(vm.getUuid());
+                    vmIdsRemoved.add(vmId);
+                    if (vm.isRemoved()) {
+                        response.setDisplayText("VM is already removed");
+                    } else {
+                        response.setDisplayText("VM is not part of the cluster");
+                    }
+                }
+                response.setObjectName(cmd.getCommandName());
+                response.setSuccess(false);
+                responseList.add(response);
+            }
+        }
         updateNodeCount(kubernetesCluster);
-        return removedCount > 0;
+        return responseList;
     }
 
     @Override
