@@ -46,13 +46,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -348,32 +346,10 @@ public class UriUtils {
         return new HttpClient(s_httpClientManager);
     }
 
-    public static List<String> getMetalinkChecksums(String url) {
-        HttpClient httpClient = getHttpClient();
-        GetMethod getMethod = new GetMethod(url);
-        try {
-            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
-                InputStream is = getMethod.getResponseBodyAsStream();
-                Map<String, List<String>> checksums = getMultipleValuesFromXML(is, new String[] {"hash"});
-                if (checksums.containsKey("hash")) {
-                    List<String> listChksum = new ArrayList<>();
-                    for (String chk : checksums.get("hash")) {
-                        listChksum.add(chk.replaceAll("\n", "").replaceAll(" ", "").trim());
-                    }
-                    return listChksum;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            getMethod.releaseConnection();
-        }
-        return null;
-    }
     /**
      * Retrieve values from XML documents ordered by ascending priority for each tag name
      */
-    protected static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
+    public static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
         try {
             DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
@@ -398,45 +374,6 @@ public class UriUtils {
             s_logger.error(ex);
         }
         return returnValues;
-    }
-
-    /**
-     * Check if there is at least one existent URL defined on metalink
-     * @param url metalink url
-     * @return true if at least one existent URL defined on metalink, false if not
-     */
-    protected static boolean checkUrlExistenceMetalink(String url) {
-        HttpClient httpClient = getHttpClient();
-        GetMethod getMethod = new GetMethod(url);
-        try {
-            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
-                InputStream is = getMethod.getResponseBodyAsStream();
-                Map<String, List<String>> metalinkUrls = getMultipleValuesFromXML(is, new String[] {"url"});
-                if (metalinkUrls.containsKey("url")) {
-                    List<String> urls = metalinkUrls.get("url");
-                    boolean validUrl = false;
-                    for (String u : urls) {
-                        if (u.endsWith("torrent")) {
-                            continue;
-                        }
-                        try {
-                            UriUtils.checkUrlExistence(u);
-                            validUrl = true;
-                            break;
-                        }
-                        catch (IllegalArgumentException e) {
-                            s_logger.warn(e.getMessage());
-                        }
-                    }
-                    return validUrl;
-                }
-            }
-        } catch (IOException e) {
-            s_logger.warn(e.getMessage());
-        } finally {
-            getMethod.releaseConnection();
-        }
-        return false;
     }
 
     /**
@@ -469,28 +406,6 @@ public class UriUtils {
             getMethod.releaseConnection();
         }
         return urls;
-    }
-
-    // use http HEAD method to validate url
-    public static void checkUrlExistence(String url) {
-        if (url.toLowerCase().startsWith("http") || url.toLowerCase().startsWith("https")) {
-            HttpClient httpClient = getHttpClient();
-            HeadMethod httphead = new HeadMethod(url);
-            try {
-                if (httpClient.executeMethod(httphead) != HttpStatus.SC_OK) {
-                    throw new IllegalArgumentException("Invalid URL: " + url);
-                }
-                if (url.endsWith("metalink") && !checkUrlExistenceMetalink(url)) {
-                    throw new IllegalArgumentException("Invalid URLs defined on metalink: " + url);
-                }
-            } catch (HttpException hte) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + hte.getMessage());
-            } catch (IOException ioe) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + ioe.getMessage());
-            } finally {
-                httphead.releaseConnection();
-            }
-        }
     }
 
     public static final Set<String> COMMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
