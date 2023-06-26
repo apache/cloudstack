@@ -830,8 +830,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String storageScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STORAGE_SCRIPTS_DIR);
 
-        String controllCidr = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONTROLL_CIDR);
-
         String tungstenScriptsDir = (String) params.get("tungsten.scripts.dir");
         if (tungstenScriptsDir == null) {
             tungstenScriptsDir = getDefaultTungstenScriptsDir();

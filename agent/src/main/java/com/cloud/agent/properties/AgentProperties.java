@@ -726,7 +726,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>
      */
-    public static final Property<String> CONTROLL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
+    public static final Property<String> CONTROL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
 
     public static class Property <T>{
         private String name;
