@@ -4331,7 +4331,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer ||hypervisorType == HypervisorType.VMware ||
+                hypervisorType == HypervisorType.Simulator || hypervisorType == HypervisorType.Custom)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -5046,6 +5047,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
+        String originalVncPassword = profile.getVirtualMachine().getVncPassword();
+        String returnedVncPassword = null;
         if (startAnswer != null) {
             StartAnswer startAns = (StartAnswer)startAnswer;
             VirtualMachineTO vmTO = startAns.getVirtualMachine();
@@ -5054,6 +5057,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     returnedIp = nicTO.getIp();
                 }
             }
+            returnedVncPassword = vmTO.getVncPassword();
         }
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -5103,6 +5107,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 s_logger.info("Detected that ip changed in the answer, updated nic in the db with new ip " + returnedIp);
             }
+        }
+
+        if (returnedVncPassword != null && !originalVncPassword.equals(returnedVncPassword)) {
+            UserVmVO userVm = _vmDao.findById(profile.getId());
+            userVm.setVncPassword(returnedVncPassword);
+            _vmDao.update(userVm.getId(), userVm);
         }
 
         // get system ip and create static nat rule for the vm

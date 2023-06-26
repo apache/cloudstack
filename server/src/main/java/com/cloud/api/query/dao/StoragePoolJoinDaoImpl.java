@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.storage.DataStoreRole;
@@ -110,7 +111,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setScope(pool.getScope().toString());
         }
         if (pool.getHypervisor() != null) {
-            poolResponse.setHypervisor(pool.getHypervisor().toString());
+            poolResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(pool.getHypervisor()));
         }
 
         StoragePoolDetailVO poolType = storagePoolDetailsDao.findDetail(pool.getId(), "pool_type");
@@ -201,7 +202,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setCreated(pool.getCreated());
         poolResponse.setScope(pool.getScope().toString());
         if (pool.getHypervisor() != null) {
-            poolResponse.setHypervisor(pool.getHypervisor().toString());
+            poolResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(pool.getHypervisor()));
         }
 
         long allocatedSize = pool.getUsedCapacity();

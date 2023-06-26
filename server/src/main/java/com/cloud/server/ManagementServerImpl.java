@@ -48,6 +48,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -1272,7 +1273,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            String hypervisorStr = (String) hypervisorType;
+            String hypervisorSearch = HypervisorGuru.HypervisorCustomDisplayName.value()
+                    .equals(hypervisorStr) ? "Custom" : hypervisorStr;
+            sc.setParameters("hypervisorType", hypervisorSearch);
         }
 
         if (clusterType != null) {
@@ -4477,7 +4481,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 final List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (final ClusterVO cluster : clustersForZone) {
-                    result.add(cluster.getHypervisorType().toString());
+                    result.add(cluster.getHypervisorType() != HypervisorType.Custom ?
+                            cluster.getHypervisorType().toString() :
+                            HypervisorGuru.HypervisorCustomDisplayName.value());
                 }
             }
 

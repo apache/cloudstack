@@ -128,7 +128,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
-            userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+            userVmResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(userVm.getHypervisorType()));
         }
         userVmResponse.setId(userVm.getUuid());
         userVmResponse.setName(userVm.getName());

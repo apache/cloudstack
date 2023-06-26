@@ -561,12 +561,13 @@ public class UserVmManagerImplTest {
     public void verifyIfHypervisorSupportRootdiskSizeOverrideTest() {
         Hypervisor.HypervisorType[] hypervisorTypeArray = Hypervisor.HypervisorType.values();
         int exceptionCounter = 0;
-        int expectedExceptionCounter = hypervisorTypeArray.length - 4;
+        int expectedExceptionCounter = hypervisorTypeArray.length - 5;
 
         for(int i = 0; i < hypervisorTypeArray.length; i++) {
             if (Hypervisor.HypervisorType.KVM == hypervisorTypeArray[i]
                     || Hypervisor.HypervisorType.XenServer == hypervisorTypeArray[i]
                     || Hypervisor.HypervisorType.VMware == hypervisorTypeArray[i]
+                    || Hypervisor.HypervisorType.Custom == hypervisorTypeArray[i]
                     || Hypervisor.HypervisorType.Simulator == hypervisorTypeArray[i]) {
                 userVmManagerImpl.verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorTypeArray[i]);
             } else {
