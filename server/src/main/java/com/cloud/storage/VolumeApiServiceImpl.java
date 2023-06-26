@@ -160,6 +160,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -2983,6 +2984,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         boolean liveMigrateVolume = false;
+        boolean srcAndDestOnStorPool = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
         VMInstanceVO vm = null;
@@ -3026,6 +3028,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
+                    srcAndDestOnStorPool = isSourceAndDestOnStorPool(storagePoolVO, destinationStoragePoolVo);
                 }
             }
 
@@ -3037,6 +3040,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!cmd.isLiveMigrate()) {
                 throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
             }
+        }
+
+        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool) {
+            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
         if (vm != null &&
@@ -3175,6 +3182,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
         return storagePoolVO.getPoolType() != Storage.StoragePoolType.StorPool
                 || destinationStoragePoolVo.getPoolType() != Storage.StoragePoolType.StorPool;
+    }
+
+    private boolean isSourceAndDestOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
+        return storagePoolVO.getPoolType() == Storage.StoragePoolType.StorPool
+                && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.StorPool;
     }
 
     /**
@@ -3476,7 +3488,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
-        if (volume.getEncryptFormat() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped) {
+        boolean isSnapshotOnStorPoolOnly = volume.getStoragePoolType() == StoragePoolType.StorPool && BooleanUtils.toBoolean(_configDao.getValue("sp.bypass.secondary.storage"));
+        if (volume.getEncryptFormat() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped && !isSnapshotOnStorPoolOnly) {
             s_logger.debug(String.format("Refusing to take snapshot of encrypted volume (%s) on running VM (%s)", volume, volume.getAttachedVM()));
             throw new UnsupportedOperationException("Volume snapshots for encrypted volumes are not supported if VM is running");
         }
