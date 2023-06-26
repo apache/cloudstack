@@ -677,7 +677,6 @@ export default {
       }
       const routeName = this.$route.name
       if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
-
         return 'all'
       }
       if (['publicip'].includes(routeName)) {

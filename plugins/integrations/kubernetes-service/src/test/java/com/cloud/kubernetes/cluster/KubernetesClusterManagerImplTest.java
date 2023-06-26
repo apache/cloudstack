@@ -290,7 +290,6 @@ public class KubernetesClusterManagerImplTest {
         Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
         Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
-        Mockito.when(kubernetesClusterVmMapDao.removeByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(3);
         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
     }
 }
