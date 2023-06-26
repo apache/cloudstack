@@ -6521,3 +6521,43 @@ class PolicyRule:
         cmd.policyuuid = policyuuid
         cmd.ruleuuid = ruleuuid
         return apiclient.removeTungstenFabricPolicyRule(cmd)
+
+
+class VMSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, virtualmachineid, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
+        cmd = createVMSchedule.createVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.description = description
+        cmd.action = action
+        cmd.schedule = schedule
+        cmd.timezone = timezone
+        cmd.startdate = startdate
+        cmd.enddate = enddate
+        cmd.enabled = enabled
+        return VMSchedule(apiclient.createVMSchedule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, virtualmachineid, id=None, enabled=None, action=None):
+        cmd = listVMSchedule.listVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.id = id
+        cmd.enabled = enabled
+        cmd.action = action
+        return apiclient.listVMSchedule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        cmd = updateVMSchedule.updateVMScheduleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateVMSchedule(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSchedule.deleteVMScheduleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineid = self.virtualmachineid
+        return (apiclient.deleteVMSchedule(cmd))

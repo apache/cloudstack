@@ -84,6 +84,7 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
 
 public class EventTypes {
 
@@ -110,6 +111,17 @@ public class EventTypes {
     public static final String EVENT_VM_IMPORT = "VM.IMPORT";
     public static final String EVENT_VM_UNMANAGE = "VM.UNMANAGE";
     public static final String EVENT_VM_RECOVER = "VM.RECOVER";
+
+    // VM Schedule
+    public static final String EVENT_VM_SCHEDULE_CREATE = "VM.SCHEDULE.CREATE";
+    public static final String EVENT_VM_SCHEDULE_UPDATE = "VM.SCHEDULE.UPDATE";
+    public static final String EVENT_VM_SCHEDULE_DELETE = "VM.SCHEDULE.DELETE";
+
+    public static final String EVENT_VM_SCHEDULE_START = "VM.SCHEDULE.START";
+    public static final String EVENT_VM_SCHEDULE_STOP = "VM.SCHEDULE.STOP";
+    public static final String EVENT_VM_SCHEDULE_REBOOT = "VM.SCHEDULE.REBOOT";
+    public static final String EVENT_VM_SCHEDULE_FORCE_STOP = "VM.SCHEDULE.FORCE.STOP";
+    public static final String EVENT_VM_SCHEDULE_FORCE_REBOOT = "VM.SCHEDULE.FORCE.REBOOT";
 
     // Domain Router
     public static final String EVENT_ROUTER_CREATE = "ROUTER.CREATE";
@@ -715,6 +727,16 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VM_EXPUNGE, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_IMPORT, VirtualMachine.class);
         entityEventDetails.put(EVENT_VM_UNMANAGE, VirtualMachine.class);
+
+        // VMSchedule
+        entityEventDetails.put(EVENT_VM_SCHEDULE_CREATE, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_DELETE, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_UPDATE, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_START, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_STOP, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_REBOOT, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_STOP, VMSchedule.class);
+        entityEventDetails.put(EVENT_VM_SCHEDULE_FORCE_REBOOT, VMSchedule.class);
 
         entityEventDetails.put(EVENT_ROUTER_CREATE, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_DESTROY, VirtualRouter.class);

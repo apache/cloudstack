@@ -99,6 +99,12 @@
         <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
         <span v-else>{{ text }}</span>
       </template>
+
+      <template v-if="column.key === 'schedule'">
+          {{ text }}
+          <br/>
+          ({{ generateHumanReadableSchedule(text) }})
+      </template>
       <template v-if="column.key === 'displayname'">
         <QuickView
           style="margin-left: 5px"
@@ -296,11 +302,15 @@
       <template v-if="column.key === 'current'">
         <status :text="record.current ? record.current.toString() : 'false'" />
       </template>
-      <template v-if="column.key === 'created'">
+      <template v-if="column.key === 'enabled'">
+        <status :text="record.enabled ? record.enabled.toString() : 'false'" />
+        {{ record.enabled ? 'Enabled' : 'Disabled' }}
+      </template>
+      <template v-if="['created', 'sent'].includes(column.key)">
         {{ $toLocaleDate(text) }}
       </template>
-      <template v-if="column.key === 'sent'">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm'].includes($route.path.split('/')[1])">
+        {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
@@ -387,6 +397,20 @@
           @onClick="editTariffValue(record)" />
         <slot></slot>
       </template>
+      <template v-if="column.key === 'vmScheduleActions'">
+        <tooltip-button
+          :tooltip="$t('label.edit')"
+          :disabled="!('updateVMSchedule' in $store.getters.apis)"
+          icon="edit-outlined"
+          @onClick="updateVMSchedule(record)" />
+        <tooltip-button
+          :tooltip="$t('label.remove')"
+          :disabled="!('deleteVMSchedule' in $store.getters.apis)"
+          icon="delete-outlined"
+          :danger="true"
+          type="primary"
+          @onClick="removeVMSchedule(record)" />
+      </template>
     </template>
     <template #footer>
       <span v-if="hasSelected">
@@ -405,6 +429,8 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
 import { createPathBasedOnVmType } from '@/utils/plugins'
+import cronstrue from 'cronstrue/i18n'
+import moment from 'moment-timezone'
 
 export default {
   name: 'ListView',
@@ -521,6 +547,9 @@ export default {
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)
+    },
+    getDateAtTimeZone (date, timezone) {
+      return date ? moment(date).tz(timezone).format('YYYY-MM-DD HH:mm:ss') : null
     },
     fetchColumns () {
       if (this.isOrderUpdatable()) {
@@ -686,6 +715,12 @@ export default {
     editTariffValue (record) {
       this.$emit('edit-tariff-action', true, record)
     },
+    updateVMSchedule (record) {
+      this.$emit('update-vm-schedule', record)
+    },
+    removeVMSchedule (record) {
+      this.$emit('remove-vm-schedule', record)
+    },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {
         return ''
@@ -729,6 +764,9 @@ export default {
         case 'AUTOSCALE_VM_GROUP': return 'AutoScale VM group'
         default: return record.entitytype.toLowerCase().replace('_', '')
       }
+    },
+    generateHumanReadableSchedule (schedule) {
+      return cronstrue.toString(schedule, { locale: this.$i18n.locale })
     },
     entityTypeToPath (entitytype) {
       switch (entitytype) {
