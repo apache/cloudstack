@@ -177,7 +177,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return ans.getTemplateSize();
     }
 
-    private void checkZoneImageStores(final VMTemplateVO template, final List<Long> zoneIdList) {
+    protected void checkZoneImageStores(final VMTemplateVO template, final List<Long> zoneIdList) {
         if (template.isDirectDownload()) {
             return;
         }
