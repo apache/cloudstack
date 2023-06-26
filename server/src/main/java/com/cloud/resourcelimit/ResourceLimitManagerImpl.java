@@ -1177,7 +1177,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             for (ResourceType type : ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
+                    recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
                     }
@@ -1186,22 +1186,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (type.supportsOwner(ResourceOwnerType.Account)) {
                     // run through the accounts in the root domain
                     for (AccountVO account : accounts) {
-                        recalculateAccountResourceCount(account.getId(), type);
+                        recalculateAccountResourceCountInContext(account.getId(), type);
                     }
                 }
             }
         }
 
-        private void recalculateDomainResourceCount(long domainId, ResourceType type) {
+        private void recalculateDomainResourceCountInContext(long domainId, ResourceType type) {
             try {
-                ResourceLimitManagerImpl.this.recalculateDomainResourceCount(domainId, type);
+                recalculateDomainResourceCount(domainId, type);
             } catch (Exception e) {
                 s_logger.warn("Resource counters recalculation periodic task failed for the domain " + domainId + " and the resource type " + type + " .", e);
             }
         }
-        private void recalculateAccountResourceCount(long accountId, ResourceType type) {
+        private void recalculateAccountResourceCountInContext(long accountId, ResourceType type) {
             try {
-                ResourceLimitManagerImpl.this.recalculateAccountResourceCount(accountId, type);
+                recalculateAccountResourceCount(accountId, type);
             } catch (Exception e) {
                 s_logger.warn("Resource counters recalculation periodic task failed for the account " + accountId + " and the resource type " + type + " .", e);
             }
