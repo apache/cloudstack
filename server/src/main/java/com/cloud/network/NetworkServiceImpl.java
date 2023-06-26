@@ -80,7 +80,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -4286,7 +4285,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
 
-            @Nullable
             private boolean deleteProviders() {
                 // delete service providers
                 List<PhysicalNetworkServiceProviderVO> providers = _pNSPDao.listBy(physicalNetworkId);
