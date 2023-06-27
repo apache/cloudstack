@@ -7733,7 +7733,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     protected CheckGuestOsMappingAnswer execute(CheckGuestOsMappingCommand cmd) {
         String guestOsName = cmd.getGuestOsName();
         String guestOsMappingName = cmd.getGuestOsHypervisorMappingName();
-        s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
+        logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -7741,21 +7741,21 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (guestOsDescriptor == null) {
                 return new CheckGuestOsMappingAnswer(cmd, "Guest os mapping name: " + guestOsMappingName + " not found in the hypervisor");
             }
-            s_logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
+            logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
             if (guestOsDescriptor.getFullName().equalsIgnoreCase(guestOsName)) {
-                s_logger.debug("Hypervisor guest os name in the descriptor matches with os name: " + guestOsName);
+                logger.debug("Hypervisor guest os name in the descriptor matches with os name: " + guestOsName);
             }
-            s_logger.info("Hypervisor guest os name in the descriptor matches with os mapping: " + guestOsMappingName + " from user");
+            logger.info("Hypervisor guest os name in the descriptor matches with os mapping: " + guestOsMappingName + " from user");
             return new CheckGuestOsMappingAnswer(cmd);
         } catch (Exception e) {
-            s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
+            logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
         }
     }
 
     protected GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
         String keyword = cmd.getKeyword();
-        s_logger.info("Getting guest os names in the hypervisor");
+        logger.info("Getting guest os names in the hypervisor");
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -7779,7 +7779,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             return new GetHypervisorGuestOsNamesAnswer(cmd, hypervisorGuestOsNames);
         } catch (Exception e) {
-            s_logger.error("Failed to get the hypervisor guest names due to: " + e.getLocalizedMessage(), e);
+            logger.error("Failed to get the hypervisor guest names due to: " + e.getLocalizedMessage(), e);
             return new GetHypervisorGuestOsNamesAnswer(cmd, e.getLocalizedMessage());
         }
     }

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.commons.collections.MapUtils
+import org.apache.commons.collections.MapUtils;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;

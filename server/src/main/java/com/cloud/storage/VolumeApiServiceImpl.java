@@ -1623,7 +1623,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private void expungeVolumesInPrimaryOrSecondary(VolumeVO volume, DataStoreRole role) throws InterruptedException, ExecutionException {
         if (!canAccessVolumeStore(volume, role)) {
-            s_logger.debug(String.format("Cannot access the storage pool with role: %s " +
+            logger.debug(String.format("Cannot access the storage pool with role: %s " +
                             "for the volume: %s, skipping expunge from storage",
                     role.name(), volume.getName()));
             return;

@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -35,8 +34,6 @@ import com.cloud.utils.Pair;
 @APICommand(name = GetHypervisorGuestOsNamesCmd.APINAME, description = "Gets the guest OS names in the hypervisor", responseObject = HypervisorGuestOsNamesResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0", authorized = {RoleType.Admin})
 public class GetHypervisorGuestOsNamesCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(GetHypervisorGuestOsNamesCmd.class.getName());
-
     public static final String APINAME = "getHypervisorGuestOsNames";
 
     /////////////////////////////////////////////////////

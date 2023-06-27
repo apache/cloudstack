@@ -574,7 +574,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             return false;
         }
         if (!Arrays.asList(Status.Up, Status.Connecting).contains(hostVO.getStatus())) {
-            LOG.warn(String.format("Host status %s is not Up or Connecting, skipping deletion of config-drive ISO on host cache", hostId));
+            logger.warn(String.format("Host status %s is not Up or Connecting, skipping deletion of config-drive ISO on host cache", hostId));
             return false;
         }
 

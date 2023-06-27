@@ -208,22 +208,22 @@ public class GuestOsMapper {
      */
     public boolean copyGuestOSHypervisorMappings(HypervisorType hypervisorType, String srcVersion, String destVersion) {
         if (hypervisorType == HypervisorType.None || hypervisorType == HypervisorType.Any) {
-            LOG.warn("Unable to copy, invalid hypervisor");
+            logger.warn("Unable to copy, invalid hypervisor");
             return false;
         }
 
         if (StringUtils.isAnyBlank(srcVersion, destVersion)) {
-            LOG.warn("Unable to copy, invalid hypervisor version details");
+            logger.warn("Unable to copy, invalid hypervisor version details");
             return false;
         }
 
         List<GuestOSHypervisorVO> guestOSHypervisorMappingsForSrcVersion = guestOSHypervisorDao.listByHypervisorTypeAndVersion(hypervisorType.toString(), srcVersion);
         if (CollectionUtils.isEmpty(guestOSHypervisorMappingsForSrcVersion)) {
-            LOG.warn(String.format("Unable to copy, couldn't find guest OS mappings for hypervisor: %s and src version: %s", hypervisorType.toString(), srcVersion));
+            logger.warn(String.format("Unable to copy, couldn't find guest OS mappings for hypervisor: %s and src version: %s", hypervisorType.toString(), srcVersion));
             return false;
         }
 
-        LOG.debug(String.format("Adding guest OS mappings for hypervisor: %s and version: %s, from version: %s ", hypervisorType.toString(), destVersion, srcVersion));
+        logger.debug(String.format("Adding guest OS mappings for hypervisor: %s and version: %s, from version: %s ", hypervisorType.toString(), destVersion, srcVersion));
         for (GuestOSHypervisorVO guestOSHypervisorMapping : guestOSHypervisorMappingsForSrcVersion) {
             GuestOSHypervisorMapping mapping = new GuestOSHypervisorMapping(hypervisorType.toString(), destVersion, guestOSHypervisorMapping.getGuestOsName());
             addGuestOsHypervisorMapping(mapping, guestOSHypervisorMapping.getGuestOsId());
