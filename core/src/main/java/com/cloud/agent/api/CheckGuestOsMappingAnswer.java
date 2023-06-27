@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+//
 
-import com.cloud.storage.GuestOSVO;
-import com.cloud.utils.db.GenericDao;
+package com.cloud.agent.api;
 
-import java.util.List;
+public class CheckGuestOsMappingAnswer extends Answer {
 
-public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
+    protected CheckGuestOsMappingAnswer() {
+    }
 
-    GuestOSVO listByDisplayName(String displayName);
+    public CheckGuestOsMappingAnswer(CheckGuestOsMappingCommand cmd) {
+        super(cmd, true, null);
+    }
 
-    List<GuestOSVO> listLikeDisplayName(String displayName);
-    GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
+    public CheckGuestOsMappingAnswer(CheckGuestOsMappingCommand cmd, String details) {
+        super(cmd, false, details);
+    }
+
+    public CheckGuestOsMappingAnswer(CheckGuestOsMappingCommand cmd, Throwable th) {
+        super(cmd, false, th.getMessage());
+    }
 }

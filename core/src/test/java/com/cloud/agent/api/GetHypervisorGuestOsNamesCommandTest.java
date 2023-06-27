@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,17 +15,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.dao;
+//
 
-import com.cloud.storage.GuestOSVO;
-import com.cloud.utils.db.GenericDao;
+package com.cloud.agent.api;
 
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
+import org.junit.Test;
 
-    GuestOSVO listByDisplayName(String displayName);
+public class GetHypervisorGuestOsNamesCommandTest {
 
-    List<GuestOSVO> listLikeDisplayName(String displayName);
-    GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
+    @Test
+    public void testExecuteInSequence() {
+        GetHypervisorGuestOsNamesCommand cmd =  new GetHypervisorGuestOsNamesCommand();
+        assertFalse(cmd.executeInSequence());
+    }
+
+    @Test
+    public void testKeyword() {
+        GetHypervisorGuestOsNamesCommand cmd =  new GetHypervisorGuestOsNamesCommand("centos");
+        assertEquals("centos", cmd.getKeyword());
+    }
 }

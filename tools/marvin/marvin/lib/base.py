@@ -6522,6 +6522,145 @@ class PolicyRule:
         cmd.ruleuuid = ruleuuid
         return apiclient.removeTungstenFabricPolicyRule(cmd)
 
+class GuestOSCategory:
+    """Manage Guest OS Categories"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, id=None, name=None, **kwargs):
+        """List all Guest OS categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if name is not None:
+            cmd.name = name
+
+        return (apiclient.listOsCategories(cmd))
+
+class GuestOS:
+    """Manage Guest OS"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, osdisplayname=None,
+                  oscategoryid=None, name=None, details=None):
+        """Add Guest OS"""
+        cmd = addGuestOs.addGuestOsCmd()
+        cmd.osdisplayname = osdisplayname
+        cmd.oscategoryid = oscategoryid
+        if name is not None:
+            cmd.name = name
+        if details is not None:
+            cmd.details = details
+
+        return (apiclient.addGuestOs(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS"""
+        cmd = removeGuestOs.removeGuestOsCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOs(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osdisplayname=None, details=None):
+        """Update Guest OS"""
+        cmd = updateGuestOs.updateGuestOsCmd()
+        cmd.id = id
+        cmd.osdisplayname = osdisplayname
+        if details is not None:
+            cmd.details = details
+
+        return apiclient.updateGuestOs(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, oscategoryid=None, description=None, **kwargs):
+        """List all Guest OS"""
+        cmd = listOsTypes.listOsTypesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if oscategoryid is not None:
+            cmd.oscategoryid = oscategoryid
+        if description is not None:
+            cmd.description = description
+
+        return (apiclient.listOsTypes(cmd))
+
+class GuestOsMapping:
+    """Manage Guest OS Mappings"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, ostypeid=None,
+                  hypervisor=None, hypervisorversion=None,
+                  osnameforhypervisor=None, osmappingcheckenabled=None, forced=None):
+        """Add Guest OS mapping"""
+        cmd = addGuestOsMapping.addGuestOsMappingCmd()
+        cmd.ostypeid = ostypeid
+        cmd.hypervisor = hypervisor
+        cmd.hypervisorversion = hypervisorversion
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+        if forced is not None:
+            cmd.forced = forced
+
+        return (apiclient.addGuestOsMapping(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS mapping"""
+        cmd = removeGuestOsMapping.removeGuestOsMappingCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOsMapping(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osnameforhypervisor=None, osmappingcheckenabled=None):
+        """Update Guest OS mapping"""
+        cmd = updateGuestOsMapping.updateGuestOsMappingCmd()
+        cmd.id = id
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+
+        return apiclient.updateGuestOsMapping(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, ostypeid=None, osdisplayname=None,
+             osnameforhypervisor=None, hypervisor=None, hypervisorversion=None, **kwargs):
+        """List all Guest OS mappings"""
+        cmd = listGuestOsMapping.listGuestOsMappingCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if ostypeid is not None:
+            cmd.ostypeid = ostypeid
+        if osdisplayname is not None:
+            cmd.osdisplayname = osdisplayname
+        if osnameforhypervisor is not None:
+            cmd.osnameforhypervisor = osnameforhypervisor
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        if hypervisorversion is not None:
+            cmd.hypervisorversion = hypervisorversion
+
+        return (apiclient.listGuestOsMapping(cmd))
 
 class VMSchedule:
 

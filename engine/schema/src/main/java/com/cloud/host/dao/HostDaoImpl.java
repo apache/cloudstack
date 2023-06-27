@@ -116,6 +116,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ResourceStateSearch;
     protected SearchBuilder<HostVO> NameLikeSearch;
     protected SearchBuilder<HostVO> NameSearch;
+    protected SearchBuilder<HostVO> hostHypervisorTypeAndVersionSearch;
     protected SearchBuilder<HostVO> SequenceSearch;
     protected SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
@@ -310,6 +311,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
+
+        hostHypervisorTypeAndVersionSearch = createSearchBuilder();
+        hostHypervisorTypeAndVersionSearch.and("hypervisorType", hostHypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("hypervisorVersion", hostHypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("type", hostHypervisorTypeAndVersionSearch.entity().getType(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.and("status", hostHypervisorTypeAndVersionSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        hostHypervisorTypeAndVersionSearch.done();
 
         SequenceSearch = createSearchBuilder();
         SequenceSearch.and("id", SequenceSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -1417,6 +1425,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public HostVO findByName(String name) {
         SearchCriteria<HostVO> sc = NameSearch.create();
         sc.setParameters("name", name);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion) {
+        SearchCriteria<HostVO> sc = hostHypervisorTypeAndVersionSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("hypervisorVersion", hypervisorVersion);
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("status", Status.Up);
         return findOneBy(sc);
     }
 
