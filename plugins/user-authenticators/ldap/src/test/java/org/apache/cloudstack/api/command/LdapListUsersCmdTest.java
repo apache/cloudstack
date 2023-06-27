@@ -31,14 +31,14 @@ import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.cloudstack.query.QueryService;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,16 +50,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     public static final String LOCAL_DOMAIN_ID = "12345678-90ab-cdef-fedc-ba0987654321";
@@ -76,21 +73,28 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
 
     Domain localDomain;
 
+    MockedStatic<CallContext> callContextMocked;
+
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         ldapListUsersCmd = new LdapListUsersCmd(ldapManager, queryService);
         cmdSpy = spy(ldapListUsersCmd);
 
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Account accountMock = PowerMockito.mock(Account.class);
-        PowerMockito.when(accountMock.getDomainId()).thenReturn(1l);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+        Account accountMock = Mockito.mock(Account.class);
+        when(accountMock.getDomainId()).thenReturn(1l);
+        when(callContextMock.getCallingAccount()).thenReturn(accountMock);
 
         ldapListUsersCmd._domainService = domainService;
 
 // no need to        setHiddenField(ldapListUsersCmd, .... );
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        callContextMocked.close();
     }
 
     /**
@@ -114,7 +118,7 @@ public class LdapListUsersCmdTest implements LdapConfigurationChanger {
      */
     @Test
     public void successfulEmptyResponseFromExecute() throws NoLdapUserMatchingQueryException {
-        doThrow(new NoLdapUserMatchingQueryException("")).when(ldapManager).getUsers(null);
+        Mockito.doThrow(new NoLdapUserMatchingQueryException("")).when(ldapManager).getUsers(null);
         ldapListUsersCmd.execute();
         assertEquals(0, ((ListResponse)ldapListUsersCmd.getResponseObject()).getResponses().size());
     }

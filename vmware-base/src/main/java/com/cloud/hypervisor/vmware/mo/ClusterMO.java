@@ -67,7 +67,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 // interface. This has changed as ClusterMO no longer works as a special host anymore. Need to refactor accordingly
 //
 public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
-    private ManagedObjectReference _environmentBrowser = null;
+    protected ManagedObjectReference _environmentBrowser = null;
 
     public ClusterMO(VmwareContext context, ManagedObjectReference morCluster) {
         super(context, morCluster);
@@ -737,5 +737,23 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    @Override
+    public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
+        for (GuestOsDescriptor descriptor : guestDescriptors) {
+            if (guestOsId != null && guestOsId.equalsIgnoreCase(descriptor.getId())) {
+                return descriptor;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        return vmConfigOption.getGuestOSDescriptor();
     }
 }

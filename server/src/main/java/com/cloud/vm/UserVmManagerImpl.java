@@ -125,6 +125,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -579,6 +580,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     private AutoScaleManager autoScaleManager;
+
+    @Inject
+    VMScheduleManager vmScheduleManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -3269,6 +3273,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         autoScaleManager.removeVmFromVmGroup(vmId);
+
+        vmScheduleManager.removeScheduleByVmId(vmId, expunge);
 
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
