@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -114,6 +115,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -4964,5 +4966,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
         return response;
+    }
+
+    @Override
+    public ObjectStoreResponse createObjectStoreResponse(ObjectStore os) {
+        ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
+        objectStoreResponse.setId(os.getUuid());
+        objectStoreResponse.setName(os.getName());
+        objectStoreResponse.setProtocol(os.getProtocol());
+        objectStoreResponse.setProviderName(os.getProviderName());
+        objectStoreResponse.setObjectName("objectstore");
+        return objectStoreResponse;
     }
 }

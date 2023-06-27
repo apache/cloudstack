@@ -3436,4 +3436,34 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         volumeTO.setIopsWriteRate(getDiskIopsWriteRate(offering, diskOffering));
     }
 
+    @Override
+    public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
+            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
+
+        if (storeProvider == null) {
+            throw new InvalidParameterValueException("can't find object store provider: " + providerName);
+        }
+
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("url", url);
+        params.put("name", name);
+        params.put("providerName", storeProvider.getName());
+        params.put("role", DataStoreRole.Object);
+
+        DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
+
+        DataStore store;
+        try {
+            store = lifeCycle.initialize(params);
+        } catch (Exception e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to add object store: " + e.getMessage(), e);
+            }
+            throw new CloudRuntimeException("Failed to add object store: " + e.getMessage(), e);
+        }
+
+        return (ObjectStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Object);
+    }
 }

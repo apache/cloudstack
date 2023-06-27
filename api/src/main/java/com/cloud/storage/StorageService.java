@@ -109,4 +109,5 @@ public interface StorageService {
 
     StoragePool syncStoragePool(SyncStoragePoolCmd cmd);
 
+    ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 }
