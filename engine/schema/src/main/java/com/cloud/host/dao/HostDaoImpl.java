@@ -1159,6 +1159,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId) {
+        SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
+        DetailVO tagEntity = hostCapabilitySearch.entity();
+        hostCapabilitySearch.and("capability", tagEntity.getName(), SearchCriteria.Op.EQ);
+        hostCapabilitySearch.and("value", tagEntity.getValue(), SearchCriteria.Op.EQ);
+
+        SearchBuilder<HostVO> hostSearch = createSearchBuilder();
+        HostVO entity = hostSearch.entity();
+        hostSearch.and("cluster", entity.getClusterId(), SearchCriteria.Op.EQ);
+        hostSearch.and("status", entity.getStatus(), SearchCriteria.Op.EQ);
+        hostSearch.join("hostCapabilitySearch", hostCapabilitySearch, entity.getId(), tagEntity.getHostId(), JoinBuilder.JoinType.INNER);
+
+        SearchCriteria<HostVO> sc = hostSearch.create();
+        sc.setJoinParameters("hostCapabilitySearch", "value", Boolean.toString(true));
+        sc.setJoinParameters("hostCapabilitySearch", "capability", Host.HOST_VOLUME_ENCRYPTION);
+
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        sc.setParameters("status", Status.Up.toString());
+        sc.setParameters("resourceState", ResourceState.Enabled.toString());
+
+        return listBy(sc);
+    }
+
+    @Override
     public HostVO findByPublicIp(String publicIp) {
         SearchCriteria<HostVO> sc = PublicIpAddressSearch.create();
         sc.setParameters("publicIpAddress", publicIp);
