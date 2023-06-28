@@ -71,6 +71,10 @@ public interface CAManager extends CAService, Configurable, PluggableService {
                                                     "ca.framework.cert.expiry.alert.period",
                                                     "15",
                                                     "The number of days before expiry of a client certificate, the validations are checked. Admins are alerted when auto-renewal is not allowed, otherwise auto-renewal is attempted.", true, ConfigKey.Scope.Cluster);
+    ConfigKey<Integer> CertExpiryWarningPeriod = new ConfigKey<>("Advanced", Integer.class,
+            "ca.framework.cert.expiry.warning.period",
+            "7",
+            "The number of days before auto-renewing the expiry of a client certificate, the validations are checked. Admins are alerted if auto-renew is enabled.", true, ConfigKey.Scope.Cluster);
 
     /**
      * Returns a list of available CA provider plugins

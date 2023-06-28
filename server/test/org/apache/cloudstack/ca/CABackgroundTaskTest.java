@@ -20,9 +20,17 @@
 package org.apache.cloudstack.ca;
 
 import static org.apache.cloudstack.ca.CAManager.AutomaticCertRenewal;
+import static org.apache.cloudstack.ca.CAManager.CertExpiryAlertPeriod;
+import static org.apache.cloudstack.ca.CAManager.CertExpiryWarningPeriod;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +39,7 @@ import java.util.UUID;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.CertUtils;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,11 +76,17 @@ public class CABackgroundTaskTest {
     public void setUp() throws Exception {
         host.setManagementServerId(ManagementServerNode.getManagementServerId());
         task = new CAManagerImpl.CABackgroundTask(caManager, hostDao);
-        final KeyPair keypair = CertUtils.generateRandomKeyPair(1024);
-        expiredCertificate = CertUtils.generateV3Certificate(null, keypair, keypair.getPublic(), "CN=ca", "SHA256withRSA", 0, null, null);
+        generateCertificate(0);
+        // This is because it is using a static variable in the class. So each test contaminates the next.
+        CAManagerImpl.getAlertMap().clear();
 
         Mockito.when(hostDao.findByIp(Mockito.anyString())).thenReturn(host);
         Mockito.when(caManager.getActiveCertificatesMap()).thenReturn(certMap);
+    }
+
+    private void generateCertificate(int validityDays) throws NoSuchProviderException, NoSuchAlgorithmException, IOException, CertificateException, InvalidKeyException, SignatureException, OperatorCreationException {
+        final KeyPair keypair = CertUtils.generateRandomKeyPair(1024);
+        expiredCertificate = CertUtils.generateV3Certificate(null, keypair, keypair.getPublic(), "CN=ca", "SHA256withRSA", validityDays, null, null);
     }
 
     @After
@@ -107,24 +122,33 @@ public class CABackgroundTaskTest {
     @Test
     public void testAutoRenewalEnabledWithNoExceptionsOnProvisioning() throws Exception {
         overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "true");
-        host.setManagementServerId(ManagementServerNode.getManagementServerId());
+        Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenReturn(true);
         certMap.put(hostIp, expiredCertificate);
         Assert.assertTrue(certMap.size() == 1);
         task.runInContext();
         Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null);
-        Mockito.verify(caManager, Mockito.times(0)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
+        verifyAlerts("Certificate auto-renewal succeeded for host.*", "Certificate auto-renew succeeded for.*");
     }
 
     @Test
     public void testAutoRenewalEnabledWithExceptionsOnProvisioning() throws Exception {
         overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "true");
         Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenThrow(new CloudRuntimeException("some error"));
-        host.setManagementServerId(ManagementServerNode.getManagementServerId());
         certMap.put(hostIp, expiredCertificate);
         Assert.assertTrue(certMap.size() == 1);
         task.runInContext();
         Mockito.verify(caManager, Mockito.times(1)).provisionCertificate(host, false, null);
-        Mockito.verify(caManager, Mockito.times(1)).sendAlert(Mockito.any(Host.class), Mockito.anyString(), Mockito.anyString());
+        verifyAlerts("Certificate auto-renewal failed for host.*", String.format("Certificate is going to expire for.* Error in auto-renewal, failed to renew the certificate, please renew it manually. It is not valid after %s.", expiredCertificate.getNotAfter()));
+    }
+
+    @Test
+    public void testFailedAutoRenew() throws Exception {
+        overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "true");
+        Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenReturn(false);
+        certMap.put(hostIp, expiredCertificate);
+        Assert.assertTrue(certMap.size() == 1);
+        task.runInContext();
+        verifyAlerts("Certificate auto-renewal failed for host.*", String.format("Certificate is going to expire for.* Auto-renewal failed to renew the certificate, please renew it manually. It is not valid after %s.", expiredCertificate.getNotAfter()));
     }
 
     @Test
@@ -144,8 +168,56 @@ public class CABackgroundTaskTest {
     }
 
     @Test
+    public void testAutoRenewWarning() throws Exception {
+        generateCertificate(4);
+        overrideDefaultConfigValue(CertExpiryAlertPeriod, "_defaultValue", "2");
+        overrideDefaultConfigValue(CertExpiryWarningPeriod, "_defaultValue", "3");
+        overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "true");
+        Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenReturn(true);
+        certMap.put(hostIp, expiredCertificate);
+        Assert.assertTrue(certMap.size() == 1);
+        task.runInContext();
+        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(host, false, null);
+        verifyAlerts("Certificate expiring soon for.*", "Certificate is going to expire for.*It will auto renew on.*");
+    }
+
+    @Test
+    public void testExpirationWarning() throws Exception {
+        generateCertificate(4);
+        overrideDefaultConfigValue(CertExpiryAlertPeriod, "_defaultValue", "2");
+        overrideDefaultConfigValue(CertExpiryWarningPeriod, "_defaultValue", "3");
+        overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "false");
+        Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenReturn(true);
+        certMap.put(hostIp, expiredCertificate);
+        Assert.assertTrue(certMap.size() == 1);
+        task.runInContext();
+        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(host, false, null);
+        verifyAlerts("Certificate expiring soon for.*", "Certificate is going to expire for.*Auto renewing is not enabled.");
+    }
+
+    @Test
+    public void testExpirationAlert() throws Exception {
+        generateCertificate(4);
+        overrideDefaultConfigValue(CertExpiryAlertPeriod, "_defaultValue", "5");
+        overrideDefaultConfigValue(CertExpiryWarningPeriod, "_defaultValue", "3");
+        overrideDefaultConfigValue(AutomaticCertRenewal, "_defaultValue", "false");
+        Mockito.when(caManager.provisionCertificate(Mockito.any(Host.class), Mockito.anyBoolean(), Mockito.anyString())).thenReturn(true);
+        certMap.put(hostIp, expiredCertificate);
+        Assert.assertTrue(certMap.size() == 1);
+        task.runInContext();
+        Mockito.verify(caManager, Mockito.times(0)).provisionCertificate(host, false, null);
+        verifyAlerts("Certificate expiring soon for.*", String.format("Certificate is going to expire for.*Please manually renew it since auto-renew is disabled. It is not valid after %s.", expiredCertificate.getNotAfter()));
+    }
+
+    @Test
     public void testGetDelay() throws Exception {
         Assert.assertTrue(task.getDelay() == CAManager.CABackgroundJobDelay.value() * 1000L);
+    }
+
+    private void verifyAlerts(String subjectRegex, String messageRegex) {
+        Mockito.verify(caManager, Mockito.times(1)).sendAlert(Mockito.any(Host.class),
+                Mockito.matches(subjectRegex),
+                Mockito.matches(messageRegex));
     }
 
 }
