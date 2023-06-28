@@ -835,7 +835,7 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent?.podName || this.stepData.zoneReturned.type === 'Edge' ? 'Pod-' + this.stepData.zoneReturned.name : null
+      params.name = this.prefillContent?.podName || (this.stepData.zoneReturned.type === 'Edge' ? 'Pod-' + this.stepData.zoneReturned.name : null)
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
@@ -1218,7 +1218,7 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName || this.stepData.zoneReturned.type === 'Edge' ? 'Cluster-' + this.stepData.zoneReturned.name : null
+      let clusterName = this.prefillContent.clusterName || (this.stepData.zoneReturned.type === 'Edge' ? 'Cluster-' + this.stepData.zoneReturned.name : null)
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
