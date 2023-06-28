@@ -159,7 +159,6 @@ export default class RFB extends EventTargetMixin {
         this._screenFlags = 0;
 
         this._qemuExtKeyEventSupported = false;
-        this._VMwareCursorSupported = false;
 
         this._clipboardText = null;
         this._clipboardServerCapabilitiesActions = {};
@@ -193,8 +192,6 @@ export default class RFB extends EventTargetMixin {
         // Keys
         this._shiftPressed = false;
         this._shiftKey = KeyTable.XK_Shift_L;
-        this._ctrlPressed = false;
-        this._altPressed = false;
 
         // Mouse state
         this._mousePos = {};
@@ -525,12 +522,6 @@ export default class RFB extends EventTargetMixin {
             this._shiftPressed = down;
             this._shiftKey = down ? keysym : KeyTable.XK_Shift_L;
         }
-        if (keysym === KeyTable.XK_Control_L || keysym === KeyTable.XK_Control_R) {
-            this._ctrlPressed = down;
-        }
-        if (keysym === KeyTable.XK_Alt_L || keysym === KeyTable.XK_Alt_R) {
-            this._altPressed = down;
-        }
 
         if (this._qemuExtKeyEventSupported && scancode) {
             // 0 is NoSymbol
@@ -539,7 +530,7 @@ export default class RFB extends EventTargetMixin {
             Log.Info("Sending key (" + (down ? "down" : "up") + "): keysym " + keysym + ", scancode " + scancode);
 
             RFB.messages.QEMUExtendedKeyEvent(this._sock, keysym, down, scancode);
-        } else if (this._VMwareCursorSupported && Object.keys(this._scancodes).length > 0) {
+        } else if (Object.keys(this._scancodes).length > 0) {
             let vscancode = this._scancodes[keysym]
             if (vscancode) {
                 let shifted = vscancode.includes("shift");
@@ -2656,7 +2647,6 @@ export default class RFB extends EventTargetMixin {
                 return true;
 
             case encodings.pseudoEncodingVMwareCursor:
-                this._VMwareCursorSupported = true;
                 return this._handleVMwareCursor();
 
             case encodings.pseudoEncodingCursor:
