@@ -80,8 +80,6 @@ def translate(keysym):
 
 def add_language_specific_mappings():
     if layout == "jp":
-        add_specific_mapping("60", "125", "")           # IntlBackslash
-        add_specific_mapping("62", "125", "shift")      # IntlBackslash + shift
         add_specific_mapping("124", "125", "shift")     # bar
 
 
