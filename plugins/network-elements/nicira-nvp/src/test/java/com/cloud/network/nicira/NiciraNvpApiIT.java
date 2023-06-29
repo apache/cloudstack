@@ -21,6 +21,7 @@ package com.cloud.network.nicira;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,36 +105,14 @@ public class NiciraNvpApiIT {
     }
 
     @Test
-    public void testCRUDAcl() {
-        Acl acl = new Acl();
-        acl.setDisplayName("Acl" + timestamp);
-
-        // Note that if the protocol is 6 (TCP) then you cannot put ICMP code and type
-        // Note that if the protocol is 1 (ICMP) then you cannot put ports
-        final List<AclRule> egressRules = new ArrayList<AclRule>();
-        acl.setLogicalPortEgressRules(egressRules);
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
-
-        final List<AclRule> ingressRules = new ArrayList<AclRule>();
-        acl.setLogicalPortIngressRules(ingressRules);
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
-        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
-
-        final List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
-        acl.setTags(tags);
-        tags.add(new NiciraNvpTag("nvp", "MyTag1"));
-        tags.add(new NiciraNvpTag("nicira", "MyTag2"));
-        // In the creation we don't get to specify UUID, href or schema: they don't exist yet
-
+    public void testCRUDAclReadAll() {
         try {
-            acl = api.createAcl(acl);
+            Acl acl = setupAcl();
 
-            // We can now update the new entity
+            acl = api.createAcl(acl);
             acl.setDisplayName("UpdatedAcl" + timestamp);
             api.updateAcl(acl, acl.getUuid());
 
-            // Read them all
             List<Acl> acls = api.findAcl();
             Acl scInList = null;
             for (final Acl iAcl : acls) {
@@ -143,16 +122,30 @@ public class NiciraNvpApiIT {
             }
             assertEquals("Read a ACL different from the one just created and updated", acl, scInList);
 
-            // Read them filtered by uuid (get one)
-            acls = api.findAcl(acl.getUuid());
-            assertEquals("Read a ACL different from the one just created and updated", acl, acls.get(0));
-            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item", 1, acls.size());
-
-            // We can now delete the new entity
             api.deleteAcl(acl.getUuid());
         } catch (final NiciraNvpApiException e) {
             e.printStackTrace();
-            assertTrue("Errors in ACL CRUD", false);
+            fail("Errors in ACL CRUD");
+        }
+    }
+
+    @Test
+    public void testCRUDAclReadOne() {
+        try {
+            Acl acl = setupAcl();
+
+            acl = api.createAcl(acl);
+            acl.setDisplayName("UpdatedAcl" + timestamp);
+            api.updateAcl(acl, acl.getUuid());
+
+            List<Acl> acls = api.findAcl(acl.getUuid());
+            assertEquals("Read a ACL different from the one just created and updated", acl, acls.get(0));
+            assertEquals("Read a ACL filtered by unique id (UUID) with more than one item", 1, acls.size());
+
+            api.deleteAcl(acl.getUuid());
+        } catch (final NiciraNvpApiException e) {
+            e.printStackTrace();
+            fail("Errors in ACL CRUD");
         }
     }
 
@@ -314,6 +307,31 @@ public class NiciraNvpApiIT {
         final boolean correctStatus = clusterStatus.equalsIgnoreCase("stable") ||
                 clusterStatus.equalsIgnoreCase("joining") || clusterStatus.equalsIgnoreCase("unstable");
         assertTrue("Not recognizable cluster status", correctStatus);
+    }
+
+    private Acl setupAcl() {
+        Acl acl = new Acl();
+        acl.setDisplayName("Acl" + timestamp);
+
+        // Note that if the protocol is 6 (TCP) then you cannot put ICMP code and type
+        // Note that if the protocol is 1 (ICMP) then you cannot put ports
+        final List<AclRule> egressRules = new ArrayList<>();
+        acl.setLogicalPortEgressRules(egressRules);
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        egressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+
+        final List<AclRule> ingressRules = new ArrayList<>();
+        acl.setLogicalPortIngressRules(ingressRules);
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 1, "allow", null, null, "1.10.10.0", "1.10.10.1", null, null, null, null, 0, 0, 5));
+        ingressRules.add(new AclRule(AclRule.ETHERTYPE_IPV4, 6, "allow", null, null, "1.10.10.6", "1.10.10.7", 80, 80, 80, 80, 1, null, null));
+
+        final List<NiciraNvpTag> tags = new ArrayList<>();
+        acl.setTags(tags);
+        tags.add(new NiciraNvpTag("nvp", "MyTag1"));
+        tags.add(new NiciraNvpTag("nicira", "MyTag2"));
+        // In the creation we don't get to specify UUID, href or schema: they don't exist yet
+
+        return acl;
     }
 
 }
