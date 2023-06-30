@@ -680,16 +680,14 @@ class TestKubernetesCluster(cloudstackTestCase):
         cmd.id = cluster_id
         cmd.virtualmachineids = vm_list
 
-        return self.apiclient.addVirtualMachinesToKubernetesCluster(cmd).success
-        return response
+        return self.apiclient.addVirtualMachinesToKubernetesCluster(cmd)
 
     def removeVirtualMachinesFromKubernetesCluster(self, cluster_id, vm_list):
         cmd = removeVirtualMachinesFromKubernetesCluster.removeVirtualMachinesFromKubernetesClusterCmd()
         cmd.id = cluster_id
         cmd.virtualmachineids = vm_list
 
-        return self.apiclient.removeVirtualMachinesFromKubernetesCluster(cmd).success
-        return response
+        return self.apiclient.removeVirtualMachinesFromKubernetesCluster(cmd)
 
 
     def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, cluster_type='CloudManaged'):
