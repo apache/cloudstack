@@ -550,6 +550,9 @@ export default class RFB extends EventTargetMixin {
                     RFB.messages.keyEvent(this._sock, this._shiftKey, 1);
                 }
             } else {
+                if (this._language === "jp" && keysym === 65328) {
+                    keysym = 65509; // Caps lock
+                }
                 RFB.messages.keyEvent(this._sock, keysym, down ? 1 : 0);
             }
         } else {
