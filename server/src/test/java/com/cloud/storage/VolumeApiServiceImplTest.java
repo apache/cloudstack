@@ -52,6 +52,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
@@ -143,6 +145,12 @@ public class VolumeApiServiceImplTest {
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDaoMock;
     @Mock
+    private ImageStoreDao imageStoreDao;
+    @Mock
+    private ImageStoreVO imageStoreVO;
+    @Mock
+    private StoragePoolVO storagePoolVO;
+    @Mock
     private VMSnapshotDao _vmSnapshotDao;
     @Mock
     private AsyncJobManager _jobMgr;
@@ -214,6 +222,7 @@ public class VolumeApiServiceImplTest {
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
     private long volumeSizeMock = 456789921939l;
+    private static long imageStoreId = 10L;
 
     private String projectMockUuid = "projectUuid";
     private long projecMockId = 13801801923810L;
@@ -238,6 +247,10 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(Mockito.mock(VolumeApiResult.class)).when(asyncCallFutureVolumeapiResultMock).get();
 
         Mockito.when(storagePoolMock.getId()).thenReturn(storagePoolMockId);
+
+        Mockito.when(volumeVoMock.getPoolId()).thenReturn(storagePoolMockId);
+        Mockito.when(imageStoreDao.findById(imageStoreId)).thenReturn(imageStoreVO);
+        Mockito.when(primaryDataStoreDaoMock.findById(storagePoolMockId)).thenReturn(storagePoolVO);
 
         volumeApiServiceImpl._gson = GsonHelper.getGsonLogger();
 
@@ -914,7 +927,7 @@ public class VolumeApiServiceImplTest {
     @Test
     public void expungeVolumesInSecondaryStorageIfNeededTestVolumeNotFoundInSecondaryStorage() throws InterruptedException, ExecutionException {
         Mockito.lenient().doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
-        Mockito.doReturn(null).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Image);
+        Mockito.lenient().doReturn(null).when(imageStoreDao).findById(imageStoreId);
         Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.lenient().doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.lenient().doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
@@ -933,6 +946,7 @@ public class VolumeApiServiceImplTest {
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
+        Mockito.doReturn(imageStoreId).when(volumeVoMock).getPoolId();
 
         volumeApiServiceImpl.expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
 
@@ -948,6 +962,7 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.lenient().doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.lenient().doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
+        Mockito.doReturn(imageStoreId).when(volumeVoMock).getPoolId();
 
         Mockito.doThrow(InterruptedException.class).when(asyncCallFutureVolumeapiResultMock).get();
 
@@ -962,6 +977,7 @@ public class VolumeApiServiceImplTest {
         Mockito.lenient().doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.lenient().doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.lenient().doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
+        Mockito.doReturn(imageStoreId).when(volumeVoMock).getPoolId();
 
         Mockito.doThrow(ExecutionException.class).when(asyncCallFutureVolumeapiResultMock).get();
 
