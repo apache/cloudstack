@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.vm;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -25,5 +28,5 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 public interface VmImportService {
     ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
-    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
+    UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
 }

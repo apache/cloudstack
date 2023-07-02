@@ -628,7 +628,7 @@ export default {
       this.fetchInstances()
     },
     fetchInstances () {
-      if (this.selectedCluster.hypervisortype === 'VMware') {
+      if (this.selectedCluster.hypervisortype === 'VMware' || this.selectedCluster.hypervisortype === 'KVM') {
         this.fetchUnmanagedInstances()
         this.fetchManagedInstances()
       }

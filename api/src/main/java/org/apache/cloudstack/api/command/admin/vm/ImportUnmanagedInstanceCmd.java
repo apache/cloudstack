@@ -84,8 +84,15 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
             required = true,
-            description = "the hypervisor name of the instance")
+            description = "the name of the instance as on the hypervisor")
     private String name;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            required = true,
+            description = "the ID of the service offering for the virtual machine")
+    private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME,
             type = CommandType.STRING,
@@ -119,13 +126,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             entityType = TemplateResponse.class,
             description = "the ID of the template for the virtual machine")
     private Long templateId;
-
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
-            type = CommandType.UUID,
-            entityType = ServiceOfferingResponse.class,
-            required = true,
-            description = "the ID of the service offering for the virtual machine")
-    private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
             type = CommandType.MAP,

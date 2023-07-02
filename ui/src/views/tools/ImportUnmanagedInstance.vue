@@ -115,7 +115,9 @@
                   @change="changeTemplateType">
                   <a-row :gutter="12">
                     <a-col :md="24" :lg="12">
-                      <a-radio value="auto">
+                      <a-radio
+                      value="auto"
+                      :disabled="this.cluster.hypervisortype === 'KVM'">
                         {{ $t('label.template.temporary.import') }}
                       </a-radio>
                     </a-col>
@@ -224,6 +226,7 @@
                   :zoneId="cluster.zoneid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
+                  :hypervisor="this.cluster.hypervisortype"
                   filterMatchKey="broadcasturi"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
@@ -448,7 +451,11 @@ export default {
               nic.broadcasturi = 'pvlan://' + nic.vlanid + '-i' + nic.isolatedpvlan
             }
           }
-          nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
+          if (this.cluster.hypervisortype === 'VMWare') {
+            nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
+          } else {
+            nic.meta = this.getMeta(nic, { macaddress: 'mac', networkname: 'network' })
+          }
           nics.push(nic)
         }
       }
