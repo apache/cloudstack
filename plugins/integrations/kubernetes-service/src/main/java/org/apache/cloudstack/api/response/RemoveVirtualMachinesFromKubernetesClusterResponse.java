@@ -14,18 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.kubernetes.cluster.dao;
+package org.apache.cloudstack.api.response;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 
-import java.util.List;
+public class RemoveVirtualMachinesFromKubernetesClusterResponse extends SuccessResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the Kubernetes cluster")
+    private String vmId;
 
-public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterVmMapVO, Long> {
-    public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId);
-    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
+    public RemoveVirtualMachinesFromKubernetesClusterResponse() {
+    }
 
-    int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
-
-    public int removeByClusterId(long clusterId);
+    public void setVmId(String vmId) {
+        this.vmId = vmId;
+    }
 }

@@ -16,32 +16,31 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import javax.inject.Inject;
-
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.util.List;
 
-@APICommand(name = "listKubernetesClusters",
-        description = "Lists Kubernetes clusters",
-        responseObject = KubernetesClusterResponse.class,
-        responseView = ResponseView.Restricted,
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true,
+@APICommand(name = "addVirtualMachinesToKubernetesCluster",
+        description = "Add VMs to an ExternalManaged kubernetes cluster. Not applicable for CloudManaged kubernetes clusters.",
+        responseObject = SuccessResponse.class,
+        since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResourcesCmd {
-    public static final Logger LOGGER = Logger.getLogger(ListKubernetesClustersCmd.class.getName());
+public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
+    public static final Logger LOGGER = Logger.getLogger(AddVirtualMachinesToKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -49,21 +48,23 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesClusterResponse.class,
+            required = true,
             description = "the ID of the Kubernetes cluster")
     private Long id;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the Kubernetes cluster")
-    private String state;
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS, type = CommandType.LIST,
+            collectionType=CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "the IDs of the VMs to add to the cluster")
+    private List<Long> vmIds;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the Kubernetes cluster" +
-            " (a substring match is made against the parameter value, data for all matching Kubernetes clusters will be returned)")
-    private String name;
-
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, since = "4.19.0",
-            description = "type of the cluster: CloudManaged, ExternalManaged")
-    private String clusterType;
+    @Parameter(name = ApiConstants.IS_CONTROL_NODE, type = CommandType.BOOLEAN,
+            description = "Is control node or not? Defaults to false.")
+    private Boolean isControlNode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -73,26 +74,29 @@ public class ListKubernetesClustersCmd extends BaseListProjectAndAccountResource
         return id;
     }
 
-    public String getState() {
-        return state;
+    public List<Long> getVmIds() {
+        return vmIds;
     }
 
-    public String getName() {
-        return name;
+    public boolean isControlNode() {
+        return (isControlNode != null) && isControlNode;
     }
-
-    public String getClusterType() {
-        return clusterType;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
     public void execute() throws ServerApiException {
         try {
-            ListResponse<KubernetesClusterResponse> response = kubernetesClusterService.listKubernetesClusters(this);
+            if (!kubernetesClusterService.addVmsToCluster(this)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VMs to cluster");
+            }
+            final SuccessResponse response = new SuccessResponse();
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {
