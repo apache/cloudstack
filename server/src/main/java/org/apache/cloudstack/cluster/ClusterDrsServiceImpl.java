@@ -21,6 +21,10 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
@@ -31,6 +35,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -42,10 +48,12 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ScheduleDrsCmd;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.commons.lang3.time.DateUtils;
@@ -95,7 +103,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public boolean start() {
         drsAlgorithmMap.clear();
-        for (final ClusterDrsAlgorithm algorithm: drsAlgorithms) {
+        for (final ClusterDrsAlgorithm algorithm : drsAlgorithms) {
             drsAlgorithmMap.put(algorithm.getName(), algorithm);
         }
 
@@ -134,7 +142,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      */
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsThreshold, ClusterDrsMetric};
+        return new ConfigKey<?>[]{ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsThreshold, ClusterDrsMetric};
     }
 
     @Override
@@ -145,6 +153,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     @Override
+    // TODO: Fix event type
+    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE, eventDescription = "Executing DRS", async = true)
     public SuccessResponse executeDrs(ScheduleDrsCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
@@ -152,14 +162,20 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
         SuccessResponse response = new SuccessResponse();
         // TODO: Send response with the exact cause
+        // TODO: Check if we need to add any other condition
         if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || cmd.getIterations() == 0) {
             response.setSuccess(false);
             return response;
         }
+        CallContext.current().setEventResourceId(cluster.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);
         try {
             int iterations = executeDrs(cluster, cmd.getIterations());
-            response.setDisplayText("Executed " + iterations + " iterations for cluster " + cluster.getName());
+            CallContext.current().setEventDescription(String.format("Executed %d iterations for cluster %s", iterations, cluster.getName()));
+            response.setDisplayText(String.format("Executed %d iterations for cluster %s", iterations, cluster.getName()));
             response.setSuccess(true);
+            CallContext.current().setEventResourceId(cluster.getId());
+            CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);
             return response;
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException("Unable to schedule DRS", e);
@@ -192,7 +208,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             originalHostVmMap.get(vm.getHostId()).add(vm);
         }
         Map<Long, List<VirtualMachine>> hostVmMap = originalHostVmMap;
-        while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration < maxIterations) {
+        while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration <= maxIterations) {
             Pair<Host, VirtualMachine> bestMigration = null;
             double maxImprovement = 0;
             hostVmMap = new HashMap<>();
@@ -212,8 +228,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     Double cost = metrics.second();
                     Double benefit = metrics.third();
                     if (benefit > cost && (improvement > maxImprovement)) {
-                            bestMigration = new Pair<>(destHost, vm);
-                            maxImprovement = improvement;
+                        bestMigration = new Pair<>(destHost, vm);
+                        maxImprovement = improvement;
                     }
                 }
             }
@@ -229,6 +245,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
 
             try {
+                CallContext.current().setEventResourceId(vm.getId());
+                CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
                 userVmService.migrateVirtualMachine(vm.getId(), destHost);
                 logger.debug("Migrated VM " + vm.getInstanceName() + " from host " + vm.getHostId() + " to host " + destHost.getId());
             } catch (ResourceUnavailableException e) {
@@ -248,15 +266,26 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     private void executeDrsForAllClusters() {
         List<ClusterVO> clusterList = clusterDao.listAll();
         for (ClusterVO cluster : clusterList) {
+            // TODO: Check if we need to add any other condition
             if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)) {
                 continue;
             }
 
             try {
-                double iterations = executeDrs(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
-                logger.debug("Executed " + iterations + " iterations of DRS for cluster " + cluster.getName());
+                // TODO: Fix event type
+                Long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE,
+                        String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(),
+                        true, 0);
+                CallContext.current().setStartEventId(eventId);
+                int iterations = executeDrs(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
+                logger.debug(String.format("Executed %d iterations of DRS for cluster %s", iterations, cluster.getName()));
+
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO,
+                        EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE, true,
+                        String.format("Executed %s iterations as part of automatic DRS for cluster %s", iterations, cluster.getName()),
+                        cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
             } catch (ConfigurationException e) {
-                throw new CloudRuntimeException("Unable to schedule DRS", e);
+                throw new CloudRuntimeException("Unable to execute DRS", e);
             }
         }
     }
