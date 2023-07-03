@@ -707,7 +707,7 @@ class TestRegisteredUserdata(cloudstackTestCase):
         res = ssh.execute(cmd)
         self.debug("Verifying userdata in the VR")
         self.assertTrue(
-            "Content-Type: multipart" in str(res[0]),
+            "Content-Type: multipart" in str(res[2]),
             "Failed to match multipart userdata"
         )
 
