@@ -198,7 +198,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     //Fang: new command added;
-    // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+    // Important! we need to sync file system before we can safely use tar to work around a linux kernel bug(or feature)
     public String createOvaForVolume(VolumeObjectTO volume, int archiveTimeout) {
         DataStoreTO storeTO = volume.getDataStore();
         if (!(storeTO instanceof NfsTO)) {
@@ -1054,7 +1054,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
             String exportDir = ova_metafile.getParent();
             s_logger.info("exportDir: " + exportDir);
-            // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+            // Important! we need to sync file system before we can safely use tar to work around a linux kernel bug(or feature)
             s_logger.info("Sync file system before we package OVA..., before tar ");
             s_logger.info("ova: " + ovaFileName + ", ovf:" + ovfFileName + ", vmdk:" + disks[0] + ".");
             Script commandSync = new Script(true, "sync", 0, s_logger);

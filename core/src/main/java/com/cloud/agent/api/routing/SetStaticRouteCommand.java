@@ -59,9 +59,4 @@ public class SetStaticRouteCommand extends NetworkElementCommand {
         }
         return toAdd.toArray(new String[toAdd.size()]);
     }
-
-    @Override
-    public int getAnswersCount() {
-        return staticRoutes.length;
-    }
 }

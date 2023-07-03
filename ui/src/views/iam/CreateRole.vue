@@ -67,9 +67,9 @@
             v-model:value="form.type"
             :placeholder="apiParams.type.description"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
@@ -87,12 +87,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="role in roles"
               :value="role.id"
-              :key="role.id">
+              :key="role.id"
+              :label="role.name">
               {{ role.name }}
             </a-select-option>
           </a-select>

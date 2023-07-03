@@ -35,43 +35,45 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <template #zonename="{record}">
-        <span v-if="fetchZoneIcon(record.zoneid)">
-          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
-        </span>
-        <global-outlined v-else style="margin-right: 5px" />
-        <span> {{ record.zonename }} </span>
-      </template>
-      <template #isready="{ record }">
-        <span v-if="record.isready">{{ $t('label.yes') }}</span>
-        <span v-else>{{ $t('label.no') }}</span>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'zonename'">
+          <span v-if="fetchZoneIcon(record.zoneid)">
+            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          </span>
+          <global-outlined v-else style="margin-right: 5px" />
+          <span> {{ record.zonename }} </span>
+        </template>
+        <template v-if="column.key === 'isready'">
+          <span v-if="record.isready">{{ $t('label.yes') }}</span>
+          <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            style="margin-right: 5px"
+            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+            :title="$t('label.action.copy.template')"
+            icon="copy-outlined"
+            :loading="copyLoading"
+            @onClick="showCopyTemplate(record)" />
+          <tooltip-button
+            style="margin-right: 5px"
+            :disabled="!('deleteTemplate' in $store.getters.apis)"
+            :title="$t('label.action.delete.template')"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="onShowDeleteModal(record)"/>
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <a-table
-          style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
+          style="margin: 10px 0;"
           :columns="innerColumns"
           :data-source="record.downloaddetails"
           :pagination="false"
           :bordered="true"
           :rowKey="record => record.zoneid">
         </a-table>
-      </template>
-      <template #action="{ record }">
-        <tooltip-button
-          style="margin-right: 5px"
-          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-          :title="$t('label.action.copy.template')"
-          icon="copy-outlined"
-          :loading="copyLoading"
-          @onClick="showCopyTemplate(record)" />
-        <tooltip-button
-          style="margin-right: 5px"
-          :disabled="!('deleteTemplate' in $store.getters.apis)"
-          :title="$t('label.action.delete.template')"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -171,12 +173,12 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.zoneid || record.name"
+          :rowKey="record => record.zoneid || record.name"
           :pagination="true"
           style="overflow-y: auto">
         </a-table>
         <a-spin :spinning="deleteLoading">
-          <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
+          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
             <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
           </a-form-item>
           <div :span="24" class="action-button">
@@ -260,18 +262,18 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'zonename',
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename',
-        slots: { customRender: 'zonename' }
+        dataIndex: 'zonename'
       },
       {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
       {
+        key: 'isready',
         title: this.$t('label.isready'),
-        dataIndex: 'isready',
-        slots: { customRender: 'isready' }
+        dataIndex: 'isready'
       }
     ]
     this.innerColumns = [
@@ -290,10 +292,10 @@ export default {
     ]
     if (this.isActionPermitted()) {
       this.columns.push({
+        key: 'actions',
         title: '',
-        dataIndex: 'action',
-        width: 100,
-        slots: { customRender: 'action' }
+        dataIndex: 'actions',
+        width: 100
       })
     }
 
@@ -422,9 +424,9 @@ export default {
     deleteTemplates (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

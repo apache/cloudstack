@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.config.impl;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,9 +26,13 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -36,11 +41,15 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 
 public class ConfigDepotAdminTest extends TestCase {
     private final static ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
     private final static ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
+    private final static ConfigKey<Integer> TestCK = new ConfigKey<>(Integer.class, "testKey", "Advance", "30", "Test Key", false,
+            ConfigKey.Scope.Global, null, "Test Display Text", null, new Ternary<>("TestGroup", "Test Group", 3L), new Pair<>("Test SubGroup", 1L));
 
     @Mock
     Configurable _configurable;
@@ -57,6 +66,12 @@ public class ConfigDepotAdminTest extends TestCase {
     ConfigurationDao _configDao;
 
     @Mock
+    ConfigurationGroupDao _configGroupDao;
+
+    @Mock
+    ConfigurationSubGroupDao _configSubGroupDao;
+
+    @Mock
     ScopedConfigStorage _scopedStorage;
 
     /**
@@ -68,6 +83,8 @@ public class ConfigDepotAdminTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         _depotAdmin = new ConfigDepotImpl();
         _depotAdmin._configDao = _configDao;
+        _depotAdmin._configGroupDao = _configGroupDao;
+        _depotAdmin._configSubGroupDao = _configSubGroupDao;
         _depotAdmin._configurables = new ArrayList<Configurable>();
         _depotAdmin._configurables.add(_configurable);
         _depotAdmin._scopedStorages = new ArrayList<ScopedConfigStorage>();
@@ -80,22 +97,58 @@ public class ConfigDepotAdminTest extends TestCase {
         dynamicIntCV.setValue("100");
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
+        ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
-        when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK});
+        when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
         when(_configDao.findById(StaticIntCK.key())).thenReturn(null);
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+        when(_configDao.findById(TestCK.key())).thenReturn(testCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
-
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.
         verify(_configDao, times(1)).persist(any(ConfigurationVO.class));
 
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+        when(_configDao.findById(TestCK.key())).thenReturn(null);
         _depotAdmin._configured.clear();
         _depotAdmin.populateConfigurations();
-        // This is two because DynamicIntCK also returns null.
-        verify(_configDao, times(2)).persist(any(ConfigurationVO.class));
+        // This is three because DynamicIntCK, TestCK also returns null.
+        verify(_configDao, times(3)).persist(any(ConfigurationVO.class));
+    }
+
+    @Test
+    public void testDefaultConfigurationGroupAndSubGroup() {
+        Mockito.when(_configSubGroupDao.findByName(anyString())).thenReturn(null);
+        Mockito.when(_configSubGroupDao.findByKeyword(anyString())).thenReturn(null);
+
+        Pair<Long, Long> configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(1L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
+    }
+
+    @Test
+    public void testConfigurationGroupAndSubGroup() {
+        ConfigurationGroupVO testGroup = new ConfigurationGroupVO("TestGroup", "Test Group", 3L);
+        ConfigurationSubGroupVO testSubGroup = new ConfigurationSubGroupVO("TestSubGroup", null, 1L);
+        testSubGroup.setGroupId(9L);
+        Mockito.when(_configSubGroupDao.findByName("storage")).thenReturn(testSubGroup);
+        Mockito.when(_configSubGroupDao.findByKeyword(anyString())).thenReturn(null);
+
+        Pair<Long, Long> configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(9L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
+
+        testSubGroup.setGroupId(5L);
+        Mockito.when(_configSubGroupDao.findByName(anyString())).thenReturn(null);
+        Mockito.when(_configSubGroupDao.findByKeyword("storage")).thenReturn(testSubGroup);
+
+        configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(5L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
     }
 }

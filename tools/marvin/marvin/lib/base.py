@@ -108,6 +108,8 @@ class Role:
             cmd.roleid = services["roleid"]
         if "description" in services:
             cmd.description = services["description"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.createRole(cmd).__dict__)
 
@@ -122,6 +124,8 @@ class Role:
             cmd.description = services["description"]
         if "forced" in services:
             cmd.type = services["forced"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.importRole(cmd).__dict__)
 
@@ -518,11 +522,12 @@ class VirtualMachine:
                serviceofferingid=None, securitygroupids=None,
                projectid=None, startvm=None, diskofferingid=None,
                affinitygroupnames=None, affinitygroupids=None, group=None,
-               hostid=None, keypair=None, ipaddress=None, mode='default',
+               hostid=None, clusterid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
+               userdataid=None, userdatadetails=None, extraconfig=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -609,6 +614,9 @@ class VirtualMachine:
         if hostid:
             cmd.hostid = hostid
 
+        if clusterid:
+            cmd.clusterid = clusterid
+
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"].encode()).decode()
 
@@ -674,6 +682,9 @@ class VirtualMachine:
 
         if boottype:
             cmd.boottype = boottype
+
+        if extraconfig:
+            cmd.extraconfig = extraconfig
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -2762,6 +2773,8 @@ class NetworkOffering:
 
         if "useVpc" in services:
             cmd.forvpc = (services["useVpc"] == "on")
+        if "useTungsten" in services:
+            cmd.fortungsten = (services["useTungsten"] == "on")
         cmd.serviceproviderlist = []
         if "serviceProviderList" in services:
             for service, provider in list(services["serviceProviderList"].items()):
@@ -3472,7 +3485,8 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
+               sourcenatipaddress=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3554,6 +3568,8 @@ class Network:
             cmd.publicmtu = publicmtu
         if privatemtu:
             cmd.privatemtu = privatemtu
+        if sourcenatipaddress:
+            cmd.sourcenatipaddress = sourcenatipaddress
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4648,6 +4664,14 @@ class Configurations:
         cmd = listCapabilities.listCapabilitiesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listCapabilities(cmd))
+
+
+    @classmethod
+    def listGroups(cls, apiclient, **kwargs):
+        """Lists configuration groups"""
+        cmd = listConfigurationGroups.listConfigurationGroupsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listConfigurationGroups(cmd))
 
 
     @classmethod
@@ -6123,3 +6147,556 @@ class NetworkPermission:
         cmd = listNetworkPermissions.listNetworkPermissionsCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listNetworkPermissions(cmd))
+
+class LogicalRouter:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, name):
+        cmd = createTungstenFabricLogicalRouter.createTungstenFabricLogicalRouterCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        return LogicalRouter(apiclient.createTungstenFabricLogicalRouter(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, logicalrouteruuid, networkuuid):
+        cmd = listTungstenFabricLogicalRouter.listTungstenFabricLogicalRouterCmd()
+        cmd.zoneid = zoneid
+        cmd.logicalrouteruuid = logicalrouteruuid
+        cmd.networkuuid = networkuuid
+        return apiclient.listTungstenFabricLogicalRouter(cmd)
+
+    @classmethod
+    def add(cls, apiclient, zoneid, logicalrouteruuid, networkuuid):
+        cmd = addTungstenFabricNetworkGatewayToLogicalRouter.addTungstenFabricNetworkGatewayToLogicalRouterCmd()
+        cmd.zoneid = zoneid
+        cmd.logicalrouteruuid = logicalrouteruuid
+        cmd.networkuuid = networkuuid
+        return apiclient.addTungstenFabricNetworkGatewayToLogicalRouter(cmd)
+
+    @classmethod
+    def remove(cls, apiclient, zoneid, logicalrouteruuid, networkuuid):
+        cmd = removeTungstenFabricNetworkGatewayFromLogicalRouter.removeTungstenFabricNetworkGatewayFromLogicalRouterCmd()
+        cmd.zoneid = zoneid
+        cmd.logicalrouteruuid = logicalrouteruuid
+        cmd.networkuuid = networkuuid
+        return apiclient.removeTungstenFabricNetworkGatewayFromLogicalRouter(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, logicalrouteruuid):
+        cmd = deleteTungstenFabricLogicalRouter.deleteTungstenFabricLogicalRouterCmd()
+        cmd.zoneid = zoneid
+        cmd.logicalrouteruuid = logicalrouteruuid
+        return apiclient.deleteTungstenFabricLogicalRouter(cmd)
+
+
+class ApplicationPolicySet:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, name):
+        cmd = createTungstenFabricApplicationPolicySet.createTungstenFabricApplicationPolicySetCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+
+        return ApplicationPolicySet(
+            apiclient.createTungstenFabricApplicationPolicySet(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, applicationpolicysetuuid):
+        cmd = listTungstenFabricApplicationPolicySet.listTungstenFabricApplicationPolicySetCmd()
+        cmd.zoneid = zoneid
+        cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        return apiclient.listTungstenFabricApplicationPolicySet(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, applicationpolicysetuuid):
+        cmd = deleteTungstenFabricApplicationPolicySet.deleteTungstenFabricApplicationPolicySetCmd()
+        cmd.zoneid = zoneid
+        cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        return apiclient.deleteTungstenFabricApplicationPolicySet(cmd)
+
+
+class FirewallPolicy:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, applicationpolicysetuuid, name, sequence):
+        cmd = createTungstenFabricFirewallPolicy.createTungstenFabricFirewallPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        cmd.name = name
+        cmd.sequence = sequence
+        return FirewallPolicy(apiclient.createTungstenFabricFirewallPolicy(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, applicationpolicysetuuid, firewallpolicyuuid):
+        cmd = listTungstenFabricFirewallPolicy.listTungstenFabricFirewallPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        cmd.firewallpolicyuuid = firewallpolicyuuid
+        return apiclient.listTungstenFabricFirewallPolicy(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, firewallpolicyuuid):
+        cmd = deleteTungstenFabricFirewallPolicy.deleteTungstenFabricFirewallPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.firewallpolicyuuid = firewallpolicyuuid
+        return apiclient.deleteTungstenFabricFirewallPolicy(cmd)
+
+
+class FirewallRule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, firewallpolicyuuid, name, action, direction,
+               servicegroupuuid, sequence,
+               srctaguuid=None, desttaguuid=None, srcaddressgroupuuid=None,
+               destaddressgroupuuid=None, srcnetworkuuid=None,
+               destnetworkuuid=None, tagtypeuuid=None):
+        cmd = createTungstenFabricFirewallRule.createTungstenFabricFirewallRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.firewallpolicyuuid = firewallpolicyuuid
+        cmd.name = name
+        cmd.action = action
+        cmd.direction = direction
+        cmd.servicegroupuuid = servicegroupuuid
+        cmd.sequence = sequence
+
+        if srctaguuid:
+            cmd.srctaguuid = srctaguuid
+        if desttaguuid:
+            cmd.desttaguuid = desttaguuid
+        if srcaddressgroupuuid:
+            cmd.srcaddressgroupuuid = srcaddressgroupuuid
+        if destaddressgroupuuid:
+            cmd.destaddressgroupuuid = destaddressgroupuuid
+        if srcnetworkuuid:
+            cmd.srcnetworkuuid = srcnetworkuuid
+        if destnetworkuuid:
+            cmd.destnetworkuuid = destnetworkuuid
+        if tagtypeuuid:
+            cmd.tagtypeuuid = tagtypeuuid
+        return FirewallRule(apiclient.createTungstenFabricFirewallRule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, firewallpolicyuuid, firewallruleuuid):
+        cmd = listTungstenFabricFirewallRule.listTungstenFabricFirewallRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.firewallpolicyuuid = firewallpolicyuuid
+        cmd.firewallruleuuid = firewallruleuuid
+        return apiclient.listTungstenFabricFirewallRule(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, firewallruleuuid):
+        cmd = deleteTungstenFabricFirewallRule.deleteTungstenFabricFirewallRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.firewallruleuuid = firewallruleuuid
+        return apiclient.deleteTungstenFabricFirewallRule(cmd)
+
+
+class TungstenTag:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, tagtype, tagvalue):
+        cmd = createTungstenFabricTag.createTungstenFabricTagCmd()
+        cmd.zoneid = zoneid
+        cmd.tagtype = tagtype
+        cmd.tagvalue = tagvalue
+        return TungstenTag(apiclient.createTungstenFabricTag(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, applicationpolicysetuuid, networkuuid, nicuuid, policyuuid, vmuuid, taguuid):
+        cmd = listTungstenFabricTag.listTungstenFabricTagCmd()
+        cmd.zoneid = zoneid
+        cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        cmd.networkuuid = networkuuid
+        cmd.nicuuid = nicuuid
+        cmd.policyuuid = policyuuid
+        cmd.vmuuid = vmuuid
+        cmd.taguuid = taguuid
+        return apiclient.listTungstenFabricTag(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, taguuid):
+        cmd = deleteTungstenFabricTag.deleteTungstenFabricTagCmd()
+        cmd.zoneid = zoneid
+        cmd.taguuid = taguuid
+        return apiclient.deleteTungstenFabricTag(cmd)
+
+    @classmethod
+    def apply(cls, apiclient, zoneid, applicationpolicysetuuid=None, taguuid=None, networkuuid=None,
+              vmuuid=None, nicuuid=None, policyuuid=None):
+        cmd = applyTungstenFabricTag.applyTungstenFabricTagCmd()
+        cmd.zoneid = zoneid
+        cmd.taguuid = taguuid
+        if applicationpolicysetuuid:
+            cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        if networkuuid:
+            cmd.networkuuid = networkuuid
+        if vmuuid:
+            cmd.vmuuid = vmuuid
+        if nicuuid:
+            cmd.nicuuid = nicuuid
+        if policyuuid:
+            cmd.policyuuid = policyuuid
+        return apiclient.applyTungstenFabricTag(cmd)
+
+    @classmethod
+    def remove(cls, apiclient, zoneid, applicationpolicysetuuid=None, taguuid=None,
+               networkuuid=None, vmuuid=None,
+               nicuuid=None, policyuuid=None):
+        cmd = removeTungstenFabricTag.removeTungstenFabricTagCmd()
+        cmd.zoneid = zoneid
+        cmd.taguuid = taguuid
+        if applicationpolicysetuuid:
+            cmd.applicationpolicysetuuid = applicationpolicysetuuid
+        if networkuuid:
+            cmd.networkuuid = networkuuid
+        if vmuuid:
+            cmd.vmuuid = vmuuid
+        if nicuuid:
+            cmd.nicuuid = nicuuid
+        if policyuuid:
+            cmd.policyuuid = policyuuid
+        return apiclient.removeTungstenFabricTag(cmd)
+
+
+class ServiceGroup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, name, protocol, startport, endport):
+        cmd = createTungstenFabricServiceGroup.createTungstenFabricServiceGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        cmd.protocol = protocol
+        cmd.startport = startport
+        cmd.endport = endport
+        return ServiceGroup(apiclient.createTungstenFabricServiceGroup(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, servicegroupuuid):
+        cmd = listTungstenFabricServiceGroup.listTungstenFabricServiceGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.servicegroupuuid = servicegroupuuid
+        return apiclient.listTungstenFabricServiceGroup(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, servicegroupuuid):
+        cmd = deleteTungstenFabricServiceGroup.deleteTungstenFabricServiceGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.servicegroupuuid = servicegroupuuid
+        return apiclient.deleteTungstenFabricServiceGroup(cmd)
+
+
+class AddressGroup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, name, ipprefix, ipprefixlen):
+        cmd = createTungstenFabricAddressGroup.createTungstenFabricAddressGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        cmd.ipprefix = ipprefix
+        cmd.ipprefixlen = ipprefixlen
+        return AddressGroup(apiclient.createTungstenFabricAddressGroup(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, addressgroupuuid):
+        cmd = listTungstenFabricAddressGroup.listTungstenFabricAddressGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.addressgroupuuid = addressgroupuuid
+        return apiclient.listTungstenFabricAddressGroup(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, addressgroupuuid):
+        cmd = deleteTungstenFabricAddressGroup.deleteTungstenFabricAddressGroupCmd()
+        cmd.zoneid = zoneid
+        cmd.addressgroupuuid = addressgroupuuid
+        return apiclient.deleteTungstenFabricAddressGroup(cmd)
+
+
+class NetworkPolicy:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, name):
+        cmd = createTungstenFabricPolicy.createTungstenFabricPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        return NetworkPolicy(apiclient.createTungstenFabricPolicy(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, policyuuid, networkuuid, ipaddressid):
+        cmd = listTungstenFabricPolicy.listTungstenFabricPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        cmd.networkid = networkuuid
+        cmd.ipaddressid = ipaddressid
+        return apiclient.listTungstenFabricPolicy(cmd)
+
+    @classmethod
+    def apply(cls, apiclient, zoneid, networkuuid, policyuuid, majorsequence, minorsequence):
+        cmd = applyTungstenFabricPolicy.applyTungstenFabricPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        cmd.networkuuid = networkuuid
+        cmd.majorsequence = majorsequence
+        cmd.minorsequence = minorsequence
+        return apiclient.applyTungstenFabricPolicy(cmd)
+
+    @classmethod
+    def remove(cls, apiclient, zoneid, networkuuid, policyuuid):
+        cmd = removeTungstenFabricPolicy.removeTungstenFabricPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.networkuuid = networkuuid
+        cmd.policyuuid = policyuuid
+        return apiclient.removeTungstenFabricPolicy(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, policyuuid):
+        cmd = deleteTungstenFabricPolicy.deleteTungstenFabricPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        return apiclient.deleteTungstenFabricPolicy(cmd)
+
+
+class PolicyRule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, zoneid, policyuuid, action, direction, protocol, srcnetwork,
+               srcipprefix, srcipprefixlend, srcstartport, srcendport, destnetwork, destipprefix,
+               destipprefixlen, deststartport, destendport):
+        cmd = addTungstenFabricPolicyRule.addTungstenFabricPolicyRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        cmd.action = action
+        cmd.direction = direction
+        cmd.protocol = protocol
+        cmd.srcnetwork = srcnetwork
+        cmd.srcipprefix = srcipprefix
+        cmd.srcipprefixlen = srcipprefixlend
+        cmd.srcstartport = srcstartport
+        cmd.srcendport = srcendport
+        cmd.destnetwork = destnetwork
+        cmd.destipprefix = destipprefix
+        cmd.destipprefixlen = destipprefixlen
+        cmd.deststartport = deststartport
+        cmd.destendport = destendport
+        return PolicyRule(apiclient.addTungstenFabricPolicyRule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, zoneid, policyuuid, ruleuuid):
+        cmd = listTungstenFabricPolicyRule.listTungstenFabricPolicyRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        cmd.ruleuuid = ruleuuid
+        return apiclient.listTungstenFabricPolicyRule(cmd)
+
+    @classmethod
+    def delete(cls, apiclient, zoneid, policyuuid, ruleuuid):
+        cmd = removeTungstenFabricPolicyRule.removeTungstenFabricPolicyRuleCmd()
+        cmd.zoneid = zoneid
+        cmd.policyuuid = policyuuid
+        cmd.ruleuuid = ruleuuid
+        return apiclient.removeTungstenFabricPolicyRule(cmd)
+
+class GuestOSCategory:
+    """Manage Guest OS Categories"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, id=None, name=None, **kwargs):
+        """List all Guest OS categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if name is not None:
+            cmd.name = name
+
+        return (apiclient.listOsCategories(cmd))
+
+class GuestOS:
+    """Manage Guest OS"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, osdisplayname=None,
+                  oscategoryid=None, name=None, details=None):
+        """Add Guest OS"""
+        cmd = addGuestOs.addGuestOsCmd()
+        cmd.osdisplayname = osdisplayname
+        cmd.oscategoryid = oscategoryid
+        if name is not None:
+            cmd.name = name
+        if details is not None:
+            cmd.details = details
+
+        return (apiclient.addGuestOs(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS"""
+        cmd = removeGuestOs.removeGuestOsCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOs(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osdisplayname=None, details=None):
+        """Update Guest OS"""
+        cmd = updateGuestOs.updateGuestOsCmd()
+        cmd.id = id
+        cmd.osdisplayname = osdisplayname
+        if details is not None:
+            cmd.details = details
+
+        return apiclient.updateGuestOs(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, oscategoryid=None, description=None, **kwargs):
+        """List all Guest OS"""
+        cmd = listOsTypes.listOsTypesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if oscategoryid is not None:
+            cmd.oscategoryid = oscategoryid
+        if description is not None:
+            cmd.description = description
+
+        return (apiclient.listOsTypes(cmd))
+
+class GuestOsMapping:
+    """Manage Guest OS Mappings"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, ostypeid=None,
+                  hypervisor=None, hypervisorversion=None,
+                  osnameforhypervisor=None, osmappingcheckenabled=None, forced=None):
+        """Add Guest OS mapping"""
+        cmd = addGuestOsMapping.addGuestOsMappingCmd()
+        cmd.ostypeid = ostypeid
+        cmd.hypervisor = hypervisor
+        cmd.hypervisorversion = hypervisorversion
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+        if forced is not None:
+            cmd.forced = forced
+
+        return (apiclient.addGuestOsMapping(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS mapping"""
+        cmd = removeGuestOsMapping.removeGuestOsMappingCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOsMapping(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osnameforhypervisor=None, osmappingcheckenabled=None):
+        """Update Guest OS mapping"""
+        cmd = updateGuestOsMapping.updateGuestOsMappingCmd()
+        cmd.id = id
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+
+        return apiclient.updateGuestOsMapping(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, ostypeid=None, osdisplayname=None,
+             osnameforhypervisor=None, hypervisor=None, hypervisorversion=None, **kwargs):
+        """List all Guest OS mappings"""
+        cmd = listGuestOsMapping.listGuestOsMappingCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if ostypeid is not None:
+            cmd.ostypeid = ostypeid
+        if osdisplayname is not None:
+            cmd.osdisplayname = osdisplayname
+        if osnameforhypervisor is not None:
+            cmd.osnameforhypervisor = osnameforhypervisor
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        if hypervisorversion is not None:
+            cmd.hypervisorversion = hypervisorversion
+
+        return (apiclient.listGuestOsMapping(cmd))
+
+class VMSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, virtualmachineid, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
+        cmd = createVMSchedule.createVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.description = description
+        cmd.action = action
+        cmd.schedule = schedule
+        cmd.timezone = timezone
+        cmd.startdate = startdate
+        cmd.enddate = enddate
+        cmd.enabled = enabled
+        return VMSchedule(apiclient.createVMSchedule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, virtualmachineid, id=None, enabled=None, action=None):
+        cmd = listVMSchedule.listVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.id = id
+        cmd.enabled = enabled
+        cmd.action = action
+        return apiclient.listVMSchedule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        cmd = updateVMSchedule.updateVMScheduleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateVMSchedule(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSchedule.deleteVMScheduleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineid = self.virtualmachineid
+        return (apiclient.deleteVMSchedule(cmd))

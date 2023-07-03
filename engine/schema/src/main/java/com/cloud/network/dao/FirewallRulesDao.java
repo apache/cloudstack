@@ -53,6 +53,12 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
 
     List<FirewallRuleVO> listByIpAndNotRevoked(long ipAddressId);
 
+    /**
+     * counts the number of portforwarding rules for an IP address
+     *
+     * @param sourceIpId the id of the IP record
+     * @return the number of portforwarding rules for this IP
+     */
     long countRulesByIpId(long sourceIpId);
 
     long countRulesByIpIdAndState(long sourceIpId, FirewallRule.State state);

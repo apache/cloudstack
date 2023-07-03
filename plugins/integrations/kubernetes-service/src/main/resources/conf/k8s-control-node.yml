@@ -326,4 +326,3 @@ runcmd:
   - /opt/bin/setup-kube-system
   - until [ -f /etc/systemd/system/deploy-kube-system.service ]; do sleep 5; done
   - systemctl start deploy-kube-system
-

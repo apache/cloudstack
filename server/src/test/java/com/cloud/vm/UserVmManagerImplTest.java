@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.VolumeDao;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -37,17 +36,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
-import com.cloud.user.dao.UserDataDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,14 +56,25 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
@@ -76,19 +84,30 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -136,6 +155,12 @@ public class UserVmManagerImplTest {
     private AccountManager accountManager;
 
     @Mock
+    private AccountService accountService;
+
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
     private UserVmDetailsDao userVmDetailVO;
 
     @Mock
@@ -169,12 +194,33 @@ public class UserVmManagerImplTest {
     UserDataDao userDataDao;
 
     @Mock
+    PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
+    VirtualMachineManager virtualMachineManager;
+
+    @Mock
+    DeploymentPlanningManager planningManager;
+
+    @Mock
+    HostDao hostDao;
+
+    @Mock
     private VolumeVO volumeVOMock;
 
     @Mock
     private VolumeDao volumeDaoMock;
 
-    private long vmId = 1l;
+    @Mock
+    AccountVO account;
+
+    @Mock
+    private ServiceOfferingVO serviceOffering;
+
+    private static final long vmId = 1l;
+    private static final long zoneId = 2L;
+    private static final long accountId = 3L;
+    private static final long serviceOfferingId = 10L;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
@@ -190,7 +236,7 @@ public class UserVmManagerImplTest {
 
         when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
 
-        Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
 
         Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
         CallContext.register(callerUser, callerAccount);
@@ -221,14 +267,14 @@ public class UserVmManagerImplTest {
     @Test
     public void validateGuestOsIdForUpdateVirtualMachineCommandTestOsTypeFound() {
         Mockito.when(updateVmCommand.getOsTypeId()).thenReturn(1l);
-        Mockito.when(guestOSDao.findById(Mockito.eq(1l))).thenReturn(Mockito.mock(GuestOSVO.class));
+        Mockito.when(guestOSDao.findById(1l)).thenReturn(Mockito.mock(GuestOSVO.class));
 
         userVmManagerImpl.validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTestVmNotFound() {
-        Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(null);
+        Mockito.when(userVmDao.findById(vmId)).thenReturn(null);
 
         userVmManagerImpl.validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
     }
@@ -873,5 +919,139 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(volumeApiService).recoverVolume(volumeVOMock.getId());
         Mockito.verify(volumeDaoMock).attachVolume(volumeVOMock.getId(), vmId, UserVmManagerImpl.ROOT_DEVICE_ID);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void createVirtualMachineWithInactiveServiceOffering() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        DeployVMCmd deployVMCmd = new DeployVMCmd();
+        ReflectionTestUtils.setField(deployVMCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(deployVMCmd, "serviceOfferingId", serviceOfferingId);
+        deployVMCmd._accountService = accountService;
+
+        when(accountService.finalyzeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Inactive);
+
+        userVmManagerImpl.createVirtualMachine(deployVMCmd);
+    }
+
+    private List<VolumeVO> mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(int localVolumes, int nonLocalVolumes) {
+        List<VolumeVO> volumes = new ArrayList<>();
+        for (int i=0; i< localVolumes + nonLocalVolumes; ++i) {
+            VolumeVO vol = Mockito.mock(VolumeVO.class);
+            long index = i + 1;
+            Mockito.when(vol.getDiskOfferingId()).thenReturn(index);
+            Mockito.when(vol.getPoolId()).thenReturn(index);
+            DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+            Mockito.when(diskOfferingDao.findById(index)).thenReturn(diskOffering);
+            StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(primaryDataStoreDao.findById(index)).thenReturn(storagePool);
+            if (i < localVolumes) {
+                if ((localVolumes + nonLocalVolumes) % 2 == 0) {
+                    Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(true);
+                } else {
+
+                    Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(false);
+                    Mockito.when(storagePool.isLocal()).thenReturn(true);
+                }
+            } else {
+                Mockito.when(diskOffering.isUseLocalStorage()).thenReturn(false);
+                Mockito.when(storagePool.isLocal()).thenReturn(false);
+            }
+            volumes.add(vol);
+        }
+        return volumes;
+    }
+
+    @Test
+    public void testIsAnyVmVolumeUsingLocalStorage() {
+        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 0)));
+        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(2, 0)));
+        Assert.assertTrue(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(1, 1)));
+        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 2)));
+        Assert.assertFalse(userVmManagerImpl.isAnyVmVolumeUsingLocalStorage(mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(0, 0)));
+    }
+
+    private List<VolumeVO> mockVolumesForIsAllVmVolumesOnZoneWideStore(int nullPoolIdVolumes, int nullPoolVolumes, int zoneVolumes, int nonZoneVolumes) {
+        List<VolumeVO> volumes = new ArrayList<>();
+        for (int i=0; i< nullPoolIdVolumes + nullPoolVolumes + zoneVolumes + nonZoneVolumes; ++i) {
+            VolumeVO vol = Mockito.mock(VolumeVO.class);
+            volumes.add(vol);
+            if (i < nullPoolIdVolumes) {
+                Mockito.when(vol.getPoolId()).thenReturn(null);
+                continue;
+            }
+            long index = i + 1;
+            Mockito.when(vol.getPoolId()).thenReturn(index);
+            if (i < nullPoolVolumes) {
+                Mockito.when(primaryDataStoreDao.findById(index)).thenReturn(null);
+                continue;
+            }
+            StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(primaryDataStoreDao.findById(index)).thenReturn(storagePool);
+            if (i < zoneVolumes) {
+                Mockito.when(storagePool.getScope()).thenReturn(ScopeType.ZONE);
+            } else {
+                Mockito.when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
+            }
+        }
+        return volumes;
+    }
+
+    @Test
+    public void testIsAllVmVolumesOnZoneWideStoreCombinations() {
+        Assert.assertTrue(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(0, 0, 1, 0)));
+        Assert.assertTrue(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(0, 0, 2, 0)));
+        Assert.assertFalse(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(0, 0, 1, 1)));
+        Assert.assertFalse(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(0, 0, 0, 0)));
+        Assert.assertFalse(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(1, 0, 1, 1)));
+        Assert.assertFalse(userVmManagerImpl.isAllVmVolumesOnZoneWideStore(mockVolumesForIsAllVmVolumesOnZoneWideStore(0, 1, 1, 1)));
+    }
+
+    private Pair<VMInstanceVO, Host> mockObjectsForChooseVmMigrationDestinationUsingVolumePoolMapTest(boolean nullPlan, Host destinationHost) {
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+        Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getId()).thenReturn(1L);
+        Mockito.when(hostDao.findById(1L)).thenReturn(Mockito.mock(HostVO.class));
+        Mockito.when(virtualMachineManager.getMigrationDeployment(Mockito.any(VirtualMachine.class),
+                        Mockito.any(Host.class), Mockito.nullable(Long.class),
+                        Mockito.any(DeploymentPlanner.ExcludeList.class)))
+                .thenReturn(Mockito.mock(DataCenterDeployment.class));
+        if (!nullPlan) {
+            try {
+                DeployDestination destination = Mockito.mock(DeployDestination.class);
+                Mockito.when(destination.getHost()).thenReturn(destinationHost);
+                Mockito.when(planningManager.planDeployment(Mockito.any(VirtualMachineProfile.class),
+                                Mockito.any(DataCenterDeployment.class), Mockito.any(DeploymentPlanner.ExcludeList.class),
+                                Mockito.nullable(DeploymentPlanner.class)))
+                        .thenReturn(destination);
+            } catch (InsufficientServerCapacityException e) {
+                Assert.fail("Failed to mock DeployDestination");
+            }
+        }
+        return new Pair<>(vm, host);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testChooseVmMigrationDestinationUsingVolumePoolMapNullDestination() {
+        Pair<VMInstanceVO, Host> pair = mockObjectsForChooseVmMigrationDestinationUsingVolumePoolMapTest(true, null);
+        userVmManagerImpl.chooseVmMigrationDestinationUsingVolumePoolMap(pair.first(), pair.second(), null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testChooseVmMigrationDestinationUsingVolumePoolMapNullHost() {
+        Pair<VMInstanceVO, Host> pair = mockObjectsForChooseVmMigrationDestinationUsingVolumePoolMapTest(false, null);
+        userVmManagerImpl.chooseVmMigrationDestinationUsingVolumePoolMap(pair.first(), pair.second(), null);
+    }
+
+    @Test
+    public void testChooseVmMigrationDestinationUsingVolumePoolMapValid() {
+        Host destinationHost = Mockito.mock(Host.class);
+        Pair<VMInstanceVO, Host> pair = mockObjectsForChooseVmMigrationDestinationUsingVolumePoolMapTest(false, destinationHost);
+        Assert.assertEquals(destinationHost, userVmManagerImpl.chooseVmMigrationDestinationUsingVolumePoolMap(pair.first(), pair.second(), null));
     }
 }

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.network.NetworkService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -43,6 +43,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
@@ -61,7 +62,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the network")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the network")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network")
     private String displayText;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
@@ -110,13 +111,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         + " - Account. Account means that only the account owner can use the network, domain - all accounts in the domain can use the network")
     private String aclType;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the network")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that will own the network. Account should be under the selected domain")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the network")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network. " +
+            "If no account is provided then network will be assigned to the caller account and domain")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
@@ -127,6 +129,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC network belongs to")
     private Long vpcId;
+
+    @Parameter(name = ApiConstants.TUNGSTEN_VIRTUAL_ROUTER_UUID, type = CommandType.STRING, description = "Tungsten-Fabric virtual router the network belongs to")
+    private String tungstenVirtualRouterUuid;
 
     @Parameter(name = ApiConstants.START_IPV6, type = CommandType.STRING, description = "the beginning IPv6 address in the IPv6 network range")
     private String startIpv6;
@@ -178,6 +183,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ip6Dns2;
 
+    @Parameter(name = ApiConstants.SOURCE_NAT_IP,
+            type = CommandType.STRING,
+            description = "IPV4 address to be assigned to the public interface of the network router. " +
+                    "This address will be used as source NAT address for the network. " +
+                    "\nIf an address is given and it cannot be acquired, an error will be returned and the network won´t be implemented,",
+            since = "4.19")
+    private String sourceNatIP;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -218,7 +231,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? name : displayText;
     }
 
     public String getNetworkDomain() {
@@ -255,6 +268,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAssociatedNetworkId() {
         return associatedNetworkId;
+    }
+
+    public String getTungstenVirtualRouterUuid() {
+        return tungstenVirtualRouterUuid;
+    }
+
+    public String getSourceNatIP() {
+        return sourceNatIP;
     }
 
     @Override

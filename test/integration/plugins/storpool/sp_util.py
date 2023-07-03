@@ -44,6 +44,7 @@ from marvin.lib.common import (get_zone,
 from marvin.cloudstackAPI import (listOsTypes,
                                   listTemplates,
                                   listHosts,
+                                  listClusters,
                                   createTemplate,
                                   createVolume,
                                   getVolumeSnapshotDetails,
@@ -74,6 +75,8 @@ class TestData():
     diskName = "diskname"
     diskOffering = "diskoffering"
     diskOffering2 = "diskoffering2"
+    diskOfferingEncrypted = "diskOfferingEncrypted"
+    diskOfferingEncrypted2 = "diskOfferingEncrypted2"
     cephDiskOffering = "cephDiskOffering"
     nfsDiskOffering = "nfsDiskOffering"
     domainId = "domainId"
@@ -232,6 +235,24 @@ class TestData():
                 "miniops": 300,
                 "maxiops": 500,
                 "hypervisorsnapshotreserve": 200,
+                TestData.tags: sp_template_2,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingEncrypted: {
+                "name": "ssd-encrypted",
+                "displaytext": "ssd-encrypted",
+                "disksize": 5,
+                "hypervisorsnapshotreserve": 200,
+                "encrypt": True,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingEncrypted2: {
+                "name": "ssd2-encrypted",
+                "displaytext": "ssd2-encrypted",
+                "disksize": 5,
+                "hypervisorsnapshotreserve": 200,
+                "encrypt": True,
                 TestData.tags: sp_template_2,
                 "storagetype": "shared"
             },
@@ -745,3 +766,33 @@ class StorPoolHelper():
         cmd.id = vmid
         cmd.hostid = hostid
         return (apiclient.startVirtualMachine(cmd))
+
+    @classmethod
+    def getClustersWithStorPool(cls, apiclient, zoneId,):
+        cmd = listClusters.listClustersCmd()
+        cmd.zoneid = zoneId
+        cmd.allocationstate = "Enabled"
+        clusters = apiclient.listClusters(cmd)
+        clustersToDeploy = []
+        for cluster in clusters:
+            if cluster.resourcedetails['sp.cluster.id']:
+                clustersToDeploy.append(cluster.id)
+
+        return clustersToDeploy
+
+    @classmethod
+    def getHostToDeployOrMigrate(cls, apiclient, hostsToavoid, clustersToDeploy):
+        hostsOnCluster = []
+        for c in clustersToDeploy:
+            hostsOnCluster.append(cls.list_hosts_by_cluster_id(apiclient, c))
+
+        destinationHost = None
+        for host in hostsOnCluster:
+
+            if hostsToavoid is None:
+                return host[0]
+            if host[0].id not in hostsToavoid:
+                destinationHost = host[0]
+                break
+
+        return destinationHost

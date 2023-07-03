@@ -28,8 +28,9 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     name: codecov
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
@@ -44,7 +45,7 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
-          mvn -P quality -Dsimulator -Dnoredist clean install
+          mvn -P quality -Dsimulator -Dnoredist clean install -T$(nproc)
 
       - uses: codecov/codecov-action@v3
         with:

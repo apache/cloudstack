@@ -16,18 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateVmToPoolCommand;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
@@ -44,10 +39,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({VMwareGuru.class})
@@ -101,7 +106,7 @@ public class VMwareGuruTest {
         Mockito.when(localStorage.isLocal()).thenReturn(true);
         Pair<Long, Long> clusterAndHost = new Pair<>(1L, 1L);
 
-        Mockito.when(vmManager.findClusterAndHostIdForVm(1L)).thenReturn(clusterAndHost);
+        Mockito.when(vmManager.findClusterAndHostIdForVm(vm, true)).thenReturn(clusterAndHost);
 
         List<StoragePoolHostVO> storagePoolHostVOS = new ArrayList<>();
         storagePoolHostVOS.add(storagePoolHostVO);
@@ -116,4 +121,33 @@ public class VMwareGuruTest {
         Assert.assertEquals("HostSystem:host-a@x.x.x.x", migrateVmToPoolCommand.getHostGuidInTargetCluster());
     }
 
+    @Test
+    public void createVolumeInfoFromVolumesTestEmptyVolumeListReturnEmptyArray() {
+        String volumeInfo = vMwareGuru.createVolumeInfoFromVolumes(new ArrayList<>());
+        assertEquals("[]", volumeInfo);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void createVolumeInfoFromVolumesTestNullVolume() {
+        vMwareGuru.createVolumeInfoFromVolumes(null);
+    }
+
+    @Test
+    public void createVolumeInfoFromVolumesTestCorrectlyConvertOfVolumes() {
+        List<VolumeVO> volumesToTest = new ArrayList<>();
+
+        VolumeVO root = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir", ProvisioningType.THIN, 555l, Volume.Type.ROOT);
+        String rootUuid = root.getUuid();
+
+        VolumeVO data = new VolumeVO("test", 1l, 1l, 1l, 1l, 1l, "test", "/root/dir/data", ProvisioningType.THIN, 1111000l, Volume.Type.DATADISK);
+        String dataUuid = data.getUuid();
+
+        volumesToTest.add(root);
+        volumesToTest.add(data);
+
+        String result = vMwareGuru.createVolumeInfoFromVolumes(volumesToTest);
+        String expected = String.format("[{\"uuid\":\"%s\",\"type\":\"ROOT\",\"size\":555,\"path\":\"/root/dir\"},{\"uuid\":\"%s\",\"type\":\"DATADISK\",\"size\":1111000,\"path\":\"/root/dir/data\"}]", rootUuid, dataUuid);
+
+        assertEquals(expected, result);
+    }
 }

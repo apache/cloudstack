@@ -26,7 +26,7 @@
               @click="showUploadModal(true)"
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
-              <div class="ant-upload-preview" v-if="$showIcon()">
+              <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
                 <camera-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
@@ -84,11 +84,31 @@
               <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
                 {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
               </a-tag>
+              <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
+                {{ $t('label.archived') }}
+              </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
                   <span>{{ $t('label.view.console') }}</span>
                 </template>
-                <console style="margin-top: -5px;" :resource="resource" size="default" v-if="resource.id" />
+                <console
+                  style="margin-top: -5px;"
+                  :resource="resource"
+                  size="default"
+                  v-if="resource.id"
+                />
+              </a-tooltip>
+              <a-tooltip placement="right" >
+                <template #title>
+                  <span>{{ $t('label.copy.consoleurl') }}</span>
+                </template>
+                <console
+                  copyUrlToClipboard
+                  style="margin-top: -5px;"
+                  :resource="resource"
+                  size="default"
+                  v-if="resource.id"
+                />
               </a-tooltip>
             </div>
           </slot>
@@ -124,7 +144,7 @@
               icon="barcode-outlined"
               type="dashed"
               size="small"
-              :copyResource="resource.id"
+              :copyResource="String(resource.id)"
               @onClick="$message.success($t('label.copied.clipboard'))" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>
@@ -143,8 +163,8 @@
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
             <appstore-outlined />
-            <span v-if="resource.cputotal">{{ resource.cputotal }}</span>
-            <span v-else>{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <span v-else>{{ resource.cputotal }}</span>
           </div>
           <div>
             <span v-if="resource.cpuused">
@@ -457,16 +477,19 @@
           </span>
         </div>
         <div class="resource-detail-item" v-if="resource.templateid">
-          <div class="resource-detail-item__label">{{ resource.isoid ? $t('label.iso') : $t('label.templatename') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.templatename') }}</div>
           <div class="resource-detail-item__details">
             <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
-            <PictureOutlined v-else />
-            <div v-if="resource.isoid">
+            <SaveOutlined v-else />
+            <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.isoid">
+          <div class="resource-detail-item__label">{{ $t('label.iso') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-icon v-if="resource.icon" :image="getImage(resource.icon.base64image)" size="1x" style="margin-right: 5px"/>
+            <UsbOutlined v-else />
               <router-link :to="{ path: '/iso/' + resource.isoid }">{{ resource.isodisplaytext || resource.isoname || resource.isoid }} </router-link>
-            </div>
-            <div v-else>
-              <router-link :to="{ path: '/template/' + resource.templateid }">{{ resource.templatedisplaytext || resource.templatename || resource.templateid }} </router-link>
-            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
@@ -631,7 +654,7 @@
         <a-divider/>
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
-            v-if="$router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
+            v-if="(item.show === undefined || item.show(resource)) && $router.resolve('/' + item.name).matched[0].redirect !== '/exception/404'"
             :to="{ name: item.name, query: getRouterQuery(item) }">
             <a-button style="margin-right: 10px">
               <template #icon>
@@ -834,7 +857,7 @@ export default {
     },
     name () {
       return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.osname || this.resource.osdisplayname || this.resource.templatetype
     },
     keypairs () {
       if (!this.resource.keypairs) {
@@ -849,8 +872,13 @@ export default {
       return this.resource.templateid
     },
     resourceIcon () {
-      if (this.$showIcon() && this.resource?.icon?.base64image) {
-        return this.resource.icon.base64image
+      if (this.$showIcon()) {
+        if (this.resource?.icon?.base64image) {
+          return this.resource.icon.base64image
+        }
+        if (this.resource?.resourceIcon?.base64image) {
+          return this.resource.resourceIcon.base64image
+        }
       }
       return null
     },

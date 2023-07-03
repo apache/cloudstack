@@ -44,6 +44,14 @@ public interface VmDetailConstants {
     String VIDEO_HARDWARE = "video.hardware";
     String VIDEO_RAM = "video.ram";
 
+    //KVM specific, loop threads for block IO requests
+    String IOTHREADS = "iothreads";
+    String IO_POLICY = "io.policy";
+
+    // KVM specific, the number of queues for multiqueue NICs
+    String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
+    String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
+
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
     String FIRMWARE = "firmware";

@@ -59,6 +59,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import com.cloud.utils.net.NetUtils;
+
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -644,7 +646,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateSCSIDef() {
         VirtualMachineTO to = createDefaultVM(false);
 
-        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus());
+        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus(), false);
         Document domainDoc = parse(scsiDef.toString());
         verifyScsi(to, domainDoc, "");
     }
@@ -5843,25 +5845,25 @@ public class LibvirtComputingResourceTest {
 
     public void setDiskIoDriverTestIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
-        Assert.assertEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+        Assert.assertEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestLibvirtSupportsIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, HYPERVISOR_QEMU_VERSION_SUPPORTS_IOURING);
-        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestQemuSupportsIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IOURING, 123l);
-        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     @Test
     public void setDiskIoDriverTestNoSupportToIoUring() {
         DiskDef diskDef = configureAndTestSetDiskIoDriverTest(123l, 123l);
-        Assert.assertNotEquals(DiskDef.IoDriver.IOURING, diskDef.getIoDriver());
+        Assert.assertNotEquals(IoDriverPolicy.IO_URING, diskDef.getIoDriver());
     }
 
     private DiskDef configureAndTestSetDiskIoDriverTest(long hypervisorLibvirtVersion, long hypervisorQemuVersion) {
@@ -5869,7 +5871,7 @@ public class LibvirtComputingResourceTest {
         LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
         Mockito.when(libvirtComputingResourceSpy.getHypervisorLibvirtVersion()).thenReturn(hypervisorLibvirtVersion);
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
-        libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
+        libvirtComputingResourceSpy.setDiskIoDriver(diskDef, IoDriverPolicy.IO_URING);
         return diskDef;
     }
 
@@ -6051,6 +6053,39 @@ public class LibvirtComputingResourceTest {
         verify(scriptMock).add(privateIp);
         verify(scriptMock).add(publicIp);
         verify(scriptMock).add(String.valueOf(port));
+    }
+
+   @Test
+    public void testGetDiskPathFromDiskDefForRBD() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defNetworkBasedDisk("cloudstack/diskpath", "1.1.1.1", 3300, "username", "uuid", 0,
+                DiskDef.DiskBus.VIRTIO, DiskDef.DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertEquals("diskpath", diskPath);
+    }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFS() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk("/mnt/pool/filepath", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertEquals("filepath", diskPath);
+    }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFSWithNullPath() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk(null, 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertNull(diskPath);
+    }
+
+    @Test
+    public void testGetDiskPathFromDiskDefForNFSWithUnsupportedPath() {
+        DiskDef diskDef = new DiskDef();
+        diskDef.defFileBasedDisk("/mnt/unsupported-path", 0, DiskDef.DiskBus.VIRTIO, DiskDef.DiskFmtType.QCOW2);
+        String diskPath = libvirtComputingResourceSpy.getDiskPathFromDiskDef(diskDef);
+        Assert.assertNull(diskPath);
     }
 
     @Test

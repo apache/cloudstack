@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.18.0.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -82,6 +82,11 @@
             <artifactId>cloud-plugin-storage-volume-scaleio</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-network-tungsten</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>

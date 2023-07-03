@@ -993,7 +993,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                 "ListNetwork response should be empty as network is deleted"
                 )
 
-        self.debug("Create a new netowrk in VPC: %s" % vpc.name)
+        self.debug("Create a new network in VPC: %s" % vpc.name)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" % nw_off.id)
 
@@ -1263,7 +1263,7 @@ class TestVMDeployVPC(cloudstackTestCase):
                 "ListNetwork response should be empty as network is deleted"
                 )
 
-        self.debug("Create a new netowrk in VPC: %s" % vpc.name)
+        self.debug("Create a new network in VPC: %s" % vpc.name)
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
                                                         nw_off_no_lb.id)
@@ -2046,7 +2046,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             self.fail("Failed to enable static NAT on IP: %s - %s" % (
                                         public_ip_4.ipaddress.ipaddress, e))
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible with network %s" % network_1.id)
+        self.debug("Adding NetworkACl rules to make NAT rule accessible with network %s" % network_1.id)
         NetworkACL.create(
                                          self.apiclient,
                                          networkid=network_1.id,

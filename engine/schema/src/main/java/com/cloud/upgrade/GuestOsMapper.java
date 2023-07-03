@@ -17,6 +17,7 @@
 package com.cloud.upgrade;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.sql.Connection;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -53,22 +55,24 @@ public class GuestOsMapper {
 
     private long getGuestOsId(long categoryId, String displayName) {
         GuestOSVO guestOS = guestOSDao.findByCategoryIdAndDisplayNameOrderByCreatedDesc(categoryId, displayName);
+        long id = 0l;
         if (guestOS != null) {
-            guestOS.getId();
+            id = guestOS.getId();
+        } else {
+            LOG.warn(String.format("Unable to find the guest OS details with category id: %d and display name: %s",  + categoryId, displayName));
         }
-
-        LOG.warn("Unable to find the guest OS details with category id: " + categoryId + " and display name: " + displayName);
-        return 0;
+        return id;
     }
 
     private long getGuestOsIdFromHypervisorMapping(GuestOSHypervisorMapping mapping) {
         GuestOSHypervisorVO guestOSHypervisorVO = guestOSHypervisorDao.findByOsNameAndHypervisorOrderByCreatedDesc(mapping.getGuestOsName(), mapping.getHypervisorType(), mapping.getHypervisorVersion());
+        long id = 0;
         if (guestOSHypervisorVO != null) {
-            guestOSHypervisorVO.getGuestOsId();
+            id = guestOSHypervisorVO.getGuestOsId();
+        } else {
+            LOG.warn(String.format("Unable to find the guest OS hypervisor mapping details for %s", mapping.toString()));
         }
-
-        LOG.debug("Unable to find the guest OS hypervisor mapping details for " + mapping.toString());
-        return 0;
+        return id;
     }
 
     public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {
@@ -92,7 +96,7 @@ public class GuestOsMapper {
         }
     }
 
-    private boolean addGuestOs(long categoryId, String displayName) {
+    public boolean addGuestOs(long categoryId, String displayName) {
         LOG.debug("Adding guest OS with category id: " + categoryId + " and display name: " + displayName);
         GuestOSVO guestOS = new GuestOSVO();
         guestOS.setCategoryId(categoryId);
@@ -100,13 +104,21 @@ public class GuestOsMapper {
         guestOS = guestOSDao.persist(guestOS);
         return (guestOS != null);
     }
+    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long category, String displayName) {
+        long guestOsId =  getGuestOsId(category, displayName);
+        if (guestOsId == 0) {
+            LOG.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
+        } else {
+            addGuestOsHypervisorMapping(mapping, guestOsId);
+        }
+    }
 
-    public void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
+    private void addGuestOsHypervisorMapping(GuestOSHypervisorMapping mapping, long guestOsId) {
         if(!isValidGuestOSHypervisorMapping(mapping)) {
             return;
         }
 
-        LOG.debug("Adding guest OS hypervisor mapping - " + mapping.toString());
+        LOG.debug("Adding guest OS hypervisor mapping - " + mapping.toString() + ", for guest OS with id - " + guestOsId);
         GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
         guestOsMapping.setHypervisorType(mapping.getHypervisorType());
         guestOsMapping.setHypervisorVersion(mapping.getHypervisorVersion());
@@ -187,5 +199,34 @@ public class GuestOsMapper {
 
         LOG.warn("Invalid Guest OS hypervisor mapping");
         return false;
+    }
+
+    /**
+     * Copies guest OS mappings from src version to dest version for the hypervisor (use this to copy all mappings from older version to newer version during upgrade)
+     * @return true if copied successfully, else false.
+     */
+    public boolean copyGuestOSHypervisorMappings(HypervisorType hypervisorType, String srcVersion, String destVersion) {
+        if (hypervisorType == HypervisorType.None || hypervisorType == HypervisorType.Any) {
+            LOG.warn("Unable to copy, invalid hypervisor");
+            return false;
+        }
+
+        if (StringUtils.isAnyBlank(srcVersion, destVersion)) {
+            LOG.warn("Unable to copy, invalid hypervisor version details");
+            return false;
+        }
+
+        List<GuestOSHypervisorVO> guestOSHypervisorMappingsForSrcVersion = guestOSHypervisorDao.listByHypervisorTypeAndVersion(hypervisorType.toString(), srcVersion);
+        if (CollectionUtils.isEmpty(guestOSHypervisorMappingsForSrcVersion)) {
+            LOG.warn(String.format("Unable to copy, couldn't find guest OS mappings for hypervisor: %s and src version: %s", hypervisorType.toString(), srcVersion));
+            return false;
+        }
+
+        LOG.debug(String.format("Adding guest OS mappings for hypervisor: %s and version: %s, from version: %s ", hypervisorType.toString(), destVersion, srcVersion));
+        for (GuestOSHypervisorVO guestOSHypervisorMapping : guestOSHypervisorMappingsForSrcVersion) {
+            GuestOSHypervisorMapping mapping = new GuestOSHypervisorMapping(hypervisorType.toString(), destVersion, guestOSHypervisorMapping.getGuestOsName());
+            addGuestOsHypervisorMapping(mapping, guestOSHypervisorMapping.getGuestOsId());
+        }
+        return true;
     }
 }

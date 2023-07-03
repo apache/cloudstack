@@ -212,9 +212,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
         List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
         markTags(hostTags,totalHosts);
-        if (host.getStatus() == Status.Up) {
+        if (host.getStatus() == Status.Up && !host.isInMaintenanceStates()) {
             markTags(hostTags, upHosts);
-        } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
+        } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down || host.isInMaintenanceStates()) {
             markTags(hostTags, downHosts);
         }
         return StringUtils.join(hostTags, ",");
