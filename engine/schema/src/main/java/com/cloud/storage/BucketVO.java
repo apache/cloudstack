@@ -1,0 +1,159 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package com.cloud.storage;
+
+import com.cloud.utils.db.GenericDao;
+import com.google.gson.annotations.Expose;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.util.Date;
+import java.util.UUID;
+
+@Entity
+@Table(name = "bucket")
+public class BucketVO implements Bucket {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "account_id")
+    long accountId;
+
+    @Column(name = "domain_id")
+    long domainId;
+
+    @Column(name = "object_store_id")
+    long objectStoreId;
+
+    @Expose
+    @Column(name = "name")
+    String name;
+
+    @Expose
+    @Column(name = "state", updatable = true, nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private State state;
+
+    @Column(name = "size")
+    long size;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    Date created;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    Date removed;
+
+    @Column(name = "uuid")
+    String uuid;
+
+    public BucketVO() {
+        uuid = UUID.randomUUID().toString();
+    }
+
+    public BucketVO(long accountId, long domainId, long objectStoreId, String name)
+    {
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.objectStoreId = objectStoreId;
+        this.name = name;
+        state = State.Allocated;
+        uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getObjectStoreId() {
+        return objectStoreId;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return Bucket.class;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Bucket %s", new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("name", getName())
+                .append("ObjectStoreId", getObjectStoreId()).toString());
+    }
+}
