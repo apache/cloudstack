@@ -1169,8 +1169,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         addKubernetesClusterDetails(cluster, network, cmd);
 
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(String.format("Kubernetes cluster with name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Kubernetes cluster with name: %s and ID: %s has been created", cluster.getName(), cluster.getUuid()));
         }
         return cluster;
     }

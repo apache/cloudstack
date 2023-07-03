@@ -1660,7 +1660,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (Objects.equals(originalEntry.getSize(), updateEntry.getSize())) {
             return;
         }
-        s_logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
+        logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
         if (ObjectUtils.anyNull(originalEntry.getSize(), updateEntry.getSize())) {
             _resourceLimitMgr.recalculateResourceCount(updateEntry.getAccountId(), updateEntry.getDomainId(),
                     ResourceType.primary_storage.getOrdinal());
