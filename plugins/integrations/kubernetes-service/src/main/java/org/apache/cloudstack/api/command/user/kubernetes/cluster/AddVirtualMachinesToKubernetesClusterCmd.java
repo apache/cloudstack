@@ -16,34 +16,31 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import javax.inject.Inject;
-
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.kubernetes.cluster.KubernetesCluster;
-import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.util.List;
 
-@APICommand(name = "stopKubernetesCluster", description = "Stops a running CloudManaged Kubernetes cluster",
+@APICommand(name = "addVirtualMachinesToKubernetesCluster",
+        description = "Add VMs to an ExternalManaged kubernetes cluster. Not applicable for CloudManaged kubernetes clusters.",
         responseObject = SuccessResponse.class,
-        responseView = ResponseObject.ResponseView.Restricted,
-        entityType = {KubernetesCluster.class},
-        requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = true,
+        since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class StopKubernetesClusterCmd extends BaseAsyncCmd {
+public class AddVirtualMachinesToKubernetesClusterCmd extends BaseCmd {
+    public static final Logger LOGGER = Logger.getLogger(AddVirtualMachinesToKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
@@ -51,10 +48,23 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
-            entityType = KubernetesClusterResponse.class, required = true,
+            entityType = KubernetesClusterResponse.class,
+            required = true,
             description = "the ID of the Kubernetes cluster")
     private Long id;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS, type = CommandType.LIST,
+            collectionType=CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "the IDs of the VMs to add to the cluster")
+    private List<Long> vmIds;
+
+    @Parameter(name = ApiConstants.IS_CONTROL_NODE, type = CommandType.BOOLEAN,
+            description = "Is control node or not? Defaults to false.")
+    private Boolean isControlNode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,43 +74,33 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
         return id;
     }
 
-    @Override
-    public String getEventType() {
-        return KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_STOP;
+    public List<Long> getVmIds() {
+        return vmIds;
     }
 
-    @Override
-    public String getEventDescription() {
-        String description = "Stopping Kubernetes cluster";
-        KubernetesCluster cluster = _entityMgr.findById(KubernetesCluster.class, getId());
-        if (cluster != null) {
-            description += String.format(" ID: %s", cluster.getUuid());
-        } else {
-            description += String.format(" ID: %d", getId());
-        }
-        return description;
+    public boolean isControlNode() {
+        return (isControlNode != null) && isControlNode;
     }
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
     @Override
-    public void execute() throws ServerApiException, ConcurrentOperationException {
+    public void execute() throws ServerApiException {
         try {
-            if (!kubernetesClusterService.stopKubernetesCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster ID: %d", getId()));
+            if (!kubernetesClusterService.addVmsToCluster(this)) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add VMs to cluster");
             }
-            final SuccessResponse response = new SuccessResponse(getCommandName());
+            final SuccessResponse response = new SuccessResponse();
+            response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (CloudRuntimeException ex) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
-
 }

@@ -218,6 +218,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public NicVO findByNetworkIdAndMacAddressIncludingRemoved(long networkId, String mac) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("macAddress", mac);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
     public NicVO findDefaultNicForVM(long instanceId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", instanceId);

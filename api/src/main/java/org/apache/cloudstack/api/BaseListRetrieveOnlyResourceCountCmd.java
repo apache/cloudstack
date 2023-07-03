@@ -14,18 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.kubernetes.cluster.dao;
+package org.apache.cloudstack.api;
 
-import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
-import com.cloud.utils.db.GenericDao;
+import org.apache.commons.lang3.BooleanUtils;
 
-import java.util.List;
+public abstract class BaseListRetrieveOnlyResourceCountCmd extends BaseListTaggedResourcesCmd {
+    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count")
+    private Boolean retrieveOnlyResourceCount;
 
-public interface KubernetesClusterVmMapDao extends GenericDao<KubernetesClusterVmMapVO, Long> {
-    public List<KubernetesClusterVmMapVO> listByClusterId(long clusterId);
-    public List<KubernetesClusterVmMapVO> listByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
-
-    int removeByClusterIdAndVmIdsIn(long clusterId, List<Long> vmIds);
-
-    public int removeByClusterId(long clusterId);
+    public Boolean getRetrieveOnlyResourceCount() {
+        return BooleanUtils.toBooleanDefaultIfNull(retrieveOnlyResourceCount, false);
+    }
 }

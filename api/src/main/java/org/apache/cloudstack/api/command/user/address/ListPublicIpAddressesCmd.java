@@ -24,7 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -41,7 +41,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
-public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
 
     private static final String s_name = "listpublicipaddressesresponse";
 
@@ -171,10 +171,6 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
         return forVirtualNetwork;
     }
 
-    public Boolean getForLoadBalancing() {
-        return forLoadBalancing;
-    }
-
     public String getState() {
         return state;
     }
@@ -192,10 +188,13 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd impleme
         Pair<List<? extends IpAddress>, Integer> result = _mgr.searchForIPAddresses(this);
         ListResponse<IPAddressResponse> response = new ListResponse<>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<>();
-        for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
-            ipResponse.setObjectName("publicipaddress");
-            ipAddrResponses.add(ipResponse);
+
+        if (!getRetrieveOnlyResourceCount()) {
+            for (IpAddress ipAddress : result.first()) {
+                IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(getResponseView(), ipAddress);
+                ipResponse.setObjectName("publicipaddress");
+                ipAddrResponses.add(ipResponse);
+            }
         }
 
         response.setResponses(ipAddrResponses, result.second());
