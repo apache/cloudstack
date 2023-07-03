@@ -153,20 +153,23 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     @Override
-    // TODO: Fix event type
-    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE, eventDescription = "Executing DRS", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Executing DRS", async = true)
     public SuccessResponse executeDrs(ScheduleDrsCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + cmd.getId());
         }
         SuccessResponse response = new SuccessResponse();
-        // TODO: Send response with the exact cause
-        // TODO: Check if we need to add any other condition
-        if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || cmd.getIterations() == 0) {
-            response.setSuccess(false);
-            return response;
+        if (cluster.getAllocationState() == Disabled) {
+            throw new InvalidParameterValueException(String.format("Unable to execute DRS on the cluster %s as it is disabled", cluster.getName()));
         }
+        if (cluster.getClusterType() != Cluster.ClusterType.CloudManaged) {
+            throw new InvalidParameterValueException(String.format("Unable to execute DRS on the cluster %s as it is not a cloud stack managed cluster", cluster.getName()));
+        }
+        if (cmd.getIterations() <= 0) {
+            throw new InvalidParameterValueException(String.format("Unable to execute DRS on the cluster %s as the number of iterations [%s] is invalid", cluster.getName(), cmd.getIterations()));
+        }
+
         CallContext.current().setEventResourceId(cluster.getId());
         CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);
         try {
@@ -189,91 +192,104 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * Run DRS as per the configured algorithm.
      */
     private int executeDrs(Cluster cluster, double iterationPercentage) throws ConfigurationException {
-        // TODO: Take a lock on drs for a cluster to avoid multiple drs operations at the same time on a cluster
-
-        if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || iterationPercentage == 0) {
-            return -1;
-        }
-        ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
+        // Take a lock on drs for a cluster to avoid automatic & ad hoc drs at the same time on the same cluster
+        GlobalLock lock = GlobalLock.getInternLock("ClusterDrs." + cluster.getId());
         int iteration = 0;
-        List<HostVO> hostList = hostDao.findByClusterId(cluster.getId());
-        List<VMInstanceVO> vmList = vmInstanceDao.listByClusterId(cluster.getId());
-        long maxIterations = round(iterationPercentage * vmList.size());
-
-        Map<Long, List<VirtualMachine>> originalHostVmMap = new HashMap<>();
-        for (HostVO host : hostList) {
-            originalHostVmMap.put(host.getId(), new ArrayList<>());
-        }
-        for (VirtualMachine vm : vmList) {
-            originalHostVmMap.get(vm.getHostId()).add(vm);
-        }
-        Map<Long, List<VirtualMachine>> hostVmMap = originalHostVmMap;
-        while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration <= maxIterations) {
-            Pair<Host, VirtualMachine> bestMigration = null;
-            double maxImprovement = 0;
-            hostVmMap = new HashMap<>();
-            for (HostVO host : hostList) {
-                hostVmMap.put(host.getId(), new ArrayList<>());
-            }
-            for (VirtualMachine vm : vmList) {
-                hostVmMap.get(vm.getHostId()).add(vm);
-            }
-            for (VirtualMachine vm : vmList) {
-                Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm.getId(), 0L, (long) hostList.size(), null);
-                List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
-                Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
-                for (Host destHost : compatibleDestinationHosts) {
-                    Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), hostVmMap, vm, destHost, requiresStorageMotion.get(destHost));
-                    Double improvement = metrics.first();
-                    Double cost = metrics.second();
-                    Double benefit = metrics.third();
-                    if (benefit > cost && (improvement > maxImprovement)) {
-                        bestMigration = new Pair<>(destHost, vm);
-                        maxImprovement = improvement;
+        try {
+            if (lock.lock(30)) {
+                try {
+                    if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || iterationPercentage <= 0) {
+                        return -1;
                     }
+                    ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
+                    List<HostVO> hostList = hostDao.findByClusterId(cluster.getId());
+                    List<VMInstanceVO> vmList = vmInstanceDao.listByClusterId(cluster.getId());
+                    long maxIterations = round(iterationPercentage * vmList.size());
+
+                    Map<Long, List<VirtualMachine>> originalHostVmMap = getHostVmMap(hostList, vmList);
+                    Map<Long, List<VirtualMachine>> hostVmMap = originalHostVmMap;
+                    while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration <= maxIterations && maxIterations > 0) {
+                        Pair<Host, VirtualMachine> bestMigration;
+                        hostVmMap = getHostVmMap(hostList, vmList);
+                        bestMigration = getBestMigration(cluster, algorithm, vmList, hostVmMap);
+
+                        Host destHost = bestMigration.first();
+                        VirtualMachine vm = bestMigration.second();
+
+                        if (destHost == null || vm == null || originalHostVmMap.get(destHost.getId()).contains(vm)) {
+                            break;
+                        }
+                        migrateVM(vm, destHost);
+                        vmList = vmInstanceDao.listByClusterId(cluster.getId());
+                        iteration++;
+                    }
+                    executeDrsForAllClusters();
+                } finally {
+                    lock.unlock();
                 }
             }
-            if (bestMigration == null) {
-                break;
-            }
-            Host destHost = bestMigration.first();
-            VirtualMachine vm = bestMigration.second();
-
-            if (originalHostVmMap.get(destHost.getId()).contains(vm)) {
-                logger.warn("VM getting migrated to it's original host. Stopping DRS.");
-                break;
-            }
-
-            try {
-                CallContext.current().setEventResourceId(vm.getId());
-                CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
-                userVmService.migrateVirtualMachine(vm.getId(), destHost);
-                logger.debug("Migrated VM " + vm.getInstanceName() + " from host " + vm.getHostId() + " to host " + destHost.getId());
-            } catch (ResourceUnavailableException e) {
-                logger.warn("Exception: ", e);
-                throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
-            } catch (VirtualMachineMigrationException | ConcurrentOperationException | ManagementServerException e) {
-                logger.warn("Exception: ", e);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-            }
-            vmList = vmInstanceDao.listByClusterId(cluster.getId());
-            iteration++;
+        } finally {
+            lock.releaseRef();
         }
-
         return iteration;
+    }
+
+    private void migrateVM(VirtualMachine vm, Host destHost) {
+        try {
+            CallContext.current().setEventResourceId(vm.getId());
+            CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
+            userVmService.migrateVirtualMachine(vm.getId(), destHost);
+            logger.debug("Migrated VM " + vm.getInstanceName() + " from host " + vm.getHostId() + " to host " + destHost.getId());
+        } catch (ResourceUnavailableException e) {
+            logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+        } catch (VirtualMachineMigrationException | ConcurrentOperationException | ManagementServerException e) {
+            logger.warn("Exception: ", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    private Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VMInstanceVO> vmList) {
+        Map<Long, List<VirtualMachine>> hostVmMap = new HashMap<>();
+        for (HostVO host : hostList) {
+            hostVmMap.put(host.getId(), new ArrayList<>());
+        }
+        for (VirtualMachine vm : vmList) {
+            hostVmMap.get(vm.getHostId()).add(vm);
+        }
+        return hostVmMap;
+    }
+
+    private Pair<Host, VirtualMachine> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VMInstanceVO> vmList, Map<Long, List<VirtualMachine>> hostVmMap) {
+        double maxImprovement = 0;
+        Pair<Host, VirtualMachine> bestMigration = new Pair<>(null, null);
+        for (VirtualMachine vm : vmList) {
+            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm.getId(), 0L, (long) hostVmMap.size(), null);
+            List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
+            Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
+            for (Host destHost : compatibleDestinationHosts) {
+                Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), hostVmMap, vm, destHost, requiresStorageMotion.get(destHost));
+                Double improvement = metrics.first();
+                Double cost = metrics.second();
+                Double benefit = metrics.third();
+                if (benefit > cost && (improvement > maxImprovement)) {
+                    bestMigration = new Pair<>(destHost, vm);
+                    maxImprovement = improvement;
+                }
+            }
+        }
+        return bestMigration;
     }
 
     private void executeDrsForAllClusters() {
         List<ClusterVO> clusterList = clusterDao.listAll();
         for (ClusterVO cluster : clusterList) {
-            // TODO: Check if we need to add any other condition
             if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)) {
                 continue;
             }
 
             try {
-                // TODO: Fix event type
-                Long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE,
+                Long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS,
                         String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(),
                         true, 0);
                 CallContext.current().setStartEventId(eventId);
@@ -281,7 +297,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 logger.debug(String.format("Executed %d iterations of DRS for cluster %s", iterations, cluster.getName()));
 
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO,
-                        EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE, true,
+                        EventTypes.EVENT_CLUSTER_DRS, true,
                         String.format("Executed %s iterations as part of automatic DRS for cluster %s", iterations, cluster.getName()),
                         cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
             } catch (ConfigurationException e) {

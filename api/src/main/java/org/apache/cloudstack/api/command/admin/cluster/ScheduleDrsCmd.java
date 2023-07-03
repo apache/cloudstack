@@ -55,7 +55,7 @@ public class ScheduleDrsCmd extends BaseAsyncCmd {
     }
 
     public Double getIterations() {
-        if (iterations == null){
+        if (iterations == null) {
             return ClusterDrsIterations.valueIn(getId());
         }
         return iterations;

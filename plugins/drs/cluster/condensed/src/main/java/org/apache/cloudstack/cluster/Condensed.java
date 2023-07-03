@@ -93,10 +93,6 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
      */
     @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion) {
-        // TODO: Implement this
-        double cost = 1L;
-        double benefit = 2L;
-
         Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);
         List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
         List<Long> cpuList = new ArrayList<>();
@@ -130,8 +126,8 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         Double postMemoryImbalance = getClusterImbalance(postMemoryList);
 
 
-//        cost = serviceOffering.getRamSize();
-//        benefit = (postMemoryImbalance - preMemoryImbalance) * destHost.getTotalMemory();
+        double cost = serviceOffering.getRamSize();
+        double benefit = (postMemoryImbalance - preMemoryImbalance) * destHost.getTotalMemory();
 
         String metric = ClusterDrsMetric.valueIn(clusterId);
         double improvement;
