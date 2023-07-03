@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -103,12 +105,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
@@ -270,12 +270,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
+        final long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
-        if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
-            // we should fail the operation (resource creation) when failed to update the resource count
-            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-        }
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+
+                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+                if (obj instanceof Long) {
+                    reservationDao.remove((long)obj);
+                }
+                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
+                    // we should fail the operation (resource creation) when failed to update the resource count
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
+                }
+            }
+        });
     }
 
     @Override
