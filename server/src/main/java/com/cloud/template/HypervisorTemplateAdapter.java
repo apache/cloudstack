@@ -175,7 +175,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return ans.getTemplateSize();
     }
 
-    private void checkZoneImageStores(final List<Long> zoneIdList) {
+    protected void checkZoneImageStores(final VMTemplateVO template, final List<Long> zoneIdList) {
+        if (template.isDirectDownload()) {
+            return;
+        }
         if (zoneIdList != null && CollectionUtils.isEmpty(storeMgr.getImageStoresByScope(new ZoneScope(zoneIdList.get(0))))) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
@@ -675,14 +678,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (template.getTemplateType() == TemplateType.SYSTEM) {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
-        checkZoneImageStores(profile.getZoneIdList());
+        checkZoneImageStores(profile.getTemplate(), profile.getZoneIdList());
         return profile;
     }
 
     @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
-        checkZoneImageStores(profile.getZoneIdList());
+        checkZoneImageStores(profile.getTemplate(), profile.getZoneIdList());
         return profile;
     }
 }
