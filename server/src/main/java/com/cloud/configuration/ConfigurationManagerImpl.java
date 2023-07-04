@@ -2369,10 +2369,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new CloudRuntimeException(errorMsg + "there are Secondary storages in this zone");
         }
 
-        // Check if there are any non-removed VMware datacenters in the zone.
-        //if (_vmwareDatacenterZoneMapDao.findByZoneId(zoneId) != null) {
-        //    throw new CloudRuntimeException(errorMsg + "there are VMware datacenters in this zone.");
-        //}
+        // We could check if there are any non-removed VMware datacenters in the zone. EWe don´t care.
+        // These can continu to exist as long as the mapping will be gone (see line deleteZone
     }
 
     private void checkZoneParameters(final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final boolean checkForDuplicates, final Long domainId,
@@ -2512,6 +2510,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (final VlanVO vlan : vlans) {
                     _vlanDao.remove(vlan.getId());
                 }
+                // we should actually find the mapping and remove if it exists
+                // but we don't know about vmware/plugin/hypervisors at this point
 
                 final boolean success = _zoneDao.remove(zoneId);
 

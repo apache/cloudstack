@@ -552,7 +552,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         // save cluster details for later cluster/host cross-checking
-        final Map<String, String> details = new HashMap<String, String>();
+        final Map<String, String> details = new HashMap<>();
         details.put("url", url);
         details.put("username", StringUtils.defaultString(username));
         details.put("password", StringUtils.defaultString(password));
