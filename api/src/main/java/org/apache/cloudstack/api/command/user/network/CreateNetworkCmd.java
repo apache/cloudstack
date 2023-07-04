@@ -311,10 +311,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             }
         }
         if (physicalNetworkId != null) {
-            if (offering.getGuestType() == GuestType.Shared) {
+            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2)) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " only.");
+                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " or " + GuestType.L2 + " only.");
             }
         } else {
             if (zoneId == null) {
