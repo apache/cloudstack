@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClusterResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -42,7 +41,6 @@ import java.util.List;
         since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveVirtualMachinesFromKubernetesClusterCmd extends BaseListCmd {
-    public static final Logger LOGGER = Logger.getLogger(RemoveVirtualMachinesFromKubernetesClusterCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;
