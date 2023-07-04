@@ -51,7 +51,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.cluster.ScheduleDrsCmd;
+import org.apache.cloudstack.api.command.admin.cluster.ExecuteDrsCmd;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -76,6 +76,7 @@ import static java.lang.Math.round;
 public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsService, PluggableService {
 
     private static final Logger logger = Logger.getLogger(ClusterDrsServiceImpl.class);
+
     @Inject
     ClusterDao clusterDao;
 
@@ -94,6 +95,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     List<ClusterDrsAlgorithm> drsAlgorithms = new ArrayList<>();
 
     Map<String, ClusterDrsAlgorithm> drsAlgorithmMap = new HashMap<>();
+
     private Date currentTimestamp;
 
     public void setDrsAlgorithms(final List<ClusterDrsAlgorithm> drsAlgorithms) {
@@ -107,13 +109,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             drsAlgorithmMap.put(algorithm.getName(), algorithm);
         }
 
-        currentTimestamp = DateUtils.addMinutes(new Date(), 1);
-
         final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
             @Override
             protected void runInContext() {
                 try {
-                    poll(currentTimestamp);
+                    poll(new Date());
                 } catch (final Exception e) {
                     logger.error("Error while running DRS", e);
                 }
@@ -124,13 +124,35 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return true;
     }
 
+    /**
+     * This is called from the TimerTask thread periodically about every one minute.
+     */
+    @Override
+    public void poll(Date timestamp) {
+        currentTimestamp = DateUtils.round(timestamp, Calendar.MINUTE);
+        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
+        logger.debug(String.format("VM scheduler.poll is being called at %s", displayTime));
+
+        GlobalLock lock = GlobalLock.getInternLock("ClusterDrs.poll");
+        try {
+            if (lock.lock(30)) {
+                try {
+                    executeDrsForAllClusters();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        } finally {
+            lock.releaseRef();
+        }
+    }
+
     private ClusterDrsAlgorithm getDrsAlgorithm(String algoName) {
         if (drsAlgorithmMap.containsKey(algoName)) {
             return drsAlgorithmMap.get(algoName);
         }
         throw new CloudRuntimeException("Invalid algorithm configured!");
     }
-
 
     @Override
     public String getConfigComponentName() {
@@ -148,13 +170,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
-        cmdList.add(ScheduleDrsCmd.class);
+        cmdList.add(ExecuteDrsCmd.class);
         return cmdList;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Executing DRS", async = true)
-    public SuccessResponse executeDrs(ScheduleDrsCmd cmd) {
+    public SuccessResponse executeDrs(ExecuteDrsCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + cmd.getId());
@@ -191,7 +213,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * Check if DRS needs to run.
      * Run DRS as per the configured algorithm.
      */
-    private int executeDrs(Cluster cluster, double iterationPercentage) throws ConfigurationException {
+    int executeDrs(Cluster cluster, double iterationPercentage) throws ConfigurationException {
         // Take a lock on drs for a cluster to avoid automatic & ad hoc drs at the same time on the same cluster
         GlobalLock lock = GlobalLock.getInternLock("ClusterDrs." + cluster.getId());
         int iteration = 0;
@@ -208,17 +230,17 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
                     Map<Long, List<VirtualMachine>> originalHostVmMap = getHostVmMap(hostList, vmList);
                     Map<Long, List<VirtualMachine>> hostVmMap = originalHostVmMap;
-                    while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration <= maxIterations && maxIterations > 0) {
+                    while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration < maxIterations) {
                         Pair<Host, VirtualMachine> bestMigration;
                         hostVmMap = getHostVmMap(hostList, vmList);
                         bestMigration = getBestMigration(cluster, algorithm, vmList, hostVmMap);
 
                         Host destHost = bestMigration.first();
                         VirtualMachine vm = bestMigration.second();
-
                         if (destHost == null || vm == null || originalHostVmMap.get(destHost.getId()).contains(vm)) {
                             break;
                         }
+
                         migrateVM(vm, destHost);
                         vmList = vmInstanceDao.listByClusterId(cluster.getId());
                         iteration++;
@@ -238,7 +260,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         try {
             CallContext.current().setEventResourceId(vm.getId());
             CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
+
             userVmService.migrateVirtualMachine(vm.getId(), destHost);
+
             logger.debug("Migrated VM " + vm.getInstanceName() + " from host " + vm.getHostId() + " to host " + destHost.getId());
         } catch (ResourceUnavailableException e) {
             logger.warn("Exception: ", e);
@@ -249,7 +273,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
     }
 
-    private Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VMInstanceVO> vmList) {
+    Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VMInstanceVO> vmList) {
         Map<Long, List<VirtualMachine>> hostVmMap = new HashMap<>();
         for (HostVO host : hostList) {
             hostVmMap.put(host.getId(), new ArrayList<>());
@@ -260,15 +284,18 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return hostVmMap;
     }
 
-    private Pair<Host, VirtualMachine> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VMInstanceVO> vmList, Map<Long, List<VirtualMachine>> hostVmMap) {
+    Pair<Host, VirtualMachine> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VMInstanceVO> vmList, Map<Long, List<VirtualMachine>> hostVmMap) {
         double maxImprovement = 0;
         Pair<Host, VirtualMachine> bestMigration = new Pair<>(null, null);
+
         for (VirtualMachine vm : vmList) {
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm.getId(), 0L, (long) hostVmMap.size(), null);
             List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
+
             for (Host destHost : compatibleDestinationHosts) {
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), hostVmMap, vm, destHost, requiresStorageMotion.get(destHost));
+
                 Double improvement = metrics.first();
                 Double cost = metrics.second();
                 Double benefit = metrics.third();
@@ -282,50 +309,24 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     private void executeDrsForAllClusters() {
+        // TODO: Exclude clusters where drs was executed in the last ClusterDrsInterval minutes
         List<ClusterVO> clusterList = clusterDao.listAll();
+
         for (ClusterVO cluster : clusterList) {
             if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)) {
                 continue;
             }
 
             try {
-                Long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS,
-                        String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(),
-                        true, 0);
+                long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS, String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), true, 0);
                 CallContext.current().setStartEventId(eventId);
                 int iterations = executeDrs(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
                 logger.debug(String.format("Executed %d iterations of DRS for cluster %s", iterations, cluster.getName()));
 
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO,
-                        EventTypes.EVENT_CLUSTER_DRS, true,
-                        String.format("Executed %s iterations as part of automatic DRS for cluster %s", iterations, cluster.getName()),
-                        cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true, String.format("Executed %s iterations as part of automatic DRS for cluster %s", iterations, cluster.getName()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
             } catch (ConfigurationException e) {
                 throw new CloudRuntimeException("Unable to execute DRS", e);
             }
-        }
-    }
-
-    /**
-     * This is called from the TimerTask thread periodically about every one minute.
-     */
-    @Override
-    public void poll(Date timestamp) {
-        currentTimestamp = DateUtils.round(timestamp, Calendar.MINUTE);
-        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
-        logger.debug(String.format("VM scheduler.poll is being called at %s", displayTime));
-
-        GlobalLock lock = GlobalLock.getInternLock("ClusterDrs.poll");
-        try {
-            if (lock.lock(30)) {
-                try {
-                    executeDrsForAllClusters();
-                } finally {
-                    lock.unlock();
-                }
-            }
-        } finally {
-            lock.releaseRef();
         }
     }
 }

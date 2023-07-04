@@ -22,7 +22,6 @@ package org.apache.cloudstack.cluster;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Ternary;
@@ -41,34 +40,32 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshol
 public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
 
     @Inject
-    private ServiceOfferingDao serviceOfferingDao;
+    ServiceOfferingDao serviceOfferingDao;
+
     @Inject
-    private HostJoinDao hostJoinDao;
-    @Inject
-    private HostDao hostDao;
+    HostJoinDao hostJoinDao;
 
     @Override
     public String getName() {
         return "balanced";
     }
 
-    /**
-     * @return
-     */
     @Override
     public boolean needsDrs(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap) throws ConfigurationException {
         Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);
         List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
+        Double threshold = ClusterDrsThreshold.valueIn(clusterId);
+        String metric = ClusterDrsMetric.valueIn(clusterId);
         List<Long> cpuList = new ArrayList<>();
         List<Long> memoryList = new ArrayList<>();
+
         for (HostJoinVO host : hostList) {
             cpuList.add(host.getCpuUsedCapacity());
             memoryList.add(host.getMemUsedCapacity());
         }
+
         Double cpuImbalance = getClusterImbalance(cpuList);
         Double memoryImbalance = getClusterImbalance(memoryList);
-        Double threshold = ClusterDrsThreshold.valueIn(clusterId);
-        String metric = ClusterDrsMetric.valueIn(clusterId);
         switch (metric) {
             case "cpu":
                 return cpuImbalance > threshold;
@@ -83,32 +80,28 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
         }
     }
 
-
     /**
-     * @param hostVmMap
-     * @param vm
-     * @param destHost
-     * @param requiresStorageMotion
-     * @return Ternary<improvement, cost, benefit>
+     * @param hostVmMap             map of hostId to list of VMs
+     * @param vm                    VM to be migrated
+     * @param destHost              destination host
+     * @param requiresStorageMotion true if storage motion is required
+     * @return Ternary<improvement, cost, benefit>  improvement is the improvement in the cluster imbalance metric, cost is the cost of the migration, benefit is the
      */
     @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion) {
         Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);
-        List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
         List<Long> cpuList = new ArrayList<>();
         List<Long> memoryList = new ArrayList<>();
+        List<Long> postCpuList = new ArrayList<>();
+        List<Long> postMemoryList = new ArrayList<>();
+        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+        List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
+
         for (HostJoinVO host : hostList) {
             cpuList.add(host.getCpuUsedCapacity());
             memoryList.add(host.getMemUsedCapacity());
         }
 
-        Double preCpuImbalance = getClusterImbalance(cpuList);
-        Double preMemoryImbalance = getClusterImbalance(memoryList);
-
-        // post migration
-        List<Long> postCpuList = new ArrayList<>();
-        List<Long> postMemoryList = new ArrayList<>();
-        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
         for (HostJoinVO host : hostList) {
             if (host.getId() == destHost.getId()) {
                 postCpuList.add(host.getCpuUsedCapacity() + serviceOffering.getCpu());
@@ -122,6 +115,8 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
             }
         }
 
+        Double preCpuImbalance = getClusterImbalance(cpuList);
+        Double preMemoryImbalance = getClusterImbalance(memoryList);
         Double postCpuImbalance = getClusterImbalance(postCpuList);
         Double postMemoryImbalance = getClusterImbalance(postMemoryList);
 
@@ -138,7 +133,7 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
                 improvement = preMemoryImbalance - postMemoryImbalance;
                 break;
             default:
-                improvement = preCpuImbalance + preMemoryImbalance - postCpuImbalance + postMemoryImbalance;
+                improvement = preCpuImbalance + preMemoryImbalance - postCpuImbalance - postMemoryImbalance;
         }
 
         return new Ternary<>(improvement, cost, benefit);

@@ -37,7 +37,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
     Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion);
 
     /**
-     * Mean is the average of a collection or set of metrics. In context of a DRS cluster, the cluster metrics defined as the average metrics value for some metric (such as CPU, memory etc) for every resource such as host.
+     * Mean is the average of a collection or set of metrics. In context of a DRS cluster, the cluster metrics defined as the average metrics value for some metric (such as CPU, memory etc.) for every resource such as host.
      * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a resource ‘i’ in a cluster with total N number of resources.
      */
     default Double getClusterMeanMetric(List<Long> metricList) {

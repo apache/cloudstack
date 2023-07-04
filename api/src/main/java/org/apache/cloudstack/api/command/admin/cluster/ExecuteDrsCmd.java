@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.event.EventTypes;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
@@ -36,15 +37,15 @@ import javax.inject.Inject;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
-@APICommand(name = "scheduleDRS", description = "Schedule DRS for a cluster", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
-public class ScheduleDrsCmd extends BaseAsyncCmd {
-    static final Logger LOG = Logger.getLogger(ScheduleDrsCmd.class);
+@APICommand(name = "executeDRS", description = "Schedule DRS for a cluster", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
+public class ExecuteDrsCmd extends BaseAsyncCmd {
+
+    static final Logger LOG = Logger.getLogger(ExecuteDrsCmd.class);
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long id;
 
-    @Parameter(name = "iterations", type = CommandType.DOUBLE,
-            description = "The maximum number of iterations in a DRS job defined as a percentage (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's drs.iterations setting")
+    @Parameter(name = "iterations", type = CommandType.DOUBLE, description = "The maximum number of iterations in a DRS job defined as a percentage (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's drs.iterations setting")
     private Double iterations;
 
     @Inject
@@ -63,7 +64,7 @@ public class ScheduleDrsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return "CLUSTER.DRS"; // EventTypes.EVENT_CLUSTER_DRS;
+        return EventTypes.EVENT_CLUSTER_DRS;
     }
 
     @Override
