@@ -1819,12 +1819,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                if (srcVolumeInfo.getTemplateId() != null) {
-                    LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
-                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
-                } else {
-                    LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
-                }
+                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -2028,16 +2023,40 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     /*
      * Return backing file for volume (if any), only for KVM volumes
      */
-    String getVolumeBackingFile(VolumeInfo srcVolumeInfo) {
-        if (srcVolumeInfo.getHypervisorType() == HypervisorType.KVM &&
-                srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
-            VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
-            if (template.getFormat() != null && template.getFormat() != Storage.ImageFormat.ISO) {
-                VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
-                return ref != null ? ref.getInstallPath() : null;
-            }
+    protected String getVolumeBackingFile(VolumeInfo srcVolumeInfo) {
+        String logMessage = "Could not get volume backing file because";
+        if (srcVolumeInfo.getHypervisorType() != HypervisorType.KVM) {
+            LOGGER.debug(String.format("%s hypervisor is not KVM.", logMessage));
+            return null;
         }
-        return null;
+        if (srcVolumeInfo.getTemplateId() == null) {
+            LOGGER.debug(String.format("%s volume does not have template.", logMessage));
+            return null;
+        }
+        if (srcVolumeInfo.getPoolId() == null) {
+            LOGGER.debug(String.format("%s volume is not on a storage pool.", logMessage));
+            return null;
+        }
+
+        LOGGER.debug(String.format("Searching for template [%s].", srcVolumeInfo.getTemplateId()));
+        VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());
+
+        if (template == null) {
+            LOGGER.debug(String.format("Template [%s] was removed.", srcVolumeInfo.getTemplateId()));
+            return null;
+        }
+        if (template.getFormat() == null || template.getFormat() == Storage.ImageFormat.ISO) {
+            LOGGER.debug(String.format("Format [%s] of template [%s] is not valid for backing file.", template.getFormat(), srcVolumeInfo.getTemplateId()));
+            return null;
+        }
+
+        VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(srcVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
+        if (ref == null) {
+            LOGGER.debug("Volume backing file not found in local storage pool.");
+            return null;
+        }
+        LOGGER.debug(String.format("Volume backing file install path [%s]", ref.getInstallPath()));
+        return ref.getInstallPath();
     }
 
     private void handlePostMigration(boolean success, Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo, VirtualMachineTO vmTO, Host destHost) {
