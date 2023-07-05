@@ -500,7 +500,8 @@ export default {
       this.tiers.loading = true
       api('listNetworks', {
         supportedservices: 'PortForwarding',
-        vpcid: this.resource.vpcid
+        vpcid: this.resource.vpcid,
+        listall: this.resource.vpcid !== null
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
         if (this.tiers.data && this.tiers.data.length > 0) {
