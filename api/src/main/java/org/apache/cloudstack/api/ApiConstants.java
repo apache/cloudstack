@@ -1028,6 +1028,7 @@ public class ApiConstants {
     public static final String MTU = "mtu";
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
+    public static final String OBJECT_STORAGE_ID = "objectstorageid";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
