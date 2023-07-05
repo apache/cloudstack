@@ -43,7 +43,7 @@ public abstract class VifDriverBase implements VifDriver {
         _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
     }
 
-    protected String getControlCidr(String defaultValue, Map<String, Object> params) {
+    protected String getControlCidr(String defaultValue) {
         String controlCidr = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONTROL_CIDR);
         return controlCidr;
     }
