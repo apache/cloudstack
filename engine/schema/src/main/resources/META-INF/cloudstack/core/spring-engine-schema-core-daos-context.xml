@@ -275,4 +275,5 @@
   <bean id="UserVmDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDaoImpl" />
   <bean id="NetworkPermissionDaoImpl" class="org.apache.cloudstack.network.dao.NetworkPermissionDaoImpl" />
   <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
+  <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
 </beans>
