@@ -130,6 +130,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
@@ -139,6 +140,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           args: (record, store, isGroupAction) => {
             var fields = []
             if (isGroupAction || record.vpcid == null) {
@@ -177,6 +179,7 @@ export default {
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
+          disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -225,7 +228,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext', 'publicmtu']
+          args: ['name', 'displaytext', 'publicmtu', 'sourcenatipaddress']
         },
         {
           api: 'restartVPC',
@@ -320,7 +323,7 @@ export default {
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
+      columns: ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
       filters: ['allocated', 'reserved', 'free'],
       component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),

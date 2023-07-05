@@ -20,7 +20,7 @@
     <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
             <breadcrumb :resource="resource">
               <template #end>
                 <a-button
@@ -34,14 +34,14 @@
                 </a-button>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
@@ -54,7 +54,7 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
-                    style="min-width: 120px; margin-left: 10px"
+                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -84,7 +84,7 @@
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
@@ -99,6 +99,7 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
+              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -675,7 +676,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -1104,6 +1105,14 @@ export default {
                 name: 'confirmpassword',
                 required: true,
                 description: self.$t('label.confirmpassword.description')
+              }
+            }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
               }
             }
             return paramFields.filter(function (param) {
@@ -1642,6 +1651,12 @@ export default {
         } else {
           delete query.archived
         }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
       }
       query.filter = filter
       query.page = '1'
@@ -1667,6 +1682,10 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
+            } else if (this.$route.name === 'guestos') {
+              query.description = value
             } else {
               query.keyword = value
             }

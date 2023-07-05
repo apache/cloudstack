@@ -111,11 +111,11 @@
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name || opt.description">
+            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
-                {{ opt.name || opt.description }}
+                {{ opt.name }}
               </span>
             </a-select-option>
           </a-select>

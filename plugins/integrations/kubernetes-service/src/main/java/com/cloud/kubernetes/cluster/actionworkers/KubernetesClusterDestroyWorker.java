@@ -19,16 +19,19 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -134,25 +137,15 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         }
     }
 
-    private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
-        NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
-        if (network == null) {
-            return;
-        }
-        List<Long> removedVmIds = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(clusterVMs)) {
-            for (KubernetesClusterVmMapVO clusterVM : clusterVMs) {
-                removedVmIds.add(clusterVM.getVmId());
-            }
-        }
-        IpAddress publicIp = getSourceNatIp(network);
+    protected void deleteKubernetesClusterIsolatedNetworkRules(Network network, List<Long> removedVmIds) throws ManagementServerException {
+        IpAddress publicIp = getNetworkSourceNatIp(network);
         if (publicIp == null) {
             throw new ManagementServerException(String.format("No source NAT IP addresses found for network : %s", network.getName()));
         }
         try {
-            removeLoadBalancingRule(publicIp, network, owner, CLUSTER_API_PORT);
+            removeLoadBalancingRule(publicIp, network, owner);
         } catch (ResourceUnavailableException e) {
-            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network : %s", network.getName()));
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster load balancing rule for network : %s", network.getName()), e);
         }
         FirewallRule firewallRule = removeApiFirewallRule(publicIp);
         if (firewallRule == null) {
@@ -165,8 +158,37 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         try {
             removePortForwardingRules(publicIp, network, owner, removedVmIds);
         } catch (ResourceUnavailableException e) {
+            throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network : %s", network.getName()), e);
+        }
+    }
+
+    protected void deleteKubernetesClusterVpcTierRules(Network network, List<Long> removedVmIds) throws ManagementServerException {
+        IpAddress publicIp = getVpcTierKubernetesPublicIp(network);
+        if (publicIp == null) {
+            return;
+        }
+        removeVpcTierAclRules(network);
+        try {
+            removePortForwardingRules(publicIp, network, owner, removedVmIds);
+        } catch (ResourceUnavailableException e) {
             throw new ManagementServerException(String.format("Failed to KubernetesCluster port forwarding rules for network : %s", network.getName()));
         }
+    }
+
+    private void deleteKubernetesClusterNetworkRules() throws ManagementServerException {
+        NetworkVO network = networkDao.findById(kubernetesCluster.getNetworkId());
+        if (network == null) {
+            return;
+        }
+        List<Long> removedVmIds = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(clusterVMs)) {
+            removedVmIds = clusterVMs.stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+        }
+        if (network.getVpcId() != null) {
+            deleteKubernetesClusterVpcTierRules(network, removedVmIds);
+            return;
+        }
+        deleteKubernetesClusterIsolatedNetworkRules(network, removedVmIds);
     }
 
     private void validateClusterVMsDestroyed() {
@@ -198,6 +220,19 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         if (kubernetesClusterNetwork != null && kubernetesClusterNetwork.getGuestType() != Network.GuestType.Shared) {
             deleteKubernetesClusterNetworkRules();
         }
+    }
+
+    private void releaseVpcTierPublicIpIfNeeded() throws InsufficientAddressCapacityException {
+        NetworkVO networkVO = networkDao.findById(kubernetesCluster.getNetworkId());
+        if (networkVO == null || networkVO.getVpcId() == null) {
+            return;
+        }
+        IpAddress address = getVpcTierKubernetesPublicIp(networkVO);
+        if (address == null) {
+            return;
+        }
+        networkService.releaseIpAddress(address.getId());
+        kubernetesClusterDetailsDao.removeDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
     }
 
     public boolean destroy() throws CloudRuntimeException {
@@ -254,6 +289,14 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
                     checkForRulesToDelete();
                 } catch (ManagementServerException e) {
                     String msg = String.format("Failed to remove network rules of Kubernetes cluster : %s", kubernetesCluster.getName());
+                    LOGGER.warn(msg, e);
+                    updateKubernetesClusterEntryForGC();
+                    throw new CloudRuntimeException(msg, e);
+                }
+                try {
+                    releaseVpcTierPublicIpIfNeeded();
+                } catch (InsufficientAddressCapacityException e) {
+                    String msg = String.format("Failed to release public IP for VPC tier used by Kubernetes cluster : %s", kubernetesCluster.getName());
                     LOGGER.warn(msg, e);
                     updateKubernetesClusterEntryForGC();
                     throw new CloudRuntimeException(msg, e);

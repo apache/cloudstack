@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     runs-on: ubuntu-22.04
 
     strategy:
@@ -79,7 +80,8 @@ jobs:
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization",
+                  smoke/test_nested_virtualization
+                  smoke/test_set_sourcenat",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -237,7 +239,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
+          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
 
       - name: Setup Simulator Prerequisites
         run: |

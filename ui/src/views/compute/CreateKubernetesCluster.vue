@@ -284,7 +284,6 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.kubecluster.name') }],
-        description: [{ required: true, message: this.$t('message.error.cluster.description') }],
         zoneid: [{ required: true, message: this.$t('message.error.zone.for.cluster') }],
         kubernetesversionid: [{ required: true, message: this.$t('message.error.version.for.cluster') }],
         serviceofferingid: [{ required: true, message: this.$t('message.error.serviceoffering.for.cluster') }],

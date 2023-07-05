@@ -304,7 +304,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
 
 
     // for vm secondary ips case mapping is  IP1--> vmIp1, IP2-->vmIp2, etc
-    // Used when vm is mapped to muliple to public ips
+    // Used when vm is mapped to multiple to public ips
     @Override
     public List<IPAddressVO> findAllByAssociatedVmId(long vmId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
@@ -314,9 +314,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
-    public IPAddressVO findByVmIp(String vmIp) {
+    public IPAddressVO findByIp(String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("associatedVmIp", vmIp);
+        sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
 

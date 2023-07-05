@@ -53,7 +53,9 @@ import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
+import org.apache.cloudstack.api.command.user.vpc.ListVPCsCmd;
 import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -62,6 +64,7 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -1017,7 +1020,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
-            final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
+                         final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1091,6 +1094,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
             vpc.setPublicMtu(publicMtu);
+            vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
         return createVpc(displayVpc, vpc);
     }
@@ -1098,9 +1102,24 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
-        return createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
+        Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
             cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
+        // associate cmd.getSourceNatIP() with this vpc
+        allocateSourceNatIp(vpc, cmd.getSourceNatIP());
+        return vpc;
+    }
+
+    private void allocateSourceNatIp(Vpc vpc, String sourceNatIP) {
+        Account account = _accountMgr.getAccount(vpc.getAccountId());
+        DataCenter zone = _dcDao.findById(vpc.getZoneId());
+        // reserve this ip and then
+        try {
+            IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), zone, null, sourceNatIP);
+            this.associateIPToVpc(ip.getId(), vpc.getId());
+        } catch (ResourceAllocationException | ResourceUnavailableException | InsufficientAddressCapacityException e){
+            throw new CloudRuntimeException("new source NAT address cannot be acquired", e);
+        }
     }
 
     @DB
@@ -1126,10 +1145,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return Transaction.execute(new TransactionCallback<VpcVO>() {
             @Override
             public VpcVO doInTransaction(final TransactionStatus status) {
-                if (displayVpc != null) {
-                    vpc.setDisplay(displayVpc);
-                }
-
                 final VpcVO persistedVpc = vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
                 _resourceLimitMgr.incrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
                 s_logger.debug("Created VPC " + persistedVpc);
@@ -1243,8 +1258,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
+    public Vpc updateVpc(UpdateVPCCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
+        return updateVpc(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getCustomId(), cmd.isDisplayVpc(), cmd.getPublicMtu(), cmd.getSourceNatIP());
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu) {
+    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException {
         CallContext.current().setEventDetails(" Id: " + vpcId);
         final Account caller = CallContext.current().getCallingAccount();
 
@@ -1279,12 +1299,78 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             updateMtuOfVpcNetwork(vpcToUpdate, vpc, mtu);
         }
 
-        if (vpcDao.update(vpcId, vpc)) {
+        boolean restartRequired = checkAndUpdateRouterSourceNatIp(vpcToUpdate, sourceNatIp);
+
+        if (vpcDao.update(vpcId, vpc) || restartRequired) { // Note that the update may fail because nothing has changed, other than the sourcenat ip
             s_logger.debug("Updated VPC id=" + vpcId);
+            if (restartRequired) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("restarting vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
+                }
+                final User callingUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+                restartVpc(vpcId, true, false, false, callingUser);
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("no restart needed.");
+                }
+            }
             return vpcDao.findById(vpcId);
         } else {
+            s_logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
             return null;
         }
+    }
+
+    private boolean checkAndUpdateRouterSourceNatIp(Vpc vpc, String sourceNatIp) {
+        IPAddressVO requestedIp = validateSourceNatip(vpc, sourceNatIp);
+        if (requestedIp == null) return false; // ip not associated with this network
+
+        List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
+        if (! userIps.isEmpty()) {
+            try {
+                _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
+            } catch (Exception e) { // pokemon exception from transaction
+                String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
+                        requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg, e);
+            }
+        }
+        return true;
+    }
+
+    @Nullable
+    protected IPAddressVO validateSourceNatip(Vpc vpc, String sourceNatIp) {
+        if (sourceNatIp == null) {
+            s_logger.trace(String.format("no source NAT ip given to update vpc %s with.", vpc.getName()));
+            return null;
+        } else {
+            s_logger.info(String.format("updating VPC %s to have source NAT ip %s", vpc.getName(), sourceNatIp));
+        }
+        IPAddressVO requestedIp = getIpAddressVO(vpc, sourceNatIp);
+        if (requestedIp == null) return null;
+        // check if it is the current source NAT address
+        if (requestedIp.isSourceNat()) {
+            s_logger.info(String.format("IP address %s is already the source Nat address. Not updating!", sourceNatIp));
+            return null;
+        }
+        if (_firewallDao.countRulesByIpId(requestedIp.getId()) > 0) {
+            s_logger.info(String.format("IP address %s has firewall/portforwarding rules. Not updating!", sourceNatIp));
+            return null;
+        }
+        return requestedIp;
+    }
+
+    @Nullable
+    private IPAddressVO getIpAddressVO(Vpc vpc, String sourceNatIp) {
+        // check if the address is already aqcuired for this network
+        IPAddressVO requestedIp = _ipAddressDao.findByIp(sourceNatIp);
+        if (requestedIp == null || requestedIp.getVpcId() == null || ! requestedIp.getVpcId().equals(vpc.getId())) {
+            s_logger.warn(String.format("Source NAT IP %s is not associated with network %s/%s. It cannot be used as source NAT IP.",
+                    sourceNatIp, vpc.getName(), vpc.getUuid()));
+            return null;
+        }
+        return requestedIp;
     }
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
@@ -1373,6 +1459,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return success;
     }
 
+    @Override
+    public Pair<List<? extends Vpc>, Integer> listVpcs(ListVPCsCmd cmd) {
+        return listVpcs(cmd.getId(), cmd.getVpcName(), cmd.getDisplayText(), cmd.getSupportedServices(), cmd.getCidr(), cmd.getVpcOffId(),
+                cmd.getState(), cmd.getAccountName(), cmd.getDomainId(), cmd.getKeyword(), cmd.getStartIndex(), cmd.getPageSizeVal(),
+                cmd.getZoneId(), cmd.isRecursive(), cmd.listAll(), cmd.getRestartRequired(), cmd.getTags(), cmd.getProjectId(),
+                cmd.getDisplay());
+    }
     @Override
     public Pair<List<? extends Vpc>, Integer> listVpcs(final Long id, final String vpcName, final String displayText, final List<String> supportedServicesStr, final String cidr,
                                                        final Long vpcOffId, final String state, final String accountName, Long domainId, final String keyword, final Long startIndex, final Long pageSizeVal,
@@ -1476,7 +1569,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean listBySupportedServices = supportedServicesStr != null && !supportedServicesStr.isEmpty() && !vpcs.isEmpty();
 
         if (listBySupportedServices) {
-            final List<VpcVO> supportedVpcs = new ArrayList<VpcVO>();
+            final List<Vpc> supportedVpcs = new ArrayList<>();
             Service[] supportedServices = null;
 
             if (listBySupportedServices) {
@@ -1501,22 +1594,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(supportedVpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, supportedVpcs.size());
-                return listWPagination;
+                return new Pair<>(wPagination, supportedVpcs.size());
             }
-            return new Pair<List<? extends Vpc>, Integer>(supportedVpcs, supportedVpcs.size());
+            return new Pair<>(supportedVpcs, supportedVpcs.size());
         } else {
             final List<? extends Vpc> wPagination = StringUtils.applyPagination(vpcs, startIndex, pageSizeVal);
             if (wPagination != null) {
-                final Pair<List<? extends Vpc>, Integer> listWPagination = new Pair<List<? extends Vpc>, Integer>(wPagination, vpcs.size());
-                return listWPagination;
+                return new Pair<>(wPagination, vpcs.size());
             }
-            return new Pair<List<? extends Vpc>, Integer>(vpcs, vpcs.size());
+            return new Pair<>(vpcs, vpcs.size());
         }
     }
 
     protected List<Service> getSupportedServices() {
-        final List<Service> services = new ArrayList<Service>();
+        final List<Service> services = new ArrayList<>();
         services.add(Network.Service.Dhcp);
         services.add(Network.Service.Dns);
         services.add(Network.Service.UserData);
