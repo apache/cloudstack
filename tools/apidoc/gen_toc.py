@@ -250,7 +250,7 @@ known_categories = {
     'listVsphereStoragePolicies' : 'vSphere storage policies',
     'ConsoleEndpoint': 'Console Endpoint',
     'Shutdown': 'Shutdown',
-    'scheduleDRS': 'schedule DRS',
+    'executeDRS': 'Execute DRS',
 }
 
 

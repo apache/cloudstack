@@ -277,4 +277,5 @@
   <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
   <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
   <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
+  <bean id="ClusterDrsEventsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsEventsDaoImpl" />
 </beans>

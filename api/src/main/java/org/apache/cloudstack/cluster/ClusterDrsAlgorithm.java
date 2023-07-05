@@ -32,21 +32,52 @@ import java.util.Map;
 
 public interface ClusterDrsAlgorithm extends Adapter {
 
+    /**
+     * Determines whether a DRS operation is needed for a given cluster and host-VM
+     * mapping.
+     *
+     * @param clusterId the ID of the cluster to check
+     * @param hostVmMap a map of host IDs to lists of VMs running on each host
+     * @return true if a DRS operation is needed, false otherwise
+     * @throws ConfigurationException if there is an error in the configuration
+     */
     boolean needsDrs(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap) throws ConfigurationException;
 
+    /**
+     * Returns the metrics for a given cluster, host-VM mapping, virtual machine,
+     * destination host, and whether storage motion is required.
+     *
+     * @param clusterId             the ID of the cluster
+     * @param hostVmMap             a map of host IDs to lists of VMs running on
+     *                              each host
+     * @param vm                    VM to be migrated
+     * @param destHost              destination host
+     * @param requiresStorageMotion true if storage motion is required
+     * @return Ternary object containing improvement, cost, benefit
+     */
     Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion);
 
     /**
-     * Mean is the average of a collection or set of metrics. In context of a DRS cluster, the cluster metrics defined as the average metrics value for some metric (such as CPU, memory etc.) for every resource such as host.
-     * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a resource ‘i’ in a cluster with total N number of resources.
+     * Mean is the average of a collection or set of metrics. In context of a DRS
+     * cluster, the cluster metrics defined as the average metrics value for some
+     * metric (such as CPU, memory etc.) for every resource such as host.
+     * Cluster Mean Metric, mavg = (∑mi) / N, where mi is a measurable metric for a
+     * resource ‘i’ in a cluster with total N number of resources.
      */
     default Double getClusterMeanMetric(List<Long> metricList) {
         return new Mean().evaluate(metricList.stream().mapToDouble(i -> i).toArray());
     }
 
     /**
-     * Standard deviation is defined as the square root of the absolute squared sum of difference of a metric from its mean for every resource divided by the total number of resources. In context of the DRS, the cluster standard deviation is the standard deviation based on a metric of resources in a cluster such as for the allocation or utilisation CPU/memory metric of hosts in a cluster.
-     * Cluster Standard Deviation, σc = sqrt((∑∣mi−mavg∣^2) / N), where mavg is the mean metric value and mi is a measurable metric for some resource ‘i’ in the cluster with total N number of resources.
+     * Standard deviation is defined as the square root of the absolute squared sum
+     * of difference of a metric from its mean for every resource divided by the
+     * total number of resources. In context of the DRS, the cluster standard
+     * deviation is the standard deviation based on a metric of resources in a
+     * cluster such as for the allocation or utilisation CPU/memory metric of hosts
+     * in a cluster.
+     * Cluster Standard Deviation, σc = sqrt((∑∣mi−mavg∣^2) / N), where mavg is the
+     * mean metric value and mi is a measurable metric for some resource ‘i’ in the
+     * cluster with total N number of resources.
      */
     default Double getClusterStandardDeviation(List<Long> metricList, Double mean) {
         if (mean != null) {
@@ -57,8 +88,14 @@ public interface ClusterDrsAlgorithm extends Adapter {
     }
 
     /**
-     * The cluster imbalance is defined as the percentage deviation from the mean for a configured metric of the cluster. The standard deviation is used as a mathematical tool to normalize the metric data for all the resource and the percentage deviation provides an easy tool to compare a cluster’s current state against the defined imbalance threshold. Because this is essentially a percentage, the value is a number between 0.0 and 1.0.
-     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and mavg is the mean metric value for the cluster.
+     * The cluster imbalance is defined as the percentage deviation from the mean
+     * for a configured metric of the cluster. The standard deviation is used as a
+     * mathematical tool to normalize the metric data for all the resource and the
+     * percentage deviation provides an easy tool to compare a cluster’s current
+     * state against the defined imbalance threshold. Because this is essentially a
+     * percentage, the value is a number between 0.0 and 1.0.
+     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
+     * mavg is the mean metric value for the cluster.
      */
     default Double getClusterImbalance(List<Long> metricList) {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);

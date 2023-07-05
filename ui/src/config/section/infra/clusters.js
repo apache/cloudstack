@@ -120,7 +120,7 @@ export default {
       show: (record) => { return record.managedstate === 'Managed' }
     },
     {
-      api: 'scheduleDRS',
+      api: 'executeDRS',
       icon: 'gold-outlined',
       label: 'label.action.drs.cluster',
       message: 'message.action.drs.cluster',

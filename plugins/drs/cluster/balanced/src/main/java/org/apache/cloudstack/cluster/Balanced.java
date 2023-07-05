@@ -80,13 +80,6 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
         }
     }
 
-    /**
-     * @param hostVmMap             map of hostId to list of VMs
-     * @param vm                    VM to be migrated
-     * @param destHost              destination host
-     * @param requiresStorageMotion true if storage motion is required
-     * @return Ternary<improvement, cost, benefit>  improvement is the improvement in the cluster imbalance metric, cost is the cost of the migration, benefit is the
-     */
     @Override
     public Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion) {
         Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);

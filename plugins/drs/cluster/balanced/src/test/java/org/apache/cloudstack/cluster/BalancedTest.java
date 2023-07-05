@@ -57,19 +57,27 @@ public class BalancedTest {
 
     @InjectMocks
     Balanced balanced;
+
     VirtualMachine vm1, vm2, vm3;
+
     Host destHost;
+
     HostJoinVO host1, host2;
+
     long clusterId = 1L;
+
     Map<Long, List<VirtualMachine>> hostVmMap;
+
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+
     @Mock
     private HostJoinDao hostJoinDao;
+
     private AutoCloseable closeable;
 
     @Before
-    public void setUp() {
+    public void setUp() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
 
 
@@ -109,7 +117,7 @@ public class BalancedTest {
         Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
 
         Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(3L, 1L)).thenReturn(serviceOffering);
-
+        overrideDefaultConfigValue(ClusterDrsThreshold, "_defaultValue", "0.5");
     }
 
     @After
@@ -123,84 +131,119 @@ public class BalancedTest {
         f.set(configKey, o);
     }
 
+    /**
+     * <b>getMetrics tests</b>
+     * <p>Scenarios to test for needsDrs
+     * <p>1. cluster with cpu metric
+     * <p>2. cluster with memory metric
+     * <p>3. cluster with "both" metric
+     * <p>4. cluster with "either" metric
+     * <p>5. cluster with "unknown" metric
+     * <p>
+     * <p>CPU imbalance = 0.333
+     * <p>Memory imbalance = 0.6
+     */
+
+    /*
+     1. cluster with cpu metric
+     0.3333 > 0.5 -> False
+    */
     @Test
-    public void needsDrs() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
-        // Scenarios to test for needsDrs
-        // 1. cluster with cpu metric
-        // 2. cluster with memory metric
-        // 3. cluster with "both" metric
-        // 4. cluster with "either" metric
-        // 5. cluster with "unknown" metric
-
-
-        // CPU imbalance = 0.333
-        // Memory imbalance = 0.6
-        overrideDefaultConfigValue(ClusterDrsThreshold, "_defaultValue", "0.5");
-
-        // 1. cluster with cpu metric
-        // 0.3333 > 0.5 -> False
+    public void needsDrsWithCpu() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
         assertFalse(balanced.needsDrs(clusterId, hostVmMap));
+    }
 
-        // 2. cluster with memory metric
-        // 0.6 > 0.5 -> True
+    /*
+     2. cluster with memory metric
+     0.6 > 0.5 -> True
+    */
+    @Test
+    public void needsDrsWithMemory() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
         assertTrue(balanced.needsDrs(clusterId, hostVmMap));
+    }
 
-        // 3. cluster with "both" metric
-        // 0.3333 > 0.5 && 0.6 > 0.5 -> False
+    /*
+     3. cluster with "both" metric
+     0.3333 > 0.5 && 0.6 > 0.5 -> False
+    */
+    @Test
+    public void needsDrsWithBoth() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
         assertFalse(balanced.needsDrs(clusterId, hostVmMap));
+    }
 
-        // 4. cluster with "either" metric
-        // 0.3333 > 0.5 || 0.6 > 0.5 -> True
+    /*
+     4. cluster with "either" metric
+     0.3333 > 0.5 || 0.6 > 0.5 -> True
+    */
+    @Test
+    public void needsDrsWithEither() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "either");
         assertTrue(balanced.needsDrs(clusterId, hostVmMap));
+    }
 
-        // 5. cluster with "unknown" metric
+    /* 5. cluster with "unknown" metric */
+    @Test
+    public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");
         assertThrows(ConfigurationException.class, () -> balanced.needsDrs(clusterId, hostVmMap));
     }
 
+    /**
+     * getMetrics tests
+     * <p>Scenarios to test for getMetrics
+     * <p>1. cluster with cpu metric
+     * <p>2. cluster with memory metric
+     * <p>3. cluster with default metric
+     * <p>
+     * <p>Pre
+     * <p>CPU imbalance = 0.333333
+     * <p>Memory imbalance = 0.6
+     * <p>
+     * <p>Post
+     * <p>CPU imbalance = 0.3333
+     * <p>Memory imbalance = 0.2
+     * <p>
+     * <p>Cost 512.0
+     * <p>Benefit  (0.6-0.2) * 8192 = 3276.8
+     */
+
+    /*
+     1. cluster with cpu metric
+     improvement = 0.3333 - 0.3333  = 0.0
+    */
     @Test
-    public void getMetrics() throws NoSuchFieldException, IllegalAccessException {
-        // Scenarios to test for getMetrics
-        // 1. cluster with cpu metric
-        // 2. cluster with memory metric
-        // 3. cluster with default metric
-
-        // Pre
-        // CPU imbalance = 0.333333
-        // Memory imbalance = 0.6
-        // Post
-        // CPU imbalance = 0.3333
-        // Memory imbalance = 0.2
-        //
-        // Cost 512.0
-        // Benefit  (0.6-0.2) * 8192 = 3276.8
-        overrideDefaultConfigValue(ClusterDrsThreshold, "_defaultValue", "0.5");
-
-        // 1. cluster with cpu metric
-        // improvement = 0.3333 - 0.3333  = 0.0
+    public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
         Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
-//        Ternary<Double, Double, Double> expected = new Ternary<Double, Double, Double>(-0.33, 0.0, -1 / 3.0););
         assertEquals(0.0, result.first(), 0.0001);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);
+    }
 
-        // 2. cluster with memory metric
-        // improvement = 0.6 - 0.2 = 0.4
+    /*
+     2. cluster with memory metric
+     improvement = 0.6 - 0.2 = 0.4
+    */
+    @Test
+    public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-        result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
         assertEquals(0.4, result.first(), 0.01);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);
+    }
 
-        // 3. cluster with default metric
-        // improvement = 0.3333 + 0.6 - 0.3333 - 0.2 = 0.4
+    /*
+     3. cluster with default metric
+     improvement = 0.3333 + 0.6 - 0.3333 - 0.2 = 0.4
+    */
+    @Test
+    public void getMetricsWithDefault() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-        result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
         assertEquals(0.4, result.first(), 0.001);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);
