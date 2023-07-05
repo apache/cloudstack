@@ -58,6 +58,7 @@
         <module>storage/image</module>
         <module>storage/snapshot</module>
         <module>storage/volume</module>
+        <module>storage/object</module>
     </modules>
     <profiles>
         <profile>

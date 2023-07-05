@@ -16,33 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
+package org.apache.cloudstack.storage.object.store.lifecycle;
 
-import java.util.Map;
-import java.util.Set;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 
-public interface DataStoreProvider {
-    // constants for provider names
-    String NFS_IMAGE = "NFS";
-    String S3_IMAGE = "S3";
-    String SWIFT_IMAGE = "Swift";
-    String SAMPLE_IMAGE = "Sample";
-    String SMB = "NFS";
-    String DEFAULT_PRIMARY = "DefaultPrimary";
-
-    enum DataStoreProviderType {
-        PRIMARY, IMAGE, ImageCache, OBJECT
-    }
-
-    DataStoreLifeCycle getDataStoreLifeCycle();
-
-    DataStoreDriver getDataStoreDriver();
-
-    HypervisorHostListener getHostListener();
-
-    String getName();
-
-    boolean configure(Map<String, Object> params);
-
-    Set<DataStoreProviderType> getTypes();
+public interface ObjectStoreLifeCycle extends DataStoreLifeCycle {
 }
