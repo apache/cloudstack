@@ -1156,12 +1156,28 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         @Override
         protected void runInContext() {
             s_logger.info("Started resource counters recalculation periodic task.");
-            List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
-            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            List<DomainVO> domains;
+            List<AccountVO> accounts;
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch immediate children for the domain " + Domain.ROOT_DOMAIN, e);
+                // initialize domains as empty list to do best effort recalculation
+                domains = new ArrayList<>();
+            }
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch active accounts for domain " + Domain.ROOT_DOMAIN, e);
+                // initialize accounts as empty list to do best effort recalculation
+                accounts = new ArrayList<>();
+            }
 
             for (ResourceType type : ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
+                    recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
                     }
@@ -1170,9 +1186,24 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (type.supportsOwner(ResourceOwnerType.Account)) {
                     // run through the accounts in the root domain
                     for (AccountVO account : accounts) {
-                        recalculateAccountResourceCount(account.getId(), type);
+                        recalculateAccountResourceCountInContext(account.getId(), type);
                     }
                 }
+            }
+        }
+
+        private void recalculateDomainResourceCountInContext(long domainId, ResourceType type) {
+            try {
+                recalculateDomainResourceCount(domainId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the domain " + domainId + " and the resource type " + type + " .", e);
+            }
+        }
+        private void recalculateAccountResourceCountInContext(long accountId, ResourceType type) {
+            try {
+                recalculateAccountResourceCount(accountId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the account " + accountId + " and the resource type " + type + " .", e);
             }
         }
     }

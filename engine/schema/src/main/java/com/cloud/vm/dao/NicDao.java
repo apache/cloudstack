@@ -89,6 +89,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findByInstanceIdAndMacAddress(long instanceId, String macAddress);
 
+    NicVO findByNetworkIdAndMacAddressIncludingRemoved(long networkId, String mac);
+
     List<NicVO> findNicsByIpv6GatewayIpv6CidrAndReserver(String ipv6Gateway, String ipv6Cidr, String reserverName);
 
     NicVO findByIpAddressAndVmType(String ip, VirtualMachine.Type vmType);

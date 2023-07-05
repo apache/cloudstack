@@ -64,7 +64,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -676,7 +676,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -1105,6 +1105,14 @@ export default {
                 name: 'confirmpassword',
                 required: true,
                 description: self.$t('label.confirmpassword.description')
+              }
+            }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
               }
             }
             return paramFields.filter(function (param) {
@@ -1643,6 +1651,18 @@ export default {
         } else {
           delete query.archived
         }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
+      } else if (this.$route.name === 'kubernetes') {
+        if (filter === 'all') {
+          delete query.clustertype
+        } else {
+          query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
+        }
       }
       query.filter = filter
       query.page = '1'
@@ -1668,6 +1688,10 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
+            } else if (this.$route.name === 'guestos') {
+              query.description = value
             } else {
               query.keyword = value
             }

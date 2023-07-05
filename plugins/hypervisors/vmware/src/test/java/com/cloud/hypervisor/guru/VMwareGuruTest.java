@@ -16,20 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateVmToPoolCommand;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
@@ -46,12 +39,20 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({VMwareGuru.class})
@@ -105,7 +106,7 @@ public class VMwareGuruTest {
         Mockito.when(localStorage.isLocal()).thenReturn(true);
         Pair<Long, Long> clusterAndHost = new Pair<>(1L, 1L);
 
-        Mockito.when(vmManager.findClusterAndHostIdForVm(1L)).thenReturn(clusterAndHost);
+        Mockito.when(vmManager.findClusterAndHostIdForVm(vm, true)).thenReturn(clusterAndHost);
 
         List<StoragePoolHostVO> storagePoolHostVOS = new ArrayList<>();
         storagePoolHostVOS.add(storagePoolHostVO);

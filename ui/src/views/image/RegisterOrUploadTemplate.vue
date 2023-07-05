@@ -575,7 +575,7 @@ export default {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
-        this.defaultOsId = this.osTypes.opts[1].id
+        this.defaultOsId = this.osTypes.opts[1].name
       }).finally(() => {
         this.osTypes.loading = false
       })

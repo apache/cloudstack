@@ -248,6 +248,7 @@ public class ApiConstants {
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
     public static final String IP_TOTAL = "iptotal";
+    public static final String IS_CONTROL_NODE = "iscontrolnode";
     public static final String IS_CLEANUP_REQUIRED = "iscleanuprequired";
     public static final String IS_DYNAMIC = "isdynamic";
     public static final String IS_EDGE = "isedge";
@@ -313,10 +314,14 @@ public class ApiConstants {
     public static final String OPTIONS = "options";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
+    public static final String OS_NAME = "osname";
     public static final String OS_ID = "osid";
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
+    public static final String GUEST_OS_LIST = "guestoslist";
+    public static final String GUEST_OS_COUNT = "guestoscount";
+    public static final String OS_MAPPING_CHECK_ENABLED = "osmappingcheckenabled";
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String OUTPUT = "output";
@@ -368,6 +373,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
     public static final String RESPONSE = "response";
+    public static final String RETRIEVE_ONLY_RESOURCE_COUNT = "retrieveonlyresourcecount";
     public static final String REVERTABLE = "revertable";
     public static final String REVOKED = "revoked";
     public static final String REGISTERED = "registered";

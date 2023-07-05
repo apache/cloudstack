@@ -459,7 +459,8 @@ export default {
           zoneid: this.zones[values.zoneid].id,
           kubernetesversionid: this.kubernetesVersions[values.kubernetesversionid].id,
           serviceofferingid: this.serviceOfferings[values.serviceofferingid].id,
-          size: values.size
+          size: values.size,
+          clustertype: 'CloudManaged'
         }
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize
