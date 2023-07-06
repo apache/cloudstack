@@ -17,21 +17,30 @@
 // under the License.
 //
 
-package com.cloud.agent.direct.download;
+package com.cloud.storage;
 
-import com.cloud.utils.Pair;
+import java.io.File;
+import java.io.IOException;
 
-public interface DirectTemplateDownloader {
+import org.junit.Assert;
+import org.junit.Test;
 
-    /**
-     * Perform template download to pool specified on downloader creation
-     * @return (true if successful, false if not, download file path)
-     */
-    Pair<Boolean, String> downloadTemplate();
+public class JavaStorageLayerTest {
 
-    /**
-     * Perform checksum validation of previously downloadeed template
-     * @return true if successful, false if not
-     */
-    boolean validateChecksum();
+    JavaStorageLayer jsl = new JavaStorageLayer();
+
+    @Test
+    public void createUniqDir() {
+
+        try {
+            File one = jsl.createUniqDir();
+            Assert.assertTrue(one.isDirectory());
+            Assert.assertTrue(one.canRead());
+            Assert.assertTrue(one.canWrite());
+            Assert.assertTrue(one.canExecute());
+        } catch (IOException e) {
+            Assert.fail("creation of a unique dir should succeed.");
+        }
+    }
 }
+

@@ -16,7 +16,7 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.agent.direct.download;
+package org.apache.cloudstack.direct.download;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
@@ -26,6 +26,7 @@ import com.cloud.utils.script.Script;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.UUID;
 
 public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
@@ -52,6 +53,10 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         }
     }
 
+    protected NfsDirectTemplateDownloader(String url) {
+        this(url, null, null, null, null);
+    }
+
     public NfsDirectTemplateDownloader(String url, String destPool, Long templateId, String checksum, String downloadPath) {
         super(url, destPool, templateId, checksum, downloadPath);
         parseUrl();
@@ -67,5 +72,31 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         Script.runSimpleBashScript("cp /mnt/" + mountSrcUuid + srcPath + " " + getDownloadedFilePath());
         Script.runSimpleBashScript("umount /mnt/" + mountSrcUuid);
         return new Pair<>(true, getDownloadedFilePath());
+    }
+
+    @Override
+    public boolean checkUrl(String url) {
+        try {
+            parseUrl();
+            return true;
+        } catch (CloudRuntimeException e) {
+            s_logger.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
+            return false;
+        }
+    }
+
+    @Override
+    public Long getRemoteFileSize(String url, String format) {
+        return null;
+    }
+
+    @Override
+    public List<String> getMetalinkUrls(String metalinkUrl) {
+        return null;
+    }
+
+    @Override
+    public List<String> getMetalinkChecksums(String metalinkUrl) {
+        return null;
     }
 }

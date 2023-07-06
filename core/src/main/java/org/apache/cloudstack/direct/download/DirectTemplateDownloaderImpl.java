@@ -16,8 +16,9 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.agent.direct.download;
+package org.apache.cloudstack.direct.download;
 
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDownloader {
 
@@ -108,6 +113,14 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     }
 
     /**
+     * Create download directory (if it does not exist)
+     */
+    protected File createTemporaryDirectoryAndFile(String downloadDir) {
+        createFolder(downloadDir);
+        return new File(downloadDir + File.separator + getFileNameFromUrl());
+    }
+
+    /**
      * Return filename from url
      */
     public String getFileNameFromUrl() {
@@ -161,4 +174,23 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
         }
     }
 
+    protected void addMetalinkUrlsToListFromInputStream(InputStream inputStream, List<String> urls) {
+        Map<String, List<String>> metalinkUrlsMap = UriUtils.getMultipleValuesFromXML(inputStream, new String[] {"url"});
+        if (metalinkUrlsMap.containsKey("url")) {
+            List<String> metalinkUrls = metalinkUrlsMap.get("url");
+            urls.addAll(metalinkUrls);
+        }
+    }
+
+    protected List<String> generateChecksumListFromInputStream(InputStream is) {
+        Map<String, List<String>> checksums = UriUtils.getMultipleValuesFromXML(is, new String[] {"hash"});
+        if (checksums.containsKey("hash")) {
+            List<String> listChksum = new ArrayList<>();
+            for (String chk : checksums.get("hash")) {
+                listChksum.add(chk.replaceAll("\n", "").replaceAll(" ", "").trim());
+            }
+            return listChksum;
+        }
+        return null;
+    }
 }
