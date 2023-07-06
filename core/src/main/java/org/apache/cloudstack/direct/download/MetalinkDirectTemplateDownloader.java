@@ -23,7 +23,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.util.List;
@@ -39,8 +38,6 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
     private Integer connectTimeout;
     private Integer soTimeout;
 
-    private static final Logger s_logger = Logger.getLogger(MetalinkDirectTemplateDownloader.class.getName());
-
     protected DirectTemplateDownloader createDownloaderForMetalinks(String url, Long templateId,
                                                                     String destPoolPath, String checksum,
                                                                     Map<String, String> headers,
@@ -55,7 +52,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         } else if (url.toLowerCase().startsWith("nfs:")) {
             return new NfsDirectTemplateDownloader(url);
         } else {
-            s_logger.error(String.format("Cannot find a suitable downloader to handle the metalink URL %s", url));
+            logger.error(String.format("Cannot find a suitable downloader to handle the metalink URL %s", url));
             return null;
         }
     }
@@ -75,10 +72,10 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         metalinkUrls = downloader.getMetalinkUrls(url);
         metalinkChecksums = downloader.getMetalinkChecksums(url);
         if (CollectionUtils.isEmpty(metalinkUrls)) {
-            s_logger.error(String.format("No urls found on metalink file: %s. Not possible to download template %s ", url, templateId));
+            logger.error(String.format("No urls found on metalink file: %s. Not possible to download template %s ", url, templateId));
         } else {
             setUrl(metalinkUrls.get(0));
-            s_logger.info("Metalink downloader created, metalink url: " + url + " parsed - " +
+            logger.info("Metalink downloader created, metalink url: " + url + " parsed - " +
                     metalinkUrls.size() + " urls and " +
                     (CollectionUtils.isNotEmpty(metalinkChecksums) ? metalinkChecksums.size() : "0") + " checksums found");
         }
@@ -96,7 +93,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             if (!isRedownload()) {
                 setUrl(metalinkUrls.get(i));
             }
-            s_logger.info("Trying to download template from url: " + getUrl());
+            logger.info("Trying to download template from url: " + getUrl());
             DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(getUrl(), getTemplateId(), getDestPoolPath(),
                     getChecksum(), headers, connectTimeout, soTimeout, null, temporaryDownloadPath);
             try {
@@ -109,10 +106,10 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
                 Pair<Boolean, String> downloadResult = urlDownloader.downloadTemplate();
                 downloaded = downloadResult.first();
                 if (downloaded) {
-                    s_logger.info("Successfully downloaded template from url: " + getUrl());
+                    logger.info("Successfully downloaded template from url: " + getUrl());
                 }
             } catch (Exception e) {
-                s_logger.error(String.format("Error downloading template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
+                logger.error(String.format("Error downloading template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
             }
             i++;
         }
@@ -125,7 +122,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         if (StringUtils.isBlank(getChecksum()) && CollectionUtils.isNotEmpty(metalinkChecksums)) {
             String chk = metalinkChecksums.get(random.nextInt(metalinkChecksums.size()));
             setChecksum(chk);
-            s_logger.info("Checksum not provided but " + metalinkChecksums.size() + " found on metalink file, performing checksum using one of them: " + chk);
+            logger.info("Checksum not provided but " + metalinkChecksums.size() + " found on metalink file, performing checksum using one of them: " + chk);
         }
         return super.validateChecksum();
     }
@@ -133,7 +130,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
     @Override
     public boolean checkUrl(String metalinkUrl) {
         if (!downloader.checkUrl(metalinkUrl)) {
-            s_logger.error(String.format("Metalink URL check failed for: %s", metalinkUrl));
+            logger.error(String.format("Metalink URL check failed for: %s", metalinkUrl));
             return false;
         }
 

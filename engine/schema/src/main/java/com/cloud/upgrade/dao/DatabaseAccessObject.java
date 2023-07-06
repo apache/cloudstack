@@ -32,9 +32,9 @@ public class DatabaseAccessObject {
         try(PreparedStatement pstmt = conn.prepareStatement(addForeignKeyStmt);)
         {
             pstmt.executeUpdate();
-            s_logger.debug(String.format("Foreign key is added successfully from the table %s", tableName));
+            logger.debug(String.format("Foreign key is added successfully from the table %s", tableName));
         } catch (SQLException e) {
-            s_logger.error("Ignored SQL Exception when trying to add foreign key on table "  + tableName + " exception: " + e.getMessage());
+            logger.error("Ignored SQL Exception when trying to add foreign key on table "  + tableName + " exception: " + e.getMessage());
         }
     }
 

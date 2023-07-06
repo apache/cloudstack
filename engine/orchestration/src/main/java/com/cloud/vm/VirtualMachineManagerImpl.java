@@ -526,7 +526,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     stateTransitTo(persistedVm, VirtualMachine.Event.OperationFailedToError, null);
                 }
             } catch (NoTransitionException nte) {
-                s_logger.error(String.format("Failed to transition %s in %s state to Error state", persistedVm, persistedVm.getState().toString()));
+                logger.error(String.format("Failed to transition %s in %s state to Error state", persistedVm, persistedVm.getState().toString()));
             }
             throw e;
         }

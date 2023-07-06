@@ -111,12 +111,12 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         HeadMethod httpHead = new HeadMethod(url);
         try {
             if (client.executeMethod(httpHead) != HttpStatus.SC_OK) {
-                s_logger.error(String.format("Invalid URL: %s", url));
+                logger.error(String.format("Invalid URL: %s", url));
                 return false;
             }
             return true;
         } catch (IOException e) {
-            s_logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
+            logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
             return false;
         } finally {
             httpHead.releaseConnection();
@@ -140,7 +140,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         try {
             status = client.executeMethod(getMethod);
         } catch (IOException e) {
-            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            logger.error("Error retrieving urls form metalink: " + metalinkUrl);
             getMethod.releaseConnection();
             return null;
         }
@@ -150,7 +150,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
                 addMetalinkUrlsToListFromInputStream(is, urls);
             }
         } catch (IOException e) {
-            s_logger.warn(e.getMessage());
+            logger.warn(e.getMessage());
         } finally {
             getMethod.releaseConnection();
         }
@@ -166,7 +166,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
                 return generateChecksumListFromInputStream(is);
             }
         } catch (IOException e) {
-            s_logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
+            logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
         } finally {
             getMethod.releaseConnection();
         }
