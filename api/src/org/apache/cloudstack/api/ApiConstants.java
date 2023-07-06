@@ -247,6 +247,8 @@ public class ApiConstants {
     public static final String RECOVER = "recover";
     public static final String REMOTE_ID = "remoteid";
     public static final String REMOTE_ID_TYPE = "remoteidtype";
+
+    public static final String VOLUME_IDS = "volumeids";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";

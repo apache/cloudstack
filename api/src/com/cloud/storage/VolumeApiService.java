@@ -90,6 +90,8 @@ public interface VolumeApiService {
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
+    Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
+
     Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
             throws ResourceAllocationException;
 

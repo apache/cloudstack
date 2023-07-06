@@ -1941,6 +1941,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume")
+    public Volume detachVolumeViaDestroyVM(long vmId, long volumeId) {
+        return orchestrateDetachVolumeFromVM(vmId, volumeId);
+    }
+
     private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
 
         Volume volume = _volsDao.findById(volumeId);
