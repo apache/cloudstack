@@ -173,6 +173,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     Map<ResourceType, Long> domainResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
 
+    protected void removeResourceReservationIfNeededAndIncrementResourceCount(final long accountId, final ResourceType type, final long numToIncrement) {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+
+                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+                if (obj instanceof Long) {
+                    reservationDao.remove((long)obj);
+                }
+                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
+                    // we should fail the operation (resource creation) when failed to update the resource count
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
+                }
+            }
+        });
+    }
+
     @Override
     public boolean start() {
         if (_resourceCountCheckInterval > 0) {
@@ -271,21 +288,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         final long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
-
-                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
-                if (obj instanceof Long) {
-                    reservationDao.remove((long)obj);
-                }
-                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
-                    // we should fail the operation (resource creation) when failed to update the resource count
-                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-                }
-            }
-        });
+        removeResourceReservationIfNeededAndIncrementResourceCount(accountId, type, numToIncrement);
     }
 
     @Override
