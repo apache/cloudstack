@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -37,6 +39,8 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +53,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.bind.DatatypeConverter;
 
+import com.cloud.configuration.Config;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -365,8 +370,12 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         if (managementKeyStore != null) {
             return true;
         }
-        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                NetUtils.getAllDefaultNicIps(), getCaValidityDays());
+        List<String> nicIps = NetUtils.getAllDefaultNicIps();
+        addConfiguredManagementIp(nicIps);
+        nicIps = new ArrayList<>(new HashSet<>(nicIps));
+
+        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()), nicIps, getCaValidityDays());
+
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
         }
@@ -383,6 +392,28 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         }
         return managementKeyStore != null;
     }
+
+    protected void addConfiguredManagementIp(List<String> ipList) {
+        String msNetworkCidr = configDao.getValue(Config.ManagementNetwork.key());
+        try {
+            LOG.debug(String.format("Trying to find management IP in CIDR range [%s].", msNetworkCidr));
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            networkInterfaces.asIterator().forEachRemaining(networkInterface -> {
+                networkInterface.getInetAddresses().asIterator().forEachRemaining(inetAddress -> {
+                    if (NetUtils.isIpWithInCidrRange(inetAddress.getHostAddress(), msNetworkCidr)) {
+                        ipList.add(inetAddress.getHostAddress());
+                        LOG.debug(String.format("Added IP [%s] to the list of IPs in the management server's certificate.", inetAddress.getHostAddress()));
+                    }
+                });
+            });
+        } catch (SocketException e) {
+            String msg = "Exception while trying to gather the management server's network interfaces.";
+            LOG.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
+        }
+    }
+
 
     private boolean setupCA() {
         if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
