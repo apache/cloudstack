@@ -33,6 +33,7 @@ import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.VMInstanceVO;
@@ -49,7 +50,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.naming.ConfigurationException;
@@ -62,7 +65,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(GlobalLock.class)
 public class ClusterDrsServiceImplTest {
 
     @Mock
@@ -109,6 +113,11 @@ public class ClusterDrsServiceImplTest {
         f.setAccessible(true);
         f.set(clusterDrsService.ClusterDrsAlgorithm, "balanced");
         Mockito.when(cmd.getId()).thenReturn(1L);
+
+        PowerMockito.mockStatic(GlobalLock.class);
+        GlobalLock lock = Mockito.mock(GlobalLock.class);
+        PowerMockito.when(GlobalLock.getInternLock("cluster.drs.1")).thenReturn(lock);
+        Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
     }
 
     @After
