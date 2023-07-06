@@ -16,22 +16,28 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPOutputStream;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudInitUserDataProviderTest {
 
     private final CloudInitUserDataProvider provider = new CloudInitUserDataProvider();
+    private final static String CLOUD_CONFIG_USERDATA = "## template: jinja\n" +
+            "#cloud-config\n" +
+            "runcmd:\n" +
+            "   - echo 'TestVariable {{ ds.meta_data.variable1 }}' >> /tmp/variable\n" +
+            "   - echo 'Hostname {{ ds.meta_data.public_hostname }}' > /tmp/hostname";
 
     @Test
     public void testGetUserDataFormatType() {
-        String userdata = "## template: jinja\n" +
-                "#cloud-config\n" +
-                "runcmd:\n" +
-                "   - echo 'TestVariable {{ ds.meta_data.variable1 }}' >> /tmp/variable\n" +
-                "   - echo 'Hostname {{ ds.meta_data.public_hostname }}' > /tmp/hostname";
-        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(userdata);
+        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(CLOUD_CONFIG_USERDATA);
         Assert.assertEquals(CloudInitUserDataProvider.FormatType.CLOUD_CONFIG, type);
     }
 
@@ -93,5 +99,41 @@ public class CloudInitUserDataProviderTest {
         String vmData = "#!/bin/bash\n" +
                 "date > /provisioned";
         provider.appendUserData(templateData, vmData);
+    }
+
+    @Test
+    public void testIsGzippedUserDataWithCloudConfigData() {
+        Assert.assertFalse(provider.isGZipped(CLOUD_CONFIG_USERDATA));
+    }
+
+    private String createGzipDataAsString() throws IOException {
+        byte[] input = CLOUD_CONFIG_USERDATA.getBytes(StandardCharsets.ISO_8859_1);
+
+        ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
+        GZIPOutputStream outputStream = new GZIPOutputStream(arrayOutputStream);
+        outputStream.write(input,0, input.length);
+        outputStream.close();
+
+        return arrayOutputStream.toString(StandardCharsets.ISO_8859_1);
+    }
+
+    @Test
+    public void testIsGzippedUserDataWithValidGzipData() {
+        try {
+            String gzipped = createGzipDataAsString();
+            Assert.assertTrue(provider.isGZipped(gzipped));
+        } catch (IOException e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testAppendUserDataWithGzippedData() {
+        try {
+            provider.appendUserData(CLOUD_CONFIG_USERDATA, createGzipDataAsString());
+            Assert.fail("Gzipped data shouldn't be appended with other data");
+        } catch (IOException e) {
+            Assert.fail("Exception encountered: " + e.getMessage());
+        }
     }
 }

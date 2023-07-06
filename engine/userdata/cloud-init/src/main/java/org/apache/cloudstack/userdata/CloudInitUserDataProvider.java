@@ -16,11 +16,16 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
@@ -29,14 +34,13 @@ import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CloudInitUserDataProvider extends AdapterBase implements UserDataProvider {
 
@@ -65,7 +69,22 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         return "cloud-init";
     }
 
+    protected boolean isGZipped(String userdata) {
+        if (StringUtils.isEmpty(userdata)) {
+            return false;
+        }
+        byte[] data = userdata.getBytes(StandardCharsets.ISO_8859_1);
+        if (data.length < 2) {
+            return false;
+        }
+        int magic = data[0] & 0xff | ((data[1] << 8) & 0xff00);
+        return magic == GZIPInputStream.GZIP_MAGIC;
+    }
+
     protected String extractUserDataHeader(String userdata) {
+        if (isGZipped(userdata)) {
+            throw new CloudRuntimeException("Gzipped user data can not be used together with other user data formats");
+        }
         List<String> lines = Arrays.stream(userdata.split("\n"))
                 .filter(x -> (x.startsWith("#") && !x.startsWith("##")) || (x.startsWith("Content-Type:")))
                 .collect(Collectors.toList());
