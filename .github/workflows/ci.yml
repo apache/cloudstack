@@ -65,6 +65,7 @@ jobs:
                   smoke/test_events_resource
                   smoke/test_global_settings
                   smoke/test_guest_vlan_range
+                  smoke/test_cluster_drs
                   smoke/test_host_maintenance
                   smoke/test_hostha_kvm
                   smoke/test_hostha_simulator

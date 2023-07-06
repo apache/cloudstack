@@ -3129,6 +3129,14 @@ class Cluster:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateCluster(cmd))
 
+    def executeDRS(cls, apiclient, iterations=None):
+        """Update cluster information"""
+
+        cmd = executeDRS.executeDRSCmd()
+        cmd.id = self.id
+        cmd.iterations = iterations
+        return (apiclient.executeDRS(cmd))
+
 
 class Host:
     """Manage Host life cycle"""
