@@ -17,23 +17,28 @@
 // under the License.
 //
 
-package com.cloud.agent.direct.download;
+package org.apache.cloudstack.direct.download;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -45,6 +50,10 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
+    protected HttpDirectTemplateDownloader(String url) {
+        this(url, null, null, null, null, null, null, null);
+    }
+
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
                                         Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
         super(url, destPoolPath, templateId, checksum, downloadPath);
@@ -55,15 +64,6 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         String downloadDir = getDirectDownloadTempPath(templateId);
         File tempFile = createTemporaryDirectoryAndFile(downloadDir);
         setDownloadedFilePath(tempFile.getAbsolutePath());
-    }
-
-    /**
-     * Create download directory (if it does not exist) and set the download file
-     * @return
-     */
-    protected File createTemporaryDirectoryAndFile(String downloadDir) {
-        createFolder(downloadDir);
-        return new File(downloadDir + File.separator + getFileNameFromUrl());
     }
 
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
@@ -98,7 +98,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
-                OutputStream out = new FileOutputStream(getDownloadedFilePath());
+                OutputStream out = new FileOutputStream(getDownloadedFilePath())
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
@@ -106,5 +106,72 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
             return new Pair<>(false, null);
         }
         return new Pair<>(true, getDownloadedFilePath());
+    }
+
+    @Override
+    public boolean checkUrl(String url) {
+        HeadMethod httpHead = new HeadMethod(url);
+        try {
+            if (client.executeMethod(httpHead) != HttpStatus.SC_OK) {
+                s_logger.error(String.format("Invalid URL: %s", url));
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            s_logger.error(String.format("Cannot reach URL: %s due to: %s", url, e.getMessage()), e);
+            return false;
+        } finally {
+            httpHead.releaseConnection();
+        }
+    }
+
+    @Override
+    public Long getRemoteFileSize(String url, String format) {
+        if ("qcow2".equalsIgnoreCase(format)) {
+            return QCOW2Utils.getVirtualSize(url);
+        } else {
+            return UriUtils.getRemoteSize(url);
+        }
+    }
+
+    @Override
+    public List<String> getMetalinkUrls(String metalinkUrl) {
+        GetMethod getMethod = new GetMethod(metalinkUrl);
+        List<String> urls = new ArrayList<>();
+        int status;
+        try {
+            status = client.executeMethod(getMethod);
+        } catch (IOException e) {
+            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            getMethod.releaseConnection();
+            return null;
+        }
+        try {
+            InputStream is = getMethod.getResponseBodyAsStream();
+            if (status == HttpStatus.SC_OK) {
+                addMetalinkUrlsToListFromInputStream(is, urls);
+            }
+        } catch (IOException e) {
+            s_logger.warn(e.getMessage());
+        } finally {
+            getMethod.releaseConnection();
+        }
+        return urls;
+    }
+
+    @Override
+    public List<String> getMetalinkChecksums(String metalinkUrl) {
+        GetMethod getMethod = new GetMethod(metalinkUrl);
+        try {
+            if (client.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
+                return generateChecksumListFromInputStream(is);
+            }
+        } catch (IOException e) {
+            s_logger.error(String.format("Error obtaining metalink checksums on URL %s: %s", metalinkUrl, e.getMessage()), e);
+        } finally {
+            getMethod.releaseConnection();
+        }
+        return null;
     }
 }

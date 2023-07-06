@@ -16,22 +16,21 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+package org.apache.cloudstack.direct.download;
 
-package com.cloud.agent.direct.download;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
-import com.cloud.utils.Pair;
+import java.util.List;
 
-public interface DirectTemplateDownloader {
+public class HttpsDirectTemplateDownloaderTest extends BaseDirectTemplateDownloaderTest {
 
-    /**
-     * Perform template download to pool specified on downloader creation
-     * @return (true if successful, false if not, download file path)
-     */
-    Pair<Boolean, String> downloadTemplate();
-
-    /**
-     * Perform checksum validation of previously downloadeed template
-     * @return true if successful, false if not
-     */
-    boolean validateChecksum();
+    @Test
+    public void testGetMetalinkUrls() {
+        List<String> metalinkUrls = httpsDownloader.getMetalinkUrls(httpUrl);
+        Assert.assertTrue(CollectionUtils.isNotEmpty(metalinkUrls));
+        Assert.assertEquals(1, metalinkUrls.size());
+        Assert.assertEquals(httpMetalinkUrl, metalinkUrls.get(0));
+    }
 }
