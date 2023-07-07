@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -865,17 +866,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Configuration updateConfiguration(final UpdateCfgCmd cmd) throws InvalidParameterValueException {
         final Long userId = CallContext.current().getCallingUserId();
         final String name = cmd.getCfgName();
-        String value = cmd.getValue();
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long imageStoreId = cmd.getImageStoreId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
-        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
-        String catergory = null;
+        String category = null;
 
         final Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isDomainAdmin(caller.getId())) {
@@ -894,10 +893,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
                 throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
             }
-            catergory = _configDepot.get(name).category();
+            category = _configDepot.get(name).category();
         } else {
-            catergory = config.getCategory();
+            category = config.getCategory();
         }
+
+        String value = cmd.getValue();
+        boolean isConfigEncrypted = config != null && config.isEncrypted();
+        if (isConfigEncrypted) {
+            value = DBEncryptionUtil.encrypt(value);
+        }
+
+        String eventValue = isConfigEncrypted ? "*****" : Objects.requireNonNullElse(value, "");
+        CallContext.current().setEventDetails(String.format(" Name: %s New Value: %s", name, eventValue));
 
         validateIpAddressRelatedConfigValues(name, value);
 
@@ -953,7 +961,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             value = (id == null) ? null : "";
         }
 
-        final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
+        final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {
