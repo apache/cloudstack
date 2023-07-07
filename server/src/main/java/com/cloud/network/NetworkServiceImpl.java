@@ -83,7 +83,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -146,7 +145,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -161,7 +159,6 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
@@ -379,8 +376,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AccountService _accountService;
     @Inject
-    NetworkAccountDao _networkAccountDao;
-    @Inject
     VirtualMachineManager vmManager;
     @Inject
     Ipv6Service ipv6Service;
@@ -389,15 +384,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AlertManager alertManager;
     @Inject
-    VirtualRouterProviderDao vrProviderDao;
-    @Inject
     DomainRouterDao routerDao;
     @Inject
     DomainRouterJoinDao routerJoinDao;
     @Inject
     CommandSetupHelper commandSetupHelper;
-    @Inject
-    AgentManager agentManager;
     @Inject
     ServiceOfferingDao serviceOfferingDao;
 
@@ -4264,23 +4255,37 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                // delete vlans for this zone
-                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
-                for (VlanVO vlan : vlans) {
-                    _vlanDao.remove(vlan.getId());
-                }
-
-                // Delete networks
-                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
-                if (networks != null && !networks.isEmpty()) {
-                    for (NetworkVO network : networks) {
-                        _networksDao.remove(network.getId());
-                    }
-                }
+                disablePhysicalNetwork(physicalNetworkId, pNetwork);
+                deleteIpAddresses();
+                deleteVlans();
+                deleteNetworks();
 
                 // delete vnets
                 _dcDao.deleteVnet(physicalNetworkId);
 
+                if (!deleteProviders()) {
+                    return false;
+                }
+
+                // delete traffic types
+                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+
+                return _physicalNetworkDao.remove(physicalNetworkId);
+            }
+
+            private void disablePhysicalNetwork(Long physicalNetworkId, PhysicalNetworkVO pNetwork) {
+                pNetwork.setState(PhysicalNetwork.State.Disabled);
+                _physicalNetworkDao.update(physicalNetworkId, pNetwork);
+            }
+
+            private void deleteIpAddresses() {
+                List<IPAddressVO> ipAddresses = _ipAddressDao.listByPhysicalNetworkId(physicalNetworkId);
+                for (IPAddressVO ipaddress : ipAddresses) {
+                    _ipAddressDao.remove(ipaddress.getId());
+                }
+            }
+
+            private boolean deleteProviders() {
                 // delete service providers
                 List<PhysicalNetworkServiceProviderVO> providers = _pNSPDao.listBy(physicalNetworkId);
 
@@ -4295,11 +4300,25 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         return false;
                     }
                 }
+                return true;
+            }
 
-                // delete traffic types
-                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+            private void deleteNetworks() {
+                // Delete networks
+                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
+                if (CollectionUtils.isNotEmpty(networks)) {
+                    for (NetworkVO network : networks) {
+                        _networksDao.remove(network.getId());
+                    }
+                }
+            }
 
-                return _physicalNetworkDao.remove(physicalNetworkId);
+            private void deleteVlans() {
+                // delete vlans for this zone
+                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
+                for (VlanVO vlan : vlans) {
+                    _vlanDao.remove(vlan.getId());
+                }
             }
         });
     }

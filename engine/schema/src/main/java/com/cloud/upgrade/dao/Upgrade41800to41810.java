@@ -60,6 +60,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        fixForeignKeyNames(conn);
         updateGuestOsMappings();
         copyGuestOsMappingsToVMware80u1();
     }
@@ -174,5 +175,31 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         LOG.debug("Copying guest OS mappings from VMware 8.0 to VMware 8.0.1");
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         guestOsMapper.copyGuestOSHypervisorMappings(Hypervisor.HypervisorType.VMware, "8.0", "8.0.1");
+    }
+
+    private void fixForeignKeyNames(Connection conn) {
+        //Alter foreign key name for user_vm table from fk_user_data_id to fk_user_vm__user_data_id (if exists)
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_user_data_id");
+        keys.add("fk_user_vm__user_data_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_vm", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_vm", keys, false);
+        DbUpgradeUtils.addForeignKey(conn, "user_vm", "user_data_id", "user_data", "id");
+
+        //Alter foreign key name for vm_template table from fk_user_data_id to fk_vm_template__user_data_id (if exists)
+        keys = new ArrayList<>();
+        keys.add("fk_user_data_id");
+        keys.add("fk_vm_template__user_data_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_template", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_template", keys, false);
+        DbUpgradeUtils.addForeignKey(conn, "vm_template", "user_data_id", "user_data", "id");
+
+        //Alter foreign key name for volumes table from fk_passphrase_id to fk_volumes__passphrase_id (if exists)
+        keys = new ArrayList<>();
+        keys.add("fk_passphrase_id");
+        keys.add("fk_volumes__passphrase_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.volumes", keys, true);
+        DbUpgradeUtils.dropKeysIfExist(conn, "cloud.volumes", keys, false);
+        DbUpgradeUtils.addForeignKey(conn, "volumes", "passphrase_id","passphrase", "id");
     }
 }
