@@ -21,7 +21,7 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
-import org.apache.cloudstack.api.command.admin.cluster.ExecuteDrsCmd;
+import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlan;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -46,8 +46,8 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
     /**
      * Executes the DRS (Distributed Resource Scheduler) command.
      *
-     * @param cmd the ExecuteDrsCmd object containing the command parameters
+     * @param cmd the GenerateClusterDrsPlan object containing the command parameters
      * @return a SuccessResponse object indicating the success of the operation
      */
-    SuccessResponse executeDrs(ExecuteDrsCmd cmd);
+    SuccessResponse executeDrs(GenerateClusterDrsPlan cmd);
 }

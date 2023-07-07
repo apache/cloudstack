@@ -37,10 +37,10 @@ import javax.inject.Inject;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
-@APICommand(name = "executeDRS", description = "Schedule DRS for a cluster", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
-public class ExecuteDrsCmd extends BaseAsyncCmd {
+@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
+public class GenerateClusterDrsPlan extends BaseAsyncCmd {
 
-    static final Logger LOG = Logger.getLogger(ExecuteDrsCmd.class);
+    static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlan.class);
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long id;

@@ -39,7 +39,7 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.admin.cluster.ExecuteDrsCmd;
+import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlan;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Before;
@@ -79,7 +79,7 @@ public class ClusterDrsServiceImplTest {
     ClusterDrsAlgorithm balancedAlgorithm;
 
     @Mock
-    ExecuteDrsCmd cmd;
+    GenerateClusterDrsPlan cmd;
 
     AutoCloseable closeable;
 
@@ -128,7 +128,7 @@ public class ClusterDrsServiceImplTest {
     @Test
     public void testGetCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
-        cmdList.add(ExecuteDrsCmd.class);
+        cmdList.add(GenerateClusterDrsPlan.class);
         assertEquals(cmdList, clusterDrsService.getCommands());
     }
 
@@ -167,14 +167,14 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(userVmService.migrateVirtualMachine(1L, host2)).thenReturn(vm1);
         Mockito.when(clusterDrsService.getBestMigration(Mockito.any(Cluster.class), Mockito.any(ClusterDrsAlgorithm.class), Mockito.anyList(), Mockito.anyMap())).thenReturn(new Pair<>(host2, vm1));
 
-        int iterations = clusterDrsService.executeDrs(cluster, 0.5);
+        List<Pair<Host, VirtualMachine>> iterations = clusterDrsService.executeDrs(cluster, 0.5);
 
         Mockito.verify(hostDao, Mockito.times(1)).findByClusterId(1L);
         Mockito.verify(vmInstanceDao, Mockito.times(2)).listByClusterId(1L);
         Mockito.verify(balancedAlgorithm, Mockito.times(2)).needsDrs(Mockito.anyLong(), Mockito.anyMap());
         Mockito.verify(userVmService, Mockito.times(1)).migrateVirtualMachine(1L, host2);
 
-        assertEquals(1, iterations);
+        assertEquals(1, iterations.size());
     }
 
     @Test(expected = InvalidParameterValueException.class)
