@@ -3726,7 +3726,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (cmd instanceof PingRoutingCommand) {
                 final PingRoutingCommand ping = (PingRoutingCommand)cmd;
                 if (ping.getHostVmStateReport() != null) {
-                    _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport());
+                    _syncMgr.processHostVmStatePingReport(agentId, ping.getHostVmStateReport(), ping.getOutOfBand());
                 }
 
                 scanStalledVMInTransitionStateOnUpHost(agentId);
