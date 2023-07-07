@@ -60,10 +60,7 @@ public class OvsVifDriver extends VifDriverBase {
             dpdkDriver = new DpdkDriverImpl();
         }
 
-        String controlCidr = (String)params.get("control.cidr");
-        if (StringUtils.isNotBlank(controlCidr)) {
-            _controlCidr = controlCidr;
-        }
+        _controlCidr = getControlCidr(_controlCidr);
 
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
