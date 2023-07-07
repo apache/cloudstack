@@ -252,7 +252,7 @@ class TestSetSourceNatIp(cloudstackTestCase):
         elif vpc:
             list_pub_ip_addr_resp = list_publicIP(
                 self.apiclient,
-                vpc=vpc.id,
+                vpcid=vpc.id,
                 listall=True,
                 issourcenat=True
             )
