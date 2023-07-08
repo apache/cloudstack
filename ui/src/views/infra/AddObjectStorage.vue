@@ -82,7 +82,7 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
-      providers: ['MinIO', 'S3', 'OceanStor'],
+      providers: ['MinIO', 'Simulator'],
       zones: [],
       loading: false
     }

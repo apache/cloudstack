@@ -36,10 +36,6 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "the url of the object store")
     private String url;
 
-    @SerializedName("protocol")
-    @Param(description = "the protocol of the object store")
-    private String protocol;
-
     @SerializedName("providername")
     @Param(description = "the provider name of the object store")
     private String providerName;
@@ -90,14 +86,6 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
 
     public void setProviderName(String providerName) {
         this.providerName = providerName;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
     }
 
     public Long getStorageTotal() {

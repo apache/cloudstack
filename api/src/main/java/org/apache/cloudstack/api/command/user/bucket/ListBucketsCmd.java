@@ -88,7 +88,6 @@ public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCm
 
     @Override
     public void execute() {
-        _bucketService.getBucketUsage();
         ListResponse<BucketResponse> response = _queryService.searchForBuckets(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

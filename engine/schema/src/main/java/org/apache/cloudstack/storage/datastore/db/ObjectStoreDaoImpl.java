@@ -130,7 +130,6 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
         osResponse.setId(store.getUuid());
         osResponse.setName(store.getName());
         osResponse.setProviderName(store.getProviderName());
-        osResponse.setProtocol(store.getProtocol());
         String url = store.getUrl();
         osResponse.setUrl(url);
         osResponse.setObjectName("objectstore");

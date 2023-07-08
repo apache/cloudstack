@@ -44,9 +44,6 @@ public class ObjectStoreVO implements ObjectStore {
     @Column(name = "uuid", nullable = false)
     private String uuid;
 
-    @Column(name = "protocol", nullable = false)
-    private String protocol;
-
     @Column(name = "url", nullable = false, length = 2048)
     private String url;
 
@@ -89,15 +86,6 @@ public class ObjectStoreVO implements ObjectStore {
 
     public void setProviderName(String provider) {
         this.providerName = provider;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
-    @Override
-    public String getProtocol() {
-        return this.protocol;
     }
 
     public void setUuid(String uuid) {

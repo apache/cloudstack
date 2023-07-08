@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 @APICommand(name = UpdateObjectStoragePoolCmd.APINAME, description = "Updates object storage pool", responseObject = ObjectStoreResponse.class, entityType = {ObjectStore.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class UpdateObjectStoragePoolCmd extends BaseCmd {
-    private static final Logger LOG = Logger.getLogger(UpdateObjectStoragePoolCmd.class.getName());
     public static final String APINAME = "updateObjectStoragePool";
 
     /////////////////////////////////////////////////////
@@ -42,6 +41,9 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name for the object store")
     private String name;
+
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the url for the object store")
+    private String url;
 
 
     /////////////////////////////////////////////////////
@@ -54,6 +56,10 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
 
     public String getName() {
         return name;
+    }
+
+    public String getUrl() {
+        return url;
     }
 
     /////////////////////////////////////////////////////

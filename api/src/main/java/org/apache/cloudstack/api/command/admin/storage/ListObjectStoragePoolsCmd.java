@@ -37,9 +37,6 @@ public class ListObjectStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the object store")
     private String storeName;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the object store protocol")
-    private String protocol;
-
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "the object store provider")
     private String provider;
 
@@ -53,10 +50,6 @@ public class ListObjectStoragePoolsCmd extends BaseListCmd {
 
     public String getStoreName() {
         return storeName;
-    }
-
-    public String getProtocol() {
-        return protocol;
     }
 
     public Long getId() {

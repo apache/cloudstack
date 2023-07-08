@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ObjectStore;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
@@ -56,6 +55,9 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
                description = "the details for the object store. Example: details[0].key=accesskey&details[0].value=s389ddssaa&details[1].key=secretkey&details[1].value=8dshfsss")
     private Map details;
 
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the storage pool")
+    private String tags;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,8 +78,8 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
             Iterator<?> iter = props.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> detail = (HashMap<String, String>)iter.next();
-                String key = detail.get("key");
-                String value = detail.get("value");
+                String key = detail.get(ApiConstants.KEY);
+                String value = detail.get(ApiConstants.VALUE);
                 detailsMap.put(key, value);
             }
         }
@@ -122,8 +124,8 @@ public class AddObjectStoragePoolCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add object storage");
             }
-        } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+        } catch (Exception ex) {
+            s_logger.error("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

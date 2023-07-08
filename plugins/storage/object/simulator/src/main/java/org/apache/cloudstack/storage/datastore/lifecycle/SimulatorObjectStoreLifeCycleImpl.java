@@ -76,9 +76,6 @@ public class SimulatorObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
         objectStoreParameters.put("url", url);
-        String protocol = "http";
-
-        objectStoreParameters.put("protocol", protocol);
         objectStoreParameters.put("providerName", providerName);
         objectStoreParameters.put("accesskey", accessKey);
         objectStoreParameters.put("secretkey", secretKey);

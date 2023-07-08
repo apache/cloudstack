@@ -37,48 +37,13 @@ public class ObjectStoreHelper {
     @Inject
     ObjectStoreDetailsDao ObjectStoreDetailsDao;
 
-    public ObjectStoreVO createObjectStore(Map<String, Object> params) {
-        ObjectStoreVO store = ObjectStoreDao.findByName((String)params.get("name"));
-        if (store != null) {
-            return store;
-        }
-        store = new ObjectStoreVO();
-        store.setProtocol((String)params.get("protocol"));
-        store.setProviderName((String)params.get("providerName"));
-        String uuid = (String)params.get("uuid");
-        if (uuid != null) {
-            store.setUuid(uuid);
-        } else {
-            store.setUuid(UUID.randomUUID().toString());
-        }
-        store.setName((String)params.get("name"));
-        if (store.getName() == null) {
-            store.setName(store.getUuid());
-        }
-        store.setUrl((String)params.get("url"));
-        store = ObjectStoreDao.persist(store);
-        return store;
-    }
-
     public ObjectStoreVO createObjectStore(Map<String, Object> params, Map<String, String> details) {
-        ObjectStoreVO store = ObjectStoreDao.findByName((String)params.get("name"));
-        if (store != null) {
-            return store;
-        }
-        store = new ObjectStoreVO();
-        store.setProtocol((String)params.get("protocol"));
+        ObjectStoreVO store = new ObjectStoreVO();
+
         store.setProviderName((String)params.get("providerName"));
-        String uuid = (String)params.get("uuid");
-        if (uuid != null) {
-            store.setUuid(uuid);
-        } else {
-            store.setUuid(UUID.randomUUID().toString());
-        }
+        store.setUuid(UUID.randomUUID().toString());
         store.setUrl((String)params.get("url"));
         store.setName((String)params.get("name"));
-        if (store.getName() == null) {
-            store.setName(store.getUuid());
-        }
 
         store = ObjectStoreDao.persist(store);
 

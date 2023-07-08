@@ -77,9 +77,7 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         Map<String, Object> objectStoreParameters = new HashMap();
         objectStoreParameters.put("name", name);
         objectStoreParameters.put("url", url);
-        String protocol = "http";
 
-        objectStoreParameters.put("protocol", protocol);
         objectStoreParameters.put("providerName", providerName);
         objectStoreParameters.put("accesskey", accessKey);
         objectStoreParameters.put("secretkey", secretKey);
@@ -98,8 +96,8 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             throw new RuntimeException(e);
         }
 
-        ObjectStoreVO ids = objectStoreHelper.createObjectStore(objectStoreParameters, details);
-        return objectStoreMgr.getObjectStore(ids.getId());
+        ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);
+        return objectStoreMgr.getObjectStore(objectStore.getId());
     }
 
     @Override

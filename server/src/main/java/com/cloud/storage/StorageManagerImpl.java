@@ -3649,18 +3649,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
-            throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+            throws IllegalArgumentException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
             throw new InvalidParameterValueException("can't find object store provider: " + providerName);
         }
 
-
-        if (name == null) {
-            name = url;
-        }
-
+        // Check Unique object store name
         ObjectStoreVO objectStore = _objectStoreDao.findByName(name);
         if (objectStore != null) {
             throw new InvalidParameterValueException("The object store with name " + name + " already exists, try creating with another name");
@@ -3725,6 +3721,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         if(cmd.getName() != null ) {
             objectStoreVO.setName(cmd.getName());
+        }
+        if(cmd.getUrl() != null ) {
+            objectStoreVO.setUrl(cmd.getUrl());
         }
         _objectStoreDao.update(id, objectStoreVO);
         s_logger.debug("Successfully updated object store with Id: "+id);
