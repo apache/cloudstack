@@ -589,21 +589,27 @@ class TestRegisteredUserdata(cloudstackTestCase):
             2. Link a userdata to template with override policy is append
             3. Deploy a VM with that template and also by passing another userdata id
             4. Since the override policy is append, userdata passed during VM deployment will be appended to template's
-            userdata and configured to VM. Verify the same by SSH into VM.
+            userdata and configured to VM as a multipart MIME userdata. Verify the same by SSH into VM.
         """
 
+        #   #!/bin/bash
+        #   date > /provisioned
         self.apiUserdata = UserData.register(
             self.apiclient,
             name="ApiUserdata",
-            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            userdata="IyEvYmluL2Jhc2gKZGF0ZSA+IC9wcm92aXNpb25lZA==",
             account=self.account.name,
             domainid=self.account.domainid
         )
 
+        #   #cloud-config
+        #   password: atomic
+        #   chpasswd: { expire: False }
+        #   ssh_pwauth: True
         self.templateUserdata = UserData.register(
             self.apiclient,
             name="TemplateUserdata",
-            userdata="VGVtcGxhdGVVc2VyRGF0YQ==", #TemplateUserData
+            userdata="I2Nsb3VkLWNvbmZpZwpwYXNzd29yZDogYXRvbWljCmNocGFzc3dkOiB7IGV4cGlyZTogRmFsc2UgfQpzc2hfcHdhdXRoOiBUcnVl",
             account=self.account.name,
             domainid=self.account.domainid
         )
@@ -700,10 +706,9 @@ class TestRegisteredUserdata(cloudstackTestCase):
         cmd = "curl http://%s/latest/user-data" % vr_ip
         res = ssh.execute(cmd)
         self.debug("Verifying userdata in the VR")
-        self.assertEqual(
-            str(res[0]),
-            "TemplateUserDataAPIuserdata",
-            "Failed to match userdata"
+        self.assertTrue(
+            "Content-Type: multipart" in str(res[2]),
+            "Failed to match multipart userdata"
         )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)

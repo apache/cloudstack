@@ -123,6 +123,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
@@ -613,6 +614,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     private ManagementService _mgr;
+
+    @Inject
+    private UserDataManager userDataManager;
 
     private static final ConfigKey<Integer> VmIpFetchWaitInterval = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmip.retrieval.interval", "180",
             "Wait Interval (in seconds) for shared network vm dhcp ip addr fetch for next iteration ", true);
@@ -5731,9 +5735,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     if (userDataId != null) {
                         UserData apiUserDataVO = userDataDao.findById(userDataId);
-                        return doConcateUserDatas(templateUserDataVO.getUserData(), apiUserDataVO.getUserData());
+                        return userDataManager.concatenateUserData(templateUserDataVO.getUserData(), apiUserDataVO.getUserData(), null);
                     } else if (StringUtils.isNotEmpty(userData)) {
-                        return doConcateUserDatas(templateUserDataVO.getUserData(), userData);
+                        return userDataManager.concatenateUserData(templateUserDataVO.getUserData(), userData, null);
                     } else {
                         return templateUserDataVO.getUserData();
                     }
@@ -5749,16 +5753,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return null;
-    }
-
-    private String doConcateUserDatas(String userdata1, String userdata2) {
-        byte[] userdata1Bytes = Base64.decodeBase64(userdata1.getBytes());
-        byte[] userdata2Bytes = Base64.decodeBase64(userdata2.getBytes());
-        byte[] finalUserDataBytes = new byte[userdata1Bytes.length + userdata2Bytes.length];
-        System.arraycopy(userdata1Bytes, 0, finalUserDataBytes, 0, userdata1Bytes.length);
-        System.arraycopy(userdata2Bytes, 0, finalUserDataBytes, userdata1Bytes.length, userdata2Bytes.length);
-
-        return Base64.encodeBase64String(finalUserDataBytes);
     }
 
     @Override
