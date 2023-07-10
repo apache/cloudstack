@@ -142,9 +142,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Override
     public void execute() {
         Pair<List<? extends Vpc>, Integer> vpcs =
-            _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(), getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
-                getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(), listAll(), getRestartRequired(), getTags(),
-                getProjectId(), getDisplay());
+            _vpcService.listVpcs(this);
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> vpcResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs.first()) {

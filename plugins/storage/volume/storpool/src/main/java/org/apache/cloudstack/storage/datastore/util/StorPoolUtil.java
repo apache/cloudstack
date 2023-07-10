@@ -54,6 +54,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,7 +69,10 @@ import java.util.UUID;
 public class StorPoolUtil {
     private static final Logger log = Logger.getLogger(StorPoolUtil.class);
 
-    private static final File spLogFile = new File("/var/log/cloudstack/management/storpool-plugin.log");
+    private static final File spLogFile = new File(
+            Files.exists(Paths.get("/var/log/cloudstack/management/")) ?
+                    "/var/log/cloudstack/management/storpool-plugin.log" :
+                    "/tmp/storpool-plugin.log");
     private static PrintWriter spLogPrinterWriter = spLogFileInitialize();
 
     private static PrintWriter spLogFileInitialize() {

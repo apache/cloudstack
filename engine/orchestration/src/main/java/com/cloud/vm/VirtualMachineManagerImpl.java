@@ -212,6 +212,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -457,72 +458,79 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     throws InsufficientCapacityException {
 
         s_logger.info(String.format("allocating virtual machine from template:%s with hostname:%s and %d networks", template.getUuid(), vmInstanceName, auxiliaryNetworks.size()));
+        VMInstanceVO persistedVm = null;
+        try {
+            final VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
+            final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
 
-        final VMInstanceVO vm = _vmDao.findVMByInstanceName(vmInstanceName);
-        final Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Allocating entries for VM: " + vm);
+            }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocating entries for VM: " + vm);
-        }
+            vm.setDataCenterId(plan.getDataCenterId());
+            if (plan.getPodId() != null) {
+                vm.setPodIdToDeployIn(plan.getPodId());
+            }
+            assert plan.getClusterId() == null && plan.getPoolId() == null : "We currently don't support cluster and pool preset yet";
+            persistedVm = _vmDao.persist(vm);
 
-        vm.setDataCenterId(plan.getDataCenterId());
-        if (plan.getPodId() != null) {
-            vm.setPodIdToDeployIn(plan.getPodId());
-        }
-        assert plan.getClusterId() == null && plan.getPoolId() == null : "We currently don't support cluster and pool preset yet";
-        final VMInstanceVO vmFinal = _vmDao.persist(vm);
+            final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(persistedVm, template, serviceOffering, null, null);
 
-        final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmFinal, template, serviceOffering, null, null);
+            Long rootDiskSize = rootDiskOfferingInfo.getSize();
+            if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null && SystemVmRootDiskSize.value() > 0L) {
+                rootDiskSize = SystemVmRootDiskSize.value();
+            }
+            final Long rootDiskSizeFinal = rootDiskSize;
 
-        Long rootDiskSize = rootDiskOfferingInfo.getSize();
-        if (vm.getType().isUsedBySystem() && SystemVmRootDiskSize.value() != null && SystemVmRootDiskSize.value() > 0L) {
-            rootDiskSize = SystemVmRootDiskSize.value();
-        }
-        final Long rootDiskSizeFinal = rootDiskSize;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Allocating nics for " + persistedVm);
+            }
 
-        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) throws InsufficientCapacityException {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Allocating nics for " + vmFinal);
+            try {
+                if (!vmProfile.getBootArgs().contains("ExternalLoadBalancerVm")) {
+                    _networkMgr.allocate(vmProfile, auxiliaryNetworks, extraDhcpOptions);
                 }
+            } catch (final ConcurrentOperationException e) {
+                throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
+            }
 
-                try {
-                    if (!vmProfile.getBootArgs().contains("ExternalLoadBalancerVm")) {
-                        _networkMgr.allocate(vmProfile, auxiliaryNetworks, extraDhcpOptions);
-                    }
-                } catch (final ConcurrentOperationException e) {
-                    throw new CloudRuntimeException("Concurrent operation while trying to allocate resources for the VM", e);
-                }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Allocating disks for " + persistedVm);
+            }
 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Allocating disks for " + vmFinal);
-                }
+            allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
 
-                allocateRootVolume(vmFinal, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
-
-                if (dataDiskOfferings != null) {
-                    for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
-                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), vmFinal, template, owner, null);
-                    }
-                }
-                if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
-                    int diskNumber = 1;
-                    for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
-                        DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
-                        long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
-                        VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
-                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vmFinal.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
-                                vmFinal, dataDiskTemplate, owner, Long.valueOf(diskNumber));
-                        diskNumber++;
-                    }
+            if (dataDiskOfferings != null) {
+                for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
+                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                            dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
                 }
             }
-        });
+            if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
+                int diskNumber = 1;
+                for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
+                    DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
+                    long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
+                    VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
+                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
+                            persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
+                    diskNumber++;
+                }
+            }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Allocation completed for VM: " + vmFinal);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Allocation completed for VM: " + persistedVm);
+            }
+        } catch (InsufficientCapacityException | CloudRuntimeException e) {
+            // Failed VM will be in Stopped. Transition it to Error, so it can be expunged by ExpungeTask or similar
+            try {
+                if (persistedVm != null) {
+                    stateTransitTo(persistedVm, VirtualMachine.Event.OperationFailedToError, null);
+                }
+            } catch (NoTransitionException nte) {
+                s_logger.error(String.format("Failed to transition %s in %s state to Error state", persistedVm, persistedVm.getState().toString()));
+            }
+            throw e;
         }
     }
 
@@ -1054,6 +1062,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    protected void checkAndAttemptMigrateVmAcrossCluster(final VMInstanceVO vm, final Long destinationClusterId, final Map<Volume, StoragePool> volumePoolMap) {
+        if (!HypervisorType.VMware.equals(vm.getHypervisorType()) || vm.getLastHostId() == null) {
+            return;
+        }
+        Host lastHost = _hostDao.findById(vm.getLastHostId());
+        if (destinationClusterId.equals(lastHost.getClusterId())) {
+            return;
+        }
+        if (volumePoolMap.values().stream().noneMatch(s -> destinationClusterId.equals(s.getClusterId()))) {
+            return;
+        }
+        Answer[] answer = attemptHypervisorMigration(vm, volumePoolMap, lastHost.getId());
+        if (answer == null) {
+            s_logger.warn("Hypervisor inter-cluster migration during VM start failed");
+            return;
+        }
+        // Other network related updates will be done using caller
+        markVolumesInPool(vm, answer);
+    }
+
     @Override
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
@@ -1227,6 +1255,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     resetVmNicsDeviceId(vm.getId());
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
+                        checkAndAttemptMigrateVmAcrossCluster(vm, cluster_id, dest.getStorageForDisks());
                         volumeMgr.prepare(vmProfile, dest);
                     }
 
@@ -2355,7 +2384,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 return  _agentMgr.send(hostId, commandsContainer);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
-                throw new CloudRuntimeException(String.format("Failed to migrate VM: %s", vm.getUuid()),e);
+                s_logger.warn(String.format("Hypervisor migration failed for the VM: %s", vm), e);
             }
         }
         return null;
@@ -2904,7 +2933,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      *  </ul>
      */
     protected void executeManagedStorageChecksWhenTargetStoragePoolProvided(StoragePoolVO currentPool, VolumeVO volume, StoragePoolVO targetPool) {
-        if (!currentPool.isManaged()) {
+        if (!currentPool.isManaged() || currentPool.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             return;
         }
         if (currentPool.getId() == targetPool.getId()) {
@@ -5712,8 +5741,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new Pair<>(clusterId, hostId);
     }
 
-    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
-        Long hostId = vm.getHostId();
+    @Override
+    public Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm, boolean skipCurrentHostForStartingVm) {
+        Long hostId = null;
+        if (!skipCurrentHostForStartingVm || !State.Starting.equals(vm.getState())) {
+            hostId = vm.getHostId();
+        }
         Long clusterId = null;
         if(hostId == null) {
             hostId = vm.getLastHostId();
@@ -5729,6 +5762,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             clusterId = host.getClusterId();
         }
         return new Pair<>(clusterId, hostId);
+    }
+
+    private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
+        return findClusterAndHostIdForVm(vm, false);
     }
 
     @Override

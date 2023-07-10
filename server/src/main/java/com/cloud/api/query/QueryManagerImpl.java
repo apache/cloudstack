@@ -973,7 +973,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
-        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        ListResponse<UserVmResponse> response = new ListResponse<>();
+
+        if (cmd.getRetrieveOnlyResourceCount()) {
+            response.setResponses(new ArrayList<>(), result.second());
+            return response;
+        }
+
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -2062,7 +2068,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd) {
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
-        ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
+        ListResponse<VolumeResponse> response = new ListResponse<>();
+
+        if (cmd.getRetrieveOnlyResourceCount()) {
+            response.setResponses(new ArrayList<>(), result.second());
+            return response;
+        }
 
         ResponseView respView = cmd.getResponseView();
         Account account = CallContext.current().getCallingAccount();
