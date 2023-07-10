@@ -37,7 +37,6 @@ import javax.mail.internet.MimeMultipart;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -59,8 +58,6 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
             Map.entry(FormatType.CLOUD_BOOTHOOK, CLOUD_BOOTHOOK_CONTENT_TYPE),
             Map.entry(FormatType.INCLUDE_FILE, INCLUDE_FILE_CONTENT_TYPE)
     );
-
-    private static final Logger LOGGER = Logger.getLogger(CloudInitUserDataProvider.class);
 
     private static final Session session = Session.getDefaultInstance(new Properties());
 
@@ -109,7 +106,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         } else {
             String msg = String.format("Cannot recognise the user data format type from the header line: %s." +
                     "Supported types are: cloud-config, bash script, cloud-boothook, include file or MIME", header);
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
@@ -121,7 +118,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     protected FormatType getUserDataFormatType(String userdata) {
         if (StringUtils.isBlank(userdata)) {
             String msg = "User data expected but provided empty user data";
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -201,7 +198,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         } catch (MessagingException | IOException | CloudRuntimeException e) {
             String msg = String.format("Error attempting to merge user data as a multipart user data. " +
                     "Reason: %s", e.getMessage());
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
     }
