@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -69,10 +68,7 @@ public class IvsVifDriver extends VifDriverBase {
         }
         _ivsIfUpPath = Script.findScript(utilScriptsDir, "qemu-ivs-ifup");
 
-        String controlCidr = (String)params.get("control.cidr");
-        if (StringUtils.isNotBlank(controlCidr)) {
-            _controlCidr = controlCidr;
-        }
+        _controlCidr = getControlCidr(_controlCidr);
     }
 
     @Override

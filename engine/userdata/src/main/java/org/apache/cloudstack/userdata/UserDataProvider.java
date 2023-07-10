@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,31 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.userdata;
 
-package com.cloud.storage;
+public interface UserDataProvider {
+    String getName();
 
-import java.io.File;
-import java.io.IOException;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-public class JavaStorageLayerTest {
-
-    JavaStorageLayer jsl = new JavaStorageLayer();
-
-    @Test
-    public void createUniqDir() {
-
-        try {
-            File one = jsl.createUniqDir();
-            Assert.assertTrue(one.isDirectory());
-            Assert.assertTrue(one.canRead());
-            Assert.assertTrue(one.canWrite());
-            Assert.assertTrue(one.canExecute());
-        } catch (IOException e) {
-            Assert.fail("creation of a unique dir should succeed.");
-        }
-    }
+    /**
+     * Append user data into a single user data.
+     * NOTE: userData1 and userData2 are decoded user data strings
+     * @return a non-encrypted string containing both user data inputs
+     */
+    String appendUserData(String userData1, String userData2);
 }
