@@ -164,6 +164,11 @@ export default {
           message: 'message.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
+          filters: (record) => {
+            var filters = []
+            filters.push({ key: 'templateid', value: { hypervisortype: record.hypervisor } })
+            return filters
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
           mapping: {
             virtualmachineid: {
