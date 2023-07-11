@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -50,28 +53,37 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     @Override
-    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
+    public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
         if (CollectionUtils.isNotEmpty(vmGroupMappings)) {
             for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-                processAffinityGroup(vmGroupMapping, plan, vm);
+                processAffinityGroup(vmGroupMapping, plan, vm, vmList);
             }
         }
     }
 
+
     /**
      * Process Affinity Group for VM deployment
      */
-    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm, List<VirtualMachine> vmList) {
         AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
         s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
 
         List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
         groupVMIds.remove(vm.getId());
 
-        List<Long> preferredHosts = getPreferredHostsFromGroupVMIds(groupVMIds);
+        List<Long> preferredHosts = getPreferredHostsFromGroupVMIds(groupVMIds, vmList);
         plan.setPreferredHosts(preferredHosts);
+    }
+
+
+    /**
+     * Process Affinity Group for VM deployment
+     */
+    protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
+        processAffinityGroup(vmGroupMapping, plan, vm, Collections.emptyList());
     }
 
     /**
@@ -88,9 +100,40 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         return hostIds;
     }
 
+    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
+        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
+        for (VirtualMachine vm : vmList) {
+            vmIdVmMap.put(vm.getId(), vm);
+        }
+        return vmIdVmMap;
+    }
+
+    /**
+     * Get host ids set from vm ids list
+     */
+    protected Set<Long> getHostIdSet(List<Long> vmIds, List<VirtualMachine> vmList) {
+        Set<Long> hostIds = new HashSet<>();
+        Map<Long, VirtualMachine> vmIdVmMap = getVmIdVmMap(vmList);
+        for (Long groupVMId : vmIds) {
+            VirtualMachine groupVM = vmIdVmMap.get(groupVMId);
+            if (groupVM == null) {
+                groupVM = _vmInstanceDao.findById(groupVMId);
+            }
+
+            if (groupVM != null && groupVM.getHostId() != null) {
+                hostIds.add(groupVM.getHostId());
+            }
+        }
+        return hostIds;
+    }
+
     /**
      * Get preferred host ids list from the affinity group VMs
      */
+    protected List<Long> getPreferredHostsFromGroupVMIds(List<Long> vmIds, List<VirtualMachine> vmList) {
+        return new ArrayList<>(getHostIdSet(vmIds, vmList));
+    }
+
     protected List<Long> getPreferredHostsFromGroupVMIds(List<Long> vmIds) {
         return new ArrayList<>(getHostIdSet(vmIds));
     }

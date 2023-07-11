@@ -41,7 +41,8 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @return true if a DRS operation is needed, false otherwise
      * @throws ConfigurationException if there is an error in the configuration
      */
-    boolean needsDrs(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap) throws ConfigurationException;
+    boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException;
+
 
     /**
      * Returns the metrics for a given cluster, host-VM mapping, virtual machine,
@@ -55,7 +56,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @param requiresStorageMotion true if storage motion is required
      * @return Ternary object containing improvement, cost, benefit
      */
-    Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion);
+    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
 
     /**
      * Mean is the average of a collection or set of metrics. In context of a DRS

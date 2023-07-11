@@ -20,7 +20,6 @@
 package org.apache.cloudstack.cluster;
 
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -51,15 +50,7 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public boolean needsDrs(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap) throws ConfigurationException {
-        Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);
-        List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
-        List<Long> cpuList = new ArrayList<>();
-        List<Long> memoryList = new ArrayList<>();
-        for (HostJoinVO host : hostList) {
-            cpuList.add(host.getCpuUsedCapacity());
-            memoryList.add(host.getMemUsedCapacity());
-        }
+    public boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException {
         Double cpuImbalance = getClusterImbalance(cpuList);
         Double memoryImbalance = getClusterImbalance(memoryList);
         Double threshold = ClusterDrsThreshold.valueIn(clusterId);
@@ -79,29 +70,32 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public Ternary<Double, Double, Double> getMetrics(long clusterId, Map<Long, List<VirtualMachine>> hostVmMap, VirtualMachine vm, Host destHost, Boolean requiresStorageMotion) {
-        Long[] hostIdList = hostVmMap.keySet().toArray(new Long[hostVmMap.size()]);
+    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion) {
         List<Long> cpuList = new ArrayList<>();
         List<Long> memoryList = new ArrayList<>();
         List<Long> postCpuList = new ArrayList<>();
         List<Long> postMemoryList = new ArrayList<>();
         ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
-        List<HostJoinVO> hostList = hostJoinDao.searchByIds(hostIdList);
-        for (HostJoinVO host : hostList) {
-            cpuList.add(host.getCpuUsedCapacity());
-            memoryList.add(host.getMemUsedCapacity());
-        }
 
-        for (HostJoinVO host : hostList) {
-            if (host.getId() == destHost.getId()) {
-                postCpuList.add(host.getCpuUsedCapacity() + serviceOffering.getCpu());
-                postMemoryList.add(host.getMemUsedCapacity() + serviceOffering.getRamSize());
-            } else if (host.getId() == vm.getHostId()) {
-                postCpuList.add(host.getCpuUsedCapacity() - serviceOffering.getCpu());
-                postMemoryList.add(host.getMemUsedCapacity() - serviceOffering.getRamSize());
+        for (Long hostId : hostCpuUsedMap.keySet()) {
+            long cpu = hostCpuUsedMap.get(hostId);
+            long memory = hostMemoryUsedMap.get(hostId);
+            if (hostId == destHost.getId()) {
+                if (memory + serviceOffering.getRamSize() > destHost.getTotalMemory()) {
+                    return new Ternary<>(-1.0, 1.0, -1.0);
+                }
+                // TODO: Revisit this check for overcommitting of resources
+                if (cpu + serviceOffering.getCpu() > destHost.getCpus()) {
+                    return new Ternary<>(-1.0, 1.0, -1.0);
+                }
+                postCpuList.add(cpu + serviceOffering.getCpu());
+                postMemoryList.add(memory + serviceOffering.getRamSize());
+            } else if (hostId.equals(vm.getHostId())) {
+                postCpuList.add(cpu - serviceOffering.getCpu());
+                postMemoryList.add(memory - serviceOffering.getRamSize());
             } else {
-                postCpuList.add(host.getCpuUsedCapacity());
-                postMemoryList.add(host.getMemUsedCapacity());
+                postCpuList.add(cpu);
+                postMemoryList.add(memory);
             }
         }
 

@@ -6294,6 +6294,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds) {
+        // Validation
+        if (vmIds.isEmpty()) {
+            throw new InvalidParameterValueException("vmIds cannot be empty");
+        } else if (hostIds.isEmpty()) {
+            throw new InvalidParameterValueException("hostIds cannot be empty");
+        } else if (hostIds.size() != vmIds.size()) {
+            throw new InvalidParameterValueException("Size of hostIds & vmIds should be same");
+        }
+
+        List<VirtualMachine> vmList = new ArrayList<>();
+
+        for (int i = 0; i < vmIds.size(); i++){
+            long hostId = hostIds.get(i);
+            long vmId = vmIds.get(i);
+
+            HostVO host = _hostDao.findById(hostId);
+            try {
+                // TODO: Create async job for each VM migration and run them sequentially
+                vmList.add(migrateVirtualMachine(vmId, host));
+                s_logger.debug("Migrated vm: " + vmId + " to host: " + hostId);
+            } catch (Exception e) {
+                s_logger.debug("Failed to migrate vm: " + vmId + " to host: " + hostId + " due to " + e.getMessage());
+            }
+        }
+
+        return vmList;
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
     VirtualMachineMigrationException {

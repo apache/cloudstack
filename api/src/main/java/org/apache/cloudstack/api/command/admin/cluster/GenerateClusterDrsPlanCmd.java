@@ -19,28 +19,33 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
-import com.cloud.event.EventTypes;
-import com.cloud.org.Cluster;
+import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.DrsPlanResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
 @APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
-public class GenerateClusterDrsPlan extends BaseAsyncCmd {
+public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
-    static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlan.class);
+    static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlanCmd.class);
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
     private Long id;
@@ -63,19 +68,17 @@ public class GenerateClusterDrsPlan extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_CLUSTER_DRS;
-    }
-
-    @Override
-    public String getEventDescription() {
-        Cluster cluster = _resourceService.getCluster(getId());
-        return "Scheduling DRS for cluster: " + cluster.getUuid();
-    }
-
-    @Override
     public void execute() {
-        final SuccessResponse response = clusterDrsService.executeDrs(this);
+        final List<Pair<Host, VirtualMachine>> plan = clusterDrsService.generateDrsPlan(this);
+        final List<DrsPlanResponse> responseList = new ArrayList<>();
+        for (Pair<Host, VirtualMachine> pair : plan) {
+            final DrsPlanResponse response = new DrsPlanResponse(pair.first().getUuid(), pair.second().getUuid());
+            response.setObjectName("drsplan");
+            response.setResponseName(getCommandName());
+            responseList.add(response);
+        }
+        ListResponse<DrsPlanResponse> response = new ListResponse<>();
+        response.setResponses(responseList);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

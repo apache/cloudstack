@@ -19,12 +19,16 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.host.Host;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
-import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlan;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+
+import java.util.List;
 
 public interface ClusterDrsService extends Manager, Configurable, Scheduler {
 
@@ -46,8 +50,8 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
     /**
      * Executes the DRS (Distributed Resource Scheduler) command.
      *
-     * @param cmd the GenerateClusterDrsPlan object containing the command parameters
+     * @param cmd the GenerateClusterDrsPlanCmd object containing the command parameters
      * @return a SuccessResponse object indicating the success of the operation
      */
-    SuccessResponse executeDrs(GenerateClusterDrsPlan cmd);
+    List<Pair<Host, VirtualMachine>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
 }

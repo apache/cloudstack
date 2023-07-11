@@ -21,7 +21,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import java.util.List;
 
 public interface AffinityGroupProcessor extends Adapter {
 
@@ -36,7 +39,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * @param avoid
      *            avoid these data centers, pods, clusters, or hosts.
      */
-    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException;
+    void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid, List<VirtualMachine> vmList) throws AffinityConflictException;
 
     /**
      * getType() should return the affinity/anti-affinity group being

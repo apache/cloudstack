@@ -19,6 +19,9 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.ActionEvent;
@@ -33,8 +36,10 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementServer;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
@@ -45,14 +50,12 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmService;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlan;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.cluster.dao.ClusterDrsEventsDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -71,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import static com.cloud.org.Grouping.AllocationState.Disabled;
 import static java.lang.Math.round;
@@ -83,7 +87,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     ClusterDao clusterDao;
 
     @Inject
+    CapacityDao capacityDao;
+
+    @Inject
     HostDao hostDao;
+
+    @Inject
+    HostJoinDao hostJoinDao;
 
     @Inject
     VMInstanceDao vmInstanceDao;
@@ -93,6 +103,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     ClusterDrsEventsDao drsEventsDao;
+
+    @Inject
+    ServiceOfferingDao serviceOfferingDao;
 
     @Inject
     ManagementServer managementServer;
@@ -179,18 +192,17 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
-        cmdList.add(GenerateClusterDrsPlan.class);
+        cmdList.add(GenerateClusterDrsPlanCmd.class);
         return cmdList;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Executing DRS", async = true)
-    public SuccessResponse executeDrs(GenerateClusterDrsPlan cmd) {
+    public List<Pair<Host, VirtualMachine>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + cmd.getId());
         }
-        SuccessResponse response = new SuccessResponse();
         if (cluster.getAllocationState() == Disabled) {
             throw new InvalidParameterValueException(String.format("Unable to execute DRS on the cluster %s as it is disabled", cluster.getName()));
         }
@@ -201,27 +213,16 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             throw new InvalidParameterValueException(String.format("Unable to execute DRS on the cluster %s as the number of iterations [%s] is invalid", cluster.getName(), cmd.getIterations()));
         }
 
-        CallContext.current().setEventResourceId(cluster.getId());
-        CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);
         try {
-            List<Pair<Host, VirtualMachine>> plan = getDrsPlan(cluster, cmd.getIterations());
-            int iterations = executeDrsPlan(plan);
-
-            drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), CallContext.current().getStartEventId(), new Date(), iterations, ClusterDrsEvents.Type.MANUAL, ClusterDrsEvents.Result.SUCCESS));
-            CallContext.current().setEventDescription(String.format("Executed %d iterations for cluster %s", iterations, cluster.getName()));
-            response.setDisplayText(String.format("Executed %d iterations for cluster %s", iterations, cluster.getName()));
-            response.setSuccess(true);
-            CallContext.current().setEventResourceId(cluster.getId());
-            CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);
-            return response;
+            return getDrsPlan(cluster, cmd.getIterations());
         } catch (ConfigurationException e) {
-            drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), CallContext.current().getStartEventId(), new Date(), null, ClusterDrsEvents.Type.MANUAL, ClusterDrsEvents.Result.FAILURE));
             throw new CloudRuntimeException("Unable to schedule DRS", e);
         }
 
     }
 
     int executeDrsPlan(List<Pair<Host, VirtualMachine>> plan) {
+        // TODO: Create an async MigrateMultipleVM job instead
         int successCount = 0;
         for (Pair<Host, VirtualMachine> migration : plan) {
             if (migrateVM(migration.second(), migration.first())) {
@@ -246,38 +247,53 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         // time on the same cluster
         GlobalLock lock = GlobalLock.getInternLock("cluster.drs." + cluster.getId());
         List<Pair<Host, VirtualMachine>> migrationPlan = new ArrayList<>();
-        try {
-            if (lock.lock(30)) {
-                try {
-                    if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || iterationPercentage <= 0) {
-                        return Collections.emptyList();
-                    }
-                    ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
-                    List<HostVO> hostList = hostDao.findByClusterId(cluster.getId());
-                    List<VMInstanceVO> vmList = vmInstanceDao.listByClusterId(cluster.getId());
-                    int iteration = 0;
-                    long maxIterations = Math.max(round(iterationPercentage * vmList.size()), 1);
 
+        if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || iterationPercentage <= 0) {
+            return Collections.emptyList();
+        }
+        ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
+        List<HostVO> hostList = hostDao.findByClusterId(cluster.getId());
+        List<VirtualMachine> vmList = new ArrayList<>(vmInstanceDao.listByClusterId(cluster.getId()));
 
-                    Map<Long, List<VirtualMachine>> originalHostVmMap = getHostVmMap(hostList, vmList);
-                    Map<Long, List<VirtualMachine>> hostVmMap = originalHostVmMap;
-                    while (algorithm.needsDrs(cluster.getId(), hostVmMap) && iteration < maxIterations) {
-                        Pair<Host, VirtualMachine> bestMigration = getBestMigration(cluster, algorithm, vmList, hostVmMap);
-                        Host destHost = bestMigration.first();
-                        VirtualMachine vm = bestMigration.second();
-                        if (destHost == null || vm == null || originalHostVmMap.get(destHost.getId()).contains(vm)) {
-                            break;
-                        }
-                        hostVmMap = getHostVmMapAfterMigration(hostVmMap, vm, vm.getHostId(), destHost.getId());
-                        migrationPlan.add(bestMigration);
-                        iteration++;
-                    }
-                } finally {
-                    lock.unlock();
-                }
+        int iteration = 0;
+        long maxIterations = Math.max(round(iterationPercentage * vmList.size()), 1);
+
+        Map<Long, List<VirtualMachine>> hostVmMap = getHostVmMap(hostList, vmList);
+        Map<Long, List<Long>> originalHostIdVmIdMap = new HashMap<>();
+        for (HostVO host : hostList) {
+            originalHostIdVmIdMap.put(host.getId(), new ArrayList<>());
+            for (VirtualMachine vm : hostVmMap.get(host.getId())) {
+                originalHostIdVmIdMap.get(host.getId()).add(vm.getId());
             }
-        } finally {
-            lock.releaseRef();
+        }
+
+        List<HostJoinVO> hostJoinList = hostJoinDao.searchByIds(hostList.stream().map(HostVO::getId).toArray(Long[]::new));
+
+        Map<Long, Long> hostCpuCapacityMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId, HostJoinVO::getCpuUsedCapacity));
+        Map<Long, Long> hostMemoryCapacityMap = hostJoinList.stream().collect(Collectors.toMap(HostJoinVO::getId, HostJoinVO::getMemUsedCapacity));
+
+        while (iteration < maxIterations && algorithm.needsDrs(cluster.getId(), new ArrayList<>(hostCpuCapacityMap.values()), new ArrayList<>(hostMemoryCapacityMap.values()))) {
+            Pair<Host, VirtualMachine> bestMigration = getBestMigration(cluster, algorithm, vmList, hostVmMap, hostCpuCapacityMap, hostMemoryCapacityMap);
+            Host destHost = bestMigration.first();
+            VirtualMachine vm = bestMigration.second();
+            if (destHost == null || vm == null || originalHostIdVmIdMap.get(destHost.getId()).contains(vm.getId())) {
+                logger.debug("VM migrating to it's original host or no host found for migration");
+                break;
+            }
+
+            ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+
+            hostVmMap = getHostVmMapAfterMigration(hostVmMap, vm, vm.getHostId(), destHost.getId());
+            hostVmMap.get(vm.getHostId()).remove(vm);
+            hostVmMap.get(destHost.getId()).add(vm);
+
+            hostCpuCapacityMap.put(vm.getHostId(), hostCpuCapacityMap.get(vm.getHostId()) - serviceOffering.getCpu());
+            hostCpuCapacityMap.put(destHost.getId(), hostCpuCapacityMap.get(destHost.getId()) + serviceOffering.getCpu());
+            hostMemoryCapacityMap.put(vm.getHostId(), hostMemoryCapacityMap.get(vm.getHostId()) - serviceOffering.getRamSize());
+            hostMemoryCapacityMap.put(destHost.getId(), hostMemoryCapacityMap.get(destHost.getId()) + serviceOffering.getRamSize());
+            vm.setHostId(destHost.getId());
+            migrationPlan.add(bestMigration);
+            iteration++;
         }
         return migrationPlan;
     }
@@ -310,7 +326,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return hostVmMap;
     }
 
-    Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VMInstanceVO> vmList) {
+    Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VirtualMachine> vmList) {
         Map<Long, List<VirtualMachine>> hostVmMap = new HashMap<>();
         for (HostVO host : hostList) {
             hostVmMap.put(host.getId(), new ArrayList<>());
@@ -331,17 +347,17 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * @param hostVmMap The map of hosts to VMs.
      * @return the best migration for the given cluster, algorithm, VM list and host
      */
-    Pair<Host, VirtualMachine> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VMInstanceVO> vmList, Map<Long, List<VirtualMachine>> hostVmMap) {
+    Pair<Host, VirtualMachine> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VirtualMachine> vmList, Map<Long, List<VirtualMachine>> hostVmMap, Map<Long, Long> hostCpuCapacityMap, Map<Long, Long> hostMemoryCapacityMap) {
         double maxImprovement = 0;
         Pair<Host, VirtualMachine> bestMigration = new Pair<>(null, null);
 
         for (VirtualMachine vm : vmList) {
-            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm.getId(), 0L, (long) hostVmMap.size(), null);
+            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm, 0L, (long) hostVmMap.size(), null, vmList);
             List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
 
             for (Host destHost : compatibleDestinationHosts) {
-                Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), hostVmMap, vm, destHost, requiresStorageMotion.get(destHost));
+                Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), vm, destHost, hostCpuCapacityMap, hostMemoryCapacityMap, requiresStorageMotion.get(destHost));
 
                 Double improvement = metrics.first();
                 Double cost = metrics.second();
