@@ -1088,7 +1088,7 @@ export default {
         }
         this.setRules(param)
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param, this.currentAction.paramFilters[param])
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
         }
       }
       this.actionLoading = false
@@ -1146,7 +1146,9 @@ export default {
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
-      // add filters
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {

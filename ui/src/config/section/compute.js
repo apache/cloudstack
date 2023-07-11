@@ -165,8 +165,11 @@ export default {
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
           filters: (record) => {
-            var filters = []
-            filters.push({ key: 'templateid', value: { hypervisortype: record.hypervisor } })
+            var filters = {}
+            var filterParams = {}
+            filterParams.hypervisortype = record.hypervisor
+            filterParams.zoneid = record.zoneid
+            filters.templateid = filterParams
             return filters
           },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
