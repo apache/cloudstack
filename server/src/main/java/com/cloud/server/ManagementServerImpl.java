@@ -278,6 +278,7 @@ import org.apache.cloudstack.api.command.admin.vm.DestroyVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.GetVMUserDataCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vm.MigrateMultipleVMsCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVirtualMachineWithVolumeCmd;
 import org.apache.cloudstack.api.command.admin.vm.RebootVMCmdByAdmin;
@@ -3506,6 +3507,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReleasePublicIpRangeCmd.class);
         cmdList.add(AssignVMCmd.class);
         cmdList.add(MigrateVMCmd.class);
+        cmdList.add(MigrateMultipleVMsCmd.class);
         cmdList.add(MigrateVirtualMachineWithVolumeCmd.class);
         cmdList.add(RecoverVMCmd.class);
         cmdList.add(CreatePrivateGatewayCmd.class);

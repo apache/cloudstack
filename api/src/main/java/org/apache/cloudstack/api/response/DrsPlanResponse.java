@@ -25,16 +25,21 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 public class DrsPlanResponse extends BaseResponse {
-    @SerializedName(ApiConstants.HOST_ID)
+    @SerializedName("destinationhostid")
     @Param(description = "POST url to upload the file to")
-    String hostId;
+    String destHostId;
+
+    @SerializedName("sourcehostid")
+    @Param(description = "POST url to upload the file to")
+    String srcHostId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "POST url to upload the file to")
     String vmId;
 
-    public DrsPlanResponse(String hostId, String vmId) {
-        this.hostId = hostId;
+    public DrsPlanResponse(String vmId, String srcHostId, String destHostId) {
         this.vmId = vmId;
+        this.srcHostId = srcHostId;
+        this.destHostId = destHostId;
     }
 }

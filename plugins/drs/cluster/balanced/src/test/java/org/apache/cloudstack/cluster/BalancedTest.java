@@ -19,11 +19,10 @@
 
 package org.apache.cloudstack.cluster;
 
-import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.host.Host;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
@@ -46,6 +45,10 @@ import java.util.Map;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshold;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BalancedTest {
@@ -57,17 +60,20 @@ public class BalancedTest {
 
     Host destHost;
 
-    HostJoinVO host1, host2;
+    ServiceOfferingVO serviceOffering;
 
     long clusterId = 1L;
 
     Map<Long, List<VirtualMachine>> hostVmMap;
 
+    List<Long> cpuList, memoryList;
+
+    Map<Long, Long> hostCpuUsedMap, hostMemoryUsedMap;
+
+
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
 
-    @Mock
-    private HostJoinDao hostJoinDao;
 
     private AutoCloseable closeable;
 
@@ -81,38 +87,32 @@ public class BalancedTest {
         vm3 = Mockito.mock(VirtualMachine.class); // vm to migrate
 
         destHost = Mockito.mock(Host.class);
-        host1 = Mockito.mock(HostJoinVO.class); // Dest host
-        host2 = Mockito.mock(HostJoinVO.class);
-
         hostVmMap = new HashMap<>();
         hostVmMap.put(1L, Collections.singletonList(vm1));
         hostVmMap.put(2L, Arrays.asList(vm2, vm3));
 
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         Mockito.when(vm3.getHostId()).thenReturn(2L);
-
-        Mockito.when(hostJoinDao.searchByIds(1L, 2L)).thenReturn(Arrays.asList(host1, host2));
-
-        Mockito.when(host1.getId()).thenReturn(1L);
-        Mockito.when(host1.getCpuUsedCapacity()).thenReturn(1L);
-        Mockito.when(host1.getMemUsedCapacity()).thenReturn(512L);
-
-        Mockito.when(host2.getId()).thenReturn(2L);
-        Mockito.when(host2.getCpuUsedCapacity()).thenReturn(2L);
-        Mockito.when(host2.getMemUsedCapacity()).thenReturn(2048L);
 
         Mockito.when(destHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getTotalMemory()).thenReturn(8192L);
-
-        Mockito.when(vm3.getId()).thenReturn(3L);
-        Mockito.when(vm3.getHostId()).thenReturn(2L);
-        Mockito.when(vm3.getServiceOfferingId()).thenReturn(1L);
+        Mockito.when(destHost.getTotalMemory()).thenReturn(8192L * 1024L * 1024L);
 
         Mockito.when(serviceOffering.getCpu()).thenReturn(1);
+        Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
         Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
 
-        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(3L, 1L)).thenReturn(serviceOffering);
         overrideDefaultConfigValue(ClusterDrsThreshold, "_defaultValue", "0.5");
+
+        cpuList = Arrays.asList(1L, 2L);
+        memoryList = Arrays.asList(512L, 2048L);
+
+        hostCpuUsedMap = new HashMap<>();
+        hostCpuUsedMap.put(1L, 1000L);
+        hostCpuUsedMap.put(2L, 2000L);
+
+        hostMemoryUsedMap = new HashMap<>();
+        hostMemoryUsedMap.put(1L, 512L * 1024L * 1024L);
+        hostMemoryUsedMap.put(2L, 2048L * 1024L * 1024L);
     }
 
     @After
@@ -127,7 +127,7 @@ public class BalancedTest {
     }
 
     /**
-     * <b>getMetrics tests</b>
+     * <b>needsDrs tests</b>
      * <p>Scenarios to test for needsDrs
      * <p>1. cluster with cpu metric
      * <p>2. cluster with memory metric
@@ -146,7 +146,7 @@ public class BalancedTest {
     @Test
     public void needsDrsWithCpu() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-//        assertFalse(balanced.needsDrs(clusterId, hostVmMap));
+        assertFalse(balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
     /*
@@ -156,7 +156,7 @@ public class BalancedTest {
     @Test
     public void needsDrsWithMemory() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-//        assertTrue(balanced.needsDrs(clusterId, hostVmMap));
+        assertTrue(balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
     /*
@@ -166,7 +166,7 @@ public class BalancedTest {
     @Test
     public void needsDrsWithBoth() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-//        assertFalse(balanced.needsDrs(clusterId, hostVmMap));
+        assertFalse(balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
     /*
@@ -176,14 +176,14 @@ public class BalancedTest {
     @Test
     public void needsDrsWithEither() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "either");
-//        assertTrue(balanced.needsDrs(clusterId, hostVmMap));
+        assertTrue(balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
     /* 5. cluster with "unknown" metric */
     @Test
     public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");
-//        assertThrows(ConfigurationException.class, () -> balanced.needsDrs(clusterId, hostVmMap));
+        assertThrows(ConfigurationException.class, () -> balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
     /**
@@ -212,10 +212,10 @@ public class BalancedTest {
     @Test
     public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-//        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
-//        assertEquals(0.0, result.first(), 0.0001);
-//        assertEquals(512.0, result.second(), 0.0);
-//        assertEquals(3276.8, result.third(), 0.001);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        assertEquals(0.0, result.first(), 0.0001);
+        assertEquals(512.0, result.second(), 0.0);
+        assertEquals(3276.8, result.third(), 0.001);
     }
 
     /*
@@ -225,10 +225,10 @@ public class BalancedTest {
     @Test
     public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-//        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
-//        assertEquals(0.4, result.first(), 0.01);
-//        assertEquals(512.0, result.second(), 0.0);
-//        assertEquals(3276.8, result.third(), 0.001);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        assertEquals(0.4, result.first(), 0.01);
+        assertEquals(512.0, result.second(), 0.0);
+        assertEquals(3276.8, result.third(), 0.001);
     }
 
     /*
@@ -238,9 +238,9 @@ public class BalancedTest {
     @Test
     public void getMetricsWithDefault() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-//        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, hostVmMap, vm3, destHost, false);
-//        assertEquals(0.4, result.first(), 0.001);
-//        assertEquals(512.0, result.second(), 0.0);
-//        assertEquals(3276.8, result.third(), 0.001);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        assertEquals(0.4, result.first(), 0.001);
+        assertEquals(512.0, result.second(), 0.0);
+        assertEquals(3276.8, result.third(), 0.001);
     }
 }

@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.cluster;
 
+import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -28,9 +30,12 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.server.ManagementServer;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GlobalLock;
@@ -62,6 +67,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -87,10 +93,13 @@ public class ClusterDrsServiceImplTest {
     private ClusterDao clusterDao;
 
     @Mock
-    private UserVmService userVmService;
+    private HostDao hostDao;
 
     @Mock
-    private HostDao hostDao;
+    private HostJoinDao hostJoinDao;
+
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
 
     @Mock
     private VMInstanceDao vmInstanceDao;
@@ -157,22 +166,41 @@ public class ClusterDrsServiceImplTest {
         hostList.add(host1);
         hostList.add(host2);
 
+        HostJoinVO hostJoin1 = Mockito.mock(HostJoinVO.class);
+        Mockito.when(hostJoin1.getId()).thenReturn(1L);
+        Mockito.when(hostJoin1.getCpuUsedCapacity()).thenReturn(1000L);
+        Mockito.when(hostJoin1.getCpuReservedCapacity()).thenReturn(0L);
+        Mockito.when(hostJoin1.getMemUsedCapacity()).thenReturn(1024L);
+        Mockito.when(hostJoin1.getMemReservedCapacity()).thenReturn(512L);
+
+        HostJoinVO hostJoin2 = Mockito.mock(HostJoinVO.class);
+        Mockito.when(hostJoin2.getId()).thenReturn(2L);
+        Mockito.when(hostJoin2.getCpuUsedCapacity()).thenReturn(1000L);
+        Mockito.when(hostJoin2.getCpuReservedCapacity()).thenReturn(0L);
+        Mockito.when(hostJoin2.getMemUsedCapacity()).thenReturn(1024L);
+        Mockito.when(hostJoin2.getMemReservedCapacity()).thenReturn(512L);
+
         List<VMInstanceVO> vmList = new ArrayList<>();
         vmList.add(vm1);
         vmList.add(vm2);
 
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOffering.getCpu()).thenReturn(1);
+        Mockito.when(serviceOffering.getRamSize()).thenReturn(1024);
+        Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
+
         Mockito.when(hostDao.findByClusterId(1L)).thenReturn(hostList);
         Mockito.when(vmInstanceDao.listByClusterId(1L)).thenReturn(vmList);
         Mockito.when(balancedAlgorithm.needsDrs(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList())).thenReturn(true, false);
-        Mockito.when(userVmService.migrateVirtualMachine(1L, host2)).thenReturn(vm1);
-        Mockito.when(clusterDrsService.getBestMigration(Mockito.any(Cluster.class), Mockito.any(ClusterDrsAlgorithm.class), Mockito.anyList(), Mockito.anyMap(), Mockito.anyMap(), Mockito.anyMap())).thenReturn(new Pair<>(host2, vm1));
+        Mockito.when(clusterDrsService.getBestMigration(Mockito.any(Cluster.class), Mockito.any(ClusterDrsAlgorithm.class), Mockito.anyList(), Mockito.anyMap(), Mockito.anyMap(), Mockito.anyMap())).thenReturn(new Pair<>(vm1, host2));
+        Mockito.when(serviceOfferingDao.findByIdIncludingRemoved(Mockito.anyLong(), Mockito.anyLong())).thenReturn(serviceOffering);
+        Mockito.when(hostJoinDao.searchByIds(host1.getId(), host2.getId())).thenReturn(List.of(hostJoin1, hostJoin2));
 
-        List<Pair<Host, VirtualMachine>> iterations = clusterDrsService.getDrsPlan(cluster, 0.5);
+        List<Ternary<VirtualMachine, Host, Host>> iterations = clusterDrsService.getDrsPlan(cluster, 0.5);
 
         Mockito.verify(hostDao, Mockito.times(1)).findByClusterId(1L);
-        Mockito.verify(vmInstanceDao, Mockito.times(2)).listByClusterId(1L);
-        Mockito.verify(balancedAlgorithm, Mockito.times(2)).needsDrs(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList());
-        Mockito.verify(userVmService, Mockito.times(1)).migrateVirtualMachine(1L, host2);
+        Mockito.verify(vmInstanceDao, Mockito.times(1)).listByClusterId(1L);
+        Mockito.verify(balancedAlgorithm, Mockito.times(1)).needsDrs(Mockito.anyLong(), Mockito.anyList(), Mockito.anyList());
 
         assertEquals(1, iterations.size());
     }
@@ -258,13 +286,23 @@ public class ClusterDrsServiceImplTest {
         hostVmMap.get(host.getId()).add(vm1);
         hostVmMap.get(host.getId()).add(vm2);
 
-        Mockito.when(managementServer.listHostsForMigrationOfVM(vm1.getId(), 0L, (long) hostVmMap.size(), null)).thenReturn(new Ternary<>(null, List.of(destHost), Map.of(destHost, false)));
-        Mockito.when(managementServer.listHostsForMigrationOfVM(vm2.getId(), 0L, (long) hostVmMap.size(), null)).thenReturn(new Ternary<>(null, Collections.emptyList(), Collections.emptyMap()));
-        Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm1, destHost, Mockito.anyMap(),Mockito.anyMap(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
+        Map<Long, ServiceOffering> vmIdServiceOfferingMap = new HashMap<>();
 
-//        Pair<Host, VirtualMachine> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm, vmList, hostVmMap);
+        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+        for (VirtualMachine vm : vmList) {
 
-//        assertEquals(destHost, bestMigration.first());
-//        assertEquals(vm1, bestMigration.second());
+            vmIdServiceOfferingMap.put(vm.getId(), serviceOffering);
+        }
+
+        Map<Long, Long> hostCpuMap = new HashMap<>();
+
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vm1, 0L, null, null, vmList)).thenReturn(new Ternary<>(null, List.of(destHost), Map.of(destHost, false)));
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vm2, 0L, null, null, vmList)).thenReturn(new Ternary<>(null, Collections.emptyList(), Collections.emptyMap()));
+        Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm1, serviceOffering, destHost, new HashMap<>(), new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
+
+        Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm, vmList, vmIdServiceOfferingMap, new HashMap<>(), new HashMap<>());
+
+        assertEquals(destHost, bestMigration.second());
+        assertEquals(vm1, bestMigration.first());
     }
 }

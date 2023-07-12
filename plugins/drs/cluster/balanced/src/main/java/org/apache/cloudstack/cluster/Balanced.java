@@ -19,15 +19,13 @@
 
 package org.apache.cloudstack.cluster;
 
-import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +35,6 @@ import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshold;
 
 public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
-
-    @Inject
-    ServiceOfferingDao serviceOfferingDao;
-
-    @Inject
-    HostJoinDao hostJoinDao;
 
     @Override
     public String getName() {
@@ -70,42 +62,16 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     @Override
-    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion) {
-        List<Long> cpuList = new ArrayList<>();
-        List<Long> memoryList = new ArrayList<>();
-        List<Long> postCpuList = new ArrayList<>();
-        List<Long> postMemoryList = new ArrayList<>();
-        ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion) {
+        Double preCpuImbalance = getClusterImbalance(new ArrayList<>(hostCpuUsedMap.values()));
+        Double preMemoryImbalance = getClusterImbalance(new ArrayList<>(hostMemoryUsedMap.values()));
 
-        for (Long hostId : hostCpuUsedMap.keySet()) {
-            long cpu = hostCpuUsedMap.get(hostId);
-            long memory = hostMemoryUsedMap.get(hostId);
-            if (hostId == destHost.getId()) {
-                if (memory + serviceOffering.getRamSize() > destHost.getTotalMemory()) {
-                    return new Ternary<>(-1.0, 1.0, -1.0);
-                }
-                // TODO: Revisit this check for overcommitting of resources
-                if (cpu + serviceOffering.getCpu() > destHost.getCpus()) {
-                    return new Ternary<>(-1.0, 1.0, -1.0);
-                }
-                postCpuList.add(cpu + serviceOffering.getCpu());
-                postMemoryList.add(memory + serviceOffering.getRamSize());
-            } else if (hostId.equals(vm.getHostId())) {
-                postCpuList.add(cpu - serviceOffering.getCpu());
-                postMemoryList.add(memory - serviceOffering.getRamSize());
-            } else {
-                postCpuList.add(cpu);
-                postMemoryList.add(memory);
-            }
-        }
-
-        Double preCpuImbalance = getClusterImbalance(cpuList);
-        Double preMemoryImbalance = getClusterImbalance(memoryList);
-        Double postCpuImbalance = getClusterImbalance(postCpuList);
-        Double postMemoryImbalance = getClusterImbalance(postMemoryList);
+        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuUsedMap, hostMemoryUsedMap);
+        Double postCpuImbalance = imbalancePair.first();
+        Double postMemoryImbalance = imbalancePair.second();
 
         double cost = serviceOffering.getRamSize();
-        double benefit = (preMemoryImbalance - postMemoryImbalance) * destHost.getTotalMemory();
+        double benefit = (preMemoryImbalance - postMemoryImbalance) * destHost.getTotalMemory() / (1024L * 1024L);
 
         String metric = ClusterDrsMetric.valueIn(clusterId);
         final double improvement;

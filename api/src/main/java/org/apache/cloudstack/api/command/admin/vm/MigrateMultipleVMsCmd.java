@@ -52,7 +52,7 @@ public class MigrateMultipleVMsCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID,
+    @Parameter(name = ApiConstants.HOST_IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = HostResponse.class,
@@ -60,7 +60,7 @@ public class MigrateMultipleVMsCmd extends BaseAsyncCmd {
             description = "Destination Host ID to migrate VM to.")
     private List<Long> hostIdList;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_IDS,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = UserVmResponse.class,

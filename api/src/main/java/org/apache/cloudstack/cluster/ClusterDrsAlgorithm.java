@@ -20,6 +20,8 @@
 package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
@@ -27,6 +29,7 @@ import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +59,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @param requiresStorageMotion true if storage motion is required
      * @return Ternary object containing improvement, cost, benefit
      */
-    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
+    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
 
     /**
      * Mean is the average of a collection or set of metrics. In context of a DRS
@@ -102,5 +105,29 @@ public interface ClusterDrsAlgorithm extends Adapter {
         Double clusterMeanMetric = getClusterMeanMetric(metricList);
         Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
         return clusterStandardDeviation / clusterMeanMetric;
+    }
+
+
+    default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap) {
+        List<Long> postCpuList = new ArrayList<>();
+        List<Long> postMemoryList = new ArrayList<>();
+        final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
+        final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
+
+        for (Long hostId : hostCpuUsedMap.keySet()) {
+            long cpu = hostCpuUsedMap.get(hostId);
+            long memory = hostMemoryUsedMap.get(hostId);
+            if (hostId == destHost.getId()) {
+                postCpuList.add(cpu + vmCpu);
+                postMemoryList.add(memory + vmRam);
+            } else if (hostId.equals(vm.getHostId())) {
+                postCpuList.add(cpu - vmCpu);
+                postMemoryList.add(memory - vmRam);
+            } else {
+                postCpuList.add(cpu);
+                postMemoryList.add(memory);
+            }
+        }
+        return new Pair<>(getClusterImbalance(postCpuList), getClusterImbalance(postMemoryList));
     }
 }

@@ -21,7 +21,7 @@ package org.apache.cloudstack.api.command.admin.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -69,10 +69,10 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        final List<Pair<Host, VirtualMachine>> plan = clusterDrsService.generateDrsPlan(this);
+        final List<Ternary<VirtualMachine, Host, Host>> plan = clusterDrsService.generateDrsPlan(this);
         final List<DrsPlanResponse> responseList = new ArrayList<>();
-        for (Pair<Host, VirtualMachine> pair : plan) {
-            final DrsPlanResponse response = new DrsPlanResponse(pair.first().getUuid(), pair.second().getUuid());
+        for (Ternary<VirtualMachine, Host, Host> ternary : plan) {
+            final DrsPlanResponse response = new DrsPlanResponse(ternary.first().getUuid(), ternary.second().getUuid(), ternary.third().getUuid());
             response.setObjectName("drsplan");
             response.setResponseName(getCommandName());
             responseList.add(response);

@@ -20,7 +20,7 @@
 package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
 import com.cloud.vm.VirtualMachine;
@@ -53,5 +53,5 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
      * @param cmd the GenerateClusterDrsPlanCmd object containing the command parameters
      * @return a SuccessResponse object indicating the success of the operation
      */
-    List<Pair<Host, VirtualMachine>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
+    List<Ternary<VirtualMachine, Host, Host>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
 }

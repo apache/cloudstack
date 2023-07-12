@@ -6305,15 +6305,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<VirtualMachine> vmList = new ArrayList<>();
+        Map<Long, Host> hostMap = new HashMap<>();
+        for (Long hostId : hostIds) {
+            if (hostMap.get(hostId) == null) {
+                Host host = _hostDao.findById(hostId);
+                if (host == null) {
+                    throw new InvalidParameterValueException("Unable to find host with id: " + hostId);
+                }
+                hostMap.put(hostId, host);
+            }
+        }
 
         for (int i = 0; i < vmIds.size(); i++){
             long hostId = hostIds.get(i);
             long vmId = vmIds.get(i);
 
-            HostVO host = _hostDao.findById(hostId);
             try {
                 // TODO: Create async job for each VM migration and run them sequentially
-                vmList.add(migrateVirtualMachine(vmId, host));
+                vmList.add(migrateVirtualMachine(vmId, hostMap.get(hostId)));
                 s_logger.debug("Migrated vm: " + vmId + " to host: " + hostId);
             } catch (Exception e) {
                 s_logger.debug("Failed to migrate vm: " + vmId + " to host: " + hostId + " due to " + e.getMessage());
