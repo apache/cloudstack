@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.userdata;
 
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class UserDataManagerImpl extends ManagerBase implements UserDataManager {
     private List<UserDataProvider> userDataProviders;
@@ -71,12 +72,8 @@ public class UserDataManagerImpl extends ManagerBase implements UserDataManager 
 
     @Override
     public String concatenateUserData(String userdata1, String userdata2, String userdataProvider) {
-        byte[] userdata1Bytes = Base64.decodeBase64(userdata1.getBytes());
-        byte[] userdata2Bytes = Base64.decodeBase64(userdata2.getBytes());
-        String userData1Str = new String(userdata1Bytes);
-        String userData2Str = new String(userdata2Bytes);
         UserDataProvider provider = getUserdataProvider(userdataProvider);
-        String appendUserData = provider.appendUserData(userData1Str, userData2Str);
+        String appendUserData = provider.appendUserData(userdata1, userdata2);
         return Base64.encodeBase64String(appendUserData.getBytes());
     }
 }

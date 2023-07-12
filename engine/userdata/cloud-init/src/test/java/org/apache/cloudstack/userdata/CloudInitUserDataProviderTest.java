@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,8 +63,42 @@ public class CloudInitUserDataProviderTest {
                 "ssh_pwauth: True";
         String vmData = "#!/bin/bash\n" +
                 "date > /provisioned";
-        String multipartUserData = provider.appendUserData(templateData, vmData);
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()), Base64.encodeBase64String(vmData.getBytes()));
         Assert.assertTrue(multipartUserData.contains("Content-Type: multipart"));
+    }
+
+    @Test
+    public void testAppendSameShellScriptTypeUserData() {
+        String templateData = "#!/bin/bash\n" +
+                "mkdir /tmp/test";
+        String vmData = "#!/bin/bash\n" +
+                "date > /provisioned";
+        String result = "#!/bin/bash\n" +
+                "mkdir /tmp/test\n" +
+                "\n" +
+                "date > /provisioned";
+        String appendUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()), Base64.encodeBase64String(vmData.getBytes()));
+        Assert.assertEquals(result, appendUserData);
+    }
+
+    @Test
+    public void testAppendSameCloudConfigTypeUserData() {
+        String templateData = "#cloud-config\n" +
+                "password: atomic\n" +
+                "chpasswd: { expire: False }\n" +
+                "ssh_pwauth: True";
+        String vmData = "#cloud-config\n" +
+                "runCmd:" +
+                "- mkdir /tmp/test";
+        String result = "#cloud-config\n" +
+                "password: atomic\n" +
+                "chpasswd: { expire: False }\n" +
+                "ssh_pwauth: True\n" +
+                "\n" +
+                "runCmd:" +
+                "- mkdir /tmp/test";
+        String appendUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()), Base64.encodeBase64String(vmData.getBytes()));
+        Assert.assertEquals(result, appendUserData);
     }
 
     @Test
@@ -87,7 +122,7 @@ public class CloudInitUserDataProviderTest {
                 "package_upgrade: true";
         String vmData = "#!/bin/bash\n" +
                 "date > /provisioned";
-        String multipartUserData = provider.appendUserData(templateData, vmData);
+        String multipartUserData = provider.appendUserData(Base64.encodeBase64String(templateData.getBytes()), Base64.encodeBase64String(vmData.getBytes()));
         Assert.assertTrue(multipartUserData.contains("Content-Type: multipart"));
     }
 
@@ -106,7 +141,7 @@ public class CloudInitUserDataProviderTest {
         Assert.assertFalse(provider.isGZipped(CLOUD_CONFIG_USERDATA));
     }
 
-    private String createGzipDataAsString() throws IOException {
+    private String createBase64EncodedGzipDataAsString() throws IOException {
         byte[] input = CLOUD_CONFIG_USERDATA.getBytes(StandardCharsets.ISO_8859_1);
 
         ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
@@ -114,13 +149,13 @@ public class CloudInitUserDataProviderTest {
         outputStream.write(input,0, input.length);
         outputStream.close();
 
-        return arrayOutputStream.toString(StandardCharsets.ISO_8859_1);
+        return Base64.encodeBase64String(arrayOutputStream.toByteArray());
     }
 
     @Test
     public void testIsGzippedUserDataWithValidGzipData() {
         try {
-            String gzipped = createGzipDataAsString();
+            String gzipped = createBase64EncodedGzipDataAsString();
             Assert.assertTrue(provider.isGZipped(gzipped));
         } catch (IOException e) {
             Assert.fail(e.getMessage());
@@ -130,7 +165,7 @@ public class CloudInitUserDataProviderTest {
     @Test(expected = CloudRuntimeException.class)
     public void testAppendUserDataWithGzippedData() {
         try {
-            provider.appendUserData(CLOUD_CONFIG_USERDATA, createGzipDataAsString());
+            provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()), createBase64EncodedGzipDataAsString());
             Assert.fail("Gzipped data shouldn't be appended with other data");
         } catch (IOException e) {
             Assert.fail("Exception encountered: " + e.getMessage());

@@ -19,7 +19,6 @@ package org.apache.cloudstack.userdata;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -69,11 +69,11 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         return "cloud-init";
     }
 
-    protected boolean isGZipped(String userdata) {
-        if (StringUtils.isEmpty(userdata)) {
+    protected boolean isGZipped(String encodedUserdata) {
+        if (StringUtils.isEmpty(encodedUserdata)) {
             return false;
         }
-        byte[] data = userdata.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] data = Base64.decodeBase64(encodedUserdata);
         if (data.length < 2) {
             return false;
         }
@@ -82,9 +82,6 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     }
 
     protected String extractUserDataHeader(String userdata) {
-        if (isGZipped(userdata)) {
-            throw new CloudRuntimeException("Gzipped user data can not be used together with other user data formats");
-        }
         List<String> lines = Arrays.stream(userdata.split("\n"))
                 .filter(x -> (x.startsWith("#") && !x.startsWith("##")) || (x.startsWith("Content-Type:")))
                 .collect(Collectors.toList());
@@ -186,12 +183,27 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         newMessage.setContent(messageContent);
         return newMessage;
     }
+    private String simpleAppendSameFormatTypeUserData(String userData1, String userData2) {
+        return String.format("%s\n\n%s", userData1, userData2.substring(userData2.indexOf('\n')+1));
+    }
+
+    private void checkGzipAppend(String encodedUserData1, String encodedUserData2) {
+        if (isGZipped(encodedUserData1) || isGZipped(encodedUserData2)) {
+            throw new CloudRuntimeException("Gzipped user data can not be used together with other user data formats");
+        }
+    }
 
     @Override
-    public String appendUserData(String userData1, String userData2) {
+    public String appendUserData(String encodedUserData1, String encodedUserData2) {
         try {
+            checkGzipAppend(encodedUserData1, encodedUserData2);
+            String userData1 = new String(Base64.decodeBase64(encodedUserData1));
+            String userData2 = new String(Base64.decodeBase64(encodedUserData2));
             FormatType formatType1 = getUserDataFormatType(userData1);
             FormatType formatType2 = getUserDataFormatType(userData2);
+            if (formatType1.equals(formatType2) && List.of(FormatType.CLOUD_CONFIG, FormatType.BASH_SCRIPT).contains(formatType1)) {
+                return simpleAppendSameFormatTypeUserData(userData1, userData2);
+            }
             MimeMessage message = new MimeMessage(session);
             message = createMultipartMessageAddingUserdata(userData1, formatType1, message);
             message = createMultipartMessageAddingUserdata(userData2, formatType2, message);
