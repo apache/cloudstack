@@ -535,6 +535,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public long findCorrectResourceLimitForAccountAndDomain(Account account, Domain domain, ResourceType type) {
+        long maxSecondaryStorageForAccount = findCorrectResourceLimitForAccount(account, type);
+        long maxSecondaryStorageForDomain = findCorrectResourceLimitForDomain(domain, type);
+
+        return Math.min(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
+    }
+
+    @Override
     @DB
     public void checkResourceLimit(final Account account, final ResourceType type, long... count) throws ResourceAllocationException {
         final long numResources = ((count.length == 0) ? 1 : count[0]);
