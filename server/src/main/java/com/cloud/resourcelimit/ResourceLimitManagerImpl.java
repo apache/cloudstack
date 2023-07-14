@@ -539,6 +539,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long maxSecondaryStorageForAccount = findCorrectResourceLimitForAccount(account, type);
         long maxSecondaryStorageForDomain = findCorrectResourceLimitForDomain(domain, type);
 
+        if (maxSecondaryStorageForDomain == Resource.RESOURCE_UNLIMITED || maxSecondaryStorageForAccount == Resource.RESOURCE_UNLIMITED) {
+            return Math.max(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
+        }
+
         return Math.min(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
     }
 
