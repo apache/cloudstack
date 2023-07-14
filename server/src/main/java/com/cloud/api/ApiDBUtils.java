@@ -1831,6 +1831,10 @@ public class ApiDBUtils {
         return s_userVmJoinDao.newUserVmView(userVms);
     }
 
+    public static List<UserVmJoinVO> newUserVmView(VirtualMachine... userVms) {
+        return s_userVmJoinDao.newUserVmView(userVms);
+    }
+
     public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {
         return s_securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
     }

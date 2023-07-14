@@ -23,23 +23,37 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.ResponseObject;
 
 public class DrsPlanResponse extends BaseResponse {
-    @SerializedName("destinationhostid")
-    @Param(description = "POST url to upload the file to")
-    String destHostId;
+//    @SerializedName("destinationhostid")
+//    @Param(description = "POST url to upload the file to")
+//    String destHostId;
+//
+//    @SerializedName("sourcehostid")
+//    @Param(description = "POST url to upload the file to")
+//    String srcHostId;
+//
+//    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+//    @Param(description = "POST url to upload the file to")
+//    String vmId;
 
-    @SerializedName("sourcehostid")
+    @SerializedName(ApiConstants.VM)
     @Param(description = "POST url to upload the file to")
-    String srcHostId;
+    ResponseObject vm;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @SerializedName("sourcehost")
     @Param(description = "POST url to upload the file to")
-    String vmId;
+    ResponseObject srcHost;
 
-    public DrsPlanResponse(String vmId, String srcHostId, String destHostId) {
-        this.vmId = vmId;
-        this.srcHostId = srcHostId;
-        this.destHostId = destHostId;
+    @SerializedName("destinationhost")
+    @Param(description = "POST url to upload the file to")
+    ResponseObject destHost;
+
+
+    public DrsPlanResponse(ResponseObject vm, ResponseObject srcHost, ResponseObject destHost) {
+        this.vm = vm;
+        this.srcHost = srcHost;
+        this.destHost = destHost;
     }
 }

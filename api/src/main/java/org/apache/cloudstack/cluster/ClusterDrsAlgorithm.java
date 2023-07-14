@@ -48,16 +48,16 @@ public interface ClusterDrsAlgorithm extends Adapter {
 
 
     /**
-     * Returns the metrics for a given cluster, host-VM mapping, virtual machine,
-     * destination host, and whether storage motion is required.
+     * Determines the metrics for a given virtual machine and destination host in a DRS cluster.
      *
-     * @param clusterId             the ID of the cluster
-     * @param hostVmMap             a map of host IDs to lists of VMs running on
-     *                              each host
-     * @param vm                    VM to be migrated
-     * @param destHost              destination host
-     * @param requiresStorageMotion true if storage motion is required
-     * @return Ternary object containing improvement, cost, benefit
+     * @param clusterId             the ID of the cluster to check
+     * @param vm                    the virtual machine to check
+     * @param serviceOffering       the service offering for the virtual machine
+     * @param destHost              the destination host for the virtual machine
+     * @param hostCpuUsedMap        a map of host IDs to the amount of CPU used on each host
+     * @param hostMemoryUsedMap     a map of host IDs to the amount of memory used on each host
+     * @param requiresStorageMotion whether or not storage motion is required for the virtual machine
+     * @return a ternary containing improvement, cost, benefit
      */
     Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
 
@@ -108,6 +108,16 @@ public interface ClusterDrsAlgorithm extends Adapter {
     }
 
 
+    /**
+     * Calculates the imbalance of the cluster after a virtual machine migration.
+     *
+     * @param serviceOffering   the service offering for the virtual machine
+     * @param vm                the virtual machine being migrated
+     * @param destHost          the destination host for the virtual machine
+     * @param hostCpuUsedMap    a map of host IDs to the amount of CPU used on each host
+     * @param hostMemoryUsedMap a map of host IDs to the amount of memory used on each host
+     * @return a pair containing the CPU and memory imbalance of the cluster after the migration
+     */
     default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap) {
         List<Long> postCpuList = new ArrayList<>();
         List<Long> postMemoryList = new ArrayList<>();

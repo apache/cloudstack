@@ -453,7 +453,7 @@ public interface UserVmService {
     VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
-    public List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+    public List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds, Long clusterId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
             VirtualMachineMigrationException;
 
     /**

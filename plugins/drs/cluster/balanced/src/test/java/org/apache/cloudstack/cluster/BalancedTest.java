@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshold;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -101,7 +101,7 @@ public class BalancedTest {
         Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
         Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
 
-        overrideDefaultConfigValue(ClusterDrsThreshold, "_defaultValue", "0.5");
+        overrideDefaultConfigValue(ClusterDrsLevel, "_defaultValue", "5");
 
         cpuList = Arrays.asList(1L, 2L);
         memoryList = Arrays.asList(512L, 2048L);

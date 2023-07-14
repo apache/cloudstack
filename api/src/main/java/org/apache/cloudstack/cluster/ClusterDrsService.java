@@ -43,7 +43,7 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
     // TODO: Check if we can populate available algorithms as part of the description
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm", ConfigKey.CATEGORY_ADVANCED, "condensed", "DRS algorithm to execute on the cluster.", true, ConfigKey.Scope.Cluster, null);
 
-    ConfigKey<Double> ClusterDrsThreshold = new ConfigKey<>(Double.class, "drs.imbalance.threshold", ConfigKey.CATEGORY_ADVANCED, "0.5", "The cluster imbalance threshold (percentage as a value between 0 and 1) that is compared with the standard deviation percentage for a resource pool (cluster) utilization metric.", true, ConfigKey.Scope.Cluster, null);
+    ConfigKey<Integer> ClusterDrsLevel = new ConfigKey<>(Integer.class, "drs.level", ConfigKey.CATEGORY_ADVANCED, "5", "The level of DRS to perform on cluster.", true, ConfigKey.Scope.Cluster, null, null, null, null, null, ConfigKey.Kind.Select, "1,2,3,4,5,6,7,8,9,10");
 
     ConfigKey<String> ClusterDrsMetric = new ConfigKey<>(String.class, "drs.imbalance.metric", ConfigKey.CATEGORY_ADVANCED, "cpu", "The cluster imbalance metric to use when checking the drs.imbalance.threshold. Possible values are memory, cpu, either (cpu OR memory crosses the threshold), both (cpu AND memory crosses the threshold).", true, ConfigKey.Scope.Cluster, null, null, null, null, null, ConfigKey.Kind.Select, "memory,cpu,either,both");
 

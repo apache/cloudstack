@@ -28,11 +28,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -52,14 +48,12 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.vm.MigrateMultipleVMsCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.cluster.dao.ClusterDrsEventsDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -67,6 +61,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
@@ -90,9 +85,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     private static final Logger logger = Logger.getLogger(ClusterDrsServiceImpl.class);
 
-    @Inject
     AsyncJobDispatcher asyncJobDispatcher;
 
+    @Inject
     AsyncJobManager asyncJobManager;
 
     @Inject
@@ -122,6 +117,14 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     List<ClusterDrsAlgorithm> drsAlgorithms = new ArrayList<>();
 
     Map<String, ClusterDrsAlgorithm> drsAlgorithmMap = new HashMap<>();
+
+    public AsyncJobDispatcher getAsyncJobDispatcher() {
+        return asyncJobDispatcher;
+    }
+
+    public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
+        asyncJobDispatcher = dispatcher;
+    }
 
     public void setDrsAlgorithms(final List<ClusterDrsAlgorithm> drsAlgorithms) {
         this.drsAlgorithms = drsAlgorithms;
@@ -195,7 +198,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{ClusterDrsEventsExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsThreshold, ClusterDrsMetric};
+        return new ConfigKey<?>[]{ClusterDrsEventsExpireInterval, ClusterDrsEnabled, ClusterDrsInterval, ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsLevel, ClusterDrsMetric};
     }
 
     @Override
@@ -206,7 +209,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Executing DRS", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Generating DRS plan", async = true)
     public List<Ternary<VirtualMachine, Host, Host>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
@@ -230,11 +233,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     }
 
-    int executeDrsPlan(Long clusterId, List<Ternary<VirtualMachine, Host, Host>> plan) {
-        // TODO: Create an async MigrateMultipleVM job instead
-        int successCount = 0;
-        List<Long> destHostIdList = new ArrayList<Long>();
-        List<Long> vmIdList = new ArrayList<Long>();
+    long executeDrsPlan(Long clusterId, List<Ternary<VirtualMachine, Host, Host>> plan) {
+        List<Long> destHostIdList = new ArrayList<>();
+        List<Long> vmIdList = new ArrayList<>();
         for (Ternary<VirtualMachine, Host, Host> migration : plan) {
             destHostIdList.add(migration.third().getId());
             vmIdList.add(migration.first().getId());
@@ -252,24 +253,19 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, MigrateMultipleVMsCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params), clusterId, ApiCommandResourceType.Cluster.toString(), null);
         job.setDispatcher(asyncJobDispatcher.getName());
 
-        asyncJobManager.submitAsyncJob(job);
-
-        return successCount;
+        return asyncJobManager.submitAsyncJob(job);
     }
 
     /**
-     * Executes DRS for the given cluster with the specified iteration percentage
-     * and algorithm.
+     * Generate DRS plan for the given cluster with the specified iteration percentage.
      *
      * @param cluster             The cluster to execute DRS on.
      * @param iterationPercentage The percentage of VMs to consider for migration
      *                            during each iteration.
-     * @return The number of iterations executed.
+     * @return List of Ternary object containing VM to be migrated, source host and destination host.
      * @throws ConfigurationException If there is an error in the DRS configuration.
      */
     List<Ternary<VirtualMachine, Host, Host>> getDrsPlan(Cluster cluster, double iterationPercentage) throws ConfigurationException {
-        // Take a lock on drs for a cluster to avoid automatic & ad hoc drs at the same
-        // time on the same cluster
         List<Ternary<VirtualMachine, Host, Host>> migrationPlan = new ArrayList<>();
 
         if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || iterationPercentage <= 0) {
@@ -334,28 +330,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return migrationPlan;
     }
 
-    // TODO: Create an async job and track the job status
-    private boolean migrateVM(VirtualMachine vm, Host destHost) {
-        try {
-            CallContext.current().setEventResourceId(vm.getId());
-            CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
-
-            VirtualMachine newVm = userVmService.migrateVirtualMachine(vm.getId(), destHost);
-            if (newVm.getHostId() != destHost.getId()) {
-                return false;
-            }
-
-            logger.debug("Migrated VM " + vm.getInstanceName() + " from host " + vm.getHostId() + " to host " + destHost.getId());
-            return true;
-        } catch (ResourceUnavailableException e) {
-            logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
-        } catch (VirtualMachineMigrationException | ConcurrentOperationException | ManagementServerException e) {
-            logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
-
     Map<Long, List<VirtualMachine>> getHostVmMap(List<HostVO> hostList, List<VirtualMachine> vmList) {
         Map<Long, List<VirtualMachine>> hostVmMap = new HashMap<>();
         for (HostVO host : hostList) {
@@ -368,20 +342,34 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     /**
-     * Returns the best migration for the given cluster, algorithm, VM list and host
-     * VM map.
+     * Returns the best migration for a given cluster using the specified DRS algorithm.
      *
-     * @param cluster   The cluster to execute DRS on.
-     * @param algorithm The DRS algorithm to use.
-     * @param vmList    The list of VMs to consider for migration.
-     * @param hostVmMap The map of hosts to VMs.
-     * @return the best migration for the given cluster, algorithm, VM list and host
+     * @param cluster                the cluster to perform DRS on
+     * @param algorithm              the DRS algorithm to use
+     * @param vmList                 the list of virtual machines to consider for migration
+     * @param vmIdServiceOfferingMap a map of virtual machine IDs to their corresponding service offerings
+     * @param hostCpuCapacityMap     a map of host IDs to their corresponding CPU capacity
+     * @param hostMemoryCapacityMap  a map of host IDs to their corresponding memory capacity
+     * @return a pair of the virtual machine and host that represent the best migration, or null if no migration is possible
      */
-    Pair<VirtualMachine, Host> getBestMigration(Cluster cluster, ClusterDrsAlgorithm algorithm, List<VirtualMachine> vmList, Map<Long, ServiceOffering> vmIdServiceOfferingMap, Map<Long, Long> hostCpuCapacityMap, Map<Long, Long> hostMemoryCapacityMap) {
+    Pair<VirtualMachine, Host> getBestMigration(
+            Cluster cluster,
+            ClusterDrsAlgorithm algorithm,
+            List<VirtualMachine> vmList,
+            Map<Long, ServiceOffering> vmIdServiceOfferingMap,
+            Map<Long, Long> hostCpuCapacityMap,
+            Map<Long, Long> hostMemoryCapacityMap
+    ) {
         double maxImprovement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
         for (VirtualMachine vm : vmList) {
+            if (vm.getType().isUsedBySystem()) {
+                continue;
+            }
+            if (MapUtils.isNotEmpty(vm.getDetails()) && vm.getDetails().get(VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true")) {
+                continue;
+            }
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm, 0L, null, null, vmList);
             List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
@@ -416,21 +404,24 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<ClusterVO> clusterList = clusterDao.listAll();
 
         for (ClusterVO cluster : clusterList) {
-            if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE) || drsEventsDao.lastAutomatedDrsEventInInterval(cluster.getId(), ClusterDrsInterval.valueIn(cluster.getId())) != null) {
+            if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)
+                    || drsEventsDao.lastAutomatedDrsEventInInterval(cluster.getId(), ClusterDrsInterval.valueIn(cluster.getId())) != null) {
                 continue;
             }
-
-            long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS, String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), true, 0);
+            Long jobId = null;
+            long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS,
+                    String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), true, 0);
             CallContext.current().setStartEventId(eventId);
             try {
                 List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
-                int iterations = executeDrsPlan(cluster.getId(), plan);
-                logger.debug(String.format("Executed %d iterations of DRS for cluster %s [id=%s]", iterations, cluster.getName(), cluster.getUuid()));
-                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), iterations, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.SUCCESS));
+                jobId = executeDrsPlan(cluster.getId(), plan);
+                logger.info(String.format("Executed DRS on cluster %s [id=%s] with job id %d", cluster.getName(), cluster.getUuid(), jobId));
+                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), jobId, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.SUCCESS));
 
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true, String.format("Executed %s iterations as part of automatic DRS for cluster %s", iterations, cluster.getName()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
-            } catch (ConfigurationException e) {
-                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), null, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.FAILURE));
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true,
+                        String.format("Created async job [id=%d] for automatic DRS of cluster %s", jobId, cluster.getName()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
+            } catch (Exception e) {
+                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), jobId, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.FAILURE));
                 logger.error(String.format("Unable to execute DRS on cluster %s [id=%s]", cluster.getName(), cluster.getUuid()), e);
             }
         }

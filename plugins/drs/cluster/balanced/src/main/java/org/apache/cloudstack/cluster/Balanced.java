@@ -31,8 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsLevel;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsThreshold;
 
 public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
 
@@ -41,11 +41,15 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
         return "balanced";
     }
 
+    private double getThreshold(long clusterId) throws ConfigurationException {
+        return 1.0 - ClusterDrsLevel.valueIn(clusterId) / 10.0;
+    }
+
     @Override
     public boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException {
         Double cpuImbalance = getClusterImbalance(cpuList);
         Double memoryImbalance = getClusterImbalance(memoryList);
-        Double threshold = ClusterDrsThreshold.valueIn(clusterId);
+        double threshold = getThreshold(clusterId);
         String metric = ClusterDrsMetric.valueIn(clusterId);
         switch (metric) {
             case "cpu":

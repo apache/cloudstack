@@ -344,6 +344,7 @@
 
     <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
         <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
     <bean id="resourceManagerUtilImpl"
           class="com.cloud.tags.ResourceManagerUtilImpl"/>

@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DrsPlanResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -72,7 +73,12 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
         final List<Ternary<VirtualMachine, Host, Host>> plan = clusterDrsService.generateDrsPlan(this);
         final List<DrsPlanResponse> responseList = new ArrayList<>();
         for (Ternary<VirtualMachine, Host, Host> ternary : plan) {
-            final DrsPlanResponse response = new DrsPlanResponse(ternary.first().getUuid(), ternary.second().getUuid(), ternary.third().getUuid());
+
+            final DrsPlanResponse response = new DrsPlanResponse(
+                    _responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", ternary.first()).get(0),
+                    _responseGenerator.createHostResponse(ternary.second()),
+                    _responseGenerator.createHostResponse(ternary.third())
+            );
             response.setObjectName("drsplan");
             response.setResponseName(getCommandName());
             responseList.add(response);

@@ -43,12 +43,12 @@ public class ClusterDrsEventsVO implements ClusterDrsEvents {
     @Column(name = "event_id")
     private long eventId;
 
+    @Column(name = "job_id")
+    private Long jobId;
+
     @Column(name = "execution_date")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date executionDate;
-
-    @Column(name = "iterations")
-    private Integer iterations;
 
     @Column(name = "type")
     private Type type;
@@ -56,11 +56,11 @@ public class ClusterDrsEventsVO implements ClusterDrsEvents {
     @Column(name = "result")
     private Result result;
 
-    public ClusterDrsEventsVO(long clusterId, long eventId, Date executionDate, Integer iterations, Type type, Result result) {
+    public ClusterDrsEventsVO(long clusterId, long eventId, Date executionDate, Long jobId, Type type, Result result) {
         this.clusterId = clusterId;
         this.eventId = eventId;
         this.executionDate = executionDate;
-        this.iterations = iterations;
+        this.jobId = jobId;
         this.type = type;
         this.result = result;
     }

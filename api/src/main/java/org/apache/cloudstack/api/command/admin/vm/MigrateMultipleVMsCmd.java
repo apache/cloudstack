@@ -21,6 +21,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.org.Cluster;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -68,6 +69,13 @@ public class MigrateMultipleVMsCmd extends BaseAsyncCmd {
             description = "the ID of the virtual machine")
     private List<Long> virtualMachineIdList;
 
+    @Parameter(name = ApiConstants.CLUSTER_ID,
+            type = CommandType.UUID,
+            entityType = Cluster.class,
+            required = false,
+            description = "id of the cluster. If passed, ensures that no other multi-vm migration is in progress on the cluster")
+    private Long clusterId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -79,6 +87,10 @@ public class MigrateMultipleVMsCmd extends BaseAsyncCmd {
 
     public List<Long> getVirtualMachineIdList() {
         return virtualMachineIdList;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     /////////////////////////////////////////////////////
@@ -104,7 +116,7 @@ public class MigrateMultipleVMsCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            List<VirtualMachine> migratedVmList = _userVmService.migrateMultipleVms(getVirtualMachineIdList(), getHostIdList());
+            List<VirtualMachine> migratedVmList = _userVmService.migrateMultipleVms(getVirtualMachineIdList(), getHostIdList(), getClusterId());
 
             List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse(
                     ResponseObject.ResponseView.Full, "virtualmachine", migratedVmList.toArray(new UserVm[0]));
