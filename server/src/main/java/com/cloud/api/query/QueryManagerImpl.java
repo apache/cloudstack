@@ -184,6 +184,8 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
@@ -455,6 +457,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResourceIconDao resourceIconDao;
+
+    @Inject
+    private ManagementServerHostDao msHostDao;
+
 
     @Inject
     EntityManager entityManager;
@@ -795,7 +801,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("resourceType", resourceType.toString());
         }
 
-        sc.setParameters("archived", false);
+        if (id == null) {
+            sc.setParameters("archived", cmd.getArchived());
+        }
 
         Pair<List<EventJoinVO>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so
@@ -969,7 +977,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
-        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        ListResponse<UserVmResponse> response = new ListResponse<>();
+
+        if (cmd.getRetrieveOnlyResourceCount()) {
+            response.setResponses(new ArrayList<>(), result.second());
+            return response;
+        }
+
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -2058,7 +2072,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<VolumeResponse> searchForVolumes(ListVolumesCmd cmd) {
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
-        ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
+        ListResponse<VolumeResponse> response = new ListResponse<>();
+
+        if (cmd.getRetrieveOnlyResourceCount()) {
+            response.setResponses(new ArrayList<>(), result.second());
+            return response;
+        }
 
         ResponseView respView = cmd.getResponseView();
         Account account = CallContext.current().getCallingAccount();
@@ -2547,6 +2566,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        if (cmd.getManagementServerId() != null) {
+            sb.and("executingMsid", sb.entity().getExecutingMsid(), SearchCriteria.Op.EQ);
+        }
+
         Object keyword = cmd.getKeyword();
         Object startDate = cmd.getStartDate();
 
@@ -2573,6 +2596,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (startDate != null) {
             sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
+        }
+
+        if (cmd.getManagementServerId() != null) {
+            ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
+            sc.setParameters("executingMsid", msHost.getMsid());
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
@@ -4040,6 +4068,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
             options.put(VmDetailConstants.IOTHREADS, Arrays.asList("enabled"));
+            options.put(VmDetailConstants.NIC_MULTIQUEUE_NUMBER, Collections.emptyList());
+            options.put(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, Arrays.asList("true", "false"));
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {

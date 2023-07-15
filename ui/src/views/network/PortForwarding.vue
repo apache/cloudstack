@@ -66,10 +66,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="tcp" label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item" style="margin-left: auto;">
@@ -98,33 +98,35 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #privateport="{record}">
-        {{ record.privateport }} - {{ record.privateendport }}
-      </template>
-      <template #publicport="{record}">
-        {{ record.publicport }} - {{ record.publicendport }}
-      </template>
-      <template #protocol="{record}">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #vm="{record}">
-        <div><desktop-outlined/>
-          <router-link
-            :to="{ path: '/vm/' + record.virtualmachineid }">
-            {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
-      </template>
-      <template #actions="{record}">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
-          <tooltip-button
-            :tooltip="$t('label.remove.rule')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            buttonClass="rule-action"
-            :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
-            @onClick="deleteRule(record)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'privateport'">
+          {{ record.privateport }} - {{ record.privateendport }}
+        </template>
+        <template v-if="column.key === 'publicport'">
+          {{ record.publicport }} - {{ record.publicendport }}
+        </template>
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'vm'">
+          <div><desktop-outlined/>
+            <router-link
+              :to="{ path: '/vm/' + record.virtualmachineid }">
+              {{ record.virtualmachinename }}</router-link> ({{ record.vmguestip }})</div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
+            <tooltip-button
+              :tooltip="$t('label.remove.rule')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              buttonClass="rule-action"
+              :disabled="!('deletePortForwardingRule' in $store.getters.apis)"
+              @onClick="deleteRule(record)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -215,12 +217,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
-              :key="tier.id">
+              :key="tier.id"
+              :label="tier.displaytext || ''">
               {{ tier.displaytext }}
             </a-select-option>
           </a-select>
@@ -241,40 +244,46 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <template #name="{text, record}">
-            <span>
-              {{ text }}
-            </span>
-            <loading-outlined v-if="addVmModalNicLoading"></loading-outlined>
-            <a-select
-              style="display: block"
-              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
-              v-model:value="newRule.vmguestip"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-              </a-select-option>
-            </a-select>
-          </template>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <span>
+                {{ text }}
+              </span>
+              <loading-outlined v-if="addVmModalNicLoading"></loading-outlined>
+              <a-select
+                style="display: block"
+                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid === record.id"
+                v-model:value="newRule.vmguestip"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option
+                  v-for="(nic, nicIndex) in nics"
+                  :key="nic"
+                  :value="nic"
+                  :label="nic">
+                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+                </a-select-option>
+              </a-select>
+            </template>
 
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText></status>
-          </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText></status>
+            </template>
 
-          <template #action="{record}">
-            <div style="text-align: center">
-              <a-radio-group
-                class="radio-group"
-                :key="record.id"
-                v-model:value="checked"
-                @change="($event) => checked = $event.target.value">
-                <a-radio :value="record.id" @change="e => fetchNics(e)" />
-              </a-radio-group>
-            </div>
+            <template v-if="column.key === 'actions'">
+              <div style="text-align: center">
+                <a-radio-group
+                  class="radio-group"
+                  :key="record.id"
+                  v-model:value="checked"
+                  @change="($event) => checked = $event.target.value">
+                  <a-radio :value="record.id" @change="e => fetchNics(e)" />
+                </a-radio-group>
+              </div>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -346,7 +355,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['State', 'Action'],
+      filterColumns: ['State', 'Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.delete.portforward.rules'),
@@ -379,28 +388,28 @@ export default {
       pageSize: 10,
       columns: [
         {
-          title: this.$t('label.privateport'),
-          slots: { customRender: 'privateport' }
+          key: 'privateport',
+          title: this.$t('label.privateport')
         },
         {
-          title: this.$t('label.publicport'),
-          slots: { customRender: 'publicport' }
+          key: 'publicport',
+          title: this.$t('label.publicport')
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.vm'),
-          slots: { customRender: 'vm' }
+          key: 'vm',
+          title: this.$t('label.vm')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ],
       tiers: {
@@ -409,15 +418,15 @@ export default {
       },
       vmColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
           dataIndex: 'name',
-          slots: { customRender: 'name' },
           width: 210
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.displayname'),
@@ -437,9 +446,9 @@ export default {
           dataIndex: 'zonename'
         },
         {
+          key: 'actions',
           title: this.$t('label.select'),
-          dataIndex: 'action',
-          slots: { customRender: 'action' },
+          dataIndex: 'actions',
           width: 80
         }
       ],
@@ -550,9 +559,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

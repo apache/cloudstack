@@ -288,6 +288,18 @@ def get_hypervisor_type(apiclient):
     assert hosts_list_validation_result[0] == PASS, "host list validation failed"
     return hosts_list_validation_result[1].hypervisor
 
+def get_hypervisor_version(apiclient):
+
+    """Return the hypervisor type of the hosts in setup"""
+
+    cmd = listHosts.listHostsCmd()
+    cmd.type = 'Routing'
+    cmd.listall = True
+    hosts = apiclient.listHosts(cmd)
+    hosts_list_validation_result = validateList(hosts)
+    assert hosts_list_validation_result[0] == PASS, "host list validation failed"
+    return hosts_list_validation_result[1].hypervisorversion
+
 def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     """
     Checks whether a snapshot with id (not UUID) `snapshotid` is present on the nfs storage

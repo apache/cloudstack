@@ -20,11 +20,11 @@
 FROM python:2
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.18.1.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.19.0.0"
 
 ENV WORK_DIR=/marvin
 
-ENV PKG_URL=https://builds.cloudstack.org/job/build-master-marvin/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.18.1.0-SNAPSHOT.tar.gz
+ENV PKG_URL=https://builds.cloudstack.org/job/build-master-marvin/lastSuccessfulBuild/artifact/tools/marvin/dist/Marvin-4.19.0.0-SNAPSHOT.tar.gz
 
 RUN apt-get update && apt-get install -y vim
 RUN pip install --upgrade paramiko nose requests

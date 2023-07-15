@@ -53,6 +53,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
@@ -79,6 +83,7 @@ import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VimPortType;
@@ -553,5 +558,103 @@ public class VmwareResourceTest {
 
         assertEquals(1, stats.length);
         assertEquals(lbStats[0], stats[0]);
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandFailure() throws Exception {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centosWrongName");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptor("centosWrongName")).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandSuccess() throws Exception {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(hyperHost.getGuestOsDescriptor("centos64Guest")).thenReturn(guestOsDescriptor);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandException() {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandFailure() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithoutKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandException() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
     }
 }

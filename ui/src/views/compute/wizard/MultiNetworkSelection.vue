@@ -26,41 +26,46 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <template #name="{record}">
-        <span>{{ record.displaytext || record.name }}</span>
-        <div v-if="record.meta">
-          <div v-for="meta in record.meta" :key="meta.key">
-            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span>{{ record.displaytext || record.name }}</span>
+          <div v-if="record.meta">
+            <div v-for="meta in record.meta" :key="meta.key">
+              <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+            </div>
           </div>
-        </div>
-      </template>
-      <template #network="{record}">
-        <a-select
-          v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
-          :defaultValue="validNetworks[record.id][0].id"
-          @change="val => handleNetworkChange(record, val)"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="network in validNetworks[record.id]" :key="network.id">
-            {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}
-          </a-select-option>
-        </a-select>
-        <span v-else>
-          {{ $t('label.no.matching.network') }}
-        </span>
-      </template>
-      <template #ipaddress="{record}">
-        <check-box-input-pair
-          layout="vertical"
-          :resourceKey="record.id"
-          :checkBoxLabel="$t('label.auto.assign.random.ip')"
-          :defaultCheckBoxValue="true"
-          :reversed="true"
-          :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
-          @handle-checkinputpair-change="setIpAddress" />
+        </template>
+        <template v-if="column.key === 'network'">
+          <a-select
+            v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
+            :defaultValue="validNetworks[record.id][0].id"
+            @change="val => handleNetworkChange(record, val)"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="network in validNetworks[record.id]"
+              :key="network.id"
+              :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
+              {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}
+            </a-select-option>
+          </a-select>
+          <span v-else>
+            {{ $t('label.no.matching.network') }}
+          </span>
+        </template>
+        <template v-if="column.key === 'ipaddress'">
+          <check-box-input-pair
+            layout="vertical"
+            :resourceKey="record.id"
+            :checkBoxLabel="$t('label.auto.assign.random.ip')"
+            :defaultCheckBoxValue="true"
+            :reversed="true"
+            :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
+            @handle-checkinputpair-change="setIpAddress" />
+        </template>
       </template>
     </a-table>
   </div>
@@ -102,19 +107,19 @@ export default {
     return {
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.nic'),
-          slots: { customRender: 'name' }
+          title: this.$t('label.nic')
         },
         {
+          key: 'network',
           dataIndex: 'network',
-          title: this.$t('label.network'),
-          slots: { customRender: 'network' }
+          title: this.$t('label.network')
         },
         {
+          key: 'ipaddress',
           dataIndex: 'ipaddress',
-          title: this.$t('label.ipaddress'),
-          slots: { customRender: 'ipaddress' }
+          title: this.$t('label.ipaddress')
         }
       ],
       loading: false,

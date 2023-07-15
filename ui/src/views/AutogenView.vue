@@ -17,10 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="78">
+    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
             <breadcrumb :resource="resource">
               <template #end>
                 <a-button
@@ -34,14 +34,14 @@
                 </a-button>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
@@ -53,14 +53,8 @@
                   <a-select
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
-                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name)
-                        ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['account', 'guestnetwork', 'guestvlans'].includes($route.name)
-                        ? 'all' : ['volume'].includes($route.name)
-                        ? 'user' : 'self')"
-                    style="min-width: 120px; margin-left: 10px"
+                    :value="filterValue"
+                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -70,7 +64,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -90,7 +84,7 @@
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
@@ -105,6 +99,7 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
+              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -252,11 +247,14 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option key="" >{{ }}</a-select-option>
-                  <a-select-option v-for="(opt, optIndex) in currentAction.mapping[field.name].options" :key="optIndex">
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    v-for="(opt, optIndex) in currentAction.mapping[field.name].options"
+                    :key="optIndex"
+                    :label="opt">
                     {{ opt }}
                   </a-select-option>
                 </a-select>
@@ -269,12 +267,15 @@
                   :loading="field.loading"
                   :placeholder="field.description"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="">{{ }}</a-select-option>
-                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    v-for="(opt, optIndex) in field.opts"
+                    :key="optIndex"
+                    :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -343,10 +344,13 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                  <a-select-option
+                    v-for="(opt, optIndex) in field.opts"
+                    :key="optIndex"
+                    :label="opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description">
                     {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -389,44 +393,46 @@
       </a-modal>
     </div>
 
-    <div v-if="dataView" style="margin-top: -10px">
-      <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
-      <resource-view
-        v-else
-        :resource="resource"
-        :loading="loading"
-        :tabs="$route.meta.tabs" />
-    </div>
-    <div class="row-element" v-else>
-      <list-view
-        :loading="loading"
-        :columns="columns"
-        :items="items"
-        :actions="actions"
-        :columnKeys="columnKeys"
-        :selectedColumns="selectedColumns"
-        ref="listview"
-        @update-selected-columns="updateSelectedColumns"
-        @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData"
-        @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
-      <a-pagination
-        class="row-element"
-        style="margin-top: 10px"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="itemCount"
-        :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="pageSizeOptions"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger
-        showQuickJumper>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
+      <div v-if="dataView" style="margin-top: -10px">
+        <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
+        <resource-view
+          v-else
+          :resource="resource"
+          :loading="loading"
+          :tabs="$route.meta.tabs" />
+      </div>
+      <div class="row-element" v-else>
+        <list-view
+          :loading="loading"
+          :columns="columns"
+          :items="items"
+          :actions="actions"
+          :columnKeys="columnKeys"
+          :selectedColumns="selectedColumns"
+          ref="listview"
+          @update-selected-columns="updateSelectedColumns"
+          @selection-change="onRowSelectionChange"
+          @refresh="fetchData"
+          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        <a-pagination
+          class="row-element"
+          style="margin-top: 10px"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="itemCount"
+          :showTotal="total => `${$t('label.showing')} ${Math.min(total, 1+((page-1)*pageSize))}-${Math.min(page*pageSize, total)} ${$t('label.of')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="pageSizeOptions"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger
+          showQuickJumper>
+          <template #buildOptionText="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
     </div>
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
@@ -664,6 +670,25 @@ export default {
       return [...new Set(sizes)].sort(function (a, b) {
         return a - b
       }).map(String)
+    },
+    filterValue () {
+      if (this.$route.query.filter) {
+        return this.$route.query.filter
+      }
+      const routeName = this.$route.name
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
+        return 'all'
+      }
+      if (['publicip'].includes(routeName)) {
+        return 'allocated'
+      }
+      if (['volume'].includes(routeName)) {
+        return 'user'
+      }
+      if (['event'].includes(routeName)) {
+        return 'active'
+      }
+      return 'self'
     }
   },
   methods: {
@@ -806,7 +831,6 @@ export default {
         })
       }
 
-      const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
@@ -814,18 +838,16 @@ export default {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
             title = columnKey.customTitle
-            customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
             title = Object.keys(columnKey)[0]
-            customRender[key] = columnKey[key]
           }
         }
         this.columns.push({
+          key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          slots: { customRender: key },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: function (a, b) { return genericCompare(a[key] || '', b[key] || '') }
         })
         this.selectedColumns.push(key)
       }
@@ -847,6 +869,7 @@ export default {
           this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
           this.$t('label.created'), this.$t('label.order')].includes(column.title)
       })
+      this.chosenColumns.splice(this.chosenColumns.length - 1, 1)
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -954,12 +977,6 @@ export default {
 
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
-          for (const key in customRender) {
-            const func = customRender[key]
-            if (func && typeof func === 'function') {
-              this.items[idx][key] = func(this.items[idx])
-            }
-          }
           if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
@@ -1088,6 +1105,14 @@ export default {
                 name: 'confirmpassword',
                 required: true,
                 description: self.$t('label.confirmpassword.description')
+              }
+            }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
               }
             }
             return paramFields.filter(function (param) {
@@ -1283,9 +1308,9 @@ export default {
           this.bulkColumns = this.chosenColumns
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
           this.bulkColumns.splice(0, 0, {
+            key: 'status',
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
-            slots: { customRender: 'status' },
             filters: [
               { text: 'In Progress', value: 'InProgress' },
               { text: 'Success', value: 'success' },
@@ -1537,13 +1562,17 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-      this.columns.push({
-        dataIndex: 'dropdownFilter',
-        slots: {
-          filterDropdown: 'filterDropdown',
-          filterIcon: 'filterIcon'
-        }
-      })
+      const filterColumn = {
+        key: 'filtercolumn',
+        dataIndex: 'filtercolumn',
+        title: '',
+        customFilterDropdown: true,
+        width: 5
+      }
+      if (this.columns.length === 0) {
+        filterColumn.width = 'auto'
+      }
+      this.columns.push(filterColumn)
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }
@@ -1616,6 +1645,24 @@ export default {
         } else if (filter === 'allocatedonly') {
           query.allocatedonly = 'true'
         }
+      } else if (this.$route.name === 'event') {
+        if (filter === 'archived') {
+          query.archived = true
+        } else {
+          delete query.archived
+        }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
+      } else if (this.$route.name === 'kubernetes') {
+        if (filter === 'all') {
+          delete query.clustertype
+        } else {
+          query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
+        }
       }
       query.filter = filter
       query.page = '1'
@@ -1641,6 +1688,10 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
+            } else if (this.$route.name === 'guestos') {
+              query.description = value
             } else {
               query.keyword = value
             }
@@ -1786,7 +1837,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
-          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)

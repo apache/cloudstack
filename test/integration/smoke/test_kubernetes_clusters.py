@@ -33,7 +33,9 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   scaleKubernetesCluster,
                                   getKubernetesClusterConfig,
                                   destroyVirtualMachine,
-                                  deleteNetwork)
+                                  deleteNetwork,
+                                  addVirtualMachinesToKubernetesCluster,
+                                  removeVirtualMachinesFromKubernetesCluster)
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
@@ -46,12 +48,14 @@ from marvin.lib.base import (Template,
                              VpcOffering,
                              VPC,
                              NetworkACLList,
-                             NetworkACL)
+                             NetworkACL,
+                             VirtualMachine)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
                               random_gen)
 from marvin.lib.common import (get_zone,
-                               get_domain)
+                               get_domain,
+                               get_template)
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
@@ -86,6 +90,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls._cleanup = []
         cls.kubernetes_version_ids = []
         cls.vpcAllowAllAclDetailsMap = {}
+        cls.initial_configuration_cks_enabled = None
 
         if cls.hypervisorNotSupported == False:
             cls.endpoint_url = Configurations.list(cls.apiclient, name="endpoint.url")[0].value
@@ -610,7 +615,82 @@ class TestKubernetesCluster(cloudstackTestCase):
         k8s_cluster = None
         return
 
-    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1):
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_11_test_unmanaged_cluster_lifecycle(self):
+        """Test all operations on unmanaged Kubernetes cluster
+
+        # Validate the following:
+        # 1. createKubernetesCluster should return valid info for new cluster
+        # 2. The Cloud Database contains the valid information
+        # 3. stopKubernetesCluster doesn't work
+        # 4. startKubernetesCluster doesn't work
+        # 5. upgradeKubernetesCluster doesn't work
+        # 6. Adding & removing vm from cluster works
+        # 7. deleteKubernetesCluster should delete an existing HA Kubernetes cluster
+        """
+        cluster = self.createKubernetesCluster("test-unmanaged-cluster", None,
+                                               cluster_type="ExternalManaged")
+        self.verifyKubernetesClusterState(cluster, 'Running')
+        self.debug("Stopping unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.stopKubernetesCluster(cluster.id)
+            self.fail("Should not be able to stop unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        self.debug("Starting unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.startKubernetesCluster(cluster.id)
+            self.fail("Should not be able to start unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        self.debug("Upgrading unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        try:
+            self.upgradeKubernetesCluster(cluster.id, self.kubernetes_version_1_24_0.id)
+            self.fail("Should not be able to upgrade unmanaged cluster")
+        except Exception as e:
+            self.debug("Expected exception: %s" % e)
+
+        template = get_template(self.apiclient,
+                                    self.zone.id,
+                                    self.services["ostype"])
+
+        self.services["virtual_machine"]["template"] = template.id
+        virtualMachine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"], zoneid=self.zone.id,
+                                                            accountid=self.account.name, domainid=self.account.domainid,
+                                                            serviceofferingid=self.cks_service_offering.id)
+        self.debug("Adding VM %s to unmanaged Kubernetes cluster with ID: %s" % (virtualMachine.id, cluster.id))
+        self.addVirtualMachinesToKubernetesCluster(cluster.id, [virtualMachine.id])
+        cluster = self.listKubernetesCluster(cluster.id)
+        self.assertEqual(virtualMachine.id, cluster.virtualmachines[0].id, "VM should be part of the kubernetes cluster")
+        self.assertEqual(1, len(cluster.virtualmachines), "Only one VM should be part of the kubernetes cluster")
+
+        self.debug("Removing VM %s from unmanaged Kubernetes cluster with ID: %s" % (virtualMachine.id, cluster.id))
+        self.removeVirtualMachinesFromKubernetesCluster(cluster.id, [virtualMachine.id])
+        cluster = self.listKubernetesCluster(cluster.id)
+        self.assertEqual(0, len(cluster.virtualmachines), "No VM should be part of the kubernetes cluster")
+
+        self.debug("Deleting unmanaged Kubernetes cluster with ID: %s" % cluster.id)
+        self.deleteKubernetesClusterAndVerify(cluster.id)
+        return
+
+    def addVirtualMachinesToKubernetesCluster(self, cluster_id, vm_list):
+        cmd = addVirtualMachinesToKubernetesCluster.addVirtualMachinesToKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.virtualmachineids = vm_list
+
+        return self.apiclient.addVirtualMachinesToKubernetesCluster(cmd)
+
+    def removeVirtualMachinesFromKubernetesCluster(self, cluster_id, vm_list):
+        cmd = removeVirtualMachinesFromKubernetesCluster.removeVirtualMachinesFromKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.virtualmachineids = vm_list
+
+        return self.apiclient.removeVirtualMachinesFromKubernetesCluster(cmd)
+
+
+    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, cluster_type='CloudManaged'):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
         createKubernetesClusterCmd.description = name + "-description"
@@ -622,11 +702,10 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
+        createKubernetesClusterCmd.clustertype = cluster_type
         if self.default_network:
             createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
-        if not clusterResponse:
-            self.cleanup.append(clusterResponse)
         return clusterResponse
 
     def startKubernetesCluster(self, cluster_id):

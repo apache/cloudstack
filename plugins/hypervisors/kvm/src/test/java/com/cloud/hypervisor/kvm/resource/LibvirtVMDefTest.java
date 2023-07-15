@@ -151,6 +151,58 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testInterfaceWithMultiQueueAndPacked() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setMultiQueueNumber(6);
+
+        LibvirtVMDef.setGlobalQemuVersion(5000000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(6400000L);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver queues='6'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        ifDef.setPackedVirtQueues(true);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver queues='6' packed='on'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        ifDef.setMultiQueueNumber(null);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver packed='on'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        LibvirtVMDef.setGlobalLibvirtVersion(300000L);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+        }
+
+    @Test
     public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");

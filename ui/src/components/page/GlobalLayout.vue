@@ -16,98 +16,105 @@
 // under the License.
 
 <template>
-  <a-layout class="layout" :class="[device]">
-    <a-affix style="z-index: 200">
-      <template v-if="isSideMenu()">
-        <a-drawer
-          v-if="isMobile()"
-          :wrapClassName="'drawer-sider ' + navTheme"
-          :closable="false"
-          :visible="collapsed"
-          placement="left"
-          @close="() => this.collapsed = false"
-        >
-          <side-menu
-            :menus="menus"
-            :theme="navTheme"
-            :collapsed="false"
-            :collapsible="true"
-            mode="inline"
-            @menuSelect="menuSelect"></side-menu>
-        </a-drawer>
-
-        <side-menu
-          v-else
-          mode="inline"
-          :menus="menus"
-          :theme="navTheme"
-          :collapsed="collapsed"
-          :collapsible="true"></side-menu>
-      </template>
-      <template v-else>
-        <a-drawer
-          v-if="isMobile()"
-          :wrapClassName="'drawer-sider ' + navTheme"
-          placement="left"
-          @close="() => this.collapsed = false"
-          :closable="false"
-          :visible="collapsed"
-        >
-          <side-menu
-            :menus="menus"
-            :theme="navTheme"
-            :collapsed="false"
-            :collapsible="true"
-            mode="inline"
-            @menuSelect="menuSelect"></side-menu>
-        </a-drawer>
-      </template>
-
-      <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
-        <template #handler>
-          <a-button type="primary" size="large">
-            <close-outlined v-if="showSetting" />
-            <setting-outlined v-else />
-          </a-button>
-        </template>
-        <template #drawer>
-          <setting :visible="showSetting" />
-        </template>
-      </drawer>
-
+  <div>
+    <a-affix v-if="this.$store.getters.shutdownTriggered" >
+      <a-alert :message="$t('message.shutdown.triggered')" type="error" banner :showIcon="false" class="shutdownHeader" />
     </a-affix>
+    <a-layout class="layout" :class="[device]">
+      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
+        <template v-if="isSideMenu()">
+          <a-drawer
+            v-if="isMobile()"
+            :wrapClassName="'drawer-sider ' + navTheme"
+            :closable="false"
+            :visible="collapsed"
+            placement="left"
+            @close="() => this.collapsed = false"
+          >
+            <side-menu
+              :menus="menus"
+              :theme="navTheme"
+              :collapsed="false"
+              :collapsible="true"
+              mode="inline"
+              @menuSelect="menuSelect"></side-menu>
+          </a-drawer>
+          <side-menu
+            v-else
+            mode="inline"
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="collapsed"
+            :collapsible="true"></side-menu>
+        </template>
+        <template v-else>
+          <a-drawer
+            v-if="isMobile()"
+            :wrapClassName="'drawer-sider ' + navTheme"
+            placement="left"
+            @close="() => this.collapsed = false"
+            :closable="false"
+            :visible="collapsed"
+          >
+            <side-menu
+              :menus="menus"
+              :theme="navTheme"
+              :collapsed="false"
+              :collapsible="true"
+              mode="inline"
+              @menuSelect="menuSelect"></side-menu>
+          </a-drawer>
+        </template>
 
-    <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
-      <!-- layout header -->
-      <a-affix style="z-index: 100">
-        <global-header
-          :mode="layoutMode"
-          :menus="menus"
-          :theme="navTheme"
-          :collapsed="collapsed"
-          :device="device"
-          @toggle="toggle"
-        />
+        <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
+          <template #handler>
+            <a-button type="primary" size="large">
+              <close-outlined v-if="showSetting" />
+              <setting-outlined v-else />
+            </a-button>
+          </template>
+          <template #drawer>
+            <setting :visible="showSetting" />
+          </template>
+        </drawer>
+
       </a-affix>
 
-      <a-button
-        v-if="showClear"
-        type="default"
-        size="small"
-        class="button-clear-notification"
-        @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
+      <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
+        <!-- layout header -->
+        <a-affix style="z-index: 100">
+          <global-header
+            :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
+            :mode="layoutMode"
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="collapsed"
+            :device="device"
+            @toggle="toggle"
+          />
+        </a-affix>
 
-      <!-- layout content -->
-      <a-layout-content class="layout-content" :class="{'is-header-fixed': fixedHeader}">
-        <slot></slot>
-      </a-layout-content>
+        <a-button
+          v-if="showClear"
+          type="default"
+          size="small"
+          class="button-clear-notification"
+          @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
 
-      <!-- layout footer -->
-      <a-layout-footer style="padding: 0">
-        <global-footer />
-      </a-layout-footer>
+        <!-- layout content -->
+        <a-layout-content
+        class="layout-content"
+        :class="{'is-header-fixed': fixedHeader}">
+          <slot></slot>
+        </a-layout-content>
+
+        <!-- layout footer -->
+        <a-layout-footer style="padding: 0">
+          <global-footer />
+        </a-layout-footer>
+      </a-layout>
     </a-layout>
-  </a-layout>
+  </div>
 </template>
 
 <script>
@@ -118,6 +125,7 @@ import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import { isAdmin } from '@/role'
+import { api } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
 
@@ -191,6 +199,7 @@ export default {
   created () {
     this.menus = this.mainMenu.find((item) => item.path === '/').children
     this.collapsed = !this.sidebarOpened
+    setInterval(this.checkShutdown, 5000)
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'
@@ -243,6 +252,11 @@ export default {
     onClearNotification () {
       this.$notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
+    },
+    checkShutdown () {
+      api('readyForShutdown', {}).then(json => {
+        this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
+      })
     }
   }
 }
@@ -279,4 +293,15 @@ export default {
     padding: 0
   }
 }
+
+.shutdownHeader {
+  font-weight: bold;
+  height: 25px;
+  text-align: center;
+  padding: 0px;
+  margin: 0px;
+  width: 100vw;
+  position: absolute;
+}
+
 </style>

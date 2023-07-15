@@ -159,6 +159,10 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
     @Param(description = "Maximum size of the cluster")
     private Long maxSize;
 
+    @SerializedName(ApiConstants.CLUSTER_TYPE)
+    @Param(description = "the type of the cluster")
+    private KubernetesCluster.ClusterType clusterType;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this Kubernetes cluster was created")
     private Date created;
@@ -385,5 +389,13 @@ public class KubernetesClusterResponse extends BaseResponseWithAnnotations imple
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public KubernetesCluster.ClusterType getClusterType() {
+        return clusterType;
+    }
+
+    public void setClusterType(KubernetesCluster.ClusterType clusterType) {
+        this.clusterType = clusterType;
     }
 }

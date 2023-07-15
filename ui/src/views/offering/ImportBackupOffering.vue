@@ -72,9 +72,9 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in externals.opts" :key="opt.id">
+          <a-select-option v-for="opt in externals.opts" :key="opt.id" :label="opt.name">
             {{ opt.name }}
           </a-select-option>
         </a-select>

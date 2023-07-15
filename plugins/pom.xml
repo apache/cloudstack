@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.18.1.0-SNAPSHOT</version>
+        <version>4.19.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -114,6 +114,8 @@
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
+
+        <module>shutdown</module>
 
         <module>storage/image/default</module>
         <module>storage/image/s3</module>

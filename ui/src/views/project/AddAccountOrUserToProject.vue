@@ -55,9 +55,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
@@ -70,9 +70,9 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addAccountToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>
@@ -128,9 +128,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="role in projectRoles" :key="role.id">
+              <a-select-option v-for="role in projectRoles" :key="role.id" :label="role.name">
                 {{ role.name }}
               </a-select-option>
             </a-select>
@@ -143,9 +143,9 @@
               v-model:value="form.roletype"
               :placeholder="apiParams.addUserToProject.roletype.description"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="Admin">Admin</a-select-option>
               <a-select-option value="Regular">Regular</a-select-option>

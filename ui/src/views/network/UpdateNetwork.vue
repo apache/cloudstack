@@ -80,6 +80,24 @@
             </a-col>
           </a-row>
         </div>
+        <a-form-item name="sourcenatipaddress" ref="sourcenatipaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.sourcenatipaddress')" :tooltip="apiParams.sourcenatipaddress.description"/>
+          </template>
+          <span v-if="sourcenatchange">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="$t('message.sourcenatip.change.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-input
+            v-model:value="form.sourcenatipaddress"
+            :placeholder="apiParams.sourcenatipaddress.description"
+            v-focus="true"
+            @change="sourcenatchange = form.sourcenatipaddress.length > 0"/>
+        </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -98,12 +116,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="networkOfferingLoading"
             :placeholder="apiParams.networkofferingid.description"
             @change="val => { networkOffering = networkOfferings[val] }">
-            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name">
               {{ opt.displaytext || opt.name }}
             </a-select-option>
           </a-select>
@@ -238,7 +256,8 @@ export default {
       minMTU: 68,
       errorPrivateMtu: '',
       errorPublicMtu: '',
-      setMTU: false
+      setMTU: false,
+      sourcenatchange: false
     }
   },
   beforeCreate () {

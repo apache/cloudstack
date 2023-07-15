@@ -1866,7 +1866,7 @@ public class HypervisorHostHelper {
 
     /**
      * deploys a new VM from a ovf spec. It ignores network, defaults locale to 'US'
-     * @throws Exception shoud be a VmwareResourceException
+     * @throws Exception should be a VmwareResourceException
      */
     public static void importVmFromOVF(VmwareHypervisorHost host, String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, ManagedObjectReference morRp,
                                        ManagedObjectReference morHost, String configurationId) throws CloudRuntimeException, IOException {
