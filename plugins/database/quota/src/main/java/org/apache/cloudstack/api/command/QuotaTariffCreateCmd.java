@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.log4j.Logger;
 
@@ -70,6 +71,7 @@ public class QuotaTariffCreateCmd extends BaseCmd {
 
     @Override
     public void execute() {
+        CallContext.current().setEventDetails(String.format("Tariff: %s, description: %s, value: %s", getName(), getDescription(), getValue()));
         QuotaTariffVO result = responseBuilder.createQuotaTariff(this);
 
         if (result == null) {
@@ -133,5 +135,4 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-
 }

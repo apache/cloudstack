@@ -693,6 +693,11 @@ public class EventTypes {
     // SystemVM
     public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
 
+    // Quota
+    public static final String EVENT_QUOTA_TARIFF_CREATE = "QUOTA.TARIFF.CREATE";
+    public static final String EVENT_QUOTA_TARIFF_DELETE = "QUOTA.TARIFF.DELETE";
+    public static final String EVENT_QUOTA_TARIFF_UPDATE = "QUOTA.TARIFF.UPDATE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1118,6 +1123,11 @@ public class EventTypes {
 
         entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
         entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
+
+        // Quota
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_CREATE, "QuotaTariff");
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_DELETE, "QuotaTariff");
+        entityEventDetails.put(EVENT_QUOTA_TARIFF_UPDATE, "QuotaTariff");
     }
 
     public static String getEntityForEvent(String eventName) {

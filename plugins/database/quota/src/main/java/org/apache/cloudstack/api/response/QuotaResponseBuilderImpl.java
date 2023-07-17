@@ -75,6 +75,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
@@ -380,6 +382,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_UPDATE, eventDescription = "updating Quota Tariff")
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
         String name = cmd.getName();
         Double value = cmd.getValue();
@@ -619,6 +622,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_CREATE, eventDescription = "creating Quota Tariff")
     public QuotaTariffVO createQuotaTariff(QuotaTariffCreateCmd cmd) {
         String name = cmd.getName();
         int usageType = cmd.getUsageType();
@@ -643,6 +647,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
     }
 
+    @ActionEvent(eventType = EventTypes.EVENT_QUOTA_TARIFF_DELETE, eventDescription = "removing Quota Tariff")
     public boolean deleteQuotaTariff(String quotaTariffUuid) {
         QuotaTariffVO quotaTariff = _quotaTariffDao.findByUuid(quotaTariffUuid);
 
