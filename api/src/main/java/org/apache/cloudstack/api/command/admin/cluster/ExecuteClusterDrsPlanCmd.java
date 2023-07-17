@@ -26,25 +26,20 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
-import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.cluster.ClusterDrsPlan;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
+@APICommand(name = "executeClusterDrsPlan", description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, this command will fail.", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
+public class ExecuteClusterDrsPlanCmd extends BaseCmd {
 
-@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
-public class GenerateClusterDrsPlanCmd extends BaseCmd {
+    static final Logger LOG = Logger.getLogger(ExecuteClusterDrsPlanCmd.class);
 
-    static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlanCmd.class);
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlan.class, required = true, description = "the ID of plan to execute")
     private Long id;
-
-    @Parameter(name = "iterations", type = CommandType.DOUBLE, description = "The maximum number of iterations in a DRS job defined as a percentage (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's drs.iterations setting")
-    private Double iterations;
 
     @Inject
     private ClusterDrsService clusterDrsService;
@@ -53,16 +48,12 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
         return id;
     }
 
-    public Double getIterations() {
-        if (iterations == null) {
-            return ClusterDrsIterations.valueIn(getId());
-        }
-        return iterations;
-    }
 
     @Override
     public void execute() {
-        final ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(this);
+        boolean result = clusterDrsService.executeDrsPlan(this);
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

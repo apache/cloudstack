@@ -19,16 +19,15 @@
 
 package org.apache.cloudstack.cluster;
 
-import com.cloud.host.Host;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
-import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.command.admin.cluster.ExecuteClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
+import org.apache.cloudstack.api.command.admin.cluster.ListClusterDrsPlanCmd;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-
-import java.util.List;
 
 public interface ClusterDrsService extends Manager, Configurable, Scheduler {
 
@@ -53,5 +52,9 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
      * @param cmd the GenerateClusterDrsPlanCmd object containing the command parameters
      * @return a SuccessResponse object indicating the success of the operation
      */
-    List<Ternary<VirtualMachine, Host, Host>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
+    ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
+
+    boolean executeDrsPlan(ExecuteClusterDrsPlanCmd executeClusterDrsPlanCmd);
+
+    ListResponse<ClusterDrsPlanResponse> listDrsPlan(ListClusterDrsPlanCmd listClusterDrsPlanCmd);
 }

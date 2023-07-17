@@ -278,4 +278,6 @@
   <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
   <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
   <bean id="ClusterDrsEventsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsEventsDaoImpl" />
+  <bean id="ClusterDrsPlanDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanDaoImpl" />
+  <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
 </beans>

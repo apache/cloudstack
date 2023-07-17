@@ -195,3 +195,32 @@ CREATE TABLE `cloud`.`cluster_drs_events` (
   INDEX `i_cluster_drs_events__execution_date_cluster_id_type`(`execution_date`, `cluster_id`, `type`),
   CONSTRAINT `fk_cluster_drs_events__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan`;
+CREATE TABLE `cloud`.`cluster_drs_plan` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `cluster_id` bigint unsigned NOT NULL,
+  `event_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40) NOT NULL COMMENT 'schedule uuid',
+  `type` varchar(20) NOT NULL COMMENT 'type of plan',
+  `status` varchar(20) NOT NULL COMMENT 'status of plan',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  INDEX `i_cluster_drs_plan__cluster_id_status`(`cluster_id`, `status`),
+  INDEX `i_cluster_drs_plan__status`(`status`),
+  CONSTRAINT `fk_cluster_drs_plan__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan_migration`;
+CREATE TABLE `cloud`.`cluster_drs_plan_migration` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `plan_id` bigint unsigned NOT NULL,
+  `vm_id` bigint unsigned NOT NULL,
+  `src_host_id` bigint unsigned NOT NULL,
+  `dest_host_id` bigint unsigned NOT NULL,
+  `job_id` bigint unsigned NULL,
+  `status` varchar(20) NULL COMMENT 'status of async job',
+  PRIMARY KEY (`id`),
+  INDEX `i_cluster_drs_plan_migration__plan_id_status`(`plan_id`, `status`),
+  CONSTRAINT `fk_cluster_drs_plan_migration__plan_id` FOREIGN KEY (`plan_id`) REFERENCES `cluster_drs_plan`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;

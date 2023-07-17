@@ -23,37 +23,35 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.jobs.JobInfo;
 
-public class DrsPlanResponse extends BaseResponse {
-//    @SerializedName("destinationhostid")
-//    @Param(description = "POST url to upload the file to")
-//    String destHostId;
-//
-//    @SerializedName("sourcehostid")
-//    @Param(description = "POST url to upload the file to")
-//    String srcHostId;
-//
-//    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-//    @Param(description = "POST url to upload the file to")
-//    String vmId;
-
+public class ClusterDrsPlanMigrationResponse extends BaseResponse {
     @SerializedName(ApiConstants.VM)
     @Param(description = "POST url to upload the file to")
-    ResponseObject vm;
+    UserVmResponse vm;
 
     @SerializedName("sourcehost")
     @Param(description = "POST url to upload the file to")
-    ResponseObject srcHost;
+    HostResponse srcHost;
 
     @SerializedName("destinationhost")
     @Param(description = "POST url to upload the file to")
-    ResponseObject destHost;
+    HostResponse destHost;
+
+    @SerializedName(ApiConstants.JOB_ID)
+    @Param(description = "Job id for migration of VM")
+    private Long jobId;
+
+    @SerializedName(ApiConstants.JOB_STATUS)
+    @Param(description = "Job id for migration of VM")
+    private JobInfo.Status jobStatus;
 
 
-    public DrsPlanResponse(ResponseObject vm, ResponseObject srcHost, ResponseObject destHost) {
+    public ClusterDrsPlanMigrationResponse(UserVmResponse vm, HostResponse srcHost, HostResponse destHost, Long jobId, JobInfo.Status jobStatus) {
         this.vm = vm;
         this.srcHost = srcHost;
         this.destHost = destHost;
+        this.jobId = jobId;
+        this.jobStatus = jobStatus;
     }
 }

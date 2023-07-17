@@ -47,19 +47,30 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.admin.cluster.ExecuteClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
-import org.apache.cloudstack.api.command.admin.vm.MigrateMultipleVMsCmd;
+import org.apache.cloudstack.api.command.admin.cluster.ListClusterDrsPlanCmd;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.cluster.dao.ClusterDrsEventsDao;
+import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
+import org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -107,6 +118,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     ClusterDrsEventsDao drsEventsDao;
+
+    @Inject
+    ClusterDrsPlanDao drsPlanDao;
+
+    @Inject
+    ClusterDrsPlanMigrationDao drsPlanDetailsDao;
+
+    @Inject
+    ResponseGenerator responseGenerator;
 
     @Inject
     ServiceOfferingDao serviceOfferingDao;
@@ -162,7 +182,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         try {
             if (lock.lock(30)) {
                 try {
-                    executeDrsForAllClusters();
+                    updateOldPlanDetails();
+                    generateDrsPlanForAllClusters();
+                    processPlans();
                 } finally {
                     lock.unlock();
                 }
@@ -204,13 +226,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
+        cmdList.add(ListClusterDrsPlanCmd.class);
         cmdList.add(GenerateClusterDrsPlanCmd.class);
+        cmdList.add(ExecuteClusterDrsPlanCmd.class);
         return cmdList;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Generating DRS plan", async = true)
-    public List<Ternary<VirtualMachine, Host, Host>> generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
+    public ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + cmd.getId());
@@ -226,31 +250,151 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
 
         try {
-            return getDrsPlan(cluster, cmd.getIterations());
+            List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, cmd.getIterations());
+            Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> pair = savePlan(cluster.getId(), plan, CallContext.current().getStartEventId(), ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
+
+            ClusterDrsPlanVO drsPlan = pair.first();
+            List<ClusterDrsPlanMigrationVO> planDetails = pair.second();
+
+            return new ClusterDrsPlanResponse(cluster.getUuid(), drsPlan, getResponseObjectForMigrationDetails(planDetails));
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException("Unable to schedule DRS", e);
         }
-
     }
 
-    long executeDrsPlan(Long clusterId, List<Ternary<VirtualMachine, Host, Host>> plan) {
-        List<Long> destHostIdList = new ArrayList<>();
-        List<Long> vmIdList = new ArrayList<>();
-        for (Ternary<VirtualMachine, Host, Host> migration : plan) {
-            destHostIdList.add(migration.third().getId());
-            vmIdList.add(migration.first().getId());
+
+    @Override
+    public ListResponse<ClusterDrsPlanResponse> listDrsPlan(ListClusterDrsPlanCmd cmd) {
+        Long clusterId = cmd.getClusterId();
+        Long planId = cmd.getId();
+
+        if (planId != null && clusterId != null) {
+            throw new InvalidParameterValueException("Only one of clusterId or planId can be specified");
         }
+
+        ClusterVO cluster = clusterDao.findById(clusterId);
+        if (clusterId != null && cluster == null) {
+            throw new InvalidParameterValueException("Unable to find the cluster by id=" + clusterId);
+        }
+
+        Pair<List<ClusterDrsPlanVO>, Integer> result = drsPlanDao.searchAndCount(clusterId, planId, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        ListResponse<ClusterDrsPlanResponse> response = new ListResponse<>();
+        List<ClusterDrsPlanResponse> responseList = new ArrayList<>();
+
+        for (ClusterDrsPlan plan : result.first()) {
+            if (cluster == null || plan.getClusterId() != cluster.getId()) {
+                cluster = clusterDao.findById(plan.getClusterId());
+            }
+            List<ClusterDrsPlanMigrationVO> planDetails = drsPlanDetailsDao.listByPlanId(plan.getId());
+
+            responseList.add(new ClusterDrsPlanResponse(cluster.getUuid(), plan, getResponseObjectForMigrationDetails(planDetails)));
+        }
+
+        response.setResponses(responseList, result.second());
+        return response;
+    }
+
+
+    List<ClusterDrsPlanMigrationResponse> getResponseObjectForMigrationDetails(List<ClusterDrsPlanMigrationVO> planDetails) {
+        List<ClusterDrsPlanMigrationResponse> migrationResponses = new ArrayList<>();
+
+        for (ClusterDrsPlanMigrationVO planDetail : planDetails) {
+            VMInstanceVO vm = vmInstanceDao.findById(planDetail.getVmId());
+            HostVO srcHost = hostDao.findById(planDetail.getSrcHostId());
+            HostVO destHost = hostDao.findById(planDetail.getDestHostId());
+            ClusterDrsPlanMigrationResponse planMigrationResponse = new ClusterDrsPlanMigrationResponse(
+                    responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", vm).get(0),
+                    responseGenerator.createHostResponse(srcHost),
+                    responseGenerator.createHostResponse(destHost),
+                    planDetail.getJobId(), planDetail.getStatus());
+            migrationResponses.add(planMigrationResponse);
+        }
+
+        return migrationResponses;
+    }
+
+    @Override
+    public boolean executeDrsPlan(ExecuteClusterDrsPlanCmd cmd) {
+        ClusterDrsPlanVO plan = drsPlanDao.findById(cmd.getId());
+
+        if (plan == null) {
+            throw new InvalidParameterValueException("Unable to find the plan by id=" + cmd.getId());
+        }
+        if (plan.getStatus() != ClusterDrsPlan.Status.UNDER_REVIEW) {
+            throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as it is not in UNDER_REVIEW state", plan.getUuid()));
+        }
+
+        // To ensure that no other plan is generated for this cluster, we take a lock
+        GlobalLock clusterLock = GlobalLock.getInternLock(String.format("drs.plan.cluster.%s", plan.getClusterId()));
+        boolean result = false;
+        try {
+            if (clusterLock.lock(5)) {
+                try {
+                    List<ClusterDrsPlanVO> readyPlans = drsPlanDao.listByClusterIdAndStatus(plan.getClusterId(), ClusterDrsPlan.Status.READY);
+                    if (readyPlans != null && !readyPlans.isEmpty()) {
+                        throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as there is already a plan in READY state", plan.getUuid()));
+                    }
+                    executeDrsPlan(plan);
+                    result = true;
+                } finally {
+                    clusterLock.unlock();
+                }
+            }
+        } finally {
+            clusterLock.releaseRef();
+        }
+
+        return result;
+    }
+
+    void executeDrsPlan(ClusterDrsPlanVO plan) {
+        List<ClusterDrsPlanMigrationVO> planDetails = drsPlanDetailsDao.listPlanDetailsToExecute(plan.getId());
+        if (planDetails == null || planDetails.isEmpty()) {
+            plan.setStatus(ClusterDrsPlan.Status.COMPLETED);
+            drsPlanDao.update(plan.getId(), plan);
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true,
+                    String.format("DRS execution task completed for cluster [id=%s]", plan.getClusterId()), plan.getClusterId(), ApiCommandResourceType.Cluster.toString(), plan.getEventId());
+            return;
+        }
+
+        plan.setStatus(ClusterDrsPlan.Status.IN_PROGRESS);
+        drsPlanDao.update(plan.getId(), plan);
+
+        for (ClusterDrsPlanMigrationVO migration : planDetails) {
+            try {
+                VirtualMachine vm = vmInstanceDao.findById(migration.getVmId());
+                Host host = hostDao.findById(migration.getDestHostId());
+                if (vm == null || host == null) {
+                    throw new CloudRuntimeException(String.format("vm %s or host %s is not found", migration.getVmId(), migration.getDestHostId()));
+                }
+
+                logger.debug(String.format("Executing DRS plan %s for vm %s to host %s", plan.getId(), vm.getInstanceName(), host.getName()));
+                long jobId = createMigrateVMAsyncJob(vm, host, plan.getEventId());
+                AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
+                migration.setJobId(jobId);
+                migration.setStatus(job.getStatus());
+                drsPlanDetailsDao.update(migration.getId(), migration);
+            } catch (Exception e) {
+                logger.warn(String.format("Unable to execute DRS plan %s due to %s", plan.getUuid(), e.getMessage()));
+                migration.setStatus(JobInfo.Status.FAILED);
+                drsPlanDetailsDao.update(migration.getId(), migration);
+            }
+        }
+    }
+
+    long createMigrateVMAsyncJob(VirtualMachine vm, Host host, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put("ctxUserId", String.valueOf(User.UID_SYSTEM));
         params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
-        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(CallContext.current().getStartEventId()));
-        params.put(ApiConstants.HOST_IDS, destHostIdList.toString());
-        params.put(ApiConstants.VIRTUAL_MACHINE_IDS, vmIdList.toString());
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
+        params.put(ApiConstants.HOST_ID, String.valueOf(host.getId()));
+        params.put(ApiConstants.VIRTUAL_MACHINE_ID, String.valueOf(vm.getId()));
 
-        final MigrateMultipleVMsCmd cmd = new MigrateMultipleVMsCmd();
+        final MigrateVMCmd cmd = new MigrateVMCmd();
         ComponentContext.inject(cmd);
 
-        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, MigrateMultipleVMsCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params), clusterId, ApiCommandResourceType.Cluster.toString(), null);
+        AsyncJobVO job = new AsyncJobVO(String.format("cluster-drs-%d", host.getClusterId()), User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, MigrateVMCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params), host.getClusterId(), ApiCommandResourceType.Cluster.toString(), null);
         job.setDispatcher(asyncJobDispatcher.getName());
 
         return asyncJobManager.submitAsyncJob(job);
@@ -360,14 +504,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             Map<Long, Long> hostCpuCapacityMap,
             Map<Long, Long> hostMemoryCapacityMap
     ) {
-        double maxImprovement = 0;
+        double improvement = 0;
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
         for (VirtualMachine vm : vmList) {
-            if (vm.getType().isUsedBySystem()) {
-                continue;
-            }
-            if (MapUtils.isNotEmpty(vm.getDetails()) && vm.getDetails().get(VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true")) {
+            if (vm.getType().isUsedBySystem() || (MapUtils.isNotEmpty(vm.getDetails()) && vm.getDetails().get(VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true"))) {
                 continue;
             }
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer.listHostsForMigrationOfVM(vm, 0L, null, null, vmList);
@@ -377,12 +518,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             for (Host destHost : compatibleDestinationHosts) {
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), vm, vmIdServiceOfferingMap.get(vm.getId()), destHost, hostCpuCapacityMap, hostMemoryCapacityMap, requiresStorageMotion.get(destHost));
 
-                Double improvement = metrics.first();
+                Double currentImprovement = metrics.first();
                 Double cost = metrics.second();
                 Double benefit = metrics.third();
-                if (benefit > cost && (improvement > maxImprovement)) {
+                if (benefit > cost && (currentImprovement > improvement)) {
                     bestMigration = new Pair<>(vm, destHost);
-                    maxImprovement = improvement;
+                    improvement = currentImprovement;
                 }
             }
         }
@@ -400,30 +541,116 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     /**
      * Executes DRS for all clusters that meet the criteria for automated DRS.
      */
-    private void executeDrsForAllClusters() {
+    private void generateDrsPlanForAllClusters() {
         List<ClusterVO> clusterList = clusterDao.listAll();
 
         for (ClusterVO cluster : clusterList) {
-            if (cluster.getAllocationState() == Disabled || cluster.getClusterType() != Cluster.ClusterType.CloudManaged || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)
-                    || drsEventsDao.lastAutomatedDrsEventInInterval(cluster.getId(), ClusterDrsInterval.valueIn(cluster.getId())) != null) {
+            if (cluster.getAllocationState() == Disabled
+                    || cluster.getClusterType() != Cluster.ClusterType.CloudManaged
+                    || ClusterDrsEnabled.valueIn(cluster.getId()).equals(Boolean.FALSE)) {
                 continue;
             }
-            Long jobId = null;
+
+            ClusterDrsPlanVO lastPlan = drsPlanDao.listLatestPlanForClusterId(cluster.getId());
+
+            // If the last plan is ready or in progress or was executed within the last interval, skip this cluster
+            if (lastPlan != null && (lastPlan.getStatus() == ClusterDrsPlan.Status.READY || lastPlan.getStatus() == ClusterDrsPlan.Status.IN_PROGRESS
+                    || (lastPlan.getStatus() == ClusterDrsPlan.Status.COMPLETED &&
+                    lastPlan.getCreated().compareTo(DateUtils.addMinutes(new Date(), -1 * ClusterDrsInterval.valueIn(cluster.getId()))) > 0)
+            )) {
+                continue;
+            }
+
             long eventId = ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_CLUSTER_DRS,
                     String.format("Executing automated DRS for cluster %s", cluster.getUuid()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), true, 0);
-            CallContext.current().setStartEventId(eventId);
+            GlobalLock clusterLock = GlobalLock.getInternLock(String.format("drs.plan.cluster.%s", cluster.getId()));
             try {
-                List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
-                jobId = executeDrsPlan(cluster.getId(), plan);
-                logger.info(String.format("Executed DRS on cluster %s [id=%s] with job id %d", cluster.getName(), cluster.getUuid(), jobId));
-                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), jobId, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.SUCCESS));
-
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true,
-                        String.format("Created async job [id=%d] for automatic DRS of cluster %s", jobId, cluster.getName()), cluster.getId(), ApiCommandResourceType.Cluster.toString(), eventId);
-            } catch (Exception e) {
-                drsEventsDao.persist(new ClusterDrsEventsVO(cluster.getId(), eventId, new Date(), jobId, ClusterDrsEvents.Type.AUTOMATED, ClusterDrsEvents.Result.FAILURE));
-                logger.error(String.format("Unable to execute DRS on cluster %s [id=%s]", cluster.getName(), cluster.getUuid()), e);
+                if (clusterLock.lock(30)) {
+                    try {
+                        List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, ClusterDrsIterations.valueIn(cluster.getId()));
+                        savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED, ClusterDrsPlan.Status.READY);
+                        logger.info(String.format("Generated DRS plan for cluster %s [id=%s]", cluster.getName(), cluster.getUuid()));
+                    } catch (Exception e) {
+                        logger.error(String.format("Unable to generate DRS plans for cluster %s [id=%s]", cluster.getName(), cluster.getUuid()), e);
+                    } finally {
+                        clusterLock.unlock();
+                    }
+                }
+            } finally {
+                clusterLock.releaseRef();
             }
         }
+
+    }
+
+    /**
+     * Fetches the plans which are in progress and updates their migration status.
+     */
+    void updateOldPlanDetails() {
+        List<ClusterDrsPlanVO> plans = drsPlanDao.listByStatus(ClusterDrsPlan.Status.IN_PROGRESS);
+        for (ClusterDrsPlanVO plan : plans) {
+            try {
+                updateDrsPlanDetails(plan);
+            } catch (Exception e) {
+                logger.error(String.format("Unable to update DRS plan details [id=%d]", plan.getId()), e);
+            }
+        }
+    }
+
+    /**
+     * Updates the job status of the plan details for the given plan.
+     *
+     * @param plan the plan to update
+     */
+    void updateDrsPlanDetails(ClusterDrsPlanVO plan) {
+        List<ClusterDrsPlanMigrationVO> migrations = drsPlanDetailsDao.listPlanMigrationsInProgress(plan.getId());
+        if (migrations == null || migrations.isEmpty()) {
+            plan.setStatus(ClusterDrsPlan.Status.COMPLETED);
+            drsPlanDao.update(plan.getId(), plan);
+            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_CLUSTER_DRS, true,
+                    String.format("DRS execution task completed for cluster [id=%s]", plan.getClusterId()), plan.getClusterId(), ApiCommandResourceType.Cluster.toString(), plan.getEventId());
+            return;
+        }
+
+        for (ClusterDrsPlanMigrationVO migration : migrations) {
+            try {
+                AsyncJobVO job = asyncJobManager.getAsyncJob(migration.getJobId());
+                if (job == null) {
+                    logger.warn(String.format("Unable to find async job [id=%d] for DRS plan detail [id=%d]", migration.getJobId(), migration.getId()));
+                    migration.setStatus(JobInfo.Status.FAILED);
+                    drsPlanDetailsDao.update(migration.getId(), migration);
+                    continue;
+                }
+                if (job.getStatus() != JobInfo.Status.IN_PROGRESS) {
+                    migration.setStatus(job.getStatus());
+                    drsPlanDetailsDao.update(migration.getId(), migration);
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Unable to update DRS plan details [id=%d]", migration.getId()), e);
+            }
+        }
+    }
+
+    private void processPlans() {
+        List<ClusterDrsPlanVO> plans = drsPlanDao.listByStatus(ClusterDrsPlan.Status.READY);
+        for (ClusterDrsPlanVO plan : plans) {
+            try {
+                executeDrsPlan(plan);
+            } catch (Exception e) {
+                logger.error(String.format("Unable to execute DRS plan [id=%d]", plan.getId()), e);
+            }
+        }
+    }
+
+    private Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> savePlan(Long clusterId, List<Ternary<VirtualMachine, Host, Host>> plan, Long eventId, ClusterDrsPlan.Type type, ClusterDrsPlan.Status status) {
+        ClusterDrsPlanVO drsPlan = drsPlanDao.persist(new ClusterDrsPlanVO(clusterId, eventId, type, status));
+        List<ClusterDrsPlanMigrationVO> planDetails = new ArrayList<ClusterDrsPlanMigrationVO>();
+        for (Ternary<VirtualMachine, Host, Host> migration : plan) {
+            VirtualMachine vm = migration.first();
+            Host srcHost = migration.second();
+            Host destHost = migration.third();
+            planDetails.add(drsPlanDetailsDao.persist(new ClusterDrsPlanMigrationVO(drsPlan.getId(), vm.getId(), srcHost.getId(), destHost.getId())));
+        }
+        return new Pair<>(drsPlan, planDetails);
     }
 }
