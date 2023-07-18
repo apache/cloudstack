@@ -7072,3 +7072,39 @@ class VnfAppliance:
         cmd.expunge = expunge
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         apiclient.destroyVirtualMachine(cmd)
+
+class ObjectStoragePool:
+    """Manage Object Stores"""
+    def create(cls, apiclient, name, url, provider, services=None):
+        """Add Object Store"""
+        cmd = addObjectStoragePool.addObjectStoragePoolCmd()
+        cmd.name = name
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "details" in services:
+                cmd.details = services["details"]
+
+        return ObjectStoragePool(apiclient.addObjectStoragePool(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Object Store"""
+        cmd = deleteObjectStoragePool.deleteObjectStoragePoolCmd()
+        cmd.id = self.id
+        apiclient.deleteObjectStoragePool(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listObjectStoragePools.listObjectStoragePoolsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listObjectStoragePools(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update the Object Store"""
+
+        cmd = updateObjectStoragePool.updateObjectStoragePoolCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateObjectStoragePool(cmd)

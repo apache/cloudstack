@@ -20,6 +20,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import io.minio.MinioClient;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -70,6 +71,9 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
+        if(details == null){
+            throw new CloudRuntimeException("MinIO credentials are missing");
+        }
         String accessKey = details.get("accesskey");
         String secretKey = details.get("secretkey");
 

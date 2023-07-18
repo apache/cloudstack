@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 public class DeleteObjectStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmd.class.getName());
 
-
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////

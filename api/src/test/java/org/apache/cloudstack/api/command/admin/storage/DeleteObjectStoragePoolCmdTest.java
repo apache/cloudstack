@@ -32,7 +32,6 @@ import org.mockito.MockitoAnnotations;
 
 public class DeleteObjectStoragePoolCmdTest {
     public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmdTest.class.getName());
-    
     @Mock
     private StorageService storageService;
 

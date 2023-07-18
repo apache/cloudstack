@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.api.command.admin.storage;
 
-import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.StorageService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -30,11 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.HashMap;
-
-import static org.mockito.ArgumentMatchers.eq;
+import  org.springframework.test.util.ReflectionTestUtils;
 
 public class UpdateObjectStoragePoolCmdTest {
     public static final Logger s_logger = Logger.getLogger(UpdateObjectStoragePoolCmdTest.class.getName());

@@ -26,11 +26,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 @APICommand(name = UpdateObjectStoragePoolCmd.APINAME, description = "Updates object storage pool", responseObject = ObjectStoreResponse.class, entityType = {ObjectStore.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
-public class UpdateObjectStoragePoolCmd extends BaseCmd {
+public class        UpdateObjectStoragePoolCmd extends BaseCmd {
     public static final String APINAME = "updateObjectStoragePool";
 
     /////////////////////////////////////////////////////

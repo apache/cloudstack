@@ -174,11 +174,6 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     }
 
     @Override
-    public String getProtocol() {
-        return objectStoreVO.getProtocol();
-    }
-
-    @Override
     public String getUrl() {
         return objectStoreVO.getUrl();
     }
