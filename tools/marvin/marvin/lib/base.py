@@ -7108,3 +7108,41 @@ class ObjectStoragePool:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.updateObjectStoragePool(cmd)
+
+class Bucket:
+    """Manage Bucket Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, objectstorageid, **kwargs):
+        """Create Bucket"""
+        cmd = createBucket.createBucketCmd()
+        cmd.name = name
+        cmd.objectstorageid = objectstorageid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        return Bucket(apiclient.createBucket(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Bucket"""
+        cmd = deleteBucket.deleteBucketCmd()
+        cmd.id = self.id
+        apiclient.deleteBucket(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listBuckets.listBucketsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listBuckets(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update Bucket"""
+
+        cmd = updateBucket.updateBucketCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateBucket(cmd)
