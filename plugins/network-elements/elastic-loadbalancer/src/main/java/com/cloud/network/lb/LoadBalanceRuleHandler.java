@@ -32,7 +32,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -286,7 +286,7 @@ public class LoadBalanceRuleHandler {
                     }
                 }
 
-                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
+                ServiceOfferingVO elasticLbVmOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.elbVmDefaultOffUniqueName, ConfigurationManager.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
                 elbVm = new DomainRouterVO(id, elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ELB_VM_NAME_PREFIX),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN,
                         elasticLbVmOffering.isOfferHA(), false, null);

@@ -148,7 +148,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -658,7 +657,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return null;
         }
         boolean useLocalStorageForSystemVM = false;
-        Boolean isLocal = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dc.getId());
+        Boolean isLocal = ConfigurationManager.SystemVMUseLocalStorage.valueIn(dc.getId());
         if (isLocal != null) {
             useLocalStorageForSystemVM = isLocal.booleanValue();
         }

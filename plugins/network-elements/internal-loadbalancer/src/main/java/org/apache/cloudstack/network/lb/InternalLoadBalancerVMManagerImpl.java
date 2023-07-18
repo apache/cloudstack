@@ -26,12 +26,13 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -45,7 +46,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -629,7 +630,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             final LinkedHashMap<Network, List<? extends NicProfile>> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             long internalLbVmOfferingId = _internalLbVmOfferingId;
             if (internalLbVmOfferingId == 0L) {
-                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.internalLbVmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
+                ServiceOfferingVO serviceOffering = _serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.internalLbVmDefaultOffUniqueName, ConfigurationManager.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
                 internalLbVmOfferingId = serviceOffering.getId();
             }
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation

@@ -58,7 +58,6 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -107,7 +106,6 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -861,63 +859,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
         return encodedKey;
 
-    }
-
-
-    @DB
-    protected HostPodVO createPod(long userId, String podName, final long zoneId, String gateway, String cidr, final String startIp, String endIp)
-            throws InternalErrorException {
-        String[] cidrPair = cidr.split("\\/");
-        String cidrAddress = cidrPair[0];
-        int cidrSize = Integer.parseInt(cidrPair[1]);
-
-        if (startIp != null) {
-            if (endIp == null) {
-                endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
-            }
-        }
-
-        // Create the new pod in the database
-        String ipRange;
-        if (startIp != null) {
-            ipRange = startIp + "-";
-            if (endIp != null) {
-                ipRange += endIp;
-            }
-        } else {
-            ipRange = "";
-        }
-
-        final HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
-        try {
-            final String endIpFinal = endIp;
-            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InternalErrorException>() {
-                @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) throws InternalErrorException {
-                    if (_podDao.persist(pod) == null) {
-                        throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
-                    }
-
-                    if (startIp != null) {
-                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
-                    }
-
-                    String ipNums = _configDao.getValue("linkLocalIp.nums");
-                    int nums = Integer.parseInt(ipNums);
-                    if (nums > 16 || nums <= 0) {
-                        throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
-                    }
-                    /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
-                    String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
-                    _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-                }
-            });
-        } catch (Exception e) {
-            s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
-            throw new InternalErrorException("Failed to create new pod. Please contact Cloud Support.");
-        }
-
-        return pod;
     }
 
     private DiskOfferingVO createDefaultDiskOffering(String name, String description, ProvisioningType provisioningType,

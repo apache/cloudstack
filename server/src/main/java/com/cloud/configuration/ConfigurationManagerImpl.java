@@ -460,8 +460,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> overprovisioningFactorsForValidation;
     public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
-    public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
-            "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
     public final static ConfigKey<Long> BYTES_MAX_READ_LENGTH= new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.read.length", "Advanced", "0",
             "Maximum Bytes read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
@@ -2307,7 +2305,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _zoneDao.addPrivateIpAddress(zone.getId(), pod.getId(), startIpFinal, endIpFinal, false, null);
             }
 
-            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(_configDao.getValue(Config.ControlCidr.key()));
+            final String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(ControlCidr.valueIn(zone.getId()));
             if (linkLocalIpRanges.length > 1) {
                 _zoneDao.addLinkLocalIpAddress(zone.getId(), pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }

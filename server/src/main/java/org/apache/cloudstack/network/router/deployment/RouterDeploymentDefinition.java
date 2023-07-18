@@ -20,15 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDetailsDao;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ConfigurationManagerImpl;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -41,6 +37,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -63,6 +62,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.DB;
@@ -389,7 +390,7 @@ public class RouterDeploymentDefinition {
     }
 
     protected void findDefaultServiceOfferingId() {
-        ServiceOfferingVO serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.routerDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
+        ServiceOfferingVO serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.routerDefaultOffUniqueName, ConfigurationManager.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId()));
         serviceOfferingId = serviceOffering.getId();
     }
 
@@ -409,7 +410,7 @@ public class RouterDeploymentDefinition {
         ServiceOfferingVO serviceOffering = serviceOfferingDao.findByUuid(offeringUuid);
         if (serviceOffering != null && serviceOffering.isSystemUse() && ServiceOffering.State.Active.equals(serviceOffering.getState())) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            boolean isLocalStorage = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
+            boolean isLocalStorage = ConfigurationManager.SystemVMUseLocalStorage.valueIn(dest.getDataCenter().getId());
             if (isLocalStorage == diskOffering.isUseLocalStorage()) {
                 logger.debug(String.format("Service offering %s (uuid: %s) will be used on virtual router", serviceOffering.getName(), serviceOffering.getUuid()));
                 serviceOfferingId = serviceOffering.getId();

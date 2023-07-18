@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -52,7 +54,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -71,7 +72,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
@@ -647,7 +648,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
         if (serviceOffering == null) {
-            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+            serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManager.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         SecondaryStorageVmVO secStorageVm =
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
@@ -826,13 +827,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 return false;
             }
 
-            boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+            boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManager.SystemVMUseLocalStorage.valueIn(dataCenterId));
             List<Pair<Long, Integer>> storagePoolHostInfos = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
             if (CollectionUtils.isNotEmpty(storagePoolHostInfos) && storagePoolHostInfos.get(0).second() > 0) {
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    String configKey = ConfigurationManagerImpl.SystemVMUseLocalStorage.key();
+                    String configKey = ConfigurationManager.SystemVMUseLocalStorage.key();
                     s_logger.debug(String.format("Primary storage is not ready, wait until it is ready to launch secondary storage VM. {\"dataCenterId\": %s, \"%s\": \"%s\"}. "
                         + "If you want to use local storage to start secondary storage VM, you need to set the configuration [%s] to \"true\".", dataCenterId, configKey, useLocalStorage, configKey));
                 }

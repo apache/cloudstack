@@ -1319,7 +1319,6 @@ public class ConfigurationManagerTest {
         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
         Mockito.when(zone.getId()).thenReturn(1L);
         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(zone);
-        Mockito.when(_configDao.getValue(Config.ControlCidr.key())).thenReturn(Config.ControlCidr.getDefaultValue());
         Mockito.when(_podDao.persist(Mockito.any(HostPodVO.class))).thenAnswer((Answer<HostPodVO>) invocation -> {
             HostPodVO pod = (HostPodVO)invocation.getArguments()[0];
             ReflectionTestUtils.setField(pod, "uuid", UUID.randomUUID().toString());

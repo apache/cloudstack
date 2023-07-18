@@ -65,7 +65,7 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ZoneConfig;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -696,7 +696,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         ServiceOfferingVO serviceOffering = serviceOfferingVO;
         if (serviceOffering == null) {
-            serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+            serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManager.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         ConsoleProxyVO proxy =
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
@@ -888,7 +888,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (templateHostRef != null) {
-                Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
+                Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManager.SystemVMUseLocalStorage.valueIn(dataCenterId));
                 List<Pair<Long, Integer>> l = consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, useLocalStorage);
                 if (CollectionUtils.isNotEmpty(l) && l.get(0).second() > 0) {
                     return true;

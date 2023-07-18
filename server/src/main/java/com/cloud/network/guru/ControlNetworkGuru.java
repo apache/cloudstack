@@ -21,10 +21,11 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Config;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -60,7 +61,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     ConfigurationDao _configDao;
     @Inject
     NetworkModel networkModel;
-    String _cidr;
     String _gateway;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Control};
@@ -98,7 +98,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         NetworkVO config =
             new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
                 plan.getPhysicalNetworkId(), offering.isRedundantRouter());
-        config.setCidr(_cidr);
+        config.setCidr(ConfigurationManager.ControlCidr.valueIn(plan.getDataCenterId()));
         config.setGateway(_gateway);
 
         return config;
@@ -150,7 +150,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             throw new InsufficientAddressCapacityException("Insufficient link local address capacity", DataCenter.class, dest.getDataCenter().getId());
         }
 
-        String netmask = NetUtils.cidr2Netmask(_cidr);
+        String netmask = NetUtils.cidr2Netmask(ConfigurationManager.ControlCidr.valueIn(dest.getDataCenter().getId()));
 
         s_logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, _gateway));
 
@@ -214,18 +214,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         super.configure(name, params);
 
         Map<String, String> dbParams = _configDao.getConfiguration(params);
-
-        _cidr = dbParams.get(Config.ControlCidr.toString());
-        if (_cidr == null) {
-            _cidr = NetUtils.getLinkLocalCIDR();
-        }
-
-        _gateway = dbParams.get(Config.ControlGateway.toString());
-        if (_gateway == null) {
-            _gateway = NetUtils.getLinkLocalGateway();
-        }
-
-        s_logger.info("Control network setup: cidr=" + _cidr + "; gateway = " + _gateway);
 
         return true;
     }

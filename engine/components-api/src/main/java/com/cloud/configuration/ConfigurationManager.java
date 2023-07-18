@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 
 import com.cloud.dc.ClusterVO;
@@ -54,10 +55,30 @@ import com.cloud.utils.net.NetUtils;
  */
 public interface ConfigurationManager {
 
-    public static final String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
-    public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
-    public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
-    public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+    String MESSAGE_CREATE_POD_IP_RANGE_EVENT = "Message.CreatePodIpRange.Event";
+    String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
+    String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
+    String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+
+    ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<>(
+            Boolean.class,
+            "system.vm.use.local.storage",
+            "Advanced",
+            "false",
+            "Indicates whether to use local storage pools or shared storage pools for system VMs.",
+            false,
+            ConfigKey.Scope.Zone,
+            null);
+
+    ConfigKey<String> ControlCidr = new ConfigKey<>(
+            String.class,
+            "control.cidr",
+            "Advanced",
+            "169.254.0.0/16",
+            "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods",
+            true,
+            ConfigKey.Scope.Zone,
+            null);
 
     /**
      * @param offering
@@ -78,58 +99,6 @@ public interface ConfigurationManager {
      */
     String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
 
-//    /**
-//     * Creates a new service offering
-//     *
-//     * @param name
-//     * @param cpu
-//     * @param ramSize
-//     * @param speed
-//     * @param displayText
-//     * @param localStorageRequired
-//     * @param offerHA
-//     * @param domainId
-//     * @param volatileVm
-//     * @param hostTag
-//     * @param networkRate
-//     *            TODO
-//     * @param id
-//     * @param useVirtualNetwork
-//     * @param deploymentPlanner
-//     * @param details
-//     * @param bytesReadRate
-//     * @param bytesWriteRate
-//     * @param iopsReadRate
-//     * @param iopsWriteRate
-//     * @return ID
-//     */
-//    ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_typeType, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired,
-//            boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId, String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details,
-//            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
-
-//    /**
-//     * Creates a new disk offering
-//     *
-//     * @param domainId
-//     * @param name
-//     * @param description
-//     * @param numGibibytes
-//     * @param tags
-//     * @param isCustomized
-//     * @param localStorageRequired
-//     * @param isDisplayOfferingEnabled
-//     * @param isCustomizedIops (is admin allowing users to set custom iops?)
-//     * @param minIops
-//     * @param maxIops
-//     * @param bytesReadRate
-//     * @param bytesWriteRate
-//     * @param iopsReadRate
-//     * @param iopsWriteRate
-//     * @return newly created disk offering
-//     */
-//    DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized,
-//            boolean localStorageRequired, boolean isDisplayOfferingEnabled, Boolean isCustomizedIops, Long minIops, Long maxIops,
-//            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate);
 
     /**
      * Creates a new pod
