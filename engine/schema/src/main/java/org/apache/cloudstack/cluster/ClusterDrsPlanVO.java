@@ -56,23 +56,6 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-/**
- DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan`;
- CREATE TABLE `cloud`.`cluster_drs_plan` (
- `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
- `cluster_id` bigint unsigned NOT NULL,
- `event_id` bigint unsigned NOT NULL,
- `uuid` varchar(40) NOT NULL COMMENT 'schedule uuid',
- `type` varchar(20) NOT NULL COMMENT 'type of plan',
- `status` varchar(20) NOT NULL COMMENT 'status of plan',
- `created` datetime NOT NULL COMMENT 'date created',
- PRIMARY KEY (`id`),
- INDEX `i_cluster_drs_plan__cluster_id_status`(`cluster_id`, `status`),
- INDEX `i_cluster_drs_plan__status`(`status`),
- CONSTRAINT `fk_cluster_drs_plan__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
- */
-
     public ClusterDrsPlanVO(long clusterId, long eventId, Type type, Status status) {
         uuid = UUID.randomUUID().toString();
         this.clusterId = clusterId;
@@ -85,7 +68,7 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
         uuid = UUID.randomUUID().toString();
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

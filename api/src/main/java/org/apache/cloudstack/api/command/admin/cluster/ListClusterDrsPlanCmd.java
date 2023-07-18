@@ -61,6 +61,7 @@ public class ListClusterDrsPlanCmd extends BaseListCmd {
     @Override
     public void execute() {
         ListResponse<ClusterDrsPlanResponse> response = clusterDrsService.listDrsPlan(this);
+        response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         setResponseObject(response);
     }

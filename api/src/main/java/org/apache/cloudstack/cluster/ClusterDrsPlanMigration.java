@@ -19,5 +19,7 @@
 
 package org.apache.cloudstack.cluster;
 
-public interface ClusterDrsPlanMigration {
+import org.apache.cloudstack.api.InternalIdentity;
+
+public interface ClusterDrsPlanMigration extends InternalIdentity {
 }

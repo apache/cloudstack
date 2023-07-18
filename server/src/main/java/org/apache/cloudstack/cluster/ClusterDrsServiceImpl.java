@@ -394,7 +394,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         final MigrateVMCmd cmd = new MigrateVMCmd();
         ComponentContext.inject(cmd);
 
-        AsyncJobVO job = new AsyncJobVO(String.format("cluster-drs-%d", host.getClusterId()), User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, MigrateVMCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params), host.getClusterId(), ApiCommandResourceType.Cluster.toString(), null);
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, MigrateVMCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), null);
         job.setDispatcher(asyncJobDispatcher.getName());
 
         return asyncJobManager.submitAsyncJob(job);

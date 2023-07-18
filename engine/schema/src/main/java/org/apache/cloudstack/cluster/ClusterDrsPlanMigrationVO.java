@@ -44,7 +44,7 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
     @Column(name = "dest_host_id", nullable = false)
     private long destHostId;
     @Column(name = "job_id")
-    private long jobId;
+    private Long jobId;
     @Column(name = "status")
     private JobInfo.Status status;
 
@@ -61,7 +61,7 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
 
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -81,7 +81,7 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
         return destHostId;
     }
 
-    public long getJobId() {
+    public Long getJobId() {
         return jobId;
     }
 

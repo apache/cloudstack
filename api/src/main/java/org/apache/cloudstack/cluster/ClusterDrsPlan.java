@@ -19,10 +19,12 @@
 
 package org.apache.cloudstack.cluster;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import java.util.Date;
 
-public interface ClusterDrsPlan {
-    Long getId();
+public interface ClusterDrsPlan extends Identity, InternalIdentity {
 
     long getClusterId();
 

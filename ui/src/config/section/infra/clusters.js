@@ -55,6 +55,9 @@ export default {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
+    name: 'drs',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterDRS.vue')))
+  }, {
     name: 'comments',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   },

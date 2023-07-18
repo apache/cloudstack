@@ -20,25 +20,27 @@
 package org.apache.cloudstack.api.command.admin.cluster;
 
 import com.cloud.user.Account;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.cluster.ClusterDrsPlan;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "executeClusterDrsPlan", description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, this command will fail.", responseObject = SuccessResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
+@APICommand(name = "executeClusterDrsPlan",
+        description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, this command will fail.",
+        responseObject = SuccessResponse.class,
+        since = "4.19.0")
 public class ExecuteClusterDrsPlanCmd extends BaseCmd {
 
     static final Logger LOG = Logger.getLogger(ExecuteClusterDrsPlanCmd.class);
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlan.class, required = true, description = "the ID of plan to execute")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class, required = true, description = "the ID of plan to execute")
     private Long id;
 
     @Inject
