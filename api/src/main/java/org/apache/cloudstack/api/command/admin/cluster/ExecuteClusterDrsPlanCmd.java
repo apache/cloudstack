@@ -26,11 +26,17 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @APICommand(name = "executeClusterDrsPlan",
         description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, this command will fail.",
@@ -40,8 +46,11 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
 
     static final Logger LOG = Logger.getLogger(ExecuteClusterDrsPlanCmd.class);
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class, required = true, description = "the ID of plan to execute")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of cluster")
     private Long id;
+
+    @Parameter(name = ApiConstants.MIGRATE_TO, type = CommandType.MAP, entityType = ClusterDrsPlanResponse.class, required = true, description = "the ID of plan to execute")
+    private Map migrateVmTo;
 
     @Inject
     private ClusterDrsService clusterDrsService;
@@ -50,6 +59,21 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
         return id;
     }
 
+
+    public Map<String, String> getVmToHostMap() {
+        Map<String, String> vmToHostMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(migrateVmTo)) {
+            Collection<?> allValues = migrateVmTo.values();
+            Iterator<?> iter = allValues.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> volumeToPool = (HashMap<String, String>)iter.next();
+                String volume = volumeToPool.get("volume");
+                String pool = volumeToPool.get("pool");
+                vmToHostMap.put(volume, pool);
+            }
+        }
+        return vmToHostMap;
+    }
 
     @Override
     public void execute() {

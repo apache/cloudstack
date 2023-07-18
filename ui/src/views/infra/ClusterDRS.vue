@@ -39,12 +39,19 @@
           :cancel-text="$t('label.cancel')"
           @confirm="generateDrsPlan()"
           >
-    <a-button
+          <a-button
         type="dashed"
         @click="showAddModal"
         :loading="loading"
         :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
         {{ $t('label.cluster.drs.generate') }}
+    </a-button>
+    <a-button
+        type="dashed"
+        @click="showAddModal"
+        :loading="loading"
+        :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
+        {{ $t('label.cluster.drs.execute') }}
     </a-button>
   </a-popconfirm>
   </a-col>

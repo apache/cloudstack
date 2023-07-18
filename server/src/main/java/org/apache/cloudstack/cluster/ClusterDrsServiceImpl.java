@@ -251,10 +251,14 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
         try {
             List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, cmd.getIterations());
-            Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> pair = savePlan(cluster.getId(), plan, CallContext.current().getStartEventId(), ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
-
-            ClusterDrsPlanVO drsPlan = pair.first();
-            List<ClusterDrsPlanMigrationVO> planDetails = pair.second();
+            ClusterDrsPlanVO drsPlan = new ClusterDrsPlanVO(cluster.getId(), CallContext.current().getStartEventId(), ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
+            List<ClusterDrsPlanMigrationVO> planDetails = new ArrayList<>();
+            for (Ternary<VirtualMachine, Host, Host> migration : plan) {
+                VirtualMachine vm = migration.first();
+                Host srcHost = migration.second();
+                Host destHost = migration.third();
+                planDetails.add(new ClusterDrsPlanMigrationVO(drsPlan.getId(), vm.getId(), srcHost.getId(), destHost.getId()));
+            }
 
             return new ClusterDrsPlanResponse(cluster.getUuid(), drsPlan, getResponseObjectForMigrationDetails(planDetails));
         } catch (ConfigurationException e) {
@@ -316,26 +320,35 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     public boolean executeDrsPlan(ExecuteClusterDrsPlanCmd cmd) {
-        ClusterDrsPlanVO plan = drsPlanDao.findById(cmd.getId());
 
-        if (plan == null) {
-            throw new InvalidParameterValueException("Unable to find the plan by id=" + cmd.getId());
-        }
-        if (plan.getStatus() != ClusterDrsPlan.Status.UNDER_REVIEW) {
-            throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as it is not in UNDER_REVIEW state", plan.getUuid()));
-        }
+        Cluster cluster = clusterDao.findById(cmd.getId());
 
         // To ensure that no other plan is generated for this cluster, we take a lock
-        GlobalLock clusterLock = GlobalLock.getInternLock(String.format("drs.plan.cluster.%s", plan.getClusterId()));
+        GlobalLock clusterLock = GlobalLock.getInternLock(String.format("drs.plan.cluster.%s", cluster.getId()));
         boolean result = false;
         try {
             if (clusterLock.lock(5)) {
                 try {
-                    List<ClusterDrsPlanVO> readyPlans = drsPlanDao.listByClusterIdAndStatus(plan.getClusterId(), ClusterDrsPlan.Status.READY);
+                    List<ClusterDrsPlanVO> readyPlans = drsPlanDao.listByClusterIdAndStatus(cluster.getId(), ClusterDrsPlan.Status.READY);
                     if (readyPlans != null && !readyPlans.isEmpty()) {
-                        throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as there is already a plan in READY state", plan.getUuid()));
+                        throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as there is already a plan in READY state", readyPlans.get(0).getUuid()));
                     }
-                    executeDrsPlan(plan);
+
+                    Map<String, String> vmToHostMap =  cmd.getVmToHostMap();
+                    List<Ternary<VirtualMachine, Host, Host>> plan = new ArrayList<>();
+                    for (String vmId : vmToHostMap.keySet()) {
+                        VirtualMachine vm = vmInstanceDao.findById(Long.parseLong(vmId));
+                        Host srcHost = hostDao.findById(vm.getHostId());
+                        Host destHost = hostDao.findById(Long.parseLong(vmToHostMap.get(vmId)));
+                        if (vm == null || srcHost == null || destHost == null) {
+                            throw new InvalidParameterValueException(String.format("Unable to find the vm/host for vmId=%s, destHostId=%s", vmId, vmToHostMap.get(vmId)));
+                        }
+                        plan.add(new Ternary<>(vm, srcHost, destHost));
+                    }
+
+                    Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> pair = savePlan(cluster.getId(), plan, CallContext.current().getStartEventId(), ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.READY);
+                    ClusterDrsPlanVO drsPlan = pair.first();
+                    executeDrsPlan(drsPlan);
                     result = true;
                 } finally {
                     clusterLock.unlock();

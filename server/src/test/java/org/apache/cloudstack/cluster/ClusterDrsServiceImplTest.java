@@ -271,6 +271,7 @@ public class ClusterDrsServiceImplTest {
 
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
+        Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(2L);
