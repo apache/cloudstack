@@ -21,8 +21,8 @@ public interface UserDataProvider {
 
     /**
      * Append user data into a single user data.
-     * NOTE: userData1 and userData2 are decoded user data strings
+     * NOTE: userData1 and userData2 are Base64 encoded user data strings
      * @return a non-encrypted string containing both user data inputs
      */
-    String appendUserData(String userData1, String userData2);
+    String appendUserData(String encodedUserData1, String encodedUserData2);
 }

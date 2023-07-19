@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -599,10 +598,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected static long ROOT_DEVICE_ID = 0;
 
-    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final int NUM_OF_2K_BLOCKS = 512;
-    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
-
     @Inject
     private OrchestrationService _orchSrvc;
 
@@ -951,7 +946,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             userDataDetails = cmd.getUserdataDetails().toString();
         }
         userData = finalizeUserData(userData, userDataId, template);
-        userData = validateUserData(userData, cmd.getHttpMethod());
+        userData = userDataManager.validateUserData(userData, cmd.getHttpMethod());
 
         userVm.setUserDataId(userDataId);
         userVm.setUserData(userData);
@@ -2975,7 +2970,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userData != null) {
             // check and replace newlines
             userData = userData.replace("\\n", "");
-            userData = validateUserData(userData, httpMethod);
+            userData = userDataManager.validateUserData(userData, httpMethod);
             // update userData on domain router.
             updateUserdata = true;
         } else {
@@ -4109,7 +4104,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
 
             // check if the user data is correct
-            userData = validateUserData(userData, httpmethod);
+            userData = userDataManager.validateUserData(userData, httpmethod);
 
             // Find an SSH public key corresponding to the key pair name, if one is
             // given
@@ -5906,6 +5901,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         String userData = cmd.getUserData();
+        userData = userDataManager.validateUserData(userData, cmd.getHttpMethod());
         Long userDataId = cmd.getUserdataId();
         String userDataDetails = null;
         if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
