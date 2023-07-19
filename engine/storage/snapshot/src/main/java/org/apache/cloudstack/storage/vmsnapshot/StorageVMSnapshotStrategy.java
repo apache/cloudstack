@@ -177,7 +177,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                         throw new CloudRuntimeException("Could not take snapshot for volume with id=" + vol.getId());
                     }
-                    s_logger.info(String.format("Snapshot with id=%s, took  %s miliseconds", snapInfo.getId(),
+                    s_logger.info(String.format("Snapshot with id=%s, took  %s milliseconds", snapInfo.getId(),
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startSnapshtot), TimeUnit.NANOSECONDS)));
                 }
                 answer = new CreateVMSnapshotAnswer(ccmd, true, "");
@@ -185,7 +185,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                 if (thawAnswer != null && thawAnswer.getResult()) {
                     s_logger.info(String.format(
-                            "Virtual machne is thawed. The freeze of virtual machine took %s miliseconds.",
+                            "Virtual machne is thawed. The freeze of virtual machine took %s milliseconds.",
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 }
             } else {
@@ -219,7 +219,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             throw new CloudRuntimeException(e.getMessage());
         } finally {
             if (thawAnswer == null && freezeAnswer != null) {
-                s_logger.info(String.format("Freeze of virtual machine took %s miliseconds.", TimeUnit.MILLISECONDS
+                s_logger.info(String.format("Freeze of virtual machine took %s milliseconds.", TimeUnit.MILLISECONDS
                                                 .convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 try {
                     thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);

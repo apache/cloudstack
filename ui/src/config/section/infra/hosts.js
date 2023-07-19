@@ -22,8 +22,13 @@ export default {
   name: 'host',
   title: 'label.hosts',
   icon: 'desktop-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    return filters
+  },
   params: { type: 'routing' },
   columns: () => {
     const fields = ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'instances', 'powerstate']

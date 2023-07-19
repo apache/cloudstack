@@ -27,9 +27,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -112,7 +109,9 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -120,6 +119,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -781,8 +781,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
                 operation = "created";
             }
-            s_logger.debug(String.format("VM [id: %s, instanceName: %s] backup restore operation %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
-                    operation, volume.getUuid()));
+            s_logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
         }
     }
 
@@ -879,9 +878,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String tag = parts[parts.length - 1];
         String[] tagSplit = tag.split("-");
         tag = tagSplit[tagSplit.length - 1];
+
+        s_logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
         NetworkVO networkVO = networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
+            s_logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
+                    networkVO.getUuid(), zoneId, tag, vlan, accountId, domainId));
         }
         return networkVO;
     }
@@ -893,6 +896,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Map<String, NetworkVO> mapping = new HashMap<>();
         for (String networkName : vmNetworkNames) {
             NetworkVO networkVO = getGuestNetworkFromNetworkMorName(networkName, accountId, zoneId, domainId);
+            s_logger.debug(String.format("Mapping network name [%s] to networkVO [id: %s].", networkName, networkVO.getUuid()));
             mapping.put(networkName, networkVO);
         }
         return mapping;
@@ -927,12 +931,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String networkName = pair.second();
             NetworkVO networkVO = networksMapping.get(networkName);
-            NicVO nicVO = nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
+            NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
+                s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
+                        networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
+
+                if (nicVO.getRemoved() != null) {
+                    nicDao.unremove(nicVO.getId());
+                }
             }
         }
         for (final NicVO unMappedNic : allNics) {
+            s_logger.debug(String.format("Removing NIC [%s] from backup restored %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(unMappedNic, "uuid", "macAddress"), vm));
             vmManager.removeNicFromVm(vm, unMappedNic);
         }
     }
@@ -1149,10 +1160,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
-        List<Command> commands = new ArrayList<Command>();
+        List<Command> commands = new ArrayList<>();
 
         // OfflineVmwareMigration: specialised migration command
-        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
+        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<>();
         Long poolClusterId = null;
         StoragePool targetLocalPoolForVM = null;
         for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
@@ -1166,10 +1177,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
                 targetLocalPoolForVM = pool;
             }
-            volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
+            volumeToFilerTo.add(new Pair<>(volumeTo, filerTo));
         }
         final Long destClusterId = poolClusterId;
-        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
+        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm, true).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         String targetHostGuid = getTargetHostGuid(targetLocalPoolForVM, destClusterId, isInterClusterMigration);
 

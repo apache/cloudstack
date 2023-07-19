@@ -2358,4 +2358,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
         return SystemVmPublicIpReservationModeStrictness;
     }
+
+    @Override
+    public void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
+        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
+            // update all other IPs to not be sourcenat, should be at most one
+            for(IPAddressVO oldIpAddress :userIps) {
+                oldIpAddress.setSourceNat(false);
+                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+            }
+            requestedIp.setSourceNat(true);
+            _ipAddressDao.update(requestedIp.getId(),requestedIp);
+            return requestedIp;
+        });
+    }
+
 }
