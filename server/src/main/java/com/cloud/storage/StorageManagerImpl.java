@@ -659,14 +659,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String hostAddress = poolInfos.get("host").toString();
         Host host = _hostDao.findByName(hostAddress);
 
-        if( host == null )
+        if( host == null ) {
             host = _hostDao.findByIp(hostAddress);
 
-        if( host == null )
-            host = _hostDao.findByPublicIp(hostAddress);
+            if( host == null ) {
+                host = _hostDao.findByPublicIp(hostAddress);
 
-        if( host == null )
-            throw new InvalidParameterValueException(String.format("host %s not found",hostAddress));
+                if( host == null ) {
+                    throw new InvalidParameterValueException(String.format("host %s not found",hostAddress));
+                }
+             }
+         }
 
         long capacityBytes = poolInfos.get("capacityBytes") != null ? Long.parseLong(poolInfos.get("capacityBytes").toString()) : 0;
 
