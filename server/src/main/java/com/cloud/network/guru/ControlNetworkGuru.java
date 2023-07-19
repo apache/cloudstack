@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.NetworkModel;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -62,6 +63,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     NetworkModel networkModel;
     String _gateway;
+    @Inject
+    NetworkModel networkModel;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Control};
 
