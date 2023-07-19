@@ -92,7 +92,7 @@ public class NonStrictHostAntiAffinityProcessorTest {
         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
         vm2.setHostId(host2Id);
 
-        processor.process(vmProfile, plan, avoid);
+        processor.process(vmProfile, plan, avoid, null);
 
         Assert.assertEquals(1, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
@@ -127,7 +127,7 @@ public class NonStrictHostAntiAffinityProcessorTest {
         when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
         vm3.setHostId(host3Id);
 
-        processor.process(vmProfile, plan, avoid);
+        processor.process(vmProfile, plan, avoid, null);
 
         Assert.assertEquals(2, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
@@ -163,7 +163,7 @@ public class NonStrictHostAntiAffinityProcessorTest {
         when(vm2.getUpdateTime()).thenReturn(new Date());
 
         ReflectionTestUtils.setField(processor, "vmCapacityReleaseInterval", 3600);
-        processor.process(vmProfile, plan, avoid);
+        processor.process(vmProfile, plan, avoid, null);
 
         Assert.assertEquals(1, plan.getHostPriorities().size());
         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));

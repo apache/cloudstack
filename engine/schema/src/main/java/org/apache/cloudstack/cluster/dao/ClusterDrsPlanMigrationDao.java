@@ -27,7 +27,7 @@ import java.util.List;
 public interface ClusterDrsPlanMigrationDao extends GenericDao<ClusterDrsPlanMigrationVO, Long> {
     List<ClusterDrsPlanMigrationVO> listByPlanId(long planId);
 
-    List<ClusterDrsPlanMigrationVO> listPlanDetailsToExecute(Long id);
+    List<ClusterDrsPlanMigrationVO> listPlanMigrationsToExecute(Long id);
 
     List<ClusterDrsPlanMigrationVO> listPlanMigrationsInProgress(Long id);
 }

@@ -44,7 +44,7 @@ public class ClusterDrsPlanMigrationDaoImpl extends GenericDaoBase<ClusterDrsPla
     }
 
     @Override
-    public List<ClusterDrsPlanMigrationVO> listPlanDetailsToExecute(Long id) {
+    public List<ClusterDrsPlanMigrationVO> listPlanMigrationsToExecute(Long id) {
         SearchBuilder<ClusterDrsPlanMigrationVO> sb = createSearchBuilder();
         sb.and("planId", sb.entity().getPlanId(), SearchCriteria.Op.EQ);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.NULL);
