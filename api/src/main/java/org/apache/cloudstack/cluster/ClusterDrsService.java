@@ -24,6 +24,7 @@ import com.cloud.utils.concurrency.Scheduler;
 import org.apache.cloudstack.api.command.admin.cluster.ExecuteClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClusterDrsPlanCmd;
+import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -52,7 +53,7 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
      * @param cmd the GenerateClusterDrsPlanCmd object containing the command parameters
      * @return a SuccessResponse object indicating the success of the operation
      */
-    ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
+    ListResponse<ClusterDrsPlanMigrationResponse> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
 
     boolean executeDrsPlan(ExecuteClusterDrsPlanCmd executeClusterDrsPlanCmd);
 

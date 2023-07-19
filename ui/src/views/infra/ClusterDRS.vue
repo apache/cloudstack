@@ -20,44 +20,30 @@
     {{ $t('message.drs.plan.description') + ' ' + algorithm }}
   </a-row>
   <a-row>
-  <a-col :span="12">
-    <a-slider v-model:value="iterations" :min="0.01" :max="1" :step="0.01" />
-  </a-col>
-  <a-col :span="4">
-    <a-input-number
-            v-model:value="iterations"
-            :min="0.01"
-            :max="1"
-            :step="0.01"
-            style="margin-left: 16px"
-          />
-  </a-col>
-  <a-col :span="6">
-    <a-popconfirm
-          title="Are you sure you want to execute this plan?"
-          :ok-text="$t('label.yes')"
-          :cancel-text="$t('label.cancel')"
-          @confirm="generateDrsPlan()"
-          >
-          <a-button
-        type="dashed"
-        @click="showAddModal"
+    <a-col :span="12">
+      <a-slider v-model:value="iterations" :min="0.01" :max="1" :step="0.01" />
+    </a-col>
+    <a-col :span="2">
+      <a-input-number
+        v-model:value="iterations"
+        :min="0.01"
+        :max="1"
+        :step="0.01"
+        style="margin-left: 16px"
+      />
+    </a-col>
+    <a-col :span="2">
+      <a-button
+        type="primary"
+        @click="generateDrsPlan"
         :loading="loading"
         :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
         {{ $t('label.cluster.drs.generate') }}
-    </a-button>
-    <a-button
-        type="dashed"
-        @click="showAddModal"
-        :loading="loading"
-        :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
-        {{ $t('label.cluster.drs.execute') }}
-    </a-button>
-  </a-popconfirm>
-  </a-col>
+      </a-button>
+    </a-col>
   </a-row>
   <a-table
-    size="medium"
+    size="small"
     :columns="drsPlanColumns"
     :dataSource="drsPlans"
     :rowKey="item => item.id"
@@ -92,25 +78,60 @@
         </template>
       </a-table>
     </template>
-    <template #bodyCell="{ column, text, record }">
-      <template v-if="column.key === 'actions' && record.type === 'MANUAL' && record.status === 'UNDER_REVIEW'">
-        <a-popconfirm
-          title="Are you sure you want to execute this plan?"
-          :ok-text="$t('label.yes')"
-          :cancel-text="$t('label.cancel')"
-          @confirm="executeDrsPlan(record)"
-          >
-          <a href="#">{{ $t('label.execute') }}</a>
-        </a-popconfirm>
-      </template>
-      <template v-else-if="column.key === 'created'">
+    <template #bodyCell="{ column, text }">
+      <template v-if="column.key === 'created'">
         {{ $toLocaleDate(text) }}
       </template>
-      <template v-else-if="column.key !== 'actions'">
+      <template v-else>
         {{ text }}
       </template>
     </template>
   </a-table>
+
+  <a-modal
+    :visible="showModal"
+    :title="$t('label.drs.plan')"
+    :maskClosable="false"
+    :closable="true"
+    :okButtonProps="{ style: { display: generatedMigrations.length === 0 ? 'none' : null } }"
+    :okText="$t('label.execute')"
+    :cancelText="$t('label.cancel')"
+    @ok="executeDrsPlan"
+    @cancel="closeModal">
+    <a-table
+      v-if="generatedMigrations.length > 0"
+      size="small"
+      :columns="generatedPlanMigrationColumns"
+      :dataSource="generatedMigrations"
+      :rowKey="(record, index) => index"
+      :pagination="true">
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'vm'">
+          <router-link :to="{ path: '/vm/' + record.vm }">
+            {{ record.vm.displayname }}
+          </router-link>
+        </template>
+        <template v-else-if="column.key === 'sourcehost'">
+          <router-link :to="{ path: '/host/' + record.sourcehost }">
+            {{ record.sourcehost.name }}
+          </router-link>
+        </template>
+        <template v-else-if="column.key === 'destinationhost'">
+          <router-link :to="{ path: '/host/' + record.destinationhost }">
+            {{ record.destinationhost.name }}
+          </router-link>
+        </template>
+        <template v-else>
+          {{ text }}
+        </template>
+      </template>
+    </a-table>
+    <a-p v-else>
+      {{ $t('label.no.drs.plan.generated') }}
+    </a-p>
+
+  </a-modal>
+
 </template>
 
 <script>
@@ -136,6 +157,26 @@ export default {
   },
   inject: ['parentFetchData'],
   data () {
+    const generatedPlanMigrationColumns = [
+      {
+        key: 'vm',
+        title: this.$t('label.vm'),
+        dataIndex: 'vm',
+        ellipsis: true
+      },
+      {
+        key: 'sourcehost',
+        title: this.$t('label.source.host'),
+        dataIndex: 'sourcehost',
+        ellipsis: true
+      },
+      {
+        key: 'destinationhost',
+        title: this.$t('label.destination.host'),
+        dataIndex: 'created',
+        ellipsis: true
+      }
+    ]
     return {
       drsPlanColumns: [
         {
@@ -150,38 +191,22 @@ export default {
           key: 'created',
           title: this.$t('label.created'),
           dataIndex: 'created'
-        },
-        {
-          key: 'actions',
-          title: this.$t('label.actions')
         }
       ],
-      migrationColumns: [
-        {
-          key: 'vm',
-          title: this.$t('label.vm'),
-          dataIndex: 'vm'
-        },
-        {
-          key: 'sourcehost',
-          title: this.$t('label.source.host'),
-          dataIndex: 'sourcehost'
-        },
-        {
-          key: 'destinationhost',
-          title: this.$t('label.destination.host'),
-          dataIndex: 'created'
-        },
+      generatedPlanMigrationColumns: generatedPlanMigrationColumns,
+      migrationColumns: generatedPlanMigrationColumns.concat([
         {
           key: 'jobstatus',
-          title: this.$t('label.destination.host'),
+          title: this.$t('label.job.status'),
           dataIndex: 'jobstatus'
         }
-      ],
+      ]),
       loading: false,
       drsPlans: [],
       algorithm: '',
-      iterations: 0
+      iterations: 0,
+      generatedMigrations: reactive([]),
+      showModal: false
     }
   },
   watch: {
@@ -195,8 +220,6 @@ export default {
     }
   },
   created () {
-    // this.algorithm = reactive('')
-    // this.iterations = reactive(0)
     this.fetchDRSPlans()
     this.fetchDrsConfig()
   },
@@ -207,16 +230,31 @@ export default {
         this.drsPlans = json.listclusterdrsplanresponse.drsPlan
       })
     },
-    executeDrsPlan (record) {
-      api('executeClusterDrsPlan', { id: record.id }).then(json => {
+    executeDrsPlan () {
+      if (this.generatedMigrations.length === 0) return
+
+      var params = { id: this.resource.id }
+
+      for (var i = 0; i < this.generatedMigrations.length; i++) {
+        const mapping = this.generatedMigrations[i]
+        params['migrateto[' + i + '].vm'] = mapping.vm.id
+        params['migrateto[' + i + '].host'] = mapping.destinationhost.id
+      }
+
+      api('executeClusterDrsPlan', params).then(json => {
         this.$message.success(this.$t('message.drs.plan.executed'))
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.drs.plan.execution.failed'))
+      }).finally(() => {
         this.fetchDRSPlans()
+        this.closeModal()
       })
     },
     generateDrsPlan () {
       api('generateClusterDrsPlan', { id: this.resource.id, iterations: this.iterations }).then(json => {
-        this.$message.success(this.$t('message.drs.plan.executed'))
-        this.fetchDRSPlans()
+        this.generatedMigrations = json.generateclusterdrsplanresponse.migrations || []
+        this.showModal = true
       })
     },
     fetchDrsConfig () {
@@ -228,6 +266,10 @@ export default {
           this.loading = false
         })
       })
+    },
+    closeModal () {
+      this.showModal = false
+      this.generatedMigrations = reactive([])
     }
   }
 }

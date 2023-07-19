@@ -234,7 +234,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Generating DRS plan", async = true)
-    public ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
+    public ListResponse<ClusterDrsPlanMigrationResponse> generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {
             throw new InvalidParameterValueException("Unable to find the cluster by id=" + cmd.getId());
@@ -251,16 +251,18 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
         try {
             List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, cmd.getIterations());
-            ClusterDrsPlanVO drsPlan = new ClusterDrsPlanVO(cluster.getId(), CallContext.current().getStartEventId(), ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
-            List<ClusterDrsPlanMigrationVO> planDetails = new ArrayList<>();
+
+            List<ClusterDrsPlanMigrationVO> migrations = new ArrayList<>();
             for (Ternary<VirtualMachine, Host, Host> migration : plan) {
                 VirtualMachine vm = migration.first();
                 Host srcHost = migration.second();
                 Host destHost = migration.third();
-                planDetails.add(new ClusterDrsPlanMigrationVO(drsPlan.getId(), vm.getId(), srcHost.getId(), destHost.getId()));
+                migrations.add(new ClusterDrsPlanMigrationVO(0L, vm.getId(), srcHost.getId(), destHost.getId()));
             }
+            ListResponse<ClusterDrsPlanMigrationResponse> response = new ListResponse<>();
+            response.setResponses(getResponseObjectForMigrationDetails(migrations), migrations.size());
 
-            return new ClusterDrsPlanResponse(cluster.getUuid(), drsPlan, getResponseObjectForMigrationDetails(planDetails));
+            return response;
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException("Unable to schedule DRS", e);
         }
@@ -334,15 +336,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                         throw new InvalidParameterValueException(String.format("Unable to execute DRS plan %s as there is already a plan in READY state", readyPlans.get(0).getUuid()));
                     }
 
-                    Map<String, String> vmToHostMap =  cmd.getVmToHostMap();
+                    Map<VirtualMachine, Host> vmToHostMap = cmd.getVmToHostMap();
                     List<Ternary<VirtualMachine, Host, Host>> plan = new ArrayList<>();
-                    for (String vmId : vmToHostMap.keySet()) {
-                        VirtualMachine vm = vmInstanceDao.findById(Long.parseLong(vmId));
+                    for (Map.Entry<VirtualMachine, Host> entry : vmToHostMap.entrySet()) {
+                        VirtualMachine vm = entry.getKey();
+                        Host destHost = entry.getValue();
                         Host srcHost = hostDao.findById(vm.getHostId());
-                        Host destHost = hostDao.findById(Long.parseLong(vmToHostMap.get(vmId)));
-                        if (vm == null || srcHost == null || destHost == null) {
-                            throw new InvalidParameterValueException(String.format("Unable to find the vm/host for vmId=%s, destHostId=%s", vmId, vmToHostMap.get(vmId)));
-                        }
                         plan.add(new Ternary<>(vm, srcHost, destHost));
                     }
 

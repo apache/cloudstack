@@ -53,5 +53,6 @@ public class ClusterDrsPlanMigrationResponse extends BaseResponse {
         this.destHost = destHost;
         this.jobId = jobId;
         this.jobStatus = jobStatus;
+        this.setObjectName(ApiConstants.MIGRATIONS);
     }
 }

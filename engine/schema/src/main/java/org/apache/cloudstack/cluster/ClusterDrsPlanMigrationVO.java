@@ -50,7 +50,6 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
 
 
     public ClusterDrsPlanMigrationVO(long planId, long vmId, long srcHostId, long destHostId) {
-//        uuid = UUID.randomUUID().toString();
         this.planId = planId;
         this.vmId = vmId;
         this.srcHostId = srcHostId;

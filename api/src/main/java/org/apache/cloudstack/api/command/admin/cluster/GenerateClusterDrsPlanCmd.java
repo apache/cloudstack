@@ -20,14 +20,14 @@
 package org.apache.cloudstack.api.command.admin.cluster;
 
 import com.cloud.user.Account;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
+import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.log4j.Logger;
 
@@ -35,8 +35,8 @@ import javax.inject.Inject;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
-@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", authorized = {RoleType.Admin})
-public class GenerateClusterDrsPlanCmd extends BaseCmd {
+@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = ClusterDrsPlanMigrationResponse.class, since = "4.19.0")
+public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
     static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlanCmd.class);
 
@@ -62,8 +62,9 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        final ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(this);
+        final ListResponse<ClusterDrsPlanMigrationResponse> response = clusterDrsService.generateDrsPlan(this);
         response.setResponseName(getCommandName());
+        response.setObjectName(getCommandName());
         this.setResponseObject(response);
     }
 

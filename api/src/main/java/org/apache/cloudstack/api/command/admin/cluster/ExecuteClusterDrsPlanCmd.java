@@ -19,13 +19,16 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.utils.UuidUtils;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
@@ -49,8 +52,17 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of cluster")
     private Long id;
 
-    @Parameter(name = ApiConstants.MIGRATE_TO, type = CommandType.MAP, entityType = ClusterDrsPlanResponse.class, required = true, description = "the ID of plan to execute")
-    private Map migrateVmTo;
+    @Parameter(
+            name = ApiConstants.MIGRATE_TO,
+            type = CommandType.MAP,
+            required = true,
+            description = "Virtual Machine to destination host mapping. This parameter specifies the mapping between a VM and a host where you want to migrate that VM. Format of this " +
+                    "parameter: migrateto[vm-index].vm=<uuid>&migrateto[vm-index].host=<uuid>Where, [vm-index] indicates the index to identify the vm that you " +
+                    "want to migrate, vm=<uuid> indicates the UUID of the vm that you want to migrate, and host=<uuid> indicates the UUID of the host where you want to " +
+                    "migrate the vm. Example: migrateto[0].vm=<71f43cd6-69b0-4d3b-9fbc-67f50963d60b>&migrateto[0].host=<a382f181-3d2b-4413-b92d-b8931befa7e1>&" +
+                    "migrateto[1].vm=<88de0173-55c0-4c1c-a269-83d0279eeedf>&migrateto[1].host=<95d6e97c-6766-4d67-9a30-c449c15011d1>&migrateto[2].vm=" +
+                    "<1b331390-59f2-4796-9993-bf11c6e76225>&migrateto[2].host=<41fdb564-9d3b-447d-88ed-7628f7640cbc>")
+    private Map<String, String> migrateVmTo;
 
     @Inject
     private ClusterDrsService clusterDrsService;
@@ -60,16 +72,37 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
     }
 
 
-    public Map<String, String> getVmToHostMap() {
-        Map<String, String> vmToHostMap = new HashMap<>();
+    public Map<VirtualMachine, Host> getVmToHostMap() {
+        Map<VirtualMachine, Host> vmToHostMap = new HashMap<>();
         if (MapUtils.isNotEmpty(migrateVmTo)) {
             Collection<?> allValues = migrateVmTo.values();
             Iterator<?> iter = allValues.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> volumeToPool = (HashMap<String, String>)iter.next();
-                String volume = volumeToPool.get("volume");
-                String pool = volumeToPool.get("pool");
-                vmToHostMap.put(volume, pool);
+                HashMap<String, String> vmToHost = (HashMap<String, String>) iter.next();
+
+                UuidUtils.isUuid(vmToHost.get("vm"));
+                String vmId = vmToHost.get("vm");
+                String hostId = vmToHost.get("host");
+
+                VirtualMachine vm;
+                Host host;
+                if (UuidUtils.isUuid(vmId)) {
+                    vm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
+                } else {
+                    vm = _entityMgr.findById(VirtualMachine.class, Long.parseLong(vmId));
+                }
+
+                if (UuidUtils.isUuid(hostId)) {
+                    host = _entityMgr.findByUuid(Host.class, hostId);
+                } else {
+                    host = _entityMgr.findById(Host.class, Long.parseLong(hostId));
+                }
+
+                if (vm == null || host == null) {
+                    throw new InvalidParameterValueException(String.format("Unable to find the vm/host for vmId=%s, destHostId=%s", vmId, hostId));
+                }
+
+                vmToHostMap.put(vm, host);
             }
         }
         return vmToHostMap;
