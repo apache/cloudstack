@@ -1417,7 +1417,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
+        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
             canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
