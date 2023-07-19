@@ -32,21 +32,31 @@ import java.util.List;
 @EntityReference(value = ClusterDrsPlan.class)
 public class ClusterDrsPlanResponse extends BaseResponse {
     @SerializedName(ApiConstants.MIGRATIONS)
+    @Param(description = "List of migrations")
     List<ClusterDrsPlanMigrationResponse> migrationPlans;
+
     @SerializedName(ApiConstants.ID)
     @Param(description = "unique ID of the drs plan for cluster")
     private String id;
+
     @SerializedName(ApiConstants.CLUSTER_ID)
+    @Param(description = "Id of the cluster")
     private String clusterId;
+
     @SerializedName(ApiConstants.TYPE)
+    @Param(description = "Type of DRS Plan (Automated or Manual))")
     private ClusterDrsPlan.Type type;
+
     @SerializedName(ApiConstants.STATUS)
+    @Param(description = "Status of DRS Plan")
     private ClusterDrsPlan.Status status;
+
     @SerializedName(ApiConstants.CREATED)
     private Date created;
 
 
-    public ClusterDrsPlanResponse(String clusterId, ClusterDrsPlan plan, List<ClusterDrsPlanMigrationResponse> migrationPlans) {
+    public ClusterDrsPlanResponse(String clusterId, ClusterDrsPlan plan,
+                                  List<ClusterDrsPlanMigrationResponse> migrationPlans) {
         this.clusterId = clusterId;
         this.id = plan.getUuid();
         this.type = plan.getType();

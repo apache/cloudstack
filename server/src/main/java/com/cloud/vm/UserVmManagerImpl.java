@@ -63,7 +63,6 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -6292,70 +6291,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         return isAnyVmVolumeUsingLocalStorage(volumes);
-    }
-
-    @Override
-    public List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds, Long clusterId) {
-        // Validation
-        if (vmIds.isEmpty()) {
-            throw new InvalidParameterValueException("vmIds cannot be empty");
-        } else if (hostIds.isEmpty()) {
-            throw new InvalidParameterValueException("hostIds cannot be empty");
-        } else if (hostIds.size() != vmIds.size()) {
-            throw new InvalidParameterValueException("Size of hostIds & vmIds should be same");
-        }
-
-        Map<Long, Host> hostMap = new HashMap<>();
-        for (Long hostId : hostIds) {
-            if (hostMap.get(hostId) == null) {
-                Host host = _hostDao.findById(hostId);
-                if (host == null) {
-                    throw new InvalidParameterValueException(String.format("Unable to find host with id: %d", hostId));
-                }
-                hostMap.put(hostId, host);
-            }
-        }
-
-        if (clusterId != null) {
-            GlobalLock clusterLock = GlobalLock.getInternLock(String.format("cluster.multivmmigration.%d", clusterId));
-
-            List<VirtualMachine> vmList = new ArrayList<>();
-            try {
-                if (clusterLock.lock(30)) {
-                    try {
-                        vmList = migrateMultipleVms(vmIds, hostIds, hostMap);
-                    } finally {
-                        clusterLock.unlock();
-                    }
-                }
-            } finally {
-                clusterLock.releaseRef();
-            }
-
-            return vmList;
-        }
-        return migrateMultipleVms(vmIds, hostIds, hostMap);
-    }
-
-    private List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds, Map<Long, Host> hostMap) {
-        List<VirtualMachine> vmList = new ArrayList<>();
-        for (int i = 0; i < vmIds.size(); i++) {
-            long hostId = hostIds.get(i);
-            long vmId = vmIds.get(i);
-
-            CallContext.current().setEventDetails(String.format("Migrating Vm Id: %d to Host Id: %d", vmId, hostId));
-            try {
-                vmList.add(migrateVirtualMachine(vmId, hostMap.get(hostId)));
-                s_logger.info(String.format("Migrated vm: %d to host: %d", vmId, hostId));
-            } catch (Exception e) {
-                s_logger.info(String.format("Failed to migrate vm: %d to host: %d due to %s", vmId, hostId, e.getMessage()));
-            }
-        }
-
-        CallContext.current().setEventDetails(String.format("Migrated VMs [ids=%s] to hosts [ids=%s]",
-                vmList.stream().map(Identity::getUuid).collect(Collectors.joining(",")),
-                vmList.stream().map(vm -> hostMap.get(vm.getHostId()).getUuid()).collect(Collectors.joining(","))));
-        return vmList;
     }
 
     @Override

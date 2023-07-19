@@ -27,27 +27,28 @@ import org.apache.cloudstack.jobs.JobInfo;
 
 public class ClusterDrsPlanMigrationResponse extends BaseResponse {
     @SerializedName(ApiConstants.VM)
-    @Param(description = "POST url to upload the file to")
+    @Param(description = "VM to migrate")
     UserVmResponse vm;
 
     @SerializedName("sourcehost")
-    @Param(description = "POST url to upload the file to")
+    @Param(description = "Original host for VM migration")
     HostResponse srcHost;
 
     @SerializedName("destinationhost")
-    @Param(description = "POST url to upload the file to")
+    @Param(description = "Destination host for VM migration")
     HostResponse destHost;
 
     @SerializedName(ApiConstants.JOB_ID)
-    @Param(description = "Job id for migration of VM")
+    @Param(description = "id of VM migration async job")
     private Long jobId;
 
     @SerializedName(ApiConstants.JOB_STATUS)
-    @Param(description = "Job id for migration of VM")
+    @Param(description = "Job status of VM migration async job")
     private JobInfo.Status jobStatus;
 
 
-    public ClusterDrsPlanMigrationResponse(UserVmResponse vm, HostResponse srcHost, HostResponse destHost, Long jobId, JobInfo.Status jobStatus) {
+    public ClusterDrsPlanMigrationResponse(UserVmResponse vm, HostResponse srcHost, HostResponse destHost, Long jobId,
+                                           JobInfo.Status jobStatus) {
         this.vm = vm;
         this.srcHost = srcHost;
         this.destHost = destHost;

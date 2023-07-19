@@ -35,16 +35,22 @@ public class ClusterDrsPlanMigrationVO implements ClusterDrsPlanMigration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     Long id;
+
     @Column(name = "plan_id", nullable = false)
     private long planId;
+
     @Column(name = "vm_id", nullable = false)
     private long vmId;
+
     @Column(name = "src_host_id", nullable = false)
     private long srcHostId;
+
     @Column(name = "dest_host_id", nullable = false)
     private long destHostId;
+
     @Column(name = "job_id")
     private Long jobId;
+
     @Column(name = "status")
     private JobInfo.Status status;
 

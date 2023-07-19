@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Collection;
@@ -42,35 +41,36 @@ import java.util.Iterator;
 import java.util.Map;
 
 @APICommand(name = "executeClusterDrsPlan",
-        description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, this command will fail.",
-        responseObject = SuccessResponse.class,
-        since = "4.19.0")
+            description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, " +
+                    "this command will fail.",
+            responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            since = "4.19.0")
 public class ExecuteClusterDrsPlanCmd extends BaseCmd {
 
-    static final Logger LOG = Logger.getLogger(ExecuteClusterDrsPlanCmd.class);
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of cluster")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
+               description = "the ID of cluster")
     private Long id;
 
     @Parameter(
             name = ApiConstants.MIGRATE_TO,
             type = CommandType.MAP,
             required = true,
-            description = "Virtual Machine to destination host mapping. This parameter specifies the mapping between a VM and a host where you want to migrate that VM. Format of this " +
-                    "parameter: migrateto[vm-index].vm=<uuid>&migrateto[vm-index].host=<uuid>Where, [vm-index] indicates the index to identify the vm that you " +
-                    "want to migrate, vm=<uuid> indicates the UUID of the vm that you want to migrate, and host=<uuid> indicates the UUID of the host where you want to " +
-                    "migrate the vm. Example: migrateto[0].vm=<71f43cd6-69b0-4d3b-9fbc-67f50963d60b>&migrateto[0].host=<a382f181-3d2b-4413-b92d-b8931befa7e1>&" +
-                    "migrateto[1].vm=<88de0173-55c0-4c1c-a269-83d0279eeedf>&migrateto[1].host=<95d6e97c-6766-4d67-9a30-c449c15011d1>&migrateto[2].vm=" +
-                    "<1b331390-59f2-4796-9993-bf11c6e76225>&migrateto[2].host=<41fdb564-9d3b-447d-88ed-7628f7640cbc>")
+            description = "Virtual Machine to destination host mapping. This parameter specifies the mapping between " +
+                    "a vm and a host to migrate that VM. " +
+                    "Format of this parameter: migrateto[vm-index].vm=<uuid>&migrateto[vm-index].host=<uuid> " +
+                    "Where, [vm-index] indicates the index to identify the vm that you want to migrate, " +
+                    "vm=<uuid> indicates the UUID of the vm that you want to migrate, and " +
+                    "host=<uuid> indicates the UUID of the host where you want to migrate the vm. " +
+                    "Example: migrateto[0].vm=<71f43cd6-69b0-4d3b-9fbc-67f50963d60b>" +
+                    "&migrateto[0].host=<a382f181-3d2b-4413-b92d-b8931befa7e1>" +
+                    "&migrateto[1].vm=<88de0173-55c0-4c1c-a269-83d0279eeedf>" +
+                    "&migrateto[1].host=<95d6e97c-6766-4d67-9a30-c449c15011d1>" +
+                    "&migrateto[2].vm=<1b331390-59f2-4796-9993-bf11c6e76225>" +
+                    "&migrateto[2].host=<41fdb564-9d3b-447d-88ed-7628f7640cbc>")
     private Map<String, String> migrateVmTo;
 
     @Inject
     private ClusterDrsService clusterDrsService;
-
-    public Long getId() {
-        return id;
-    }
-
 
     public Map<VirtualMachine, Host> getVmToHostMap() {
         Map<VirtualMachine, Host> vmToHostMap = new HashMap<>();
@@ -80,7 +80,6 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
             while (iter.hasNext()) {
                 HashMap<String, String> vmToHost = (HashMap<String, String>) iter.next();
 
-                UuidUtils.isUuid(vmToHost.get("vm"));
                 String vmId = vmToHost.get("vm");
                 String hostId = vmToHost.get("host");
 
@@ -99,7 +98,8 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
                 }
 
                 if (vm == null || host == null) {
-                    throw new InvalidParameterValueException(String.format("Unable to find the vm/host for vmId=%s, destHostId=%s", vmId, hostId));
+                    throw new InvalidParameterValueException(
+                            String.format("Unable to find the vm/host for vmId=%s, destHostId=%s", vmId, hostId));
                 }
 
                 vmToHostMap.put(vm, host);
@@ -125,6 +125,10 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
     @Override
     public Long getApiResourceId() {
         return getId();
+    }
+
+    public Long getId() {
+        return id;
     }
 
     @Override

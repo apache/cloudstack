@@ -621,10 +621,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> newUserVmView(VirtualMachine... userVms) {
+    public List<UserVmJoinVO> newUserVmView(VirtualMachine... vms) {
 
         Hashtable<Long,VirtualMachine> userVmDataHash = new Hashtable<>();
-        for (VirtualMachine vm : userVms) {
+        for (VirtualMachine vm : vms) {
             if (!userVmDataHash.containsKey(vm.getId())) {
                 userVmDataHash.put(vm.getId(), vm);
             }

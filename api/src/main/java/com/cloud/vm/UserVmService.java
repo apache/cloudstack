@@ -453,9 +453,6 @@ public interface UserVmService {
     VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
-    public List<VirtualMachine> migrateMultipleVms(List<Long> vmIds, List<Long> hostIds, Long clusterId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException;
-
     /**
      * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
      * Only root admin can migrate a VM.

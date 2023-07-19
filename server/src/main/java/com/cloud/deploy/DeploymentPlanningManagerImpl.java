@@ -407,7 +407,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         if (vmGroupCount > 0) {
             for (AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, avoids, Collections.emptyList());
+                processor.process(vmProfile, plan, avoids);
             }
         }
 

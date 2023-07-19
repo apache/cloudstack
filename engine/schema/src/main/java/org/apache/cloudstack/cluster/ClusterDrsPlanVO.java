@@ -41,6 +41,9 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
     @Column(name = "uuid", nullable = false)
     String uuid;
 
+    @Column(name = GenericDao.CREATED_COLUMN)
+    Date created;
+
     @Column(name = "cluster_id")
     private long clusterId;
 
@@ -52,9 +55,6 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
 
     @Column(name = "status")
     private Status status;
-
-    @Column(name = GenericDao.CREATED_COLUMN)
-    Date created;
 
     public ClusterDrsPlanVO(long clusterId, long eventId, Type type, Status status) {
         uuid = UUID.randomUUID().toString();
@@ -72,16 +72,8 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
         return id;
     }
 
-    public String getUuid() {
-        return uuid;
-    }
-
     public long getEventId() {
         return eventId;
-    }
-
-    public Date getCreated() {
-        return created;
     }
 
     public long getClusterId() {
@@ -92,9 +84,17 @@ public class ClusterDrsPlanVO implements ClusterDrsPlan {
         return type;
     }
 
+    public Date getCreated() {
+        return created;
+    }
+
     @Override
     public Status getStatus() {
         return status;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public void setStatus(Status status) {

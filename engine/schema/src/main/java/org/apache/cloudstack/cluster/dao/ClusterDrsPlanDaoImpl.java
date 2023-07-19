@@ -86,7 +86,8 @@ public class ClusterDrsPlanDaoImpl extends GenericDaoBase<ClusterDrsPlanVO, Long
     }
 
     @Override
-    public Pair<List<ClusterDrsPlanVO>, Integer> searchAndCount(Long clusterId, Long planId, Long startIndex, Long pageSizeVal) {
+    public Pair<List<ClusterDrsPlanVO>, Integer> searchAndCount(Long clusterId, Long planId, Long startIndex,
+                                                                Long pageSizeVal) {
         SearchBuilder<ClusterDrsPlanVO> sb;
         sb = createSearchBuilder();
         sb.and(ApiConstants.CLUSTER_ID, sb.entity().getClusterId(), SearchCriteria.Op.EQ);

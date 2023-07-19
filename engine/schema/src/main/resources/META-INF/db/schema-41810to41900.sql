@@ -182,20 +182,6 @@ ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) D
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
 
 -- Add tables for Cluster DRS
-DROP TABLE IF EXISTS `cloud`.`cluster_drs_events`;
-CREATE TABLE `cloud`.`cluster_drs_events` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `cluster_id` bigint unsigned NOT NULL,
-  `event_id` bigint unsigned NOT NULL,
-  `iterations` int COMMENT 'Number of iterations performed for DRS',
-  `execution_date` datetime NOT NULL COMMENT 'Time at which the drs''s execution was complete',
-  `type` varchar(40) NOT NULL COMMENT 'type of DRS (AUTOMATED or MANUAL)',
-  `result` varchar(20) NOT NULL COMMENT 'Result of DRS execution',
-  PRIMARY KEY (`id`),
-  INDEX `i_cluster_drs_events__execution_date_cluster_id_type`(`execution_date`, `cluster_id`, `type`),
-  CONSTRAINT `fk_cluster_drs_events__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan`;
 CREATE TABLE `cloud`.`cluster_drs_plan` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',

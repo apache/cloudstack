@@ -38,7 +38,7 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> newUserVmView(UserVm... userVms);
 
-    List<UserVmJoinVO> newUserVmView(VirtualMachine... userVms);
+    List<UserVmJoinVO> newUserVmView(VirtualMachine... vms);
 
     List<UserVmJoinVO> searchByIds(Long... ids);
 

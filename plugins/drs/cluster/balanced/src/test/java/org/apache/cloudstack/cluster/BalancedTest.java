@@ -43,8 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsLevel;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -115,15 +115,16 @@ public class BalancedTest {
         hostMemoryUsedMap.put(2L, 2048L * 1024L * 1024L);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        closeable.close();
-    }
-
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name,
+                                            final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField(name);
         f.setAccessible(true);
         f.set(configKey, o);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     /**
@@ -212,7 +213,8 @@ public class BalancedTest {
     @Test
     public void getMetricsWithCpu() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "cpu");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
+                hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(0.0, result.first(), 0.0001);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);
@@ -225,7 +227,8 @@ public class BalancedTest {
     @Test
     public void getMetricsWithMemory() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "memory");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
+                hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(0.4, result.first(), 0.01);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);
@@ -238,7 +241,8 @@ public class BalancedTest {
     @Test
     public void getMetricsWithDefault() throws NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost, hostCpuUsedMap, hostMemoryUsedMap, false);
+        Ternary<Double, Double, Double> result = balanced.getMetrics(clusterId, vm3, serviceOffering, destHost,
+                hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(0.4, result.first(), 0.001);
         assertEquals(512.0, result.second(), 0.0);
         assertEquals(3276.8, result.third(), 0.001);

@@ -257,7 +257,7 @@ public interface ResponseGenerator {
 
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, VirtualMachine... userVms);
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, VirtualMachine... vms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 

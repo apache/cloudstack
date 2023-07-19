@@ -29,35 +29,37 @@ import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
-@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster", responseObject = ClusterDrsPlanMigrationResponse.class, since = "4.19.0")
+@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster",
+            responseObject = ClusterDrsPlanMigrationResponse.class, since = "4.19.0", requestHasSensitiveInfo = false)
 public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
-    static final Logger LOG = Logger.getLogger(GenerateClusterDrsPlanCmd.class);
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
+               description = "the ID of the Cluster")
     private Long id;
 
-    @Parameter(name = "iterations", type = CommandType.DOUBLE, description = "The maximum number of iterations in a DRS job defined as a percentage (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's drs.iterations setting")
+    @Parameter(name = "iterations", type = CommandType.DOUBLE,
+               description = "The maximum number of VM migrations to perform for DRS. This is defined as a percentage" +
+                       " (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's " +
+                       "drs.iterations setting")
     private Double iterations;
 
     @Inject
     private ClusterDrsService clusterDrsService;
-
-    public Long getId() {
-        return id;
-    }
 
     public Double getIterations() {
         if (iterations == null) {
             return ClusterDrsIterations.valueIn(getId());
         }
         return iterations;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     @Override
@@ -69,11 +71,6 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
     }
 
     @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    @Override
     public Long getApiResourceId() {
         return getId();
     }
@@ -81,5 +78,10 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

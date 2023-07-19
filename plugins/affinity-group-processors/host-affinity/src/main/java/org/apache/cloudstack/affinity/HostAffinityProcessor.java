@@ -26,7 +26,6 @@ import java.util.ArrayList;
 
 import javax.inject.Inject;
 
-import com.cloud.vm.VMInstanceVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -89,28 +88,11 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
     /**
      * Get host ids set from vm ids list
      */
+
     protected Set<Long> getHostIdSet(List<Long> vmIds) {
-        Set<Long> hostIds = new HashSet<>();
-        for (Long groupVMId : vmIds) {
-            VMInstanceVO groupVM = _vmInstanceDao.findById(groupVMId);
-            if (groupVM != null && groupVM.getHostId() != null) {
-                hostIds.add(groupVM.getHostId());
-            }
-        }
-        return hostIds;
+        return getHostIdSet(vmIds, Collections.emptyList());
     }
 
-    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
-        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
-        for (VirtualMachine vm : vmList) {
-            vmIdVmMap.put(vm.getId(), vm);
-        }
-        return vmIdVmMap;
-    }
-
-    /**
-     * Get host ids set from vm ids list
-     */
     protected Set<Long> getHostIdSet(List<Long> vmIds, List<VirtualMachine> vmList) {
         Set<Long> hostIds = new HashSet<>();
         Map<Long, VirtualMachine> vmIdVmMap = getVmIdVmMap(vmList);
@@ -127,15 +109,19 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         return hostIds;
     }
 
+    protected Map<Long, VirtualMachine> getVmIdVmMap(List<VirtualMachine> vmList) {
+        Map<Long, VirtualMachine> vmIdVmMap = new HashMap<>();
+        for (VirtualMachine vm : vmList) {
+            vmIdVmMap.put(vm.getId(), vm);
+        }
+        return vmIdVmMap;
+    }
+
     /**
      * Get preferred host ids list from the affinity group VMs
      */
     protected List<Long> getPreferredHostsFromGroupVMIds(List<Long> vmIds, List<VirtualMachine> vmList) {
         return new ArrayList<>(getHostIdSet(vmIds, vmList));
-    }
-
-    protected List<Long> getPreferredHostsFromGroupVMIds(List<Long> vmIds) {
-        return new ArrayList<>(getHostIdSet(vmIds));
     }
 
     @Override

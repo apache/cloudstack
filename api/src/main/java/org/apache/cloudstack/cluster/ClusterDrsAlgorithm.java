@@ -39,10 +39,17 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * Determines whether a DRS operation is needed for a given cluster and host-VM
      * mapping.
      *
-     * @param clusterId the ID of the cluster to check
-     * @param hostVmMap a map of host IDs to lists of VMs running on each host
+     * @param clusterId
+     *         the ID of the cluster to check
+     * @param cpuList
+     *         a list of CPU allocated values for each host in the cluster
+     * @param memoryList
+     *         a list of memory allocated values for each host in the cluster
+     *
      * @return true if a DRS operation is needed, false otherwise
-     * @throws ConfigurationException if there is an error in the configuration
+     *
+     * @throws ConfigurationException
+     *         if there is an error in the configuration
      */
     boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException;
 
@@ -50,16 +57,83 @@ public interface ClusterDrsAlgorithm extends Adapter {
     /**
      * Determines the metrics for a given virtual machine and destination host in a DRS cluster.
      *
-     * @param clusterId             the ID of the cluster to check
-     * @param vm                    the virtual machine to check
-     * @param serviceOffering       the service offering for the virtual machine
-     * @param destHost              the destination host for the virtual machine
-     * @param hostCpuUsedMap        a map of host IDs to the amount of CPU used on each host
-     * @param hostMemoryUsedMap     a map of host IDs to the amount of memory used on each host
-     * @param requiresStorageMotion whether or not storage motion is required for the virtual machine
+     * @param clusterId
+     *         the ID of the cluster to check
+     * @param vm
+     *         the virtual machine to check
+     * @param serviceOffering
+     *         the service offering for the virtual machine
+     * @param destHost
+     *         the destination host for the virtual machine
+     * @param hostCpuUsedMap
+     *         a map of host IDs to the amount of CPU used on each host
+     * @param hostMemoryUsedMap
+     *         a map of host IDs to the amount of memory used on each host
+     * @param requiresStorageMotion
+     *         whether storage motion is required for the virtual machine
+     *
      * @return a ternary containing improvement, cost, benefit
      */
-    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
+    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
+                                               Host destHost, Map<Long, Long> hostCpuUsedMap,
+                                               Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion);
+
+    /**
+     * Calculates the imbalance of the cluster after a virtual machine migration.
+     *
+     * @param serviceOffering
+     *         the service offering for the virtual machine
+     * @param vm
+     *         the virtual machine being migrated
+     * @param destHost
+     *         the destination host for the virtual machine
+     * @param hostCpuUsedMap
+     *         a map of host IDs to the amount of CPU used on each host
+     * @param hostMemoryUsedMap
+     *         a map of host IDs to the amount of memory used on each host
+     *
+     * @return a pair containing the CPU and memory imbalance of the cluster after the migration
+     */
+    default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm,
+                                                           Host destHost, Map<Long, Long> hostCpuUsedMap,
+                                                           Map<Long, Long> hostMemoryUsedMap) {
+        List<Long> postCpuList = new ArrayList<>();
+        List<Long> postMemoryList = new ArrayList<>();
+        final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
+        final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
+
+        for (Long hostId : hostCpuUsedMap.keySet()) {
+            long cpu = hostCpuUsedMap.get(hostId);
+            long memory = hostMemoryUsedMap.get(hostId);
+            if (hostId == destHost.getId()) {
+                postCpuList.add(cpu + vmCpu);
+                postMemoryList.add(memory + vmRam);
+            } else if (hostId.equals(vm.getHostId())) {
+                postCpuList.add(cpu - vmCpu);
+                postMemoryList.add(memory - vmRam);
+            } else {
+                postCpuList.add(cpu);
+                postMemoryList.add(memory);
+            }
+        }
+        return new Pair<>(getClusterImbalance(postCpuList), getClusterImbalance(postMemoryList));
+    }
+
+    /**
+     * The cluster imbalance is defined as the percentage deviation from the mean
+     * for a configured metric of the cluster. The standard deviation is used as a
+     * mathematical tool to normalize the metric data for all the resource and the
+     * percentage deviation provides an easy tool to compare a cluster’s current
+     * state against the defined imbalance threshold. Because this is essentially a
+     * percentage, the value is a number between 0.0 and 1.0.
+     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
+     * mavg is the mean metric value for the cluster.
+     */
+    default Double getClusterImbalance(List<Long> metricList) {
+        Double clusterMeanMetric = getClusterMeanMetric(metricList);
+        Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
+        return clusterStandardDeviation / clusterMeanMetric;
+    }
 
     /**
      * Mean is the average of a collection or set of metrics. In context of a DRS
@@ -89,55 +163,5 @@ public interface ClusterDrsAlgorithm extends Adapter {
         } else {
             return new StandardDeviation(false).evaluate(metricList.stream().mapToDouble(i -> i).toArray());
         }
-    }
-
-    /**
-     * The cluster imbalance is defined as the percentage deviation from the mean
-     * for a configured metric of the cluster. The standard deviation is used as a
-     * mathematical tool to normalize the metric data for all the resource and the
-     * percentage deviation provides an easy tool to compare a cluster’s current
-     * state against the defined imbalance threshold. Because this is essentially a
-     * percentage, the value is a number between 0.0 and 1.0.
-     * Cluster Imbalance, Ic = σc / mavg , where σc is the standard deviation and
-     * mavg is the mean metric value for the cluster.
-     */
-    default Double getClusterImbalance(List<Long> metricList) {
-        Double clusterMeanMetric = getClusterMeanMetric(metricList);
-        Double clusterStandardDeviation = getClusterStandardDeviation(metricList, clusterMeanMetric);
-        return clusterStandardDeviation / clusterMeanMetric;
-    }
-
-
-    /**
-     * Calculates the imbalance of the cluster after a virtual machine migration.
-     *
-     * @param serviceOffering   the service offering for the virtual machine
-     * @param vm                the virtual machine being migrated
-     * @param destHost          the destination host for the virtual machine
-     * @param hostCpuUsedMap    a map of host IDs to the amount of CPU used on each host
-     * @param hostMemoryUsedMap a map of host IDs to the amount of memory used on each host
-     * @return a pair containing the CPU and memory imbalance of the cluster after the migration
-     */
-    default Pair<Double, Double> getImbalancePostMigration(ServiceOffering serviceOffering, VirtualMachine vm, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap) {
-        List<Long> postCpuList = new ArrayList<>();
-        List<Long> postMemoryList = new ArrayList<>();
-        final int vmCpu = serviceOffering.getCpu() * serviceOffering.getSpeed();
-        final long vmRam = serviceOffering.getRamSize() * 1024L * 1024L;
-
-        for (Long hostId : hostCpuUsedMap.keySet()) {
-            long cpu = hostCpuUsedMap.get(hostId);
-            long memory = hostMemoryUsedMap.get(hostId);
-            if (hostId == destHost.getId()) {
-                postCpuList.add(cpu + vmCpu);
-                postMemoryList.add(memory + vmRam);
-            } else if (hostId.equals(vm.getHostId())) {
-                postCpuList.add(cpu - vmCpu);
-                postMemoryList.add(memory - vmRam);
-            } else {
-                postCpuList.add(cpu);
-                postMemoryList.add(memory);
-            }
-        }
-        return new Pair<>(getClusterImbalance(postCpuList), getClusterImbalance(postMemoryList));
     }
 }

@@ -659,6 +659,7 @@ public class ApiConstants {
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";
+    public static final String ITERATIONS = "iterations";
     public static final String SORT_BY = "sortby";
     public static final String CHANGE_CIDR = "changecidr";
     public static final String PURPOSE = "purpose";

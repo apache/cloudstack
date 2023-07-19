@@ -1591,8 +1591,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, VirtualMachine... userVms) {
-        List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(userVms);
+    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, VirtualMachine... vms) {
+        List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(vms);
         return ViewResponseHelper.createUserVmResponse(view, objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
     }
 

@@ -30,21 +30,19 @@ import org.apache.cloudstack.cluster.ClusterDrsService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listClusterDrsPlan", description = "List DRS plans for clusters", responseObject = ClusterDrsPlanResponse.class, since = "4.19.0",
-        requestHasSensitiveInfo = false)
+@APICommand(name = "listClusterDrsPlan", description = "List DRS plans for a clusters",
+            responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", requestHasSensitiveInfo = false)
 public class ListClusterDrsPlanCmd extends BaseListCmd {
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class, description = "ID of the drs plan")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class,
+               description = "ID of the drs plan")
     private Long id;
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class, description = "ID of the cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class,
+               description = "ID of the cluster")
     private Long clusterId;
 
     @Inject
     private ClusterDrsService clusterDrsService;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -53,10 +51,6 @@ public class ListClusterDrsPlanCmd extends BaseListCmd {
     public Long getClusterId() {
         return clusterId;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {

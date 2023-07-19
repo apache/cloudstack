@@ -41,10 +41,6 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         return "condensed";
     }
 
-    private double getThreshold(long clusterId) throws ConfigurationException {
-        return ClusterDrsLevel.valueIn(clusterId) / 10.0;
-    }
-
     @Override
     public boolean needsDrs(long clusterId, List<Long> cpuList, List<Long> memoryList) throws ConfigurationException {
         Double cpuImbalance = getClusterImbalance(cpuList);
@@ -58,20 +54,26 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
                 return memoryImbalance < threshold;
             case "both":
                 return cpuImbalance < threshold && memoryImbalance < threshold;
-            case "either":
-                return cpuImbalance < threshold || memoryImbalance < threshold;
             default:
-                throw new ConfigurationException(String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
+                throw new ConfigurationException(
+                        String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
         }
     }
 
+    private double getThreshold(long clusterId) throws ConfigurationException {
+        return ClusterDrsLevel.valueIn(clusterId) / 10.0;
+    }
 
     @Override
-    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering, Host destHost, Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap, Boolean requiresStorageMotion) {
+    public Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm,
+                                                      ServiceOffering serviceOffering, Host destHost,
+                                                      Map<Long, Long> hostCpuUsedMap, Map<Long, Long> hostMemoryUsedMap,
+                                                      Boolean requiresStorageMotion) {
         Double preCpuImbalance = getClusterImbalance(new ArrayList<>(hostCpuUsedMap.values()));
         Double preMemoryImbalance = getClusterImbalance(new ArrayList<>(hostMemoryUsedMap.values()));
 
-        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuUsedMap, hostMemoryUsedMap);
+        Pair<Double, Double> imbalancePair = getImbalancePostMigration(serviceOffering, vm, destHost, hostCpuUsedMap,
+                hostMemoryUsedMap);
         Double postCpuImbalance = imbalancePair.first();
         Double postMemoryImbalance = imbalancePair.second();
 
