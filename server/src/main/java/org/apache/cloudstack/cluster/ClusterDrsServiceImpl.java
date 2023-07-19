@@ -24,7 +24,6 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -196,7 +195,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         try {
             if (cleanupLock.lock(30)) {
                 try {
-                    cleanUpOldDrsEvents();
+                    cleanUpOldDrsPlans();
                 } finally {
                     cleanupLock.unlock();
                 }
@@ -610,12 +609,12 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     }
 
     /**
-     * Removes old DRS events that have expired based on the configured interval.
+     * Removes old DRS migrations records that have expired based on the configured interval.
      */
-    private void cleanUpOldDrsEvents() {
-        // FIXME: Remove DRS Events table and use drs plan table instead
-        int rowsRemoved = 0;
-        logger.debug("Removed " + rowsRemoved + " old DRS events");
+    private void cleanUpOldDrsPlans() {
+        Date date = DateUtils.addDays(new Date(), -1 * ClusterDrsPlanExpireInterval.value());
+        int rowsRemoved = drsPlanDao.expungeBeforeDate(date);
+        logger.debug(String.format("Removed %d old drs migration plans", rowsRemoved));
     }
 
     @Override
@@ -625,7 +624,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{ClusterDrsEventsExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
+        return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
                                   ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsLevel, ClusterDrsMetric};
     }
 
@@ -653,7 +652,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *         if there is an error scheduling the DRS plan
      */
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_CLUSTER_DRS, eventDescription = "Generating DRS plan", async = true)
     public ListResponse<ClusterDrsPlanMigrationResponse> generateDrsPlan(GenerateClusterDrsPlanCmd cmd) {
         Cluster cluster = clusterDao.findById(cmd.getId());
         if (cluster == null) {

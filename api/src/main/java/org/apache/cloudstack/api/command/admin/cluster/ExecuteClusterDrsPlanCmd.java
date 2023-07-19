@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
@@ -27,7 +28,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -45,7 +46,7 @@ import java.util.Map;
                     "this command will fail.",
             responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             since = "4.19.0")
-public class ExecuteClusterDrsPlanCmd extends BaseCmd {
+public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
                description = "the ID of cluster")
@@ -134,5 +135,15 @@ public class ExecuteClusterDrsPlanCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_CLUSTER_DRS;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return String.format("Executing DRS plan for cluster: %d", getId());
     }
 }

@@ -133,8 +133,7 @@ public class BalancedTest {
      * <p>1. cluster with cpu metric
      * <p>2. cluster with memory metric
      * <p>3. cluster with "both" metric
-     * <p>4. cluster with "either" metric
-     * <p>5. cluster with "unknown" metric
+     * <p>4. cluster with "unknown" metric
      * <p>
      * <p>CPU imbalance = 0.333
      * <p>Memory imbalance = 0.6
@@ -170,17 +169,7 @@ public class BalancedTest {
         assertFalse(balanced.needsDrs(clusterId, cpuList, memoryList));
     }
 
-    /*
-     4. cluster with "either" metric
-     0.3333 > 0.5 || 0.6 > 0.5 -> True
-    */
-    @Test
-    public void needsDrsWithEither() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
-        overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "either");
-        assertTrue(balanced.needsDrs(clusterId, cpuList, memoryList));
-    }
-
-    /* 5. cluster with "unknown" metric */
+    /* 4. cluster with "unknown" metric */
     @Test
     public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");

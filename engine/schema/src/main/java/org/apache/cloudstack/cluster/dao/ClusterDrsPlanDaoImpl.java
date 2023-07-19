@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.cluster.ClusterDrsPlan;
 import org.apache.cloudstack.cluster.ClusterDrsPlanVO;
 
+import java.util.Date;
 import java.util.List;
 
 public class ClusterDrsPlanDaoImpl extends GenericDaoBase<ClusterDrsPlanVO, Long> implements ClusterDrsPlanDao {
@@ -102,5 +103,16 @@ public class ClusterDrsPlanDaoImpl extends GenericDaoBase<ClusterDrsPlanVO, Long
         }
         Filter filter = new Filter(ClusterDrsPlanVO.class, "id", false, startIndex, pageSizeVal);
         return searchAndCount(sc, filter);
+    }
+
+    @Override
+    public int expungeBeforeDate(Date date) {
+        SearchBuilder<ClusterDrsPlanVO> sb;
+        sb = createSearchBuilder();
+        sb.and(ApiConstants.CREATED, sb.entity().getCreated(), SearchCriteria.Op.LT);
+        sb.done();
+        SearchCriteria<ClusterDrsPlanVO> sc = sb.create();
+        sc.setParameters(ApiConstants.CREATED, date);
+        return expunge(sc);
     }
 }

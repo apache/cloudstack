@@ -25,6 +25,7 @@ import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.cluster.ClusterDrsPlan;
 import org.apache.cloudstack.cluster.ClusterDrsPlanVO;
 
+import java.util.Date;
 import java.util.List;
 
 public interface ClusterDrsPlanDao extends GenericDao<ClusterDrsPlanVO, Long> {
@@ -39,4 +40,6 @@ public interface ClusterDrsPlanDao extends GenericDao<ClusterDrsPlanVO, Long> {
 
     Pair<List<ClusterDrsPlanVO>, Integer> searchAndCount(Long clusterId, Long planId, Long startIndex,
                                                          Long pageSizeVal);
+
+    int expungeBeforeDate(Date date);
 }
