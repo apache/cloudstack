@@ -19,7 +19,7 @@ package org.apache.cloudstack.userdata;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +35,14 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.sun.mail.util.BASE64DecoderStream;
 
 public class CloudInitUserDataProvider extends AdapterBase implements UserDataProvider {
 
@@ -69,11 +71,11 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         return "cloud-init";
     }
 
-    protected boolean isGZipped(String userdata) {
-        if (StringUtils.isEmpty(userdata)) {
+    protected boolean isGZipped(String encodedUserdata) {
+        if (StringUtils.isEmpty(encodedUserdata)) {
             return false;
         }
-        byte[] data = userdata.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] data = Base64.decodeBase64(encodedUserdata);
         if (data.length < 2) {
             return false;
         }
@@ -82,9 +84,6 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
     }
 
     protected String extractUserDataHeader(String userdata) {
-        if (isGZipped(userdata)) {
-            throw new CloudRuntimeException("Gzipped user data can not be used together with other user data formats");
-        }
         List<String> lines = Arrays.stream(userdata.split("\n"))
                 .filter(x -> (x.startsWith("#") && !x.startsWith("##")) || (x.startsWith("Content-Type:")))
                 .collect(Collectors.toList());
@@ -131,7 +130,7 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
 
     private String getContentType(String userData, FormatType formatType) throws MessagingException {
         if (formatType == FormatType.MIME) {
-            MimeMessage msg = new MimeMessage(session, new ByteArrayInputStream(userData.getBytes()));
+            NoIdMimeMessage msg = new NoIdMimeMessage(session, new ByteArrayInputStream(userData.getBytes()));
             return msg.getContentType();
         }
         if (!formatContentTypeMap.containsKey(formatType)) {
@@ -141,15 +140,35 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         return formatContentTypeMap.get(formatType);
     }
 
-    protected MimeBodyPart generateBodyPartMIMEMessage(String userData, FormatType formatType) throws MessagingException {
+    protected String getBodyPartContentAsString(BodyPart bodyPart) throws MessagingException, IOException {
+        Object content = bodyPart.getContent();
+        if (content instanceof BASE64DecoderStream) {
+            return new String(((BASE64DecoderStream)bodyPart.getContent()).readAllBytes());
+        } else if (content instanceof ByteArrayInputStream) {
+            return new String(((ByteArrayInputStream)bodyPart.getContent()).readAllBytes());
+        } else if (content instanceof String) {
+            return (String)bodyPart.getContent();
+        }
+        throw new CloudRuntimeException(String.format("Failed to get content for multipart data with content type: %s", getBodyPartContentType(bodyPart)));
+    }
+
+    private String getBodyPartContentType(BodyPart bodyPart) throws MessagingException {
+        String contentType = StringUtils.defaultString(bodyPart.getDataHandler().getContentType(), bodyPart.getContentType());
+        return  contentType.contains(";") ? contentType.substring(0, contentType.indexOf(';')) : contentType;
+    }
+
+    protected MimeBodyPart generateBodyPartMimeMessage(String userData, String contentType) throws MessagingException {
         MimeBodyPart bodyPart = new MimeBodyPart();
-        String contentType = getContentType(userData, formatType);
         bodyPart.setContent(userData, contentType);
         bodyPart.addHeader("Content-Transfer-Encoding", "base64");
         return bodyPart;
     }
 
-    private Multipart getMessageContent(MimeMessage message) {
+    protected MimeBodyPart generateBodyPartMimeMessage(String userData, FormatType formatType) throws MessagingException {
+        return generateBodyPartMimeMessage(userData, getContentType(userData, formatType));
+    }
+
+    private Multipart getMessageContent(NoIdMimeMessage message) {
         Multipart messageContent;
         try {
             messageContent = (MimeMultipart) message.getContent();
@@ -159,40 +178,83 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
         return messageContent;
     }
 
-    private void addBodyPartsToMessageContentFromUserDataContent(Multipart messageContent,
-                                                                 MimeMessage msgFromUserdata) throws MessagingException, IOException {
-        Multipart msgFromUserdataParts = (MimeMultipart) msgFromUserdata.getContent();
-        int count = msgFromUserdataParts.getCount();
-        int i = 0;
-        while (i < count) {
-            BodyPart bodyPart = msgFromUserdataParts.getBodyPart(0);
-            messageContent.addBodyPart(bodyPart);
-            i++;
+    private void addBodyPartToMultipart(Multipart existingMultipart, MimeBodyPart bodyPart) throws MessagingException, IOException {
+        boolean added = false;
+        final int existingCount = existingMultipart.getCount();
+        for (int j = 0; j < existingCount; ++j) {
+            MimeBodyPart existingBodyPart = (MimeBodyPart)existingMultipart.getBodyPart(j);
+            String existingContentType = getBodyPartContentType(existingBodyPart);
+            String newContentType = getBodyPartContentType(bodyPart);
+            if (existingContentType.equals(newContentType)) {
+                String existingContent = getBodyPartContentAsString(existingBodyPart);
+                String newContent = getBodyPartContentAsString(bodyPart);
+                // generating a combined content MimeBodyPart to replace
+                MimeBodyPart combinedBodyPart = generateBodyPartMimeMessage(
+                        simpleAppendSameFormatTypeUserData(existingContent, newContent), existingContentType);
+                existingMultipart.removeBodyPart(j);
+                existingMultipart.addBodyPart(combinedBodyPart, j);
+                added = true;
+                break;
+            }
+        }
+        if (!added) {
+            existingMultipart.addBodyPart(bodyPart);
         }
     }
 
-    private MimeMessage createMultipartMessageAddingUserdata(String userData, FormatType formatType,
-                                                           MimeMessage message) throws MessagingException, IOException {
-        MimeMessage newMessage = new MimeMessage(session);
+    private void addBodyPartsToMessageContentFromUserDataContent(Multipart existingMultipart,
+                                                                 NoIdMimeMessage msgFromUserdata) throws MessagingException, IOException {
+        MimeMultipart newMultipart = (MimeMultipart)msgFromUserdata.getContent();
+        final int existingCount = existingMultipart.getCount();
+        final int newCount = newMultipart.getCount();
+        for (int i = 0; i < newCount; ++i) {
+            BodyPart bodyPart = newMultipart.getBodyPart(i);
+            if (existingCount == 0) {
+                existingMultipart.addBodyPart(bodyPart);
+                continue;
+            }
+            addBodyPartToMultipart(existingMultipart, (MimeBodyPart)bodyPart);
+        }
+    }
+
+    private NoIdMimeMessage createMultipartMessageAddingUserdata(String userData, FormatType formatType,
+                                                           NoIdMimeMessage message) throws MessagingException, IOException {
+        NoIdMimeMessage newMessage = new NoIdMimeMessage(session);
         Multipart messageContent = getMessageContent(message);
 
         if (formatType == FormatType.MIME) {
-            MimeMessage msgFromUserdata = new MimeMessage(session, new ByteArrayInputStream(userData.getBytes()));
+            NoIdMimeMessage msgFromUserdata = new NoIdMimeMessage(session, new ByteArrayInputStream(userData.getBytes()));
             addBodyPartsToMessageContentFromUserDataContent(messageContent, msgFromUserdata);
         } else {
-            MimeBodyPart part = generateBodyPartMIMEMessage(userData, formatType);
-            messageContent.addBodyPart(part);
+            MimeBodyPart part = generateBodyPartMimeMessage(userData, formatType);
+            addBodyPartToMultipart(messageContent, part);
         }
         newMessage.setContent(messageContent);
         return newMessage;
     }
 
+    private String simpleAppendSameFormatTypeUserData(String userData1, String userData2) {
+        return String.format("%s\n\n%s", userData1, userData2.substring(userData2.indexOf('\n')+1));
+    }
+
+    private void checkGzipAppend(String encodedUserData1, String encodedUserData2) {
+        if (isGZipped(encodedUserData1) || isGZipped(encodedUserData2)) {
+            throw new CloudRuntimeException("Gzipped user data can not be used together with other user data formats");
+        }
+    }
+
     @Override
-    public String appendUserData(String userData1, String userData2) {
+    public String appendUserData(String encodedUserData1, String encodedUserData2) {
         try {
+            checkGzipAppend(encodedUserData1, encodedUserData2);
+            String userData1 = new String(Base64.decodeBase64(encodedUserData1));
+            String userData2 = new String(Base64.decodeBase64(encodedUserData2));
             FormatType formatType1 = getUserDataFormatType(userData1);
             FormatType formatType2 = getUserDataFormatType(userData2);
-            MimeMessage message = new MimeMessage(session);
+            if (formatType1.equals(formatType2) && List.of(FormatType.CLOUD_CONFIG, FormatType.BASH_SCRIPT).contains(formatType1)) {
+                return simpleAppendSameFormatTypeUserData(userData1, userData2);
+            }
+            NoIdMimeMessage message = new NoIdMimeMessage(session);
             message = createMultipartMessageAddingUserdata(userData1, formatType1, message);
             message = createMultipartMessageAddingUserdata(userData2, formatType2, message);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -203,6 +265,22 @@ public class CloudInitUserDataProvider extends AdapterBase implements UserDataPr
                     "Reason: %s", e.getMessage());
             LOGGER.error(msg, e);
             throw new CloudRuntimeException(msg, e);
+        }
+    }
+
+    /* This is a wrapper class just to remove Message-ID header from the resultant
+       multipart data which may contain server details.
+     */
+    private class NoIdMimeMessage extends MimeMessage {
+        NoIdMimeMessage (Session session) {
+            super(session);
+        }
+        NoIdMimeMessage (Session session, InputStream is) throws MessagingException {
+            super(session, is);
+        }
+        @Override
+        protected void updateMessageID() throws MessagingException {
+            removeHeader("Message-ID");
         }
     }
 }

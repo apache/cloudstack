@@ -836,9 +836,12 @@ public class UserVmManagerImplTest {
         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
         when(template.getUserDataId()).thenReturn(null);
 
-        when(cmd.getUserData()).thenReturn("testUserdata");
+        String testUserData = "testUserdata";
+        when(cmd.getUserData()).thenReturn(testUserData);
         when(cmd.getUserdataId()).thenReturn(null);
         when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        when(userDataManager.validateUserData(testUserData, HTTPMethod.GET)).thenReturn(testUserData);
 
         try {
             doNothing().when(userVmManagerImpl).updateUserData(userVmVO);
@@ -873,11 +876,14 @@ public class UserVmManagerImplTest {
         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
         when(template.getUserDataId()).thenReturn(null);
 
+        String testUserData = "testUserdata";
         when(cmd.getUserdataId()).thenReturn(1L);
         UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
         when(userDataDao.findById(1L)).thenReturn(apiUserDataVO);
-        when(apiUserDataVO.getUserData()).thenReturn("testUserdata");
+        when(apiUserDataVO.getUserData()).thenReturn(testUserData);
         when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        when(userDataManager.validateUserData(testUserData, HTTPMethod.GET)).thenReturn(testUserData);
 
         try {
             doNothing().when(userVmManagerImpl).updateUserData(userVmVO);
