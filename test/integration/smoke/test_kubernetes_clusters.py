@@ -68,9 +68,6 @@ VPC_DATA = {
     "tier_netmask": "255.255.255.0"
 }
 
-K8S_VERSION_v1 = "1.25.0"
-K8S_VERSION_v2 = "1.26.0"
-
 class TestKubernetesCluster(cloudstackTestCase):
 
     @classmethod
@@ -90,6 +87,9 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
         cls.vpcAllowAllAclDetailsMap = {}
 
+        cls.k8s_version_from = cls.services["cks_kubernetes_version_upgrade_from"]
+        cls.k8s_version_to = cls.services["cks_kubernetes_version_upgrade_to"]
+
         if cls.hypervisorNotSupported == False:
             cls.endpoint_url = Configurations.list(cls.apiclient, name="endpoint.url")[0].value
             if "localhost" in cls.endpoint_url:
@@ -108,20 +108,20 @@ class TestKubernetesCluster(cloudstackTestCase):
 
             if cls.setup_failed == False:
                 try:
-                    cls.kubernetes_version_v1 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"][K8S_VERSION_v1])
+                    cls.kubernetes_version_v1 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"][cls.k8s_version_from])
                     cls.kubernetes_version_ids.append(cls.kubernetes_version_v1.id)
                 except Exception as e:
                     cls.setup_failed = True
                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-                        (cls.services["cks_kubernetes_versions"][K8S_VERSION_v1]["semanticversion"], cls.services["cks_kubernetes_versions"][K8S_VERSION_v1]["url"], e))
+                        (cls.services["cks_kubernetes_versions"][cls.k8s_version_from]["semanticversion"], cls.services["cks_kubernetes_versions"][cls.k8s_version_from]["url"], e))
             if cls.setup_failed == False:
                 try:
-                    cls.kubernetes_version_v2 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"][K8S_VERSION_v2])
+                    cls.kubernetes_version_v2 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"][cls.k8s_version_to])
                     cls.kubernetes_version_ids.append(cls.kubernetes_version_v2.id)
                 except Exception as e:
                     cls.setup_failed = True
                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-                        (cls.services["cks_kubernetes_versions"][K8S_VERSION_v2]["semanticversion"], cls.services["cks_kubernetes_versions"][K8S_VERSION_v2]["url"], e))
+                        (cls.services["cks_kubernetes_versions"][cls.k8s_version_to]["semanticversion"], cls.services["cks_kubernetes_versions"][cls.k8s_version_to]["url"], e))
 
             if cls.setup_failed == False:
                 cks_offering_data = cls.services["cks_service_offering"]

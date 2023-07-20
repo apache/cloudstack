@@ -2262,6 +2262,9 @@ test_data = {
             "minmemory": 2048
         }
     },
+    "cks_kubernetes_version": "1.26.0",
+    "cks_kubernetes_version_upgrade_from": "1.25.0",
+    "cks_kubernetes_version_upgrade_to": "1.26.0",
     "cks_service_offering": {
         "name": "CKS-Instance",
         "displaytext": "CKS Instance",
