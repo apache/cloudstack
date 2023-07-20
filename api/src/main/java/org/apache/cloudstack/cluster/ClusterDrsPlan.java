@@ -36,6 +36,8 @@ public interface ClusterDrsPlan extends Identity, InternalIdentity {
 
     String getUuid();
 
+    long getEventId();
+
     enum Type {
         AUTOMATED, MANUAL
     }

@@ -27,6 +27,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -107,6 +108,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     HostDao hostDao;
+
+    @Inject
+    EventDao eventDao;
 
     @Inject
     HostJoinDao hostJoinDao;
@@ -786,9 +790,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 cluster = clusterDao.findById(plan.getClusterId());
             }
             List<ClusterDrsPlanMigrationVO> migrations = drsPlanMigrationDao.listByPlanId(plan.getId());
+            EventVO event = eventDao.findById(plan.getEventId());
 
-            responseList.add(
-                    new ClusterDrsPlanResponse(cluster.getUuid(), plan, getResponseObjectForMigrations(migrations)));
+            responseList.add(new ClusterDrsPlanResponse(
+                    cluster.getUuid(), plan, event.getUuid(), getResponseObjectForMigrations(migrations)));
         }
 
         response.setResponses(responseList, result.second());

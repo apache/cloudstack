@@ -43,6 +43,10 @@ public class ClusterDrsPlanResponse extends BaseResponse {
     @Param(description = "Id of the cluster")
     private String clusterId;
 
+    @SerializedName("eventid")
+    @Param(description = "Start event Id of the DRS Plan")
+    private String eventId;
+
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "Type of DRS Plan (Automated or Manual))")
     private ClusterDrsPlan.Type type;
@@ -55,10 +59,11 @@ public class ClusterDrsPlanResponse extends BaseResponse {
     private Date created;
 
 
-    public ClusterDrsPlanResponse(String clusterId, ClusterDrsPlan plan,
+    public ClusterDrsPlanResponse(String clusterId, ClusterDrsPlan plan, String eventId,
                                   List<ClusterDrsPlanMigrationResponse> migrationPlans) {
         this.clusterId = clusterId;
         this.id = plan.getUuid();
+        this.eventId = eventId;
         this.type = plan.getType();
         this.status = plan.getStatus();
         this.created = plan.getCreated();

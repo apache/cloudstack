@@ -17,37 +17,41 @@
 
 <template>
   <a-row>
-    {{ $t('message.drs.plan.description') + ' ' + algorithm }}
+    {{ $t('message.drs.plan.description') }}
   </a-row>
   <a-row>
-    <a-col :span="12">
-      <a-slider v-model:value="iterations" :min="0.01" :max="1" :step="0.01" />
-    </a-col>
-    <a-col :span="2">
-      <a-input-number
-        v-model:value="iterations"
-        :min="0.01"
-        :max="1"
-        :step="0.01"
-        style="margin-left: 16px"
-      />
-    </a-col>
-    <a-col :span="2">
-      <a-button
-        type="primary"
-        @click="generateDrsPlan"
-        :loading="loading"
-        :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
-        {{ $t('label.cluster.drs.generate') }}
-      </a-button>
-    </a-col>
+    <strong>{{ $t('label.algorithm') }}:</strong>&nbsp;{{ algorithm }}
   </a-row>
+  <a-row>
+    <a-col span="10">
+      <a-slider v-model:value="iterations" :min="1" :max="100" :step="1" />
+    </a-col>
+    <a-col span="3">
+      <a-input-number
+          v-model:value="iterations"
+          :min="1"
+          :max="100"
+          :step="1"
+          style="margin-left: 16px"
+        />
+      </a-col>
+      <a-col span="3">
+        <a-button
+          type="primary"
+          @click="generateDrsPlan"
+          :loading="loading"
+          :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
+          {{ $t('label.drs.generate.plan') }}
+        </a-button>
+      </a-col>
+  </a-row>
+  <br/>
   <a-table
     size="small"
     :columns="drsPlanColumns"
     :dataSource="drsPlans"
     :rowKey="item => item.id"
-    :pagination="true"
+    :pagination="{hideOnSinglePage: true, showSizeChanger: true}"
   >
     <template #expandedRowRender="{ record }">
       <a-table
@@ -55,21 +59,21 @@
         :columns="migrationColumns"
         :dataSource="record.migrations"
         :rowKey="(record, index) => index"
-        :pagination="true">
+        :pagination="{hideOnSinglePage: true, showSizeChanger: true}">
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'vm'">
             <router-link :to="{ path: '/vm/' + record.vm }">
-              {{ record.vm.displayname }}
+              <desktop-outlined/> {{ record.vm.displayname }}
             </router-link>
           </template>
           <template v-else-if="column.key === 'sourcehost'">
             <router-link :to="{ path: '/host/' + record.sourcehost }">
-              {{ record.sourcehost.name }}
+              <cluster-outlined/> {{ record.sourcehost.name }}
             </router-link>
           </template>
           <template v-else-if="column.key === 'destinationhost'">
             <router-link :to="{ path: '/host/' + record.destinationhost }">
-              {{ record.destinationhost.name }}
+              <cluster-outlined/> {{ record.destinationhost.name }}
             </router-link>
           </template>
           <template v-else>
@@ -77,10 +81,16 @@
           </template>
         </template>
       </a-table>
+      <br/>
     </template>
     <template #bodyCell="{ column, text }">
       <template v-if="column.key === 'created'">
         {{ $toLocaleDate(text) }}
+      </template>
+      <template v-else-if="column.key === 'eventid'" >
+        <router-link :to="{ path: '/event', query: { startid: text} }" target="_blank">
+          <schedule-outlined /> {{ $t('label.events') }}
+        </router-link>
       </template>
       <template v-else>
         {{ text }}
@@ -108,17 +118,17 @@
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'vm'">
           <router-link :to="{ path: '/vm/' + record.vm }">
-            {{ record.vm.displayname }}
+            <desktop-outlined/> {{ record.vm.displayname }}
           </router-link>
         </template>
         <template v-else-if="column.key === 'sourcehost'">
           <router-link :to="{ path: '/host/' + record.sourcehost }">
-            {{ record.sourcehost.name }}
+            <cluster-outlined/> {{ record.sourcehost.name }}
           </router-link>
         </template>
         <template v-else-if="column.key === 'destinationhost'">
           <router-link :to="{ path: '/host/' + record.destinationhost }">
-            {{ record.destinationhost.name }}
+            <cluster-outlined/> {{ record.destinationhost.name }}
           </router-link>
         </template>
         <template v-else>
@@ -127,7 +137,7 @@
       </template>
     </a-table>
     <a-p v-else>
-      {{ $t('label.no.drs.plan.generated') }}
+      {{ $t('label.drs.no.plan.generated') }}
     </a-p>
 
   </a-modal>
@@ -138,24 +148,15 @@
 
 import { reactive } from 'vue'
 import { api } from '@/api'
-import ResourceIcon from '@/components/view/ResourceIcon'
-import TooltipButton from '@/components/widgets/TooltipButton'
-import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'NicsTable',
+  name: 'ClusterDrsTab',
   props: {
     resource: {
       type: Object,
       required: true
     }
   },
-  components: {
-    ResourceIcon,
-    TooltipButton,
-    TooltipLabel
-  },
-  inject: ['parentFetchData'],
   data () {
     const generatedPlanMigrationColumns = [
       {
@@ -166,13 +167,13 @@ export default {
       },
       {
         key: 'sourcehost',
-        title: this.$t('label.source.host'),
+        title: this.$t('label.sourcehost'),
         dataIndex: 'sourcehost',
         ellipsis: true
       },
       {
         key: 'destinationhost',
-        title: this.$t('label.destination.host'),
+        title: this.$t('label.desthost'),
         dataIndex: 'created',
         ellipsis: true
       }
@@ -191,13 +192,18 @@ export default {
           key: 'created',
           title: this.$t('label.created'),
           dataIndex: 'created'
+        },
+        {
+          key: 'eventid',
+          title: this.$t('label.events'),
+          dataIndex: 'eventid'
         }
       ],
       generatedPlanMigrationColumns: generatedPlanMigrationColumns,
       migrationColumns: generatedPlanMigrationColumns.concat([
         {
           key: 'jobstatus',
-          title: this.$t('label.job.status'),
+          title: this.$t('label.status'),
           dataIndex: 'jobstatus'
         }
       ]),
@@ -252,7 +258,7 @@ export default {
       })
     },
     generateDrsPlan () {
-      api('generateClusterDrsPlan', { id: this.resource.id, iterations: this.iterations }).then(json => {
+      api('generateClusterDrsPlan', { id: this.resource.id, iterations: this.iterations / 100.0 }).then(json => {
         this.generatedMigrations = json.generateclusterdrsplanresponse.migrations || []
         this.showModal = true
       })
@@ -262,7 +268,7 @@ export default {
       api('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
         this.algorithm = reactive(json.listconfigurationsresponse.configuration[0].value)
         api('listConfigurations', { clusterid: this.resource.id, name: 'drs.iterations' }).then(json => {
-          this.iterations = reactive(json.listconfigurationsresponse.configuration[0].value)
+          this.iterations = reactive(json.listconfigurationsresponse.configuration[0].value) * 100
           this.loading = false
         })
       })
