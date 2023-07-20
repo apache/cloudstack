@@ -1970,7 +1970,7 @@ export default {
         deployVmData.iothreadsenabled = values.iothreadsenabled
         deployVmData.iodriverpolicy = values.iodriverpolicy
         if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(this.$toBase64Encoded(values.userdata))
+          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {

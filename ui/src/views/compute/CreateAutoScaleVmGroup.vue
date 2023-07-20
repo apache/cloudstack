@@ -2425,7 +2425,7 @@ export default {
         createVmGroupData.keypairs = this.sshKeyPairs.join(',')
         createVmGroupData.affinitygroupids = (values.affinitygroupids || []).join(',')
         if (values.userdata && values.userdata.length > 0) {
-          createVmGroupData.userdata = encodeURIComponent(this.$toBase64Encoded(values.userdata))
+          createVmGroupData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
 
         // vm profile details

@@ -316,7 +316,7 @@ export default {
           params.group = values.group
         }
         if (values.userdata && values.userdata.length > 0) {
-          params.userdata = encodeURIComponent(this.$toBase64Encoded(values.userdata))
+          params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         this.loading = true
 

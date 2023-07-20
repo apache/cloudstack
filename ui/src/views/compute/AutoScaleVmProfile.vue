@@ -519,7 +519,7 @@ export default {
         params.autoscaleuserid = this.autoscaleuserid
       }
       if (this.userdata && this.userdata.length > 0) {
-        params.userdata = encodeURIComponent(this.$toBase64Encoded(this.userdata))
+        params.userdata = this.$toBase64AndURIEncoded(this.userdata)
       }
 
       const httpMethod = params.userdata ? 'POST' : 'GET'

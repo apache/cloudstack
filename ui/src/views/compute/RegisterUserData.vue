@@ -201,7 +201,7 @@ export default {
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
         }
-        params.userdata = encodeURIComponent(this.toBase64Encoded(values.userdata))
+        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
 
         if (values.params != null && values.params.length > 0) {
           var userdataparams = values.params.join(',')
