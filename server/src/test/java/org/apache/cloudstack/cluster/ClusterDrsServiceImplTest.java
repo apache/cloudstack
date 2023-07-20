@@ -384,12 +384,17 @@ public class ClusterDrsServiceImplTest {
             vmIdServiceOfferingMap.put(vm.getId(), serviceOffering);
         }
 
-        Mockito.when(managementServer.listHostsForMigrationOfVM(vm1, 0L, null, null, vmList)).thenReturn(
-                new Ternary<>(null, List.of(destHost), Map.of(destHost, false)));
-        Mockito.when(managementServer.listHostsForMigrationOfVM(vm2, 0L, null, null, vmList)).thenReturn(
-                new Ternary<>(null, Collections.emptyList(), Collections.emptyMap()));
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vm1, 0L, 500L, null, vmList)).thenReturn(
+                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
+                        false)));
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vm2, 0L, 500L, null, vmList)).thenReturn(
+                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
+                        false)));
         Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm1, serviceOffering, destHost, new HashMap<>(),
                 new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
+
+        Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm2, serviceOffering, destHost, new HashMap<>(),
+                new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 2.5, 1.5));
 
         Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,
                 vmList, vmIdServiceOfferingMap, new HashMap<>(), new HashMap<>());

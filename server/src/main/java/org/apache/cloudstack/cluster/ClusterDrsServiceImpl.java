@@ -464,8 +464,8 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             }
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer
                     .listHostsForMigrationOfVM(
-                            vm, 0L, null, null, vmList);
-            List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.second();
+                            vm, 0L, 500L, null, vmList);
+            List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.first().first();
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
 
             for (Host destHost : compatibleDestinationHosts) {
