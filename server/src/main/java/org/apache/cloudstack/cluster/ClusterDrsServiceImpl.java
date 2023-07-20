@@ -264,7 +264,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     /**
      * Generates DRS for all clusters that meet the criteria for automated DRS.
      */
-    private void generateDrsPlanForAllClusters() {
+    void generateDrsPlanForAllClusters() {
         List<ClusterVO> clusterList = clusterDao.listAll();
 
         for (ClusterVO cluster : clusterList) {
@@ -500,9 +500,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *
      * @return a pair of the saved DRS plan and the list of migrations to be executed
      */
-    private Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> savePlan(Long clusterId,
-                                                                             List<Ternary<VirtualMachine, Host, Host>> plan,
-                                                                             Long eventId, ClusterDrsPlan.Type type) {
+    Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> savePlan(Long clusterId,
+                                                                     List<Ternary<VirtualMachine, Host, Host>> plan,
+                                                                     Long eventId, ClusterDrsPlan.Type type) {
         return Transaction.execute(
                 (TransactionCallback<Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>>>) status -> {
                     ClusterDrsPlanVO drsPlan = drsPlanDao.persist(
@@ -523,7 +523,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     /**
      * Processes all DRS plans that are in the READY status.
      */
-    private void processPlans() {
+    void processPlans() {
         List<ClusterDrsPlanVO> plans = drsPlanDao.listByStatus(ClusterDrsPlan.Status.READY);
         for (ClusterDrsPlanVO plan : plans) {
             try {
@@ -615,7 +615,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     /**
      * Removes old DRS migrations records that have expired based on the configured interval.
      */
-    private void cleanUpOldDrsPlans() {
+    void cleanUpOldDrsPlans() {
         Date date = DateUtils.addDays(new Date(), -1 * ClusterDrsPlanExpireInterval.value());
         int rowsRemoved = drsPlanDao.expungeBeforeDate(date);
         logger.debug(String.format("Removed %d old drs migration plans", rowsRemoved));

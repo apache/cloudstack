@@ -44,6 +44,10 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
+import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
+import org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +59,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -63,6 +68,7 @@ import javax.naming.ConfigurationException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +78,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GlobalLock.class)
+@PowerMockIgnore("javax.management.*")
 public class ClusterDrsServiceImplTest {
 
     @Mock
@@ -90,6 +97,12 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private ClusterDao clusterDao;
+
+    @Mock
+    private ClusterDrsPlanDao drsPlanDao;
+
+    @Mock
+    private ClusterDrsPlanMigrationDao drsPlanMigrationDao;
 
     @Mock
     private HostDao hostDao;
@@ -139,7 +152,7 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
-    public void testExecuteDrs() throws ConfigurationException, ManagementServerException,
+    public void testGetDrsPlan() throws ConfigurationException, ManagementServerException,
                                         ResourceUnavailableException, VirtualMachineMigrationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
@@ -210,13 +223,13 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testExecuteDrsClusterNotFound() {
+    public void testGenerateDrsPlanClusterNotFound() {
         Mockito.when(clusterDao.findById(1L)).thenReturn(null);
         clusterDrsService.generateDrsPlan(cmd);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testExecuteDrsClusterDisabled() {
+    public void testGenerateDrsPlanClusterDisabled() {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getName()).thenReturn("testCluster");
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
@@ -227,7 +240,7 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testExecuteDrsClusterNotCloudManaged() {
+    public void testGenerateDrsPlanClusterNotCloudManaged() {
 
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getName()).thenReturn("testCluster");
@@ -240,7 +253,7 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testExecuteDrsInvalidIterations() {
+    public void testGenerateDrsPlanInvalidIterations() {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getName()).thenReturn("testCluster");
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
@@ -253,16 +266,86 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testExecuteDrsConfigurationException() throws ConfigurationException {
+    public void testGenerateDrsPlanConfigurationException() throws ConfigurationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
-        Mockito.when(clusterDrsService.getDrsPlan(cluster, 0.5)).thenThrow(new CloudRuntimeException("test"));
+        Mockito.when(clusterDrsService.getDrsPlan(cluster, 0.5)).thenThrow(new ConfigurationException("test"));
         Mockito.when(cmd.getIterations()).thenReturn(0.5);
 
         clusterDrsService.generateDrsPlan(cmd);
+    }
+
+    @Test
+    public void testGenerateDrsPlan() throws ConfigurationException {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
+
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+
+        Host srcHost = Mockito.mock(Host.class);
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+
+        Host destHost = Mockito.mock(Host.class);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+
+        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+        Mockito.when(cmd.getIterations()).thenReturn(0.5);
+        Mockito.doReturn(List.of(new Ternary<>(vm, srcHost,
+                destHost))).when(clusterDrsService).getDrsPlan(Mockito.any(Cluster.class), Mockito.anyDouble());
+
+        ClusterDrsPlanMigrationResponse migrationResponse = Mockito.mock(ClusterDrsPlanMigrationResponse.class);
+
+        Mockito.when(clusterDrsService.getResponseObjectForMigrations(Mockito.anyList())).thenReturn(
+                List.of(migrationResponse));
+
+
+        ListResponse<ClusterDrsPlanMigrationResponse> response = clusterDrsService.generateDrsPlan(
+                cmd);
+
+        assertEquals(1L, response.getCount().longValue());
+        assertEquals(migrationResponse, response.getResponses().get(0));
+    }
+
+    @Test
+    public void testPoll() {
+        Mockito.doNothing().when(clusterDrsService).updateOldPlanMigrations();
+        Mockito.doNothing().when(clusterDrsService).processPlans();
+        Mockito.doNothing().when(clusterDrsService).generateDrsPlanForAllClusters();
+        Mockito.doNothing().when(clusterDrsService).cleanUpOldDrsPlans();
+
+        GlobalLock lock = Mockito.mock(GlobalLock.class);
+        Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
+
+        Mockito.when(GlobalLock.getInternLock(Mockito.anyString())).thenReturn(lock);
+
+        clusterDrsService.poll(new Date());
+
+        Mockito.verify(clusterDrsService, Mockito.times(1)).updateOldPlanMigrations();
+        Mockito.verify(clusterDrsService, Mockito.times(2)).processPlans();
+        Mockito.verify(clusterDrsService, Mockito.times(1)).generateDrsPlanForAllClusters();
+    }
+
+    @Test
+    public void testUpdateOldPlanMigrations() {
+        ClusterDrsPlanVO drsPlan1 = Mockito.mock(ClusterDrsPlanVO.class);
+        ClusterDrsPlanVO drsPlan2 = Mockito.mock(ClusterDrsPlanVO.class);
+
+        Mockito.when(drsPlanDao.listByStatus(ClusterDrsPlan.Status.IN_PROGRESS)).thenReturn(
+                List.of(drsPlan1, drsPlan2));
+
+        Mockito.doNothing().when(clusterDrsService).updateDrsPlanMigrations(drsPlan1);
+        Mockito.doNothing().when(clusterDrsService).updateDrsPlanMigrations(drsPlan2);
+
+        clusterDrsService.updateOldPlanMigrations();
+
+        Mockito.verify(clusterDrsService, Mockito.times(2)).updateDrsPlanMigrations(
+                Mockito.any(ClusterDrsPlanVO.class));
     }
 
     @Test
@@ -313,5 +396,34 @@ public class ClusterDrsServiceImplTest {
 
         assertEquals(destHost, bestMigration.second());
         assertEquals(vm1, bestMigration.first());
+    }
+
+    @Test
+    public void testSavePlan() {
+        Mockito.when(drsPlanDao.persist(Mockito.any(ClusterDrsPlanVO.class))).thenReturn(
+                Mockito.mock(ClusterDrsPlanVO.class));
+        Mockito.when(drsPlanMigrationDao.persist(Mockito.any(ClusterDrsPlanMigrationVO.class))).thenReturn(
+                Mockito.mock(ClusterDrsPlanMigrationVO.class));
+
+        clusterDrsService.savePlan(1L,
+                List.of(new Ternary<>(Mockito.mock(VirtualMachine.class), Mockito.mock(Host.class),
+                                Mockito.mock(Host.class)),
+                        new Ternary<>(Mockito.mock(VirtualMachine.class), Mockito.mock(Host.class),
+                                Mockito.mock(Host.class))), 1L, ClusterDrsPlan.Type.AUTOMATED);
+
+        Mockito.verify(drsPlanDao, Mockito.times(1)).persist(Mockito.any(ClusterDrsPlanVO.class));
+        Mockito.verify(drsPlanMigrationDao, Mockito.times(2)).persist(Mockito.any(ClusterDrsPlanMigrationVO.class));
+    }
+
+    @Test
+    public void testProcessPlans() {
+        Mockito.when(drsPlanDao.listByStatus(ClusterDrsPlan.Status.READY)).thenReturn(
+                List.of(Mockito.mock(ClusterDrsPlanVO.class), Mockito.mock(ClusterDrsPlanVO.class)));
+
+        Mockito.doNothing().when(clusterDrsService).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
+
+        clusterDrsService.processPlans();
+
+        Mockito.verify(clusterDrsService, Mockito.times(2)).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
     }
 }
