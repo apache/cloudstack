@@ -21,9 +21,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.NetworkModel;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -53,6 +50,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import org.apache.log4j.Logger;
 
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
