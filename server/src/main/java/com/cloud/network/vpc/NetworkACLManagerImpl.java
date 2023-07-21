@@ -357,9 +357,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return rules;
     }
 
-    private void removeRule(final NetworkACLItem rule) {
-        resourceTagDao.removeByIdAndType(rule.getId(), ResourceTag.ResourceObjectType.NetworkACL);
-        _networkACLItemDao.remove(rule.getId());
+    boolean removeRule(final NetworkACLItem rule) {
+        boolean rc = resourceTagDao.removeByIdAndType(rule.getId(), ResourceTag.ResourceObjectType.NetworkACL);
+        return rc && _networkACLItemDao.remove(rule.getId());
     }
 
     @Override
