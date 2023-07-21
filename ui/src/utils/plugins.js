@@ -485,20 +485,12 @@ export const genericUtilPlugin = {
       return regexExp.test(uuid)
     }
 
-    app.config.globalProperties.$toBase64Encoded = function (text) {
-      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
-      if (base64regex.test(text)) {
-        return text
-      }
-      return btoa(unescape(encodeURIComponent(text)))
-    }
-
     app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
       const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
       if (base64regex.test(text)) {
         return text
       }
-      return btoa(unescape(encodeURIComponent(text)))
+      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }
