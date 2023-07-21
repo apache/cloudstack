@@ -249,8 +249,7 @@ known_categories = {
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
     'ConsoleEndpoint': 'Console Endpoint',
-    'Shutdown': 'Shutdown',
-    'executeDRS': 'Execute DRS',
+    'Shutdown': 'Shutdown'
 }
 
 

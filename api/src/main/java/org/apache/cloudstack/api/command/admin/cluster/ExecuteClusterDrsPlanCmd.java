@@ -42,7 +42,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 @APICommand(name = "executeClusterDrsPlan",
-            description = "Schedule DRS for a cluster. If there is another plan in progress for the same cluster, " +
+            description = "Execute DRS for a cluster. If there is another plan in progress for the same cluster, " +
                     "this command will fail.",
             responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             since = "4.19.0")

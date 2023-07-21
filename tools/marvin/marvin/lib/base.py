@@ -3129,13 +3129,34 @@ class Cluster:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateCluster(cmd))
 
-    def executeDRS(cls, apiclient, iterations=None):
-        """Update cluster information"""
+    def listDrsPlans(cls, apiclient, **kwargs):
+        """List drs plans for cluster"""
 
-        cmd = executeDRS.executeDRSCmd()
-        cmd.id = self.id
+        cmd = listClusterDrsPlan.listClusterDrsPlanCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listClusterDrsPlan(cmd)
+
+    def generateDrsPlan(cls, apiclient, iterations=None):
+        """Generate a drs plan for cluster"""
+
+        cmd = generateClusterDrsPlan.generateClusterDrsPlanCmd()
+        cmd.id = cls.id
         cmd.iterations = iterations
-        return (apiclient.executeDRS(cmd))
+        return apiclient.generateClusterDrsPlan(cmd)
+
+    def executeDrsPlan(cls, apiclient, migrateto=None):
+        """Execute drs plan on cluster"""
+
+        cmd = executeClusterDrsPlan.executeClusterDrsPlanCmd()
+        cmd.id = cls.id
+        if migrateto:
+            cmd.migrateto = []
+            for vm, host in list(migrateto.items()):
+                cmd.migrateto.append({
+                    'vm': vm,
+                    'host': host
+                })
+        return apiclient.executeClusterDrsPlan(cmd)
 
 
 class Host:

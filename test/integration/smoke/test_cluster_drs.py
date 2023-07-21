@@ -16,20 +16,20 @@
 # under the License.
 
 """
-Tests of Non-Strict (host anti-affinity and host affinity) affinity groups
+Tests DRS on a cluster
 """
 
 import logging
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (Cluster, Configurations, Host, ServiceOffering, VirtualMachine, Zone)
+from marvin.lib.base import (Cluster, Configurations, Host, Network, NetworkOffering, ServiceOffering, VirtualMachine,
+                             Zone)
 from marvin.lib.common import (get_domain, get_zone, get_template)
+from marvin.lib.utils import wait_until
+from marvin import jsonHelper
 from nose.plugins.attrib import attr
 
 
 class TestClusterDRS(cloudstackTestCase):
-    """
-    Test Non-Strict (host anti-affinity and host affinity) affinity groups
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -64,7 +64,7 @@ class TestClusterDRS(cloudstackTestCase):
                 cls.skipTests = True
                 return
             else:
-                cls.cluster = cluster
+                cls.cluster = Cluster(jsonHelper.jsonDump.dump(cluster))
                 break
 
         cls.domain = get_domain(cls.apiclient)
@@ -72,6 +72,30 @@ class TestClusterDRS(cloudstackTestCase):
         # 1. Create small service offering
         cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offerings"]["small"])
         cls._cleanup.append(cls.service_offering)
+
+        # 2. Create a network
+        cls.services["network"]["name"] = "Test Network Isolated - Regular user"
+        cls.network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l2-network_offering"]
+        )
+        cls._cleanup.append(cls.network_offering)
+        NetworkOffering.update(
+            cls.network_offering,
+            cls.apiclient,
+            id=cls.network_offering.id,
+            state="enabled"
+        )
+
+        cls.network = Network.create(
+            cls.apiclient,
+            cls.services["l2-network"],
+            networkofferingid=cls.network_offering.id,
+            zoneid=cls.zone.id,
+            accountid="admin",
+            domainid=cls.domain.id,
+        )
+        cls._cleanup.append(cls.network)
 
     @classmethod
     def tearDownClass(cls):
@@ -94,7 +118,7 @@ class TestClusterDRS(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_condensed_drs_algorithm(self):
-        """ Verify Non-Strict host anti-affinity """
+        """ Verify DRS algorithm - condensed"""
         # 1. Deploy vm-1 on host 1
         # 2. Deploy vm-2 on host 2
         # 3. Execute DRS to move all VMs on the same host
@@ -103,11 +127,10 @@ class TestClusterDRS(cloudstackTestCase):
         # 1. Deploy vm-1 on host 1
         self.services["virtual_machine"]["name"] = "virtual-machine-1"
         self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
-        self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
         self.virtual_machine_1 = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
-                                                       networkids=self.user_network.id, hostid=self.hosts[0].id)
+                                                       networkids=self.network.id, hostid=self.hosts[0].id)
         self.cleanup.append(self.virtual_machine_1)
         vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
 
@@ -117,24 +140,36 @@ class TestClusterDRS(cloudstackTestCase):
         self.virtual_machine_2 = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
-                                                       networkids=self.user_network.id, hostid=self.hosts[1].id)
+                                                       networkids=self.network.id, hostid=self.hosts[1].id)
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
         self.cleanup.append(self.virtual_machine_2)
 
         self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
 
-        # 3. Execute DRS to move all VMs on the same host
+        # 3. Generate & execute DRS to move all VMs on the same host
         Configurations.update(self.apiclient, "drs.algorithm", "condensed")
-        Configurations.update(self.apiclient, "drs.imbalance.threshold", "1")
-        self.cluster.executeDRS(iterations=1.0)
+        Configurations.update(self.apiclient, "drs.level", "10")
+        drsPlan = self.cluster.generateDrsPlan(self.apiclient)
 
-        vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
-        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
-        self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on the same host")
+        vm_to_dest_host_map = {migration["vm"]["id"]: migration["destinationhost"]["id"] for migration in drsPlan}
+
+        self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
+
+        self.assertTrue(self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map))
+
+        def check_vm_hosts():
+            vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
+            vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
+            return vm_1_host_id == vm_2_host_id, None
+
+        # Wait upto 2.5 minutes for VM's host
+        res, _ = wait_until(5, 30, check_vm_hosts)
+
+        self.assertTrue(res, msg="Both VMs should be on the same host")
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_balanced_drs_algorithm(self):
-        """ Verify Non-Strict host anti-affinity """
+        """ Verify DRS algorithm - balanced"""
 
         # 1. Deploy vm-1 on host 1
         # 2. Deploy vm-2 on host 2
@@ -144,11 +179,10 @@ class TestClusterDRS(cloudstackTestCase):
         # 1. Deploy vm-1 on host 1
         self.services["virtual_machine"]["name"] = "virtual-machine-1"
         self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
-        self.services["virtual_machine"]["displayname"] = "virtual-machine-1"
         self.virtual_machine_1 = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
-                                                       networkids=self.user_network.id, hostid=self.hosts[0].id)
+                                                       networkids=self.network.id, hostid=self.hosts[0].id)
         self.cleanup.append(self.virtual_machine_1)
         vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
 
@@ -158,17 +192,27 @@ class TestClusterDRS(cloudstackTestCase):
         self.virtual_machine_2 = VirtualMachine.create(self.apiclient, self.services["virtual_machine"],
                                                        serviceofferingid=self.service_offering.id,
                                                        templateid=self.template.id, zoneid=self.zone.id,
-                                                       networkids=self.user_network.id, hostid=self.hosts[0].id)
+                                                       networkids=self.network.id, hostid=self.hosts[0].id)
         vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
         self.cleanup.append(self.virtual_machine_2)
 
-        self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
+        self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on same hosts")
 
         # 3. Execute DRS to move all VMs on different hosts
         Configurations.update(self.apiclient, "drs.algorithm", "balanced")
-        Configurations.update(self.apiclient, "drs.imbalance.threshold", "0")
-        self.cluster.executeDRS(iterations=1.0)
+        Configurations.update(self.apiclient, "drs.level", "10")
 
-        vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
-        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
-        self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
+        drsPlan = self.cluster.generateDrsPlan(self.apiclient)
+        vm_to_dest_host_map = {migration["vm"]["id"]: migration["destinationhost"]["id"] for migration in drsPlan}
+
+        self.assertTrue(self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map))
+
+        def check_vm_hosts():
+            vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
+            vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
+            return vm_1_host_id != vm_2_host_id, None
+
+        # Wait upto 2.5 minutes for VM's host
+        res, _ = wait_until(5, 30, check_vm_hosts)
+
+        self.assertTrue(res, msg="Both VMs should be on different hosts")

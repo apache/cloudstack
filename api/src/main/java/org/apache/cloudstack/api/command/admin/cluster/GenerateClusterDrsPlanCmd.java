@@ -34,7 +34,7 @@ import javax.inject.Inject;
 
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
-@APICommand(name = "generateClusterDrsPlan", description = "Schedule DRS for a cluster",
+@APICommand(name = "generateClusterDrsPlan", description = "Generate DRS plan for a cluster",
             responseObject = ClusterDrsPlanMigrationResponse.class, since = "4.19.0", requestHasSensitiveInfo = false)
 public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
