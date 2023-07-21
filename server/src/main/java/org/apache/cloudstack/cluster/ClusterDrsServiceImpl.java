@@ -468,9 +468,14 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     .listHostsForMigrationOfVM(
                             vm, 0L, 500L, null, vmList);
             List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.first().first();
+            List<? extends Host> suitableDestinationHosts = hostsForMigrationOfVM.first().first();
+
             Map<Host, Boolean> requiresStorageMotion = hostsForMigrationOfVM.third();
 
             for (Host destHost : compatibleDestinationHosts) {
+                if (!suitableDestinationHosts.contains(destHost)) {
+                    continue;
+                }
                 Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), vm,
                         vmIdServiceOfferingMap.get(vm.getId()), destHost, hostCpuCapacityMap, hostMemoryCapacityMap,
                         requiresStorageMotion.get(destHost));
