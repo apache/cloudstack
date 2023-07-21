@@ -519,7 +519,7 @@ export default {
         params.autoscaleuserid = this.autoscaleuserid
       }
       if (this.userdata && this.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(this.userdata)
       }
 
       const httpMethod = params.userdata ? 'POST' : 'GET'
@@ -538,14 +538,6 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-    },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
     },
     decodeUserData (userdata) {
       const decodedData = Buffer.from(userdata, 'base64')

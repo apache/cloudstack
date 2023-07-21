@@ -123,7 +123,6 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'EditVM',
@@ -317,7 +316,7 @@ export default {
           params.group = values.group
         }
         if (values.userdata && values.userdata.length > 0) {
-          params.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+          params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         this.loading = true
 
