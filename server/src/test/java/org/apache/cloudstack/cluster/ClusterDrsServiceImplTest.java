@@ -361,11 +361,13 @@ public class ClusterDrsServiceImplTest {
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm1.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(vm1.getDetails()).thenReturn(Collections.emptyMap());
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(2L);
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vm2.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(vm2.getDetails()).thenReturn(Collections.emptyMap());
 
         List<VirtualMachine> vmList = new ArrayList<>();

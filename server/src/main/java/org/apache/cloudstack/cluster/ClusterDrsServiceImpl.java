@@ -458,8 +458,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         Pair<VirtualMachine, Host> bestMigration = new Pair<>(null, null);
 
         for (VirtualMachine vm : vmList) {
-            if (vm.getType().isUsedBySystem() || (MapUtils.isNotEmpty(vm.getDetails()) && vm.getDetails().get(
-                    VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true"))) {
+            if (vm.getType().isUsedBySystem() || vm.getState() != VirtualMachine.State.Running ||
+                    (MapUtils.isNotEmpty(vm.getDetails()) &&
+                             vm.getDetails().get(VmDetailConstants.SKIP_DRS).equalsIgnoreCase("true"))
+            ) {
                 continue;
             }
             Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer
