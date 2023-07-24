@@ -65,7 +65,8 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
-                    :loading="field.loading">
+                    :loading="field.loading"
+                    @input="onchange($event, field.name)">
                     <a-select-option
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
@@ -236,6 +237,29 @@ export default {
     }
   },
   methods: {
+    onchange: async function (event, fieldname) {
+      const promises = []
+      const value = event.target.value
+      let domainIndex = -1
+      if (fieldname.includes('domainid')) {
+        domainIndex = this.fields.findIndex(item => item.name === 'domainid')
+        this.fields[domainIndex].loading = true
+        promises.push(await this.fetchDomains(value))
+      }
+      Promise.all(promises).then(response => {
+        if (domainIndex > -1) {
+          const domain = response.filter(item => item.type === 'domainid')
+          if (domain && domain.length > 0) {
+            this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
+          }
+        }
+      }).finally(() => {
+        if (domainIndex > -1) {
+          this.fields[domainIndex].loading = false
+        }
+        this.fillFormFieldValues()
+      })
+    },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
       if (!this.visibleFilter) return
@@ -331,7 +355,7 @@ export default {
       if (arrayField.includes('domainid')) {
         domainIndex = this.fields.findIndex(item => item.name === 'domainid')
         this.fields[domainIndex].loading = true
-        promises.push(await this.fetchDomains())
+        promises.push(await this.fetchDomains(''))
       }
 
       if (arrayField.includes('podid')) {
@@ -460,9 +484,11 @@ export default {
         })
       })
     },
-    fetchDomains () {
+    fetchDomains (name) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, showicon: true }).then(json => {
+        const pagesize = 100
+        const page = 1
+        api('listDomains', { listAll: true, showicon: true, pagesize: pagesize, page: page, keyword: name }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
