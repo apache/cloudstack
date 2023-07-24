@@ -238,27 +238,7 @@ export default {
   },
   methods: {
     onchange: async function (event, fieldname) {
-      const promises = []
-      const value = event.target.value
-      let domainIndex = -1
-      if (fieldname.includes('domainid')) {
-        domainIndex = this.fields.findIndex(item => item.name === 'domainid')
-        this.fields[domainIndex].loading = true
-        promises.push(await this.fetchDomains(value))
-      }
-      Promise.all(promises).then(response => {
-        if (domainIndex > -1) {
-          const domain = response.filter(item => item.type === 'domainid')
-          if (domain && domain.length > 0) {
-            this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
-          }
-        }
-      }).finally(() => {
-        if (domainIndex > -1) {
-          this.fields[domainIndex].loading = false
-        }
-        this.fillFormFieldValues()
-      })
+      this.fetchDynamicFieldData(fieldname, event.target.value)
     },
     onVisibleForm () {
       this.visibleFilter = !this.visibleFilter
@@ -278,7 +258,7 @@ export default {
       }
       return this.$t('label.' + fieldName)
     },
-    async initFormFieldData () {
+    initFields () {
       const arrayField = []
       this.fields = []
       this.searchFilters.forEach(item => {
@@ -315,14 +295,9 @@ export default {
         })
         arrayField.push(item)
       })
-
-      const promises = []
-      let zoneIndex = -1
-      let domainIndex = -1
-      let podIndex = -1
-      let clusterIndex = -1
-      let groupIndex = -1
-
+      return arrayField
+    },
+    fetchStaticFieldData (arrayField) {
       if (arrayField.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
           const typeIndex = this.fields.findIndex(item => item.name === 'type')
@@ -346,36 +321,6 @@ export default {
         this.fields[levelIndex].loading = false
       }
 
-      if (arrayField.includes('zoneid')) {
-        zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
-        this.fields[zoneIndex].loading = true
-        promises.push(await this.fetchZones())
-      }
-
-      if (arrayField.includes('domainid')) {
-        domainIndex = this.fields.findIndex(item => item.name === 'domainid')
-        this.fields[domainIndex].loading = true
-        promises.push(await this.fetchDomains(''))
-      }
-
-      if (arrayField.includes('podid')) {
-        podIndex = this.fields.findIndex(item => item.name === 'podid')
-        this.fields[podIndex].loading = true
-        promises.push(await this.fetchPods())
-      }
-
-      if (arrayField.includes('clusterid')) {
-        clusterIndex = this.fields.findIndex(item => item.name === 'clusterid')
-        this.fields[clusterIndex].loading = true
-        promises.push(await this.fetchClusters())
-      }
-
-      if (arrayField.includes('groupid')) {
-        groupIndex = this.fields.findIndex(item => item.name === 'groupid')
-        this.fields[groupIndex].loading = true
-        promises.push(await this.fetchInstanceGroups())
-      }
-
       if (arrayField.includes('entitytype')) {
         const entityTypeIndex = this.fields.findIndex(item => item.name === 'entitytype')
         this.fields[entityTypeIndex].loading = true
@@ -397,6 +342,44 @@ export default {
           { value: 'Volume' }
         ]
         this.fields[resourceTypeIndex].loading = false
+      }
+    },
+    async fetchDynamicFieldData (arrayField, searchKeyword) {
+      const promises = []
+      let zoneIndex = -1
+      let domainIndex = -1
+      let podIndex = -1
+      let clusterIndex = -1
+      let groupIndex = -1
+
+      if (arrayField.includes('zoneid')) {
+        zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
+        this.fields[zoneIndex].loading = true
+        promises.push(await this.fetchZones(searchKeyword))
+      }
+
+      if (arrayField.includes('domainid')) {
+        domainIndex = this.fields.findIndex(item => item.name === 'domainid')
+        this.fields[domainIndex].loading = true
+        promises.push(await this.fetchDomains(searchKeyword))
+      }
+
+      if (arrayField.includes('podid')) {
+        podIndex = this.fields.findIndex(item => item.name === 'podid')
+        this.fields[podIndex].loading = true
+        promises.push(await this.fetchPods(searchKeyword))
+      }
+
+      if (arrayField.includes('clusterid')) {
+        clusterIndex = this.fields.findIndex(item => item.name === 'clusterid')
+        this.fields[clusterIndex].loading = true
+        promises.push(await this.fetchClusters(searchKeyword))
+      }
+
+      if (arrayField.includes('groupid')) {
+        groupIndex = this.fields.findIndex(item => item.name === 'groupid')
+        this.fields[groupIndex].loading = true
+        promises.push(await this.fetchInstanceGroups(searchKeyword))
       }
 
       Promise.all(promises).then(response => {
@@ -449,6 +432,13 @@ export default {
         this.fillFormFieldValues()
       })
     },
+    initFormFieldData () {
+      const arrayField = this.initFields()
+
+      this.fetchStaticFieldData(arrayField)
+
+      this.fetchDynamicFieldData(arrayField)
+    },
     sortArray (data, key = 'name') {
       return data.sort(function (a, b) {
         if (a[key] < b[key]) { return -1 }
@@ -471,9 +461,9 @@ export default {
       this.inputKey = this.fieldValues['tags[0].key'] || null
       this.inputValue = this.fieldValues['tags[0].value'] || null
     },
-    fetchZones () {
+    fetchZones (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listZones', { showicon: true }).then(json => {
+        api('listZones', { showicon: true, keyyword: searchKeyword }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -484,11 +474,9 @@ export default {
         })
       })
     },
-    fetchDomains (name) {
+    fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        const pagesize = 100
-        const page = 1
-        api('listDomains', { listAll: true, showicon: true, pagesize: pagesize, page: page, keyword: name }).then(json => {
+        api('listDomains', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -499,9 +487,9 @@ export default {
         })
       })
     },
-    fetchPods () {
+    fetchPods (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listPods').then(json => {
+        api('listPods', { keyword: searchKeyword }).then(json => {
           const pods = json.listpodsresponse.pod
           resolve({
             type: 'podid',
@@ -512,9 +500,9 @@ export default {
         })
       })
     },
-    fetchClusters () {
+    fetchClusters (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listClusters').then(json => {
+        api('listClusters', { keyword: searchKeyword }).then(json => {
           const clusters = json.listclustersresponse.cluster
           resolve({
             type: 'clusterid',
@@ -525,9 +513,9 @@ export default {
         })
       })
     },
-    fetchInstanceGroups () {
+    fetchInstanceGroups (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listInstanceGroups', { listAll: true }).then(json => {
+        api('listInstanceGroups', { listAll: true, keyword: searchKeyword }).then(json => {
           const instancegroups = json.listinstancegroupsresponse.instancegroup
           resolve({
             type: 'groupid',
