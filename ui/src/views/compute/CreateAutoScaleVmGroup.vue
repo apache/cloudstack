@@ -2629,10 +2629,13 @@ export default {
         // advanced settings
         createVmGroupData.keypairs = this.sshKeyPairs.join(',')
         createVmGroupData.affinitygroupids = (values.affinitygroupids || []).join(',')
-        if (values.userdata && values.userdata.length > 0) {
+        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
+        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           createVmGroupData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
-        createVmGroupData.userdataid = values.userdataid
+        if (isUserdataAllowed) {
+          createVmGroupData.userdataid = values.userdataid
+        }
 
         // vm profile details
         createVmGroupData.autoscaleuserid = values.autoscaleuserid
@@ -2648,7 +2651,7 @@ export default {
             idx++
           }
         }
-        if (this.userDataValues) {
+        if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
             createVmGroupData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
