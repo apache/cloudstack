@@ -836,7 +836,6 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
@@ -1971,7 +1970,7 @@ export default {
         deployVmData.iothreadsenabled = values.iothreadsenabled
         deployVmData.iodriverpolicy = values.iodriverpolicy
         if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {

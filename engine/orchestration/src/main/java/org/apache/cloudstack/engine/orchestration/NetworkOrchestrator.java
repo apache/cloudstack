@@ -2665,8 +2665,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
                 // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
                 // enabled zone
-                if (ntwkOff.getGuestType() != GuestType.Shared) {
-                    throw new InvalidParameterValueException("Only shared guest network can be created in security group enabled zone");
+                if ((ntwkOff.getGuestType() != GuestType.Shared) && (ntwkOff.getGuestType() != GuestType.L2)) {
+                    throw new InvalidParameterValueException("Only shared or L2 guest network can be created in security group enabled zone");
                 }
                 if (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
