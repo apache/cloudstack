@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloud.vpc;
+package com.cloud.network.vpc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -58,18 +59,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItem.State;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.NetworkACLManagerImpl;
-import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.network.vpc.VpcGatewayVO;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -88,7 +78,7 @@ import junit.framework.TestCase;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class NetworkACLManagerTest extends TestCase {
     @Inject
-    NetworkACLManager _aclMgr;
+    NetworkACLManagerImpl _aclMgr;
 
     @Inject
     AccountManager _accountMgr;
@@ -103,10 +93,6 @@ public class NetworkACLManagerTest extends TestCase {
     @Inject
     NetworkOfferingDao networkOfferingDao;
     @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    EntityManager _entityMgr;
-    @Inject
     NetworkModel _networkModel;
     @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
@@ -114,6 +100,8 @@ public class NetworkACLManagerTest extends TestCase {
     VpcService _vpcSvc;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    private ResourceTagDao resourceTagDao;
 
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
@@ -154,9 +142,17 @@ public class NetworkACLManagerTest extends TestCase {
     }
 
     @Test
-    public void testApplyNetworkACL() throws Exception {
+    public void testApplyNetworkACLsOnGatewayAndInGeneral() throws Exception {
         driveTestApplyNetworkACL(true, true, true);
+    }
+
+    @Test
+    public void testApplyNetworkACLsOnGatewayOnly() throws Exception {
         driveTestApplyNetworkACL(false, false, true);
+    }
+
+    @Test
+    public void testApplyNetworkACLsButNotOnGateway() throws Exception {
         driveTestApplyNetworkACL(false, true, false);
     }
 
@@ -168,11 +164,12 @@ public class NetworkACLManagerTest extends TestCase {
         // Prepare
         // Reset mocked objects to reuse
         Mockito.reset(_networkACLItemDao);
+        Mockito.reset(_networkDao);
 
         // Make sure it is handled
         final long aclId = 1L;
         final NetworkVO network = Mockito.mock(NetworkVO.class);
-        final List<NetworkVO> networks = new ArrayList<NetworkVO>();
+        final List<NetworkVO> networks = new ArrayList<>();
         networks.add(network);
 
         NetworkServiceMapDao ntwkSrvcDao = mock(NetworkServiceMapDao.class);
@@ -194,7 +191,7 @@ public class NetworkACLManagerTest extends TestCase {
 
         // Create 4 rules to test all 4 scenarios: only revoke should
         // be deleted, only add should update
-        final List<NetworkACLItemVO> rules = new ArrayList<NetworkACLItemVO>();
+        final List<NetworkACLItemVO> rules = new ArrayList<>();
         final NetworkACLItemVO ruleActive = Mockito.mock(NetworkACLItemVO.class);
         final NetworkACLItemVO ruleStaged = Mockito.mock(NetworkACLItemVO.class);
         final NetworkACLItemVO rule2Revoke = Mockito.mock(NetworkACLItemVO.class);
@@ -224,7 +221,6 @@ public class NetworkACLManagerTest extends TestCase {
 
         // Assert if conditions met, network ACL was applied
         final int timesProcessingDone = applyNetworkACLs && applyACLToPrivateGw ? 1 : 0;
-        Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).remove(revokeId);
         Mockito.verify(rule2Add, Mockito.times(timesProcessingDone)).setState(NetworkACLItem.State.Active);
         Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).update(addId, rule2Add);
     }
@@ -236,8 +232,19 @@ public class NetworkACLManagerTest extends TestCase {
     }
 
     @Test
+    public void testRemoveRule() {
+        NetworkACLItem aclItem = Mockito.mock(NetworkACLItemVO.class);
+        when(aclItem.getId()).thenReturn(1l);
+        Mockito.when(resourceTagDao.removeByIdAndType(1l, ResourceTag.ResourceObjectType.NetworkACL)).thenReturn(true);
+        Mockito.when(_networkACLItemDao.remove(1l)).thenReturn(true);
+        assertTrue(_aclMgr.removeRule(aclItem));
+
+    }
+
+    @Test
     public void deleteNonEmptyACL() throws Exception {
-        final List<NetworkACLItemVO> aclItems = new ArrayList<NetworkACLItemVO>();
+        Mockito.reset(_networkDao);
+        final List<NetworkACLItemVO> aclItems = new ArrayList<>();
         aclItems.add(aclItem);
         Mockito.when(_networkACLItemDao.listByACL(anyLong())).thenReturn(aclItems);
         Mockito.when(acl.getId()).thenReturn(3l);
@@ -342,5 +349,4 @@ public class NetworkACLManagerTest extends TestCase {
             }
         }
     }
-
 }
