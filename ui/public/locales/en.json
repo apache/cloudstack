@@ -1113,6 +1113,8 @@
 "label.kubernetes.cluster.stop": "Stop Kubernetes cluster",
 "label.kubernetes.cluster.upgrade": "Upgrade Kubernetes cluster",
 "label.kubernetes.dashboard": "Kubernetes dashboard UI",
+"label.kubernetes.dashboard.create.token": "Create token for Kubernetes dashboard",
+"label.kubernetes.dashboard.create.token.desc": "Since Kubernetes v1.24.0, there is no auto-generation of secret-based service account token due to security reason. You need to create a service account and an optional long-lived Bearer Token for the service account.",
 "label.kubernetes.isos": "Kubernetes ISOs",
 "label.kubernetes.service": "Kubernetes service",
 "label.kubernetes.version.add": "Add Kubernetes version",
