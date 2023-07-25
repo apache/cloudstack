@@ -17,7 +17,9 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -35,6 +37,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -102,6 +105,14 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
             since = "4.18.0")
     private String userData;
 
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the userdata",
+            since = "4.18.1")
+    private Long userdataId;
+
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.",
+            since = "4.18.1")
+    private Map userdataDetails;
+
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
                entityType = UserResponse.class,
@@ -154,6 +165,25 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     public String getUserData() {
         return userData;
+    }
+
+    public Long getUserdataId() {
+        return userdataId;
+    }
+
+    public Map<String, String> getUserdataDetails() {
+        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
+        if (userdataDetails != null && userdataDetails.size() != 0) {
+            Collection parameterCollection = userdataDetails.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (Map.Entry<String,String> entry: value.entrySet()) {
+                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return userdataDetailsMap;
     }
 
     public Long getAutoscaleUserId() {

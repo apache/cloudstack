@@ -759,7 +759,10 @@
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item>
+                      <template #label>
+                        <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+                      </template>
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-text type="primary">
@@ -850,14 +853,6 @@
                           </a-step>
                         </div>
                       </a-card>
-                    </a-form-item>
-                    <a-form-item name="userdata" ref="userdata">
-                      <template #label>
-                        <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
-                      </template>
-                      <a-textarea
-                        v-model:value="form.userdata">
-                      </a-textarea>
                     </a-form-item>
                   </div>
                 </template>

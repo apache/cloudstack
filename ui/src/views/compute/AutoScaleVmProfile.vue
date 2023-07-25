@@ -71,9 +71,24 @@
       </div>
       <div class="form">
         <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+          </div>
+          <a-textarea v-model:value="userdata" rows="5" :disabled="true">
+          </a-textarea>
+        </div>
+      </div>
+      <div class="form">
+        <div class="form__item">
           <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="editProfileModalVisible = true">
             <template #icon><edit-outlined /></template>
             {{ $t('label.edit.autoscale.vmprofile') }}
+          </a-button>
+        </div>
+        <div class="form__item">
+          <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="showUpdateUserDataForm = true">
+            <template #icon><solution-outlined /></template>
+            {{ $t('label.reset.userdata.on.autoscale.vm.group') }}
           </a-button>
         </div>
       </div>
@@ -224,19 +239,25 @@
           </a-select>
         </div>
       </div>
-      <div class="form">
-        <div class="form__item">
-          <div class="form__label">
-            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
-          </div>
-          <a-textarea v-model:value="userdata">
-          </a-textarea>
-        </div>
-      </div>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="updateAutoScaleVmProfile">{{ $t('label.ok') }}</a-button>
       </div>
+    </a-modal>
+
+    <a-modal
+      :visible="showUpdateUserDataForm"
+      :title="$t('label.reset.userdata.on.autoscale.vm.group')"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      @cancel="showUpdateUserDataForm = false"
+      centered
+      width="auto">
+      <reset-user-data
+        :resource="{ ...resource, ...{ resetUserDataApiName: 'updateAutoScaleVmProfile', resetUserDataResourceId: this.resource.vmprofileid, templateid: this.templateid}}"
+        @close-action="showUpdateUserDataForm = false"
+      />
     </a-modal>
   </div>
 </template>
@@ -247,10 +268,12 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import ResetUserData from '@views/compute/ResetUserData'
 
 export default {
   name: 'conditionsTab',
   components: {
+    ResetUserData,
     Status,
     TooltipButton,
     TooltipLabel
@@ -266,6 +289,7 @@ export default {
       filterColumns: ['Action'],
       loading: true,
       editProfileModalVisible: false,
+      showUpdateUserDataForm: false,
       profileid: null,
       autoscaleuserid: null,
       expungevmgraceperiod: null,
@@ -518,13 +542,10 @@ export default {
       if (this.autoscaleuserid) {
         params.autoscaleuserid = this.autoscaleuserid
       }
-      if (this.userdata && this.userdata.length > 0) {
-        params.userdata = this.$toBase64AndURIEncoded(this.userdata)
-      }
 
-      const httpMethod = params.userdata ? 'POST' : 'GET'
-      const args = httpMethod === 'POST' ? {} : params
-      const data = httpMethod === 'POST' ? params : {}
+      const httpMethod = 'GET'
+      const args = params
+      const data = {}
 
       api('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
         this.$pollJob({

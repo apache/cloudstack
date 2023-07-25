@@ -340,6 +340,8 @@ public class AutoScaleManagerImplTest {
     private static final Long scaleDownCounterId = 38L;
     private static final Long nextVmSeq = 39L;
     private static final Long networkOfferingId = 40L;
+    private static final String userData = "VGVzdFVzZXJEYXRh";  //TestUserData
+    private static final Long userDataId = 41L;
 
     @Mock
     DataCenterVO zoneMock;
@@ -748,10 +750,43 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "otherDeployParams", otherDeployParams);
         ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
 
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+
         AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.createAutoScaleVmProfile(cmd);
 
         Assert.assertEquals(asVmProfileMock, vmProfile);
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    @PrepareForTest(ComponentContext.class)
+    public void testCreateAutoScaleVmProfileFail() {
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findByIdIncludingRemoved(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        Mockito.doThrow(InvalidParameterValueException.class).when(userVmMgr).finalizeUserData(any(), any(), any());
+
+        DispatchChain dispatchChainMock = Mockito.mock(DispatchChain.class);
+        when(dispatchChainFactory.getStandardDispatchChain()).thenReturn(dispatchChainMock);
+        Mockito.doNothing().when(dispatchChainMock).dispatch(any());
+        PowerMockito.mockStatic(ComponentContext.class);
+        when(ComponentContext.inject(DeployVMCmd.class)).thenReturn(Mockito.mock(DeployVMCmd.class));
+
+        CreateAutoScaleVmProfileCmd cmd = new CreateAutoScaleVmProfileCmd();
+
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+        ReflectionTestUtils.setField(cmd, "expungeVmGracePeriod", expungeVmGracePeriod);
+        ReflectionTestUtils.setField(cmd, "otherDeployParams", otherDeployParams);
+        ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
+
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+
+        AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.createAutoScaleVmProfile(cmd);
     }
 
     @Test
