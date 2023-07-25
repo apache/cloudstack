@@ -62,18 +62,18 @@
         :pagination="{hideOnSinglePage: true, showSizeChanger: true}">
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'vm'">
-            <router-link :to="{ path: '/vm/' + record.vm }">
-              <desktop-outlined/> {{ record.vm.displayname }}
+            <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
+              <desktop-outlined/> {{ record.virtualmachinename }}
             </router-link>
           </template>
           <template v-else-if="column.key === 'sourcehost'">
-            <router-link :to="{ path: '/host/' + record.sourcehost }">
-              <cluster-outlined/> {{ record.sourcehost.name }}
+            <router-link :to="{ path: '/host/' + record.sourcehostid }">
+              <cluster-outlined/> {{ record.sourcehostname }}
             </router-link>
           </template>
           <template v-else-if="column.key === 'destinationhost'">
-            <router-link :to="{ path: '/host/' + record.destinationhost }">
-              <cluster-outlined/> {{ record.destinationhost.name }}
+            <router-link :to="{ path: '/host/' + record.destinationhostid }">
+              <cluster-outlined/> {{ record.destinationhostname }}
             </router-link>
           </template>
           <template v-else>
@@ -117,18 +117,18 @@
       :pagination="true">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'vm'">
-          <router-link :to="{ path: '/vm/' + record.vm }">
-            <desktop-outlined/> {{ record.vm.displayname }}
+          <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
+            <desktop-outlined/> {{ record.virtualmachinename }}
           </router-link>
         </template>
         <template v-else-if="column.key === 'sourcehost'">
-          <router-link :to="{ path: '/host/' + record.sourcehost }">
-            <cluster-outlined/> {{ record.sourcehost.name }}
+          <router-link :to="{ path: '/host/' + record.sourcehostid }">
+            <cluster-outlined/> {{ record.sourcehostname }}
           </router-link>
         </template>
         <template v-else-if="column.key === 'destinationhost'">
-          <router-link :to="{ path: '/host/' + record.destinationhost }">
-            <cluster-outlined/> {{ record.destinationhost.name }}
+          <router-link :to="{ path: '/host/' + record.destinationhostid }">
+            <cluster-outlined/> {{ record.destinationhostname }}
           </router-link>
         </template>
         <template v-else>

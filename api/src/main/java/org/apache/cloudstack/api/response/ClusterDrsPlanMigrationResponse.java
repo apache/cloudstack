@@ -26,17 +26,29 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.jobs.JobInfo;
 
 public class ClusterDrsPlanMigrationResponse extends BaseResponse {
-    @SerializedName(ApiConstants.VM)
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "VM to migrate")
-    UserVmResponse vm;
+    String vmId;
 
-    @SerializedName("sourcehost")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
+    @Param(description = "VM to migrate")
+    String vmName;
+
+    @SerializedName("sourcehostid")
     @Param(description = "Original host for VM migration")
-    HostResponse srcHost;
+    String srcHostId;
 
-    @SerializedName("destinationhost")
+    @SerializedName("sourcehostname")
+    @Param(description = "Original host for VM migration")
+    String srcHostName;
+
+    @SerializedName("destinationhostid")
     @Param(description = "Destination host for VM migration")
-    HostResponse destHost;
+    String destHostId;
+
+    @SerializedName("destinationhostname")
+    @Param(description = "Destination host for VM migration")
+    String destHostName;
 
     @SerializedName(ApiConstants.JOB_ID)
     @Param(description = "id of VM migration async job")
@@ -47,25 +59,17 @@ public class ClusterDrsPlanMigrationResponse extends BaseResponse {
     private JobInfo.Status jobStatus;
 
 
-    public ClusterDrsPlanMigrationResponse(UserVmResponse vm, HostResponse srcHost, HostResponse destHost, Long jobId,
+    public ClusterDrsPlanMigrationResponse(String vmId, String vmName, String srcHostId, String srcHostName,
+                                           String destHostId, String destHostName, Long jobId,
                                            JobInfo.Status jobStatus) {
-        this.vm = vm;
-        this.srcHost = srcHost;
-        this.destHost = destHost;
+        this.vmId = vmId;
+        this.vmName = vmName;
+        this.srcHostId = srcHostId;
+        this.srcHostName = srcHostName;
+        this.destHostId = destHostId;
+        this.destHostName = destHostName;
         this.jobId = jobId;
         this.jobStatus = jobStatus;
         this.setObjectName(ApiConstants.MIGRATIONS);
-    }
-
-    public UserVmResponse getVm() {
-        return vm;
-    }
-
-    public HostResponse getSrcHost() {
-        return srcHost;
-    }
-
-    public HostResponse getDestHost() {
-        return destHost;
     }
 }

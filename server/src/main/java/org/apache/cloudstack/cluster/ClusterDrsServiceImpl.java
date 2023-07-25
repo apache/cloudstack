@@ -54,8 +54,6 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.admin.cluster.ExecuteClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClusterDrsPlanCmd;
@@ -123,9 +121,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     ClusterDrsPlanMigrationDao drsPlanMigrationDao;
-
-    @Inject
-    ResponseGenerator responseGenerator;
 
     @Inject
     ServiceOfferingDao serviceOfferingDao;
@@ -712,21 +707,20 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * @return a list of ClusterDrsPlanMigrationResponse objects
      */
     List<ClusterDrsPlanMigrationResponse> getResponseObjectForMigrations(List<ClusterDrsPlanMigrationVO> migrations) {
-        List<ClusterDrsPlanMigrationResponse> migrationResponses = new ArrayList<>();
+        List<ClusterDrsPlanMigrationResponse> responses = new ArrayList<>();
 
         for (ClusterDrsPlanMigrationVO migration : migrations) {
-            VMInstanceVO vm = vmInstanceDao.findById(migration.getVmId());
-            HostVO srcHost = hostDao.findById(migration.getSrcHostId());
-            HostVO destHost = hostDao.findById(migration.getDestHostId());
-            ClusterDrsPlanMigrationResponse planMigrationResponse = new ClusterDrsPlanMigrationResponse(
-                    responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", vm)
-                                     .get(0),
-                    responseGenerator.createHostResponse(srcHost),
-                    responseGenerator.createHostResponse(destHost), migration.getJobId(), migration.getStatus());
-            migrationResponses.add(planMigrationResponse);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(migration.getVmId());
+            HostVO srcHost = hostDao.findByIdIncludingRemoved(migration.getSrcHostId());
+            HostVO destHost = hostDao.findByIdIncludingRemoved(migration.getDestHostId());
+            responses.add(new ClusterDrsPlanMigrationResponse(
+                    vm.getUuid(), vm.getInstanceName(),
+                    srcHost.getUuid(), srcHost.getName(),
+                    destHost.getUuid(), destHost.getName(),
+                    migration.getJobId(), migration.getStatus()));
         }
 
-        return migrationResponses;
+        return responses;
     }
 
     @Override
