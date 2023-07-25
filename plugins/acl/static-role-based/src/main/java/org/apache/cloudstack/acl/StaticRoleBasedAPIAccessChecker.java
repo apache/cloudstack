@@ -107,6 +107,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     @Override
     public boolean checkAccess(Account account, String commandName) {
+        if (isEnabled()) {
+            return true;
+        }
+
         RoleType roleType = accountService.getRoleType(account);
         if (isApiAllowed(commandName, roleType)) {
             return true;
