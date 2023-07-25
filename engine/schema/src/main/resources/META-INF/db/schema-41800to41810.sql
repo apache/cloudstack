@@ -34,5 +34,4 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2022 (64-bit)', 'Xe
 
 -- Support userdata ids and details in VM AutoScaling
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data" AFTER `user_data`');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.autoscale_vmprofiles', 'user_data', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data_details', 'mediumtext DEFAULT NULL COMMENT "value of the comma-separated list of parameters" AFTER `user_data_id`');
