@@ -463,7 +463,7 @@ export default {
     },
     fetchZones (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listZones', { showicon: true, keyyword: searchKeyword }).then(json => {
+        api('listZones', { showicon: true, keyword: searchKeyword }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
