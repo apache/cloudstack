@@ -1969,7 +1969,8 @@ export default {
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         deployVmData.iothreadsenabled = values.iothreadsenabled
         deployVmData.iodriverpolicy = values.iodriverpolicy
-        if (values.userdata && values.userdata.length > 0) {
+        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
+        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
@@ -2092,7 +2093,9 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        deployVmData.userdataid = values.userdataid
+        if (isUserdataAllowed) {
+          deployVmData.userdataid = values.userdataid
+        }
 
         if (values.name) {
           deployVmData.name = values.name
@@ -2128,7 +2131,7 @@ export default {
             idx++
           }
         }
-        if (this.userDataValues) {
+        if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
