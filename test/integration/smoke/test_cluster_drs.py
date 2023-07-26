@@ -150,8 +150,9 @@ class TestClusterDRS(cloudstackTestCase):
         Configurations.update(self.apiclient, "drs.algorithm", "condensed")
         Configurations.update(self.apiclient, "drs.level", "10")
         drsPlan = self.cluster.generateDrsPlan(self.apiclient)
-
-        vm_to_dest_host_map = {migration["vm"]["id"]: migration["destinationhost"]["id"] for migration in drsPlan}
+        vm_to_dest_host_map = {
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
+        }
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
 
@@ -203,7 +204,9 @@ class TestClusterDRS(cloudstackTestCase):
         Configurations.update(self.apiclient, "drs.level", "10")
 
         drsPlan = self.cluster.generateDrsPlan(self.apiclient)
-        vm_to_dest_host_map = {migration["vm"]["id"]: migration["destinationhost"]["id"] for migration in drsPlan}
+        vm_to_dest_host_map = {
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
+        }
 
         self.assertTrue(self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map))
 
