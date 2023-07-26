@@ -116,6 +116,25 @@ class TestClusterDRS(cloudstackTestCase):
         vm = list_vms[0]
         return vm.hostid
 
+    def wait_for_vm_start(self, vm=None):
+        """ Wait until vm is Running """
+        def check_vm_state():
+            vms = VirtualMachine.list(
+                self.apiclient,
+                id=vm.id,
+                listall=True
+            )
+            if isinstance(vms, list):
+                if vms[0].state == 'Running':
+                    return True, vms[0].state
+            return False, vms[0].state
+
+        self.message("Waiting for VM %s (%s) to be Running" % (vm.name, vm.id))
+        res = wait_until(10, 30, check_vm_state)
+        if not res:
+            raise Exception("Failed to wait for user VM %s (%s) to be Running" % (vm.name, vm.id))
+        return res
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_condensed_drs_algorithm(self):
         """ Verify DRS algorithm - condensed"""
@@ -145,6 +164,8 @@ class TestClusterDRS(cloudstackTestCase):
         self.cleanup.append(self.virtual_machine_2)
 
         self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")
+        self.wait_for_vm_start(self.virtual_machine_1)
+        self.wait_for_vm_start(self.virtual_machine_2)
 
         # 3. Generate & execute DRS to move all VMs on the same host
         Configurations.update(self.apiclient, "drs.algorithm", "condensed")
@@ -198,15 +219,18 @@ class TestClusterDRS(cloudstackTestCase):
         self.cleanup.append(self.virtual_machine_2)
 
         self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on same hosts")
+        self.wait_for_vm_start(self.virtual_machine_1)
+        self.wait_for_vm_start(self.virtual_machine_2)
 
         # 3. Execute DRS to move all VMs on different hosts
         Configurations.update(self.apiclient, "drs.algorithm", "balanced")
         Configurations.update(self.apiclient, "drs.level", "10")
-
         drsPlan = self.cluster.generateDrsPlan(self.apiclient)
         vm_to_dest_host_map = {
             migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
         }
+
+        self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
 
         self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
 
