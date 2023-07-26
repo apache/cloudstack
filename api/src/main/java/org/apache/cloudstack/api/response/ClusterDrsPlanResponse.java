@@ -70,4 +70,12 @@ public class ClusterDrsPlanResponse extends BaseResponse {
         this.migrationPlans = migrationPlans;
         this.setObjectName("drsPlan");
     }
+
+    public List<ClusterDrsPlanMigrationResponse> getMigrationPlans() {
+        return migrationPlans;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

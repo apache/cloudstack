@@ -25,7 +25,6 @@ import com.cloud.utils.concurrency.Scheduler;
 import org.apache.cloudstack.api.command.admin.cluster.ExecuteClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClusterDrsPlanCmd;
-import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
 import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -71,33 +70,41 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             "memory,cpu,both");
 
     /**
-     * Executes the DRS (Distributed Resource Scheduler) command.
+     * Generate a DRS plan for a cluster and save it as per the parameters
      *
      * @param cmd
      *         the GenerateClusterDrsPlanCmd object containing the command parameters
      *
-     * @return a SuccessResponse object indicating the success of the operation
+     * @return a ClusterDrsPlanResponse object containing information regarding the migrations
      */
-    ListResponse<ClusterDrsPlanMigrationResponse> generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
+    ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
 
     /**
      * Executes a DRS plan for a cluster.
      *
-     * @param cmd the ExecuteClusterDrsPlanCmd object containing the ID of the cluster and the map of virtual
-     *            machines to hosts
-     * @return true if the DRS plan was executed successfully, false otherwise
-     * @throws InvalidParameterValueException if there is already a plan in READY state for the cluster or if the
-     * cluster cannot be found by ID
+     * @param cmd
+     *         the ExecuteClusterDrsPlanCmd object containing the ID of the cluster and the map of virtual
+     *         machines to hosts
+     *
+     * @return ClusterDrsPlanResponse response object
+     *
+     * @throws InvalidParameterValueException
+     *         if there is already a plan in READY or IN_PROGRESS state for the cluster or if the
+     *         cluster cannot be found by ID
      */
-    boolean executeDrsPlan(ExecuteClusterDrsPlanCmd cmd);
+    ClusterDrsPlanResponse executeDrsPlan(ExecuteClusterDrsPlanCmd cmd);
 
     /**
      * Lists DRS plans for a cluster or a specific plan.
      *
-     * @param cmd the ListClusterDrsPlanCmd object containing the ID of the cluster or the ID of the plan
+     * @param cmd
+     *         the ListClusterDrsPlanCmd object containing the ID of the cluster or the ID of the plan
+     *
      * @return a ListResponse object containing a list of ClusterDrsPlanResponse objects and the total number of plans
-     * @throws InvalidParameterValueException if both clusterId and planId are specified or if the cluster cannot be
-     * found by ID
+     *
+     * @throws InvalidParameterValueException
+     *         if both clusterId and planId are specified or if the cluster cannot be
+     *         found by ID
      */
     ListResponse<ClusterDrsPlanResponse> listDrsPlan(ListClusterDrsPlanCmd cmd);
 }

@@ -30,8 +30,8 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.commons.collections.MapUtils;
 
@@ -44,20 +44,25 @@ import java.util.Map;
 @APICommand(name = "executeClusterDrsPlan",
             description = "Execute DRS for a cluster. If there is another plan in progress for the same cluster, " +
                     "this command will fail.",
-            responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-            since = "4.19.0")
+            responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
 public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
-               description = "the ID of cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class,
+               description = "ID of cluster")
+    private Long clusterId;
+
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class,
+               description = "ID of drs plan")
     private Long id;
+
 
     @Parameter(
             name = ApiConstants.MIGRATE_TO,
             type = CommandType.MAP,
-            required = true,
             description = "Virtual Machine to destination host mapping. This parameter specifies the mapping between " +
-                    "a vm and a host to migrate that VM. " +
+                    "a vm and a host to migrate that VM. clusterid is required if this parameter is set." +
                     "Format of this parameter: migrateto[vm-index].vm=<uuid>&migrateto[vm-index].host=<uuid> " +
                     "Where, [vm-index] indicates the index to identify the vm that you want to migrate, " +
                     "vm=<uuid> indicates the UUID of the vm that you want to migrate, and " +
@@ -111,9 +116,7 @@ public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        boolean result = clusterDrsService.executeDrsPlan(this);
-        SuccessResponse response = new SuccessResponse();
-        response.setSuccess(result);
+        ClusterDrsPlanResponse response = clusterDrsService.executeDrsPlan(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
@@ -135,6 +138,10 @@ public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     @Override

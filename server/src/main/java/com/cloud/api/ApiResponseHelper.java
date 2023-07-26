@@ -1591,12 +1591,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, VirtualMachine... vms) {
-        List<UserVmJoinVO> viewVms = ApiDBUtils.newUserVmView(vms);
-        return ViewResponseHelper.createUserVmResponse(view, objectName, viewVms.toArray(new UserVmJoinVO[viewVms.size()]));
-    }
-
-    @Override
     public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
         List<DomainRouterJoinVO> viewVrs = ApiDBUtils.newDomainRouterView(router);
         List<DomainRouterResponse> listVrs = ViewResponseHelper.createDomainRouterResponse(viewVrs.toArray(new DomainRouterJoinVO[viewVrs.size()]));

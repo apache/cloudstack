@@ -20,7 +20,6 @@
 package org.apache.cloudstack.cluster.dao;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.cluster.ClusterDrsPlan;
 import org.apache.cloudstack.cluster.ClusterDrsPlanVO;
@@ -32,8 +31,6 @@ public interface ClusterDrsPlanDao extends GenericDao<ClusterDrsPlanVO, Long> {
     List<ClusterDrsPlanVO> listByStatus(ClusterDrsPlan.Status status);
 
     List<ClusterDrsPlanVO> listByClusterIdAndStatus(Long clusterId, ClusterDrsPlan.Status status);
-
-    List<ClusterDrsPlanVO> listByClusterId(Long clusterId, Filter filter);
 
     ClusterDrsPlanVO listLatestPlanForClusterId(Long clusterId);
 

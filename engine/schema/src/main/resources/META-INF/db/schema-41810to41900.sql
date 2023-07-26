@@ -194,6 +194,7 @@ CREATE TABLE `cloud`.`cluster_drs_plan` (
   PRIMARY KEY (`id`),
   INDEX `i_cluster_drs_plan__cluster_id_status`(`cluster_id`, `status`),
   INDEX `i_cluster_drs_plan__status`(`status`),
+  INDEX `i_cluster_drs_plan__created`(`created`),
   CONSTRAINT `fk_cluster_drs_plan__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 

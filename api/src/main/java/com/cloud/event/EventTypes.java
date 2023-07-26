@@ -679,6 +679,8 @@ public class EventTypes {
 
     // DRS Events
     public static final String EVENT_CLUSTER_DRS = "CLUSTER.DRS";
+    public static final String EVENT_CLUSTER_DRS_GENERATE = "CLUSTER.DRS.GENERATE";
+
 
     // Netscaler Service Package events
     public static final String EVENT_NETSCALER_SERVICEPACKAGE_ADD = "NETSCALER.SERVICEPACKAGE.ADD";

@@ -259,7 +259,7 @@ export default {
     },
     generateDrsPlan () {
       api('generateClusterDrsPlan', { id: this.resource.id, iterations: this.iterations / 100.0 }).then(json => {
-        this.generatedMigrations = json.generateclusterdrsplanresponse.migrations || []
+        this.generatedMigrations = json?.generateclusterdrsplanresponse?.generateclusterdrsplanresponse?.migrations || []
         this.showModal = true
       })
     },

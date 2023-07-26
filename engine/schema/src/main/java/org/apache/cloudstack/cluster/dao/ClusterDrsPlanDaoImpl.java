@@ -60,17 +60,6 @@ public class ClusterDrsPlanDaoImpl extends GenericDaoBase<ClusterDrsPlanVO, Long
     }
 
     @Override
-    public List<ClusterDrsPlanVO> listByClusterId(Long clusterId, Filter filter) {
-        SearchBuilder<ClusterDrsPlanVO> sb;
-        sb = createSearchBuilder();
-        sb.and(ApiConstants.CLUSTER_ID, sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.done();
-        SearchCriteria<ClusterDrsPlanVO> sc = sb.create();
-        sc.setParameters(ApiConstants.CLUSTER_ID, clusterId);
-        return search(sc, null);
-    }
-
-    @Override
     public ClusterDrsPlanVO listLatestPlanForClusterId(Long clusterId) {
         SearchBuilder<ClusterDrsPlanVO> sb;
         sb = createSearchBuilder();

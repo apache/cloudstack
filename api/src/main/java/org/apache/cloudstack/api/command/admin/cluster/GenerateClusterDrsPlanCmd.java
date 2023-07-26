@@ -23,11 +23,10 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.cluster.ClusterDrsService;
 
 import javax.inject.Inject;
@@ -35,8 +34,9 @@ import javax.inject.Inject;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
 
 @APICommand(name = "generateClusterDrsPlan", description = "Generate DRS plan for a cluster",
-            responseObject = ClusterDrsPlanMigrationResponse.class, since = "4.19.0", requestHasSensitiveInfo = false)
-public class GenerateClusterDrsPlanCmd extends BaseListCmd {
+            responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false)
+public class GenerateClusterDrsPlanCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
                description = "the ID of the Cluster")
@@ -47,6 +47,10 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
                        " (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's " +
                        "drs.iterations setting")
     private Double iterations;
+
+    @Parameter(name = "saveplan", type = CommandType.BOOLEAN, entityType = ClusterResponse.class, description = "save" +
+            " plan in the database")
+    private Boolean savePlan;
 
     @Inject
     private ClusterDrsService clusterDrsService;
@@ -64,10 +68,22 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        final ListResponse<ClusterDrsPlanMigrationResponse> response = clusterDrsService.generateDrsPlan(this);
+        final ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(this);
+        if (!getSavePlan()) {
+            response.setId(null);
+        }
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);
+    }
+
+    public boolean getSavePlan() {
+        return savePlan != null && savePlan;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
@@ -78,10 +94,5 @@ public class GenerateClusterDrsPlanCmd extends BaseListCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.Cluster;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

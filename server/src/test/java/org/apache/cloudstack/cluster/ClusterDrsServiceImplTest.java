@@ -23,6 +23,9 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -45,7 +48,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.cluster.GenerateClusterDrsPlanCmd;
 import org.apache.cloudstack.api.response.ClusterDrsPlanMigrationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ClusterDrsPlanResponse;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanDao;
 import org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -77,7 +80,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(GlobalLock.class)
+@PrepareForTest({GlobalLock.class, ActionEventUtils.class})
 @PowerMockIgnore("javax.management.*")
 public class ClusterDrsServiceImplTest {
 
@@ -103,6 +106,9 @@ public class ClusterDrsServiceImplTest {
 
     @Mock
     private ClusterDrsPlanMigrationDao drsPlanMigrationDao;
+
+    @Mock
+    private EventDao eventDao;
 
     @Mock
     private HostDao hostDao;
@@ -295,7 +301,9 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(destHost.getId()).thenReturn(2L);
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+        Mockito.when(eventDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(EventVO.class));
         Mockito.when(cmd.getIterations()).thenReturn(0.5);
+        Mockito.when(cmd.getSavePlan()).thenReturn(false);
         Mockito.doReturn(List.of(new Ternary<>(vm, srcHost,
                 destHost))).when(clusterDrsService).getDrsPlan(Mockito.any(Cluster.class), Mockito.anyDouble());
 
@@ -304,12 +312,17 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(clusterDrsService.getResponseObjectForMigrations(Mockito.anyList())).thenReturn(
                 List.of(migrationResponse));
 
+        PowerMockito.mockStatic(ActionEventUtils.class);
+        PowerMockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                Mockito.anyLong(),
+                Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
-        ListResponse<ClusterDrsPlanMigrationResponse> response = clusterDrsService.generateDrsPlan(
+        ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(
                 cmd);
 
-        assertEquals(1L, response.getCount().longValue());
-        assertEquals(migrationResponse, response.getResponses().get(0));
+        assertEquals(1L, response.getMigrationPlans().size());
+        assertEquals(migrationResponse, response.getMigrationPlans().get(0));
     }
 
     @Test
@@ -387,10 +400,12 @@ public class ClusterDrsServiceImplTest {
         }
 
         Mockito.when(managementServer.listHostsForMigrationOfVM(vm1, 0L, 500L, null, vmList)).thenReturn(
-                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
+                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
+                        new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
                         false)));
         Mockito.when(managementServer.listHostsForMigrationOfVM(vm2, 0L, 500L, null, vmList)).thenReturn(
-                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
+                new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(
+                        new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost,
                         false)));
         Mockito.when(balancedAlgorithm.getMetrics(cluster.getId(), vm1, serviceOffering, destHost, new HashMap<>(),
                 new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
@@ -416,7 +431,8 @@ public class ClusterDrsServiceImplTest {
                 List.of(new Ternary<>(Mockito.mock(VirtualMachine.class), Mockito.mock(Host.class),
                                 Mockito.mock(Host.class)),
                         new Ternary<>(Mockito.mock(VirtualMachine.class), Mockito.mock(Host.class),
-                                Mockito.mock(Host.class))), 1L, ClusterDrsPlan.Type.AUTOMATED);
+                                Mockito.mock(Host.class))), 1L, ClusterDrsPlan.Type.AUTOMATED,
+                ClusterDrsPlan.Status.READY);
 
         Mockito.verify(drsPlanDao, Mockito.times(1)).persist(Mockito.any(ClusterDrsPlanVO.class));
         Mockito.verify(drsPlanMigrationDao, Mockito.times(2)).persist(Mockito.any(ClusterDrsPlanMigrationVO.class));
