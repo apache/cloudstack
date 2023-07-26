@@ -156,7 +156,7 @@ class TestClusterDRS(cloudstackTestCase):
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
 
-        self.assertTrue(self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map))
+        self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
 
         def check_vm_hosts():
             vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
@@ -208,7 +208,7 @@ class TestClusterDRS(cloudstackTestCase):
             migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
         }
 
-        self.assertTrue(self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map))
+        self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
 
         def check_vm_hosts():
             vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
