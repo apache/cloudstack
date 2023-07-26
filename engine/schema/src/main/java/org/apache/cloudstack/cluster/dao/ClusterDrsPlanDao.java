@@ -34,7 +34,6 @@ public interface ClusterDrsPlanDao extends GenericDao<ClusterDrsPlanVO, Long> {
 
     ClusterDrsPlanVO listLatestPlanForClusterId(Long clusterId);
 
-
     Pair<List<ClusterDrsPlanVO>, Integer> searchAndCount(Long clusterId, Long planId, Long startIndex,
                                                          Long pageSizeVal);
 
