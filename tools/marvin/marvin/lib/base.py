@@ -3148,7 +3148,7 @@ class Cluster:
         """Execute drs plan on cluster"""
 
         cmd = executeClusterDrsPlan.executeClusterDrsPlanCmd()
-        cmd.id = cls.id
+        cmd.clusterid = cls.id
         if migrateto:
             cmd.migrateto = []
             for vm, host in list(migrateto.items()):
