@@ -97,6 +97,25 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         List<GuestOSHypervisorMapping> mappings = new ArrayList<>();
 
+        LOG.debug("Adding Ubuntu 20.04 support for VMware 7.0+");
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "ubuntu64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(10, "Ubuntu 20.04 LTS", mappings);
+        mappings.clear();
+
+        LOG.debug("Adding Ubuntu 22.04 support for KVM and VMware 7.0+");
+        mappings.add(new GuestOSHypervisorMapping("KVM", "default", "Ubuntu 22.04 LTS"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.1.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.2.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "ubuntu64Guest"));
+        mappings.add(new GuestOSHypervisorMapping("VMware", "8.0", "ubuntu64Guest"));
+        guestOsMapper.addGuestOsAndHypervisorMappings(10, "Ubuntu 22.04 LTS", mappings);
+        mappings.clear();
+
         LOG.debug("Correcting guest OS names in hypervisor mappings for VMware 8.0");
         final String hypervisorVMware = Hypervisor.HypervisorType.VMware.name();
         final String hypervisorVersionVmware8 = "8.0";
