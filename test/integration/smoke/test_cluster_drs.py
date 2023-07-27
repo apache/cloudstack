@@ -74,7 +74,7 @@ class TestClusterDRS(cloudstackTestCase):
         cls._cleanup.append(cls.service_offering)
 
         # 2. Create a network
-        cls.services["network"]["name"] = "Test Network Isolated - Regular user"
+        cls.services["network"]["name"] = "Test Network"
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["l2-network_offering"]
@@ -129,10 +129,23 @@ class TestClusterDRS(cloudstackTestCase):
                     return True, vms[0].state
             return False, vms[0].state
 
-        self.message("Waiting for VM %s (%s) to be Running" % (vm.name, vm.id))
         res = wait_until(10, 30, check_vm_state)
         if not res:
-            raise Exception("Failed to wait for user VM %s (%s) to be Running" % (vm.name, vm.id))
+            raise Exception("Failed to wait for VM %s (%s) to be Running" % (vm.name, vm.id))
+        return res
+
+    def wait_for_plan_completion(self, plan=None):
+        """ Wait until plan is completed """
+        def check_plan_status():
+            plans = self.cluster.listDrsPlans(self.apiclient, id=plan.id)
+            if isinstance(plans, list):
+                if plans[0].status == 'COMPLETED':
+                    return True, plans[0].status
+            return False, plans[0].status
+
+        res = wait_until(10, 30, check_plan_status)
+        if not res:
+            raise Exception("Failed to wait for completion of plan %s" % (plan.id))
         return res
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -168,26 +181,22 @@ class TestClusterDRS(cloudstackTestCase):
         self.wait_for_vm_start(self.virtual_machine_2)
 
         # 3. Generate & execute DRS to move all VMs on the same host
-        Configurations.update(self.apiclient, "drs.algorithm", "condensed")
-        Configurations.update(self.apiclient, "drs.level", "10")
-        drsPlan = self.cluster.generateDrsPlan(self.apiclient)
+        Configurations.update(self.apiclient, "drs.algorithm", "condensed", clusterid=self.cluster.id)
+        Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+        drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
         vm_to_dest_host_map = {
-            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
         }
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
 
-        self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
+        executed_plan = self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
+        self.wait_for_plan_completion(executed_plan)
 
-        def check_vm_hosts():
-            vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
-            vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
-            return vm_1_host_id == vm_2_host_id, None
+        vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
+        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
-        # Wait upto 2.5 minutes for VM's host
-        res, _ = wait_until(5, 30, check_vm_hosts)
-
-        self.assertTrue(res, msg="Both VMs should be on the same host")
+        self.assertEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on the same host")
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_balanced_drs_algorithm(self):
@@ -223,23 +232,19 @@ class TestClusterDRS(cloudstackTestCase):
         self.wait_for_vm_start(self.virtual_machine_2)
 
         # 3. Execute DRS to move all VMs on different hosts
-        Configurations.update(self.apiclient, "drs.algorithm", "balanced")
-        Configurations.update(self.apiclient, "drs.level", "10")
-        drsPlan = self.cluster.generateDrsPlan(self.apiclient)
+        Configurations.update(self.apiclient, "drs.algorithm", "balanced", clusterid=self.cluster.id)
+        Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+        drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
         vm_to_dest_host_map = {
-            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drsPlan["migrations"]
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
         }
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
 
-        self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
+        executed_plan = self.cluster.executeDrsPlan(self.apiclient, vm_to_dest_host_map)
+        self.wait_for_plan_completion(executed_plan)
 
-        def check_vm_hosts():
-            vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
-            vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
-            return vm_1_host_id != vm_2_host_id, None
+        vm_1_host_id = self.get_vm_host_id(self.virtual_machine_1.id)
+        vm_2_host_id = self.get_vm_host_id(self.virtual_machine_2.id)
 
-        # Wait upto 2.5 minutes for VM's host
-        res, _ = wait_until(5, 30, check_vm_hosts)
-
-        self.assertTrue(res, msg="Both VMs should be on different hosts")
+        self.assertNotEqual(vm_1_host_id, vm_2_host_id, msg="Both VMs should be on different hosts")

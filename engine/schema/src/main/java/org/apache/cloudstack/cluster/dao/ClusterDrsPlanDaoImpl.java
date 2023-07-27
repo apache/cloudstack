@@ -81,7 +81,7 @@ public class ClusterDrsPlanDaoImpl extends GenericDaoBase<ClusterDrsPlanVO, Long
         SearchBuilder<ClusterDrsPlanVO> sb;
         sb = createSearchBuilder();
         sb.and(ApiConstants.CLUSTER_ID, sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.and(ApiConstants.ID, sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<ClusterDrsPlanVO> sc = sb.create();
         if (clusterId != null) {
