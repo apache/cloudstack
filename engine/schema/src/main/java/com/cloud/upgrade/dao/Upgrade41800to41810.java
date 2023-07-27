@@ -127,9 +127,17 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         LOG.debug("Correcting guest OS names in hypervisor mappings for VMware 8.0");
         final String hypervisorVMware = Hypervisor.HypervisorType.VMware.name();
         final String hypervisorVersionVmware8 = "8.0";
-        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "AlmaLinux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
-        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "Oracle Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "oracleLinux9_64Guest"));
-        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "Rocky Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rockylinux_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "AlmaLinux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Oracle Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "oracleLinux9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Rocky Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rockylinux_64Guest"));
+
+        LOG.debug("Correcting guest OS names in hypervisor mappings for Red Hat Enterprise Linux 9");
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0", "rhel9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0.1.0", "rhel9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0.2.0", "rhel9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0.3.0", "rhel9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rhel9_64Guest"));
+        guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "8.0.0.1", "rhel9_64Guest"));
 
         LOG.debug("Adding new guest OS ids in hypervisor mappings for VMware 8.0");
         // Add support for darwin22_64Guest from VMware 8.0
