@@ -96,20 +96,11 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
     @Override
     public void updateScheduledJob(VMScheduleVO vmSchedule) {
         removeScheduledJobs(Longs.asList(vmSchedule.getId()));
-        scheduleNextJob(vmSchedule);
-    }
-
-    public Date scheduleNextJob(Long vmScheduleId) {
-        VMScheduleVO vmSchedule = vmScheduleDao.findById(vmScheduleId);
-        if (vmSchedule != null) {
-            return scheduleNextJob(vmSchedule);
-        }
-        LOGGER.debug(String.format("VM Schedule [id=%s] is removed. Not scheduling next job.", vmScheduleId));
-        return null;
+        scheduleNextJob(vmSchedule, new Date());
     }
 
     @Override
-    public Date scheduleNextJob(VMScheduleVO vmSchedule) {
+    public Date scheduleNextJob(VMScheduleVO vmSchedule, Date timestamp) {
         if (!vmSchedule.getEnabled()) {
             LOGGER.debug(String.format("VM Schedule [id=%s] for VM [id=%s] is disabled. Not scheduling next job.", vmSchedule.getUuid(), vmSchedule.getVmId()));
             return null;
@@ -127,7 +118,12 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
             return null;
         }
 
-        ZonedDateTime now = ZonedDateTime.now(vmSchedule.getTimeZoneId());
+        ZonedDateTime now;
+        if (timestamp != null) {
+            now = ZonedDateTime.ofInstant(timestamp.toInstant(), vmSchedule.getTimeZoneId());
+        } else {
+            now = ZonedDateTime.now(vmSchedule.getTimeZoneId());
+        }
         ZonedDateTime zonedStartDate = ZonedDateTime.ofInstant(startDate.toInstant(), vmSchedule.getTimeZoneId());
         ZonedDateTime zonedEndDate = null;
         if (endDate != null) {
@@ -178,8 +174,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         // Adding 1 minute to currentTimestamp to ensure that
         // jobs which were to be run at current time, doesn't cause issues
         currentTimestamp = DateUtils.addMinutes(new Date(), 1);
-
-        scheduleNextJobs();
+        scheduleNextJobs(currentTimestamp);
 
         final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
             @Override
@@ -193,7 +188,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         };
 
         vmSchedulerTimer = new Timer("VMSchedulerPollTask");
-        vmSchedulerTimer.schedule(schedulerPollTask, 5000L, 60 * 1000L);
+        vmSchedulerTimer.scheduleAtFixedRate(schedulerPollTask, 5000L, 60 * 1000L);
         return true;
     }
 
@@ -207,7 +202,7 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         try {
             if (scanLock.lock(30)) {
                 try {
-                    scheduleNextJobs();
+                    scheduleNextJobs(currentTimestamp);
                 } finally {
                     scanLock.unlock();
                 }
@@ -236,10 +231,10 @@ public class VMSchedulerImpl extends ManagerBase implements VMScheduler {
         }
     }
 
-    private void scheduleNextJobs() {
+    private void scheduleNextJobs(Date timestamp) {
         for (final VMScheduleVO schedule : vmScheduleDao.listAllActiveSchedules()) {
             try {
-                scheduleNextJob(schedule);
+                scheduleNextJob(schedule, timestamp);
             } catch (Exception e) {
                 LOGGER.warn("Error in scheduling next job for schedule " + schedule.getUuid(), e);
             }
