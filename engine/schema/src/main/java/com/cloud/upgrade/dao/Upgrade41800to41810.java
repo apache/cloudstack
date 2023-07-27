@@ -61,7 +61,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         fixForeignKeyNames(conn);
-        updateGuestOsMappings();
+        updateGuestOsMappings(conn);
         copyGuestOsMappingsToVMware80u1();
     }
 
@@ -91,20 +91,20 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private void updateGuestOsMappings() {
+    private void updateGuestOsMappings(Connection conn) {
         LOG.debug("Updating guest OS mappings");
 
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         List<GuestOSHypervisorMapping> mappings = new ArrayList<>();
 
+        LOG.debug("Correcting guest OS names in hypervisor mappings for VMware 8.0");
         final String hypervisorVMware = Hypervisor.HypervisorType.VMware.name();
         final String hypervisorVersionVmware8 = "8.0";
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "AlmaLinux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "Oracle Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "oracleLinux9_64Guest"));
+        guestOsMapper.updateGuestOsIdInHypervisorMapping(conn, 1, "Rocky Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rockylinux_64Guest"));
 
-        // Add support for almalinux_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
-        guestOsMapper.addGuestOsAndHypervisorMappings(1, "AlmaLinux (64-bit)", mappings);
-        mappings.clear();
-
+        LOG.debug("Adding new guest OS ids in hypervisor mappings for VMware 8.0");
         // Add support for darwin22_64Guest from VMware 8.0
         mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "darwin22_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 13 (64-bit)", mappings);
@@ -143,11 +143,6 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         // Add support for other6xLinuxGuest from VMware 8.0
         mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "other6xLinuxGuest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "Linux 6.x Kernel (32-bit)", mappings);
-        mappings.clear();
-
-        // Add support for rockylinux_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rockylinux_64Guest"));
-        guestOsMapper.addGuestOsAndHypervisorMappings(1, "Rocky Linux (64-bit)", mappings);
         mappings.clear();
 
         // Add support for vmkernel8Guest from VMware 8.0
