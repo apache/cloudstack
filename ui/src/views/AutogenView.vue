@@ -769,6 +769,10 @@ export default {
         this.dataView = false
       }
 
+      if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
+        params.listsystemvms = true
+      }
+
       if ('listview' in this.$refs && this.$refs.listview) {
         this.$refs.listview.resetSelection()
       }
