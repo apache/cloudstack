@@ -322,6 +322,9 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'zones',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SnapshotZones.vue')))
+        }, {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }

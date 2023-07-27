@@ -98,6 +98,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "id of the availability zone")
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "name of the availability zone")
+    private String zoneName;
+
     @SerializedName(ApiConstants.REVERTABLE)
     @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
     private boolean revertable;
@@ -206,6 +210,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {

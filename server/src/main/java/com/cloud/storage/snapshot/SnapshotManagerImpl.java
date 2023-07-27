@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
@@ -1567,5 +1568,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 _snapshotDao.update(snapshot.getId(), snapshot);
             }
         }
+    }
+
+    @Override
+    public Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException {
+        return null;
     }
 }

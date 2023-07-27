@@ -641,6 +641,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
                 snapshotResponse.setZoneId(zone.getUuid());
+                snapshotResponse.setZoneName(zone.getName());
             }
 
             if (volume.getVolumeType() == Volume.Type.ROOT && volume.getInstanceId() != null) {
