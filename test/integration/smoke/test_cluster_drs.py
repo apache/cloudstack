@@ -118,7 +118,7 @@ class TestClusterDRS(cloudstackTestCase):
         vm = list_vms[0]
         return vm.hostid
 
-    def wait_for_vm_start(self, vm=None):
+    def wait_for_vm_start(self, vm):
         """ Wait until vm is Running """
         def check_vm_state():
             vms = VirtualMachine.list(
@@ -136,7 +136,7 @@ class TestClusterDRS(cloudstackTestCase):
             raise Exception("Failed to wait for VM %s (%s) to be Running" % (vm.name, vm.id))
         return res
 
-    def wait_for_plan_completion(self, plan=None):
+    def wait_for_plan_completion(self, plan):
         """ Wait until plan is completed """
         def check_plan_status():
             plans = self.cluster.listDrsPlans(self.apiclient, id=plan.id)
@@ -149,6 +149,19 @@ class TestClusterDRS(cloudstackTestCase):
         if not res:
             raise Exception("Failed to wait for completion of plan %s" % (plan.id))
         return res
+
+    def get_migrations(self):
+        """ Wait until migrations are generated """
+        def generate_migrations():
+            drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
+            if len(drs_plan["migrations"]) > 0:
+                return True, drs_plan["migrations"]
+            return False, drs_plan["migrations"]
+
+        res, migrations = wait_until(10, 30, generate_migrations)
+        if not res:
+            raise Exception("Failed to generate drs migrations")
+        return migrations
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_condensed_drs_algorithm(self):
@@ -186,11 +199,9 @@ class TestClusterDRS(cloudstackTestCase):
         Configurations.update(self.apiclient, "drs.algorithm", "condensed", clusterid=self.cluster.id)
         Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
 
-        # Sleep for 30 seconds since it can take some time for host's details to get updated
-        time.sleep(30)
-        drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
+        migrations = self.get_migrations()
         vm_to_dest_host_map = {
-            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in migrations
         }
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
@@ -240,11 +251,9 @@ class TestClusterDRS(cloudstackTestCase):
         Configurations.update(self.apiclient, "drs.algorithm", "balanced", clusterid=self.cluster.id)
         Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
 
-        # Sleep for 30 seconds since it can take some time for host's details to get updated
-        time.sleep(30)
-        drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
+        migrations = self.get_migrations()
         vm_to_dest_host_map = {
-            migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
+            migration["virtualmachineid"]: migration["destinationhostid"] for migration in migrations
         }
 
         self.assertEqual(len(vm_to_dest_host_map), 1, msg="DRS plan should have 1 migrations")
