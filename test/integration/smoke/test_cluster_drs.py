@@ -20,6 +20,8 @@ Tests DRS on a cluster
 """
 
 import logging
+import time
+
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (Cluster, Configurations, Host, Network, NetworkOffering, ServiceOffering, VirtualMachine,
                              Zone)
@@ -183,6 +185,9 @@ class TestClusterDRS(cloudstackTestCase):
         # 3. Generate & execute DRS to move all VMs on the same host
         Configurations.update(self.apiclient, "drs.algorithm", "condensed", clusterid=self.cluster.id)
         Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+
+        # Sleep for 30 seconds since it can take some time for host's details to get updated
+        time.sleep(30)
         drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
         vm_to_dest_host_map = {
             migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
@@ -234,6 +239,9 @@ class TestClusterDRS(cloudstackTestCase):
         # 3. Execute DRS to move all VMs on different hosts
         Configurations.update(self.apiclient, "drs.algorithm", "balanced", clusterid=self.cluster.id)
         Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+
+        # Sleep for 30 seconds since it can take some time for host's details to get updated
+        time.sleep(30)
         drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
         vm_to_dest_host_map = {
             migration["virtualmachineid"]: migration["destinationhostid"] for migration in drs_plan["migrations"]
