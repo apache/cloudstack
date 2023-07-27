@@ -162,6 +162,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -292,6 +293,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -1089,6 +1092,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SSHKeyPairVO keypair : sshkeypairs) {
                 _sshKeyPairDao.remove(keypair.getId());
             }
+
+            // Delete registered UserData
+            userDataDao.removeByAccountId(accountId);
+
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
