@@ -36,6 +36,7 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -223,7 +224,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final String body = bodySubstitutor.replace(emailTemplate.getTemplateBody());
 
             try {
-                sendQuotaAlert(account.getUuid(), emailRecipients, subject, body);
+                sendQuotaAlert(account, emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
                 s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
@@ -354,17 +355,20 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     };
 
-    protected void sendQuotaAlert(String accountUuid, List<String> emails, String subject, String body) {
+    protected void sendQuotaAlert(Account account, List<String> emails, String subject, String body) {
         SMTPMailProperties mailProperties = new SMTPMailProperties();
 
         mailProperties.setSender(new MailAddress(senderAddress));
+
+        body = addHeaderAndFooter(body, QuotaConfig.QuotaEmailHeader.valueIn(account.getDomainId()), QuotaConfig.QuotaEmailFooter.valueIn(account.getDomainId()));
+
         mailProperties.setSubject(subject);
         mailProperties.setContent(body);
         mailProperties.setContentType("text/html; charset=utf-8");
 
         if (CollectionUtils.isEmpty(emails)) {
             s_logger.warn(String.format("Account [%s] does not have users with email registered, "
-                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", accountUuid, subject, body));
+                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", account.getUuid(), subject, body));
             return;
         }
 
@@ -376,6 +380,18 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         mailProperties.setRecipients(addresses);
 
         mailSender.sendMail(mailProperties);
+    }
+
+    protected String addHeaderAndFooter(String body, String header, String footer) {
+
+        if (StringUtils.isNotEmpty(header)) {
+            body = String.format("%s%s", header, body);
+        }
+        if (StringUtils.isNotEmpty(footer)) {
+            body = String.format("%s%s", body, footer);
+        }
+
+        return body;
     }
 
 }
