@@ -282,7 +282,7 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder response = new StringBuilder();
-            response.append(String.format("<memory>%s</memory>\n", this.currentMemory));
+            response.append(String.format("<memory>%s</memory>\n", this.memory));
             response.append(String.format("<currentMemory>%s</currentMemory>\n", this.currentMemory));
 
             if (this.memory > this.currentMemory) {
@@ -1238,7 +1238,7 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "' autodeflate='on'>\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }
