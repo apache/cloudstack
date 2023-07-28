@@ -2234,16 +2234,20 @@ export default {
         }, 1000)
       })
     },
-    createVmProfile (createVmGroupData) {
+    createVmProfile (createVmGroupData, createVmGroupUserDataDetails) {
       this.addStep('message.creating.autoscale.vmprofile', 'createVmProfile')
 
       return new Promise((resolve, reject) => {
         const params = {
-          expungevmgraceperiod: createVmGroupData.expungevmgraceperiod,
-          serviceofferingid: createVmGroupData.serviceofferingid,
-          templateid: createVmGroupData.templateid,
-          userdata: createVmGroupData.userdata,
-          zoneid: createVmGroupData.zoneid
+          ...createVmGroupUserDataDetails,
+          ...{
+            expungevmgraceperiod: createVmGroupData.expungevmgraceperiod,
+            serviceofferingid: createVmGroupData.serviceofferingid,
+            templateid: createVmGroupData.templateid,
+            userdata: createVmGroupData.userdata,
+            userdataid: createVmGroupData.userdataid,
+            zoneid: createVmGroupData.zoneid
+          }
         }
         if (createVmGroupData.autoscaleuserid) {
           params.autoscaleuserid = createVmGroupData.autoscaleuserid
@@ -2639,16 +2643,17 @@ export default {
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
+        const createVmGroupUserDataDetails = {}
         var idx = 0
         if (this.templateUserDataValues) {
           for (const [key, value] of Object.entries(this.templateUserDataValues)) {
-            createVmGroupData['userdatadetails[' + idx + '].' + `${key}`] = value
+            createVmGroupUserDataDetails['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
           }
         }
         if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
-            createVmGroupData['userdatadetails[' + idx + '].' + `${key}`] = value
+            createVmGroupUserDataDetails['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
           }
         }
@@ -2657,7 +2662,7 @@ export default {
         this.processStatus = null
 
         // create autoscale vm profile
-        const vmprofile = await this.createVmProfile(createVmGroupData)
+        const vmprofile = await this.createVmProfile(createVmGroupData, createVmGroupUserDataDetails)
 
         // create scaleup conditions and policy
         const scaleUpPolicyIds = []

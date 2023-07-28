@@ -114,6 +114,6 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     private void addForeignKeyToAutoscaleVmprofiles(Connection conn) {
-        DbUpgradeUtils.addForeignKey(conn, "autoscale_vmprofiles", "user_data_id","user_data", "id");
+        DbUpgradeUtils.addForeignKey(conn, "autoscale_vmprofiles", "user_data_id", "user_data", "id");
     }
 }

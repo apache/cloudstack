@@ -356,8 +356,13 @@ export default {
         }
       }
       params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
+
       const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
-      api(resetUserDataApiName, params).then(json => {
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
           content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2
