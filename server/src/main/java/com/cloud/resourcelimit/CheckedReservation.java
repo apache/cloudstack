@@ -76,7 +76,7 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
                     resourceLimitService.checkResourceLimit(account,resourceType,amount);
                     ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), resourceType, amount);
                     this.reservation = reservationDao.persist(reservationVO);
-                    CallContext.current().putContextParameter(getContextParameterKey(), reservationVO.getId());
+                    CallContext.current().putContextParameter(getContextParameterKey(), reservation.getId());
                 } catch (NullPointerException npe) {
                     throw new CloudRuntimeException("not enough means to check limits", npe);
                 } finally {
