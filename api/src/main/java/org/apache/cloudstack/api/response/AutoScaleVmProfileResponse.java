@@ -72,6 +72,18 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Param(description = "Base 64 encoded VM user data")
     private String userData;
 
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.1")
+    private String userDataId;
+
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.1")
+    private String userDataName;
+
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.1")
+    private String userDataPolicy;
+
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.1")
+    private String userDataDetails;
+
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
     private String autoscaleUserId;
@@ -151,6 +163,22 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setUserData(String userData) {
         this.userData = userData;
+    }
+
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
+    }
+
+    public void setUserDataPolicy(String userDataPolicy) {
+        this.userDataPolicy = userDataPolicy;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
     }
 
     @Override

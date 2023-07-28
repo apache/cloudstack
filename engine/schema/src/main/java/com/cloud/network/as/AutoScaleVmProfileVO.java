@@ -234,6 +234,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return userData;
     }
 
+    @Override
     public Long getUserDataId() {
         return userDataId;
     }
@@ -242,6 +243,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         this.userDataId = userDataId;
     }
 
+    @Override
     public String getUserDataDetails() {
         return userDataDetails;
     }

@@ -69,6 +69,38 @@
           {{ getServiceOfferingName(serviceofferingid) }}
         </div>
       </div>
+      <div class="form" v-if="userdataid">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdataid')"/>
+          </div>
+          {{ userdataid }}
+        </div>
+      </div>
+      <div class="form" v-if="userdataname">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdataname')"/>
+          </div>
+          {{ userdataname }}
+        </div>
+      </div>
+      <div class="form" v-if="userdatadetails">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdatadetails')"/>
+          </div>
+          {{ userdatadetails }}
+        </div>
+      </div>
+      <div class="form" v-if="userdatapolicy">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdatapolicy')"/>
+          </div>
+          {{ userdatapolicy }}
+        </div>
+      </div>
       <div class="form">
         <div class="form__item">
           <div class="form__label">
@@ -296,6 +328,10 @@ export default {
       templateid: null,
       serviceofferingid: null,
       userdata: null,
+      userdataid: null,
+      userdataname: null,
+      userdatadetails: null,
+      userdatapolicy: null,
       usersList: [],
       templatesList: [],
       serviceOfferingsList: [],
@@ -408,6 +444,11 @@ export default {
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
         this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
+        this.userdataid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataid
+        this.userdataname = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataname
+        this.userdatadetails = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdatadetails
+        this.userdatapolicy = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdatapolicy
+
         const counterparam = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.counterparam || {}
         const otherdeployparams = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.otherdeployparams || {}
         this.finalizeParams(counterparam, otherdeployparams)
