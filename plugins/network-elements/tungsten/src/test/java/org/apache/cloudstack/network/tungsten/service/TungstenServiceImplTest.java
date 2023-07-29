@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -953,7 +952,6 @@ public class TungstenServiceImplTest {
 
     @Test
     public void addTungstenPolicyRuleTest() throws Exception {
-        AddTungstenPolicyRuleCommand addTungstenPolicyRuleCommand = mock(AddTungstenPolicyRuleCommand.class);
         TungstenAnswer addTungstenPolicyRuleAnswer = mock(TungstenAnswer.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
@@ -970,19 +968,20 @@ public class TungstenServiceImplTest {
         when(addTungstenPolicyRuleAnswer.getApiObjectBase()).thenReturn(networkPolicy);
         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
-        try (MockedConstruction<AddTungstenPolicyRuleCommand> addTungstenPolicyRuleCommandMockedConstructor =
-                Mockito.mockConstruction(AddTungstenPolicyRuleCommand.class, withSettings().defaultAnswer(invocation -> addTungstenPolicyRuleCommand))) {
-//        when(AddTungstenPolicyRuleCommand.class).withAnyArguments().thenReturn(addTungstenPolicyRuleCommand);
-            when(addTungstenPolicyRuleCommand.getUuid()).thenReturn(
-                    "8b4637b6-5629-46de-8fb2-d0b0502bfa85");
-            when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
-            when(policyRuleType.getActionList()).thenReturn(actionListType);
-            when(actionListType.getSimpleAction()).thenReturn("pass");
-            when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
-            when(addressType.getSubnet()).thenReturn(subnetType);
-            when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
-            when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
-            when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+
+        when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+        when(policyRuleType.getActionList()).thenReturn(actionListType);
+        when(actionListType.getSimpleAction()).thenReturn("pass");
+        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+        when(addressType.getSubnet()).thenReturn(subnetType);
+        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+
+        try (MockedConstruction<AddTungstenPolicyRuleCommand> ignored =
+                     Mockito.mockConstruction(AddTungstenPolicyRuleCommand.class, (mock, context) -> {
+                         when(mock.getUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+                     })) {
 
             assertNotNull(tungstenService.addTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "pass",
                     "<>", "tcp", "network1", "192.168.100.100", 32, 80, 80,

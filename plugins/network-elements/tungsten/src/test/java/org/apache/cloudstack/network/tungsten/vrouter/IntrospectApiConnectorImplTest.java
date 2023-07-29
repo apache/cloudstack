@@ -107,8 +107,6 @@ public class IntrospectApiConnectorImplTest {
 
         httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
         when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
-        when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
-        when(httpEntity.getContent()).thenReturn(inputStream);
         documentBuilderFactoryMocked.when(DocumentBuilderFactory::newInstance).thenReturn(documentBuilderFactory);
         when(documentBuilderFactory.newDocumentBuilder()).thenThrow(ParserConfigurationException.class);
 

@@ -55,7 +55,6 @@ public class ListTungstenFabricAddressGroupCmdTest {
         listTungstenFabricAddressGroupCmd = new ListTungstenFabricAddressGroupCmd();
         listTungstenFabricAddressGroupCmd.tungstenService = tungstenService;
         listTungstenFabricAddressGroupCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricAddressGroupCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "page", 1);
