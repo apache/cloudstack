@@ -55,6 +55,7 @@ public class ListTungstenFabricServiceGroupCmdTest {
         listTungstenFabricServiceGroupCmd = new ListTungstenFabricServiceGroupCmd();
         listTungstenFabricServiceGroupCmd.tungstenService = tungstenService;
         listTungstenFabricServiceGroupCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricServiceGroupCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricServiceGroupCmd, "serviceGroupUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricServiceGroupCmd, "page", 1);

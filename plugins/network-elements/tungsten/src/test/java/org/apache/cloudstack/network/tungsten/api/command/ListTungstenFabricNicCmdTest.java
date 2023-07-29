@@ -55,6 +55,7 @@ public class ListTungstenFabricNicCmdTest {
         listTungstenFabricNicCmd = new ListTungstenFabricNicCmd();
         listTungstenFabricNicCmd.tungstenService = tungstenService;
         listTungstenFabricNicCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricNicCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricNicCmd, "nicUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricNicCmd, "page", 1);

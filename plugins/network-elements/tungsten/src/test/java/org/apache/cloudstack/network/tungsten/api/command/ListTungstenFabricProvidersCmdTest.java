@@ -52,6 +52,7 @@ public class ListTungstenFabricProvidersCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricProvidersCmd = new ListTungstenFabricProvidersCmd();
         listTungstenFabricProvidersCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricProvidersCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricProvidersCmd, "tungstenProviderService", tungstenProviderService);
         ReflectionTestUtils.setField(listTungstenFabricProvidersCmd, "zoneId", 1L);

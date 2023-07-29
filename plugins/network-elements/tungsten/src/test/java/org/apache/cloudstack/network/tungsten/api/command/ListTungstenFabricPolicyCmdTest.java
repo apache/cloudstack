@@ -54,6 +54,7 @@ public class ListTungstenFabricPolicyCmdTest {
         listTungstenFabricPolicyCmd = new ListTungstenFabricPolicyCmd();
         listTungstenFabricPolicyCmd.tungstenService = tungstenService;
         listTungstenFabricPolicyCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricPolicyCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "networkId", 1L);
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "addressId", 1L);

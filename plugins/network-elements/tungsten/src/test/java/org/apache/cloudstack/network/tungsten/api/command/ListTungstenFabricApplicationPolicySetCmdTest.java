@@ -55,6 +55,7 @@ public class ListTungstenFabricApplicationPolicySetCmdTest {
         listTungstenFabricApplictionPolicySetCmd = new ListTungstenFabricApplictionPolicySetCmd();
         listTungstenFabricApplictionPolicySetCmd.tungstenService = tungstenService;
         listTungstenFabricApplictionPolicySetCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricApplictionPolicySetCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricApplictionPolicySetCmd, "applicationPolicySetUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricApplictionPolicySetCmd, "page", 1);

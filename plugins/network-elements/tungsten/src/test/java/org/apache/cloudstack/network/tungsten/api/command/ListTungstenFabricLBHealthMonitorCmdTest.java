@@ -54,6 +54,7 @@ public class ListTungstenFabricLBHealthMonitorCmdTest {
         listTungstenFabricLBHealthMonitorCmd = new ListTungstenFabricLBHealthMonitorCmd();
         listTungstenFabricLBHealthMonitorCmd.tungstenService = tungstenService;
         listTungstenFabricLBHealthMonitorCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricLBHealthMonitorCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricLBHealthMonitorCmd, "lbID", 1L);
         ReflectionTestUtils.setField(listTungstenFabricLBHealthMonitorCmd, "page", 1);

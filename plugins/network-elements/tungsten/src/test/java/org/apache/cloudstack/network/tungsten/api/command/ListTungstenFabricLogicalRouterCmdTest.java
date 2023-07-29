@@ -55,6 +55,7 @@ public class ListTungstenFabricLogicalRouterCmdTest {
         listTungstenFabricLogicalRouterCmd = new ListTungstenFabricLogicalRouterCmd();
         listTungstenFabricLogicalRouterCmd.tungstenService = tungstenService;
         listTungstenFabricLogicalRouterCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricLogicalRouterCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricLogicalRouterCmd, "networkUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricLogicalRouterCmd, "logicalRouterUuid", "test");

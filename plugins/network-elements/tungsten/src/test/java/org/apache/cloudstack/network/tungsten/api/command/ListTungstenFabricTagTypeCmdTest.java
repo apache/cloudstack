@@ -55,6 +55,7 @@ public class ListTungstenFabricTagTypeCmdTest {
         listTungstenFabricTagTypeCmd = new ListTungstenFabricTagTypeCmd();
         listTungstenFabricTagTypeCmd.tungstenService = tungstenService;
         listTungstenFabricTagTypeCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricTagTypeCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricTagTypeCmd, "tagTypeUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricTagTypeCmd, "page", 1);

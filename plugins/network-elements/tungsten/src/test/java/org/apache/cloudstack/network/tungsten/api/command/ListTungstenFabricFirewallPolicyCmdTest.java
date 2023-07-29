@@ -55,6 +55,7 @@ public class ListTungstenFabricFirewallPolicyCmdTest {
         listTungstenFabricFirewallPolicyCmd = new ListTungstenFabricFirewallPolicyCmd();
         listTungstenFabricFirewallPolicyCmd.tungstenService = tungstenService;
         listTungstenFabricFirewallPolicyCmd._configService = configService;
+        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricFirewallPolicyCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "applicationPolicySetUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "firewallPolicyUuid", "test");
