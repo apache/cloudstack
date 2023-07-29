@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +50,11 @@ public class DeleteTungstenFabricLogicalRouterCmdTest {
         deleteTungstenFabricLogicalRouterCmd.tungstenService = tungstenService;
         ReflectionTestUtils.setField(deleteTungstenFabricLogicalRouterCmd, "zoneId", 1L);
         ReflectionTestUtils.setField(deleteTungstenFabricLogicalRouterCmd, "logicalRouterUuid", "test");
+    }
+
+    @After
+    public void close() throws Exception {
+        closeable.close();
     }
 
     @Test
