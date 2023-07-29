@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -1019,13 +1020,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        if (ipAddr.getVpcId() != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
-            if (vpc != null) {
-                ipResponse.setVpcId(vpc.getUuid());
-                ipResponse.setVpcName(vpc.getName());
-            }
-        }
+
+        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName);
+
 
         // Network id the ip is associated with (if associated networkId is
         // null, try to get this information from vlan)
@@ -1093,6 +1090,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setHasRules(firewallRulesDao.countRulesByIpId(ipAddr.getId()) > 0);
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
+    }
+
+
+    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter) {
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                try {
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
+                    vpcUuidSetter.accept(vpc.getUuid());
+                } catch (PermissionDeniedException e) {
+                    s_logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
+                }
+                vpcNameSetter.accept(vpc.getName());
+            }
+        }
     }
 
     private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
@@ -2565,13 +2578,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
-        if (network.getVpcId() != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(network.getVpcId());
-            if (vpc != null) {
-                response.setVpcId(vpc.getUuid());
-                response.setVpcName(vpc.getName());
-            }
-        }
+
+
+        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName);
 
         setResponseAssociatedNetworkInformation(response, network.getId());
 

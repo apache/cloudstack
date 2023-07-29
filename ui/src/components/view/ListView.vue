@@ -216,7 +216,10 @@
       <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
     </template>
     <template v-if="column.key === 'vpcname'">
-      <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+      <a v-if="record.vpcid">
+        <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+      </a>
+      <span v-else>{{ text }}</span>
     </template>
     <template v-if="column.key === 'hostname'">
       <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
