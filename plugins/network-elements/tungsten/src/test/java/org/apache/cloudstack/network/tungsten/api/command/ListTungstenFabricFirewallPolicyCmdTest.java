@@ -21,6 +21,7 @@ import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,16 +30,13 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ListTungstenFabricFirewallPolicyCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ListTungstenFabricFirewallPolicyCmdTest {
 
     @Mock
@@ -49,45 +47,51 @@ public class ListTungstenFabricFirewallPolicyCmdTest {
 
     ListTungstenFabricFirewallPolicyCmd listTungstenFabricFirewallPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricFirewallPolicyCmd = new ListTungstenFabricFirewallPolicyCmd();
         listTungstenFabricFirewallPolicyCmd.tungstenService = tungstenService;
         listTungstenFabricFirewallPolicyCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
         listTungstenFabricFirewallPolicyCmd.configure();
-        Whitebox.setInternalState(listTungstenFabricFirewallPolicyCmd, "applicationPolicySetUuid", "test");
-        Whitebox.setInternalState(listTungstenFabricFirewallPolicyCmd, "firewallPolicyUuid", "test");
-        Whitebox.setInternalState(listTungstenFabricFirewallPolicyCmd, "page", 1);
-        Whitebox.setInternalState(listTungstenFabricFirewallPolicyCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "applicationPolicySetUuid", "test");
+        ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "firewallPolicyUuid", "test");
+        ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "page", 1);
+        ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "pageSize", 10);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        Whitebox.setInternalState(listTungstenFabricFirewallPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(listTungstenFabricFirewallPolicyCmd, "zoneId", 1L);
         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
         List<BaseResponse> baseResponseList = Arrays.asList(baseResponse);
-        ListResponse<BaseResponse> responseList = Mockito.mock(ListResponse.class);
         Mockito.when(tungstenService.listTungstenFirewallPolicy(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(baseResponseList);
-        PowerMockito.whenNew(ListResponse.class).withAnyArguments().thenReturn(responseList);
         listTungstenFabricFirewallPolicyCmd.execute();
-        Assert.assertEquals(responseList, listTungstenFabricFirewallPolicyCmd.getResponseObject());
+        ListResponse<BaseResponse> responseList = (ListResponse<BaseResponse>) listTungstenFabricFirewallPolicyCmd.getResponseObject();
+        Assert.assertEquals(baseResponseList, responseList.getResponses());
+        Assert.assertEquals(Integer.valueOf(1), responseList.getCount());
     }
 
     @Test
     public void executeAllZoneTest() throws Exception {
         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
         List<BaseResponse> baseResponseList = Arrays.asList(baseResponse);
-        ListResponse<BaseResponse> responseList = Mockito.mock(ListResponse.class);
         TungstenProviderVO tungstenProviderVO = Mockito.mock(TungstenProviderVO.class);
         List<TungstenProviderVO> tungstenProviderVOList = Arrays.asList(tungstenProviderVO);
         Mockito.when(tungstenService.getTungstenProviders()).thenReturn(tungstenProviderVOList);
         Mockito.when(tungstenService.listTungstenFirewallPolicy(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(baseResponseList);
-        PowerMockito.whenNew(ListResponse.class).withAnyArguments().thenReturn(responseList);
         listTungstenFabricFirewallPolicyCmd.execute();
-        Assert.assertEquals(responseList, listTungstenFabricFirewallPolicyCmd.getResponseObject());
+        ListResponse<BaseResponse> responseList = (ListResponse<BaseResponse>) listTungstenFabricFirewallPolicyCmd.getResponseObject();
+        Assert.assertEquals(baseResponseList, responseList.getResponses());
+        Assert.assertEquals(Integer.valueOf(1), responseList.getCount());
     }
 }

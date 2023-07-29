@@ -31,7 +31,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 
@@ -42,18 +42,24 @@ public class RemoveTungstenFabricTagCmdTest {
 
     RemoveTungstenFabricTagCmd removeTungstenFabricTagCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         removeTungstenFabricTagCmd = new RemoveTungstenFabricTagCmd();
         removeTungstenFabricTagCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "zoneId", 1L);
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "networkUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "vmUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "nicUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "policyUuid", "test");
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "applicationPolicySetUuid", "test");
-        Whitebox.setInternalState(removeTungstenFabricTagCmd, "tagUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "networkUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "vmUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "nicUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "applicationPolicySetUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "tagUuid", "test");
+    }
+
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

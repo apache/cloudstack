@@ -31,7 +31,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class AddTungstenFabricPolicyRuleCmdTest {
 
@@ -40,26 +40,32 @@ public class AddTungstenFabricPolicyRuleCmdTest {
 
     AddTungstenFabricPolicyRuleCmd addTungstenFabricPolicyRuleCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         addTungstenFabricPolicyRuleCmd = new AddTungstenFabricPolicyRuleCmd();
         addTungstenFabricPolicyRuleCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "zoneId", 1L);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "policyUuid", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "action", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "direction", "oneway");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "protocol", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "srcNetwork", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "srcIpPrefix", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "srcIpPrefixLen", 1);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "srcStartPort", 1);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "srcEndPort", 1);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "destNetwork", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "destIpPrefix", "test");
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "destIpPrefixLen", 1);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "destStartPort", 1);
-        Whitebox.setInternalState(addTungstenFabricPolicyRuleCmd, "destEndPort", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "action", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "direction", "oneway");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "protocol", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "srcNetwork", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "srcIpPrefix", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "srcIpPrefixLen", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "srcStartPort", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "srcEndPort", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destNetwork", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destIpPrefix", "test");
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destIpPrefixLen", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destStartPort", 1);
+        ReflectionTestUtils.setField(addTungstenFabricPolicyRuleCmd, "destEndPort", 1);
+    }
+
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

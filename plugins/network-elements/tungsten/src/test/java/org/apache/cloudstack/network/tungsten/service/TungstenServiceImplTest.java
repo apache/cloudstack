@@ -27,8 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.mockito.Mockito.withSettings;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -205,21 +204,22 @@ import org.apache.cloudstack.network.tungsten.model.TungstenLogicalRouter;
 import org.apache.cloudstack.network.tungsten.model.TungstenNetworkPolicy;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.cloudstack.network.tungsten.model.TungstenTag;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Transaction.class, TungstenServiceImpl.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenServiceImplTest {
     @Mock
     MessageBus messageBus;
@@ -278,9 +278,11 @@ public class TungstenServiceImplTest {
 
     TungstenServiceImpl tungstenService;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         tungstenService = new TungstenServiceImpl();
         tungstenService.projectDao = projectDao;
         tungstenService.tungstenProviderDao = tungstenProviderDao;
@@ -311,6 +313,11 @@ public class TungstenServiceImplTest {
         tungstenService.messageBus = messageBus;
     }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void createTungstenFloatingIpTest() throws Exception {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
@@ -323,7 +330,7 @@ public class TungstenServiceImplTest {
         when(createTungstenFloatingIpAnswer.getResult()).thenReturn(true);
         when(ipAddressVO.getAddress()).thenReturn(ip);
 
-        assertTrue(Whitebox.invokeMethod(tungstenService, "createTungstenFloatingIp", 1L, ipAddressVO));
+        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "createTungstenFloatingIp", 1L, ipAddressVO));
     }
 
     @Test
@@ -336,7 +343,7 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpAnswer);
         when(deleteTungstenFloatingIpAnswer.getResult()).thenReturn(true);
 
-        assertTrue(Whitebox.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, ipAddressVO));
+        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, ipAddressVO));
     }
 
     @Test
@@ -349,7 +356,7 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenDomainCommand.class), anyLong())).thenReturn(deleteTungstenDomainAnswer);
         when(deleteTungstenDomainAnswer.getResult()).thenReturn(true);
 
-        assertTrue(Whitebox.invokeMethod(tungstenService, "deleteTungstenDomain", domainVO));
+        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenDomain", domainVO));
     }
 
     @Test
@@ -362,7 +369,7 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenProjectCommand.class), anyLong())).thenReturn(deleteTungstenProjectAnswer);
         when(deleteTungstenProjectAnswer.getResult()).thenReturn(true);
 
-        assertTrue(Whitebox.invokeMethod(tungstenService, "deleteTungstenProject", projectVO));
+        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenProject", projectVO));
     }
 
     @Test
@@ -729,7 +736,6 @@ public class TungstenServiceImplTest {
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
         TungstenAnswer createTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
         TungstenAnswer addTungstenSecurityGroupRuleAnswer = mock(TungstenAnswer.class);
-        mockStatic(Transaction.class);
 
         when(projectDao.findByProjectAccountId(anyLong())).thenReturn(projectVO);
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
@@ -739,9 +745,11 @@ public class TungstenServiceImplTest {
         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
         when(createTungstenSecurityGroupAnswer.getResult()).thenReturn(true);
         when(addTungstenSecurityGroupRuleAnswer.getResult()).thenReturn(true);
-        PowerMockito.when(Transaction.execute(any(TransactionCallback.class))).thenReturn(List.of(tungstenSecurityGroupRuleVO));
 
-        assertTrue(tungstenService.createTungstenSecurityGroup(securityGroup));
+        try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+            transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(List.of(tungstenSecurityGroupRuleVO));
+            assertTrue(tungstenService.createTungstenSecurityGroup(securityGroup));
+        }
     }
 
     @Test
@@ -962,20 +970,24 @@ public class TungstenServiceImplTest {
         when(addTungstenPolicyRuleAnswer.getApiObjectBase()).thenReturn(networkPolicy);
         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
-        whenNew(AddTungstenPolicyRuleCommand.class).withAnyArguments().thenReturn(addTungstenPolicyRuleCommand);
-        PowerMockito.when(addTungstenPolicyRuleCommand, "getUuid").thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
-        when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
-        when(policyRuleType.getActionList()).thenReturn(actionListType);
-        when(actionListType.getSimpleAction()).thenReturn("pass");
-        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
-        when(addressType.getSubnet()).thenReturn(subnetType);
-        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
-        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
-        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+        try (MockedConstruction<AddTungstenPolicyRuleCommand> addTungstenPolicyRuleCommandMockedConstructor =
+                Mockito.mockConstruction(AddTungstenPolicyRuleCommand.class, withSettings().defaultAnswer(invocation -> addTungstenPolicyRuleCommand))) {
+//        when(AddTungstenPolicyRuleCommand.class).withAnyArguments().thenReturn(addTungstenPolicyRuleCommand);
+            when(addTungstenPolicyRuleCommand.getUuid()).thenReturn(
+                    "8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+            when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+            when(policyRuleType.getActionList()).thenReturn(actionListType);
+            when(actionListType.getSimpleAction()).thenReturn("pass");
+            when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+            when(addressType.getSubnet()).thenReturn(subnetType);
+            when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+            when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+            when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
 
-        assertNotNull(tungstenService.addTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "pass",
-            "<>", "tcp", "network1", "192.168.100.100", 32, 80, 80,
-            "network2", "192.168.200.200", 32, 80, 80));
+            assertNotNull(tungstenService.addTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "pass",
+                    "<>", "tcp", "network1", "192.168.100.100", 32, 80, 80,
+                    "network2", "192.168.200.200", 32, 80, 80));
+        }
     }
 
     @Test

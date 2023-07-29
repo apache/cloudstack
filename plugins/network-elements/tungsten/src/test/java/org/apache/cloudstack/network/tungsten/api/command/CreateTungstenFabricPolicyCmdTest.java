@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class CreateTungstenFabricPolicyCmdTest {
 
@@ -40,13 +41,20 @@ public class CreateTungstenFabricPolicyCmdTest {
 
     CreateTungstenFabricPolicyCmd createTungstenFabricPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricPolicyCmd = new CreateTungstenFabricPolicyCmd();
         createTungstenFabricPolicyCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricPolicyCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricPolicyCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricPolicyCmd, "name", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

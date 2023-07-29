@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 
@@ -42,18 +43,25 @@ public class ApplyTungstenFabricTagCmdTest {
 
     ApplyTungstenFabricTagCmd applyTungstenFabricTagCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         applyTungstenFabricTagCmd = new ApplyTungstenFabricTagCmd();
         applyTungstenFabricTagCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "zoneId", 1L);
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "networkUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "vmUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "nicUuids", Arrays.asList("test"));
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "policyUuid", "test");
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "applicationPolicySetUuid", "test");
-        Whitebox.setInternalState(applyTungstenFabricTagCmd, "tagUuid", "test");
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "networkUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "vmUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "nicUuids", Arrays.asList("test"));
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "applicationPolicySetUuid", "test");
+        ReflectionTestUtils.setField(applyTungstenFabricTagCmd, "tagUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

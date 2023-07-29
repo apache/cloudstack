@@ -32,7 +32,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class CreateTungstenFabricProviderCmdTest {
 
@@ -41,18 +41,24 @@ public class CreateTungstenFabricProviderCmdTest {
 
     CreateTungstenFabricProviderCmd createTungstenFabricProviderCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricProviderCmd = new CreateTungstenFabricProviderCmd();
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "tungstenProviderService", tungstenProviderService);
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "name", "test");
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "hostname", "test");
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "port", "test");
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "gateway", "test");
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "vrouterPort", "test");
-        Whitebox.setInternalState(createTungstenFabricProviderCmd, "introspectPort", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "tungstenProviderService", tungstenProviderService);
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "hostname", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "port", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "gateway", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "vrouterPort", "test");
+        ReflectionTestUtils.setField(createTungstenFabricProviderCmd, "introspectPort", "test");
+    }
+
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
