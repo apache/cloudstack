@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -27,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -42,9 +42,7 @@ public class ListTungstenFabricPolicyRuleCmdTest {
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
+    @InjectMocks
     ListTungstenFabricPolicyRuleCmd listTungstenFabricPolicyRuleCmd;
 
     AutoCloseable closeable;
@@ -54,13 +52,11 @@ public class ListTungstenFabricPolicyRuleCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricPolicyRuleCmd = new ListTungstenFabricPolicyRuleCmd();
         listTungstenFabricPolicyRuleCmd.tungstenService = tungstenService;
-        listTungstenFabricPolicyRuleCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
-        listTungstenFabricPolicyRuleCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricPolicyRuleCmd, "policyUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricPolicyRuleCmd, "ruleUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricPolicyRuleCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricPolicyRuleCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricPolicyRuleCmd, "s_maxPageSize", -1L);
     }
 
     @After

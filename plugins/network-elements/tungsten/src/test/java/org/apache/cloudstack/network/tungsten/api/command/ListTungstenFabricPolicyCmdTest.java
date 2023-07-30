@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -42,9 +41,6 @@ public class ListTungstenFabricPolicyCmdTest {
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
     ListTungstenFabricPolicyCmd listTungstenFabricPolicyCmd;
 
     AutoCloseable closeable;
@@ -53,14 +49,12 @@ public class ListTungstenFabricPolicyCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricPolicyCmd = new ListTungstenFabricPolicyCmd();
         listTungstenFabricPolicyCmd.tungstenService = tungstenService;
-        listTungstenFabricPolicyCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
-        listTungstenFabricPolicyCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "networkId", 1L);
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "addressId", 1L);
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "policyUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricPolicyCmd, "s_maxPageSize", -1L);
     }
 
     @After

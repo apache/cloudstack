@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -42,9 +41,6 @@ public class ListTungstenFabricAddressGroupCmdTest {
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
     ListTungstenFabricAddressGroupCmd listTungstenFabricAddressGroupCmd;
 
     AutoCloseable closeable;
@@ -54,8 +50,6 @@ public class ListTungstenFabricAddressGroupCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricAddressGroupCmd = new ListTungstenFabricAddressGroupCmd();
         listTungstenFabricAddressGroupCmd.tungstenService = tungstenService;
-        listTungstenFabricAddressGroupCmd._configService = configService;
-        listTungstenFabricAddressGroupCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "pageSize", 10);

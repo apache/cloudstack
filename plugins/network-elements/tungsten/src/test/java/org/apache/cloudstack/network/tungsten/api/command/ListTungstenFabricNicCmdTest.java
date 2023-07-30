@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -27,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -42,9 +42,7 @@ public class ListTungstenFabricNicCmdTest {
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
+    @InjectMocks
     ListTungstenFabricNicCmd listTungstenFabricNicCmd;
 
     AutoCloseable closeable;
@@ -54,12 +52,10 @@ public class ListTungstenFabricNicCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricNicCmd = new ListTungstenFabricNicCmd();
         listTungstenFabricNicCmd.tungstenService = tungstenService;
-        listTungstenFabricNicCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
-        listTungstenFabricNicCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricNicCmd, "nicUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricNicCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricNicCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricNicCmd, "s_maxPageSize", -1L);
     }
 
     @After

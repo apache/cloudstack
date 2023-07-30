@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.api.command;
 
-import com.cloud.configuration.ConfigurationService;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -42,9 +41,6 @@ public class ListTungstenFabricTagCmdTest {
     @Mock
     TungstenService tungstenService;
 
-    @Mock
-    ConfigurationService configService;
-
     ListTungstenFabricTagCmd listTungstenFabricTagCmd;
 
     AutoCloseable closeable;
@@ -54,9 +50,6 @@ public class ListTungstenFabricTagCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         listTungstenFabricTagCmd = new ListTungstenFabricTagCmd();
         listTungstenFabricTagCmd.tungstenService = tungstenService;
-        listTungstenFabricTagCmd._configService = configService;
-        Mockito.when(configService.getDefaultPageSize()).thenReturn(-1L);
-        listTungstenFabricTagCmd.configure();
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "networkUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "vmUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "nicUuid", "test");
@@ -65,6 +58,7 @@ public class ListTungstenFabricTagCmdTest {
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "tagUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricTagCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricTagCmd, "s_maxPageSize", -1L);
     }
 
     @After
