@@ -49,6 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
         <project.systemvm.template.version>4.18.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
