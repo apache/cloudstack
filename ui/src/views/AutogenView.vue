@@ -1034,7 +1034,6 @@ export default {
       this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
-      const self = this
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
@@ -1072,6 +1071,7 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      this.currentAction.paramFilters = []
       if ('message' in action) {
         var message = action.message
         if (typeof action.message === 'function') {
@@ -1079,6 +1079,29 @@ export default {
         }
         action.message = message
       }
+
+      this.getArgs(action, isGroupAction, paramFields)
+      this.getFilters(action, isGroupAction, paramFields)
+      this.getFirstIndexFocus()
+
+      this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+          param.type = 'string'
+        }
+        this.setRules(param)
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
+        }
+      }
+      this.actionLoading = false
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
+        this.fillEditFormFieldValues()
+      }
+    },
+    getArgs (action, isGroupAction, paramFields) {
+      const self = this
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -1100,22 +1123,14 @@ export default {
           })
         }
       }
-      this.getFirstIndexFocus()
-
-      this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
-      for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
-          param.type = 'string'
+    },
+    getFilters (action, isGroupAction, paramFields) {
+      if ('filters' in action) {
+        var filters = action.filters
+        if (typeof action.filters === 'function') {
+          filters = action.filters(action.resource, this.$store.getters, isGroupAction)
         }
-        this.setRules(param)
-        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param)
-        }
-      }
-      this.actionLoading = false
-      if (action.dataView && listIconForFillValues.includes(action.icon)) {
-        this.fillEditFormFieldValues()
+        this.currentAction.paramFilters = filters
       }
     },
     getFirstIndexFocus () {
@@ -1128,13 +1143,16 @@ export default {
         }
       }
     },
-    listUuidOpts (param) {
+    listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {
