@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import com.cloud.storage.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;

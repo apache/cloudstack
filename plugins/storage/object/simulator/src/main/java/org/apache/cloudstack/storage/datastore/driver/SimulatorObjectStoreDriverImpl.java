@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.AccountDetailsDao;

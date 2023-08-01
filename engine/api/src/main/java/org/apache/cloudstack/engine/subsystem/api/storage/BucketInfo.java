@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 
 public interface BucketInfo extends DataObject, Bucket {
 

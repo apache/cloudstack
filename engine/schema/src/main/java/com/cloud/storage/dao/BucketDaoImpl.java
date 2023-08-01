@@ -38,6 +38,7 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
 
     private static final String STORE_ID = "store_id";
     private static final String STATE = "state";
+    private static final String ACCOUNT_ID = "account_id";
 
     @Inject
     ObjectStoreDao _objectStoreDao;
@@ -52,15 +53,25 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
 
         searchFilteringStoreId = createSearchBuilder();
         searchFilteringStoreId.and(STORE_ID, searchFilteringStoreId.entity().getObjectStoreId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreId.and(ACCOUNT_ID, searchFilteringStoreId.entity().getAccountId(), SearchCriteria.Op.EQ);
         searchFilteringStoreId.and(STATE, searchFilteringStoreId.entity().getState(), SearchCriteria.Op.NEQ);
         searchFilteringStoreId.done();
 
         return true;
     }
-        @Override
+    @Override
     public List<BucketVO> listByObjectStoreId(long objectStoreId) {
         SearchCriteria<BucketVO> sc = searchFilteringStoreId.create();
         sc.setParameters(STORE_ID, objectStoreId);
+        sc.setParameters(STATE, BucketVO.State.Destroyed);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<BucketVO> listByObjectStoreIdAndAccountId(long objectStoreId, long accountId) {
+        SearchCriteria<BucketVO> sc = searchFilteringStoreId.create();
+        sc.setParameters(STORE_ID, objectStoreId);
+        sc.setParameters(ACCOUNT_ID, accountId);
         sc.setParameters(STATE, BucketVO.State.Destroyed);
         return listBy(sc);
     }

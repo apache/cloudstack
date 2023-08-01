@@ -19,7 +19,6 @@ package org.apache.cloudstack.api;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.storage.Bucket;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -80,7 +79,7 @@ public enum ApiCommandResourceType {
     Role(org.apache.cloudstack.acl.Role.class),
     VpnCustomerGateway(com.cloud.network.Site2SiteCustomerGateway.class),
     ManagementServer(org.apache.cloudstack.management.ManagementServerHost.class),
-    Bucket(com.cloud.storage.Bucket.class);
+    Bucket(org.apache.cloudstack.storage.object.Bucket.class);
 
     private final Class<?> clazz;
 

@@ -36,6 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.storage.object.ObjectStore;
 
 public interface StorageService {
     /**

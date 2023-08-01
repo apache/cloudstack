@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.user.bucket;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -34,7 +34,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 @APICommand(name = "updateBucket", description = "Updates Bucket properties", responseObject = SuccessResponse.class, entityType = {Bucket.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class UpdateBucketCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateBucketCmd.class.getName());
 

@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 

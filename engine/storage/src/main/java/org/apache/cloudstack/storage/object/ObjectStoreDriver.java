@@ -20,7 +20,6 @@ package org.apache.cloudstack.storage.object;
 
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
-import com.cloud.storage.Bucket;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
 import java.util.List;

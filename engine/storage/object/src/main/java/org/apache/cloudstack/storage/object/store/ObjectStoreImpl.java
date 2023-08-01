@@ -19,7 +19,7 @@
 package org.apache.cloudstack.storage.object.store;
 
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;

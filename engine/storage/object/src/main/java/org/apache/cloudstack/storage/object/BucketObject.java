@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.object;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
-import com.cloud.storage.Bucket;
 import org.apache.cloudstack.engine.subsystem.api.storage.BucketInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;

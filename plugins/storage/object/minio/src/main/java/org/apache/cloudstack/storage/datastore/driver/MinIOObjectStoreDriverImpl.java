@@ -21,7 +21,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
@@ -110,13 +110,20 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
             throw new CloudRuntimeException(e);
         }
 
+        List<BucketVO> buckets = _bucketDao.listByObjectStoreIdAndAccountId(storeId, accountId);
+        StringBuilder resources_builder = new StringBuilder();
+        for(BucketVO exitingBucket : buckets) {
+            resources_builder.append("\"arn:aws:s3:::"+exitingBucket.getName()+"/*\",\n");
+        }
+        resources_builder.append("\"arn:aws:s3:::"+bucketName+"/*\"\n");
+
         String policy = " {\n" +
                 "     \"Statement\": [\n" +
                 "         {\n" +
                 "             \"Action\": \"s3:*\",\n" +
                 "             \"Effect\": \"Allow\",\n" +
                 "             \"Principal\": \"*\",\n" +
-                "             \"Resource\": \"arn:aws:s3:::"+bucketName+"/*\"\n" +
+                "             \"Resource\": ["+resources_builder+"]" +
                 "         }\n" +
                 "     ],\n" +
                 "     \"Version\": \"2012-10-17\"\n" +
@@ -333,52 +340,6 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return true;
     }
 
-    /*
-    public void setBucketPolicy(String bucketName, long storeId, String policy) {
-
-        String privatePolicy = "{\"Version\":\"2012-10-17\",\"Statement\":[]}";
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("{\n");
-        builder.append("    \"Statement\": [\n");
-        builder.append("        {\n");
-        builder.append("            \"Action\": [\n");
-        builder.append("                \"s3:GetBucketLocation\",\n");
-        builder.append("                \"s3:ListBucket\"\n");
-        builder.append("            ],\n");
-        builder.append("            \"Effect\": \"Allow\",\n");
-        builder.append("            \"Principal\": \"*\",\n");
-        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"\"\n");
-        builder.append("        },\n");
-        builder.append("        {\n");
-        builder.append("            \"Action\": \"s3:GetObject\",\n");
-        builder.append("            \"Effect\": \"Allow\",\n");
-        builder.append("            \"Principal\": \"*\",\n");
-        builder.append("            \"Resource\": \"arn:aws:s3:::"+bucketName+"/*\"\n");
-        builder.append("        }\n");
-        builder.append("    ],\n");
-        builder.append("    \"Version\": \"2012-10-17\"\n");
-        builder.append("}\n");
-
-        String publicPolicy = builder.toString();
-        //Default to private policy
-        //ToDo Support custom policy
-        String policyConfig = privatePolicy;
-
-        if(policy.equals("public")) {
-            policyConfig = publicPolicy;
-        }
-
-        MinioClient minioClient = getMinIOClient(storeId);
-        try {
-            minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policyConfig).build());
-
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
-    } */
-
     @Override
     public void setBucketQuota(String bucketName, long storeId, long size) {
 
@@ -412,6 +373,9 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         .endpoint(url)
                         .credentials(accessKey,secretKey)
                         .build();
+        if(minioClient == null){
+            throw new CloudRuntimeException("Error while creating MinIO client");
+        }
         return minioClient;
     }
 
@@ -426,6 +390,9 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
                         .endpoint(url)
                         .credentials(accessKey,secretKey)
                         .build();
+        if(minioAdminClient == null){
+            throw new CloudRuntimeException("Error while creating MinIO client");
+        }
         return minioAdminClient;
     }
 }

@@ -2328,7 +2328,6 @@
 "label.objectstorageid": "Object Storage Pool",
 "label.bucket.update": "Update Bucket",
 "label.bucket.delete": "Delete Bucket",
-"label.quota": "Quota",
 "label.quotagb": "Quota in GB",
 "label.encryption": "Encryption",
 "label.versioning": "Versioning",

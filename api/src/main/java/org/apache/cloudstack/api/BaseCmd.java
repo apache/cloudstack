@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.object.BucketApiService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -43,6 +42,7 @@ import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.storage.object.BucketApiService;
 import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.usage.UsageService;

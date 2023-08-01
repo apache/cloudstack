@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.bucket;
 
-import com.cloud.storage.Bucket;
+import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 @APICommand(name = "listBuckets", description = "Lists all Buckets.", responseObject = BucketResponse.class, responseView = ResponseView.Restricted, entityType = {
-        Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListBucketsCmd.class.getName());
 

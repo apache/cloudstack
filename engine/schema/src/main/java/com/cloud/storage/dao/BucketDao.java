@@ -26,4 +26,6 @@ public interface BucketDao extends GenericDao<BucketVO, Long> {
     List<BucketVO> listByObjectStoreId(long objectStoreId);
 
     BucketResponse newBucketResponse(BucketVO bucket);
+
+    List<BucketVO> listByObjectStoreIdAndAccountId(long objectStoreId, long accountId);
 }

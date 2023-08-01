@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
-import com.cloud.storage.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;

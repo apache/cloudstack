@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.storage.object;
+package org.apache.cloudstack.storage.object;
 
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Bucket;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;

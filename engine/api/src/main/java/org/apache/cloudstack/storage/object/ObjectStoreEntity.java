@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.storage.object;
 
-import com.cloud.storage.Bucket;
-import com.cloud.storage.ObjectStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
 import java.util.Map;

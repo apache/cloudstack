@@ -14,10 +14,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.object;
+package org.apache.cloudstack.storage.object;
 
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.BucketDao;
@@ -38,7 +37,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
-import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;

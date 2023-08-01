@@ -18,7 +18,7 @@
  */
 package org.apache.cloudstack.storage.datastore.db;
 
-import com.cloud.storage.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;

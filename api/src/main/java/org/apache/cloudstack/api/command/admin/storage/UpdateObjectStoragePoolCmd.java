@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.api.command.admin.storage;
 
-import com.cloud.storage.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +29,7 @@ import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = UpdateObjectStoragePoolCmd.APINAME, description = "Updates object storage pool", responseObject = ObjectStoreResponse.class, entityType = {ObjectStore.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
-public class        UpdateObjectStoragePoolCmd extends BaseCmd {
+public class UpdateObjectStoragePoolCmd extends BaseCmd {
     public static final String APINAME = "updateObjectStoragePool";
 
     /////////////////////////////////////////////////////
