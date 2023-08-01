@@ -1609,6 +1609,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if (vol.getQemuEncryptFormat() != null) {
                     newVol.setEncryptFormat(vol.getQemuEncryptFormat().toString());
                 }
+                if (vol.getFormat() != null) {
+                    format = vol.getFormat();
+                }
             }
             newVol.setSize(volume.getSize());
             newVol.setFormat(ImageFormat.valueOf(format.toString().toUpperCase()));
