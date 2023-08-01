@@ -114,6 +114,14 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "virtual size of backedup snapshot on image store")
     private long virtualSize;
 
+    @SerializedName(ApiConstants.IMAGE_STORE_ID)
+    @Param(description = "ID of image store")
+    private String storeId;
+
+    @SerializedName(ApiConstants.IMAGE_STORE)
+    @Param(description = "Name of image store")
+    private String store;
+
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -230,5 +238,13 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVirtualSize(long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public void setStoreId(String storeId) {
+        this.storeId = storeId;
+    }
+
+    public void setStore(String store) {
+        this.store = store;
     }
 }

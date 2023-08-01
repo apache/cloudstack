@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
@@ -100,7 +101,7 @@ public class CreateSnapshotCmdTest extends TestCase {
 
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         SnapshotResponse snapshotResponse = Mockito.mock(SnapshotResponse.class);
-        Mockito.when(responseGenerator.createSnapshotResponse(snapshot)).thenReturn(snapshotResponse);
+        Mockito.when(responseGenerator.createSnapshotResponse(snapshot, ResponseObject.ResponseView.Restricted)).thenReturn(snapshotResponse);
         Mockito.doNothing().when(snapshotResponse).setAccountName(anyString());
 
         createSnapshotCmd._accountService = accountService;

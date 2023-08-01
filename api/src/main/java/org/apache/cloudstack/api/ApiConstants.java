@@ -862,6 +862,8 @@ public class ApiConstants {
     public static final String VM_SNAPSHOT_DISK_IDS = "vmsnapshotdiskids";
     public static final String VM_SNAPSHOT_MEMORY = "snapshotmemory";
     public static final String VM_SNAPSHOT_QUIESCEVM = "quiescevm";
+
+    public static final String IMAGE_STORE = "imagestore";
     public static final String IMAGE_STORE_UUID = "imagestoreuuid";
     public static final String IMAGE_STORE_ID = "imagestoreid";
     public static final String GUEST_VM_CIDR = "guestvmcidr";

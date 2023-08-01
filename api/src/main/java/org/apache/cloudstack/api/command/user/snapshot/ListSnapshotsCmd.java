@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -34,9 +36,11 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
-        Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
+@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.",
+            responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            responseView = ResponseObject.ResponseView.Restricted)
+public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
 
@@ -105,10 +109,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Override
     public void execute() {
         Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
-        ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
-        List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
+        ListResponse<SnapshotResponse> response = new ListResponse<>();
+        List<SnapshotResponse> snapshotResponses = new ArrayList<>();
         for (Snapshot snapshot : result.first()) {
-            SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
+            SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot, getResponseView());
             snapshotResponse.setObjectName("snapshot");
             snapshotResponses.add(snapshotResponse);
         }

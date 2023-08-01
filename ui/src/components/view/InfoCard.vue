@@ -465,6 +465,14 @@
           </div>
         </div>
 
+        <div class="resource-detail-item" v-if="resource.imagestoreid">
+          <div class="resource-detail-item__label">{{ $t('label.secondary.storage') }}</div>
+          <div class="resource-detail-item__details">
+            <picture-outlined />
+            <router-link :to="{ path: '/imagestore/' + resource.imagestoreid }">{{ resource.imagestore || resource.imagestoreid }}</router-link>
+          </div>
+        </div>
+
         <div class="resource-detail-item" v-if="resource.affinitygroup && resource.affinitygroup.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.affinitygroup') }}</div>
           <SwapOutlined />

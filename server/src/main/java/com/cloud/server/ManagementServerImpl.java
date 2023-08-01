@@ -204,6 +204,10 @@ import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.api.command.admin.snapshot.CreateSnapshotCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.snapshot.CreateSnapshotFromVMSnapshotCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.snapshot.RevertSnapshotCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -3871,6 +3875,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(PatchSystemVMCmd.class);
         cmdList.add(ListGuestVlansCmd.class);
         cmdList.add(AssignVolumeCmd.class);
+        cmdList.add(CreateSnapshotCmdByAdmin.class);
+        cmdList.add(CreateSnapshotFromVMSnapshotCmdByAdmin.class);
+        cmdList.add(ListSnapshotsCmdByAdmin.class);
+        cmdList.add(RevertSnapshotCmdByAdmin.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);

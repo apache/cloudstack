@@ -625,7 +625,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public SnapshotResponse createSnapshotResponse(Snapshot snapshot) {
+    public SnapshotResponse createSnapshotResponse(Snapshot snapshot, ResponseView view) {
         SnapshotResponse snapshotResponse = new SnapshotResponse();
         snapshotResponse.setId(snapshot.getUuid());
 
@@ -672,17 +672,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotInfo = snapshotfactory.getSnapshot(snapshot.getId(), dataStoreRole);
         }
 
+        if (view.equals(ResponseView.Full)) {
+            SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+            long storagePoolId = snapshotStore.getDataStoreId();
+            DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Image);
+            snapshotResponse.setStore(dataStore.getName());
+            snapshotResponse.setStoreId(dataStore.getUuid());
+        }
+
         if (snapshotInfo == null) {
             s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
-        snapshotResponse.setRevertable(snapshotInfo.isRevertable());
-        snapshotResponse.setPhysicaSize(snapshotInfo.getPhysicalSize());
+            snapshotResponse.setRevertable(snapshotInfo.isRevertable());
+            snapshotResponse.setPhysicaSize(snapshotInfo.getPhysicalSize());
         }
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Snapshot, snapshot.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        List<ResourceTagResponse> tagResponses = new ArrayList<>();
         for (ResourceTag tag : tags) {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);

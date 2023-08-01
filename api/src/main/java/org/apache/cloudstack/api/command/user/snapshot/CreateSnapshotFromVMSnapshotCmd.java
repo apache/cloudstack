@@ -23,7 +23,9 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -40,9 +42,12 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "createSnapshotFromVMSnapshot", description = "Creates an instant snapshot of a volume from existing vm snapshot.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class}, since = "4.10.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
+@APICommand(name = "createSnapshotFromVMSnapshot",
+            description = "Creates an instant snapshot of a volume from existing vm snapshot.",
+            responseObject = SnapshotResponse.class, entityType = {Snapshot.class}, since = "4.10.0",
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            responseView = ResponseObject.ResponseView.Restricted)
+public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
 
     // ///////////////////////////////////////////////////
@@ -172,7 +177,7 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
         try {
             snapshot = _snapshotService.backupSnapshotFromVmSnapshot(getEntityId(), getVmId(), getVolumeId(), getVMSnapshotId());
             if (snapshot != null) {
-                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
+                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot, getResponseView());
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {

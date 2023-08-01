@@ -249,7 +249,7 @@ public interface ResponseGenerator {
 
     ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup);
 
-    SnapshotResponse createSnapshotResponse(Snapshot snapshot);
+    SnapshotResponse createSnapshotResponse(Snapshot snapshot, ResponseView view);
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 

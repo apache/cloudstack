@@ -312,6 +312,7 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('domain')
           fields.push('account')
+          fields.push('imagestore')
         }
         return fields
       },
