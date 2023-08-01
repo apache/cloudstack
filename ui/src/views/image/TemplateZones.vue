@@ -73,6 +73,13 @@
           :pagination="false"
           :bordered="true"
           :rowKey="record => record.zoneid">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
         </a-table>
       </template>
     </a-table>

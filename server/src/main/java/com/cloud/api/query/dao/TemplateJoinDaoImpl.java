@@ -178,6 +178,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
             if (datastore != null) {
                 downloadDetailInImageStores.put("datastore", datastore.getName());
+                if (view.equals(ResponseView.Full)) {
+                    downloadDetailInImageStores.put("datastoreId", datastore.getUuid());
+                }
                 downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
                 downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
                 downloadProgressDetails.add(downloadDetailInImageStores);
