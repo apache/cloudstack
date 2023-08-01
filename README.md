@@ -62,7 +62,7 @@ via GitHub pull requests.
 ## Documentation
 
 * [Project Documentation](https://docs.cloudstack.apache.org)
-* [Release notes](https://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
+* [Release notes](https://docs.cloudstack.apache.org/en/latest/releasenotes/index.html)
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
