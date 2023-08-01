@@ -615,7 +615,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         k8s_cluster = None
         return
 
-    @attr(tags=["advanced", "smoke"], required_hardware="false")
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_11_test_unmanaged_cluster_lifecycle(self):
         """Test all operations on unmanaged Kubernetes cluster
 

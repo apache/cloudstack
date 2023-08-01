@@ -61,6 +61,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: python
 Requires: python3
 Requires: bash
@@ -107,6 +108,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -142,6 +144,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-11-openjdk
+Requires: tzdata-java
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
