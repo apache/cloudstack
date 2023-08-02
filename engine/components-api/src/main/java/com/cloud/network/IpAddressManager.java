@@ -260,9 +260,10 @@ public interface IpAddressManager {
      * Adds the given public IP address to quarantine for the duration of the global configuration `public.ip.address.quarantine.duration` value.
      *
      * @param publicIpAddress to be quarantined.
+     * @param domainId used to retrieve the quarantine duration.
      * @return the {@link PublicIpQuarantine} persisted in the database.
      */
-    PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress);
+    PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId);
 
     /**
      * Prematurely removes a public IP address from quarantine. It is required to provide a reason for removing it.

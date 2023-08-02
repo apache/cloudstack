@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`quarantined_ips` (
   `id` bigint(20) unsigned NOT NULL auto_increment,
   `uuid` varchar(255) UNIQUE,
   `public_ip_address_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the quarantined public IP address, foreign key to `user_ip_address` table',
-  `previous_owner_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the previous owner of the public IP address, foreign key to `user_ip_address` table',
+  `previous_owner_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the previous owner of the public IP address, foreign key to `account` table',
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   `end_date` datetime NOT NULL,

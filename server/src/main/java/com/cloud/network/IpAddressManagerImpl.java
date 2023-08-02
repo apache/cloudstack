@@ -326,7 +326,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
-            "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Global);
+            "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -746,7 +746,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
         } else if (ip.getState() == State.Releasing) {
-            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
+            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
             _ipAddressDao.unassignIpAddress(ip.getId());
         }
 
@@ -1139,7 +1139,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } else if (addr.getState() == IpAddress.State.Releasing) {
                 // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
                 if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
-                    addPublicIpAddressToQuarantine(addr);
+                    addPublicIpAddressToQuarantine(addr, network.getDomainId());
                     _ipAddressDao.unassignIpAddress(addr.getId());
                     messageBus.publish(_name, MESSAGE_RELEASE_IPADDR_EVENT, PublishScope.LOCAL, addr);
                 } else {
@@ -2418,8 +2418,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress) {
-        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.value();
+    public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId) {
+        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.valueInDomain(domainId);
         if (quarantineDuration <= 0) {
             s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
                     PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.key()));
