@@ -56,6 +56,7 @@
 	<bean id="serviceOfferingDaoImpl" class="com.cloud.service.dao.ServiceOfferingDaoImpl" />
 	<bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
 	<bean id="snapshotDaoImpl" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+	<bean id="snapshotZoneDaoImpl" class="com.cloud.storage.dao.SnapshotZoneDaoImpl" />
 	<bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDaoImpl" />
 	<bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
 	<bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />

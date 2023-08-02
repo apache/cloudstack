@@ -37,6 +37,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -63,6 +64,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
+    private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
@@ -122,6 +124,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotCreatedSearch.and(STORE_ID, snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         snapshotCreatedSearch.and(CREATED,  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
         snapshotCreatedSearch.done();
+
+        storeSnapshotDownloadStatusSearch = createSearchBuilder();
+        storeSnapshotDownloadStatusSearch.and("snapshot_id", storeSnapshotDownloadStatusSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        storeSnapshotDownloadStatusSearch.and("store_id", storeSnapshotDownloadStatusSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeSnapshotDownloadStatusSearch.and("downloadState", storeSnapshotDownloadStatusSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
+        storeSnapshotDownloadStatusSearch.done();
 
         return true;
     }
@@ -204,6 +212,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public void removeBySnapshotStore(DataStoreRole role, long storeId, long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
+        remove(sc);
+    }
+
+    @Override
     public SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role) {
         return findOldestOrLatestSnapshotForVolume(volumeId, role, false);
     }
@@ -261,6 +278,13 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters(STATE, State.Ready);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
     }
 
     @Override
@@ -462,5 +486,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATE, State.Ready);
         return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnasphotStoreDownloadStatus(long snapshotId, long storeId, VMTemplateStorageResourceAssoc.Status... status) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotDownloadStatusSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("downloadState", (Object[])status);
+        return search(sc, null);
     }
 }

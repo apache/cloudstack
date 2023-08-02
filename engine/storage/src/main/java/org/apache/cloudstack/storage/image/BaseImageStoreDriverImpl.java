@@ -32,13 +32,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Upload;
-import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -53,11 +46,15 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
+import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -68,6 +65,8 @@ import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
@@ -76,10 +75,13 @@ import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -106,6 +108,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     TemplateDataStoreDao _templateStoreDao;
+    @Inject
+    SnapshotDao snapshotDao;
+    @Inject
+    SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     EndPointSelector _epSelector;
     @Inject
@@ -192,6 +198,12 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 LOGGER.debug("Downloading volume to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadVolumeToStorage(data, caller);
+        } else if (data.getType() == DataObjectType.SNAPSHOT) {
+            caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Downloading volume to data store " + dataStore.getId());
+            }
+            _downloadMonitor.downloadSnapshotToStorage(data, caller);
         }
     }
 
@@ -305,6 +317,55 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             String msg = "Failed to upload volume: " + obj.getUuid() + " with error: " + answer.getErrorString();
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     (volStoreVO == null ? -1L : volStoreVO.getZoneId()), null, msg, msg);
+            LOGGER.error(msg);
+        } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            caller.complete(result);
+        }
+        return null;
+    }
+
+    protected Void createSnapshotAsyncCallback(AsyncCallbackDispatcher<? extends BaseImageStoreDriverImpl, DownloadAnswer> callback, CreateContext<CreateCmdResult> context) {
+        DownloadAnswer answer = callback.getResult();
+        DataObject obj = context.data;
+        DataStore store = obj.getDataStore();
+
+        SnapshotDataStoreVO snapshotStoreVO = snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), obj.getId());
+        if (snapshotStoreVO != null) {
+            if (snapshotStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Snapshot is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                }
+                return null;
+            }
+            SnapshotDataStoreVO updateBuilder = snapshotDataStoreDao.createForUpdate();
+            updateBuilder.setDownloadPercent(answer.getDownloadPct());
+            updateBuilder.setDownloadState(answer.getDownloadStatus());
+            updateBuilder.setLastUpdated(new Date());
+            updateBuilder.setErrorString(answer.getErrorString());
+            updateBuilder.setJobId(answer.getJobId());
+            updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
+            updateBuilder.setInstallPath(answer.getInstallPath());
+            updateBuilder.setSize(answer.getTemplateSize());
+            updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+            snapshotDataStoreDao.update(snapshotStoreVO.getId(), updateBuilder);
+            // update size in snapshot table
+//            SnapshotVO snapshotUpdater = snapshotDao.createForUpdate();
+//            snapshotUpdater.setSize(answer.getTemplateSize());
+//            snapshotDao.update(obj.getId(), snapshotUpdater);
+        }
+
+        AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
+
+        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
+                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+            CreateCmdResult result = new CreateCmdResult(null, null);
+            result.setSuccess(false);
+            result.setResult(answer.getErrorString());
+            caller.complete(result);
+            String msg = "Failed to copy snapshot: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
+                    (snapshotStoreVO == null ? -1L : 1L), null, msg, msg); // ToDo
             LOGGER.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);

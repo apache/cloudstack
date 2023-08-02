@@ -23,6 +23,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -39,9 +40,13 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findByStoreSnapshot(DataStoreRole role, long storeId, long snapshotId);
 
+    void removeBySnapshotStore(DataStoreRole role, long storeId, long snapshotId);
+
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
     SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
+
+    List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role);
 
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
 
@@ -91,4 +96,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
      * List all snapshots in 'snapshot_store_ref' with state 'Ready' by volume ID.
      */
     List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
+
+    List<SnapshotDataStoreVO> listBySnasphotStoreDownloadStatus(long snapshotId, long storeId, VMTemplateStorageResourceAssoc.Status... status);
 }

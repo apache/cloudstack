@@ -14,24 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage.download;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+package com.cloud.storage.dao;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.component.Manager;
+import com.cloud.storage.SnapshotZoneVO;
+import com.cloud.utils.db.GenericDao;
 
-/**
- * Monitor download progress of all templates across all servers
- *
- */
-public interface DownloadMonitor extends Manager {
-
-    public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback);
-
-    public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
-
-    void downloadSnapshotToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
-
+public interface SnapshotZoneDao extends GenericDao<SnapshotZoneVO, Long> {
+    SnapshotZoneVO findByZoneSnapshot(long zoneId, long templateId);
+    void addSnapshotToZone(long snapshotId, long zoneId);
 }

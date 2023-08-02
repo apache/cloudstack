@@ -64,6 +64,7 @@ public class SnapshotObject implements SnapshotInfo {
     private DataStore store;
     private Object payload;
     private Boolean fullBackup;
+    private String url;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -194,7 +195,14 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getUri() {
+        if (url != null) {
+            return url;
+        }
         return snapshot.getUuid();
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override

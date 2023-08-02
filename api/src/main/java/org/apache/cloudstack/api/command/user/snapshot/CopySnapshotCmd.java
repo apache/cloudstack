@@ -32,10 +32,12 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Snapshot;
@@ -53,6 +55,13 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = SnapshotResponse.class, required = true, description = "the ID of the snapshot.")
     private Long id;
+
+    @Parameter(name = ApiConstants.SOURCE_ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "ID of the zone in which the snapshot is currently present. " +
+                    "If not specified and zone in which the volume of the snapshot is present will be used.")
+    private Long sourceZoneId;
 
     @Parameter(name = ApiConstants.DESTINATION_ZONE_ID,
             type = CommandType.UUID,
@@ -78,6 +87,10 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getSourceZoneId() {
+        return sourceZoneId;
     }
 
     public List<Long> getDestinationZoneIds() {
@@ -135,25 +148,25 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         try {
-            if (destZoneId == null && (destZoneIds == null || destZoneIds.size() == 0))
+            if (destZoneId == null && CollectionUtils.isEmpty(destZoneIds))
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Either destzoneid or destzoneids parameters have to be specified.");
 
-            if (destZoneId != null && destZoneIds != null && destZoneIds.size() != 0)
+            if (destZoneId != null && CollectionUtils.isNotEmpty(destZoneIds))
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Both destzoneid and destzoneids cannot be specified at the same time.");
 
             CallContext.current().setEventDetails(getEventDescription());
             Snapshot snapshot = _snapshotService.copySnapshot(this);
 
-            if (snapshot != null){
-                List<SnapshotResponse> listResponse = new ArrayList<>();/*_responseGenerator.createSnapshotResponse(getResponseView(),
-                        snapshot, getDestinationZoneIds(), false);*/
-                SnapshotResponse response = new SnapshotResponse();
-                if (listResponse != null && !listResponse.isEmpty()) {
-                    response = listResponse.get(0);
-                }
-
+            if (snapshot != null) {
+//                List<SnapshotResponse> listResponse = new ArrayList<>();_responseGenerator.createSnapshotResponse(getResponseView(),
+//                        snapshot, getDestinationZoneIds(), false);
+//                SnapshotResponse response = new SnapshotResponse();
+//                if (CollectionUtils.isNotEmpty(listResponse)) {
+//                    response = listResponse.get(0);
+//                }
+                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
@@ -162,6 +175,9 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         }
 
     }

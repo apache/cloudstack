@@ -19,16 +19,19 @@ package com.cloud.storage.snapshot;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -46,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
@@ -53,6 +57,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -119,6 +124,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
+import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.template.TemplateConstants;
@@ -135,6 +141,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -222,12 +229,25 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     protected SnapshotHelper snapshotHelper;
     @Inject
     DataCenterDao dataCenterDao;
+    @Inject
+    SnapshotZoneDao snapshotZoneDao;
 
     private int _totalRetries;
     private int _pauseInterval;
     private int snapshotBackupRetries, snapshotBackupRetryInterval;
 
     private ScheduledExecutorService backupSnapshotExecutor;
+
+    private DataStore getSnapshotZoneImageStore(long snapshotId, long zoneId) {
+        List<DataStore> zoneStores = dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        List<SnapshotDataStoreVO> snapshotImageStoreList = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<Long> snapshotImageStoreIds = snapshotImageStoreList.stream().map(SnapshotDataStoreVO::getDataStoreId).collect(Collectors.toList());
+        zoneStores = zoneStores.stream().filter(s -> snapshotImageStoreIds.contains(s.getId())).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(zoneStores)) {
+            return zoneStores.get(0);
+        }
+        return null;
+    }
 
     protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
         if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
@@ -1487,11 +1507,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException {
-        return allocSnapshot(volumeId, policyId, snapshotName, locationType, false);
+        return allocSnapshot(volumeId, policyId, snapshotName, locationType, false, null);
     }
 
     @Override
-    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, Boolean isFromVmSnapshot) throws ResourceAllocationException {
+    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, Boolean isFromVmSnapshot, List<Long> zoneIds) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
         supportedByHypervisor(volume, isFromVmSnapshot);
@@ -1571,7 +1591,133 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
-    public Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException {
-        return null;
+    public Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
+        Long snapshotId = cmd.getId();
+        Long userId = CallContext.current().getCallingUserId();
+        Long sourceZoneId = cmd.getSourceZoneId();
+        List<Long> destZoneIds = cmd.getDestinationZoneIds();
+        Account caller = CallContext.current().getCallingAccount();
+
+        // Verify parameters
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot == null) {
+            throw new InvalidParameterValueException("Unable to find snapshot with id");
+        }
+
+        // Verify snapshot is backedup and is on Secondary store
+        if (!Snapshot.State.BackedUp.equals(snapshot.getState())) {
+            throw new InvalidParameterValueException("Snapshot is not backed up");
+        }
+        if (Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType())) {
+            throw new InvalidParameterValueException("Snapshot is not backed up");
+        }
+        if (CollectionUtils.isEmpty(destZoneIds)) {
+            throw new InvalidParameterValueException("Please specify valid destination zone(s).");
+        }
+        Volume volume = _volsDao.findById(snapshot.getVolumeId());
+        if (sourceZoneId == null) {
+            sourceZoneId = volume.getDataCenterId();
+        }
+        if (destZoneIds.contains(sourceZoneId)) {
+            throw new InvalidParameterValueException("Please specify different source and destination zones.");
+        }
+        DataCenterVO sourceZone = dataCenterDao.findById(sourceZoneId);
+        if (sourceZone == null) {
+            throw new InvalidParameterValueException("Please specify a valid source zone.");
+        }
+        Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
+        for (Long destZoneId: destZoneIds) {
+            DataCenterVO dstZone = dataCenterDao.findById(destZoneId);
+            if (dstZone == null) {
+                throw new InvalidParameterValueException("Please specify a valid destination zone.");
+            }
+            dataCenterVOs.put(destZoneId, dstZone);
+        }
+
+        _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, snapshot);
+
+        List<String> failedZones = new ArrayList<>();
+
+        DataStore srcSecStore = getSnapshotZoneImageStore(snapshotId, sourceZoneId);
+        if (srcSecStore == null) {
+            throw new InvalidParameterValueException(String.format("There is no snapshot ID: %s ready on image store", snapshot.getUuid()));
+        }
+
+        for (Long destZoneId : destZoneIds) {
+            DataStore dstSecStore = getSnapshotZoneImageStore(snapshotId, destZoneId);
+            if (dstSecStore != null) {
+                s_logger.debug("There is already snapshot in secondary storage " + dstSecStore.getName() +
+                        " in zone " + destZoneId + " , don't need to copy");
+                continue;
+            }
+            if (!copy(snapshot, srcSecStore, dataCenterVOs.get(destZoneId))) {
+                failedZones.add(dataCenterVOs.get(destZoneId).getName());
+            } else {
+                // increase resource count
+                _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.secondary_storage, snapshot.getSize());
+            }
+        }
+
+        if (destZoneIds.size() > failedZones.size()){
+            if (!failedZones.isEmpty()) {
+                s_logger.error("There were failures when copying template to zones: " +
+                        StringUtils.listToCsvTags(failedZones));
+            }
+            return snapshot;
+        } else {
+            throw new CloudRuntimeException("Failed to copy template");
+        }
+    }
+
+    @DB
+    private boolean copy(SnapshotVO snapshotVO, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
+        final long snapshotId = snapshotVO.getId();
+        long dstZoneId = dstZone.getId();
+        // find all eligible image stores for the destination zone
+        List<DataStore> dstSecStores = dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dstZoneId));
+        if (CollectionUtils.isEmpty(dstSecStores)) {
+            throw new StorageUnavailableException("Destination zone is not ready, no image store associated", DataCenter.class, dstZone.getId());
+        }
+        AccountVO account = _accountDao.findById(snapshotVO.getAccountId());
+        // find the size of the template to be copied
+        SnapshotDataStoreVO snapshotDataStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcSecStore.getId(), snapshotId);
+
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
+        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
+
+        // Copy will just find one eligible image store for the destination zone
+        // and copy snapshot there, not propagate to all image stores
+        // for that zone
+        for (DataStore dstSecStore : dstSecStores) {
+            SnapshotDataStoreVO dstSnapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, dstSecStore.getId(), snapshotId);
+            if (dstSnapshotStore != null && dstSnapshotStore.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+                return true; // already downloaded on this image store
+            }
+            if (dstSnapshotStore != null && !List.of(ObjectInDataStoreStateMachine.State.Creating, ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
+                _snapshotStoreDao.removeBySnapshotStore(DataStoreRole.Image, snapshotId, dstSecStore.getId());
+            }
+
+            SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
+            AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, dstSecStore);
+            try {
+                SnapshotResult result = future.get();
+                if (result.isFailed()) {
+                    s_logger.debug("copy template failed for image store " + dstSecStore.getName() + ":" + result.getResult());
+                    continue; // try next image store
+                }
+
+                snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
+
+                if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
+                            snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
+                }
+                return true;
+            } catch (Exception ex) {
+                s_logger.debug("failed to copy template to image store:" + dstSecStore.getName() + " ,will try next one");
+            }
+        }
+        return false;
+
     }
 }

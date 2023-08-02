@@ -42,6 +42,7 @@ public class SnapshotObjectTO implements DataTO {
     private boolean quiescevm;
     private String[] parents;
     private Long physicalSize = (long) 0;
+    private long accountId;
 
 
     public SnapshotObjectTO() {
@@ -51,6 +52,7 @@ public class SnapshotObjectTO implements DataTO {
     public SnapshotObjectTO(SnapshotInfo snapshot) {
         this.path = snapshot.getPath();
         this.setId(snapshot.getId());
+        this.accountId = snapshot.getAccountId();
         VolumeInfo vol = snapshot.getBaseVolume();
         if (vol != null) {
             this.volume = (VolumeObjectTO)vol.getTO();
@@ -166,6 +168,14 @@ public class SnapshotObjectTO implements DataTO {
 
     public String[] getParents() {
         return parents;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
     }
 
     @Override

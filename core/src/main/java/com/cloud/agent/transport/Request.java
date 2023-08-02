@@ -32,12 +32,20 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import com.cloud.utils.HumanReadableJson;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BadCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
+import com.cloud.exception.UnsupportedVersionException;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.utils.HumanReadableJson;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
@@ -48,16 +56,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonReader;
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.BadCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
-import com.cloud.exception.UnsupportedVersionException;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Request is a simple wrapper around command and answer to add sequencing,
@@ -253,6 +251,7 @@ public class Request {
                 jsonReader.setLenient(true);
                 _cmds = s_gson.fromJson(jsonReader, (Type)Command[].class);
             } catch (JsonParseException e) {
+                s_logger.error("Caught problem while parsing JSON command " + _content, e);
                 _cmds = new Command[] { new BadCommand() };
             } catch (RuntimeException e) {
                 s_logger.error("Caught problem with " + _content, e);

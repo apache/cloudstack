@@ -57,4 +57,6 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     void markBackedUp() throws CloudRuntimeException;
 
     Snapshot getSnapshotVO();
+
+    long getAccountId();
 }

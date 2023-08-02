@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -25,8 +26,11 @@ import javax.inject.Inject;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -42,16 +46,20 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.configuration.Config;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -82,6 +90,10 @@ public class SnapshotServiceImpl implements SnapshotService {
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
     VolumeDataFactory volFactory;
+    @Inject
+    EndPointSelector epSelector;
+    @Inject
+    ConfigurationDao _configDao;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -130,6 +142,48 @@ public class SnapshotServiceImpl implements SnapshotService {
             this.future = future;
         }
 
+    }
+
+    private String generateCopyUrl(String ipAddress, String dir, String path) {
+        String hostname = ipAddress;
+        String scheme = "http";
+        boolean _sslCopy = false;
+        String sslCfg = _configDao.getValue(Config.SecStorageEncryptCopy.toString());
+        String _ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
+        if (sslCfg != null) {
+            _sslCopy = Boolean.parseBoolean(sslCfg);
+        }
+        if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
+            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            _sslCopy = false;
+        }
+        if (_sslCopy) {
+            if(_ssvmUrlDomain.startsWith("*")) {
+                hostname = ipAddress.replace(".", "-");
+                hostname = hostname + _ssvmUrlDomain.substring(1);
+            } else {
+                hostname = _ssvmUrlDomain;
+            }
+            scheme = "https";
+        }
+        return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path;
+    }
+
+    private String generateCopyUrl(SnapshotInfo srcSnapshot) {
+        DataStore srcStore = srcSnapshot.getDataStore();
+        EndPoint ep = epSelector.select(srcSnapshot);
+        if (ep == null) {
+            return null;
+        }
+        if (ep.getPublicAddr() == null) {
+            s_logger.warn("A running secondary storage vm has a null public ip?");
+            return null;
+        }
+        String adjustedPath = srcSnapshot.getPath();
+        if (Hypervisor.HypervisorType.VMware.equals(srcSnapshot.getHypervisorType())) {
+            adjustedPath += File.separator + adjustedPath.substring(adjustedPath.lastIndexOf(File.separator) + 1) + ".vmdk";
+        }
+        return generateCopyUrl(ep.getPublicAddr(), ((ImageStoreEntity)srcStore).getMountPoint(), adjustedPath);
     }
 
     protected Void createSnapshotAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> callback, CreateSnapshotContext<CreateCmdResult> context) {
@@ -608,4 +662,45 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     }
 
+    @Override
+    public AsyncCallFuture<SnapshotResult> copySnapshot(SnapshotInfo snapshot, DataStore store) {
+        // generate a URL from source snapshot ssvm to download to destination data store
+        String url = generateCopyUrl(snapshot);
+        if (url == null) {
+            s_logger.warn("Unable to start/resume copy of template " + snapshot.getName() + " to " + store.getName() +
+                    ", no secondary storage vm in running state in source zone");
+            throw new CloudRuntimeException("No secondary VM in running state in source template zone ");
+        }
+
+        SnapshotObject snapshotForCopy = (SnapshotObject)_snapshotFactory.getSnapshot(snapshot, store);
+        snapshotForCopy.setUrl(url);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Mark template_store_ref entry as Creating");
+        }
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        DataObject snapshotOnStore = store.create(snapshotForCopy);
+        ((SnapshotObject)snapshotOnStore).setUrl(url);
+        snapshotOnStore.processEvent(Event.CreateOnlyRequested);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
+        }
+        try {
+            CopySnapshotContext<SnapshotResult> context = new CopySnapshotContext<>(null, (SnapshotObject)snapshotOnStore, snapshotForCopy, future);
+            AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().copySnapshotAsyncCallback(null, null)).setContext(context);
+            store.getDriver().createAsync(store, snapshotOnStore, caller);
+        } catch (CloudRuntimeException ex) {
+            // clean up already persisted template_store_ref entry in case of createTemplateCallback is never called
+            SnapshotDataStoreVO templateStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
+            if (templateStoreVO != null) {
+                snapshotForCopy.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            }
+            SnapshotResult res = new SnapshotResult((SnapshotObject)snapshotOnStore, null);
+            res.setResult(ex.getMessage());
+            future.complete(res);
+        }
+        return future;
+    }
 }

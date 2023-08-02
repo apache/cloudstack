@@ -90,7 +90,7 @@ public interface SnapshotApiService {
 
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;
 
-    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, Boolean isFromVmSnapshot)
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, Boolean isFromVmSnapshot, List<Long> zoneIds)
             throws ResourceAllocationException;
 
 
@@ -127,5 +127,5 @@ public interface SnapshotApiService {
 
     void markVolumeSnapshotsAsDestroyed(Volume volume);
 
-    Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException;
+    Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
 }

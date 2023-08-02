@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,55 +39,53 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.TemplateDownloader;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.MetalinkTemplateDownloader;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.VmdkProcessor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.TemplateConstants;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.cloudstack.utils.security.ChecksumValue;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.net.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.MetalinkTemplateDownloader;
+import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.S3TemplateDownloader;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TARProcessor;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
-import org.apache.cloudstack.utils.security.ChecksumValue;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang3.StringUtils;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
@@ -304,8 +304,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
-            }
-            else {
+            } else {
                 // For other TemplateDownloaders where files are locally available,
                 // we run the postLocalDownload() method.
                 td.setDownloadError("Download success, starting install ");
@@ -376,11 +375,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String postLocalDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String resourcePath = dnld.getInstallPathPrefix(); // path with mount
-        // directory
-        String finalResourcePath = dnld.getTmpltPath(); // template download
-        // path on secondary
-        // storage
+        String resourcePath = dnld.getInstallPathPrefix(); // path with mount directory
+        String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
         ResourceType resourceType = dnld.getResourceType();
 
         File originalTemplate = new File(td.getDownloadLocalPath());
@@ -388,6 +384,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
             }
+        }
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return "This not implemented yet, so returning failure!";
         }
         // check or create checksum
         String checksumErrorMessage = checkOrCreateTheChecksum(dnld, originalTemplate);
@@ -409,7 +408,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
 
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
-        setPermissionsForTheDownloadedTemplate(dnld, resourcePath, resourceType);
+        setPermissionsForTheDownloadedTemplate(resourcePath, resourceType);
 
         TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
         try {
@@ -468,7 +467,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return templateName;
     }
 
-    private void setPermissionsForTheDownloadedTemplate(DownloadJob dnld, String resourcePath, ResourceType resourceType) {
+    private void setPermissionsForTheDownloadedTemplate(String resourcePath, ResourceType resourceType) {
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return;
+        }
         // Set permissions for template/volume.properties
         String propertiesFile = resourcePath;
         if (resourceType == ResourceType.TEMPLATE) {
