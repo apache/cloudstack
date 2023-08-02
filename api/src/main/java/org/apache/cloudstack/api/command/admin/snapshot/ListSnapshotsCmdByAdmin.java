@@ -18,9 +18,12 @@ package org.apache.cloudstack.api.command.admin.snapshot;
 
 import com.cloud.storage.Snapshot;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.",
@@ -28,4 +31,13 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             responseView = ResponseObject.ResponseView.Full)
 public class ListSnapshotsCmdByAdmin extends ListSnapshotsCmd implements AdminCmd {
+
+    @Parameter(name = ApiConstants.IMAGE_STORE_ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
+               description = "the IDs of the image store", since = "4.19")
+    private Long imageStoreId;
+
+    @Override
+    public Long getImageStoreId() {
+        return imageStoreId;
+    }
 }

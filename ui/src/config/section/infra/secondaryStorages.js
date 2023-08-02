@@ -45,6 +45,11 @@ export default {
     name: 'template',
     title: 'label.templates',
     param: 'datastoreid'
+  },
+  {
+    name: 'snapshot',
+    title: 'label.snapshots',
+    param: 'imagestoreid'
   }],
   resourceType: 'SecondaryStorage',
   tabs: [{

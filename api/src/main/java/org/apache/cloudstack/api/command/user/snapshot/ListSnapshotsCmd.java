@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.snapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.cloudstack.api.ResponseObject;
@@ -123,6 +124,13 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     public List<Long> getIds() {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
         return ids;
+    }
+
+    public Long getImageStoreId() {
+        return null;
     }
 }

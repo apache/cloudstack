@@ -25,6 +25,7 @@ import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -684,6 +685,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        Long imageStoreId = cmd.getImageStoreId();
+
+        if (imageStoreId != null) {
+            List<SnapshotDataStoreVO> snapshotsInStore = _snapshotStoreDao.listByStoreId(imageStoreId, DataStoreRole.Image);
+            if (snapshotsInStore == null || snapshotsInStore.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+            List<Long> snapshotIdsInStore = snapshotsInStore.stream().map(SnapshotDataStoreVO::getSnapshotId).collect(Collectors.toList());
+            if (ids.isEmpty()) {
+                ids = snapshotIdsInStore;
+            } else {
+                ids.retainAll(snapshotIdsInStore);
+            }
+        }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
                 cmd.isRecursive(), null);
