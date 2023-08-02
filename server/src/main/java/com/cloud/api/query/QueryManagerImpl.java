@@ -131,6 +131,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -443,6 +445,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private StoragePoolDetailsDao _storagePoolDetailsDao;
+
+    @Inject
+    private TemplateDataStoreDao templateDataStoreDao;
 
     @Inject
     private ProjectInvitationDao projectInvitationDao;
@@ -3628,8 +3633,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
+                domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
@@ -3639,8 +3646,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
+        List<Long> ids = cmd.getIds();
+        Long imageStoreId = cmd.getDataStoreId();
+        if (imageStoreId != null) {
+            List<TemplateDataStoreVO> templatesInStore = templateDataStoreDao.listByStoreId(imageStoreId);
+
+            if (templatesInStore == null || templatesInStore.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+            if (ids.isEmpty()) {
+                ids = templatesInStore.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList());
+            } else {
+                ids.retainAll(templatesInStore.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
+            }
+        }
+
+        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
+                cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
+                ids, parentTemplateId, cmd.getShowUnique());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,

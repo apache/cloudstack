@@ -16,16 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
+import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-import com.cloud.template.VirtualMachineTemplate;
-
-@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Full,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.",
+            responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class},
+            responseView = ResponseView.Full, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTemplatesCmdByAdmin extends ListTemplatesCmd implements AdminCmd {
+    @Parameter(name = ApiConstants.DATASTORE_ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
+               description = "the IDs of the image or image cache store", since = "4.19")
+    private Long dataStoreId;
 
+    @Override
+    public Long getDataStoreId() {
+        return dataStoreId;
+    }
 }

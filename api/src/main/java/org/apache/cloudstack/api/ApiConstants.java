@@ -75,6 +75,7 @@ public class ApiConstants {
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
     public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
+    public static final String DATASTORE_ID = "datastoreid";
     public static final String DATASTORE_HOST = "datastorehost";
     public static final String DATASTORE_NAME = "datastorename";
     public static final String DATASTORE_PATH = "datastorepath";

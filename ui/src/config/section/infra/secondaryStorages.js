@@ -41,6 +41,11 @@ export default {
     }
     return fields
   },
+  related: [{
+    name: 'template',
+    title: 'label.templates',
+    param: 'datastoreid'
+  }],
   resourceType: 'SecondaryStorage',
   tabs: [{
     name: 'details',
