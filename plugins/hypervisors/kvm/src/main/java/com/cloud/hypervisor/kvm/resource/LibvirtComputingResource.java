@@ -2791,10 +2791,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!_noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
+        long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
+        long currRam = vmTO.getType() == VirtualMachine.Type.User ? getCurrentMemAccordingToMemBallooning(vmTO, maxRam) : maxRam;
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("memory values for VM %s are %d/%d",vmTO.getName(),maxRam, currRam));
+        }
 
         grd.setMemorySize(maxRam);
-        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+        grd.setCurrentMem(currRam);
 
         int vcpus = vmTO.getCpus();
         Integer maxVcpus = vmTO.getVcpuMaxLimit();

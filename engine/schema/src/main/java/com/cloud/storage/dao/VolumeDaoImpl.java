@@ -766,4 +766,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("vType", Volume.Type.ROOT);
         return findOneBy(sc);
     }
+
+    @Override
+    public void updateAndRemoveVolume(VolumeVO volume) {
+        if (volume.getState() != Volume.State.Destroy) {
+            volume.setState(Volume.State.Destroy);
+            volume.setPoolId(null);
+            volume.setInstanceId(null);
+            update(volume.getId(), volume);
+            remove(volume.getId());
+        }
+    }
 }

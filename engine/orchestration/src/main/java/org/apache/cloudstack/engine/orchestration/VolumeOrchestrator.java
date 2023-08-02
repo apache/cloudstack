@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -83,6 +84,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -1656,6 +1658,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return tasks;
     }
 
+    protected void checkAndUpdateVolumeAccountResourceCount(VolumeVO originalEntry, VolumeVO updateEntry) {
+        if (Objects.equals(originalEntry.getSize(), updateEntry.getSize())) {
+            return;
+        }
+        s_logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
+        if (ObjectUtils.anyNull(originalEntry.getSize(), updateEntry.getSize())) {
+            _resourceLimitMgr.recalculateResourceCount(updateEntry.getAccountId(), updateEntry.getDomainId(),
+                    ResourceType.primary_storage.getOrdinal());
+            return;
+        }
+        if (updateEntry.getSize() > originalEntry.getSize()) {
+            _resourceLimitMgr.incrementResourceCount(updateEntry.getAccountId(), ResourceType.primary_storage, updateEntry.isDisplayVolume(), updateEntry.getSize() - originalEntry.getSize());
+        } else {
+            _resourceLimitMgr.decrementResourceCount(updateEntry.getAccountId(), ResourceType.primary_storage, updateEntry.isDisplayVolume(), originalEntry.getSize() - updateEntry.getSize());
+        }
+    }
+
     private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, StorageAccessException {
         String volToString = getReflectOnlySelectedFields(vol);
 
@@ -1793,8 +1812,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw new StorageUnavailableException(msg, destPool.getId());
             }
         }
-
-        return new Pair<VolumeVO, DataStore>(newVol, destPool);
+        checkAndUpdateVolumeAccountResourceCount(vol, newVol);
+        return new Pair<>(newVol, destPool);
     }
 
     private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {

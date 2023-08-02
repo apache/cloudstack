@@ -53,7 +53,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.Host;
@@ -103,7 +102,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @InjectMocks
     private StorageManager storageMgr = new StorageManagerImpl();
 
-    @Spy
+    @Mock
     private HypervisorHostListener hostListener;
 
     @InjectMocks
