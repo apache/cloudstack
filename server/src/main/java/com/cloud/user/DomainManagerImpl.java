@@ -25,8 +25,12 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -121,6 +125,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
+    @Inject
+    private VpcOfferingJoinDao vpcOfferingJoinDao;
+    @Inject
+    private VpcOfferingDetailsDao vpcOfferingDetailsDao;
     @Inject
     private ProjectDao _projectDao;
     @Inject
@@ -499,6 +509,23 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         removeServiceOfferings(domainId, domainIdString);
 
         removeNetworkOfferings(domainId, domainIdString);
+
+        removeVpcOfferings(domainId, domainIdString);
+    }
+
+    private void removeVpcOfferings(Long domainId, String domainIdString) {
+        List<Long> vpcOfferingsDetailsToRemove = new ArrayList<>();
+        List<VpcOfferingJoinVO> vpcOfferingsForThisDomain = vpcOfferingJoinDao.findByDomainId(domainId);
+        for (VpcOfferingJoinVO vpcOffering : vpcOfferingsForThisDomain) {
+            if (domainIdString.equals(vpcOffering.getDomainId())) {
+                vpcOfferingDao.remove(vpcOffering.getId());
+            } else {
+                vpcOfferingsDetailsToRemove.add(vpcOffering.getId());
+            }
+        }
+        for (final Long vpcOfferingId : vpcOfferingsDetailsToRemove) {
+            vpcOfferingDetailsDao.removeDetail(vpcOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
+        }
     }
 
     private void removeNetworkOfferings(Long domainId, String domainIdString) {
