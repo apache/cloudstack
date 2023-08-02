@@ -83,7 +83,7 @@ public class GuestOsMapper {
             }
             guestOsId = getGuestOsId(categoryId, displayName);
         } else {
-            // TODO: update is_user_defined to false
+            updateToSystemDefined(guestOsId);
         }
 
         if (CollectionUtils.isEmpty(mappings)) {
@@ -93,6 +93,12 @@ public class GuestOsMapper {
         for (final GuestOSHypervisorMapping mapping : mappings) {
             addGuestOsHypervisorMapping(mapping, guestOsId);
         }
+    }
+
+    private void updateToSystemDefined(long guestOsId) {
+        GuestOSVO guestOsVo = guestOSDao.findById(guestOsId);
+        guestOsVo.setIsUserDefined(false);
+        guestOSDao.update(guestOsId, guestOsVo);// TODO: update is_user_defined to false
     }
 
     private boolean addGuestOs(long categoryId, String displayName) {
