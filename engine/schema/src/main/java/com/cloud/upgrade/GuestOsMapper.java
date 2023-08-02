@@ -81,6 +81,7 @@ public class GuestOsMapper {
                 LOG.warn("Couldn't add the guest OS with category id: " + categoryId + " and display name: " + displayName);
                 return;
             }
+            guestOsId = getGuestOsId(categoryId, displayName);
         } else {
             // TODO: update is_user_defined to false
         }
