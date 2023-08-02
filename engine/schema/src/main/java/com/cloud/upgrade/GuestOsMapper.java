@@ -74,18 +74,18 @@ public class GuestOsMapper {
     }
 
     public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {
-        if (!addGuestOs(categoryId, displayName)) {
-            LOG.warn("Couldn't add the guest OS with category id: " + categoryId + " and display name: " + displayName);
-            return;
-        }
-
-        if (CollectionUtils.isEmpty(mappings)) {
-            return;
-        }
-
         long guestOsId = getGuestOsId(categoryId, displayName);
         if (guestOsId == 0) {
             LOG.debug("No guest OS found with category id: " + categoryId + " and display name: " + displayName);
+            if (!addGuestOs(categoryId, displayName)) {
+                LOG.warn("Couldn't add the guest OS with category id: " + categoryId + " and display name: " + displayName);
+                return;
+            }
+        } else {
+            // TODO: update is_user_defined to false
+        }
+
+        if (CollectionUtils.isEmpty(mappings)) {
             return;
         }
 
