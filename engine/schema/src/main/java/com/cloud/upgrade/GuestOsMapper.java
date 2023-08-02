@@ -49,6 +49,19 @@ public class GuestOsMapper {
     public GuestOsMapper() {
         guestOSHypervisorDao = new GuestOSHypervisorDaoImpl();
         guestOSDao = new GuestOSDaoImpl();
+        mergeDuplicates();// this location is just a placeholder
+    }
+
+    private void mergeDuplicates() {
+        // find duplicates
+        // find for the one with the higher (or lower) id, guestos hypervisor mappings
+        // # we can also look at user_defined to decide which to eliminate and which to keep
+        // for each retrieved mapping
+        // // set the guest_os_id to the lower (or higher) id
+        // find for the one with the highr (or lower) id, VMs
+        // // set the guest_os_id to the lower (or higher) id
+        // mark the higher id as removed
+        // set the lower id as not user defined,
     }
 
     private long getGuestOsId(long categoryId, String displayName) {
