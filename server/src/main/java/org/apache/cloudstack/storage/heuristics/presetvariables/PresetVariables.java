@@ -20,6 +20,8 @@ import java.util.List;
 
 public class PresetVariables {
 
+    private Account account;
+
     private List<SecondaryStorage> secondaryStorages;
 
     private Template template;
@@ -58,5 +60,13 @@ public class PresetVariables {
 
     public void setVolume(Volume volume) {
         this.volume = volume;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
     }
 }

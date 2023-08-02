@@ -17,10 +17,14 @@
 package org.apache.cloudstack.storage.heuristics;
 
 import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -30,6 +34,8 @@ import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.heuristics.presetvariables.Account;
+import org.apache.cloudstack.storage.heuristics.presetvariables.Domain;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.storage.heuristics.presetvariables.SecondaryStorage;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Snapshot;
@@ -61,6 +67,12 @@ public class HeuristicRuleHelper {
     @Inject
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
 
+    @Inject
+    private DomainDao domainDao;
+
+    @Inject
+    private AccountDao accountDao;
+
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicPurpose}.
      * It returns null otherwise.
@@ -87,19 +99,24 @@ public class HeuristicRuleHelper {
      */
     protected void buildPresetVariables(JsInterpreter jsInterpreter, HeuristicPurpose heuristicPurpose, long zoneId, Object obj) {
         PresetVariables presetVariables = new PresetVariables();
+        Long accountId = null;
 
         switch (heuristicPurpose) {
             case TEMPLATE:
             case ISO:
                 presetVariables.setTemplate(setTemplatePresetVariable((VMTemplateVO) obj));
+                accountId = ((VMTemplateVO) obj).getAccountId();
                 break;
             case SNAPSHOT:
                 presetVariables.setSnapshot(setSnapshotPresetVariable((SnapshotInfo) obj));
+                accountId = ((SnapshotInfo) obj).getAccountId();
                 break;
             case VOLUME:
                 presetVariables.setVolume(setVolumePresetVariable((VolumeVO) obj));
+                accountId = ((VolumeVO) obj).getAccountId();
                 break;
         }
+        presetVariables.setAccount(setAccountPresetVariable(accountId));
         presetVariables.setSecondaryStorages(setSecondaryStoragesVariable(zoneId));
 
         injectPresetVariables(jsInterpreter, presetVariables);
@@ -131,6 +148,10 @@ public class HeuristicRuleHelper {
         if (presetVariables.getVolume() != null) {
             jsInterpreter.injectVariable("volume", presetVariables.getVolume().toString());
         }
+
+        if (presetVariables.getAccount() != null) {
+            jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
+        }
     }
 
     protected List<SecondaryStorage> setSecondaryStoragesVariable(long zoneId) {
@@ -140,7 +161,8 @@ public class HeuristicRuleHelper {
         for (ImageStoreVO imageStore : imageStoreVOS) {
             SecondaryStorage secondaryStorage = new SecondaryStorage();
 
-            secondaryStorage.setUuid(imageStore.getUuid());
+            secondaryStorage.setName(imageStore.getName());
+            secondaryStorage.setId(imageStore.getUuid());
             secondaryStorage.setProtocol(imageStore.getProtocol());
             StorageStats storageStats = ApiDBUtils.getSecondaryStorageStatistics(imageStore.getId());
 
@@ -157,6 +179,7 @@ public class HeuristicRuleHelper {
     protected Template setTemplatePresetVariable(VMTemplateVO templateVO) {
         Template template = new Template();
 
+        template.setName(templateVO.getName());
         template.setFormat(templateVO.getFormat());
         template.setHypervisorType(templateVO.getHypervisorType());
 
@@ -166,6 +189,7 @@ public class HeuristicRuleHelper {
     protected Volume setVolumePresetVariable(VolumeVO volumeVO) {
         Volume volume = new Volume();
 
+        volume.setName(volumeVO.getName());
         volume.setFormat(volumeVO.getFormat());
         volume.setSize(volumeVO.getSize());
 
@@ -175,10 +199,42 @@ public class HeuristicRuleHelper {
     protected Snapshot setSnapshotPresetVariable(SnapshotInfo snapshotInfo) {
         Snapshot snapshot = new Snapshot();
 
+        snapshot.setName(snapshotInfo.getName());
         snapshot.setSize(snapshotInfo.getSize());
         snapshot.setHypervisorType(snapshotInfo.getHypervisorType());
 
         return snapshot;
+    }
+
+    protected Account setAccountPresetVariable(Long accountId) {
+        if (accountId == null) {
+            return null;
+        }
+
+        AccountVO account = accountDao.findById(accountId);
+        if (account == null) {
+            return null;
+        }
+
+        Account accountVariable = new Account();
+        accountVariable.setName(account.getName());
+        accountVariable.setId(account.getUuid());
+
+        accountVariable.setDomain(setDomainPresetVariable(account.getDomainId()));
+
+        return accountVariable;
+    }
+
+    protected Domain setDomainPresetVariable(long domainId) {
+        DomainVO domain = domainDao.findById(domainId);
+        if (domain == null) {
+            return null;
+        }
+        Domain domainVariable = new Domain();
+        domainVariable.setName(domain.getName());
+        domainVariable.setId(domain.getUuid());
+
+        return domainVariable;
     }
 
     /**

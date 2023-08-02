@@ -25,6 +25,8 @@ public class Template extends GenericHeuristicPresetVariable {
 
     private Storage.ImageFormat format;
 
+    private Storage.TemplateType templateType;
+
     public Hypervisor.HypervisorType getHypervisorType() {
         return hypervisorType;
     }
@@ -41,5 +43,14 @@ public class Template extends GenericHeuristicPresetVariable {
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
         fieldNamesToIncludeInToString.add("format");
+    }
+
+    public Storage.TemplateType getTemplateType() {
+        return templateType;
+    }
+
+    public void setTemplateType(Storage.TemplateType templateType) {
+        this.templateType = templateType;
+        fieldNamesToIncludeInToString.add("templateType");
     }
 }

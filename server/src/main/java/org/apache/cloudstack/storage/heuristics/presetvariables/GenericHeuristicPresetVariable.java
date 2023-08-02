@@ -25,6 +25,17 @@ public class GenericHeuristicPresetVariable {
 
     protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
 
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+        fieldNamesToIncludeInToString.add("name");
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));

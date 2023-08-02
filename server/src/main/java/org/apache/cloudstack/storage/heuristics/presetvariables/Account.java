@@ -16,15 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-public class SecondaryStorage extends GenericHeuristicPresetVariable {
-
+public class Account extends GenericHeuristicPresetVariable{
     private String id;
 
-    private Long usedDiskSize;
-
-    private Long totalDiskSize;
-
-    private String protocol;
+    private Domain domain;
 
     public String getId() {
         return id;
@@ -35,30 +30,12 @@ public class SecondaryStorage extends GenericHeuristicPresetVariable {
         fieldNamesToIncludeInToString.add("id");
     }
 
-    public Long getUsedDiskSize() {
-        return usedDiskSize;
+    public Domain getDomain() {
+        return domain;
     }
 
-    public void setUsedDiskSize(Long usedDiskSize) {
-        this.usedDiskSize = usedDiskSize;
-        fieldNamesToIncludeInToString.add("usedDiskSize");
-    }
-
-    public Long getTotalDiskSize() {
-        return totalDiskSize;
-    }
-
-    public void setTotalDiskSize(Long totalDiskSize) {
-        this.totalDiskSize = totalDiskSize;
-        fieldNamesToIncludeInToString.add("totalDiskSize");
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-        fieldNamesToIncludeInToString.add("protocol");
+    public void setDomain(Domain domain) {
+        this.domain = domain;
+        fieldNamesToIncludeInToString.add("domain");
     }
 }
