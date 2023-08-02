@@ -53,15 +53,22 @@ public class GuestOsMapper {
     }
 
     private void mergeDuplicates() {
-        // find duplicates
-        // find for the one with the higher (or lower) id, guestos hypervisor mappings
-        // # we can also look at user_defined to decide which to eliminate and which to keep
-        // for each retrieved mapping
-        // // set the guest_os_id to the lower (or higher) id
-        // find for the one with the highr (or lower) id, VMs
-        // // set the guest_os_id to the lower (or higher) id
-        // mark the higher id as removed
-        // set the lower id as not user defined,
+        // find duplicate guest_os definitions
+        // decide which to remove
+        // # highest/lowest id
+        // # or is user_defined == false
+        // for each one to remove
+        // // find guestos hypervisor mappings
+        // // // for each retrieved mapping
+        // // // // set the guest_os_id to the one to keep
+        // // find VMs
+        // // // for each VM
+        // // // // set the guest_os_id to the one to keep
+        // // find templates
+        // // // for each template
+        // // // // set the guest_os_id to the one to keep
+        // // mark as removed
+        // set the lower id as not user defined, if that was not the premise anyway
     }
 
     private long getGuestOsId(long categoryId, String displayName) {
