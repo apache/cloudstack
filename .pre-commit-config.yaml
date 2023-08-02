@@ -34,7 +34,20 @@ repos:
       #- id: check-merge-conflict
       - id: check-vcs-permalinks
       #- id: check-yaml
-      #- id: detect-private-key
+      - id: detect-private-key
+        exclude: >
+          (?x)
+          ^scripts/vm/systemvm/id_rsa\.cloud$|
+          ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
+          ^server/src/test/resources/certs/dsa_self_signed\.key$|
+          ^server/src/test/resources/certs/non_root\.key$|
+          ^server/src/test/resources/certs/root_chain\.key$|
+          ^server/src/test/resources/certs/rsa_ca_signed\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed_with_pwd\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed\.key$|
+          ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
+          ^systemvm/agent/certs/localhost\.key$|
+          ^systemvm/agent/certs/realhostip\.key$
       - id: end-of-file-fixer
         exclude: \.vhd$
       #- id: fix-byte-order-marker
