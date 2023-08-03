@@ -356,7 +356,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<read_bytes_sec_max_length>"+bytesReadRateMaxLength+"</read_bytes_sec_max_length>\n<write_bytes_sec_max_length>"+bytesWriteRateMaxLength+"</write_bytes_sec_max_length>\n" +
                 "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
 
-                assertEquals(xmlDef, expectedXml);
+                assertEquals(expectedXml, xmlDef);
     }
 
     @Test
