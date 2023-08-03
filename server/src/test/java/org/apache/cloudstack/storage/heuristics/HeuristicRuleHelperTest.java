@@ -107,50 +107,58 @@ public class HeuristicRuleHelperTest {
     }
 
     @Test
-    public void buildPresetVariablesTestWithTemplateHeuristicPurposeShouldSetTemplateAndSecondaryStoragePresetVariables() {
+    public void buildPresetVariablesTestWithTemplateHeuristicPurposeShouldSetTemplateAndSecondaryStorageAndAccountPresetVariables() {
         Mockito.doNothing().when(heuristicRuleHelperSpy).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setAccountPresetVariable(Mockito.anyLong());
 
         heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicPurpose.TEMPLATE, 1L, vmTemplateVOMock);
 
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setTemplatePresetVariable(Mockito.any(VMTemplateVO.class));
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
     }
 
     @Test
-    public void buildPresetVariablesTestWithIsoHeuristicPurposeShouldSetTemplateAndSecondaryStoragePresetVariables() {
+    public void buildPresetVariablesTestWithIsoHeuristicPurposeShouldSetTemplateAndSecondaryStorageAndAccountPresetVariables() {
         Mockito.doNothing().when(heuristicRuleHelperSpy).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setAccountPresetVariable(Mockito.anyLong());
 
         heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicPurpose.ISO, 1L, vmTemplateVOMock);
 
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setTemplatePresetVariable(Mockito.any(VMTemplateVO.class));
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
     }
 
     @Test
-    public void buildPresetVariablesTestWithSnapshotHeuristicPurposeShouldSetSnapshotAndSecondaryStoragePresetVariables() {
+    public void buildPresetVariablesTestWithSnapshotHeuristicPurposeShouldSetSnapshotAndSecondaryStorageAndAccountPresetVariables() {
         Mockito.doNothing().when(heuristicRuleHelperSpy).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setAccountPresetVariable(Mockito.anyLong());
 
         heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicPurpose.SNAPSHOT, 1L, snapshotInfoMock);
 
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSnapshotPresetVariable(Mockito.any(SnapshotInfo.class));
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
     }
 
     @Test
-    public void buildPresetVariablesTestWithSnapshotHeuristicPurposeShouldSetVolumeAndSecondaryStoragePresetVariables() {
+    public void buildPresetVariablesTestWithSnapshotHeuristicPurposeShouldSetVolumeAndSecondaryStorageAndAccountPresetVariables() {
         Mockito.doNothing().when(heuristicRuleHelperSpy).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
         Mockito.doReturn(null).when(heuristicRuleHelperSpy).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.doReturn(null).when(heuristicRuleHelperSpy).setAccountPresetVariable(Mockito.anyLong());
 
         heuristicRuleHelperSpy.buildPresetVariables(null, HeuristicPurpose.VOLUME, 1L, volumeVOMock);
 
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setVolumePresetVariable(Mockito.any(VolumeVO.class));
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setSecondaryStoragesVariable(Mockito.anyLong());
+        Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).setAccountPresetVariable(Mockito.anyLong());
         Mockito.verify(heuristicRuleHelperSpy, Mockito.times(1)).injectPresetVariables(Mockito.isNull(), Mockito.any(PresetVariables.class));
     }
 
