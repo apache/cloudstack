@@ -29,6 +29,8 @@ import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +74,9 @@ public class QueryManagerImplTest {
     AccountManager accountManager;
     @Mock
     EventJoinDao eventJoinDao;
+
+    @Mock
+    TemplateDataStoreDao templateDataStoreDao;
 
     private AccountVO account;
     private UserVO user;
@@ -186,5 +191,42 @@ public class QueryManagerImplTest {
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
         Mockito.doThrow(new PermissionDeniedException("Denied")).when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, false, network);
         queryManager.searchForEvents(cmd);
+    }
+
+    @Test
+    public void getTemplateIdsFromIdsAndStoreIdWithNoTemplatesInStore() {
+        List<Long> ids = new ArrayList<>();
+        when(templateDataStoreDao.listByStoreId(1L)).thenReturn(new ArrayList<>());
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        Assert.assertEquals(0, result.size());
+    }
+
+    @Test
+    public void getTemplateIdsFromIdsAndStoreIdWithNoIds() {
+        List<Long> ids = new ArrayList<>();
+        TemplateDataStoreVO templateDataStoreVO = Mockito.mock(TemplateDataStoreVO.class);
+        when(templateDataStoreVO.getTemplateId()).thenReturn(10L);
+        List<TemplateDataStoreVO> templatesInStore = new ArrayList<>();
+        templatesInStore.add(templateDataStoreVO);
+        when(templateDataStoreDao.listByStoreId(1L)).thenReturn(templatesInStore);
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(10L, result.get(0).longValue());
+    }
+
+    @Test
+    public void getTemplateIdsFromIdsAndStoreIdWithNonEmptyIds() {
+        List<Long> ids = new ArrayList<>();
+        ids.add(10L);
+        ids.add(11L);
+        ids.add(12L);
+        TemplateDataStoreVO templateDataStoreVO = Mockito.mock(TemplateDataStoreVO.class);
+        when(templateDataStoreVO.getTemplateId()).thenReturn(10L);
+        List<TemplateDataStoreVO> templatesInStore = new ArrayList<>();
+        templatesInStore.add(templateDataStoreVO);
+        when(templateDataStoreDao.listByStoreId(1L)).thenReturn(templatesInStore);
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(10L, result.get(0).longValue());
     }
 }

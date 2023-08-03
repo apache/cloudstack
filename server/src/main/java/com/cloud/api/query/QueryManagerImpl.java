@@ -3662,7 +3662,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ids, parentTemplateId, cmd.getShowUnique());
     }
 
-    private List<Long> getTemplateIdsFromIdsAndStoreId(List<Long> ids, long storeId) {
+    List<Long> getTemplateIdsFromIdsAndStoreId(List<Long> ids, long storeId) {
         List<TemplateDataStoreVO> templatesInStore = templateDataStoreDao.listByStoreId(storeId);
         if (templatesInStore == null || templatesInStore.isEmpty()) {
             ids = Collections.emptyList();

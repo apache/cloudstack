@@ -25,7 +25,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -574,5 +576,40 @@ public class SnapshotManagerTest {
     public void testIsBackupSnapshotToSecondaryForEdgeZone() {
         mockForBackupSnapshotToSecondaryZoneTest(true, DataCenter.Type.Edge);
         Assert.assertFalse(_snapshotMgr.isBackupSnapshotToSecondaryForZone(1L));
+    }
+
+    @Test
+    public void testGetSnapshotIdsFromIdsAndImageStoreIdNoSnapshotsInStore() {
+        ArrayList<Long> ids = new ArrayList<>();
+        Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(
+                Collections.emptyList());
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetSnapshotIdsFromIdsAndImageStoreIdWithEmpdyIds() {
+        ArrayList<Long> ids = new ArrayList<>();
+        List<SnapshotDataStoreVO> snapshotsInStore = new ArrayList<>();
+        snapshotsInStore.add(snapshotStoreMock);
+        Mockito.when(snapshotStoreMock.getSnapshotId()).thenReturn(10L);
+        Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(snapshotsInStore);
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        Assert.assertEquals(1L, result.size());
+        Assert.assertEquals(10L, result.get(0).longValue());
+    }
+
+    @Test
+    public void testGetSnapshotIdsFromIdsAndImageStoreIdWithNonEmptyIds() {
+        ArrayList<Long> ids = new ArrayList<>();
+        ids.add(10L);
+        ids.add(11L);
+        List<SnapshotDataStoreVO> snapshotsInStore = new ArrayList<>();
+        snapshotsInStore.add(snapshotStoreMock);
+        Mockito.when(snapshotStoreMock.getSnapshotId()).thenReturn(10L);
+        Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(snapshotsInStore);
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        Assert.assertEquals(1L, result.size());
+        Assert.assertEquals(10L, result.get(0).longValue());
     }
 }

@@ -663,7 +663,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         throw new CloudRuntimeException("Can not find secondary storage hosting the snapshot");
     }
 
-    private List<Long> getSnapshotIdsFromIdsAndImageStoreId(List<Long> ids, long storeId) {
+    List<Long> getSnapshotIdsFromIdsAndImageStoreId(List<Long> ids, long storeId) {
         List<SnapshotDataStoreVO> snapshotsInStore = _snapshotStoreDao.listByStoreId(storeId, DataStoreRole.Image);
         if (snapshotsInStore == null || snapshotsInStore.isEmpty()) {
             ids = Collections.emptyList();
