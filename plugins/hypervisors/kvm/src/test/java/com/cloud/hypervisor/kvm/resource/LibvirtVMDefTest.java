@@ -441,8 +441,8 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
 
         LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
-        assertEquals(def.getModel(), model);
-        assertEquals(def.getAction(), action);
+        assertEquals(model, def.getModel());
+        assertEquals(action, def.getAction());
     }
 
     @Test
