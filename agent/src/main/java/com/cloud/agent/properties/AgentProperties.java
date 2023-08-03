@@ -395,11 +395,11 @@ public class AgentProperties{
 
     /**
      * Disables memory ballooning on VM guests for overcommit.<br>
-     * By default overcommit feature enables balloon and sets currentMemory to a minimum value.<br>
+     * By default the setting is disabled; when it's enabled overcommit feature enables balloon and sets currentMemory to a minimum value.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>false</code>
+     * Default value: <code>true</code>
      */
-    public static final Property<Boolean> VM_MEMBALLOON_DISABLE = new Property<>("vm.memballoon.disable", false);
+    public static final Property<Boolean> VM_MEMBALLOON_DISABLE = new Property<>("vm.memballoon.disable", true);
 
     /**
      * Set to true to check disk activity on VM's disks before starting a VM.<br>
