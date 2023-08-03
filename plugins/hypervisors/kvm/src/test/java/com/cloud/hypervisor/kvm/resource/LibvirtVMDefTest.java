@@ -367,7 +367,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String xmlDef = memBalloonDef.toString();
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
