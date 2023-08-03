@@ -413,11 +413,11 @@ public class LibvirtVMDefTest extends TestCase {
         int bytes = 2048;
 
         LibvirtVMDef.RngDef def = new LibvirtVMDef.RngDef(path, backendModel, bytes, period);
-        assertEquals(def.getPath(), path);
-        assertEquals(def.getRngBackendModel(), backendModel);
-        assertEquals(def.getRngModel(), LibvirtVMDef.RngDef.RngModel.VIRTIO);
-        assertEquals(def.getRngRateBytes(), bytes);
-        assertEquals(def.getRngRatePeriod(), period);
+        assertEquals(path, def.getPath());
+        assertEquals(backendModel, def.getRngBackendModel());
+        assertEquals(LibvirtVMDef.RngDef.RngModel.VIRTIO, def.getRngModel());
+        assertEquals(bytes, def.getRngRateBytes());
+        assertEquals(period, def.getRngRatePeriod());
     }
 
     @Test
