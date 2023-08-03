@@ -453,6 +453,6 @@ public class LibvirtVMDefTest extends TestCase {
                 "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
                 "<driver queues='4'/>\n" +
                 "</controller>\n";
-        assertEquals(str, expected);
+        assertEquals(expected, str);
     }
 }
