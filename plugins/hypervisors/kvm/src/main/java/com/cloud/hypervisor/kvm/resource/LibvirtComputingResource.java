@@ -2795,11 +2795,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
-        if (_noMemBalloon) {
-            s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
+        if (_noMemBalloon || (vmTO != null && vmTO.getType() != VirtualMachine.Type.User)) {
+            if (_noMemBalloon) {
+                s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
+            } else {
+                s_logger.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
+            }
             return maxRam;
         } else {
-            return ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            s_logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
+            return minRam;
         }
     }
 
