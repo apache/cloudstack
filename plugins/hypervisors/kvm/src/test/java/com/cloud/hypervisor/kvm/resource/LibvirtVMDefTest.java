@@ -236,7 +236,7 @@ public class LibvirtVMDefTest extends TestCase {
             "<secret type='passphrase' uuid='" + passphraseUuid + "' />\n" +
             "</encryption>\n" +
             "</disk>\n";
-        assertEquals(disk.toString(), expectedXML);
+        assertEquals(expectedXML, disk.toString());
     }
 
     @Test
