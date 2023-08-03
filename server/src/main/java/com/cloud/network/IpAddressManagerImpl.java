@@ -326,7 +326,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
-            "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Global);
+            "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -746,7 +746,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
         } else if (ip.getState() == State.Releasing) {
-            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated);
+            publicIpQuarantine = addPublicIpAddressToQuarantine(ipToBeDisassociated, caller.getDomainId());
             _ipAddressDao.unassignIpAddress(ip.getId());
         }
 
@@ -1139,7 +1139,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             } else if (addr.getState() == IpAddress.State.Releasing) {
                 // Cleanup all the resources for ip address if there are any, and only then un-assign ip in the system
                 if (cleanupIpResources(addr.getId(), Account.ACCOUNT_ID_SYSTEM, _accountMgr.getSystemAccount())) {
-                    addPublicIpAddressToQuarantine(addr);
+                    addPublicIpAddressToQuarantine(addr, network.getDomainId());
                     _ipAddressDao.unassignIpAddress(addr.getId());
                     messageBus.publish(_name, MESSAGE_RELEASE_IPADDR_EVENT, PublishScope.LOCAL, addr);
                 } else {
@@ -1491,15 +1491,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             throw new InvalidParameterValueException("Ip address can be associated to the network with trafficType " + TrafficType.Guest);
         }
 
-        // Check that network belongs to IP owner - skip this check
-        //     - if zone is basic zone as there is just one guest network,
-        //     - if shared network in Advanced zone
-        //     - and it belongs to the system
-        if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
-                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
-            }
-        }
+        validateNetworkAndIpOwnership(owner, ipToAssoc, network, zone);
 
         if (zone.getNetworkType() == NetworkType.Advanced) {
             // In Advance zone allow to do IP assoc only for Isolated networks with source nat service enabled
@@ -1559,6 +1551,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         s_logger.warn("Unable to disassociate ip address for recovery", e);
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Check that network belongs to IP owner - skip this check
+     *  - if the IP belongs to the same VPC as the network
+     *  - if zone is basic zone as there is just one guest network,
+     *  - if shared network in Advanced zone
+     *  - and it belongs to the system
+     */
+    private static void validateNetworkAndIpOwnership(Account owner, IPAddressVO ipToAssoc, Network network, DataCenter zone) {
+        if (network.getAccountId() != owner.getId()) {
+            if (!network.getVpcId().equals(ipToAssoc.getVpcId()) && zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
             }
         }
     }
@@ -1645,15 +1652,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
-        // Check that network belongs to IP owner - skip this check
-        //     - if zone is basic zone as there is just one guest network,
-        //     - if shared network in Advanced zone
-        //     - and it belongs to the system
-        if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
-                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
-            }
-        }
+        validateNetworkAndIpOwnership(owner, ipToAssoc, network, zone);
 
         // Check if IP has any services (rules) associated in the network
         List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
@@ -2418,8 +2417,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress) {
-        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.value();
+    public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId) {
+        Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.valueInDomain(domainId);
         if (quarantineDuration <= 0) {
             s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
                     PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.key()));

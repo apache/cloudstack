@@ -860,7 +860,6 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
@@ -1996,8 +1995,9 @@ export default {
         deployVmData.iodriverpolicy = values.iodriverpolicy
         deployVmData.nicmultiqueuenumber = values.nicmultiqueuenumber
         deployVmData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
-        if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
+        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
+          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
@@ -2119,7 +2119,9 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        deployVmData.userdataid = values.userdataid
+        if (isUserdataAllowed) {
+          deployVmData.userdataid = values.userdataid
+        }
 
         if (values.name) {
           deployVmData.name = values.name
@@ -2155,7 +2157,7 @@ export default {
             idx++
           }
         }
-        if (this.userDataValues) {
+        if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++

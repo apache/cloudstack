@@ -124,5 +124,3 @@ ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group___account
 
 DROP VIEW `cloud`.`user_ip_address_view`;
 CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address;
-
-

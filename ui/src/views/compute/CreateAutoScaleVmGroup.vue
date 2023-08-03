@@ -2429,7 +2429,7 @@ export default {
         createVmGroupData.keypairs = this.sshKeyPairs.join(',')
         createVmGroupData.affinitygroupids = (values.affinitygroupids || []).join(',')
         if (values.userdata && values.userdata.length > 0) {
-          createVmGroupData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+          createVmGroupData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
 
         // vm profile details
@@ -2705,14 +2705,6 @@ export default {
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
       this.fetchOptions(this.params[name], name)
-    },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
     },
     fetchTemplateNics (template) {
       var nics = []

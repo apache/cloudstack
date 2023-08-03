@@ -49,6 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
         <project.systemvm.template.version>4.18.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -133,6 +134,7 @@
         <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
+        <cs.cron-utils.version>9.2.0</cs.cron-utils.version>
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>

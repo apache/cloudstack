@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
+import org.apache.cloudstack.api.BaseListRetrieveOnlyResourceCountCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -54,7 +55,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
+public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";
@@ -147,7 +148,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -255,14 +255,11 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Override
     public Boolean getDisplay() {
-        if (display != null) {
-            return display;
-        }
-        return super.getDisplay();
+        return BooleanUtils.toBooleanDefaultIfNull(display, super.getDisplay());
     }
 
     public Boolean getShowIcon() {
-        return showIcon != null ? showIcon : false;
+        return BooleanUtils.toBooleanDefaultIfNull(showIcon, false);
     }
 
     public Boolean getAccumulate() {

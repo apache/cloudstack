@@ -760,7 +760,7 @@ public class LibvirtComputingResourceTest {
 
     private void verifyMemory(VirtualMachineTO to, Document domainDoc, String minRam) {
         assertXpath(domainDoc, "/domain/maxMemory/text()", String.valueOf( to.getMaxRam() / 1024 ));
-        assertXpath(domainDoc, "/domain/memory/text()",minRam);
+        assertXpath(domainDoc, "/domain/currentMemory/text()",minRam);
         assertXpath(domainDoc, "/domain/cpu/numa/cell/@memory", minRam);
         assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
     }

@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -51,6 +52,7 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadHelper;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -88,10 +90,12 @@ import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
@@ -157,6 +161,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -272,6 +277,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
+    private ImageStoreDao imageStoreDao;
+    @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
@@ -326,6 +333,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Inject
     protected ProjectManager projectManager;
+    @Inject
+    protected StoragePoolDetailsDao storagePoolDetailsDao;
 
     protected Gson _gson;
 
@@ -525,7 +534,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             UriUtils.validateUrl(format, url);
             if (VolumeUrlCheck.value()) { // global setting that can be set when their MS does not have internet access
                 s_logger.debug("Checking url: " + url);
-                UriUtils.checkUrlExistence(url);
+                DirectDownloadHelper.checkUrlExistence(url);
             }
             // Check that the resource limit for secondary storage won't be exceeded
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -1098,8 +1107,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (isNotPossibleToResize(volume, diskOffering)) {
                     throw new InvalidParameterValueException(
                             "Failed to resize Root volume. The service offering of this Volume has been configured with a root disk size; "
-                                    + "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
-                                    + "For more details please check out the Official Resizing Volumes documentation.");
+                                    +   "on such case a Root Volume can only be resized when changing to another Service Offering with a Root disk size. "
+                                    +   "For more details please check out the Official Resizing Volumes documentation.");
                 }
 
                 // convert from bytes to GiB
@@ -1246,7 +1255,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
              */
             if (currentSize > newSize && !shrinkOk) {
                 throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize + " would shrink the volume."
-                        + "Need to sign off by supplying the shrinkok parameter with value of true.");
+                        +  "Need to sign off by supplying the shrinkok parameter with value of true.");
             }
 
             if (newSize > currentSize) {
@@ -1616,6 +1625,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void expungeVolumesInPrimaryOrSecondary(VolumeVO volume, DataStoreRole role) throws InterruptedException, ExecutionException {
+        if (!canAccessVolumeStore(volume, role)) {
+            s_logger.debug(String.format("Cannot access the storage pool with role: %s " +
+                            "for the volume: %s, skipping expunge from storage",
+                    role.name(), volume.getName()));
+            return;
+        }
         VolumeInfo volOnStorage = volFactory.getVolume(volume.getId(), role);
         if (volOnStorage != null) {
             s_logger.info("Expunging volume " + volume.getId() + " from " + role + " data store");
@@ -1635,6 +1650,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
     }
+
+    private boolean canAccessVolumeStore(VolumeVO volume, DataStoreRole role) {
+        if (volume == null) {
+            throw new CloudRuntimeException("No volume given, cannot check access to volume store");
+        }
+        InternalIdentity pool = role == DataStoreRole.Primary ?
+                _storagePoolDao.findById(volume.getPoolId()) :
+                imageStoreDao.findById(volume.getPoolId());
+        return pool != null;
+    }
+
     /**
      * Clean volumes cache entries (if they exist).
      */
@@ -2959,15 +2985,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         boolean liveMigrateVolume = false;
+        boolean srcAndDestOnStorPool = false;
         Long instanceId = vol.getInstanceId();
         Long srcClusterId = null;
         VMInstanceVO vm = null;
         if (instanceId != null) {
             vm = _vmInstanceDao.findById(instanceId);
-        }
-
-        if (vol.getPassphraseId() != null) {
-            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
@@ -2976,16 +2999,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
+        StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
+
         // OfflineVmwareMigration: extract this block as method and check if it is subject to regression
         if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
                 throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
-            }
-
-            StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
-            if (storagePoolVO.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                throw new InvalidParameterValueException("Migrate volume of a running VM is unsupported on storage pool type " + storagePoolVO.getPoolType());
             }
 
             // Check if the underlying hypervisor supports storage motion.
@@ -3002,14 +3022,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     liveMigrateVolume = capabilities.isStorageMotionSupported();
                 }
 
-                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType())) {
+                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
-                    if (isSourceOrDestNotOnStorPool(storagePoolVO, destinationStoragePoolVo)) {
+                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
+                    srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
                 }
             }
 
@@ -3021,6 +3042,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!cmd.isLiveMigrate()) {
                 throw new InvalidParameterValueException("The volume " + vol + "is attached to a vm and for migrating it " + "the parameter livemigrate should be specified");
             }
+        }
+
+        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 
         if (vm != null &&
@@ -3159,6 +3184,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
         return storagePoolVO.getPoolType() != Storage.StoragePoolType.StorPool
                 || destinationStoragePoolVo.getPoolType() != Storage.StoragePoolType.StorPool;
+    }
+
+    private boolean isSourceAndDestOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
+        return storagePoolVO.getPoolType() == Storage.StoragePoolType.StorPool
+                && destinationStoragePoolVo.getPoolType() == Storage.StoragePoolType.StorPool;
     }
 
     /**
@@ -3460,7 +3490,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
-        if (volume.getEncryptFormat() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped) {
+        boolean isSnapshotOnStorPoolOnly = volume.getStoragePoolType() == StoragePoolType.StorPool && BooleanUtils.toBoolean(_configDao.getValue("sp.bypass.secondary.storage"));
+        if (volume.getEncryptFormat() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped && !isSnapshotOnStorPoolOnly) {
             s_logger.debug(String.format("Refusing to take snapshot of encrypted volume (%s) on running VM (%s)", volume, volume.getAttachedVM()));
             throw new UnsupportedOperationException("Volume snapshots for encrypted volumes are not supported if VM is running");
         }

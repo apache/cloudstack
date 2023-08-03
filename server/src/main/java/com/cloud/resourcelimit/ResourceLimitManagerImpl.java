@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -103,12 +105,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
@@ -172,6 +172,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> domainResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
+
+    protected void removeResourceReservationIfNeededAndIncrementResourceCount(final long accountId, final ResourceType type, final long numToIncrement) {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+
+                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+                if (obj instanceof Long) {
+                    reservationDao.remove((long)obj);
+                }
+                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
+                    // we should fail the operation (resource creation) when failed to update the resource count
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
+                }
+            }
+        });
+    }
 
     @Override
     public boolean start() {
@@ -270,12 +287,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
-            // we should fail the operation (resource creation) when failed to update the resource count
-            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-        }
+        final long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
+        removeResourceReservationIfNeededAndIncrementResourceCount(accountId, type, numToIncrement);
     }
 
     @Override
@@ -1156,12 +1169,28 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         @Override
         protected void runInContext() {
             s_logger.info("Started resource counters recalculation periodic task.");
-            List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
-            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            List<DomainVO> domains;
+            List<AccountVO> accounts;
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch immediate children for the domain " + Domain.ROOT_DOMAIN, e);
+                // initialize domains as empty list to do best effort recalculation
+                domains = new ArrayList<>();
+            }
+            // try/catch task, otherwise it won't be rescheduled in case of exception
+            try {
+                accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed, unable to fetch active accounts for domain " + Domain.ROOT_DOMAIN, e);
+                // initialize accounts as empty list to do best effort recalculation
+                accounts = new ArrayList<>();
+            }
 
             for (ResourceType type : ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
+                    recalculateDomainResourceCountInContext(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
                     }
@@ -1170,9 +1199,24 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (type.supportsOwner(ResourceOwnerType.Account)) {
                     // run through the accounts in the root domain
                     for (AccountVO account : accounts) {
-                        recalculateAccountResourceCount(account.getId(), type);
+                        recalculateAccountResourceCountInContext(account.getId(), type);
                     }
                 }
+            }
+        }
+
+        private void recalculateDomainResourceCountInContext(long domainId, ResourceType type) {
+            try {
+                recalculateDomainResourceCount(domainId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the domain " + domainId + " and the resource type " + type + " .", e);
+            }
+        }
+        private void recalculateAccountResourceCountInContext(long accountId, ResourceType type) {
+            try {
+                recalculateAccountResourceCount(accountId, type);
+            } catch (Exception e) {
+                s_logger.warn("Resource counters recalculation periodic task failed for the account " + accountId + " and the resource type " + type + " .", e);
             }
         }
     }
