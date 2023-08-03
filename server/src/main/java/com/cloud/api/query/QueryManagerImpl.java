@@ -3648,16 +3648,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> ids = cmd.getIds();
         Long imageStoreId = cmd.getDataStoreId();
-        if (imageStoreId != null) {
-            List<TemplateDataStoreVO> templatesInStore = templateDataStoreDao.listByStoreId(imageStoreId);
 
-            if (templatesInStore == null || templatesInStore.isEmpty()) {
-                return new Pair<>(new ArrayList<>(), 0);
-            }
+        if (imageStoreId != null) {
+            ids = getTemplateIdsFromIdsAndStoreId(ids, imageStoreId);
             if (ids.isEmpty()) {
-                ids = templatesInStore.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList());
-            } else {
-                ids.retainAll(templatesInStore.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
+                return new Pair<>(new ArrayList<>(), 0);
             }
         }
 
@@ -3665,6 +3660,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl,
                 ids, parentTemplateId, cmd.getShowUnique());
+    }
+
+    private List<Long> getTemplateIdsFromIdsAndStoreId(List<Long> ids, long storeId) {
+        List<TemplateDataStoreVO> templatesInStore = templateDataStoreDao.listByStoreId(storeId);
+        if (templatesInStore == null || templatesInStore.isEmpty()) {
+            ids = Collections.emptyList();
+        } else {
+            List<Long> templateIdList = templatesInStore.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList());
+            if (ids.isEmpty()) {
+                ids = templateIdList;
+            } else {
+                ids.retainAll(templateIdList);
+            }
+        }
+        return ids;
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,

@@ -673,11 +673,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (view.equals(ResponseView.Full)) {
-            SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
-            long storagePoolId = snapshotStore.getDataStoreId();
-            DataStore dataStore = _dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Image);
-            snapshotResponse.setStore(dataStore.getName());
-            snapshotResponse.setStoreId(dataStore.getUuid());
+            DataStore dataStore = getDataStore(snapshot.getId(), DataStoreRole.Image);
+            if (dataStore != null) {
+                snapshotResponse.setStore(dataStore.getName());
+                snapshotResponse.setStoreId(dataStore.getUuid());
+            }
         }
 
         if (snapshotInfo == null) {
@@ -701,6 +701,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
+    }
+
+    private DataStore getDataStore(Long snapshotId, DataStoreRole role) {
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshotId, role);
+        if (snapshotStore == null) {
+            return null;
+        }
+        return _dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), role);
     }
 
     public static DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
