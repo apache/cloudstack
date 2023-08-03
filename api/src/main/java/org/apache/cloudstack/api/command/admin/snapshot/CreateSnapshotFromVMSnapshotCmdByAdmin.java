@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 
 @APICommand(name = "createSnapshotFromVMSnapshot",
             description = "Creates an instant snapshot of a volume from existing vm snapshot.",
-            responseObject = SnapshotResponse.class, entityType = {Snapshot.class}, since = "4.10.0",
+            responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
             responseView = ResponseObject.ResponseView.Full)
 public class CreateSnapshotFromVMSnapshotCmdByAdmin extends CreateSnapshotFromVMSnapshotCmd implements AdminCmd {
