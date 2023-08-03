@@ -646,6 +646,9 @@ export default {
         if (this.isValidTextValueForKey(values, 'privatemtu')) {
           params.privatemtu = values.privatemtu
         }
+        if ('vpcid' in values) {
+          params.vpcid = this.selectedVpc.id
+        }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
           if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {

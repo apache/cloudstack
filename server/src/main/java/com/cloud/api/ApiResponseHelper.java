@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -43,6 +44,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -91,6 +93,8 @@ import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
@@ -1018,13 +1022,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        if (ipAddr.getVpcId() != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(ipAddr.getVpcId());
-            if (vpc != null) {
-                ipResponse.setVpcId(vpc.getUuid());
-                ipResponse.setVpcName(vpc.getName());
-            }
-        }
+
+        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName);
+
 
         // Network id the ip is associated with (if associated networkId is
         // null, try to get this information from vlan)
@@ -1092,6 +1092,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setHasRules(firewallRulesDao.countRulesByIpId(ipAddr.getId()) > 0);
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
+    }
+
+
+    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter) {
+        if (vpcId != null) {
+            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+            if (vpc != null) {
+                try {
+                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
+                    vpcUuidSetter.accept(vpc.getUuid());
+                } catch (PermissionDeniedException e) {
+                    s_logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
+                }
+                vpcNameSetter.accept(vpc.getName());
+            }
+        }
     }
 
     private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
@@ -2564,13 +2580,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
-        if (network.getVpcId() != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(network.getVpcId());
-            if (vpc != null) {
-                response.setVpcId(vpc.getUuid());
-                response.setVpcName(vpc.getName());
-            }
-        }
+
+
+        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName);
 
         setResponseAssociatedNetworkInformation(response, network.getId());
 
@@ -3662,12 +3674,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public GuestOSResponse createGuestOSResponse(GuestOS guestOS) {
         GuestOSResponse response = new GuestOSResponse();
+        response.setName(guestOS.getDisplayName());
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(guestOS.getIsUserDefined());
+        response.setIsUserDefined(String.valueOf(guestOS.getIsUserDefined()));
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
+            response.setOsCategoryName(category.getName());
         }
 
         response.setObjectName("ostype");
@@ -3690,6 +3704,28 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("guestosmapping");
         return response;
+    }
+
+    @Override
+    public HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames) {
+        HypervisorGuestOsNamesResponse response = new HypervisorGuestOsNamesResponse();
+        List<HypervisorGuestOsResponse> hypervisorGuestOsResponses = new ArrayList<>();
+        for (Pair<String, String> hypervisorGuestOsName : hypervisorGuestOsNames) {
+            HypervisorGuestOsResponse hypervisorGuestOsResponse = createHypervisorGuestOsResponse(hypervisorGuestOsName);
+            hypervisorGuestOsResponses.add(hypervisorGuestOsResponse);
+        }
+        response.setGuestOSList(hypervisorGuestOsResponses);
+        response.setGuestOSCount(hypervisorGuestOsResponses.size());
+        response.setObjectName("hypervisorguestosnames");
+        return response;
+    }
+
+    private HypervisorGuestOsResponse createHypervisorGuestOsResponse(Pair<String, String> hypervisorGuestOsName) {
+        HypervisorGuestOsResponse hypervisorGuestOsResponse = new HypervisorGuestOsResponse();
+        hypervisorGuestOsResponse.setOsStdName(hypervisorGuestOsName.first());
+        hypervisorGuestOsResponse.setOsNameForHypervisor(hypervisorGuestOsName.second());
+        hypervisorGuestOsResponse.setObjectName(ApiConstants.GUEST_OS_LIST);
+        return hypervisorGuestOsResponse;
     }
 
     @Override

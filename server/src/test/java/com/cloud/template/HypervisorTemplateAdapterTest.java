@@ -18,6 +18,13 @@
 
 package com.cloud.template;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -56,7 +63,6 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Before;
-//import org.junit.Test;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -75,23 +81,16 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
-
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ComponentContext.class)
@@ -330,7 +329,7 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
         Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
-        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
@@ -346,11 +345,11 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
         Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
-        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
-        Mockito.verify(_adapter, Mockito.times(1)).standardImageStoreAllocation(isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.verify(_adapter, Mockito.times(1)).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
     }
 
     @Test
@@ -363,11 +362,11 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
         Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(List.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(dataStoreMock).when(_adapter).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
-        Mockito.doNothing().when(_adapter).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), isNull());
+        Mockito.doNothing().when(_adapter).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.isNull());
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
-        Mockito.verify(_adapter, Mockito.times(1)).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), isNull());
+        Mockito.verify(_adapter, Mockito.times(1)).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.isNull());
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -590,5 +589,28 @@ public class HypervisorTemplateAdapterTest {
 
         testLogAppender.assertMessagesLogged();
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testCheckZoneImageStoresDirectDownloadTemplate() {
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateVO.isDirectDownload()).thenReturn(true);
+        _adapter.checkZoneImageStores(templateVO, List.of(1L));
+    }
+
+    @Test
+    public void testCheckZoneImageStoresRegularTemplateWithStore() {
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateVO.isDirectDownload()).thenReturn(false);
+        Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(List.of(Mockito.mock(DataStore.class)));
+        _adapter.checkZoneImageStores(templateVO, List.of(1L));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckZoneImageStoresRegularTemplateNoStore() {
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateVO.isDirectDownload()).thenReturn(false);
+        Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(new ArrayList<>());
+        _adapter.checkZoneImageStores(templateVO, List.of(1L));
     }
 }
