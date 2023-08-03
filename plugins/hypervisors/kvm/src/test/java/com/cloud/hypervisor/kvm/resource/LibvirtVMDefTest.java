@@ -218,7 +218,7 @@ public class LibvirtVMDefTest extends TestCase {
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
