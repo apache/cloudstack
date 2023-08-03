@@ -29,7 +29,7 @@ import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Snapshot.class)
-public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
+public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
     private String id;

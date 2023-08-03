@@ -176,6 +176,7 @@
   <bean id="site2SiteCustomerGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" />
   <bean id="site2SiteVpnConnectionDaoImpl" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" />
   <bean id="site2SiteVpnGatewayDaoImpl" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" />
+  <bean id="snapshotJoinDaoImpl" class="com.cloud.api.query.dao.SnapshotJoinDaoImpl" />
   <bean id="snapshotDetailsDaoImpl" class="com.cloud.storage.dao.SnapshotDetailsDaoImpl" />
   <bean id="snapshotPolicyDaoImpl" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl" />
   <bean id="snapshotPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDaoImpl" />

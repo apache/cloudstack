@@ -19,23 +19,23 @@
 
 package com.cloud.storage.resource;
 
-import com.cloud.serializer.GsonHelper;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
+import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -43,6 +43,7 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 import com.google.gson.Gson;
@@ -69,6 +70,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((AttachCommand)command);
         } else if (command instanceof DettachCommand) {
             return execute((DettachCommand)command);
+        } else if (command instanceof PrepareSnapshotZoneCopyCommand) {
+            return execute((PrepareSnapshotZoneCopyCommand)command);
         } else if (command instanceof IntroduceObjectCmd) {
             return processor.introduceObject((IntroduceObjectCmd)command);
         } else if (command instanceof SnapshotAndCopyCommand) {
@@ -173,6 +176,10 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         } else {
             return processor.dettachVolume(cmd);
         }
+    }
+
+    protected Answer execute(PrepareSnapshotZoneCopyCommand cmd) {
+        return new PrepareSnapshotZoneCopyAnswer(cmd, "Unsupported command");
     }
 
     private void logCommand(Command cmd) {

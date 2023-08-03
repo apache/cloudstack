@@ -24,6 +24,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -127,8 +131,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final ResourceType resourceType;
         private OVFInformationTO ovfInformationTO;
 
+        private URI url;
+
         public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
-                String installPathPrefix, ResourceType resourceType) {
+                String installPathPrefix, ResourceType resourceType, URI url) {
             super();
             this.td = td;
             this.tmpltName = tmpltName;
@@ -140,6 +146,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             this.templatesize = 0;
             this.id = id;
             this.resourceType = resourceType;
+            this.url = url;
         }
 
         public String getDescription() {
@@ -227,6 +234,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         public void setOvfInformationTO(OVFInformationTO ovfInformationTO) {
             this.ovfInformationTO = ovfInformationTO;
+        }
+
+        public URI getUri() {
+            return url;
+        }
+
+        public void setUrl(URI url) {
+            this.url = url;
         }
     }
 
@@ -365,6 +380,46 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return result;
     }
 
+    private String getSnapshotInstallNameFromDownloadUrl(URI uri) {
+        String name = uri.getPath();
+        if (StringUtils.isEmpty(name) || !name.contains("/")) {
+            return null;
+        }
+        String[] items = uri.getPath().split("/");
+        name = items[items.length - 1];
+        if (!name.contains(".")) {
+            return name;
+        }
+        name = (items.length > 1 ? items[items.length - 2] : name.split(".")[0]) + File.separator + name;
+        return name;
+    }
+
+    private String postLocalSnapshotDownload(DownloadJob job, String downloadedFile, String resourcePath, String relativeResourcePath) {
+        String name = getSnapshotInstallNameFromDownloadUrl(job.getUri());
+        if (StringUtils.isEmpty(name)) {
+            name = UUID.randomUUID().toString();
+            LOGGER.warn(String.format("Unable to retrieve install filename for snapshot download %s, using a random UUID", downloadedFile));
+        }
+        Path srcPath = Paths.get(downloadedFile);
+        Path destPath = Paths.get(resourcePath + File.separator + name);
+
+        try {
+            LOGGER.debug(String.format("Trying to create missing directories (if any) to move snapshot %s.", destPath));
+            Files.createDirectories(destPath.getParent());
+            LOGGER.debug(String.format("Trying to move downloaded snapshot [%s] to [%s].", srcPath, destPath));
+            Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", resourcePath), e);
+            return "Unable process post snapshot download due to " + e.getMessage();
+        }
+        String installedPath = relativeResourcePath + File.separator + name;
+        if (installedPath.contains(".")) {
+            installedPath = installedPath.substring(0, installedPath.lastIndexOf(File.separator));
+        }
+        job.setTmpltPath(installedPath);
+        return null;
+    }
+
     /**
      * Post local download activity (install and cleanup). Executed in context of
      * downloader thread
@@ -379,14 +434,14 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
         ResourceType resourceType = dnld.getResourceType();
 
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return postLocalSnapshotDownload(dnld, td.getDownloadLocalPath(), resourcePath, finalResourcePath);
+        }
         File originalTemplate = new File(td.getDownloadLocalPath());
         if(StringUtils.isBlank(dnld.getChecksum())) {
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
             }
-        }
-        if (ResourceType.SNAPSHOT.equals(resourceType)) {
-            return "This not implemented yet, so returning failure!";
         }
         // check or create checksum
         String checksumErrorMessage = checkOrCreateTheChecksum(dnld, originalTemplate);
@@ -572,7 +627,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         } else {
             throw new CloudRuntimeException("Unable to download from URL: " + url);
         }
-        DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
+        DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType, uri);
         dj.setTmpltPath(installPathPrefix);
         jobs.put(jobId, dj);
         threadPool.execute(td);
@@ -639,7 +694,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     // including mount directory
                     // on ssvm, while templatePath is the final relative path on
                     // secondary storage.
-                    DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
+                    DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType, uri);
                     dj.setTmpltPath(templatePath);
                     jobs.put(jobId, dj);
                     threadPool.execute(td);

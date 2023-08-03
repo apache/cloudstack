@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -79,6 +80,7 @@ import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -591,6 +593,23 @@ public class ViewResponseHelper {
             vrDataList.put(vr.getTempZonePair(), vrData);
         }
         return new ArrayList<TemplateResponse>(vrDataList.values());
+    }
+
+    public static List<SnapshotResponse> createSnapshotResponse(ResponseView view, SnapshotJoinVO... snapshots) {
+        LinkedHashMap<String, SnapshotResponse> vrDataList = new LinkedHashMap<>();
+        for (SnapshotJoinVO vr : snapshots) {
+            SnapshotResponse vrData = vrDataList.get(vr.getSnapshotZonePair());
+            if (vrData == null) {
+                // first time encountering this snapshot
+                vrData = ApiDBUtils.newSnapshotResponse(view, vr);
+            }
+            else{
+                // update tags
+                vrData = ApiDBUtils.fillSnapshotDetails(view, vrData, vr);
+            }
+            vrDataList.put(vr.getSnapshotZonePair(), vrData);
+        }
+        return new ArrayList<SnapshotResponse>(vrDataList.values());
     }
 
     public static List<TemplateResponse> createTemplateUpdateResponse(ResponseView view, TemplateJoinVO... templates) {

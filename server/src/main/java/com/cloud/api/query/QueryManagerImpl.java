@@ -80,6 +80,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -109,6 +110,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -155,6 +157,7 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
@@ -179,6 +182,7 @@ import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -228,6 +232,8 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -236,6 +242,7 @@ import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -460,6 +467,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ManagementServerHostDao msHostDao;
+
+    @Inject
+    private SnapshotJoinDao snapshotJoinDao;
 
 
     @Inject
@@ -4445,6 +4455,133 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
+    }
+
+    @Override
+    public ListResponse<SnapshotResponse> listSnapshots(ListSnapshotsCmd cmd) {
+        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsInternal(cmd);
+        ListResponse<SnapshotResponse> response = new ListResponse<>();
+
+        ResponseView respView = ResponseView.Full;
+
+        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, result.first().toArray(new SnapshotJoinVO[result.first().size()]));
+        response.setResponses(templateResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<SnapshotJoinVO>, Integer> searchForSnapshotsInternal(ListSnapshotsCmd cmd) {
+        Long id = cmd.getId();
+        Map<String, String> tags = cmd.getTags();
+        Account caller = CallContext.current().getCallingAccount();
+        Long volumeId = cmd.getVolumeId();
+        String name = cmd.getSnapshotName();
+        String keyword = cmd.getKeyword();
+        String snapshotTypeStr = cmd.getSnapshotType();
+        String intervalTypeStr = cmd.getIntervalType();
+        Long zoneId = cmd.getZoneId();
+        boolean listAll = cmd.listAll();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
+
+        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotZonePair", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        List<Long> permittedAccountIds = new ArrayList<>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        // Verify parameters
+        if (volumeId != null) {
+            VolumeVO volume = volumeDao.findById(volumeId);
+            if (volume != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+            }
+        }
+
+        sb.and("statusNEQ", sb.entity().getStatus(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
+        sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NIN);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count = 0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<SnapshotJoinVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
+
+        sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
+
+        if (volumeId != null) {
+            sc.setParameters("volumeId", volumeId);
+        }
+
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Snapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+
+        setIdsListToSearchCriteria(sc, ids);
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (keyword != null) {
+            SearchCriteria<SnapshotJoinVO> ssc = snapshotJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (snapshotTypeStr != null) {
+            Snapshot.Type snapshotType = SnapshotVO.getSnapshotType(snapshotTypeStr);
+            if (snapshotType == null) {
+                throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
+            }
+            if (snapshotType == Snapshot.Type.RECURRING) {
+                sc.setParameters("snapshotTypeEQ", Snapshot.Type.HOURLY.ordinal(), Snapshot.Type.DAILY.ordinal(), Snapshot.Type.WEEKLY.ordinal(), Snapshot.Type.MONTHLY.ordinal());
+            } else {
+                sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
+            }
+        } else if (intervalTypeStr != null && volumeId != null) {
+            Snapshot.Type type = SnapshotVO.getSnapshotType(intervalTypeStr);
+            if (type == null) {
+                throw new InvalidParameterValueException("Unsupported snapshot interval type " + intervalTypeStr);
+            }
+            sc.setParameters("snapshotTypeEQ", type.ordinal());
+        } else {
+            // Show only MANUAL and RECURRING snapshot types
+            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal(), Snapshot.Type.GROUP.ordinal());
+        }
+
+        return snapshotJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
     }
 
     @Override

@@ -117,6 +117,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -1669,6 +1670,25 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
+    private boolean checkAndProcessSnapshotAlreadyExistInStore(SnapshotVO snapshot, DataStore dstSecStore) {
+        SnapshotDataStoreVO dstSnapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, dstSecStore.getId(), snapshot.getId());
+        if (dstSnapshotStore == null) {
+            return false;
+        }
+        if (dstSnapshotStore.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            return true; // already downloaded on this image store
+        }
+        if (List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
+                VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
+                VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED,
+                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState()) ||
+                !List.of(ObjectInDataStoreStateMachine.State.Creating,
+                        ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
+            _snapshotStoreDao.removeBySnapshotStore(DataStoreRole.Image, snapshot.getId(), dstSecStore.getId());
+        }
+        return false;
+    }
+
     @DB
     private boolean copy(SnapshotVO snapshotVO, DataStore srcSecStore, DataCenterVO dstZone) throws StorageUnavailableException, ResourceAllocationException {
         final long snapshotId = snapshotVO.getId();
@@ -1689,14 +1709,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // and copy snapshot there, not propagate to all image stores
         // for that zone
         for (DataStore dstSecStore : dstSecStores) {
-            SnapshotDataStoreVO dstSnapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, dstSecStore.getId(), snapshotId);
-            if (dstSnapshotStore != null && dstSnapshotStore.getState() == ObjectInDataStoreStateMachine.State.Ready) {
-                return true; // already downloaded on this image store
+            if (checkAndProcessSnapshotAlreadyExistInStore(snapshotVO, dstSecStore)) {
+                return true;
             }
-            if (dstSnapshotStore != null && !List.of(ObjectInDataStoreStateMachine.State.Creating, ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
-                _snapshotStoreDao.removeBySnapshotStore(DataStoreRole.Image, snapshotId, dstSecStore.getId());
-            }
-
             SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
             AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, dstSecStore);
             try {

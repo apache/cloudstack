@@ -65,6 +65,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.SNAPSHOT, type = CommandType.BOOLEAN, description = "temp parameter")
+    private boolean newWay;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +96,10 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public boolean isNewWay() {
+        return newWay;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -104,15 +111,19 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
-        List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
-        for (Snapshot snapshot : result.first()) {
-            SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
-            snapshotResponse.setObjectName("snapshot");
-            snapshotResponses.add(snapshotResponse);
+        if (isNewWay()) {
+            response = _queryService.listSnapshots(this);
+        } else {
+            Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
+            List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
+            for (Snapshot snapshot : result.first()) {
+                SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
+                snapshotResponse.setObjectName("snapshot");
+                snapshotResponses.add(snapshotResponse);
+            }
+            response.setResponses(snapshotResponses, result.second());
         }
-        response.setResponses(snapshotResponses, result.second());
         response.setResponseName(getCommandName());
 
         setResponseObject(response);

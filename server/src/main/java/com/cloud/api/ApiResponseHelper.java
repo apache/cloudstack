@@ -2815,6 +2815,23 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainName(domain.getName());
     }
 
+    private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
+        Account account = ApiDBUtils.findAccountById(object.getAccountId());
+
+        if (account.getType() == Account.Type.PROJECT) {
+            // find the project
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+            response.setProjectId(project.getUuid());
+            response.setProjectName(project.getName());
+        } else {
+            response.setAccountName(account.getAccountName());
+        }
+
+        Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
+        response.setDomainId(domain.getUuid());
+        response.setDomainName(domain.getName());
+    }
+
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
 
         if (object.getAccountType() == Account.Type.PROJECT) {
