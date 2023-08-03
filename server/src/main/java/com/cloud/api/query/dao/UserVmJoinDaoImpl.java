@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -128,7 +129,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
-            userVmResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(userVm.getHypervisorType()));
+            userVmResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(userVm.getHypervisorType()));
         }
         userVmResponse.setId(userVm.getUuid());
         userVmResponse.setName(userVm.getName());

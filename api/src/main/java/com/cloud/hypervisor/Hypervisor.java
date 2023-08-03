@@ -76,6 +76,16 @@ public class Hypervisor {
         }
 
         /**
+         * Returns the display name of a hypervisor type in case the custom hypervisor is used,
+         * using the 'hypervisor.custom.display.name' setting. Otherwise, returns hypervisor name
+         */
+        public static String getHypervisorDisplayName(HypervisorType hypervisorType) {
+            return hypervisorType != Hypervisor.HypervisorType.Custom ?
+                    hypervisorType.toString() :
+                    HypervisorGuru.HypervisorCustomDisplayName.value();
+        }
+
+        /**
          * This method really needs to be part of the properties of the hypervisor type itself.
          *
          * @param hyperType

@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -126,7 +127,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         }
 
         if (router.getHypervisorType() != null) {
-            routerResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(router.getHypervisorType()));
+            routerResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(router.getHypervisorType()));
         }
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));

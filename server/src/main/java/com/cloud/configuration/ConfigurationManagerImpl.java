@@ -856,19 +856,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new CloudRuntimeException("Failed to clean up download URLs in template_store_ref or volume_store_ref due to exception ", e);
             }
         } else if (HypervisorGuru.HypervisorCustomDisplayName.key().equals(name)) {
-            String hypervisorListConfigName = Config.HypervisorList.key();
-            String hypervisors = _configDao.getValue(hypervisorListConfigName);
-            if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
-                hypervisors = hypervisors.replace(previousValue, value);
-                s_logger.info(String.format("Updating the hypervisor list configuration '%s' " +
-                        "to match the new custom hypervisor display name", hypervisorListConfigName));
-                _configDao.update(hypervisorListConfigName, hypervisors);
-            }
+            updateCustomDisplayNameOnHypervisorsList(previousValue, value);
         }
 
         txn.commit();
         messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
         return _configDao.getValue(name);
+    }
+
+    /**
+     * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
+     */
+    private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
+        String hypervisorListConfigName = Config.HypervisorList.key();
+        String hypervisors = _configDao.getValue(hypervisorListConfigName);
+        if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
+            hypervisors = hypervisors.replace(previousValue, newValue);
+            s_logger.info(String.format("Updating the hypervisor list configuration '%s' " +
+                    "to match the new custom hypervisor display name", hypervisorListConfigName));
+            _configDao.update(hypervisorListConfigName, hypervisors);
+        }
     }
 
     @Override

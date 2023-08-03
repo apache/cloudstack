@@ -28,8 +28,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.api.ApiResponseHelper;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -128,8 +126,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
         if (host.getHypervisorType() != null) {
-            String hypervisorType = host.getHypervisorType() != Hypervisor.HypervisorType.Custom ?
-                    host.getHypervisorType().toString() : HypervisorGuru.HypervisorCustomDisplayName.value();
+            String hypervisorType = Hypervisor.HypervisorType.getHypervisorDisplayName(host.getHypervisorType());
             hostResponse.setHypervisor(hypervisorType);
         }
         hostResponse.setHostType(host.getType());
@@ -310,7 +307,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setCpuNumber(host.getCpus());
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-        hostResponse.setHypervisor(ApiResponseHelper.getDisplayHypervisorTypeString(host.getHypervisorType()));
+        hostResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(host.getHypervisorType()));
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         hostResponse.setManagementServerId(host.getManagementServerId());
