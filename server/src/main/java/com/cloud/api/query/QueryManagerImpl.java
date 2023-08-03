@@ -4482,8 +4482,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
-        SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
-
         Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotZonePair", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
 
         List<Long> permittedAccountIds = new ArrayList<>();
@@ -4500,6 +4498,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
         sb.and("statusNEQ", sb.entity().getStatus(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
