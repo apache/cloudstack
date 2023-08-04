@@ -85,7 +85,7 @@ override_dh_auto_install:
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
 
 	# Bundle in mysql_connector_python
-	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/wheel
 	wget -P $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/wheel https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl
 	wget -P $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/wheel https://files.pythonhosted.org/packages/e9/93/4860cebd5ad3ff2664ad3c966490ccb46e3b88458b2095145bca11727ca4/setuptools-47.3.1-py3-none-any.whl
 	wget -P $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/wheel https://files.pythonhosted.org/packages/32/27/1141a8232723dcb10a595cc0ce4321dcbbd5215300bf4acfc142343205bf/protobuf-3.19.6-py2.py3-none-any.whl
