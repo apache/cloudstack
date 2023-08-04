@@ -579,28 +579,28 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void testGetSnapshotIdsFromIdsAndImageStoreIdNoSnapshotsInStore() {
+    public void testGetSnapshotIdsFromIdsAndStoreIdIdNoSnapshotsInStore() {
         ArrayList<Long> ids = new ArrayList<>();
         Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(
                 Collections.emptyList());
-        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndStoreId(ids, 1L, DataStoreRole.Image);
         Assert.assertTrue(result.isEmpty());
     }
 
     @Test
-    public void testGetSnapshotIdsFromIdsAndImageStoreIdWithEmpdyIds() {
+    public void testGetSnapshotIdsFromIdsAndStoreIdIdWithEmptyIds() {
         ArrayList<Long> ids = new ArrayList<>();
         List<SnapshotDataStoreVO> snapshotsInStore = new ArrayList<>();
         snapshotsInStore.add(snapshotStoreMock);
         Mockito.when(snapshotStoreMock.getSnapshotId()).thenReturn(10L);
         Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(snapshotsInStore);
-        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndStoreId(ids, 1L, DataStoreRole.Image);
         Assert.assertEquals(1L, result.size());
         Assert.assertEquals(10L, result.get(0).longValue());
     }
 
     @Test
-    public void testGetSnapshotIdsFromIdsAndImageStoreIdWithNonEmptyIds() {
+    public void testGetSnapshotIdsFromIdsAndStoreIdIdWithNonEmptyIds() {
         ArrayList<Long> ids = new ArrayList<>();
         ids.add(10L);
         ids.add(11L);
@@ -608,7 +608,7 @@ public class SnapshotManagerTest {
         snapshotsInStore.add(snapshotStoreMock);
         Mockito.when(snapshotStoreMock.getSnapshotId()).thenReturn(10L);
         Mockito.when(snapshotStoreDao.listByStoreId(Mockito.anyLong(), Mockito.any())).thenReturn(snapshotsInStore);
-        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndImageStoreId(ids, 1L);
+        List<Long> result = _snapshotMgr.getSnapshotIdsFromIdsAndStoreId(ids, 1L, DataStoreRole.Image);
         Assert.assertEquals(1L, result.size());
         Assert.assertEquals(10L, result.get(0).longValue());
     }
