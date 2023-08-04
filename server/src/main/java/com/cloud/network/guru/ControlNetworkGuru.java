@@ -62,8 +62,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     NetworkModel networkModel;
     String _gateway;
-    @Inject
-    NetworkModel networkModel;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Control};
 
