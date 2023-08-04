@@ -59,6 +59,9 @@ if [ "$1" = configure ]; then
 
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
 
+    # install mysql_connector_python
+    pip3 install /usr/share/cloudstack-management/setup/wheel/six-1.15.0-py2.py3-none-any.whl /usr/share/cloudstack-management/setup/wheel/setuptools-47.3.1-py3-none-any.whl /usr/share/cloudstack-management/setup/wheel/protobuf-3.19.6-py2.py3-none-any.whl /usr/share/cloudstack-management/setup/wheel/mysql_connector_python-8.0.31-py2.py3-none-any.whl
+
     # Add jdbc MySQL driver settings to db.properties if not present
     grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
     grep -s -q "db.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
