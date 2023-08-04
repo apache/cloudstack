@@ -673,10 +673,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (view.equals(ResponseView.Full)) {
-            DataStore dataStore = getDataStore(snapshot.getId(), DataStoreRole.Image);
-            if (dataStore != null) {
-                snapshotResponse.setStore(dataStore.getName());
-                snapshotResponse.setStoreId(dataStore.getUuid());
+            DataStore imageStore = getDataStore(snapshot.getId(), DataStoreRole.Image);
+            if (imageStore != null) {
+                snapshotResponse.setImageStore(imageStore.getName());
+                snapshotResponse.setImageStoreId(imageStore.getUuid());
+            }
+            DataStore primaryStore = getDataStore(snapshot.getId(), DataStoreRole.Primary);
+            if (primaryStore != null) {
+                snapshotResponse.setPrimaryDataStore(primaryStore.getName());
+                snapshotResponse.setPrimaryDataStoreId(primaryStore.getUuid());
             }
         }
 

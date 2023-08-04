@@ -313,6 +313,7 @@ export default {
           fields.push('domain')
           fields.push('account')
           fields.push('imagestore')
+          fields.push('primarydatastore')
         }
         return fields
       },

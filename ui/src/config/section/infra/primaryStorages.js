@@ -39,6 +39,11 @@ export default {
     name: 'volume',
     title: 'label.volumes',
     param: 'storageid'
+  },
+  {
+    name: 'snapshot',
+    title: 'label.snapshots',
+    param: 'primarydatastoreid'
   }],
   resourceType: 'PrimaryStorage',
   filters: () => {

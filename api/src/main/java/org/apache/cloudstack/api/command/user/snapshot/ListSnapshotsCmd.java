@@ -133,4 +133,9 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd implements User
     public Long getImageStoreId() {
         return null;
     }
+
+
+    public Long getPrimaryDataStoreId() {
+        return null;
+    }
 }

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.",
             responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
@@ -36,8 +37,17 @@ public class ListSnapshotsCmdByAdmin extends ListSnapshotsCmd implements AdminCm
                description = "the IDs of the image store", since = "4.19")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.PRIMARY_DATA_STORE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
+               description = "the IDs of the image store", since = "4.19")
+    private Long primaryDataStoreId;
+
     @Override
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    @Override
+    public Long getPrimaryDataStoreId() {
+        return primaryDataStoreId;
     }
 }

@@ -465,6 +465,14 @@
           </div>
         </div>
 
+        <div class="resource-detail-item" v-if="resource.primarydatastoreid">
+          <div class="resource-detail-item__label">{{ $t('label.primary.storage') }}</div>
+          <div class="resource-detail-item__details">
+            <picture-outlined />
+            <router-link :to="{ path: '/storagepool/' + resource.primarydatastoreid }">{{ resource.primarydatastore || resource.primarydatastoreid }}</router-link>
+          </div>
+        </div>
+
         <div class="resource-detail-item" v-if="resource.imagestoreid">
           <div class="resource-detail-item__label">{{ $t('label.secondary.storage') }}</div>
           <div class="resource-detail-item__details">

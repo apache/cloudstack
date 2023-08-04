@@ -351,6 +351,8 @@ public class ApiConstants {
     public static final String POST_URL = "postURL";
     public static final String POWER_STATE = "powerstate";
     public static final String PRECEDENCE = "precedence";
+    public static final String PRIMARY_DATA_STORE = "primarydatastore";
+    public static final String PRIMARY_DATA_STORE_ID = "primarydatastoreid";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";

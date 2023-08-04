@@ -116,11 +116,20 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     @SerializedName(ApiConstants.IMAGE_STORE_ID)
     @Param(description = "ID of image store")
-    private String storeId;
+    private String imageStoreId;
 
     @SerializedName(ApiConstants.IMAGE_STORE)
     @Param(description = "Name of image store")
-    private String store;
+    private String imageStore;
+
+    @SerializedName(ApiConstants.PRIMARY_DATA_STORE_ID)
+    @Param(description = "ID of image store")
+    private String primaryDataStoreId;
+
+    @SerializedName(ApiConstants.PRIMARY_DATA_STORE)
+    @Param(description = "Name of image store")
+    private String primaryDataStore;
+
 
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -240,11 +249,18 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.virtualSize = virtualSize;
     }
 
-    public void setStoreId(String storeId) {
-        this.storeId = storeId;
+    public void setImageStoreId(String imageStoreId) {
+        this.imageStoreId = imageStoreId;
+    }
+    public void setImageStore(String imageStore) {
+        this.imageStore = imageStore;
     }
 
-    public void setStore(String store) {
-        this.store = store;
+    public void setPrimaryDataStoreId(String primaryDataStoreId) {
+        this.primaryDataStoreId = primaryDataStoreId;
+    }
+
+    public void setPrimaryDataStore(String primaryDataStore) {
+        this.primaryDataStore = primaryDataStore;
     }
 }

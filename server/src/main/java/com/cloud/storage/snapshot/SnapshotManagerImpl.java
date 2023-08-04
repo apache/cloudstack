@@ -663,8 +663,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         throw new CloudRuntimeException("Can not find secondary storage hosting the snapshot");
     }
 
-    List<Long> getSnapshotIdsFromIdsAndImageStoreId(List<Long> ids, long storeId) {
-        List<SnapshotDataStoreVO> snapshotsInStore = _snapshotStoreDao.listByStoreId(storeId, DataStoreRole.Image);
+    List<Long> getSnapshotIdsFromIdsAndStoreId(List<Long> ids, long storeId, DataStoreRole role) {
+        List<SnapshotDataStoreVO> snapshotsInStore = _snapshotStoreDao.listByStoreId(storeId, role);
         if (snapshotsInStore == null || snapshotsInStore.isEmpty()) {
             ids = Collections.emptyList();
         } else {
@@ -702,9 +702,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
         Long imageStoreId = cmd.getImageStoreId();
+        Long primaryStoreId = cmd.getPrimaryDataStoreId();
 
         if (imageStoreId != null) {
-            ids = getSnapshotIdsFromIdsAndImageStoreId(ids, imageStoreId);
+            ids = getSnapshotIdsFromIdsAndStoreId(ids, imageStoreId, DataStoreRole.Image);
+            if (ids.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+        }
+
+        if (primaryStoreId != null) {
+            ids = getSnapshotIdsFromIdsAndStoreId(ids, primaryStoreId, DataStoreRole.Primary);
             if (ids.isEmpty()) {
                 return new Pair<>(new ArrayList<>(), 0);
             }
