@@ -126,7 +126,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
         if (host.getHypervisorType() != null) {
-            String hypervisorType = Hypervisor.HypervisorType.getHypervisorDisplayName(host.getHypervisorType());
+            String hypervisorType = host.getHypervisorType().getHypervisorDisplayName();
             hostResponse.setHypervisor(hypervisorType);
         }
         hostResponse.setHostType(host.getType());
@@ -307,7 +307,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setCpuNumber(host.getCpus());
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-        hostResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(host.getHypervisorType()));
+        hostResponse.setHypervisor(host.getHypervisorType().getHypervisorDisplayName());
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         hostResponse.setManagementServerId(host.getManagementServerId());

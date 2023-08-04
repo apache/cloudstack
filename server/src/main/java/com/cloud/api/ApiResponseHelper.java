@@ -262,7 +262,6 @@ import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -736,7 +735,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
             vmSnapshotResponse.setVirtualMachineName(StringUtils.isEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
-            vmSnapshotResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(vm.getHypervisorType()));
+            vmSnapshotResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
@@ -1438,7 +1437,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             clusterResponse.setZoneId(dc.getUuid());
             clusterResponse.setZoneName(dc.getName());
         }
-        clusterResponse.setHypervisorType(Hypervisor.HypervisorType.getHypervisorDisplayName(cluster.getHypervisorType()));
+        clusterResponse.setHypervisorType(cluster.getHypervisorType().getHypervisorDisplayName());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
@@ -1634,7 +1633,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
-            vmResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(vm.getHypervisorType()));
+            vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
 
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
@@ -2793,7 +2792,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities) {
         HypervisorCapabilitiesResponse hpvCapabilitiesResponse = new HypervisorCapabilitiesResponse();
         hpvCapabilitiesResponse.setId(hpvCapabilities.getUuid());
-        hpvCapabilitiesResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(hpvCapabilities.getHypervisorType()));
+        hpvCapabilitiesResponse.setHypervisor(hpvCapabilities.getHypervisorType().getHypervisorDisplayName());
         hpvCapabilitiesResponse.setHypervisorVersion(hpvCapabilities.getHypervisorVersion());
         hpvCapabilitiesResponse.setIsSecurityGroupEnabled(hpvCapabilities.isSecurityGroupEnabled());
         hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
@@ -4941,7 +4940,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(certificate.getUuid());
         response.setAlias(certificate.getAlias());
         handleCertificateResponse(certificate.getCertificate(), response);
-        response.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(certificate.getHypervisorType()));
+        response.setHypervisor(certificate.getHypervisorType().getHypervisorDisplayName());
         response.setObjectName("directdownloadcertificate");
         return response;
     }

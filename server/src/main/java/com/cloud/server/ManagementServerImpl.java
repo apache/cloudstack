@@ -4472,7 +4472,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 final List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (final ClusterVO cluster : clustersForZone) {
-                    result.add(HypervisorType.getHypervisorDisplayName(cluster.getHypervisorType()));
+                    result.add(cluster.getHypervisorType().getHypervisorDisplayName());
                 }
             }
 

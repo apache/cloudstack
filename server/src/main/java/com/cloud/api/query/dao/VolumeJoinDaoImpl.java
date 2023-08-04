@@ -150,7 +150,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
             if (view == ResponseView.Full) {
                 Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
-                volResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(hypervisorTypeFromFormat));
+                volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
             }
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
@@ -212,10 +212,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         if (view == ResponseView.Full) {
             if (volume.getState() != Volume.State.UploadOp) {
                 if (volume.getHypervisorType() != null) {
-                    volResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(volume.getHypervisorType()));
+                    volResponse.setHypervisor(volume.getHypervisorType().getHypervisorDisplayName());
                 } else {
                     Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
-                    volResponse.setHypervisor(Hypervisor.HypervisorType.getHypervisorDisplayName(hypervisorTypeFromFormat));
+                    volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
                 }
             }
             Long poolId = volume.getPoolId();
