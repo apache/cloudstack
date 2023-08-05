@@ -26,7 +26,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -73,9 +73,7 @@ public class GuestOSHypervisorVO implements GuestOSHypervisor {
 
     @Override
     public String getHypervisorType() {
-        return hypervisorType.equalsIgnoreCase("Custom") ?
-                HypervisorGuru.HypervisorCustomDisplayName.value() :
-                hypervisorType;
+        return Hypervisor.HypervisorType.getType(hypervisorType).toString();
     }
 
     @Override
