@@ -126,26 +126,32 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         if(cmd.isObjectLocking()) {
             objectLock = true;
         }
-        objectStore.createBucket(bucket, objectLock);
+        try {
+            objectStore.createBucket(bucket, objectLock);
 
-        if(cmd.isVersioning()) {
-            objectStore.setBucketVersioning(bucket.getName());
+            if (cmd.isVersioning()) {
+                objectStore.setBucketVersioning(bucket.getName());
+            }
+
+            if (cmd.isEncryption()) {
+                objectStore.setBucketEncryption(bucket.getName());
+            }
+
+            if (cmd.getQuota() != null) {
+                objectStore.setQuota(bucket.getName(), cmd.getQuota());
+            }
+
+            if (cmd.getPolicy() != null) {
+                objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+            }
+
+            bucket.setState(Bucket.State.Created);
+            _bucketDao.update(bucket.getId(), bucket);
+        } catch (Exception e) {
+            s_logger.error("Failed to create bucket with name: "+bucket.getName(), e);
+            _bucketDao.remove(bucket.getId());
+            throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName());
         }
-
-        if(cmd.isEncryption()) {
-            objectStore.setBucketEncryption(bucket.getName());
-        }
-
-        if(cmd.getQuota() != null) {
-            objectStore.setQuota(bucket.getName(), cmd.getQuota());
-        }
-
-        if(cmd.getPolicy() != null) {
-            objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
-        }
-
-        bucket.setState(Bucket.State.Created);
-        _bucketDao.update(bucket.getId(), bucket);
         return bucket;
     }
 

@@ -162,31 +162,24 @@ export default {
           policy: values.policy
         }
         this.loading = true
-        try {
-          await this.createBucket(data)
-
-          this.$notification.success({
-            message: this.$t('label.create.bucket'),
-            description: this.$t('label.create.bucket')
+        api('createBucket', data).then(response => {
+          this.$pollJob({
+            jobId: response.createbucketresponse.jobid,
+            title: this.$t('message.success.create.bucket'),
+            description: values.name,
+            successMessage: this.$t('message.success.create.bucket'),
+            errorMessage: this.$t('message.create.bucket.failed'),
+            loadingMessage: this.$t('message.create.bucket.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result')
           })
-          this.loading = false
           this.closeModal()
-          this.parentFetchData()
-        } catch (error) {
-          this.$notifyError(error)
-          this.loading = false
-        }
-      }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
-      })
-    },
-    createBucket (params) {
-      return new Promise((resolve, reject) => {
-        api('createBucket', params).then(json => {
-          resolve()
         }).catch(error => {
-          reject(error)
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }
