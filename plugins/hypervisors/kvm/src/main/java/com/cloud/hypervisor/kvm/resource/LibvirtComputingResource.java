@@ -2780,15 +2780,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!_noMemBalloon);
 
-        long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
-        long currRam = vmTO.getType() == VirtualMachine.Type.User ? getCurrentMemAccordingToMemBallooning(vmTO, maxRam) : maxRam;
-
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("memory values for VM %s are %d/%d",vmTO.getName(),maxRam, currRam));
-        }
+        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
 
         grd.setMemorySize(maxRam);
-        grd.setCurrentMem(currRam);
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
 
         int vcpus = vmTO.getCpus();
         Integer maxVcpus = vmTO.getVcpuMaxLimit();
@@ -2800,12 +2795,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
+        long retVal = maxRam;
         if (_noMemBalloon) {
             s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
-            return maxRam;
+        } else if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
+            s_logger.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
         } else {
-            return ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            s_logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
+            retVal = minRam;
         }
+        return retVal;
     }
 
     /**
