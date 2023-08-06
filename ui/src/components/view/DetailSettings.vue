@@ -170,7 +170,11 @@ export default {
         return []
       }
       if (!Array.isArray(this.detailOptions[this.newKey])) {
-        return { value: this.detailOptions[this.newKey] }
+        if (this.detailOptions[this.newKey]) {
+          return { value: this.detailOptions[this.newKey] }
+        } else {
+          return ''
+        }
       }
       return this.detailOptions[this.newKey].map(value => {
         return { value: value }

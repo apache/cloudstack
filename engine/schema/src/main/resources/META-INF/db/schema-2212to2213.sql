@@ -80,4 +80,3 @@ INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-serv
 INSERT IGNORE INTO configuration VALUES ('Advanced', 'DEFAULT', 'management-server', 'vm.destory.forcestop', 'false', 'On destory, force-stop takes this value');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.lock.timeout', '600', 'Lock wait timeout (seconds) while implementing network');
 INSERT IGNORE INTO configuration VALUES ('Network', 'DEFAULT', 'management-server', 'network.disable.rpfilter','true','disable rp_filter on Domain Router VM public interfaces.');
-

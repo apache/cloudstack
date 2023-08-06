@@ -714,4 +714,3 @@ pip3 install --upgrade urllib3
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-
