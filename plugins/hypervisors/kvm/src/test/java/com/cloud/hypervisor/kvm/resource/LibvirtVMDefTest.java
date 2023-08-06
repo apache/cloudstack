@@ -266,11 +266,11 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(bus, disk.getBusType());
         assertEquals(DiskDef.DeviceType.DISK, disk.getDeviceType());
 
-        String resultingXml = disk.toString();
+        String xmlDef = disk.toString();
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
-        assertEquals(expectedXml, resultingXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -398,7 +398,7 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.setGlobalQemuVersion(2006000L);
         LibvirtVMDef.setGlobalLibvirtVersion(9008L);
 
-        String resultingXml = disk.toString();
+        String xmlDef = disk.toString();
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='none' />\n" +
                 "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n" +
                 "<iotune>\n<read_bytes_sec>"+bytesReadRate+"</read_bytes_sec>\n<write_bytes_sec>"+bytesWriteRate+"</write_bytes_sec>\n" +
@@ -408,29 +408,29 @@ public class LibvirtVMDefTest extends TestCase {
                 "<read_bytes_sec_max_length>"+bytesReadRateMaxLength+"</read_bytes_sec_max_length>\n<write_bytes_sec_max_length>"+bytesWriteRateMaxLength+"</write_bytes_sec_max_length>\n" +
                 "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
 
-                assertEquals(expectedXml, resultingXml);
+                assertEquals(expectedXml, xmlDef);
     }
 
     @Test
     public void memBalloonDefTestNone() {
-        String expectedXml = "<memballoon model='none' autodeflate='on'>\n</memballoon>";
+        String expectedXml = "<memballoon model='none'>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defNoneMemBalloon();
 
-        String resultingXml = memBalloonDef.toString();
+        String xmlDef = memBalloonDef.toString();
 
-        assertEquals(expectedXml, resultingXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
     public void memBalloonDefTestVirtio() {
-        String expectedXml = "<memballoon model='virtio' autodeflate='on'>\n<stats period='60'/>\n</memballoon>";
+        String expectedXml = "<memballoon model='virtio'>\n<stats period='60'/>\n</memballoon>";
         MemBalloonDef memBalloonDef = new MemBalloonDef();
         memBalloonDef.defVirtioMemBalloon("60");
 
-        String resultingXml = memBalloonDef.toString();
+        String xmlDef = memBalloonDef.toString();
 
-        assertEquals(expectedXml, resultingXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
