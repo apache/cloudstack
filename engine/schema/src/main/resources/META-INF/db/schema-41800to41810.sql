@@ -36,3 +36,7 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2022 (64-bit)', 'Xe
 UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 0
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
+
+-- fix erronous commas in guest_os names
+UPDATE `cloud`.`guest_os_hypervisor` SET guest_os_name = 'rhel9_64Guest' WHERE guest_os_name = 'rhel9_64Guest,';
+>>>>>>> 2572ce5ea4 (commas)
