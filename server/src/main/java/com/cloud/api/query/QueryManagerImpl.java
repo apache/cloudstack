@@ -969,7 +969,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
-        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        ListResponse<UserVmResponse> response = new ListResponse<>();
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -1307,7 +1307,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vmIds[i++] = v.getId();
         }
         List<UserVmJoinVO> vms = _userVmJoinDao.searchByIds(vmIds);
-        return new Pair<List<UserVmJoinVO>, Integer>(vms, count);
+        return new Pair<>(vms, count);
     }
 
     @Override
