@@ -1729,6 +1729,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
+    public void destroyVolume(long volumeId) {
+        volService.destroyVolume(volumeId);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RECOVER, eventDescription = "recovering a volume in Destroy state")
     public Volume recoverVolume(long volumeId) {
         Account caller = CallContext.current().getCallingAccount();

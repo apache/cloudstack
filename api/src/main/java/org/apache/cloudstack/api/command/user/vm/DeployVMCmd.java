@@ -753,7 +753,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public String getEventDescription() {
-        return "starting Vm. Vm Id: " + getEntityUuid();
+        if(getStartVm()) {
+            return "starting Vm. Vm Id: " + getEntityUuid();
+        }
+        return "deploying Vm. Vm Id: " + getEntityUuid();
     }
 
     @Override
@@ -765,28 +768,33 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public void execute() {
         UserVm result;
 
-        try {
-            CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
-            result = _userVmService.startVirtualMachine(this);
-        } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
-        } catch (InsufficientCapacityException ex) {
-            StringBuilder message = new StringBuilder(ex.getMessage());
-            if (ex instanceof InsufficientServerCapacityException) {
-                if (((InsufficientServerCapacityException)ex).isAffinityApplied()) {
-                    message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
+        CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
+        if (getStartVm()) {
+            try {
+                result = _userVmService.startVirtualMachine(this);
+            } catch (ResourceUnavailableException ex) {
+                s_logger.warn("Exception: ", ex);
+                throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            } catch (ResourceAllocationException ex) {
+                s_logger.warn("Exception: ", ex);
+                throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+            } catch (ConcurrentOperationException ex) {
+                s_logger.warn("Exception: ", ex);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
+            } catch (InsufficientCapacityException ex) {
+                StringBuilder message = new StringBuilder(ex.getMessage());
+                if (ex instanceof InsufficientServerCapacityException) {
+                    if (((InsufficientServerCapacityException)ex).isAffinityApplied()) {
+                        message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
+                    }
                 }
+                s_logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+                s_logger.debug(message.toString(), ex);
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
-            s_logger.info(ex);
-            s_logger.info(message.toString(), ex);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
+        } else {
+            s_logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
         if (result != null) {
