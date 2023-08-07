@@ -3719,12 +3719,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm")
     public UserVm finalizeCreateVirtualMachine(long vmId) {
-        s_logger.info("Loading UserVm " + vmId + " from DB");
+        logger.info("Loading UserVm " + vmId + " from DB");
         UserVm userVm = getUserVm(vmId);
         if (userVm == null) {
-            s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
+            logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
         } else {
-            s_logger.warn("UserVm " + vmId + " does not exist in DB");
+            logger.warn("UserVm " + vmId + " does not exist in DB");
         }
         return userVm;
     }

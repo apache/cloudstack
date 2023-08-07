@@ -1879,7 +1879,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _accountMgr.checkAccess(vpcaccount, null, false, networkAccount);
         }
         catch (PermissionDeniedException e) {
-            s_logger.error(e.getMessage());
+            logger.error(e.getMessage());
             throw new InvalidParameterValueException(String.format("VPC owner does not have access to account [%s].", networkAccount.getAccountName()));
         }
     }

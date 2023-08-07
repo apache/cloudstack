@@ -2814,7 +2814,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LOGGER.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
         } else {
             long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
-            s_logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
+            logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
             retVal = minRam;
         }
         return retVal;

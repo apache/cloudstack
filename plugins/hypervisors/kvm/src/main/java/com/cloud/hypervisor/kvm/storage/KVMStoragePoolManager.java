@@ -114,7 +114,7 @@ public class KVMStoragePoolManager {
                     logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
                 } else {
                     try {
-                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptor.getName()));
+                        logger.info(String.format("adding storage adaptor for %s", storageAdaptor.getName()));
                         this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.getDeclaredConstructor().newInstance());
                     } catch (Exception ex) {
                        throw new CloudRuntimeException(ex.toString());

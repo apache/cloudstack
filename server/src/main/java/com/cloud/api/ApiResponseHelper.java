@@ -1102,7 +1102,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
                     vpcUuidSetter.accept(vpc.getUuid());
                 } catch (PermissionDeniedException e) {
-                    s_logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
+                    logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
                 }
                 vpcNameSetter.accept(vpc.getName());
             }

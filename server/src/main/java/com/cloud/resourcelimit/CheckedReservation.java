@@ -22,7 +22,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.user.ResourceReservation;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.cloud.configuration.Resource.ResourceType;

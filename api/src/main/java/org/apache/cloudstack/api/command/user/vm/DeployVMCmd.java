@@ -807,7 +807,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            s_logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
