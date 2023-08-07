@@ -71,8 +71,8 @@ class TestClusterDRS(cloudstackTestCase):
 
         cls.domain = get_domain(cls.apiclient)
 
-        # 1. Create small service offering
-        cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offerings"]["small"])
+        # 1. Create large service offering
+        cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offerings"]["large"])
         cls._cleanup.append(cls.service_offering)
 
         # 2. Create a network
