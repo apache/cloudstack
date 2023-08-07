@@ -18,6 +18,7 @@
 package com.cloud.hypervisor.vmware.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +38,7 @@ public class VmwareHelperTest {
     public void prepareDiskDeviceTestNotLimitingIOPS() throws Exception {
         Mockito.when(virtualMachineMO.getIDEDeviceControllerKey()).thenReturn(1);
         VirtualDisk virtualDisk = (VirtualDisk) VmwareHelper.prepareDiskDevice(virtualMachineMO, null, -1, new String[1], null, 0, 0, null);
-        assertEquals(null, virtualDisk.getStorageIOAllocation());
+        assertNull(virtualDisk.getStorageIOAllocation());
     }
 
     @Test
@@ -51,6 +52,6 @@ public class VmwareHelperTest {
     public void prepareDiskDeviceTestLimitingIOPSToZero() throws Exception {
         Mockito.when(virtualMachineMO.getIDEDeviceControllerKey()).thenReturn(1);
         VirtualDisk virtualDisk = (VirtualDisk) VmwareHelper.prepareDiskDevice(virtualMachineMO, null, -1, new String[1], null, 0, 0, Long.valueOf(0));
-        assertEquals(null, virtualDisk.getStorageIOAllocation());
+        assertNull(virtualDisk.getStorageIOAllocation());
     }
 }

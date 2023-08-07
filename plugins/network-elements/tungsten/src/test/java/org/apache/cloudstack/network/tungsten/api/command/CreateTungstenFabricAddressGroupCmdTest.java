@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricAddressGroupResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricAddressGroupCmdTest {
 
     @Mock
@@ -40,15 +44,22 @@ public class CreateTungstenFabricAddressGroupCmdTest {
 
     CreateTungstenFabricAddressGroupCmd createTungstenFabricAddressGroupCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricAddressGroupCmd = new CreateTungstenFabricAddressGroupCmd();
         createTungstenFabricAddressGroupCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricAddressGroupCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricAddressGroupCmd, "name", "test");
-        Whitebox.setInternalState(createTungstenFabricAddressGroupCmd, "ipPrefix", "test");
-        Whitebox.setInternalState(createTungstenFabricAddressGroupCmd, "ipPrefixLen", 1);
+        ReflectionTestUtils.setField(createTungstenFabricAddressGroupCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricAddressGroupCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricAddressGroupCmd, "ipPrefix", "test");
+        ReflectionTestUtils.setField(createTungstenFabricAddressGroupCmd, "ipPrefixLen", 1);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

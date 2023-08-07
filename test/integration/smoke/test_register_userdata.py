@@ -31,6 +31,8 @@ from marvin.lib.common import get_test_template, get_zone, list_virtual_machines
 from marvin.lib.utils import (validateList, cleanup_resources)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS,FAIL
+import base64
+import email
 
 
 from marvin.lib.common import (get_domain, get_template)
@@ -592,24 +594,20 @@ class TestRegisteredUserdata(cloudstackTestCase):
             userdata and configured to VM as a multipart MIME userdata. Verify the same by SSH into VM.
         """
 
-        #   #!/bin/bash
-        #   date > /provisioned
+        shellscript_userdata = str("#!/bin/bash\ndate > /provisioned")
         self.apiUserdata = UserData.register(
             self.apiclient,
             name="ApiUserdata",
-            userdata="IyEvYmluL2Jhc2gKZGF0ZSA+IC9wcm92aXNpb25lZA==",
+            userdata=base64.encodebytes(shellscript_userdata.encode()).decode(),
             account=self.account.name,
             domainid=self.account.domainid
         )
 
-        #   #cloud-config
-        #   password: atomic
-        #   chpasswd: { expire: False }
-        #   ssh_pwauth: True
+        cloudconfig_userdata = str("#cloud-config\npassword: atomic\nchpasswd: { expire: False }\nssh_pwauth: True")
         self.templateUserdata = UserData.register(
             self.apiclient,
             name="TemplateUserdata",
-            userdata="I2Nsb3VkLWNvbmZpZwpwYXNzd29yZDogYXRvbWljCmNocGFzc3dkOiB7IGV4cGlyZTogRmFsc2UgfQpzc2hfcHdhdXRoOiBUcnVl",
+            userdata=base64.encodebytes(cloudconfig_userdata.encode()).decode(),
             account=self.account.name,
             domainid=self.account.domainid
         )
@@ -707,8 +705,31 @@ class TestRegisteredUserdata(cloudstackTestCase):
         res = ssh.execute(cmd)
         self.debug("Verifying userdata in the VR")
         self.assertTrue(
-            "Content-Type: multipart" in str(res[2]),
+            res is not None and len(res) > 0,
+            "Resultant userdata is not valid"
+        )
+        msg = email.message_from_string('\n'.join(res))
+        self.assertTrue(
+            msg.is_multipart(),
             "Failed to match multipart userdata"
+        )
+        shellscript_userdata_found = False
+        cloudconfig_userdata_found = False
+        for part in msg.get_payload():
+            content_type = part.get_content_type()
+            payload = part.get_payload(decode=True).decode()
+            if "shellscript" in content_type:
+                shellscript_userdata_found = shellscript_userdata == payload
+            elif "cloud-config" in content_type:
+                cloudconfig_userdata_found = cloudconfig_userdata == payload
+
+        self.assertTrue(
+            shellscript_userdata_found,
+            "Failed to find shellscript userdata in append result"
+        )
+        self.assertTrue(
+            cloudconfig_userdata_found,
+            "Failed to find cloud-config userdata in append result"
         )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)

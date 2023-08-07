@@ -93,6 +93,10 @@ public class CallContext {
         context.put(key, value);
     }
 
+    public void removeContextParameter(Object key) {
+        context.remove(key);
+    }
+
     /**
      * @param key any not null key object
      * @return the value of the key from context map
@@ -235,6 +239,7 @@ public class CallContext {
         CallContext callContext = register(parent.getCallingUserId(), parent.getCallingAccountId());
         callContext.setStartEventId(parent.getStartEventId());
         callContext.setEventResourceType(eventResourceType);
+        callContext.putContextParameters(parent.getContextParameters());
         return callContext;
     }
 

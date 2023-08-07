@@ -59,6 +59,8 @@ import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,6 +69,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenApiTest {
 
     protected Logger logger = LogManager.getLogger(getClass());
