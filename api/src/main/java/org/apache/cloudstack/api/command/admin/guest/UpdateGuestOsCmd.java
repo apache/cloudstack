@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -56,8 +57,10 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
     private Map details;
 
+    @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
+    private Boolean display;
 
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -82,6 +85,10 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
             }
         }
         return detailsMap;
+    }
+
+    public Boolean getForDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////

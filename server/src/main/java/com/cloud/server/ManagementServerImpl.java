@@ -2796,6 +2796,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
+        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
         if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
@@ -2850,6 +2851,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
+        if (cmd.getForDisplay() != null) {
+            guestOs.setDisplay(cmd.getForDisplay());
+        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {
