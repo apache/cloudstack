@@ -2806,12 +2806,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
+        long retVal = maxRam;
         if (_noMemBalloon) {
             s_logger.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
-            return maxRam;
+        } else if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
+            s_logger.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
         } else {
-            return ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+            s_logger.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
+            retVal = minRam;
         }
+        return retVal;
     }
 
     /**
@@ -2843,7 +2848,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < nics.length; i++) {
             for (final NicTO nic : vmSpec.getNics()) {
                 if (nic.getDeviceId() == i) {
-                    createVif(vm, nic, nicAdapter, extraConfig);
+                    createVif(vm, vmSpec, nic, nicAdapter, extraConfig);
                 }
             }
         }
@@ -3224,12 +3229,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
+    private void createVif(final LibvirtVMDef vm, final VirtualMachineTO vmSpec, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         if (vm.getDevices() == null) {
             s_logger.error("LibvirtVMDef object get devices with null result");
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
-        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig));
+        final InterfaceDef interfaceDef = getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig);
+        if (vmSpec.getDetails() != null) {
+            setInterfaceDefQueueSettings(vmSpec.getDetails(), vmSpec.getCpus(), interfaceDef);
+        }
+        vm.getDevices().addDevice(interfaceDef);
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {
@@ -5142,5 +5151,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static String generateSecretUUIDFromString(String seed) {
         return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
+    }
+
+    public void setInterfaceDefQueueSettings(Map<String, String> details, Integer cpus, InterfaceDef interfaceDef) {
+        String nicMultiqueueNumber = details.get(VmDetailConstants.NIC_MULTIQUEUE_NUMBER);
+        if (nicMultiqueueNumber != null) {
+            try {
+                Integer nicMultiqueueNumberInteger = Integer.valueOf(nicMultiqueueNumber);
+                if (nicMultiqueueNumberInteger == InterfaceDef.MULTI_QUEUE_NUMBER_MEANS_CPU_CORES) {
+                    if (cpus != null) {
+                        interfaceDef.setMultiQueueNumber(cpus);
+                    }
+                } else {
+                    interfaceDef.setMultiQueueNumber(nicMultiqueueNumberInteger);
+                }
+            } catch (NumberFormatException ex) {
+                s_logger.warn(String.format("VM details %s is not a valid integer value %s", VmDetailConstants.NIC_MULTIQUEUE_NUMBER, nicMultiqueueNumber));
+            }
+        }
+        String nicPackedEnabled = details.get(VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED);
+        if (nicPackedEnabled != null) {
+            try {
+                interfaceDef.setPackedVirtQueues(Boolean.valueOf(nicPackedEnabled));
+            } catch (NumberFormatException ex) {
+                s_logger.warn(String.format("VM details %s is not a valid Boolean value %s", VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, nicPackedEnabled));
+            }
+        }
     }
 }

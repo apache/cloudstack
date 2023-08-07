@@ -24,18 +24,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 import junit.framework.TestCase;
-import org.apache.commons.beanutils.ConvertUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PropertiesUtil.class, ConvertUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class AgentPropertiesFileHandlerTest extends TestCase {
 
     @Mock
@@ -53,14 +52,27 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
     @Mock
     Properties propertiesMock;
 
+    MockedStatic<PropertiesUtil> propertiesUtilMocked;
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        propertiesUtilMocked = Mockito.mockStatic(PropertiesUtil.class);
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        propertiesUtilMocked.close();
+    }
+
     @Test
     public void getPropertyValueTestFileNotFoundReturnDefaultValueNull() throws Exception{
         String expectedResult = null;
 
         AgentProperties.Property<String> agentPropertiesStringMock = new AgentProperties.Property<String>("Test-null", null, String.class);
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(null).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(null);
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
@@ -72,8 +84,7 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(null).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(null);
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
@@ -85,9 +96,8 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         String expectedResult = "default value";
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doThrow(new IOException()).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenThrow(new IOException());
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
@@ -100,10 +110,9 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
-        PowerMockito.doReturn("").when(propertiesMock).getProperty(Mockito.anyString());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
+        propertiesUtilMocked.when(() -> propertiesMock.getProperty(Mockito.anyString())).thenReturn("");
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
@@ -116,10 +125,9 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Mockito.doReturn(expectedResult).when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
-        PowerMockito.doReturn(null).when(propertiesMock).getProperty(Mockito.anyString());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
+        propertiesUtilMocked.when(() -> propertiesMock.getProperty(Mockito.anyString())).thenReturn(null);
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
 
@@ -132,9 +140,8 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Mockito.doReturn("default value").when(agentPropertiesStringMock).getDefaultValue();
         Mockito.doReturn("name").when(agentPropertiesStringMock).getName();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
         Mockito.doReturn(expectedResult).when(propertiesMock).getProperty(Mockito.anyString());
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
@@ -148,9 +155,8 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
 
         AgentProperties.Property<String> agentPropertiesStringMock = new AgentProperties.Property<String>("Test-null", null, String.class);
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
         Mockito.doReturn(expectedResult).when(propertiesMock).getProperty(Mockito.anyString());
 
         String result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesStringMock);
@@ -165,9 +171,8 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Mockito.doReturn("name").when(agentPropertiesIntegerMock).getName();
         Mockito.doReturn(Integer.class).when(agentPropertiesIntegerMock).getTypeClass();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
         Mockito.doReturn(String.valueOf(expectedResult)).when(propertiesMock).getProperty(Mockito.anyString());
 
         Integer result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesIntegerMock);
@@ -182,9 +187,8 @@ public class AgentPropertiesFileHandlerTest extends TestCase {
         Mockito.doReturn("name").when(agentPropertiesLongMock).getName();
         Mockito.doReturn(Long.class).when(agentPropertiesLongMock).getTypeClass();
 
-        PowerMockito.mockStatic(PropertiesUtil.class);
-        PowerMockito.doReturn(fileMock).when(PropertiesUtil.class, "findConfigFile", Mockito.anyString());
-        PowerMockito.doReturn(propertiesMock).when(PropertiesUtil.class, "loadFromFile", Mockito.any());
+        propertiesUtilMocked.when(() -> PropertiesUtil.findConfigFile(Mockito.anyString())).thenReturn(fileMock);
+        propertiesUtilMocked.when(() -> PropertiesUtil.loadFromFile(Mockito.any())).thenReturn(propertiesMock);
         Mockito.doReturn(String.valueOf(expectedResult)).when(propertiesMock).getProperty(Mockito.anyString());
 
         Long result = AgentPropertiesFileHandler.getPropertyValue(agentPropertiesLongMock);

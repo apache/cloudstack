@@ -264,6 +264,8 @@ public interface VirtualMachineManager extends Manager {
 
     Pair<Long, Long> findClusterAndHostIdForVm(long vmId);
 
+    Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm, boolean skipCurrentHostForStartingVm);
+
     /**
      * Obtains statistics for a list of VMs; CPU and network utilization
      * @param hostId ID of the host

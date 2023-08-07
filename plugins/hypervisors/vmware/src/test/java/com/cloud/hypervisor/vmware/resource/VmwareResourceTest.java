@@ -19,14 +19,13 @@ package com.cloud.hypervisor.vmware.resource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,22 +36,25 @@ import java.util.Map;
 
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
@@ -79,6 +81,7 @@ import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VimPortType;
@@ -87,8 +90,7 @@ import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineVideoCard;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CopyCommand.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VmwareResourceTest {
 
     private static final String VOLUME_PATH = "XXXXXXXXXXXX";
@@ -182,10 +184,12 @@ public class VmwareResourceTest {
 
     private Map<String,String> specsArray = new HashMap<String,String>();
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        storageCmd = PowerMockito.mock(CopyCommand.class);
+        closeable = MockitoAnnotations.openMocks(this);
+        storageCmd = Mockito.mock(CopyCommand.class);
         doReturn(context).when(_resource).getServiceContext(null);
         when(cmd.getVirtualMachine()).thenReturn(vmSpec);
 
@@ -213,19 +217,17 @@ public class VmwareResourceTest {
         when(hostCapability.isNestedHVSupported()).thenReturn(true);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     //Test successful scaling up the vm
     @Test
     public void testScaleVMF1() throws Exception {
         when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
         doReturn("i-2-3-VM").when(cmd).getVmName();
         when(hyperHost.findVmOnHyperHost("i-2-3-VM")).thenReturn(vmMo);
-        doReturn(536870912L).when(vmSpec).getMinRam();
-        doReturn(1).when(vmSpec).getCpus();
-        doReturn(1000).when(vmSpec).getMinSpeed();
-        doReturn(1000).when(vmSpec).getMaxSpeed();
-        doReturn(536870912L).when(vmSpec).getMaxRam();
-        doReturn(false).when(vmSpec).getLimitCpuUse();
-        when(vmMo.configureVm(vmConfigSpec)).thenReturn(true);
 
         _resource.execute(cmd);
         verify(_resource).execute(cmd);
@@ -246,7 +248,7 @@ public class VmwareResourceTest {
         final NicTO[] nics = new NicTO[] {nicTo1, nicTo2};
 
         String macSequence = _resource.generateMacSequence(nics);
-        assertEquals(macSequence, "02:00:65:b5:00:03|01:23:45:67:89:AB");
+        assertEquals("02:00:65:b5:00:03|01:23:45:67:89:AB", macSequence);
     }
 
     @Test
@@ -399,8 +401,8 @@ public class VmwareResourceTest {
     @Test
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionNotSet(){
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
-        verify(_resource).examineStorageSubSystemCommandFullCloneFlagForVmware(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource).examineStorageSubSystemCommandNfsVersion(eq(storageCmd), any(EnumMap.class));
+        verify(_resource).examineStorageSubSystemCommandFullCloneFlagForVmware(eq(storageCmd), any(EnumMap.class));
         verify(_resource).reconfigureProcessorByHandler(any(EnumMap.class));
         assertEquals(NFS_VERSION, _resource.storageNfsVersion);
     }
@@ -410,24 +412,26 @@ public class VmwareResourceTest {
     public void checkStorageProcessorAndHandlerNfsVersionAttributeVersionSet(){
         _resource.storageNfsVersion = NFS_VERSION;
         _resource.checkStorageProcessorAndHandlerNfsVersionAttribute(storageCmd);
-        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(Matchers.eq(storageCmd), any(EnumMap.class));
+        verify(_resource, never()).examineStorageSubSystemCommandNfsVersion(eq(storageCmd), any(EnumMap.class));
     }
 
-    @Test(expected= CloudRuntimeException.class)
+    @Test(expected=CloudRuntimeException.class)
     public void testFindVmOnDatacenterNullHyperHostReference() throws Exception {
-        when(hyperHost.getMor()).thenReturn(null);
-        _resource.findVmOnDatacenter(context, hyperHost, volume);
+        try (MockedConstruction<DatacenterMO> ignored = Mockito.mockConstruction(DatacenterMO.class)) {
+            _resource.findVmOnDatacenter(context, hyperHost, volume);
+        }
     }
 
     @Test
-    @PrepareForTest({DatacenterMO.class, VmwareResource.class})
     public void testFindVmOnDatacenter() throws Exception {
         when(hyperHost.getHyperHostDatacenter()).thenReturn(mor);
-        when(datacenter.getMor()).thenReturn(mor);
-        when(datacenter.findVm(VOLUME_PATH)).thenReturn(vmMo);
-        whenNew(DatacenterMO.class).withArguments(context, mor).thenReturn(datacenter);
-        VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
-        assertEquals(vmMo, result);
+        try (MockedConstruction<DatacenterMO> ignored = Mockito.mockConstruction(DatacenterMO.class, (mock, context) -> {
+            when(mock.findVm(VOLUME_PATH)).thenReturn(vmMo);
+            when(mock.getMor()).thenReturn(mor);
+        })) {
+            VirtualMachineMO result = _resource.findVmOnDatacenter(context, hyperHost, volume);
+            assertEquals(vmMo, result);
+        }
     }
 
     @Test
@@ -553,5 +557,103 @@ public class VmwareResourceTest {
 
         assertEquals(1, stats.length);
         assertEquals(lbStats[0], stats[0]);
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandFailure() throws Exception {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centosWrongName");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptor("centosWrongName")).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandSuccess() throws Exception {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(hyperHost.getGuestOsDescriptor("centos64Guest")).thenReturn(guestOsDescriptor);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+    }
+
+    @Test
+    public void testCheckGuestOsMappingCommandException() {
+        CheckGuestOsMappingCommand cmd = Mockito.mock(CheckGuestOsMappingCommand.class);
+        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandFailure() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandSuccessWithoutKeyword() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+        GuestOsDescriptor guestOsDescriptor = Mockito.mock(GuestOsDescriptor.class);
+        when(guestOsDescriptor.getFullName()).thenReturn("centos64Guest");
+        when(guestOsDescriptor.getId()).thenReturn("centos64Guest");
+        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
+        guestOsDescriptors.add(guestOsDescriptor);
+        when(hyperHost.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertTrue(answer.getResult());
+        assertEquals("centos64Guest", answer.getHypervisorGuestOsNames().get(0).first());
+    }
+
+    @Test
+    public void testGetHypervisorGuestOsNamesCommandException() throws Exception {
+        GetHypervisorGuestOsNamesCommand cmd = Mockito.mock(GetHypervisorGuestOsNamesCommand.class);
+        when(cmd.getKeyword()).thenReturn("CentOS");
+        when(_resource.getHyperHost(context, null)).thenReturn(null);
+
+        GetHypervisorGuestOsNamesAnswer answer = _resource.execute(cmd);
+
+        assertFalse(answer.getResult());
     }
 }

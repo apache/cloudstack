@@ -1471,15 +1471,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             throw new InvalidParameterValueException("Ip address can be associated to the network with trafficType " + TrafficType.Guest);
         }
 
-        // Check that network belongs to IP owner - skip this check
-        //     - if zone is basic zone as there is just one guest network,
-        //     - if shared network in Advanced zone
-        //     - and it belongs to the system
-        if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
-                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
-            }
-        }
+        validateNetworkAndIpOwnership(owner, ipToAssoc, network, zone);
 
         if (zone.getNetworkType() == NetworkType.Advanced) {
             // In Advance zone allow to do IP assoc only for Isolated networks with source nat service enabled
@@ -1539,6 +1531,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         s_logger.warn("Unable to disassociate ip address for recovery", e);
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Check that network belongs to IP owner - skip this check
+     *  - if the IP belongs to the same VPC as the network
+     *  - if zone is basic zone as there is just one guest network,
+     *  - if shared network in Advanced zone
+     *  - and it belongs to the system
+     */
+    private static void validateNetworkAndIpOwnership(Account owner, IPAddressVO ipToAssoc, Network network, DataCenter zone) {
+        if (network.getAccountId() != owner.getId()) {
+            if (!network.getVpcId().equals(ipToAssoc.getVpcId()) && zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
             }
         }
     }
@@ -1625,15 +1632,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
-        // Check that network belongs to IP owner - skip this check
-        //     - if zone is basic zone as there is just one guest network,
-        //     - if shared network in Advanced zone
-        //     - and it belongs to the system
-        if (network.getAccountId() != owner.getId()) {
-            if (zone.getNetworkType() != NetworkType.Basic && !(zone.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Shared)) {
-                throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
-            }
-        }
+        validateNetworkAndIpOwnership(owner, ipToAssoc, network, zone);
 
         // Check if IP has any services (rules) associated in the network
         List<PublicIpAddress> ipList = new ArrayList<PublicIpAddress>();
@@ -2358,4 +2357,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
         return SystemVmPublicIpReservationModeStrictness;
     }
+
+    @Override
+    public void updateSourceNatIpAddress(IPAddressVO requestedIp, List<IPAddressVO> userIps) throws Exception{
+        Transaction.execute((TransactionCallbackWithException<IpAddress, Exception>) status -> {
+            // update all other IPs to not be sourcenat, should be at most one
+            for(IPAddressVO oldIpAddress :userIps) {
+                oldIpAddress.setSourceNat(false);
+                _ipAddressDao.update(oldIpAddress.getId(), oldIpAddress);
+            }
+            requestedIp.setSourceNat(true);
+            _ipAddressDao.update(requestedIp.getId(),requestedIp);
+            return requestedIp;
+        });
+    }
+
 }

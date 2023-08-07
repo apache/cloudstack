@@ -54,7 +54,7 @@ public class CreateRoleCmdTest {
         when(role.getDescription()).thenReturn("User test");
         when(role.getName()).thenReturn("testuser");
         when(role.getRoleType()).thenReturn(RoleType.User);
-        when(roleService.createRole(createRoleCmd.getRoleName(), createRoleCmd.getRoleType(), createRoleCmd.getRoleDescription())).thenReturn(role);
+        when(roleService.createRole(createRoleCmd.getRoleName(), createRoleCmd.getRoleType(), createRoleCmd.getRoleDescription(), true)).thenReturn(role);
         createRoleCmd.execute();
         RoleResponse response = (RoleResponse) createRoleCmd.getResponseObject();
         Assert.assertEquals((String) ReflectionTestUtils.getField(response, "roleName"), role.getName());
@@ -71,7 +71,7 @@ public class CreateRoleCmdTest {
         when(newRole.getDescription()).thenReturn("User test");
         when(newRole.getName()).thenReturn("testuser");
         when(newRole.getRoleType()).thenReturn(RoleType.User);
-        when(roleService.createRole(createRoleCmd.getRoleName(), role, createRoleCmd.getRoleDescription())).thenReturn(newRole);
+        when(roleService.createRole(createRoleCmd.getRoleName(), role, createRoleCmd.getRoleDescription(), true)).thenReturn(newRole);
         createRoleCmd.execute();
         RoleResponse response = (RoleResponse) createRoleCmd.getResponseObject();
         Assert.assertEquals((String) ReflectionTestUtils.getField(response, "roleName"), newRole.getName());

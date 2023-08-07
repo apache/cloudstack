@@ -57,12 +57,6 @@
             <artifactId>ini4j</artifactId>
             <version>${cs.ini.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${cs.junit.jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -128,7 +122,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://download.cloudstack.org/systemvm/${cs.version}/md5sum.txt</url>
+                            <url>${project.systemvm.template.location}/${cs.version}/md5sum.txt</url>
                             <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                             <skipCache>true</skipCache>
                             <overwrite>true</overwrite>
@@ -187,7 +181,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-kvm.qcow2.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
@@ -223,7 +217,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-vmware.ova</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${vmware.checksum}</md5>
                                 </configuration>
@@ -259,7 +253,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${xen.checksum}</md5>
                                 </configuration>
@@ -295,7 +289,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-ovm.raw.bz2</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-ovm.raw.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${ovm.checksum}</md5>
                                 </configuration>
@@ -331,7 +325,7 @@
                                 </goals>
                                 <configuration>
                                     <checkSignature>true</checkSignature>
-                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-hyperv.vhd.zip</url>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-hyperv.vhd.zip</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${hyperv.checksum}</md5>
                                 </configuration>

@@ -20,7 +20,7 @@
     <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
+          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
             <breadcrumb :resource="resource">
               <template #end>
                 <a-button
@@ -34,14 +34,14 @@
                 </a-button>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px"
+                  style="margin-left: 8px; margin-bottom: 3px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
@@ -54,7 +54,7 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
-                    style="min-width: 120px; margin-left: 10px"
+                    style="min-width: 120px; margin-left: 10px; margin-top: -4px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -63,7 +63,9 @@
                     }" >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
-                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
+                      ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
                       {{ $t('label.all') }}
@@ -82,7 +84,7 @@
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-6px' }" >
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-bottom': '-4px' }" >
             <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
             <action-button
               v-else
@@ -97,6 +99,7 @@
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
+              style="min-width: 120px; margin-left: 10px; margin-top: 5px"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
@@ -673,7 +676,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes(routeName)) || ['guestnetwork', 'guestvlans'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -789,6 +792,10 @@ export default {
         }
       } else {
         this.dataView = false
+      }
+
+      if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
+        params.listsystemvms = true
       }
 
       if ('listview' in this.$refs && this.$refs.listview) {
@@ -1044,7 +1051,6 @@ export default {
       this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
-      const self = this
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
@@ -1082,6 +1088,7 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      this.currentAction.paramFilters = []
       if ('message' in action) {
         var message = action.message
         if (typeof action.message === 'function') {
@@ -1089,6 +1096,29 @@ export default {
         }
         action.message = message
       }
+
+      this.getArgs(action, isGroupAction, paramFields)
+      this.getFilters(action, isGroupAction, paramFields)
+      this.getFirstIndexFocus()
+
+      this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+          param.type = 'string'
+        }
+        this.setRules(param)
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
+        }
+      }
+      this.actionLoading = false
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
+        this.fillEditFormFieldValues()
+      }
+    },
+    getArgs (action, isGroupAction, paramFields) {
+      const self = this
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -1104,28 +1134,28 @@ export default {
                 description: self.$t('label.confirmpassword.description')
               }
             }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
+              }
+            }
             return paramFields.filter(function (param) {
               return param.name.toLowerCase() === arg.toLowerCase()
             })[0]
           })
         }
       }
-      this.getFirstIndexFocus()
-
-      this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
-      for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
-          param.type = 'string'
+    },
+    getFilters (action, isGroupAction, paramFields) {
+      if ('filters' in action) {
+        var filters = action.filters
+        if (typeof action.filters === 'function') {
+          filters = action.filters(action.resource, this.$store.getters, isGroupAction)
         }
-        this.setRules(param)
-        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param)
-        }
-      }
-      this.actionLoading = false
-      if (action.dataView && listIconForFillValues.includes(action.icon)) {
-        this.fillEditFormFieldValues()
+        this.currentAction.paramFilters = filters
       }
     },
     getFirstIndexFocus () {
@@ -1138,13 +1168,16 @@ export default {
         }
       }
     },
-    listUuidOpts (param) {
+    listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {
@@ -1592,8 +1625,33 @@ export default {
         } else {
           query.networkfilter = filter
         }
-      } else if (this.$route.name === 'publicip') {
-        query.state = filter
+      } else if (['account', 'publicip', 'systemvm', 'router'].includes(this.$route.name)) {
+        if (filter !== 'all') {
+          query.state = filter
+        }
+      } else if (this.$route.name === 'storagepool') {
+        if (filter === 'all') {
+          delete query.status
+        } else {
+          query.status = filter
+        }
+      } else if (['pod', 'cluster'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.allocationstate
+        } else {
+          query.allocationstate = filter
+        }
+      } else if (['host'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.resourcestate
+          delete query.state
+        } else if (['up', 'down', 'alert'].includes(filter)) {
+          delete query.resourcestate
+          query.state = filter
+        } else {
+          delete query.state
+          query.resourcestate = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
@@ -1614,6 +1672,18 @@ export default {
           query.archived = true
         } else {
           delete query.archived
+        }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
+      } else if (this.$route.name === 'kubernetes') {
+        if (filter === 'all') {
+          delete query.clustertype
+        } else {
+          query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
       }
       query.filter = filter
@@ -1640,6 +1710,10 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
+            } else if (this.$route.name === 'guestos') {
+              query.description = value
             } else {
               query.keyword = value
             }

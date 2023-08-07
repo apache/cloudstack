@@ -46,4 +46,3 @@ do
                 mysql -u $dbuser -p$dbpwd -h $dbhost -e "describe cloud_usage.$tablename" > ./base_data/usage_data/$tablename
         fi
 done
-

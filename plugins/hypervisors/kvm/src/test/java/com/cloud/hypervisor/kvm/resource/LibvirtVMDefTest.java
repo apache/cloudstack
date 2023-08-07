@@ -151,6 +151,58 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
+    public void testInterfaceWithMultiQueueAndPacked() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
+        ifDef.setMultiQueueNumber(6);
+
+        LibvirtVMDef.setGlobalQemuVersion(5000000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(6400000L);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver queues='6'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        ifDef.setPackedVirtQueues(true);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver queues='6' packed='on'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        ifDef.setMultiQueueNumber(null);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<driver packed='on'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+
+        LibvirtVMDef.setGlobalLibvirtVersion(300000L);
+        expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.BRIDGE + "'>\n"
+                        + "<source bridge='targetDeviceName'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+        assertEquals(expected, ifDef.toString());
+        }
+
+    @Test
     public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");
@@ -218,7 +270,7 @@ public class LibvirtVMDefTest extends TestCase {
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -236,7 +288,7 @@ public class LibvirtVMDefTest extends TestCase {
             "<secret type='passphrase' uuid='" + passphraseUuid + "' />\n" +
             "</encryption>\n" +
             "</disk>\n";
-        assertEquals(disk.toString(), expectedXML);
+        assertEquals(expectedXML, disk.toString());
     }
 
     @Test
@@ -356,7 +408,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<read_bytes_sec_max_length>"+bytesReadRateMaxLength+"</read_bytes_sec_max_length>\n<write_bytes_sec_max_length>"+bytesWriteRateMaxLength+"</write_bytes_sec_max_length>\n" +
                 "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
 
-                assertEquals(xmlDef, expectedXml);
+                assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -367,7 +419,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String xmlDef = memBalloonDef.toString();
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -378,7 +430,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String xmlDef = memBalloonDef.toString();
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -413,11 +465,11 @@ public class LibvirtVMDefTest extends TestCase {
         int bytes = 2048;
 
         LibvirtVMDef.RngDef def = new LibvirtVMDef.RngDef(path, backendModel, bytes, period);
-        assertEquals(def.getPath(), path);
-        assertEquals(def.getRngBackendModel(), backendModel);
-        assertEquals(def.getRngModel(), LibvirtVMDef.RngDef.RngModel.VIRTIO);
-        assertEquals(def.getRngRateBytes(), bytes);
-        assertEquals(def.getRngRatePeriod(), period);
+        assertEquals(path, def.getPath());
+        assertEquals(backendModel, def.getRngBackendModel());
+        assertEquals(LibvirtVMDef.RngDef.RngModel.VIRTIO, def.getRngModel());
+        assertEquals(bytes, def.getRngRateBytes());
+        assertEquals(period, def.getRngRatePeriod());
     }
 
     @Test
@@ -441,8 +493,8 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
 
         LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
-        assertEquals(def.getModel(), model);
-        assertEquals(def.getAction(), action);
+        assertEquals(model, def.getModel());
+        assertEquals(action, def.getAction());
     }
 
     @Test
@@ -453,6 +505,6 @@ public class LibvirtVMDefTest extends TestCase {
                 "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
                 "<driver queues='4'/>\n" +
                 "</controller>\n";
-        assertEquals(str, expected);
+        assertEquals(expected, str);
     }
 }
