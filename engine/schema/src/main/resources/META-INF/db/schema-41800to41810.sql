@@ -39,4 +39,4 @@ WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm'
 
 -- fix erronous commas in guest_os names
 UPDATE `cloud`.`guest_os_hypervisor` SET guest_os_name = 'rhel9_64Guest' WHERE guest_os_name = 'rhel9_64Guest,';
->>>>>>> 2572ce5ea4 (commas)
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os', 'display', 'tinyint(1) DEFAULT ''1'' COMMENT ''should this guest_os be shown to the end user'' ');
