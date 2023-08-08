@@ -73,9 +73,9 @@
     <template #name="{text, record}">
       <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
         <span v-if="record.icon && record.icon.base64image">
-          <resource-icon :image="record.icon.base64image" size="1x"/>
+          <resource-icon :image="record.icon.base64image" size="2x"/>
         </span>
-        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="lg" />
+        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="2x" />
       </span>
       <span style="min-width: 120px" >
         <QuickView
@@ -88,8 +88,8 @@
           <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
         </span>
         <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
-          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" />
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="2x" />
           <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
           <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
         </span>
@@ -143,7 +143,7 @@
     </template>
     <template #username="{text, record}">
       <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
+        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
         <user-outlined v-else style="font-size: 16px;" />
       </span>
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
@@ -192,6 +192,9 @@
     </template>
     <template #volumename="{ text, record }">
       <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+    </template>
+    <template #size="{ text }">
+      {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
     </template>
     <template #physicalsize="{ text }">
       {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB

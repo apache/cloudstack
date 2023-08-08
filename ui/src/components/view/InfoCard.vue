@@ -27,7 +27,7 @@
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
               <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
-                <camera-outlined class="upload-icon"/>
+                <edit-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
                 <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">

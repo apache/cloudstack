@@ -35,9 +35,12 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'hypervisor', 'ostypename']
+        var fields = ['name', 'ostypename', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
+          fields.push('physicalsize')
           fields.push('account')
+          fields.push('domain')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
@@ -46,7 +49,7 @@ export default {
       },
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
-          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+          'crossZones', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype', 'url')
@@ -188,7 +191,9 @@ export default {
       columns: () => {
         var fields = ['name', 'ostypename']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
           fields.push('account')
+          fields.push('domain')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')

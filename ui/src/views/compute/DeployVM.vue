@@ -42,13 +42,13 @@
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
                               <a-col :span="8">
-                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
+                                <a-card-grid style="width:220px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
                                       <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
                                         :image="zoneItem.icon.base64image"
-                                        size="36"
+                                        size="48"
                                         style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
@@ -74,7 +74,7 @@
                       >
                         <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
                           <span>
-                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
                             <global-outlined v-else style="margin-right: 5px" />
                             {{ zone1.name }}
                           </span>
