@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import com.cloud.utils.Pair;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -42,8 +43,11 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -54,6 +58,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -116,6 +121,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmManager;
@@ -171,6 +177,8 @@ public class VolumeApiServiceImplTest {
     @Mock
     private CreateVolumeCmd createVol;
     @Mock
+    private MigrateVolumeCmd migrateVolumeCmd;
+    @Mock
     private UserVmManager userVmManager;
     @Mock
     private DataCenterDao _dcDao;
@@ -190,6 +198,10 @@ public class VolumeApiServiceImplTest {
     private ServiceOfferingDao serviceOfferingDao;
     @Mock
     private DiskOfferingDao _diskOfferingDao;
+    @Mock
+    private DataStoreManager dataStoreMgr;
+    @Mock
+    private SnapshotHelper snapshotHelper;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -219,6 +231,9 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private ProjectManager projectManagerMock;
+
+    @Mock
+    private StorageManager storageMgr;
 
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
@@ -1627,5 +1642,42 @@ public class VolumeApiServiceImplTest {
         HostVO host = Mockito.mock(HostVO.class);
         Mockito.when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
         Assert.assertFalse(volumeApiServiceImpl.isSendCommandForVmVolumeAttachDetach(host, Mockito.mock(StoragePoolVO.class)));
+    }
+
+    // Below test covers both allowing encrypted volume migration for PowerFlex storage and expect error on storagepool compatibility
+    @Test
+    public void testStoragePoolCompatibilityAndAllowEncryptedVolumeMigrationForPowerFlexStorage() {
+        try {
+            Mockito.when(migrateVolumeCmd.getVolumeId()).thenReturn(1L);
+            Mockito.when(migrateVolumeCmd.getStoragePoolId()).thenReturn(2L);
+            VolumeVO vol = Mockito.mock(VolumeVO.class);
+            Mockito.when(volumeDaoMock.findById(1L)).thenReturn(vol);
+            Mockito.when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+            Mockito.when(vol.getState()).thenReturn(Volume.State.Ready);
+            Mockito.when(vol.getPoolId()).thenReturn(1L);
+            Mockito.when(vol.getInstanceId()).thenReturn(null);
+            Mockito.when(vol.getDiskOfferingId()).thenReturn(1L);
+            DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+            Mockito.when(_diskOfferingDao.findById(1L)).thenReturn(diskOffering);
+
+            StoragePoolVO srcStoragePoolVOMock = Mockito.mock(StoragePoolVO.class);
+            StoragePool destPool = Mockito.mock(StoragePool.class);
+            PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+
+            Mockito.when(vol.getPassphraseId()).thenReturn(1L);
+            Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(srcStoragePoolVOMock);
+            Mockito.when(srcStoragePoolVOMock.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+            Mockito.when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn( dataStore);
+            Mockito.doNothing().when(snapshotHelper).checkKvmVolumeSnapshotsOnlyInPrimaryStorage(vol, HypervisorType.KVM);
+            Mockito.when(destPool.getUuid()).thenReturn("bd525970-3d2a-4230-880d-261892129ef3");
+
+            Mockito.when(storageMgr.storagePoolCompatibleWithVolumePool(destPool, vol)).thenReturn(false);
+
+            volumeApiServiceImpl.migrateVolume(migrateVolumeCmd);
+        } catch (InvalidParameterValueException e) {
+            fail("Unexpected InvalidParameterValueException was thrown");
+        } catch (CloudRuntimeException e) {
+            // test passed
+        }
     }
 }

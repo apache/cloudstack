@@ -43,6 +43,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
@@ -216,6 +217,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private ServiceOfferingVO serviceOffering;
+
+    @Mock
+    UserDataManager userDataManager;
 
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
@@ -714,29 +718,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void testUserDataAppend() {
-        String userData = "testUserdata";
-        String templateUserData = "testTemplateUserdata";
-        Long userDataId = 1L;
-
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        when(template.getUserDataId()).thenReturn(2L);
-        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.APPEND);
-
-        UserDataVO templateUserDataVO = Mockito.mock(UserDataVO.class);
-        doReturn(templateUserDataVO).when(userDataDao).findById(2L);
-        when(templateUserDataVO.getUserData()).thenReturn(templateUserData);
-
-        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
-        doReturn(apiUserDataVO).when(userDataDao).findById(userDataId);
-        when(apiUserDataVO.getUserData()).thenReturn(userData);
-
-        String finalUserdata = userVmManagerImpl.finalizeUserData(null, userDataId, template);
-
-        Assert.assertEquals(finalUserdata, templateUserData+userData);
-    }
-
-    @Test
     public void testUserDataWithoutTemplate() {
         String userData = "testUserdata";
         Long userDataId = 1L;
@@ -855,9 +836,12 @@ public class UserVmManagerImplTest {
         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
         when(template.getUserDataId()).thenReturn(null);
 
-        when(cmd.getUserData()).thenReturn("testUserdata");
+        String testUserData = "testUserdata";
+        when(cmd.getUserData()).thenReturn(testUserData);
         when(cmd.getUserdataId()).thenReturn(null);
         when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        when(userDataManager.validateUserData(testUserData, HTTPMethod.GET)).thenReturn(testUserData);
 
         try {
             doNothing().when(userVmManagerImpl).updateUserData(userVmVO);
@@ -892,11 +876,14 @@ public class UserVmManagerImplTest {
         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
         when(template.getUserDataId()).thenReturn(null);
 
+        String testUserData = "testUserdata";
         when(cmd.getUserdataId()).thenReturn(1L);
         UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
         when(userDataDao.findById(1L)).thenReturn(apiUserDataVO);
-        when(apiUserDataVO.getUserData()).thenReturn("testUserdata");
+        when(apiUserDataVO.getUserData()).thenReturn(testUserData);
         when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        when(userDataManager.validateUserData(testUserData, HTTPMethod.GET)).thenReturn(testUserData);
 
         try {
             doNothing().when(userVmManagerImpl).updateUserData(userVmVO);

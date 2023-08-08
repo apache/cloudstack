@@ -530,13 +530,13 @@ class TestVMSchedule(cloudstackTestCase):
         )
         self.assertNotEqual(len(vmschedules), 0, "Check VM Schedule is created")
 
-        # poll every 20 seconds (max waiting time is 4 minutes ) and check VM's state for changes
+        # poll every 10 seconds (max waiting time is 6 minutes) and check VM's state for changes
         previous_state = self.virtual_machine.state
         self.debug("VM state: %s" % self.virtual_machine.state)
         is_stop_schedule_working = False
         is_start_schedule_working = False
-        for i in range(0, 12):
-            time.sleep(20)
+        for i in range(0, 36):
+            time.sleep(10)
             current_state = self.virtual_machine.update(self.apiclient).state
             self.debug("Polling VM state: %s" % current_state)
             if previous_state in ("Running", "Starting") and current_state in (
@@ -570,6 +570,9 @@ class TestVMSchedule(cloudstackTestCase):
         start_vmschedule.delete(self.apiclient)
         stop_vmschedule.delete(self.apiclient)
 
+        # To ensure that all vm schedules have been deleted and all of their jobs have been completed
+        time.sleep(15)
+
         # Verify VM Schedule is deleted
         self.assertEqual(
             VMSchedule.list(
@@ -586,10 +589,10 @@ class TestVMSchedule(cloudstackTestCase):
             "Check VM Schedule is deleted",
         )
 
-        # Verify VM does not switch states after deleting schedules at least for 1.5 minutes
+        # Verify VM does not switch states after deleting schedules at least for 2 minutes
         previous_state = self.virtual_machine.update(self.apiclient).state
         state_changed = False
-        for i in range(0, 3):
+        for i in range(0, 4):
             time.sleep(30)
             current_state = self.virtual_machine.update(self.apiclient).state
             if previous_state != current_state:

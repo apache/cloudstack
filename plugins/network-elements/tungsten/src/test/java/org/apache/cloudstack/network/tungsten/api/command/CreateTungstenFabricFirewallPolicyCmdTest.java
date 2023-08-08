@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricFirewallPolicyResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricFirewallPolicyCmdTest {
 
     @Mock
@@ -40,15 +44,22 @@ public class CreateTungstenFabricFirewallPolicyCmdTest {
 
     CreateTungstenFabricFirewallPolicyCmd createTungstenFabricFirewallPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricFirewallPolicyCmd = new CreateTungstenFabricFirewallPolicyCmd();
         createTungstenFabricFirewallPolicyCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricFirewallPolicyCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricFirewallPolicyCmd, "applicationPolicySetUuid", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallPolicyCmd, "name", "test");
-        Whitebox.setInternalState(createTungstenFabricFirewallPolicyCmd, "sequence", 1);
+        ReflectionTestUtils.setField(createTungstenFabricFirewallPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricFirewallPolicyCmd, "applicationPolicySetUuid", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallPolicyCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricFirewallPolicyCmd, "sequence", 1);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

@@ -235,11 +235,11 @@ public class ListNetworksCmd extends BaseListRetrieveOnlyResourceCountCmd implem
     private void updateNetworkResponse(List<NetworkResponse> response) {
         for (NetworkResponse networkResponse : response) {
             ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Network, networkResponse.getId());
-            if (resourceIcon == null) {
+            if (resourceIcon == null && networkResponse.getVpcId() != null) {
                 resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Vpc, networkResponse.getVpcId());
-                if (resourceIcon == null) {
-                    continue;
-                }
+            }
+            if (resourceIcon == null) {
+                continue;
             }
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
             networkResponse.setResourceIconResponse(iconResponse);

@@ -376,9 +376,8 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
-    public NicVO findByInstanceIdAndMacAddress(long instanceId, String macAddress) {
+    public NicVO findByMacAddress(String macAddress) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
-        sc.setParameters("instance", instanceId);
         sc.setParameters("macAddress", macAddress);
         return findOneBy(sc);
     }

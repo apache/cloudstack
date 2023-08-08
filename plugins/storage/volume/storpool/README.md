@@ -350,4 +350,3 @@ Supported Virtual machine operations - live migration of VM to another host, vir
 Supported Volume operations - attach/detach volume, live migrate volume between two StorPool primary storages, volume snapshot, delete snapshot, revert snapshot
 
 Note: volume snapshot are allowed only when `sp.bypass.secondary.storage` is set to `true`. This means that the snapshots are not backed up to secondary storage
-
