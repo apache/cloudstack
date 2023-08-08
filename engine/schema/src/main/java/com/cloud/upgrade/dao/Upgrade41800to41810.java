@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
@@ -27,6 +28,8 @@ import java.util.List;
 
 public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate {
     final static Logger LOG = Logger.getLogger(Upgrade41800to41810.class);
+    private GuestOsMapper guestOsMapper = new GuestOsMapper();
+
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
@@ -58,6 +61,11 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     public void performDataMigration(Connection conn) {
         fixForeignKeyNames(conn);
+        mergeDuplicateGuestOSes();
+    }
+
+    private void mergeDuplicateGuestOSes() {
+        guestOsMapper.mergeDuplicates();
     }
 
     @Override

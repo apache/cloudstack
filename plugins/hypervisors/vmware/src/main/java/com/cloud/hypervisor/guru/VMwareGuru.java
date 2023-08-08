@@ -456,8 +456,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private Long getImportingVMGuestOs(VirtualMachineConfigSummary configSummary) {
         String guestFullName = configSummary.getGuestFullName();
-        GuestOSVO os = _guestOsDao.listByDisplayName(guestFullName);
-        return os != null ? os.getId() : _guestOsDao.listByDisplayName("Other (64-bit)").getId();
+        GuestOSVO os = _guestOsDao.listOneByDisplayName(guestFullName);
+        return os != null ? os.getId() : _guestOsDao.listOneByDisplayName("Other (64-bit)").getId();
     }
 
     /**

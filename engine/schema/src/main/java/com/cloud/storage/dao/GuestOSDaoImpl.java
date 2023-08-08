@@ -17,8 +17,17 @@
 package com.cloud.storage.dao;
 
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +51,7 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
     }
 
     @Override
-    public GuestOSVO listByDisplayName(String displayName) {
+    public GuestOSVO listOneByDisplayName(String displayName) {
         SearchCriteria<GuestOSVO> sc = Search.create();
         sc.setParameters("display_name", displayName);
         return findOneBy(sc);
@@ -61,5 +70,42 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
             return guestOSes.get(0);
         }
         return null;
+    }
+
+    /**
+     "select * from guest_os go2 where display_name in"
+     +       "(select display_name from"
+     +               "(select display_name, count(1) as count from guest_os go1 group by display_name having count > 1) tab0)";
+     *
+     * @return
+     */
+    @Override
+    @DB
+    public Set<String> findDoubleNames() {
+        String selectSql = "(select display_name from (select display_name, count(1) as count from guest_os go1 group by display_name having count > 1) tab0)";
+        Set<String> names = new HashSet<>();
+        Connection conn = TransactionLegacy.getStandaloneConnection();
+        try {
+            PreparedStatement stmt = conn.prepareStatement(selectSql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs != null && rs.next()) {
+                names.add(rs.getString(1));
+            }
+        } catch (SQLException ex) {
+            throw new CloudRuntimeException("Error while trying to find duplicate guest OSses", ex);
+        }
+        return names;
+    }
+
+    /**
+     * get all with a certain display name
+     * @param displayName
+     * @return a list with GuestOS objects
+     */
+    @Override
+    public List<GuestOSVO> listByDisplayName(String displayName) {
+        SearchCriteria<GuestOSVO> sc = Search.create();
+        sc.setParameters("display_name", displayName);
+        return listBy(sc);
     }
 }

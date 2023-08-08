@@ -22,7 +22,9 @@ import org.apache.log4j.Logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -49,26 +51,86 @@ public class GuestOsMapper {
     public GuestOsMapper() {
         guestOSHypervisorDao = new GuestOSHypervisorDaoImpl();
         guestOSDao = new GuestOSDaoImpl();
-        mergeDuplicates();// this location is just a placeholder
     }
 
-    private void mergeDuplicates() {
-        // find duplicate guest_os definitions
-        // decide which to remove
-        // # highest/lowest id
-        // # or is user_defined == false
-        // for each one to remove
-        // // find guestos hypervisor mappings
-        // // // for each retrieved mapping
-        // // // // set the guest_os_id to the one to keep
-        // // find VMs
-        // // // for each VM
-        // // // // set the guest_os_id to the one to keep
-        // // find templates
-        // // // for each template
-        // // // // set the guest_os_id to the one to keep
-        // // mark as removed
+    public void mergeDuplicates() {
+        LOG.info("merging duplicate guest osses");
+        Set<Set<GuestOSVO>> duplicates = findDuplicates();
+        LOG.debug(String.format("merging %d sets of duplicates", duplicates.size()));
+        for (Set<GuestOSVO> setOfGuestOSes : duplicates) {
+            // decide which to (mark as) remove(d)
+            // # highest/lowest id
+            // # or is user_defined == false
+            GuestOSVO guestOSVO = highestIdFrom(setOfGuestOSes);
+            LOG.info(String.format("merging %d duplicates for %s ", setOfGuestOSes.size(), guestOSVO.getDisplayName()));
+            makeNormative(guestOSVO, setOfGuestOSes);
+
+        }
+    }
+
+    private void makeNormative(GuestOSVO guestOSVO, Set<GuestOSVO> setOfGuestOSes) {
+        for (GuestOSVO oldGuestOs : setOfGuestOSes) {
+            List<GuestOSHypervisorVO> mappings = guestOSHypervisorDao.listByGuestOsId(oldGuestOs.getId());
+            copyMappings(guestOSVO, mappings);
+            // // find VMs
+            // // // for each VM
+            // // // // set the guest_os_id to the one to keep
+            // // find templates
+            // // // for each template
+            // // // // set the guest_os_id to the one to keep
+            // // mark as removed
+
+        }
         // set the lower id as not user defined, if that was not the premise anyway
+
+    }
+
+    private void copyMappings(GuestOSVO guestOSVO, List<GuestOSHypervisorVO> mappings) {
+        for (GuestOSHypervisorVO mapping : mappings) {
+            if (null == guestOSHypervisorDao.findByOsIdAndHypervisor(guestOSVO.getId(), mapping.getHypervisorType(), mapping.getHypervisorVersion())) {
+                GuestOSHypervisorVO newMap = new GuestOSHypervisorVO();
+                newMap.setGuestOsId(guestOSVO.getId());
+                newMap.setGuestOsName(guestOSVO.getDisplayName());
+                newMap.setHypervisorType(mapping.getHypervisorType());
+                newMap.setHypervisorType(mapping.getHypervisorType());
+                guestOSHypervisorDao.persist(newMap);
+            }
+        }
+    }
+
+    private GuestOSVO highestIdFrom(Set<GuestOSVO> setOfGuestOSes) {
+        GuestOSVO rc = null;
+        for (GuestOSVO guestOSVO: setOfGuestOSes) {
+            if (rc == null || (guestOSVO.getId() > rc.getId() && !guestOSVO.getIsUserDefined())) {
+                rc = guestOSVO;
+            }
+        }
+        return rc;
+    }
+
+    /**
+     *
+     ¨¨¨
+     select * from guest_os go2
+      where display_name
+      in (select display_name from
+                 (select display_name, count(1) as count from guest_os go1 group by display_name having count > 1) tab0);
+     ¨¨¨
+     * and group them by display_name
+     *
+     *
+     * @return a list of sets of duplicate
+     */
+    private Set<Set<GuestOSVO>> findDuplicates() {
+        Set<Set<GuestOSVO>> rc = new HashSet<>();
+        Set<String> names = guestOSDao.findDoubleNames();
+        for (String name : names) {
+            List<GuestOSVO> guestOsses = guestOSDao.listByDisplayName(name);
+            if (CollectionUtils.isNotEmpty(guestOsses)) {
+                rc.add(new HashSet<>(guestOsses));
+            }
+        }
+        return rc;
     }
 
     private long getGuestOsId(long categoryId, String displayName) {
