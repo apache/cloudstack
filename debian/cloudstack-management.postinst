@@ -60,8 +60,12 @@ if [ "$1" = configure ]; then
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
 
     # install mysql_connector_python
-    if ! pip3 show mysql-connector-python 2>&1 > /dev/null; then
-      pip3 install --break-system-packages mysql-connector-python==8.0.31
+    if [[ ! $(apt-cache search python3-mysql.connector | wc -l) -ge 1 ]]; then
+        if which pip3 > /dev/null; then
+            pip3 install mysql-connector-python==8.0.31 || pip3 install --break-system-packages mysql-connector-python==8.0.31
+        else
+            echo "Failed to find and install python3-mysql.connector, please install mysql-connector-python using pip3"
+        fi
     fi
 
     # Add jdbc MySQL driver settings to db.properties if not present
