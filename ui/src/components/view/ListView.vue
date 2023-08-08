@@ -162,7 +162,9 @@
     </template>
     <template #ipaddress="{ text, record }" href="javascript:;">
       <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <span v-else>
+        <copy-label :label="text" />
+      </span>
       <span v-if="record.issourcenat">
         &nbsp;
         <a-tag>source-nat</a-tag>
@@ -187,6 +189,15 @@
     </template>
     <template #virtualmachinename="{ text, record }">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
+    </template>
+    <template #volumename="{ text, record }">
+      <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+    </template>
+    <template #physicalsize="{ text }">
+      {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+    </template>
+    <template #physicalnetworkname="{ text, record }">
+      <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
     </template>
     <template #hypervisor="{ text, record }">
       <span v-if="$route.name === 'hypervisorcapability'">
@@ -303,6 +314,7 @@
     </template>
     <template #zonename="{ text, record }">
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <router-link v-else-if="$router.resolve('/zones/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zones/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #rolename="{ text, record }">
@@ -431,6 +443,7 @@ import { api } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
+import CopyLabel from '@/components/widgets/CopyLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
@@ -442,6 +455,7 @@ export default {
     OsLogo,
     Status,
     QuickView,
+    CopyLabel,
     TooltipButton,
     ResourceIcon,
     ResourceLabel

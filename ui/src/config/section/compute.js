@@ -46,8 +46,8 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'displayname', 'state', 'ipaddress']
-        const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
+        const fields = ['name', 'state', 'ipaddress', 'cpunumber', 'memorytotal']
+        const metricsFields = ['cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
               if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
@@ -56,19 +56,22 @@ export default {
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
           },
-          'memorytotal', 'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
+          'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
+          fields.pop()
           fields.push(...metricsFields)
         }
 
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
+          fields.push('domain')
           fields.push('hostname')
           fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          fields.push('domain')
           fields.push('zonename')
         } else {
           fields.push('zonename')
@@ -455,9 +458,10 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: (store) => {
-        var fields = ['name', 'state', 'size', 'cpunumber', 'memory']
+        var fields = ['name', 'state', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
@@ -548,7 +552,7 @@ export default {
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      columns: ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account', 'domain'],
       details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
       related: [{
         name: 'vm',
@@ -652,7 +656,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-      columns: ['name', 'account'],
+      columns: ['name', 'account', 'domain'],
       details: ['name', 'id', 'account', 'domain', 'created'],
       related: [{
         name: 'vm',
@@ -706,6 +710,7 @@ export default {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -783,6 +788,7 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -854,6 +860,7 @@ export default {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
