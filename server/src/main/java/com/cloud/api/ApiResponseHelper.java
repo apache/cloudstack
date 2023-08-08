@@ -3636,6 +3636,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
         }
+        // TODO: create details find utility and add the details to the response
 
         response.setObjectName("ostype");
         return response;

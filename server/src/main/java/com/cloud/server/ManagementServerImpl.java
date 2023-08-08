@@ -2796,17 +2796,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
-        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(), (String)key, detailsMap.get(key), false);
-            }
-        }
+        Map<String, String> details = cmd.getDetails();
+        Boolean forDisplay = cmd.getForDisplay();
+        persistGuestOsDetails(forDisplay, details, guestOsPersisted.getId());
 
         return guestOsPersisted;
+    }
+
+    private void persistGuestOsDetails(Boolean forDisplay, Map<String, String> details, long guestOsPersistedId) {
+        if (Boolean.FALSE.equals(forDisplay)) {
+            details.put("display", Boolean.FALSE.toString());
+        } else {
+            details.put("display", Boolean.TRUE.toString());
+        }
+        for (Object key : details.keySet()) {
+            _guestOsDetailsDao.addDetail(guestOsPersistedId, (String)key, details.get(key), false);
+        }
     }
 
     @Override
@@ -2832,12 +2839,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(id, (String)key, detailsMap.get(key), false);
-            }
-        }
+
+        Map<String, String> details = cmd.getDetails();
+        Boolean forDisplay = cmd.getForDisplay();
+        persistGuestOsDetails(forDisplay, details, id);
 
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
@@ -2851,9 +2856,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
-        if (cmd.getForDisplay() != null) {
-            guestOs.setDisplay(cmd.getForDisplay());
-        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {

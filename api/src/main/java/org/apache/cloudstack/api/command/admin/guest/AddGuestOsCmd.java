@@ -81,7 +81,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     }
 
     public Map getDetails() {
-        Map<String, String> detailsMap = new HashMap<String, String>();
+        Map<String, String> detailsMap = new HashMap<>();
         if (!details.isEmpty()) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();

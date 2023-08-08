@@ -73,7 +73,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     }
 
     public Map getDetails() {
-        Map<String, String> detailsMap = new HashMap<String, String>();;
+        Map<String, String> detailsMap = new HashMap<>();;
         if (!details.isEmpty()) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();

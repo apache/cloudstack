@@ -74,8 +74,8 @@ public class ListGuestOsCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends GuestOS>, Integer> result = _mgr.listGuestOSByCriteria(this);
-        ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
-        List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();
+        ListResponse<GuestOSResponse> response = new ListResponse<>();
+        List<GuestOSResponse> osResponses = new ArrayList<>();
         for (GuestOS guestOS : result.first()) {
             GuestOSResponse guestOSResponse = _responseGenerator.createGuestOSResponse(guestOS);
             osResponses.add(guestOSResponse);
