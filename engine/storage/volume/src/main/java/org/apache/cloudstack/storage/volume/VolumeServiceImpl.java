@@ -1648,6 +1648,10 @@ public class VolumeServiceImpl implements VolumeService {
         newVol.setPoolType(pool.getPoolType());
         newVol.setLastPoolId(lastPoolId);
         newVol.setPodId(pool.getPodId());
+        if (volume.getPassphraseId() != null) {
+            newVol.setPassphraseId(volume.getPassphraseId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        }
         return volDao.persist(newVol);
     }
 

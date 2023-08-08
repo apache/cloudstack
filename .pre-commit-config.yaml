@@ -26,17 +26,18 @@ repos:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.4.0
     hooks:
       #- id: check-added-large-files
-      #- id: check-case-conflict
+      - id: check-case-conflict
       #- id: check-executables-have-shebangs
       #- id: check-merge-conflict
-      #- id: check-vcs-permalinks
+      - id: check-vcs-permalinks
       #- id: check-yaml
       #- id: detect-private-key
-      #- id: end-of-file-fixer
+      - id: end-of-file-fixer
+        files: \.(java|md|py|txt|yaml|yml)$
       #- id: fix-byte-order-marker
       - id: mixed-line-ending
-        files: \.(java|py)$
+        files: \.(java|md|py|txt|yaml|yml)$
       # - id: trailing-whitespace

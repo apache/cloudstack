@@ -57,7 +57,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Optional name for Guest OS")
     private String osName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
     private Map details;
 
 

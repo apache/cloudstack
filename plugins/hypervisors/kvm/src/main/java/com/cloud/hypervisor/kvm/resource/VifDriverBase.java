@@ -23,6 +23,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -39,6 +41,11 @@ public abstract class VifDriverBase implements VifDriver {
         _libvirtComputingResource = (LibvirtComputingResource)params.get("libvirt.computing.resource");
         _bridges = (Map<String, String>)params.get("libvirt.host.bridges");
         _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
+    }
+
+    protected String getControlCidr(String defaultValue) {
+        String controlCidr = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONTROL_CIDR);
+        return controlCidr;
     }
 
     @Override
