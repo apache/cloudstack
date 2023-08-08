@@ -272,8 +272,6 @@ public class LibvirtComputingResourceTest {
     public void setup() throws Exception {
         libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
         libvirtComputingResourceSpy.parser = parserMock;
-//        Scanner scanner = new Scanner(memInfo);
-//        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
         LibvirtComputingResource.s_logger = loggerMock;
     }
 

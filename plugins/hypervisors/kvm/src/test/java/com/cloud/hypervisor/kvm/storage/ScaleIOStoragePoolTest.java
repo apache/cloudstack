@@ -174,9 +174,6 @@ public class ScaleIOStoragePoolTest {
             when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
             // TODO: Mock file exists
-//            File file = PowerMockito.mock(File.class);
-//            PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(file);
-//            PowerMockito.when(file.exists()).thenReturn(true);
 
             KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
             assertNull(disk);

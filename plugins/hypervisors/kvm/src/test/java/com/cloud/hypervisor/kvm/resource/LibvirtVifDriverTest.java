@@ -64,8 +64,6 @@ public class LibvirtVifDriverTest {
             "Inactive:         949392 kB\n";
     @Before
     public void setUp() throws Exception {
-//        Scanner scanner = new Scanner(memInfo);
-//        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource();
         res = spy(resReal);
