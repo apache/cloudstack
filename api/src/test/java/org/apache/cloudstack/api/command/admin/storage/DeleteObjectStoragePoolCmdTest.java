@@ -22,25 +22,26 @@ import com.cloud.storage.StorageService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class DeleteObjectStoragePoolCmdTest {
     public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmdTest.class.getName());
     @Mock
     private StorageService storageService;
 
-    @InjectMocks
-    private DeleteObjectStoragePoolCmd deleteObjectStoragePoolCmd = new DeleteObjectStoragePoolCmd();
+    @Spy
+    DeleteObjectStoragePoolCmd deleteObjectStoragePoolCmd;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        deleteObjectStoragePoolCmd = Mockito.spy(new DeleteObjectStoragePoolCmd());
+        deleteObjectStoragePoolCmd._storageService = storageService;
     }
 
     @After
@@ -50,11 +51,8 @@ public class DeleteObjectStoragePoolCmdTest {
 
     @Test
     public void testDeleteObjectStore()  {
-        try {
-            deleteObjectStoragePoolCmd.execute();
-        } catch (Exception e) {
-            Assert.assertEquals("Failed to delete object store", e.getMessage());
-        }
+        Mockito.doReturn(true).when(storageService).deleteObjectStore(deleteObjectStoragePoolCmd);
+        deleteObjectStoragePoolCmd.execute();
         Mockito.verify(storageService, Mockito.times(1))
                 .deleteObjectStore(deleteObjectStoragePoolCmd);
     }

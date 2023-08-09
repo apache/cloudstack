@@ -94,7 +94,6 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketResponse.setAccessKey(bucket.getAccessKey());
         bucketResponse.setSecretKey(bucket.getSecretKey());
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
-        //ToDo change to UUID
         bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
         bucketResponse.setObjectName("bucket");
         return bucketResponse;

@@ -150,7 +150,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         } catch (Exception e) {
             s_logger.error("Failed to create bucket with name: "+bucket.getName(), e);
             _bucketDao.remove(bucket.getId());
-            throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName());
+            throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()  );
         }
         return bucket;
     }
@@ -266,5 +266,4 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             }
         }
     }
-
 }

@@ -20,43 +20,62 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.StorageService;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
+import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyObject;
+
+@RunWith(MockitoJUnitRunner.class)
 public class AddObjectStoragePoolCmdTest {
     public static final Logger s_logger = Logger.getLogger(AddObjectStoragePoolCmdTest.class.getName());
 
     @Mock
-    private StorageService storageService;
+    StorageService storageService;
 
-    @InjectMocks
-    private AddObjectStoragePoolCmd addObjectStoragePoolCmd = new AddObjectStoragePoolCmd();
+    @Mock
+    ObjectStore objectStore;
 
-    private String name = "testObjStore";
+    @Mock
+    ResponseGenerator responseGenerator;
 
-    private String url = "testURL";
+    @Spy
+    AddObjectStoragePoolCmd addObjectStoragePoolCmdSpy;
 
-    private String provider = "Simulator";
+    String name = "testObjStore";
+
+    String url = "testURL";
+
+    String provider = "Simulator";
+
+    Map<String, String> details;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
-        ReflectionTestUtils.setField(addObjectStoragePoolCmd, "name", name);
-        ReflectionTestUtils.setField(addObjectStoragePoolCmd, "url", url);
-        ReflectionTestUtils.setField(addObjectStoragePoolCmd, "providerName", provider);
-        ReflectionTestUtils.setField(addObjectStoragePoolCmd, "details", new HashMap<>());
+        details = new HashMap<>();
+        addObjectStoragePoolCmdSpy = Mockito.spy(new AddObjectStoragePoolCmd());
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "name", name);
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "url", url);
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "providerName", provider);
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "details", details);
+        addObjectStoragePoolCmdSpy._storageService = storageService;
+        addObjectStoragePoolCmdSpy._responseGenerator = responseGenerator;
     }
 
     @After
@@ -66,13 +85,13 @@ public class AddObjectStoragePoolCmdTest {
 
     @Test
     public void testAddObjectStore() throws DiscoveryException {
-        try {
-            addObjectStoragePoolCmd.execute();
-        } catch (Exception e) {
-            Assert.assertEquals("Failed to add object storage", e.getMessage());
-        }
+        Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), anyObject());
+        ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        addObjectStoragePoolCmdSpy.execute();
+
         Mockito.verify(storageService, Mockito.times(1))
                 .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
-
 }

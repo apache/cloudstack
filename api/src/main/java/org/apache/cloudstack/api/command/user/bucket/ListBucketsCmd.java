@@ -33,7 +33,8 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 @APICommand(name = "listBuckets", description = "Lists all Buckets.", responseObject = BucketResponse.class, responseView = ResponseView.Restricted, entityType = {
-        Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
+        Bucket.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListBucketsCmd.class.getName());
 

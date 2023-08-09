@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -25,7 +26,8 @@ import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.log4j.Logger;
 
 @APICommand(name = "listObjectStoragePools", description = "Lists object storage pools.", responseObject = ObjectStoreResponse.class, since = "4.19.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListObjectStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListObjectStoragePoolsCmd.class.getName());
 

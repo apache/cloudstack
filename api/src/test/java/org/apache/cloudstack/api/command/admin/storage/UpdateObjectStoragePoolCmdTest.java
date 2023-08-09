@@ -19,17 +19,21 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.storage.StorageService;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import  org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.Spy;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.mockito.ArgumentMatchers.anyObject;
 
 public class UpdateObjectStoragePoolCmdTest {
     public static final Logger s_logger = Logger.getLogger(UpdateObjectStoragePoolCmdTest.class.getName());
@@ -37,8 +41,14 @@ public class UpdateObjectStoragePoolCmdTest {
     @Mock
     private StorageService storageService;
 
-    @InjectMocks
-    private UpdateObjectStoragePoolCmd updateObjectStoragePoolCmd = new UpdateObjectStoragePoolCmd();
+    @Spy
+    UpdateObjectStoragePoolCmd updateObjectStoragePoolCmd;
+
+    @Mock
+    ObjectStore objectStore;
+
+    @Mock
+    ResponseGenerator responseGenerator;
 
     private String name = "testObjStore";
 
@@ -49,7 +59,9 @@ public class UpdateObjectStoragePoolCmdTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
+        updateObjectStoragePoolCmd = Mockito.spy(new UpdateObjectStoragePoolCmd());
+        updateObjectStoragePoolCmd._storageService = storageService;
+        updateObjectStoragePoolCmd._responseGenerator = responseGenerator;
         ReflectionTestUtils.setField(updateObjectStoragePoolCmd, "name", name);
         ReflectionTestUtils.setField(updateObjectStoragePoolCmd, "url", url);
         ReflectionTestUtils.setField(updateObjectStoragePoolCmd, "id", 1L);
@@ -62,11 +74,10 @@ public class UpdateObjectStoragePoolCmdTest {
 
     @Test
     public void testUpdateObjectStore() {
-        try {
-            updateObjectStoragePoolCmd.execute();
-        } catch (Exception e) {
-            Assert.assertEquals("Failed to update object storage", e.getMessage());
-        }
+        Mockito.doReturn(objectStore).when(storageService).updateObjectStore(1L, updateObjectStoragePoolCmd);
+        ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
+        Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(anyObject());
+        updateObjectStoragePoolCmd.execute();
         Mockito.verify(storageService, Mockito.times(1))
                 .updateObjectStore(1L, updateObjectStoragePoolCmd);
     }

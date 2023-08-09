@@ -99,8 +99,6 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
 
     @Override
     public DataObject create(DataObject obj) {
-        //ToDo remove this?
-        //driver.createBucket();
         return null;
     }
 
