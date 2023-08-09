@@ -294,7 +294,8 @@ export default {
   width: 80vw;
 
   @media (min-width: 500px) {
-    width: 400px;
+    min-width: 400px;
+    width: 100%;
   }
 }
 </style>
