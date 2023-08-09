@@ -39,9 +39,7 @@
           style="width: 100%; margin-bottom: 10px"
           @click="showAddVolModal"
           :loading="loading"
-          :disabled="!('createVolume' in $store.getters.apis) ||
-                          $store.getters.userInfo.account != this.resource.account ||
-                          $store.getters.userInfo.domainid != this.resource.domainid">
+          :disabled="!('createVolume' in $store.getters.apis)">
           <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />

@@ -229,6 +229,8 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         if (this.createVolumeFromVM) {
+          values.account = this.resource.account
+          values.domainid = this.resource.domainid
           values.virtualmachineid = this.resource.id
           values.zoneid = this.resource.zoneid
         }
