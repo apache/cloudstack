@@ -139,6 +139,29 @@
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.ipaddress">
+          <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
+          <div class="resource-detail-item__details">
+            <environment-outlined
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
+              v-clipboard:copy="ipaddress" />
+            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">
+              <copy-label :label="ipaddress" />
+            </router-link>
+            <span v-else>
+              <span v-if="ipaddress.includes(',')">
+                <span
+                v-for="(value, index) in ipaddress.split(',')"
+                :key="index">
+                  <copy-label :label="value" /><br/>
+                </span>
+              </span>
+              <span v-else>
+                <copy-label :label="ipaddress" />
+              </span>
+            </span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
@@ -298,9 +321,13 @@
                 <a-tag v-if="eth.isdefault">
                   {{ $t('label.default') }}
                 </a-tag ><br/>
-                <minus-outlined />
-                <apartment-outlined />
-                <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">{{ eth.networkname }}</router-link>
+                <span v-if="!isStatic && eth.networkname && eth.networkid">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  <apartment-outlined/>
+                  <router-link :to="{ path: '/guestnetwork/' + eth.networkid      }">
+                    {{ eth.networkname }}
+                  </router-link>
+                </span>
               </div>
             </div>
           </div>
@@ -326,16 +353,6 @@
           <div class="resource-detail-item__details">
             <api-outlined />
             <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.ipaddress">
-          <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
-          <div class="resource-detail-item__details">
-            <environment-outlined
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
-              v-clipboard:copy="ipaddress" />
-            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
-            <span v-else>{{ ipaddress }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -429,7 +446,8 @@
           <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
-            <router-link :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+            <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+            <copy-label :label="resource.publicip"/>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">

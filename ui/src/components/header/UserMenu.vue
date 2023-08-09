@@ -51,7 +51,6 @@
                 <span class="user-menu-item-name">{{ $t('label.limits') }}</span>
             </a-menu-item>
           </router-link>
-
           <a @click="toggleUseBrowserTimezone">
             <a-menu-item class="user-menu-item" key="1">
                 <ClockCircleOutlined class="user-menu-item-icon" />

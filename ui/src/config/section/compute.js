@@ -67,14 +67,13 @@ export default {
           fields.push('account')
           fields.push('domain')
           fields.push('hostname')
-          fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
           fields.push('domain')
-          fields.push('zonename')
         } else {
-          fields.push('zonename')
+          fields.push('serviceofferingname')
         }
+        fields.push('zonename')
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],

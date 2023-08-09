@@ -194,13 +194,20 @@
       <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
     </template>
     <template #size="{ text }">
-      {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      <span v-if="text">
+        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      </span>
     </template>
     <template #physicalsize="{ text }">
-      {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      <span v-if="text">
+        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      </span>
     </template>
     <template #physicalnetworkname="{ text, record }">
       <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
+    </template>
+    <template #serviceofferingname="{ text, record }">
+      <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
     </template>
     <template #hypervisor="{ text, record }">
       <span v-if="$route.name === 'hypervisorcapability'">
