@@ -27,7 +27,7 @@
     <a-dropdown>
       <span class="user-menu-dropdown action">
         <span v-if="image">
-          <resource-icon :image="image" size="4x" style="margin-right: 5px; margin-top: -4px"/>
+          <resource-icon :image="image" size="4x" style="margin-right: 5px; margin-top: -3px"/>
         </span>
         <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
           {{ userInitials }}

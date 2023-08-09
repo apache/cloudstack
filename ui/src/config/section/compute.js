@@ -46,8 +46,8 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'state', 'ipaddress', 'cpunumber', 'memorytotal']
-        const metricsFields = ['cputotal', 'cpuused', 'memorytotal',
+        const fields = ['name', 'state', 'ipaddress']
+        const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
               if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
@@ -59,7 +59,6 @@ export default {
           'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
-          fields.pop()
           fields.push(...metricsFields)
         }
 
