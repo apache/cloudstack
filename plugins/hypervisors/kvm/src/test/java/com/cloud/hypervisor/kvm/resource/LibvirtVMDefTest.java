@@ -22,7 +22,6 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 import junit.framework.TestCase;
@@ -31,17 +30,13 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
-import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuObject;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtVMDefTest extends TestCase {
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
@@ -51,12 +46,6 @@ public class LibvirtVMDefTest extends TestCase {
             "SwapCached:            0 kB\n" +
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
-
-    @Before
-    public void setup() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
-    }
 
     @Test
     public void testInterfaceTypeUserWithNetwork() {

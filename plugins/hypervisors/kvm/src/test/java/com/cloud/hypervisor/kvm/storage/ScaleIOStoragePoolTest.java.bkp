@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,7 +100,7 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+        try(MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             when(Script.runSimpleBashScript(
                     "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
                     sdcId);
@@ -120,7 +121,7 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+        try(MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             when(Script.runSimpleBashScript(
                     "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
                     null);
@@ -151,7 +152,7 @@ public class ScaleIOStoragePoolTest {
 
         // TODO: Mock file in dir
 
-        try (MockedConstruction<File> ignored = Mockito.mockConstruction(File.class, (mock, context) -> {
+        try(MockedConstruction<File> ignored = Mockito.mockConstruction(File.class, (mock, context) -> {
             File[] files = new File[1];
             String volumeId = ScaleIOUtil.getVolumePath(volumePath);
             String diskFilePath =
@@ -164,16 +165,16 @@ public class ScaleIOStoragePoolTest {
         }
     }
 
-
     @Test
     public void testGetPhysicalDiskWithSystemId() throws Exception {
         final String volumePath = "6c3362b500000001:vol-139-3d2c-12f0";
         final String volumeId = ScaleIOUtil.getVolumePath(volumePath);
         final String systemId = "218ce1797566a00f";
-        try (MockedStatic<ScaleIOUtil> ignored = Mockito.mockStatic(ScaleIOUtil.class, Mockito.CALLS_REAL_METHODS)) {
-            when(ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
-            // TODO: Mock file exists
+        try (MockedConstruction<File> ignored = Mockito.mockConstruction(File.class, (mock, context) -> {
+            Mockito.when(mock.exists()).thenReturn(true);
+        }); MockedStatic<ScaleIOUtil> scaleIOUtilMockedStatic = Mockito.mockStatic(ScaleIOUtil.class)) {
+            scaleIOUtilMockedStatic.when(() -> ScaleIOUtil.getSystemIdForVolume(volumeId)).thenReturn(systemId);
 
             KVMPhysicalDisk disk = adapter.getPhysicalDisk(volumePath, pool);
             assertNull(disk);
