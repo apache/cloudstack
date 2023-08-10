@@ -65,11 +65,9 @@ export default {
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
-          fields.push('domain')
           fields.push('hostname')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          fields.push('domain')
         } else {
           fields.push('serviceofferingname')
         }
@@ -550,7 +548,7 @@ export default {
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      columns: ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account', 'domain'],
+      columns: ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account'],
       details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
       related: [{
         name: 'vm',

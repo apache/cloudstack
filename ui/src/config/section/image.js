@@ -40,7 +40,6 @@ export default {
           fields.push('size')
           fields.push('physicalsize')
           fields.push('account')
-          fields.push('domain')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')
@@ -193,7 +192,6 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
-          fields.push('domain')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')

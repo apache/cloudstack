@@ -56,11 +56,9 @@ export default {
 
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('account')
-          fields.push('domain')
           fields.push('storage')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          fields.push('domain')
         }
         fields.push('zonename')
 
