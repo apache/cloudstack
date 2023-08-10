@@ -92,7 +92,7 @@ public class GuestOsMapper {
                 newMap.setGuestOsId(guestOSVO.getId());
                 newMap.setGuestOsName(guestOSVO.getDisplayName());
                 newMap.setHypervisorType(mapping.getHypervisorType());
-                newMap.setHypervisorType(mapping.getHypervisorType());
+                newMap.setHypervisorVersion(mapping.getHypervisorVersion());
                 guestOSHypervisorDao.persist(newMap);
             }
         }
