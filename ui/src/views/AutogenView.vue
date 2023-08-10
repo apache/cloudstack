@@ -442,6 +442,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
+import { sourceToken } from '@/utils/request'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
@@ -621,6 +622,9 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    console.log('DEBUG - Due to route change, cancelling any on-going API request', this.apiName)
+    sourceToken.cancel()
+    sourceToken.init()
     this.currentPath = this.$route.fullPath
     next()
   },
@@ -918,18 +922,36 @@ export default {
             break
           }
         }
-        this.itemCount = 0
+        var apiItemCount = 0
         for (const key in json[responseName]) {
           if (key === 'count') {
-            this.itemCount = json[responseName].count
+            apiItemCount = json[responseName].count
             continue
           }
           objectName = key
           break
         }
+
+        if ((this.apiName.toLowerCase() + 'response') !== responseName.toLowerCase()) {
+          console.log('DEBUG - Discarding API response as expected API response key does not match response name:', responseName)
+          return
+        }
+        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+          console.log('DEBUG - Discarding API response as its `id` does not match $route.param.id')
+          return
+        }
+        if (this.dataView && apiItemCount > 1) {
+          console.log('DEBUG - Discarding API response as got more than one item in data view', this.$route.params, this.items)
+          return
+        }
+
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
           this.items = []
+        }
+        this.itemCount = apiItemCount
+        if (this.itemCount !== this.items.length) {
+          console.log('WARN: API items length does not match the API return count, something is wrong')
         }
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
@@ -979,6 +1001,10 @@ export default {
           }
         }
       }).catch(error => {
+        if (!error || !error.message) {
+          console.log('API request likely got cancelled due to route change:', this.apiName)
+          return
+        }
         if ([401].includes(error.response.status)) {
           return
         }
