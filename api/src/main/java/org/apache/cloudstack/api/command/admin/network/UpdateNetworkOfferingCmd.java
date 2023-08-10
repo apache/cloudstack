@@ -55,7 +55,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering."
-            + " Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering; Only one network offering can have the value Required ")
+            + " The default value is Required for Guest Virtual network offering, Optional for Guest Direct network offering. Only one network offering can have the value Required ")
     private String availability;
 
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the network offering, integer")
