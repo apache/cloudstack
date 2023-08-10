@@ -610,7 +610,7 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createIsoResponse(ResponseView view, TemplateJoinVO... templates) {
-        Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
+        LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
