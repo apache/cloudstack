@@ -1410,6 +1410,7 @@
 "label.oauth.verification": "OAuth verification",
 "label.ocfs2": "OCFS2",
 "label.object.storage" : "Object Storage",
+"label.objectstore" : "Object Storage",
 "label.add.object.storage" : "Add Object Storage",
 "label.action.update.object.storage" : "Update Object Storage",
 "label.action.delete.object.storage" : "Delete Object Storage",

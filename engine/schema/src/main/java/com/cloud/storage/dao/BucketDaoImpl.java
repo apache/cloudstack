@@ -82,6 +82,7 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketResponse.setName(bucket.getName());
         bucketResponse.setId(bucket.getUuid());
         bucketResponse.setCreated(bucket.getCreated());
+        bucketResponse.setState(bucket.getState());
         bucketResponse.setSize(bucket.getSize());
         if(bucket.getQuota() != null) {
             bucketResponse.setQuota(bucket.getQuota());
@@ -95,6 +96,7 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         bucketResponse.setSecretKey(bucket.getSecretKey());
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
+        bucketResponse.setObjectStoragePool(objectStoreVO.getName());
         bucketResponse.setObjectName("bucket");
         return bucketResponse;
     }

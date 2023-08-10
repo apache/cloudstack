@@ -58,9 +58,17 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "id of the object storage hosting the Bucket; returned to admin user only")
     private String objectStoragePoolId;
 
+    @SerializedName(ApiConstants.OBJECT_STORAGE)
+    @Param(description = "Name of the object storage hosting the Bucket; returned to admin user only")
+    private String objectStoragePool;
+
     @SerializedName(ApiConstants.SIZE)
     @Param(description = "Total size of objects in Bucket")
     private Long size;
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "State of the Bucket")
+    private String state;
 
     @SerializedName(ApiConstants.QUOTA)
     @Param(description = "Bucket Quota in GB")
@@ -255,4 +263,19 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
         this.secretKey = secretKey;
     }
 
+    public void setState(Bucket.State state) {
+        this.state = state.toString();
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setObjectStoragePool(String objectStoragePool) {
+        this.objectStoragePool = objectStoragePool;
+    }
+
+    public String getObjectStoragePool() {
+        return objectStoragePool;
+    }
 }

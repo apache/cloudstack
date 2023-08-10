@@ -25,11 +25,11 @@ export default {
   docHelp: 'adminguide/storage.html#object-storage',
   permission: ['listObjectStoragePools'],
   columns: () => {
-    var fields = ['name', 'url', 'protocol', 'providername']
+    var fields = ['name', 'url', 'providername']
     return fields
   },
   details: () => {
-    var fields = ['name', 'id', 'url', 'protocol', 'providername']
+    var fields = ['name', 'id', 'url', 'providername']
     return fields
   },
   resourceType: 'ObjectStorage',
@@ -62,7 +62,7 @@ export default {
       api: 'updateObjectStoragePool',
       icon: 'edit-outlined',
       label: 'label.action.update.object.storage',
-      args: ['name'],
+      args: ['name', 'url'],
       dataView: true
     },
     {
