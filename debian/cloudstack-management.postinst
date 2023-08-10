@@ -59,13 +59,9 @@ if [ "$1" = configure ]; then
 
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j.xml
 
-    # install mysql_connector_python
+    # Warn about mysql_connector_python on Debian
     if grep '^ID=debian$' /etc/os-release > /dev/null; then
-        if which pip3 > /dev/null; then
-            pip3 install mysql-connector-python==8.0.31 || pip3 install --break-system-packages mysql-connector-python==8.0.31
-        else
-            echo "Failed to find and install python3-mysql.connector, please install mysql-connector-python using pip3 manually"
-        fi
+        echo "Please check and install python3-mysql.connector package or mysql-connector-python via pip3 manually"
     fi
 
     # Add jdbc MySQL driver settings to db.properties if not present
