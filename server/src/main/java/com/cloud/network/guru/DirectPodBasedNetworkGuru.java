@@ -222,7 +222,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                  * Linux, FreeBSD and Windows all calculate the same IPv6 address when configured properly.
                  *
                  * Using Router Advertisements the routers in the network should announce the IPv6 CIDR which is configured
-                 * in in the vlan table in the database.
+                 * in the vlan table in the database.
                  *
                  * This way the NIC will be populated with a IPv6 address on which the Instance is reachable.
                  */

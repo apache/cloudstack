@@ -236,7 +236,7 @@ public class ActionEventUtils {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish action event on the the event bus.");
+            s_logger.warn("Failed to publish action event on the event bus.");
         }
     }
 

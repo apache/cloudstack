@@ -106,7 +106,7 @@ public interface ManagementService {
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
     /**
-     * returns the the configuration groups
+     * returns the configuration groups
      *
      * @return list of configuration groups
      */

@@ -476,7 +476,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     protected List<Long> getAffectedVmsForVmStop(VMInstanceVO vm) {
         List<Long> affectedVms = new ArrayList<Long>();
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
-        // For each group, find the security rules rules that allow the group
+        // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
             //Add usage events for security group remove
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), mapVO.getSecurityGroupId(), vm

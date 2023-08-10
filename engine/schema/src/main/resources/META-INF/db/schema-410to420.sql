@@ -1986,7 +1986,7 @@ CREATE TABLE `cloud`.`account_vnet_map` (
   `uuid` varchar(255) UNIQUE,
   `vnet_range` varchar(255) NOT NULL COMMENT 'dedicated guest vlan range',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
-  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the the physical network table',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id. foreign key to the physical network table',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_account_vnet_map__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network` (`id`) ON DELETE CASCADE,
   INDEX `i_account_vnet_map__physical_network_id`(`physical_network_id`),

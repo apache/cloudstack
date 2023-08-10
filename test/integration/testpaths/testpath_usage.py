@@ -432,7 +432,7 @@ class TestUsage(cloudstackTestCase):
     def test_01_positive_tests_usage(self):
         """ Positive test for usage test path
 
-        # 1.  Register a template and verify that usage usage is generated
+        # 1.  Register a template and verify that usage is generated
               for correct size of template
         # 2.  Register an ISO, verify usage is generate for the correct size
               of ISO

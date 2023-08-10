@@ -53,7 +53,7 @@ public interface HighAvailabilityManager extends Manager {
     ConfigKey<Long> TimeBetweenCleanup = new ConfigKey<>("Advanced", Long.class,
         "time.between.cleanup", "86400", "The time in seconds to wait before the"
         + " cleanup thread runs for the different HA-Worker-Threads. The cleanup thread finds all the work items "
-        + "that were successful and is now ready to be purged from the the database (table: op_ha_work).",
+        + "that were successful and is now ready to be purged from the database (table: op_ha_work).",
         true, Cluster);
 
     ConfigKey<Integer> MaxRetries = new ConfigKey<>("Advanced", Integer.class, "max.retries",

@@ -90,7 +90,7 @@ h. puppet - set puppetmaster to listen on 8140
 
 2. NFS storage - the nfs server is a single server serving as both primary and secondary storage. This is likely a limitation when compared to true production deployments but serves in good stead for a test setup. Where it becomes a limitation is in testing different storage backends. Object stores, local storage, clustered local storage etc are not addressed by this setup.
 
-3. Hypervisor hosts - There currently are 4 hosts in this environment. These are arranged at the moment in three pods so as to be capable of being deployed in a two zone environment. One zone with two pods and and a second zone with a single pod. This covers tests that depend on 
+3. Hypervisor hosts - There currently are 4 hosts in this environment. These are arranged at the moment in three pods so as to be capable of being deployed in a two zone environment. One zone with two pods and a second zone with a single pod. This covers tests that depend on 
 a. single zone/pod/cluster
 b. multiple cluster
 c. inter-zone tests

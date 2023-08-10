@@ -105,7 +105,7 @@ class TestLdap(cloudstackTestCase):
                 self.apiClient.deleteAccount(deleteAcct)
 
                 self.debug(
-                    "Deleted the the following account name %s:" %
+                    "Deleted the following account name %s:" %
                     acct_name)
 
                 if self.ldapconfRes == 1:

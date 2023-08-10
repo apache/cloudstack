@@ -2492,7 +2492,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     IPv6Address.class.getName(), null);
         }
 
-        //remove the secondary ip addresses corresponding to to this nic
+        //remove the secondary ip addresses corresponding to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
             s_logger.debug("Removing nic " + nic.getId() + " secondary ip addresses failed");
         }
