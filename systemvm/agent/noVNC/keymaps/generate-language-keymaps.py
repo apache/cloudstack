@@ -97,7 +97,7 @@ def generate_js_file(keymap_file):
     js_config.append("export default {\n")
     for keycode in dict(sorted(result_mappings.items(), key=lambda item: int(item[0]))):
         js_config.append("%10s : \"%s\",\n" % ("\"" + str(keycode) + "\"", result_mappings[keycode].strip()))
-    js_config.append("}")
+    js_config.append("}\n")
     for line in js_config:
         handle.write(line)
     handle.close()
