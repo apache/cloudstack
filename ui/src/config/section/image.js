@@ -35,10 +35,17 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename', 'hypervisor']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
-          fields.push('physicalsize')
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
@@ -188,7 +195,15 @@ export default {
       resourceType: 'ISO',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')

@@ -219,6 +219,9 @@
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
       <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
     </template>
+    <template #status="{ text }">
+      <status :text="text ? text : ''" displayText />
+    </template>
     <template #allocationstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>

@@ -457,7 +457,6 @@ export default {
         var fields = ['name', 'state', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
-          fields.push('domain')
         }
         if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
