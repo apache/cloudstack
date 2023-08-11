@@ -83,7 +83,7 @@ public class QCOW2Processor extends AdapterBase implements Processor {
             long size = getTemplateVirtualSize(file);
             return size;
         } catch (Exception e) {
-            s_logger.info("[ignored]" + "failed to get template virtual size for QCOW2: " + e.getLocalizedMessage());
+            s_logger.info("[ignored]" + "failed to get Template virtual size for QCOW2: " + e.getLocalizedMessage());
         }
         return file.length();
     }

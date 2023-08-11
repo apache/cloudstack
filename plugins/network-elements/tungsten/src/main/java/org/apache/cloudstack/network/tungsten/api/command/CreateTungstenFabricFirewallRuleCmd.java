@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricFirewallRuleCmd.APINAME, description = "create Tungsten-Fabric firewall",
+@APICommand(name = CreateTungstenFabricFirewallRuleCmd.APINAME, description = "Create Tungsten-Fabric firewall",
     responseObject = TungstenFabricFirewallRuleResponse.class, requestHasSensitiveInfo = false,
     responseHasSensitiveInfo = false)
 public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
@@ -48,10 +48,10 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric firewall policy")
+    @Parameter(name = ApiConstants.FIREWALL_POLICY_UUID, type = CommandType.STRING, required = true, description = "The UUID of Tungsten-Fabric firewall policy")
     private String firewallPolicyUuid;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall rule name")
@@ -69,7 +69,7 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.SRC_ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule source address group uuid")
     private String srcAddressGroupUuid;
 
-    @Parameter(name = ApiConstants.SRC_NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric source network")
+    @Parameter(name = ApiConstants.SRC_NETWORK_UUID, type = CommandType.STRING, description = "The UUID of Tungsten-Fabric source network")
     private String srcNetworkUuid;
 
     @Parameter(name = ApiConstants.DIRECTION, type = CommandType.STRING, required = true, description = "Tungsten-Fabric firewall rule direction")
@@ -81,13 +81,13 @@ public class CreateTungstenFabricFirewallRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DEST_ADDRESS_GROUP_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule destination address group uuid")
     private String destAddressGroupUuid;
 
-    @Parameter(name = ApiConstants.DEST_NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric destination network")
+    @Parameter(name = ApiConstants.DEST_NETWORK_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric destination network")
     private String destNetworkUuid;
 
     @Parameter(name = ApiConstants.TAG_TYPE_UUID, type = CommandType.STRING, description = "Tungsten-Fabric firewall rule tag type uuid")
     private String tagTypeUuid;
 
-    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "the sequence of Tungsten-Fabric firewall rule")
+    @Parameter(name = ApiConstants.SEQUENCE, type = CommandType.INTEGER, required = true, description = "The sequence of Tungsten-Fabric firewall rule")
     private int sequence;
 
     @Override

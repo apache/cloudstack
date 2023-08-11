@@ -526,7 +526,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         throw new IOException("SSL: Fail to init SSL! " + e);
                     }
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Connection to peer opened: " + peerName + ", ip: " + ip);
+                        s_logger.debug("Connection to peer opened: " + peerName + ", IP: " + ip);
                     }
                     _peers.put(peerName, ch1);
                     _sslEngines.put(peerName, sslEngine);
@@ -539,7 +539,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             s_logger.error("failed to close failed peer socket: " + ex);
                         }
                     }
-                    s_logger.warn("Unable to connect to peer management server: " + peerName + ", ip: " + ip + " due to " + e.getMessage(), e);
+                    s_logger.warn("Unable to connect to peer management server: " + peerName + ", IP: " + ip + " due to " + e.getMessage(), e);
                     return null;
                 }
             }

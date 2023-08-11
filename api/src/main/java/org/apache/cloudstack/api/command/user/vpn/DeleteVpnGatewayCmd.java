@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVpnGateway", description = "Delete site to site vpn gateway", responseObject = SuccessResponse.class, entityType = {Site2SiteVpnGateway.class},
+@APICommand(name = "deleteVpnGateway", description = "Delete site to site VPN gateway", responseObject = SuccessResponse.class, entityType = {Site2SiteVpnGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnGatewayCmd.class.getName());
@@ -40,7 +40,7 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnGatewayResponse.class, required = true, description = "id of customer gateway")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteVpnGatewayResponse.class, required = true, description = "ID of customer gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete site-to-site VPN gateway for account " + getEntityOwnerId();
+        return "Delete site-to-site VPN gateway for Account " + getEntityOwnerId();
     }
 
     @Override

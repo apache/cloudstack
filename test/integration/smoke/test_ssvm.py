@@ -160,7 +160,7 @@ class TestSSVMs(cloudstackTestCase):
             "Check number of SSVMs with number of zones"
         )
         # For each secondary storage VM check private IP,
-        # public IP, link local IP and DNS
+        # public IP, Control IP and DNS
         for ssvm in list_ssvm_response:
 
             self.debug("SSVM state: %s" % ssvm.state)
@@ -179,7 +179,7 @@ class TestSSVMs(cloudstackTestCase):
             self.assertEqual(
                 hasattr(ssvm, 'linklocalip'),
                 True,
-                "Check whether SSVM has link local IP field"
+                "Check whether SSVM has Control IP field"
             )
 
             self.assertEqual(
@@ -319,7 +319,7 @@ class TestSSVMs(cloudstackTestCase):
             self.assertEqual(
                 hasattr(cpvm, 'linklocalip'),
                 True,
-                "Check whether CPVM has link local IP field"
+                "Check whether CPVM has Control IP field"
             )
 
             self.assertEqual(
@@ -556,11 +556,11 @@ class TestSSVMs(cloudstackTestCase):
                     "Marvin configuration has no host\
                             credentials to check router services")
         res = result[0]
-        self.debug("Cached Link Local IP: %s" % res)
+        self.debug("Cached Control IP: %s" % res)
         self.assertEqual(
             linklocal_ip,
             res,
-            "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
+            "The cached Control IP should be the same as the current Control IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
         )
 
     @attr(
@@ -689,11 +689,11 @@ class TestSSVMs(cloudstackTestCase):
                     "Marvin configuration has no host\
                             credentials to check router services")
         res = result[0]
-        self.debug("Cached Link Local IP: %s" % res)
+        self.debug("Cached Control IP: %s" % res)
         self.assertEqual(
             linklocal_ip,
             res,
-            "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
+            "The cached Control IP should be the same as the current Control IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
         )
 
     @attr(
@@ -1142,7 +1142,7 @@ class TestSSVMs(cloudstackTestCase):
         self.assertEqual(
             hasattr(ssvm_response, 'linklocalip'),
             True,
-            "Check whether SSVM has link local IP field"
+            "Check whether SSVM has Control IP field"
         )
 
         self.assertEqual(
@@ -1213,7 +1213,7 @@ class TestSSVMs(cloudstackTestCase):
         self.assertEqual(
             hasattr(cpvm_response, 'linklocalip'),
             True,
-            "Check whether CPVM has link local IP field"
+            "Check whether CPVM has Control IP field"
         )
 
         self.assertEqual(

@@ -49,7 +49,7 @@ public final class CitrixCleanupNetworkRulesCmdWrapper extends CommandWrapper<Cl
         }
 
         if (numCleaned > 0) {
-            s_logger.info("Cleaned up rules for " + result + " vms on host " + citrixResourceBase.getHost().getIp());
+            s_logger.info("Cleaned up rules for " + result + " Instances on host " + citrixResourceBase.getHost().getIp());
         }
         return new Answer(command, true, result);
     }

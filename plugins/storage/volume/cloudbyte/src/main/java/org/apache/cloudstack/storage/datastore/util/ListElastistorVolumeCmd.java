@@ -40,7 +40,7 @@ public class ListElastistorVolumeCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "the ID of the account")
+    @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "The ID of the account")
     private String id;
 
     // ///////////////////////////////////////////////////

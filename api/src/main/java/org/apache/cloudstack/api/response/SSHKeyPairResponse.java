@@ -30,28 +30,28 @@ import org.apache.cloudstack.api.EntityReference;
 public class SSHKeyPairResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the ssh keypair")
+    @Param(description = "ID of the SSH keypair")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "Name of the keypair")
     private String name;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the keypair")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description = "The owner of the keypair")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the keypair owner")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description = "The domain id of the keypair owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the keypair owner")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description = "The domain name of the keypair owner")
     private String domain;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the keypair owner")
+    @Param(description = "The project id of the keypair owner")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the keypair owner")
+    @Param(description = "The project name of the keypair owner")
     private String projectName;
 
     @SerializedName("fingerprint")

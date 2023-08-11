@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricTagCmd.APINAME, description = "create Tungsten-Fabric tag",
+@APICommand(name = CreateTungstenFabricTagCmd.APINAME, description = "Create Tungsten-Fabric tag",
     responseObject = TungstenFabricTagResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricTagCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricTagCmd.class.getName());
@@ -46,7 +46,7 @@ public class CreateTungstenFabricTagCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.TAG_TYPE, type = CommandType.STRING, required = true, description = "Tungsten-Fabric tag type")

@@ -145,7 +145,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {
-            s_logger.warn("Error listing permitted templates", e);
+            s_logger.warn("Error listing permitted Templates", e);
         }
         return permittedTemplates;
     }

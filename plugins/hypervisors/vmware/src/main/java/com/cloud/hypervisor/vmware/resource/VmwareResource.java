@@ -4464,7 +4464,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (vmMo != null) {
                 if (vmMo.isToolsInstallerMounted()) {
                     toolsInstallerMounted = true;
-                    s_logger.trace("Detected mounted vmware tools installer for :[" + cmd.getVmName() + "]");
+                    s_logger.trace("Detected mounted VMWare tools installer for :[" + cmd.getVmName() + "]");
                 }
                 try {
                     if (canSetEnableSetupConfig(vmMo,cmd.getVirtualMachine())) {
@@ -4498,9 +4498,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (toolsInstallerMounted) {
                 try {
                     vmMo.mountToolsInstaller();
-                    s_logger.debug(String.format("Successfully re-mounted vmware tools installer for :[%s].", cmd.getVmName()));
+                    s_logger.debug(String.format("Successfully re-mounted VMWare tools installer for :[%s].", cmd.getVmName()));
                 } catch (Exception e) {
-                    s_logger.error(String.format("Unabled to re-mount vmware tools installer for: [%s].", cmd.getVmName()), e);
+                    s_logger.error(String.format("Unabled to re-mount VMWare tools installer for: [%s].", cmd.getVmName()), e);
                 }
             }
         }
@@ -5443,7 +5443,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String expectedSnapshotBackupUuid = null;
         String actualSnapshotBackupUuid = null;
         String actualSnapshotUuid = null;
-        return new ValidateSnapshotAnswer(cmd, false, "ValidateSnapshotCommand is not supported for vmware yet", expectedSnapshotBackupUuid, actualSnapshotBackupUuid,
+        return new ValidateSnapshotAnswer(cmd, false, "ValidateSnapshotCommand is not supported for VMWare yet", expectedSnapshotBackupUuid, actualSnapshotBackupUuid,
                 actualSnapshotUuid);
     }
 

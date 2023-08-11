@@ -1082,7 +1082,7 @@ public class StressTestDirectAttach {
 
     private static String sshWinTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring win ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring winSSH test");
             return null;
         }
 
@@ -1182,12 +1182,12 @@ public class StressTestDirectAttach {
     private static String sshTest(String host, String password) {
         int i = 0;
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            s_logger.info("Did not receive a host back from test, ignoringSSH test");
             return null;
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            s_logger.info("Did not receive a password back from test, ignoringSSH test");
             return null;
         }
 

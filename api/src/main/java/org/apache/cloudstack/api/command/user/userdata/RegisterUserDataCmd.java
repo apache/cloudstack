@@ -62,22 +62,22 @@ public class RegisterUserDataCmd extends BaseCmd {
     private String name;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional account for the userdata. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "An optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the userdata")
     private Long projectId;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Userdata content", length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "Comma separated list of variables declared in userdata content")
     private String params;
 
 

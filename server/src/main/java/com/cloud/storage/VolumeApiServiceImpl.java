@@ -1225,7 +1225,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volume.getInstanceId() != null) {
                 // Check that VM to which this volume is attached does not have VM snapshots
                 if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
+                    throw new InvalidParameterValueException("A volume that is attached to an Instance with any Instance Snapshots cannot be resized.");
                 }
             }
 
@@ -2122,7 +2122,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volume.getInstanceId() != null) {
                 // Check that VM to which this volume is attached does not have VM snapshots
                 if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
+                    throw new InvalidParameterValueException("A volume that is attached to a Instance with any Instance Snapshots cannot be resized.");
                 }
             }
 
@@ -2408,7 +2408,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have VM snapshots", vm.getName(), vm.getUuid()));
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to Instance %s/%s, please specify an Instance that does not have Instance Snapshots", vm.getName(), vm.getUuid()));
         }
 
         // if target VM has backups
@@ -2720,7 +2720,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Don't allow detach if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (CollectionUtils.isNotEmpty(vmSnapshots)) {
-            throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+            throw new InvalidParameterValueException("Unable to detach volume, please specify an Instance that does not have Instance Snapshots");
         }
 
         validateIfVmHasBackups(vm, false);
@@ -3006,7 +3006,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
-            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
+            throw new InvalidParameterValueException("Volume cannot be migrated, please remove all Instance Snapshots for Instance to which this volume is attached");
         }
 
         StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
@@ -3015,7 +3015,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-                throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
+                throw new InvalidParameterValueException("Live Migration of GPU enabled Instance is not supported");
             }
 
             // Check if the underlying hypervisor supports storage motion.

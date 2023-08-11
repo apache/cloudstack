@@ -30,19 +30,19 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ProjectAccountResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "project id")
+    @Param(description = "Project id")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "project name")
+    @Param(description = "Project name")
     private String projectName;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the id of the account")
+    @Param(description = "The id of the Account")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the name of the account")
+    @Param(description = "The name of the Account")
     private String accountName;
 
     @SerializedName(ApiConstants.USERNAME)
@@ -50,7 +50,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private String username;
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
-    @Param(description = "account type (admin, domain-admin, user)")
+    @Param(description = "Account type (admin, domain-admin, user)")
     private Integer accountType;
 
     @SerializedName(ApiConstants.USER_ID)
@@ -58,23 +58,23 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
     private String userId;
 
     @SerializedName(ApiConstants.PROJECT_ROLE_ID)
-    @Param(description = "Id of the project role associated with the account/user")
+    @Param(description = "Id of the project role associated with the Account/user")
     private String projectRoleId;
 
     @SerializedName(ApiConstants.ROLE)
-    @Param(description = "account role in the project (regular,owner)")
+    @Param(description = "Account role in the project (regular,owner)")
     private String role;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "id of the Domain the account belongs too")
+    @Param(description = "ID of the Domain the Account belongs too")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "name of the Domain the account belongs too")
+    @Param(description = "Name of the Domain the Account belongs too")
     private String domainName;
 
     @SerializedName(ApiConstants.USER)
-    @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
+    @Param(description = "The list of users associated with Account", responseObject = UserResponse.class)
     private List<UserResponse> users;
 
     @Override

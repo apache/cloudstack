@@ -249,7 +249,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
 
         if (elbVm == null) {
-            s_logger.warn("Unable to apply lb rules, ELB vm  doesn't exist in the network " + network.getId());
+            s_logger.warn("Unable to apply lb rules, ELB Instance doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
 
@@ -327,7 +327,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     }
 
     private DomainRouterVO stop(DomainRouterVO elbVm, boolean forced) throws ConcurrentOperationException, ResourceUnavailableException {
-        s_logger.debug("Stopping ELB vm " + elbVm);
+        s_logger.debug("Stopping ELB Instance " + elbVm);
         try {
             _itMgr.advanceStop(elbVm.getUuid(), forced);
             return _routerDao.findById(elbVm.getId());
@@ -346,7 +346,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         List<DomainRouterVO> unusedElbVms = _elbVmMapDao.listUnusedElbVms();
         if (unusedElbVms != null) {
             if (unusedElbVms.size() > 0) {
-                s_logger.info("Found " + unusedElbVms.size() + " unused ELB vms");
+                s_logger.info("Found " + unusedElbVms.size() + " unused ELB Instances");
             }
             Set<Long> currentGcCandidates = new HashSet<Long>();
             for (DomainRouterVO elbVm : unusedElbVms) {
@@ -363,9 +363,9 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                     stop(elbVm, true);
                     gceed = true;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
+                    s_logger.warn("Unable to stop unused ELB Instance " + elbVm + " due to ", e);
                 } catch (ResourceUnavailableException e) {
-                    s_logger.warn("Unable to stop unused ELB vm " + elbVm + " due to ", e);
+                    s_logger.warn("Unable to stop unused ELB Instance " + elbVm + " due to ", e);
                     continue;
                 }
                 if (gceed) {

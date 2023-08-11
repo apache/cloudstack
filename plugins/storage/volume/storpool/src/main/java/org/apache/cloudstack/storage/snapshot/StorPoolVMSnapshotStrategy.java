@@ -167,12 +167,12 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
                 publishUsageEvents(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY, vmSnapshot, userVm, new_chain_size - prev_chain_size, virtual_size);
             } else {
-                throw new CloudRuntimeException("Could not create vm snapshot");
+                throw new CloudRuntimeException("Could not create Instance Snapshot");
             }
             return vmSnapshot;
         } catch (Exception e) {
-            log.debug("Could not create VM snapshot:" + e.getMessage());
-            throw new CloudRuntimeException("Could not create VM snapshot:" + e.getMessage());
+            log.debug("Could not create Instance Snapshot:" + e.getMessage());
+            throw new CloudRuntimeException("Could not create Instance Snapshot:" + e.getMessage());
         } finally {
             if (!result) {
                 try {
@@ -219,9 +219,9 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            log.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            log.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException(
-                    "Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+                    "Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
@@ -239,15 +239,15 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             VMSnapshotDetailsVO snapshotDetailsVO = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), volumeObjectTO.getUuid());
             String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
             if (snapshotName == null) {
-                err = String.format("Could not find StorPool's snapshot vm snapshot uuid=%s and volume uui=%s",
+                err = String.format("Could not find StorPool's Snapshot Instance Snapshot uuid=%s and volume uui=%s",
                         vmSnapshot.getUuid(), volumeObjectTO.getUuid());
-                log.error("Could not delete snapshot for vm:" + err);
+                log.error("Could not delete snapshot for Instance:" + err);
             }
             StorPoolUtil.spLog("StorpoolVMSnapshotStrategy.deleteVMSnapshot snapshotName=%s", snapshotName);
             resp = StorPoolUtil.snapshotDelete(snapshotName, conn);
             if (resp.getError() != null) {
                 err = String.format("Could not delete storpool vm error=%s", resp.getError());
-                log.error("Could not delete snapshot for vm:" + err);
+                log.error("Could not delete snapshot for Instance:" + err);
             } else {
                 // do we need to clean database?
                 if (snapshotDetailsVO != null) {
@@ -258,7 +258,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 StorPoolUtil.spLog(
                         "StorpoolVMSnapshotStrategy.deleteVMSnapshot delete snapshot=%s of gropusnapshot=%s failed due to %s",
                         snapshotName, userVm.getInstanceName(), err);
-                throw new CloudRuntimeException("Delete vm snapshot " + vmSnapshot.getName() + " of vm "
+                throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of vm "
                         + userVm.getInstanceName() + " failed due to " + err);
             }
         }
@@ -278,12 +278,12 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public boolean revertVMSnapshot(VMSnapshot vmSnapshot) {
-        log.debug("Revert vm snapshot");
+        log.debug("Revert Instance Snapshot");
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
 
         if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVO.getType() == VMSnapshot.Type.Disk) {
-            throw new CloudRuntimeException("Virtual machine should be in stopped state for revert operation");
+            throw new CloudRuntimeException("The Instance should be in stopped state for revert operation");
         }
 
         try {
@@ -304,9 +304,9 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                         volumeObjectTO.getUuid());
                 String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshotDetailsVO.getValue(), true);
                 if (snapshotName == null) {
-                    err = String.format("Could not find StorPool's snapshot vm snapshot uuid=%s and volume uui=%s",
+                    err = String.format("Could not find StorPool's Snapshot Instance Snapshot uuid=%s and volume uui=%s",
                             vmSnapshot.getUuid(), volumeObjectTO.getUuid());
-                    log.error("Could not delete snapshot for vm:" + err);
+                    log.error("Could not delete Snapshot for Instance:" + err);
                 }
                 String volumeName = StorPoolStorageAdaptor.getVolumeNameFromPath(volumeObjectTO.getPath(), true);
                 VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeObjectTO.getId(), StorPoolUtil.SP_PROVIDER_NAME);
@@ -346,7 +346,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             finalizeRevert(vmSnapshotVO, volumeTOs);
             result = vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
         } catch (CloudRuntimeException | NoTransitionException  e) {
-            String errMsg = String.format("Error while finalize create vm snapshot [%s] due to %s", vmSnapshot.getName(), e.getMessage());
+            String errMsg = String.format("Error while finalize create Instance Snapshot [%s] due to %s", vmSnapshot.getName(), e.getMessage());
             log.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         } finally {
@@ -354,7 +354,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    log.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    log.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }

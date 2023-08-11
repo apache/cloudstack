@@ -28,19 +28,19 @@ import com.cloud.ucs.database.UcsBladeVO;
 @EntityReference(value = UcsBladeVO.class)
 public class UcsBladeResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ucs blade id")
+    @Param(description = "Ucs blade id")
     private String id;
     @SerializedName(ApiConstants.UCS_MANAGER_ID)
-    @Param(description = "ucs manager id")
+    @Param(description = "Ucs manager id")
     private String ucsManagerId;
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "cloudstack host id this blade associates to")
+    @Param(description = "Cloudstack host id this blade associates to")
     private String hostId;
     @SerializedName(ApiConstants.UCS_BLADE_DN)
-    @Param(description = "ucs blade dn")
+    @Param(description = "Ucs blade dn")
     private String dn;
     @SerializedName(ApiConstants.UCS_PROFILE_DN)
-    @Param(description = "associated ucs profile dn")
+    @Param(description = "Associated ucs profile dn")
     private String associatedProfileDn;
 
     public String getId() {

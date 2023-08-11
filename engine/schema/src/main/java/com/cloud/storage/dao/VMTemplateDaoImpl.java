@@ -300,7 +300,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             consoleProxyTmpltName = "routing";
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Use console proxy template : " + consoleProxyTmpltName);
+            s_logger.debug("Use console proxy Template : " + consoleProxyTmpltName);
         }
 
         UniqueNameSearch = createSearchBuilder();
@@ -465,7 +465,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         VMTemplateVO tmplt2 = findById(tmplt.getId());
         if (tmplt2 == null) {
             if (persist(tmplt) == null) {
-                throw new CloudRuntimeException("Failed to persist the template " + tmplt);
+                throw new CloudRuntimeException("Failed to persist the Template " + tmplt);
             }
 
             if (tmplt.getDetails() != null) {
@@ -725,7 +725,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                     .append("; updatedTime=")
                     .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update template: id=" + vo.getId() + ", as no such template exists in the database anymore");
+                s_logger.debug("Unable to update Template: id=" + vo.getId() + ", as no such Template exists in the database anymore");
             }
         }
         return rows > 0;

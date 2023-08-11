@@ -46,7 +46,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = FirewallRuleResponse.class,
                required = true,
-               description = "the ID of the load balancer rule")
+               description = "The ID of the load balancer rule")
     private Long id;
 
     /////////////////////////////////////////////////////

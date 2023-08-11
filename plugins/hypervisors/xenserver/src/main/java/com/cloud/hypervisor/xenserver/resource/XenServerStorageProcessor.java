@@ -241,8 +241,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             isoURL = iso.getName();
         } else {
             if (!(store instanceof NfsTO)) {
-                s_logger.debug("Can't attach a iso which is not created on nfs: ");
-                return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+                s_logger.debug("Can't attach a ISO which is not created on nfs: ");
+                return new AttachAnswer("Can't attach a ISO which is not created on nfs: ");
             }
             final NfsTO nfsStore = (NfsTO) store;
             isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
@@ -286,7 +286,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
 
         } catch (final XenAPIException e) {
-            s_logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            s_logger.warn("Failed to attach ISO" + ": " + e.toString(), e);
             return new AttachAnswer(e.toString());
         } catch (final Exception e) {
             s_logger.warn("Failed to attach iso" + ": " + e.toString(), e);
@@ -844,10 +844,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
             Long virtualSize  = vdi.getVirtualSize(conn);
             if (volume.getSize() > virtualSize) {
-                s_logger.debug("Overriding provided template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
+                s_logger.debug("Overriding provided Template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
                 vdi.resize(conn, volume.getSize());
             } else {
-                s_logger.debug("Using templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
+                s_logger.debug("Using Templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
             }
             vdi.setNameLabel(conn, volume.getName());
 

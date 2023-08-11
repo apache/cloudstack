@@ -42,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 public class ListStorageProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageProvidersCmd.class.getName());
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of storage provider: either primary or image", required = true)
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "The type of storage provider: either primary or image", required = true)
     private String type;
 
     public String getType() {

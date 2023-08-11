@@ -35,7 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "deleteAccountFromProject", description = "Deletes account from the project", responseObject = SuccessResponse.class, since = "3.0.0",
+@APICommand(name = "deleteAccountFromProject", description = "Deletes Account from the project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountFromProjectCmd.class.getName());
@@ -48,10 +48,10 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
                required = true,
-               description = "ID of the project to remove the account from")
+               description = "ID of the project to remove the Account from")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "name of the account to be removed from the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Name of the Account to be removed from the project")
     private String accountName;
 
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete account from the project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Account from the project");
         }
     }
 
@@ -105,7 +105,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing account " + accountName + " from project: " + projectId;
+        return "Removing Account " + accountName + " from project: " + projectId;
     }
 
     @Override

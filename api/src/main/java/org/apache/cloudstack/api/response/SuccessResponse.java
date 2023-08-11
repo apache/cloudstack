@@ -24,11 +24,11 @@ import com.cloud.serializer.Param;
 
 public class SuccessResponse extends BaseResponse {
     @SerializedName("success")
-    @Param(description = "true if operation is executed successfully")
+    @Param(description = "True if operation is executed successfully")
     private Boolean success = true;
 
     @SerializedName("displaytext")
-    @Param(description = "any text associated with the success or failure")
+    @Param(description = "Any text associated with the success or failure")
     private String displayText;
 
     public Boolean getSuccess() {

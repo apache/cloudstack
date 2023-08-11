@@ -50,10 +50,10 @@ public class AddBrocadeVcsDeviceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname of ip address of the Brocade VCS Switch.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname of IP address of the Brocade VCS Switch.")
     private String host;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to access the Brocade VCS Switch API")

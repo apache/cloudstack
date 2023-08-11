@@ -48,7 +48,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "the public IP address ID for which static NAT feature is being disabled")
+               description = "The public IP address ID for which static NAT feature is being disabled")
     private Long ipAddressId;
 
     /////////////////////////////////////////////////////

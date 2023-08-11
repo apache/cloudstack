@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroup;
 
-@APICommand(name = "updateInstanceGroup", description = "Updates a vm group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
+@APICommand(name = "updateInstanceGroup", description = "Updates an Instance group", responseObject = InstanceGroupResponse.class, entityType = {InstanceGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateVMGroupCmd extends BaseCmd {
 
@@ -44,7 +44,7 @@ public class UpdateVMGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, required = true, description = "Instance group ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "new instance group name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "New Instance group name")
     private String groupName;
 
     /////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ public class UpdateVMGroupCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vm instance group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Instance group");
         }
     }
 }

@@ -43,7 +43,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricApplictionPolicySetCmd.APINAME, description = "list Tungsten-Fabric application "
+@APICommand(name = ListTungstenFabricApplictionPolicySetCmd.APINAME, description = "List Tungsten-Fabric application "
     + "policy set", responseObject = TungstenFabricApplicationPolicySetResponse.class, requestHasSensitiveInfo =
     false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricApplictionPolicySetCmd extends BaseListCmd {
@@ -53,10 +53,10 @@ public class ListTungstenFabricApplictionPolicySetCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric application policy set")
+    @Parameter(name = ApiConstants.APPLICATION_POLICY_SET_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric application policy set")
     private String applicationPolicySetUuid;
 
     @Override

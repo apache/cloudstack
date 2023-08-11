@@ -25,11 +25,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class CloudianEnabledResponse extends BaseResponse {
     @SerializedName(ApiConstants.ENABLED)
-    @Param(description = "the Cloudian connector enabled state")
+    @Param(description = "The Cloudian connector enabled state")
     private Boolean enabled;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the Cloudian Management Console base URL")
+    @Param(description = "The Cloudian Management Console base URL")
     private String cmcUrl;
 
     public void setEnabled(Boolean enabled) {

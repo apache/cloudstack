@@ -27,19 +27,19 @@ import com.cloud.serializer.Param;
 
 public class ConfigurationGroupResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the configuration group")
+    @Param(description = "The name of the configuration group")
     private String groupName;
 
     @SerializedName(ApiConstants.SUBGROUP)
-    @Param(description = "the subgroups of the configuration group", responseObject = ConfigurationSubGroupResponse.class)
+    @Param(description = "The subgroups of the configuration group", responseObject = ConfigurationSubGroupResponse.class)
     private List<ConfigurationSubGroupResponse> subGroups;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the configuration group")
+    @Param(description = "The description of the configuration group")
     private String description;
 
     @SerializedName(ApiConstants.PRECEDENCE)
-    @Param(description = "the precedence of the configuration group")
+    @Param(description = "The precedence of the configuration group")
     private Long precedence;
 
     public String getGroupName() {

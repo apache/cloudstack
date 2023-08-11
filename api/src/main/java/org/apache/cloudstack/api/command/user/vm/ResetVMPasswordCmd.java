@@ -39,8 +39,8 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
-                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
+@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description = "Resets the password for the Instance. " +
+                    "The Instance must be in a \"Stopped\" state and the Template must already " +
         "support this feature for this command to take effect. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
@@ -53,7 +53,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+            required=true, description = "The ID of the Instance")
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command
@@ -103,7 +103,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "resetting password for vm: " + getId();
+        return  "resetting password for Instance: " + getId();
     }
 
     @Override
@@ -126,7 +126,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm password");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset Instance password");
         }
     }
 }

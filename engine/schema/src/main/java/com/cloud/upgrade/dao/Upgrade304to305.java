@@ -120,20 +120,20 @@ public class Upgrade304to305 extends Upgrade30xBase {
                 pstmt.close();
             } else {
                 if (VMware) {
-                    throw new CloudRuntimeException("3.0.5 VMware SystemVm template not found. Cannot upgrade system Vms");
+                    throw new CloudRuntimeException("3.0.5 VMware SystemVM Template not found. Cannot upgrade system VMs");
                 } else {
-                    s_logger.warn("3.0.5 VMware SystemVm template not found. VMware hypervisor is not used, so not failing upgrade");
+                    s_logger.warn("3.0.5 VMware SystemVM Template not found. VMware hypervisor is not used, so not failing upgrade");
                 }
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Error while updating VMware systemVm template", e);
+            throw new CloudRuntimeException("Error while updating VMware systemVM Template", e);
         }
-        s_logger.debug("Updating System Vm Template IDs Complete");
+        s_logger.debug("Updating System VM Template IDs Complete");
     }
 
     private void addVpcProvider(Connection conn) {
         //Encrypt config params and change category to Hidden
-        s_logger.debug("Adding vpc provider to all physical networks in the system");
+        s_logger.debug("Adding VPC provider to all physical networks in the system");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {

@@ -183,7 +183,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
-            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
+            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router Template version : " + router.getTemplateVersion()
                     + ", minimal required version : " + NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
@@ -656,7 +656,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected LinkedHashMap<Network, List<? extends NicProfile>> configureControlNic(final RouterDeploymentDefinition routerDeploymentDefinition) {
         final LinkedHashMap<Network, List<? extends NicProfile>> controlConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
-        s_logger.debug("Adding nic for Virtual Router in Control network ");
+        s_logger.debug("Adding NIC for Virtual Router in Control network ");
         final List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork);
         final NetworkOffering controlOffering = offerings.get(0);
         final Network controlNic = _networkMgr.setupNetwork(s_systemAccount, controlOffering, routerDeploymentDefinition.getPlan(), null, null, false).get(0);
@@ -670,7 +670,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         if (routerDeploymentDefinition.isPublicNetwork()) {
-            s_logger.debug("Adding nic for Virtual Router in Public network ");
+            s_logger.debug("Adding NIC for Virtual Router in Public network ");
             // if source nat service is supported by the network, get the source
             // nat ip address
             final NicProfile defaultNic = new NicProfile();
@@ -746,13 +746,13 @@ public class NetworkHelperImpl implements NetworkHelper {
         final Network guestNetwork = routerDeploymentDefinition.getGuestNetwork();
 
         if (guestNetwork != null) {
-            s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
+            s_logger.debug("Adding NIC for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
             if (!routerDeploymentDefinition.isPublicNetwork()) {
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
-                        s_logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
+                        s_logger.debug("Requesting IPv4 address " + placeholder.getIPv4Address() + " stored in placeholder NIC for the Network "
                                 + guestNetwork);
                         defaultNetworkStartIp = placeholder.getIPv4Address();
                     } else {
@@ -766,8 +766,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                                     && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                                 defaultNetworkStartIp = startIp;
                             } else if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                                s_logger.debug("First IPv4 " + startIp + " in Network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random IP address from the range");
                             }
                         }
                     }
@@ -775,7 +775,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
                 if (guestNetwork.getIp6Cidr() != null) {
                     if (placeholder != null && placeholder.getIPv6Address() != null) {
-                        s_logger.debug("Requesting ipv6 address " + placeholder.getIPv6Address() + " stored in placeholder nic for the network "
+                        s_logger.debug("Requesting IPv6 address " + placeholder.getIPv6Address() + " stored in placeholder NIC for the Network "
                                 + guestNetwork);
                         defaultNetworkStartIpv6 = placeholder.getIPv6Address();
                     } else {
@@ -788,8 +788,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                             if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
                                 defaultNetworkStartIpv6 = startIpv6;
                             } else if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                                s_logger.debug("First IPv6 " + startIpv6 + " in Network id=" + guestNetwork.getId()
+                                        + " is already allocated, can't use it for domain router; will get random IPv6 address from the range");
                             }
                         }
                     }
@@ -844,14 +844,14 @@ public class NetworkHelperImpl implements NetworkHelper {
         int haproxy_stats_port = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyStatsPort.key()));
         if (rule.getSourcePortStart() == haproxy_stats_port) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for  LB stats on this port");
+                s_logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for LB stats on this port");
             }
             return false;
         }
         String lbProtocol = rule.getLbProtocol();
         if (lbProtocol != null && lbProtocol.toLowerCase().equals(NetUtils.UDP_PROTO)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Can't create LB rule as haproxy does not support udp");
+                s_logger.debug("Can't create LB rule as haproxy does not support UDP");
             }
             return false;
         }

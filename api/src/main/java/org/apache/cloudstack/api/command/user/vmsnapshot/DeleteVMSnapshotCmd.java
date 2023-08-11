@@ -36,7 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "deleteVMSnapshot", description = "Deletes a vmsnapshot.", responseObject = SuccessResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
+@APICommand(name = "deleteVMSnapshot", description = "Deletes an Instance Snapshot.", responseObject = SuccessResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVMSnapshotCmd.class.getName());
@@ -46,7 +46,7 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = VMSnapshotResponse.class,
                required = true,
-               description = "The ID of the VM snapshot")
+               description = "The ID of the Instance Snapshot")
     private Long id;
 
     public Long getId() {
@@ -70,13 +70,13 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vm snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete Instance Snapshot");
         }
     }
 
     @Override
     public String getEventDescription() {
-        return "Delete VM snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getId());
+        return "Delete Instance Snapshot: " + this._uuidMgr.getUuid(VMSnapshot.class, getId());
     }
 
     @Override

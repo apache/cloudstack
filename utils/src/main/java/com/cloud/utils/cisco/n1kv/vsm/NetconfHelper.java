@@ -47,7 +47,7 @@ public class NetconfHelper {
     public NetconfHelper(String ip, String username, String password) throws CloudRuntimeException {
         _connection = SSHCmdHelper.acquireAuthorizedConnection(ip, username, password);
         if (_connection == null) {
-            throw new CloudRuntimeException("Error opening ssh connection.");
+            throw new CloudRuntimeException("Error opening SSH connection.");
         }
 
         try {

@@ -49,7 +49,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the internal lb vm")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting internal lb vm: " + getId();
+        return "starting internal lb Instance: " + getId();
     }
 
     @Override

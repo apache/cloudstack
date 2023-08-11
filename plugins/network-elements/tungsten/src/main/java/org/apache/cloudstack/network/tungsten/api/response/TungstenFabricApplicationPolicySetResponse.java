@@ -39,11 +39,11 @@ public class TungstenFabricApplicationPolicySetResponse extends BaseResponse {
     private String name;
 
     @SerializedName(ApiConstants.FIREWALL_POLICY)
-    @Param(description = "list Tungsten-Fabric firewall policy")
+    @Param(description = "List Tungsten-Fabric firewall policy")
     private List<TungstenFabricFirewallPolicyResponse> firewallPolicys;
 
     @SerializedName(ApiConstants.TAG)
-    @Param(description = "list Tungsten-Fabric tag")
+    @Param(description = "List Tungsten-Fabric tag")
     private List<TungstenFabricTagResponse> tags;
 
     @SerializedName(ApiConstants.ZONE_ID)

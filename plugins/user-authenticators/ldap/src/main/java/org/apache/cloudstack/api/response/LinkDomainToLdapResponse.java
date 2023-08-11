@@ -26,20 +26,20 @@ import org.apache.cloudstack.api.BaseResponse;
 public class LinkDomainToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "id of the Domain which is linked to LDAP")
+    @Param(description = "Id of the Domain which is linked to LDAP")
     private String domainId;
 
     @Deprecated
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the group or OU in LDAP which is linked to the domain")
+    @Param(description = "Name of the group or OU in LDAP which is linked to the domain")
     private String name;
 
     @SerializedName(ApiConstants.LDAP_DOMAIN)
-    @Param(description = "name of the group or OU in LDAP which is linked to the domain")
+    @Param(description = "Name of the group or OU in LDAP which is linked to the domain")
     private String ldapDomain;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "type of the name in LDAP which is linke to the domain")
+    @Param(description = "Type of the name in LDAP which is linked to the domain")
     private String type;
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)

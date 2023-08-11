@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteAccount", description = "Deletes a account, and all users associated with this account", responseObject = SuccessResponse.class, entityType = {Account.class},
+@APICommand(name = "deleteAccount", description = "Deletes an account and all users associated with this account", responseObject = SuccessResponse.class, entityType = {Account.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteAccountCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
@@ -81,8 +81,8 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         Account account = _accountService.getAccount(getId());
-        return (account != null ? "Deleting user account " + account.getAccountName() + " (ID: " + account.getUuid() + ") and all corresponding users"
-            : "Account delete, but this account does not exist in the system");
+        return (account != null ? "Deleting user Account " + account.getAccountName() + " (ID: " + account.getUuid() + ") and all corresponding users"
+            : "Cannot delete Account - it does not exist in the system");
     }
 
     @Override

@@ -214,7 +214,7 @@ public class TestClient {
 
     private static String sshWinTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring win ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring win SSH test");
             return null;
         }
 
@@ -300,7 +300,7 @@ public class TestClient {
 
     private static String sshTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring SSH test");
             return null;
         }
 

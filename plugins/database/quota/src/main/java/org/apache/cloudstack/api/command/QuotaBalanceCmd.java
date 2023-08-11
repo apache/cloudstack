@@ -51,7 +51,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, description = "Start date range quota query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified Account")
     private Long accountId;
 
     @Inject

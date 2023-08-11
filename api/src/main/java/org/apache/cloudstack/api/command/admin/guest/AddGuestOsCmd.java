@@ -134,7 +134,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "adding a new guest OS type Id: " + getEntityId();
+        return "Adding a new guest OS type Id: " + getEntityId();
     }
 
     @Override
@@ -149,7 +149,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCreateEventDescription() {
-        return "adding new guest OS type";
+        return "Adding new guest OS type";
     }
 
 }

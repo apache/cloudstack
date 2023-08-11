@@ -56,7 +56,7 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
                required = true,
-               description = "the network service provider ID of the virtual router element")
+               description = "The network service provider ID of the virtual router element")
     private Long nspId;
 
     @Parameter(name = ApiConstants.PROVIDER_TYPE,

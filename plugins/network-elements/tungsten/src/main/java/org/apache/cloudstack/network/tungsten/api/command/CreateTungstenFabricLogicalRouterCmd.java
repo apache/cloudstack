@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = CreateTungstenFabricLogicalRouterCmd.APINAME, description = "create Tungsten-Fabric logical router",
+@APICommand(name = CreateTungstenFabricLogicalRouterCmd.APINAME, description = "Create Tungsten-Fabric logical router",
     responseObject = TungstenFabricLogicalRouterResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTungstenFabricLogicalRouterCmd.class.getName());
@@ -47,7 +47,7 @@ public class CreateTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Tungsten-Fabric logical router name")

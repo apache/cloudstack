@@ -31,207 +31,207 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = Host.class)
 public class HostForMigrationResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the host")
+    @Param(description = "The ID of the host")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the host")
+    @Param(description = "The name of the host")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the host")
+    @Param(description = "The state of the host")
     private Status state;
 
     @SerializedName("disconnected")
-    @Param(description = "true if the host is disconnected. False otherwise.")
+    @Param(description = "True if the host is disconnected. False otherwise.")
     private Date disconnectedOn;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the host type")
+    @Param(description = "The host type")
     private Host.Type hostType;
 
     @SerializedName("oscategoryid")
-    @Param(description = "the OS category ID of the host")
+    @Param(description = "The OS category ID of the host")
     private String osCategoryId;
 
     @SerializedName("oscategoryname")
-    @Param(description = "the OS category name of the host")
+    @Param(description = "The OS category name of the host")
     private String osCategoryName;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the IP address of the host")
+    @Param(description = "The IP address of the host")
     private String ipAddress;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID of the host")
+    @Param(description = "The Zone ID of the host")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name of the host")
+    @Param(description = "The Zone name of the host")
     private String zoneName;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID of the host")
+    @Param(description = "The Pod ID of the host")
     private String podId;
 
     @SerializedName("podname")
-    @Param(description = "the Pod name of the host")
+    @Param(description = "The Pod name of the host")
     private String podName;
 
     @SerializedName("version")
-    @Param(description = "the host version")
+    @Param(description = "The host version")
     private String version;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the host hypervisor")
+    @Param(description = "The host hypervisor")
     private HypervisorType hypervisor;
 
     @SerializedName("cpunumber")
-    @Param(description = "the CPU number of the host")
+    @Param(description = "The CPU number of the host")
     private Integer cpuNumber;
 
     @SerializedName("cpuspeed")
-    @Param(description = "the CPU speed of the host")
+    @Param(description = "The CPU speed of the host")
     private Long cpuSpeed;
 
     @Deprecated
     @SerializedName("cpuallocated")
-    @Param(description = "the amount of the host's CPU currently allocated")
+    @Param(description = "The amount of the host's CPU currently allocated")
     private String cpuAllocated;
 
     @SerializedName("cpuallocatedvalue")
-    @Param(description = "the amount of the host's CPU currently allocated in MHz")
+    @Param(description = "The amount of the host's CPU currently allocated in MHz")
     private Long cpuAllocatedValue;
 
     @SerializedName("cpuallocatedpercentage")
-    @Param(description = "the amount of the host's CPU currently allocated in percentage")
+    @Param(description = "The amount of the host's CPU currently allocated in percentage")
     private String cpuAllocatedPercentage;
 
     @SerializedName("cpuallocatedwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
+    @Param(description = "The amount of the host's CPU currently allocated after applying the cpu.overprovisioning.factor")
     private String cpuAllocatedWithOverprovisioning;
 
     @SerializedName("cpuused")
-    @Param(description = "the amount of the host's CPU currently used")
+    @Param(description = "The amount of the host's CPU currently used")
     private String cpuUsed;
 
     @SerializedName("cpuwithoverprovisioning")
-    @Param(description = "the amount of the host's CPU after applying the cpu.overprovisioning.factor ")
+    @Param(description = "The amount of the host's CPU after applying the cpu.overprovisioning.factor ")
     private String cpuWithOverprovisioning;
 
     @Deprecated
     @SerializedName("memorytotal")
-    @Param(description = "the memory total of the host, this parameter is deprecated use memorywithoverprovisioning")
+    @Param(description = "The memory total of the host, this parameter is deprecated use memorywithoverprovisioning")
     private Long memoryTotal;
 
     @SerializedName("memorywithoverprovisioning")
-    @Param(description = "the amount of the host's memory after applying the mem.overprovisioning.factor ")
+    @Param(description = "The amount of the host's memory after applying the mem.overprovisioning.factor ")
     private String memWithOverprovisioning;
 
     @SerializedName("averageload")
-    @Param(description = "the cpu average load on the host")
+    @Param(description = "The CPU average load on the host")
     private Long averageLoad;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the host")
+    @Param(description = "The incoming Network traffic on the host")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "The outgoing Network traffic on the host")
     private Long networkKbsWrite;
 
     @Deprecated
     @SerializedName("memoryallocated")
-    @Param(description = "the amount of the host's memory currently allocated")
+    @Param(description = "The amount of the host's memory currently allocated")
     private String memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
-    @Param(description = "the amount of the host's memory currently allocated in percentage")
+    @Param(description = "The amount of the host's memory currently allocated in percentage")
     private String memoryAllocatedPercentage;
 
     @SerializedName("memoryallocatedbytes")
-    @Param(description = "the amount of the host's memory currently allocated in bytes")
+    @Param(description = "The amount of the host's memory currently allocated in bytes")
     private Long memoryAllocatedBytes;
 
     @SerializedName("memoryused")
-    @Param(description = "the amount of the host's memory currently used")
+    @Param(description = "The amount of the host's memory currently used")
     private Long memoryUsed;
 
     @SerializedName("disksizetotal")
-    @Param(description = "the total disk size of the host")
+    @Param(description = "The total disk size of the host")
     private Long diskSizeTotal;
 
     @SerializedName("disksizeallocated")
-    @Param(description = "the host's currently allocated disk size")
+    @Param(description = "The host's currently allocated disk size")
     private Long diskSizeAllocated;
 
     @SerializedName("capabilities")
-    @Param(description = "capabilities of the host")
+    @Param(description = "Capabilities of the host")
     private String capabilities;
 
     @SerializedName("lastpinged")
-    @Param(description = "the date and time the host was last pinged")
+    @Param(description = "The date and time the host was last pinged")
     private Date lastPinged;
 
     @SerializedName("managementserverid")
-    @Param(description = "the management server ID of the host")
+    @Param(description = "The management server ID of the host")
     private Long managementServerId;
 
     @SerializedName("clusterid")
-    @Param(description = "the cluster ID of the host")
+    @Param(description = "The cluster ID of the host")
     private String clusterId;
 
     @SerializedName("clustername")
-    @Param(description = "the cluster name of the host")
+    @Param(description = "The cluster name of the host")
     private String clusterName;
 
     @SerializedName("clustertype")
-    @Param(description = "the cluster type of the cluster that host belongs to")
+    @Param(description = "The cluster type of the cluster that host belongs to")
     private String clusterType;
 
     @SerializedName("islocalstorageactive")
-    @Param(description = "true if local storage is active, false otherwise")
+    @Param(description = "True if local storage is active, false otherwise")
     private Boolean localStorageActive;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date and time the host was created")
+    @Param(description = "The date and time the host was created")
     private Date created;
 
     @SerializedName("removed")
-    @Param(description = "the date and time the host was removed")
+    @Param(description = "The date and time the host was removed")
     private Date removed;
 
     @SerializedName("events")
-    @Param(description = "events available for the host")
+    @Param(description = "Events available for the host")
     private String events;
 
     @SerializedName("hosttags")
-    @Param(description = "comma-separated list of tags for the host")
+    @Param(description = "Comma-separated list of tags for the host")
     private String hostTags;
 
     @SerializedName("hasenoughcapacity")
-    @Param(description = "true if this host has enough CPU and RAM capacity to migrate a VM to it, false otherwise")
+    @Param(description = "True if this host has enough CPU and RAM capacity to migrate an Instance to it, false otherwise")
     private Boolean hasEnoughCapacity;
 
     @SerializedName("suitableformigration")
-    @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, " +
-        "max guests vm limit etc) to migrate a VM to it , false otherwise")
+    @Param(description = "True if this host is suitable(has enough capacity and satisfies all conditions like hosttags, " +
+        "max guests Instance limit etc) to migrate an Instance to it , false otherwise")
     private Boolean suitableForMigration;
 
     @SerializedName("requiresStorageMotion")
-    @Param(description = "true if migrating a vm to this host requires storage motion, false otherwise")
+    @Param(description = "True if migrating an Instance to this host requires storage motion, false otherwise")
     private Boolean requiresStorageMotion;
 
     @SerializedName("resourcestate")
-    @Param(description = "the resource state of the host")
+    @Param(description = "The resource state of the host")
     private String resourceState;
 
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "the hypervisor version")
+    @Param(description = "The hypervisor version")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.HA_HOST)
-    @Param(description = "true if the host is Ha host (dedicated to vms started by HA process; false otherwise")
+    @Param(description = "True if the host is HA host (dedicated to Instances started by HA process; false otherwise")
     private Boolean haHost;
 
     @Override

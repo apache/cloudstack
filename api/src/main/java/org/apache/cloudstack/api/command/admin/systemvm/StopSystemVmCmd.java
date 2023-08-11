@@ -51,10 +51,10 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = SystemVmResponse.class,
                required = true,
-               description = "The ID of the system virtual machine")
+               description = "The ID of the System VM")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM.  The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance. The caller knows the Instance is stopped.")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override

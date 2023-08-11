@@ -529,15 +529,15 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                 boolean revertStatus = revertSnapshot(sourceSnapshotVolumeId, destVolumeId);
                 if (!revertStatus) {
                     revertSnapshotResult = false;
-                    LOG.warn("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
-                    throw new CloudRuntimeException("Failed to revert snapshot for volume id: " + sourceSnapshotVolumeId);
+                    LOG.warn("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
+                    throw new CloudRuntimeException("Failed to revert Snapshot for volume id: " + sourceSnapshotVolumeId);
                 } else {
                     revertStatusIndex++;
                 }
             }
         } catch (final Exception e) {
-            LOG.error("Failed to revert vm snapshot due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to revert vm snapshot due to: " + e.getMessage());
+            LOG.error("Failed to revert Instance Snapshot due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to revert Instance Snapshot due to: " + e.getMessage());
         } finally {
             if (!revertSnapshotResult) {
                 //revert to volume with last state and delete the snapshot group, for already reverted volumes

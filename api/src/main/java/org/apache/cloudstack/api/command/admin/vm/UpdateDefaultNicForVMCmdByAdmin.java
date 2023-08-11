@@ -24,6 +24,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on an Instance", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmdByAdmin extends UpdateDefaultNicForVMCmd implements AdminCmd {}

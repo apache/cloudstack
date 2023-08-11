@@ -251,7 +251,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     public Answer AttachIso(AttachIsoCommand cmd) {
         MockVolumeVO iso = findVolumeFromSecondary(cmd.getIsoPath(), cmd.getStoreUrl(), MockVolumeType.ISO);
         if (iso == null) {
-            return new Answer(cmd, false, "Failed to find the iso: " + cmd.getIsoPath() + "on secondary storage " + cmd.getStoreUrl());
+            return new Answer(cmd, false, "Failed to find the ISO: " + cmd.getIsoPath() + "on secondary storage " + cmd.getStoreUrl());
         }
 
         String vmName = cmd.getVmName();
@@ -262,11 +262,11 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             vm = _mockVMDao.findByVmName(vmName);
             txn.commit();
             if (vm == null) {
-                return new Answer(cmd, false, "can't find vm :" + vmName);
+                return new Answer(cmd, false, "can't find Instance :" + vmName);
             }
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when attaching iso to vm " + vmName, ex);
+            throw new CloudRuntimeException("Error when attaching ISO to Instance " + vmName, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -435,7 +435,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             return new ListVolumeAnswer(cmd.getSecUrl(), templateInfos);
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
+            throw new CloudRuntimeException("Error when finding Template on sec storage " + storage.getId(), ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -467,7 +467,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             return new ListTemplateAnswer(nfsUrl, templateInfos);
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when finding template on sec storage " + storage.getId(), ex);
+            throw new CloudRuntimeException("Error when finding Template on sec storage " + storage.getId(), ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -671,7 +671,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Unable to perform snapshot", ex);
+            throw new CloudRuntimeException("Unable to perform Snapshot", ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -694,7 +694,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when saving snapshot " + snapshot, ex);
+            throw new CloudRuntimeException("Error when saving Snapshot " + snapshot, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -721,18 +721,18 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             String snapshotPath = cmd.getSnapshotUuid();
             snapshot = _mockVolumeDao.findByStoragePathAndType(snapshotPath);
             if (snapshot == null) {
-                return new BackupSnapshotAnswer(cmd, false, "can't find snapshot" + snapshotPath, null, true);
+                return new BackupSnapshotAnswer(cmd, false, "Can't find Snapshot" + snapshotPath, null, true);
             }
 
             String secStorageUrl = cmd.getSecondaryStorageUrl();
             secStorage = _mockSecStorageDao.findByUrl(secStorageUrl);
             if (secStorage == null) {
-                return new BackupSnapshotAnswer(cmd, false, "can't find sec storage" + snapshotPath, null, true);
+                return new BackupSnapshotAnswer(cmd, false, "Can't find sec storage" + snapshotPath, null, true);
             }
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when backing up snapshot");
+            throw new CloudRuntimeException("Error when backing up Snapshot");
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -754,7 +754,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when backing up snapshot " + newsnapshot, ex);
+            throw new CloudRuntimeException("Error when backing up Snapshot " + newsnapshot, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -783,7 +783,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when creating volume from snapshot", ex);
+            throw new CloudRuntimeException("Error when creating volume from Snapshot", ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -806,7 +806,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when creating volume from snapshot " + volume, ex);
+            throw new CloudRuntimeException("Error when creating volume from Snapshot " + volume, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -1039,7 +1039,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 snapshotUUId = cmd.getSnapshotName();
                 snapshot = _mockVolumeDao.findByName(snapshotUUId);
                 if (snapshot == null) {
-                    return new CreatePrivateTemplateAnswer(cmd, false, "can't find snapshot:" + snapshotUUId);
+                    return new CreatePrivateTemplateAnswer(cmd, false, "can't find Snapshot:" + snapshotUUId);
                 }
             }
 
@@ -1069,7 +1069,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when saving template " + template, ex);
+            throw new CloudRuntimeException("Error when saving Template " + template, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -1123,7 +1123,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Error when creating private template from volume");
+            throw new CloudRuntimeException("Error when creating private Template from volume");
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -1145,7 +1145,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Encountered " + ex.getMessage() + " when persisting template " + template.getName(), ex);
+            throw new CloudRuntimeException("Encountered " + ex.getMessage() + " when persisting Template " + template.getName(), ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);

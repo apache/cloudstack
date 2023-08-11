@@ -98,7 +98,7 @@ public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper
                     return new HandleConfigDriveIsoAnswer(command, "Invalid config drive ISO data received");
                 }
                 if (isoFile.exists()) {
-                    LOG.debug("An old config drive iso already exists");
+                    LOG.debug("An old config drive ISO already exists");
                 }
 
                 Files.createDirectories(isoPath.getParent());

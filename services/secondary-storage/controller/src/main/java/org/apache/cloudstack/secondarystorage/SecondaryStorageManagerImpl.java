@@ -642,7 +642,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
         VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
         if (template == null) {
-            throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc.toString()));
+            throw new CloudRuntimeException(String.format("Unable to find the system Templates or it was not downloaded in %s.", dc.toString()));
         }
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
@@ -808,7 +808,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
             if (template == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("System VM template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
+                    s_logger.debug(String.format("System VM Template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
                 }
                 return false;
             }
@@ -1090,7 +1090,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         List<DataStore> secStores= _dataStoreMgr.listImageStoresWithFreeCapacity(dest.getDataCenter().getId());
         if (CollectionUtils.isEmpty(secStores)) {
-            s_logger.warn(String.format("Unable to finalize virtual machine profile [%s] as it has no secondary storage available to satisfy storage needs for zone [%s].", profile.toString(), dest.getDataCenter().getUuid()));
+            s_logger.warn(String.format("Unable to finalize Instance profile [%s] as it has no secondary storage available to satisfy storage needs for zone [%s].", profile.toString(), dest.getDataCenter().getUuid()));
             return false;
         }
         Collections.shuffle(secStores);

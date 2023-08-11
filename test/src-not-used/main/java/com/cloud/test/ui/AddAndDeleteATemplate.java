@@ -57,7 +57,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                 }
             } catch (Exception ex) {
                 s_logger.info("[ignored]"
-                        + "error during clicking test on template: " + ex.getLocalizedMessage());
+                        + "error during clicking test on Template: " + ex.getLocalizedMessage());
             }
 
             for (int second = 0;; second++) {
@@ -68,7 +68,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                         break;
                 } catch (Exception e) {
                     s_logger.info("[ignored]"
-                            + "error during visibility test of template: " + e.getLocalizedMessage());
+                            + "error during visibility test of Template: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(10000);
             }
@@ -106,7 +106,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                         break;
                 } catch (Exception e) {
                     s_logger.info("[ignored]"
-                            + "error checking visibility after test completion for template: " + e.getLocalizedMessage());
+                            + "error checking visibility after test completion for Template: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(1000);
             }

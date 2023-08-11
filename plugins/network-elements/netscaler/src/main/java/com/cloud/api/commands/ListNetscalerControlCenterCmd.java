@@ -39,7 +39,7 @@ import com.cloud.network.NetScalerControlCenterVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listNetscalerControlCenter", responseObject = NetscalerControlCenterResponse.class, description = "list control center", requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
+@APICommand(name = "listNetscalerControlCenter", responseObject = NetscalerControlCenterResponse.class, description = "List control center", requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class ListNetscalerControlCenterCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListNetscalerControlCenterCmd.class.getName());

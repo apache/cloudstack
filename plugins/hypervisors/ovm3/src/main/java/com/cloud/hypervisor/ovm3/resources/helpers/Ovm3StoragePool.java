@@ -449,7 +449,7 @@ public class Ovm3StoragePool {
         try {
             /* double check */
             if (config.getAgentHasPrimary() && config.getAgentInOvm3Pool()) {
-                LOGGER.debug("Skip systemvm iso copy, leave it to the primary");
+                LOGGER.debug("Skip systemvm ISO copy, leave it to the primary");
                 return;
             }
             if (lock.lock(3600)) {
@@ -617,13 +617,13 @@ public class Ovm3StoragePool {
         String systemVmIsoPath = Script.findScript("", "vms/" + iso);
         File isoFile = null;
         if (systemVmIsoPath != null) {
-            LOGGER.debug("found systemvm patch iso " + systemVmIsoPath);
+            LOGGER.debug("found systemvm patch ISO " + systemVmIsoPath);
             isoFile = new File(systemVmIsoPath);
         }
         if (isoFile == null || !isoFile.exists()) {
             String svm = "client/target/generated-webapp/WEB-INF/classes/vms/"
                     + iso;
-            LOGGER.debug("last resort for systemvm patch iso " + svm);
+            LOGGER.debug("last resort for systemvm patch ISO " + svm);
             isoFile = new File(svm);
         }
         assert isoFile != null;

@@ -307,7 +307,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
                 // if this snapshot belongs to the storagePool that was passed in
                 if (snapshotDetails != null && snapshotDetails.getValue() != null && Long.parseLong(snapshotDetails.getValue()) == storagePoolId) {
-                    throw new CloudRuntimeException("This primary storage cannot be deleted because it currently contains one or more snapshots.");
+                    throw new CloudRuntimeException("This primary storage cannot be deleted because it currently contains one or more Snapshots.");
                 }
             }
         }
@@ -323,7 +323,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
                     SolidFireUtil.deleteVolume(sfConnection, sfTemplateVolumeId);
                 }
                 catch (Exception ex) {
-                    s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire template volume");
+                    s_logger.error(ex.getMessage() != null ? ex.getMessage() : "Error deleting SolidFire Template volume");
                 }
 
                 _tmpltPoolDao.remove(templatePoolRef.getId());

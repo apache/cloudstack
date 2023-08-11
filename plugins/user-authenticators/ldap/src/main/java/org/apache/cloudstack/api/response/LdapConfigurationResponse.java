@@ -28,15 +28,15 @@ import org.apache.cloudstack.ldap.LdapConfiguration;
 @EntityReference(value = LdapConfiguration.class)
 public class LdapConfigurationResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "name of the host running the ldap server")
+    @Param(description = "Name of the host running the LDAP server")
     private String hostname;
 
     @SerializedName(ApiConstants.PORT)
-    @Param(description = "port teh ldap server is running on")
+    @Param(description = "Port the LDAP server is running on")
     private int port;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "linked domain")
+    @Param(description = "Linked domain")
     private String domainId;
 
     public LdapConfigurationResponse() {

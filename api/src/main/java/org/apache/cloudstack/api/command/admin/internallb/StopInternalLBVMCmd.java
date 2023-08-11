@@ -38,7 +38,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB vm.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
+@APICommand(name = "stopInternalLoadBalancerVM", description = "Stops an Internal LB Instance.", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class StopInternalLBVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopInternalLBVMCmd.class.getName());
@@ -48,10 +48,10 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the internal lb vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the internal LB Instance")
     private Long id;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM. The caller knows the VM is stopped.")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the Instance. The caller knows the Instance is stopped.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
         if (vm != null && vm.getRole() == Role.INTERNAL_LB_VM) {
             return vm.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find internal lb vm by id");
+            throw new InvalidParameterValueException("Unable to find Internal LB Instance by id");
         }
     }
 
@@ -88,7 +88,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping internal lb vm: " + getId();
+        return "stopping internal lb Instance: " + getId();
     }
 
     @Override

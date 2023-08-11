@@ -32,19 +32,19 @@ import com.google.gson.annotations.SerializedName;
 public class ApplicationLoadBalancerInstanceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the instance ID")
+    @Param(description = "The Instance ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the instance")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the instance")
+    @Param(description = "The state of the Instance")
     private String state;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the ip address of the instance")
+    @Param(description = "The IP address of the Instance")
     private String ipAddress;
 
     public void setId(String id) {

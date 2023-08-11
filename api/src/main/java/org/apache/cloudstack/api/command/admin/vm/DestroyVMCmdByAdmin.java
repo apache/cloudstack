@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
+@APICommand(name = "destroyVirtualMachine", description = "Destroys  an Instance. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
 public class DestroyVMCmdByAdmin extends DestroyVMCmd implements AdminCmd {}

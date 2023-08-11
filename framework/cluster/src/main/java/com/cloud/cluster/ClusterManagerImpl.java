@@ -817,7 +817,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Found " + inactiveList.size() + " inactive management server node based on timestamp");
                 for (final ManagementServerHostVO host : inactiveList) {
-                    s_logger.info("management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service ip: " + host.getServiceIP() +
+                    s_logger.info("Management server node msid: " + host.getMsid() + ", name: " + host.getName() + ", service IP: " + host.getServiceIP() +
                             ", version: " + host.getVersion());
                 }
             }

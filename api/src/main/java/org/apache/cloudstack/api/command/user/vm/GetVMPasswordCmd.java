@@ -33,7 +33,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM", entityType = {VirtualMachine.class},
+@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the Instance", entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetVMPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMPasswordCmd.class.getName());
@@ -44,7 +44,7 @@ public class GetVMPasswordCmd extends BaseCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class
-            , required=true, description="The ID of the virtual machine")
+            , required=true, description = "The ID of the Instance")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class GetVMPasswordCmd extends BaseCmd {
     public void execute() {
         String passwd = _mgr.getVMPassword(this);
         if (passwd == null || passwd.equals(""))
-            throw new InvalidParameterException("No password for VM with id '" + getId() + "' found.");
+            throw new InvalidParameterException("No password for Instance with id '" + getId() + "' found.");
 
         setResponseObject(new GetVMPasswordResponse(getCommandName(), passwd));
     }

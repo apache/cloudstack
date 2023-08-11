@@ -228,7 +228,7 @@ class TestHypervisorCapabilities(cloudstackTestCase):
         # 6. Try VM snapshot again, it should succeed
         """
         if self.hypervisor == "KVM":
-            self.skipTest("Skipping test: Reason -  VM Snapshot of running VM is not supported for KVM")
+            self.skipTest("Skipping test: Reason -  Instance Snapshot of running Instance is not supported for KVM")
         self.updateHostHypervisorCapability(self.hostCapability.id, None, False)
         capabilities = self.listHostHypervisorCapabilities(self.hostCapability.id)
         self.assertTrue(isinstance(capabilities, list), "listHypervisorCapabilities response not a valid list")
@@ -258,9 +258,9 @@ class TestHypervisorCapabilities(cloudstackTestCase):
                 description="Test Snapshot Desc"
             )
             self.cleanup.append(fail_snapshot)
-            self.fail("Successful to take VM snapshot even when vmsnapshotenabled was set to False")
+            self.fail("Successful to take Instance Snapshot even when vmsnapshotenabled was set to False")
         except Exception as e:
-            self.debug("Failed to take VM snapshot even vmsnapshotenabled was set to False: %s" % e)
+            self.debug("Failed to take Instance Snapshot even vmsnapshotenabled was set to False: %s" % e)
 
         self.updateHostHypervisorCapability(self.hostCapability.id, None, True)
 

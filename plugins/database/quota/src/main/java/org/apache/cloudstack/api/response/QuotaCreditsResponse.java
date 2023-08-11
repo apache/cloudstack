@@ -29,19 +29,19 @@ import java.util.Date;
 public class QuotaCreditsResponse extends BaseResponse {
 
     @SerializedName("credits")
-    @Param(description = "the credit deposited")
+    @Param(description = "The credit deposited")
     private BigDecimal credits;
 
     @SerializedName("updated_by")
-    @Param(description = "the user name of the admin who updated the credits")
+    @Param(description = "The user name of the admin who updated the credits")
     private String updatedBy;
 
     @SerializedName("updated_on")
-    @Param(description = "the account name of the admin who updated the credits")
+    @Param(description = "The Account name of the admin who updated the credits")
     private Date updatedOn;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     public QuotaCreditsResponse() {

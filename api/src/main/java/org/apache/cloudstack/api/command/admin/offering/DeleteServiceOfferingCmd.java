@@ -42,7 +42,7 @@ public class DeleteServiceOfferingCmd extends BaseCmd {
                type = CommandType.UUID,
                entityType = ServiceOfferingResponse.class,
                required = true,
-               description = "the ID of the service offering")
+               description = "The ID of the service offering")
     private Long id;
 
     /////////////////////////////////////////////////////

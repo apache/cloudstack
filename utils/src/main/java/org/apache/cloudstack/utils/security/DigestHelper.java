@@ -142,7 +142,7 @@ public class DigestHelper {
         try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
             return DigestUtils.md5Hex(is);
         } catch (IOException e) {
-            String errMsg = "Failed to calculate template checksum";
+            String errMsg = "Failed to calculate Template checksum";
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }

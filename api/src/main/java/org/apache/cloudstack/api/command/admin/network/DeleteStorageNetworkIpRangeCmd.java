@@ -48,7 +48,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = StorageNetworkIpRangeResponse.class,
                required = true,
-               description = "the uuid of the storage network ip range")
+               description = "The uuid of the storage network ip range")
     private Long id;
 
     /////////////////////////////////////////////////////

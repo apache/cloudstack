@@ -55,13 +55,13 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
             for (VM vm : vms) {
                 if (isAttach) {
                     if (!citrixResourceBase.createAndAttachConfigDriveIsoForVM(conn, vm, vmData, label)) {
-                        s_logger.debug("Failed to attach config drive iso to VM " + vmName);
+                        s_logger.debug("Failed to attach config drive ISO to Instane " + vmName);
                     }
                 } else {
                     // delete the config drive iso attached to VM
                     Set<VDI> vdis = VDI.getByNameLabel(conn, vmName+".iso");
                     if (vdis != null && !vdis.isEmpty()) {
-                        s_logger.debug("Deleting config drive for the VM " + vmName);
+                        s_logger.debug("Deleting config drive for the Instance " + vmName);
                         VDI vdi = vdis.iterator().next();
                         // Find the VM's CD-ROM VBD
                         Set<VBD> vbds = vdi.getVBDs(conn);
@@ -79,13 +79,13 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
                         vdi.destroy(conn);
                     }
 
-                    s_logger.debug("Successfully dettached config drive iso from the VM " + vmName);
+                    s_logger.debug("Successfully detached config drive ISO from the Instance " + vmName);
                 }
             }
         }catch (Types.XenAPIException ex) {
-            s_logger.debug("Failed to attach config drive iso to VM " + vmName + " " + ex.getMessage() );
+            s_logger.debug("Failed to attach config drive ISO to Instance " + vmName + " " + ex.getMessage() );
         }catch (XmlRpcException ex) {
-            s_logger.debug("Failed to attach config drive iso to VM " + vmName + " "+ex.getMessage());
+            s_logger.debug("Failed to attach config drive ISO to Instance " + vmName + " "+ex.getMessage());
         }
 
         return new Answer(command, true, "success");

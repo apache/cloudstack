@@ -77,7 +77,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 
-@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts an Instance based on a service offering, disk offering, and Template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityGroupAction, UserCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
@@ -88,54 +88,54 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "availability zone for the virtual machine")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "Availability zone for the Instance")
     private Long zoneId;
 
     @ACL
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "The ID of the Service offering for the Instance")
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the Template for the Instance")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Host name for the Instance")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
+    @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "An optional User generated name for the Instance")
     private String displayName;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the Instance. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "An optional domainId for the Instance. If the Account parameter is used, domainId must also be used.")
     private Long domainId;
 
     //Network information
     //@ACL(accessType = AccessType.UseEntry)
-    @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
+    @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "List of Network IDs used by Instance. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
-    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest Instance Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware if the Template is marked as deploy-as-is, as we honour what is defined in the Template.", since = "4.14.0.0")
     private String bootType;
 
-    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMWare if the Template is marked as deploy-as-is, as we honour what is defined in the Template.", since = "4.14.0.0")
     private String bootMode;
 
-    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
+    @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for VMWare)", since = "4.15.0.0")
     private Boolean bootIntoSetup;
 
     //DataDisk information
     @ACL
-    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine. If the template is of ISO format,"
+    @Parameter(name = ApiConstants.DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The ID of the disk offering for the Instance. If the Template is of ISO format,"
             + " the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the "
             + "offering for the data disk volume. If the templateId parameter passed is from a Template object,"
             + " the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is "
             + "from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
     private Long diskOfferingId;
 
-    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
+    @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "The arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
     private Long size;
 
     @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
@@ -144,116 +144,116 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             since = "4.4")
     private Long rootdisksize;
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "An optional group for the Instance")
     private String group;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine. "
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The hypervisor on which to deploy the Instance. "
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
     private String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
-            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
+            description = "An optional binary data that can be sent to the Instance upon a successful deployment. This binary data must be base64 encoded before adding it to the request. Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding.",
             length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the Userdata", since = "4.18")
     private Long userdataId;
 
-    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "Used to specify the parameters values for the variables in userdata.", since = "4.18")
     private Map userdataDetails;
 
     @Deprecated
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "Name of the SSH key pair used to login to the Instance")
     private String sshKeyPairName;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs used to login to the virtual machine")
+    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "Names of the SSH key pairs used to login to the Instance")
     private List<String> sshKeyPairNames;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "destination Host ID to deploy the VM to - parameter available for root admin only")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Destination Host ID to deploy the Instance to - parameter available for root admin only")
     private Long hostId;
 
     @ACL
-    @Parameter(name = ApiConstants.SECURITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups id that going to be applied to the virtual machine. "
-            + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = SecurityGroupResponse.class, description = "Comma separated list of security groups id that going to be applied to the Instance. "
+            + "Should be passed only when Instance is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
     private List<Long> securityGroupIdList;
 
     @ACL
-    @Parameter(name = ApiConstants.SECURITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = SecurityGroupResponse.class, description = "comma separated list of security groups names that going to be applied to the virtual machine."
-            + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = SecurityGroupResponse.class, description = "Comma separated list of security groups names that going to be applied to the Instance."
+            + " Should be passed only when Instance is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
 
-    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter."
-            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use ip 10.10.10.11 in network id=uuid")
+    @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "IP to network mapping. Can't be specified with networkIds parameter."
+            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use IP 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "The IP address for default Instance's Network")
     private String ipAddress;
 
-    @Parameter(name = ApiConstants.IP6_ADDRESS, type = CommandType.STRING, description = "the ipv6 address for default vm's network")
+    @Parameter(name = ApiConstants.IP6_ADDRESS, type = CommandType.STRING, description = "The IPv6 address for default Instance's Network")
     private String ip6Address;
 
-    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "the mac address for default vm's network")
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "The MAC address for default Instance's Network")
     private String macAddress;
 
-    @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
+    @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "An optional keyboard device type for the Instance. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy Instance for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if start vm after creating; defaulted to true if not specified")
+    @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "True if start Instance after creating; defaulted to true if not specified")
     private Boolean startVm;
 
     @ACL
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine."
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "Comma separated list of affinity groups id that are going to be applied to the Instance."
             + " Mutually exclusive with affinitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "Comma separated list of affinity groups names that are going to be applied to the Instance."
             + "Mutually exclusive with affinitygroupids parameter")
     private List<String> affinityGroupNameList;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "An optional field, whether to the display the Instance to the end user or not.", authorized = {RoleType.Admin})
     private Boolean displayVm;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "Used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
     private Map details;
 
-    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
+    @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for Instance allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
-    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
+    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the Instance on start up"
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.11", description = "datadisk template to disk-offering mapping;" +
-            " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
+    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.11", description = "Datadisk Template to disk-offering mapping;" +
+            " an optional parameter used to create additional data disks from datadisk Templates; can't be specified with diskOfferingId parameter")
     private Map dataDiskTemplateToDiskOfferingList;
 
-    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "An optional URL encoded string that can be passed to the Instance upon successful deployment", length = 5120)
     private String extraConfig;
 
-    @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "if true the image tags (if any) will be copied to the VM, default value is false")
+    @Parameter(name = ApiConstants.COPY_IMAGE_TAGS, type = CommandType.BOOLEAN, since = "4.13", description = "If true the image tags (if any) will be copied to the Instance, default value is false")
     private Boolean copyImageTags;
 
     @Parameter(name = ApiConstants.PROPERTIES, type = CommandType.MAP, since = "4.15",
-            description = "used to specify the vApp properties.")
+            description = "Used to specify the vApp properties.")
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map vAppProperties;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST, type = CommandType.MAP, since = "4.15",
-            description = "VMware only: used to specify network mapping of a vApp VMware template registered \"as-is\"." +
+            description = "VMware only: used to specify network mapping of a vApp VMware Template registered \"as-is\"." +
                     " Example nicnetworklist[0].ip=Nic-101&nicnetworklist[0].network=uuid")
     @LogLevel(LogLevel.Log4jLevel.Off)
     private Map vAppNetworks;
 
     @Parameter(name = ApiConstants.DYNAMIC_SCALING_ENABLED, type = CommandType.BOOLEAN, since = "4.16",
-            description = "true if virtual machine needs to be dynamically scalable")
+            description = "True if Instance needs to be dynamically scalable")
     protected Boolean dynamicScalingEnabled;
 
-    @Parameter(name = ApiConstants.OVERRIDE_DISK_OFFERING_ID, type = CommandType.UUID, since = "4.17", entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine to be used for root volume instead of the disk offering mapped in service offering." +
-            "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
+    @Parameter(name = ApiConstants.OVERRIDE_DISK_OFFERING_ID, type = CommandType.UUID, since = "4.17", entityType = DiskOfferingResponse.class, description = "The ID of the disk offering for the Instance to be used for root volume instead of the disk offering mapped in service offering." +
+            "In case of Instance deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
     private Long overrideDiskOfferingId;
 
     @Parameter(name = ApiConstants.IOTHREADS_ENABLED, type = CommandType.BOOLEAN, required = false,
@@ -307,7 +307,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String type = bootType.trim().toUpperCase();
                 return ApiConstants.BootType.valueOf(type);
             } catch (IllegalArgumentException e) {
-                String errMesg = "Invalid bootType " + bootType + "Specified for vm " + getName()
+                String errMesg = "Invalid bootType " + bootType + "Specified for Instance " + getName()
                         + " Valid values are: " + Arrays.toString(ApiConstants.BootType.values());
                 s_logger.warn(errMesg);
                 throw new InvalidParameterValueException(errMesg);
@@ -363,14 +363,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String mode = bootMode.trim().toUpperCase();
                 return ApiConstants.BootMode.valueOf(mode);
             } catch (IllegalArgumentException e) {
-                String msg = String.format("Invalid %s: %s specified for VM: %s. Valid values are: %s",
+                String msg = String.format("Invalid %s: %s specified for Instance: %s. Valid values are: %s",
                         ApiConstants.BOOT_MODE, bootMode, getName(), Arrays.toString(ApiConstants.BootMode.values()));
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
         }
         if (ApiConstants.BootType.UEFI.equals(getBootType())) {
-            String msg = String.format("%s must be specified for the VM with boot type: %s. Valid values are: %s",
+            String msg = String.format("%s must be specified for the Instance with boot type: %s. Valid values are: %s",
                     ApiConstants.BOOT_MODE, getBootType(), Arrays.toString(ApiConstants.BootMode.values()));
             s_logger.error(msg);
             throw new InvalidParameterValueException(msg);
@@ -722,7 +722,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 String policyType = ioDriverPolicy.trim().toUpperCase();
                 return ApiConstants.IoDriverPolicy.valueOf(policyType);
             } catch (IllegalArgumentException e) {
-                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
+                String errMesg = String.format("Invalid io policy %s specified for Instance %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
                 s_logger.warn(errMesg);
                 throw new InvalidParameterValueException(errMesg);
             }
@@ -764,15 +764,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public String getCreateEventDescription() {
-        return "creating Vm";
+        return "creating Instance";
     }
 
     @Override
     public String getEventDescription() {
         if(getStartVm()) {
-            return "starting Vm. Vm Id: " + getEntityUuid();
+            return "starting Instance. Instance Id: " + getEntityUuid();
         }
-        return "deploying Vm. Vm Id: " + getEntityUuid();
+        return "deploying Instance. Instance Id: " + getEntityUuid();
     }
 
     @Override
@@ -784,7 +784,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public void execute() {
         UserVm result;
 
-        CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
+        CallContext.current().setEventDetails("Instance Id: " + getEntityUuid());
         if (getStartVm()) {
             try {
                 result = _userVmService.startVirtualMachine(this);
@@ -809,7 +809,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            s_logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            s_logger.info("Instance " + getEntityUuid() + " already created, load UserVm from DB");
             result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
@@ -818,7 +818,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm uuid:"+getEntityUuid());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy Instance UUID:"+getEntityUuid());
         }
     }
 
@@ -832,7 +832,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 setEntityId(vm.getId());
                 setEntityUuid(vm.getUuid());
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to deploy Instance");
             }
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);

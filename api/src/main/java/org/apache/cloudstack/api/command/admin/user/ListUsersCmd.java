@@ -56,7 +56,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     private String username;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for users")
+            description = "Flag to display the resource icon for users")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

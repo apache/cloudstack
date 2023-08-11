@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
-@APICommand(name = "enableAutoScaleVmGroup", description = "Enables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
+@APICommand(name = "enableAutoScaleVmGroup", description = "Enables an AutoScale Instance Group", responseObject = AutoScaleVmGroupResponse.class, entityType = {AutoScaleVmGroup.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAutoScaleVmGroupCmd.class.getName());
@@ -49,7 +49,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScaleVmGroupResponse.class,
                required = true,
-               description = "the ID of the autoscale group")
+               description = "The ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -64,7 +64,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable AutoScale Vm Group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable AutoScale Instance Group");
         }
     }
 
@@ -98,7 +98,7 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Enabling AutoScale Vm Group. Vm Group Id: " + getId();
+        return "Enabling AutoScale Instance Group. Instance Group Id: " + getId();
     }
 
     @Override

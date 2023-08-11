@@ -135,16 +135,16 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
             try {
                 while (!valid && retry > 0) {
                     retry--;
-                    s_logger.info("Performing checksum validation for downloaded template " + templateId + " using " + checksum + ", retries left: " + retry);
+                    s_logger.info("Performing checksum validation for downloaded Template " + templateId + " using " + checksum + ", retries left: " + retry);
                     valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
                     if (!valid && retry > 0) {
-                        s_logger.info("Checksum validation failed, re-downloading template");
+                        s_logger.info("Checksum validation failed, re-downloading Template");
                         redownload = true;
                         resetDownloadFile();
                         downloadTemplate();
                     }
                 }
-                s_logger.info("Checksum validation for template " + templateId + ": " + (valid ? "succeeded" : "failed"));
+                s_logger.info("Checksum validation for Template " + templateId + ": " + (valid ? "succeeded" : "failed"));
                 return valid;
             } catch (IOException e) {
                 throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath, e);
@@ -161,7 +161,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
      */
     private void resetDownloadFile() {
         File f = new File(getDownloadedFilePath());
-        s_logger.info("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
+        s_logger.info("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist Template " + templateId + " on it");
         try {
             if (f.exists()) {
                 f.delete();

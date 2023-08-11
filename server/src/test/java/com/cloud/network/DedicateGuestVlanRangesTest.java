@@ -279,7 +279,7 @@ public class DedicateGuestVlanRangesTest {
         try {
             networkService.dedicateGuestVlanRange(dedicateGuestVlanRangesCmd);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("is allocated to a different account"));
+            Assert.assertTrue(e.getMessage().contains("is allocated to a different Account"));
         } finally {
             txn.close("runDedicateGuestVlanRangeAllocatedVlans");
         }

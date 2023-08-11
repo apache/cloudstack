@@ -26,23 +26,23 @@ import com.cloud.serializer.Param;
 public class TrafficMonitorResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the external firewall")
+    @Param(description = "The ID of the external firewall")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID of the external firewall")
+    @Param(description = "The zone ID of the external firewall")
     private String zoneId;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the management IP address of the external firewall")
+    @Param(description = "The management IP address of the external firewall")
     private String ipAddress;
 
     @SerializedName(ApiConstants.NUM_RETRIES)
-    @Param(description = "the number of times to retry requests to the external firewall")
+    @Param(description = "The number of times to retry requests to the external firewall")
     private String numRetries;
 
     @SerializedName(ApiConstants.TIMEOUT)
-    @Param(description = "the timeout (in seconds) for requests to the external firewall")
+    @Param(description = "The timeout (in seconds) for requests to the external firewall")
     private String timeout;
 
     public String getId() {

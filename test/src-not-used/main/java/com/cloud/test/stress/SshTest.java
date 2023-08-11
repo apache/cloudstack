@@ -52,12 +52,12 @@ public class SshTest {
         }
 
         if (host == null || host.equals("")) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring SSH test");
             System.exit(2);
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            s_logger.info("Did not receive a password back from test, ignoringSSH test");
             System.exit(2);
         }
 

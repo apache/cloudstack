@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.as.Counter;
 import com.cloud.user.Account;
 
-@APICommand(name = "createCounter", description = "Adds metric counter for VM auto scaling", responseObject = CounterResponse.class,
+@APICommand(name = "createCounter", description = "Adds metric counter for Instance auto scaling", responseObject = CounterResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateCounterCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateCounterCmd.class.getName());
@@ -115,7 +115,7 @@ public class CreateCounterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating a new Counter";
+        return "Creating a new Counter";
     }
 
     @Override

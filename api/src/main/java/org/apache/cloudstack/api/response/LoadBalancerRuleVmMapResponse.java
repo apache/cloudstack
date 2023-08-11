@@ -34,11 +34,11 @@ public class LoadBalancerRuleVmMapResponse extends BaseResponse {
 
 
     @SerializedName("loadbalancerruleinstance")
-    @Param(description = "the user vm set for lb rule")
+    @Param(description = "The user Instance set for LB rule")
     private UserVmResponse UserVmResponse;
 
     @SerializedName("lbvmipaddresses")
-    @Param(description = "IP addresses of the vm set of lb rule")
+    @Param(description = "IP addresses of the Instance set of LB rule")
     private List<String> ipAddr;
 
     public void setIpAddr(List<String> ipAddr) {

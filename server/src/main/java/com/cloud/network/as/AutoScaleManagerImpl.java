@@ -1868,7 +1868,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 if (s != null) {
                     sshKeyPairs.add(s.getName());
                 } else {
-                    s_logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    s_logger.warn("Cannot find SSH keypair by name in sshkeypairs from otherdeployparams in AutoScale Instane profile");
                 }
             }
         }

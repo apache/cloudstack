@@ -200,16 +200,16 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             Ip sourceIp = new Ip(ip);
             long active = _appLbDao.countActiveBySourceIp(sourceIp, network.getId());
             if (active > 0) {
-                s_logger.debug("Have to implement internal lb vm for source ip " + sourceIp + " as a part of network " + network + " implement as there are " + active +
-                    " internal lb rules exist for this ip");
+                s_logger.debug("Have to implement internal lb Instance for source IP " + sourceIp + " as a part of network " + network + " implement as there are " + active +
+                    " internal lb rules exist for this IP");
                 List<? extends VirtualRouter> internalLbVms;
                 try {
                     internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
                 } catch (InsufficientCapacityException e) {
-                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp + " due to:", e);
+                    s_logger.warn("Failed to deploy element " + getName() + " for IP " + sourceIp + " due to:", e);
                     return false;
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn("Failed to deploy element " + getName() + " for ip " + sourceIp + " due to:", e);
+                    s_logger.warn("Failed to deploy element " + getName() + " for IP " + sourceIp + " due to:", e);
                     return false;
                 }
 
@@ -320,11 +320,11 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
             if (vms.size() > 0) {
                 //only one internal lb per IP exists
                 try {
-                    s_logger.debug(String.format("Destroying internal lb vm for ip %s as all the rules for this vm are in Revoke state", sourceIp.addr()));
+                    s_logger.debug(String.format("Destroying internal lb Instance for IP %s as all the rules for this Instance are in Revoke state", sourceIp.addr()));
                     return _internalLbMgr.destroyInternalLbVm(vms.get(0).getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM),
                             _accountMgr.getUserIncludingRemoved(User.UID_SYSTEM).getId());
                 } catch (ConcurrentOperationException e) {
-                    s_logger.warn(String.format("Failed to apply lb rule(s) for ip %s on the element %s due to: ", sourceIp.addr(), getName()), e);
+                    s_logger.warn(String.format("Failed to apply lb rule(s) for IP %s on the element %s due to: ", sourceIp.addr(), getName()), e);
                     return false;
                 }
             }
@@ -340,21 +340,21 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 DeployDestination dest = new DeployDestination(_entityMgr.findById(DataCenter.class, network.getDataCenterId()), null, null, null);
                 internalLbVms = _internalLbMgr.deployInternalLbVm(network, sourceIp, dest, _accountMgr.getAccount(network.getAccountId()), null);
             } catch (InsufficientCapacityException e) {
-                s_logger.warn(String.format("Failed to apply lb rule(s) for ip %s on the element %s due to: ", sourceIp.addr(), getName()), e);
+                s_logger.warn(String.format("Failed to apply lb rule(s) for IP %s on the element %s due to: ", sourceIp.addr(), getName()), e);
                 return false;
             } catch (ConcurrentOperationException e) {
-                s_logger.warn(String.format("Failed to apply lb rule(s) for ip %s on the element %s due to: ", sourceIp.addr(), getName()), e);
+                s_logger.warn(String.format("Failed to apply lb rule(s) for IP %s on the element %s due to: ", sourceIp.addr(), getName()), e);
                 return false;
             }
 
             if (internalLbVms == null || internalLbVms.isEmpty()) {
-                throw new ResourceUnavailableException("Can't find/deploy internal lb vm to handle LB rules",
+                throw new ResourceUnavailableException("Can't find/deploy internal lb Instance to handle LB rules",
                         DataCenter.class, network.getDataCenterId());
             }
 
             //2.3 Apply Internal LB rules on the VM
             if (!_internalLbMgr.applyLoadBalancingRules(network, entry.getValue(), internalLbVms)) {
-                throw new CloudRuntimeException("Failed to apply load balancing rules for ip " + sourceIp.addr() +
+                throw new CloudRuntimeException("Failed to apply load balancing rules for IP " + sourceIp.addr() +
                         " in network " + network.getId() + " on element " + getName());
             }
         }
@@ -381,7 +381,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
         for (Ip sourceIp : lbPublicIps) {
             //2) Check if there are non revoked rules for the source ip address
             if (_appLbDao.countBySourceIpAndNotRevoked(sourceIp, network.getId()) == 0) {
-                s_logger.debug("Have to destroy internal lb vm for source ip " + sourceIp + " as it has 0 rules in non-Revoke state");
+                s_logger.debug("Have to destroy internal lb Instance for source IP " + sourceIp + " as it has 0 rules in non-Revoke state");
                 vmsToDestroy.add(sourceIp);
             }
         }
@@ -404,7 +404,7 @@ public class InternalLoadBalancerElement extends AdapterBase implements LoadBala
                 rulesToApply.add(rule);
                 groupedRules.put(sourceIp, rulesToApply);
             } else {
-                s_logger.debug("Internal lb rule " + rule + " doesn't have any vms assigned, skipping");
+                s_logger.debug("Internal LB rule " + rule + " doesn't have any Instances assigned, skipping");
             }
         }
         return groupedRules;

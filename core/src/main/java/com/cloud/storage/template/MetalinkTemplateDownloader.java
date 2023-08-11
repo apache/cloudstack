@@ -110,7 +110,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         ) {
             IOUtils.copy(in, out);
         } catch (IOException e) {
-            LOGGER.error("Error downloading template from: " + _downloadUrl + " due to: " + e.getMessage());
+            LOGGER.error("Error downloading Template from: " + _downloadUrl + " due to: " + e.getMessage());
             return false;
         }
         return true;

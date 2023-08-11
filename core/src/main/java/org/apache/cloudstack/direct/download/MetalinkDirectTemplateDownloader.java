@@ -75,10 +75,10 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         metalinkUrls = downloader.getMetalinkUrls(url);
         metalinkChecksums = downloader.getMetalinkChecksums(url);
         if (CollectionUtils.isEmpty(metalinkUrls)) {
-            s_logger.error(String.format("No urls found on metalink file: %s. Not possible to download template %s ", url, templateId));
+            s_logger.error(String.format("No URLs found on metalink file: %s. Not possible to download Template %s ", url, templateId));
         } else {
             setUrl(metalinkUrls.get(0));
-            s_logger.info("Metalink downloader created, metalink url: " + url + " parsed - " +
+            s_logger.info("Metalink downloader created, metalink URL: " + url + " parsed - " +
                     metalinkUrls.size() + " urls and " +
                     (CollectionUtils.isNotEmpty(metalinkChecksums) ? metalinkChecksums.size() : "0") + " checksums found");
         }
@@ -96,7 +96,7 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
             if (!isRedownload()) {
                 setUrl(metalinkUrls.get(i));
             }
-            s_logger.info("Trying to download template from url: " + getUrl());
+            s_logger.info("Trying to download Template from URL: " + getUrl());
             DirectTemplateDownloader urlDownloader = createDownloaderForMetalinks(getUrl(), getTemplateId(), getDestPoolPath(),
                     getChecksum(), headers, connectTimeout, soTimeout, null, temporaryDownloadPath);
             try {
@@ -109,10 +109,10 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
                 Pair<Boolean, String> downloadResult = urlDownloader.downloadTemplate();
                 downloaded = downloadResult.first();
                 if (downloaded) {
-                    s_logger.info("Successfully downloaded template from url: " + getUrl());
+                    s_logger.info("Successfully downloaded Template from URL: " + getUrl());
                 }
             } catch (Exception e) {
-                s_logger.error(String.format("Error downloading template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
+                s_logger.error(String.format("Error downloading Template: %s from URL: %s due to: %s", getTemplateId(), getUrl(), e.getMessage()), e);
             }
             i++;
         }

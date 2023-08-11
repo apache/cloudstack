@@ -50,7 +50,7 @@ public class IsoProcessor extends AdapterBase implements Processor {
         String isoPath = templatePath + File.separator + templateName + "." + ImageFormat.ISO.getFileExtension();
 
         if (!_storage.exists(isoPath)) {
-            s_logger.debug("Unable to find the iso file: " + isoPath);
+            s_logger.debug("Unable to find the ISO file: " + isoPath);
             return null;
         }
 

@@ -102,11 +102,11 @@ public class CreateRoleCmd extends RoleCmd {
 
     private void validateRoleParameters() {
         if (getRoleType() == null && getRoleId() == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither role type nor role ID is provided");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither role type nor role id is provided");
         }
 
         if (getRoleType() != null && getRoleId() != null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Both role type and role ID should not be specified");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Both role type and role id should not be specified");
         }
 
         if (getRoleId() != null && getRoleId() < 1L) {

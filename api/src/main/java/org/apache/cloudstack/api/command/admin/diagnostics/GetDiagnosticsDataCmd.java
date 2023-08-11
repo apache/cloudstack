@@ -48,7 +48,7 @@ import com.cloud.vm.VirtualMachine;
         entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
         requestHasSensitiveInfo = false,
-        description = "Get diagnostics and files from system VMs",
+        description = "Get diagnostics and files from System VMs",
         since = "4.14.0.0",
         authorized = {RoleType.Admin})
 public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
@@ -64,7 +64,7 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
             entityType = SystemVmResponse.class,
             required = true,
             validations = {ApiArgValidator.PositiveNumber},
-            description = "The ID of the system VM instance to retrieve diagnostics data files from")
+            description = "The ID of the System VM to retrieve diagnostics data files from")
     private Long id;
 
     @Parameter(name = ApiConstants.FILES,
@@ -113,7 +113,7 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("failed to generate valid download url: " + downloadUrl);
+                throw new CloudRuntimeException("Failed to generate valid download url: " + downloadUrl);
             }
         } catch (ServerApiException e) {
             throw new CloudRuntimeException("Internal exception caught while retrieving diagnostics files: ", e);
@@ -140,7 +140,7 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Getting diagnostics data files from system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Getting diagnostics data files from System VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override

@@ -56,7 +56,7 @@ public class QuotaStatementCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.INTEGER, description = "List quota usage records for the specified usage type")
     private Integer usageType;
 
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified Account")
     private Long accountId;
 
     @Inject

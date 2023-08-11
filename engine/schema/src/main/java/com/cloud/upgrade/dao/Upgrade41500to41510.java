@@ -70,7 +70,7 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
     @Override
     @SuppressWarnings("serial")
     public void updateSystemVmTemplates(final Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        LOG.debug("Updating System VM Template IDs");
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
             while (rs.next()) {
@@ -157,8 +157,8 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         templateId = rs.getLong(1);
                     }
                 } catch (final SQLException e) {
-                    LOG.error("updateSystemVmTemplates: Exception caught while getting ids of templates: " + e.getMessage());
-                    throw new CloudRuntimeException("updateSystemVmTemplates: Exception caught while getting ids of templates", e);
+                    LOG.error("updateSystemVmTemplates: Exception caught while getting ids of Templates: " + e.getMessage());
+                    throw new CloudRuntimeException("updateSystemVmTemplates: Exception caught while getting ids of Templates", e);
                 }
 
                 // change template type to SYSTEM
@@ -167,8 +167,8 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         templ_type_pstmt.setLong(1, templateId);
                         templ_type_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
+                        LOG.error("updateSystemVmTemplates:Exception while updating Template with id " + templateId + " to be marked as 'system': " + e.getMessage());
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating Template with id " + templateId + " to be marked as 'system'", e);
                     }
                     // update template ID of system Vms
                     try (PreparedStatement update_templ_id_pstmt = conn
@@ -177,9 +177,9 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
                         update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
                         update_templ_id_pstmt.executeUpdate();
                     } catch (final Exception e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
+                        LOG.error("updateSystemVmTemplates:Exception while setting Template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
                                 + ": " + e.getMessage());
-                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to "
+                        throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting Template for " + hypervisorAndTemplateName.getKey().toString() + " to "
                                 + templateId, e);
                     }
 
@@ -229,8 +229,8 @@ public class Upgrade41500to41510 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     }
                 }
             } catch (final SQLException e) {
-                LOG.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
-                throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
+                LOG.error("updateSystemVmTemplates:Exception while getting ids of Templates: " + e.getMessage());
+                throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of Templates", e);
             }
         }
         LOG.debug("Updating System Vm Template IDs Complete");

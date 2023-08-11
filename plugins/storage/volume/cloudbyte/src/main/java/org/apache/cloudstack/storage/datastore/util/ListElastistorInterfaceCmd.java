@@ -39,7 +39,7 @@ public class ListElastistorInterfaceCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = "controllerid", type = CommandType.STRING, description = "controller id")
+    @Parameter(name = "controllerid", type = CommandType.STRING, description = "Controller id")
     private String controllerid;
 
     // ///////////////////////////////////////////////////

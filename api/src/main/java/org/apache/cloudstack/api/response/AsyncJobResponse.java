@@ -32,67 +32,67 @@ import com.cloud.serializer.Param;
 public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "the account id that executed the async command")
+    @Param(description = "The Account id that executed the async command")
     private String accountId;
 
     @SerializedName("account")
-    @Param(description = "the account that executed the async command")
+    @Param(description = "The Account that executed the async command")
     private String account;
 
     @SerializedName("domainid")
-    @Param(description = "the domain id that executed the async command")
+    @Param(description = "The domain id that executed the async command")
     private String domainid;
 
     @SerializedName("domainpath")
-    @Param(description = "the domain that executed the async command")
+    @Param(description = "The domain that executed the async command")
     private String domainPath;
 
     @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "the user that executed the async command")
+    @Param(description = "The User that executed the async command")
     private String userId;
 
     @SerializedName("cmd")
-    @Param(description = "the async command executed")
+    @Param(description = "The async command executed")
     private String cmd;
 
     @SerializedName("jobstatus")
-    @Param(description = "the current job status-should be 0 for PENDING")
+    @Param(description = "The current job status-should be 0 for PENDING")
     private Integer jobStatus;
 
     @SerializedName("jobprocstatus")
-    @Param(description = "the progress information of the PENDING job")
+    @Param(description = "The progress information of the PENDING job")
     private Integer jobProcStatus;
 
     @SerializedName("jobresultcode")
-    @Param(description = "the result code for the job")
+    @Param(description = "The result code for the job")
     private Integer jobResultCode;
 
     @SerializedName("jobresulttype")
-    @Param(description = "the result type")
+    @Param(description = "The result type")
     private String jobResultType;
 
     @SerializedName("jobresult")
-    @Param(description = "the result reason")
+    @Param(description = "The result reason")
     private ResponseObject jobResult;
 
     @SerializedName("jobinstancetype")
-    @Param(description = "the instance/entity object related to the job")
+    @Param(description = "The Instance/entity object related to the job")
     private String jobInstanceType;
 
     @SerializedName("jobinstanceid")
-    @Param(description = "the unique ID of the instance/entity object related to the job")
+    @Param(description = "The unique ID of the Instance/entity object related to the job")
     private String jobInstanceId;
 
     @SerializedName("managementserverid")
-    @Param(description = "the msid of the management server on which the job is running", since = "4.19")
+    @Param(description = "The msid of the management server on which the job is running", since = "4.19")
     private Long msid;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "  the created date of the job")
+    @Param(description = "The created date of the job")
     private Date created;
 
     @SerializedName(ApiConstants.COMPLETED)
-    @Param(description = "  the completed date of the job")
+    @Param(description = "The completed date of the job")
     private Date removed;
 
     public void setAccountId(String accountId) {

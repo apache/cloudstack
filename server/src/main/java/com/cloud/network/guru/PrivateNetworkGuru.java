@@ -140,7 +140,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            s_logger.debug("Deallocate Network: networkId: " + nic.getNetworkId() + ", IP: " + nic.getIPv4Address());
         }
 
         PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());

@@ -555,7 +555,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
                 if (dataDiskTemplates != null && dataDiskTemplates.size() > 0) {
-                    s_logger.info("Template: " + template.getId() + " has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template");
+                    s_logger.info("Template: " + template.getId() + " has Datadisk template(s) associated with it. Delete Datadisk Templates before deleting the template");
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
                         s_logger.info("Delete Datadisk template: " + dataDiskTemplate.getId() + " from image store: " + imageStore.getName());
                         AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(dataDiskTemplate.getId(), imageStore));
@@ -613,7 +613,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     }
                 } else {
                     s_logger.warn("Template: " + template.getId() + " won't be deleted from image store: " + imageStore.getName() + " because deletion of one of the Datadisk"
-                            + " templates that belonged to the template failed");
+                            + " Templates that belonged to the template failed");
                 }
             }
 

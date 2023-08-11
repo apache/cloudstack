@@ -72,15 +72,15 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
     @Override
     public void runInContext() {
         mine = Thread.currentThread();
-        s_logger.info("running job to mark fully cloned templates for gc in thread " + mine.getName());
+        s_logger.info("running job to mark fully cloned Templates for gc in thread " + mine.getName());
 
         if (StorageManager.VmwareCreateCloneFull.value()) { // only run if full cloning is being used (might need to be more fine grained)
             try {
                 queryAllPools();
             } catch (Throwable t) {
-                s_logger.error("error during job to mark fully cloned templates for gc in thread " + mine.getName());
+                s_logger.error("error during job to mark fully cloned Templates for gc in thread " + mine.getName());
                 if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("running job to mark fully cloned templates for gc in thread " + mine.getName(),t);
+                    s_logger.debug("running job to mark fully cloned Templates for gc in thread " + mine.getName(),t);
                 }
             }
         }
@@ -98,7 +98,7 @@ public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
         // we don't need those specific to other hypervisor types
         if (pool.getHypervisor() == null || Hypervisor.HypervisorType.VMware.equals(pool.getHypervisor())) {
             if(s_logger.isDebugEnabled()) {
-                s_logger.debug(mine.getName() + " is marking fully cloned templates in pool " + pool.getName());
+                s_logger.debug(mine.getName() + " is marking fully cloned Templates in pool " + pool.getName());
             }
             List<VMTemplateStoragePoolVO> templatePrimaryDataStoreVOS = templateDataStoreDao.listByPoolId(pool.getId());
             for (VMTemplateStoragePoolVO templateMapping : templatePrimaryDataStoreVOS) {

@@ -44,7 +44,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
 @APICommand(name = "removeFromLoadBalancerRule",
-            description = "Removes a virtual machine or a list of virtual machines from a load balancer rule.",
+            description = "Removes an Instance or a list of  Instances from a load balancer rule.",
             responseObject = SuccessResponse.class,
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -67,7 +67,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the list of IDs of the virtual machines that are being removed from the load balancer rule (i.e. virtualMachineIds=1,2,3)")
+               description = "The list of IDs of the Instances that are being removed from the load balancer rule (i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID_IP,
@@ -123,7 +123,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
                 VirtualMachine lbvm = _entityMgr.findByUuid(VirtualMachine.class, vmId);
                 if (lbvm == null) {
-                    throw new InvalidParameterValueException("Unable to find virtual machine ID: " + vmId);
+                    throw new InvalidParameterValueException("Unable to find Instance ID: " + vmId);
                 }
 
                 Long longVmId = lbvm.getId();
@@ -145,12 +145,12 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "removing instances from load balancer: " + getId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
+        return "removing Instances from load balancer: " + getId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
     @Override
     public void execute()  {
-        CallContext.current().setEventDetails("Load balancer Id: " + getId() + " VmIds: " + StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer Id: " + getId() + " Instance IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
         Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
         try {
             boolean result = _lbService.removeFromLoadBalancer(id, virtualMachineIds, vmIdIpsMap, false);
@@ -158,10 +158,10 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove instance from load balancer rule");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Instance from load balancer rule");
             }
         }catch (InvalidParameterValueException ex) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to remove instance from load balancer rule");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Failed to remove Instance from load balancer rule");
         }
     }
 

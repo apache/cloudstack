@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "updateTemplate", description = "Updates attributes of a Template.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
@@ -41,7 +41,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = "templatetype", type = CommandType.STRING, description = "the type of the template")
+    @Parameter(name = "templatetype", type = CommandType.STRING, description = "The type of the Template")
     private String templateType;
 
     /////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update Template");
         }
     }
 }

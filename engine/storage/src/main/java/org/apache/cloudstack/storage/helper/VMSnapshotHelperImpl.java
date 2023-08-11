@@ -153,17 +153,17 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
     public Long getStoragePoolForVM(Long vmId) {
         List<VolumeVO> rootVolumes = volumeDao.findReadyRootVolumesByInstance(vmId);
         if (rootVolumes == null || rootVolumes.isEmpty()) {
-            throw new InvalidParameterValueException("Failed to find root volume for the user vm:" + vmId);
+            throw new InvalidParameterValueException("Failed to find root volume for the user Instance:" + vmId);
         }
 
         VolumeVO rootVolume = rootVolumes.get(0);
         StoragePoolVO rootVolumePool = primaryDataStoreDao.findById(rootVolume.getPoolId());
         if (rootVolumePool == null) {
-            throw new InvalidParameterValueException("Failed to find root volume storage pool for the user vm:" + vmId);
+            throw new InvalidParameterValueException("Failed to find root volume storage pool for the user Instance:" + vmId);
         }
 
         if (rootVolumePool.isInMaintenance()) {
-            throw new InvalidParameterValueException("Storage pool for the user vm:" + vmId + " is in maintenance");
+            throw new InvalidParameterValueException("Storage pool for the user Instance:" + vmId + " is in maintenance");
         }
 
         return rootVolumePool.getId();

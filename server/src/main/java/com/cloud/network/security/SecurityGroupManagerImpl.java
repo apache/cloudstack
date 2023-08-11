@@ -398,7 +398,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         Collections.sort(affectedVms);
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
+            s_logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " Instances");
         }
         boolean locked = _workLock.lock(_globalWorkLockTimeout);
         if (!locked) {
@@ -1043,14 +1043,14 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                             locked = true;
                             return;
                         }
-                        s_logger.warn("Unable to acquire lock on vm id=" + userVmId);
+                        s_logger.warn("Unable to acquire lock on Instance id=" + userVmId);
                         return;
                     }
                     locked = true;
                     Long agentId = null;
                     VmRulesetLogVO log = _rulesetLogDao.findByVmId(userVmId);
                     if (log == null) {
-                        s_logger.warn("Cannot find log record for vm id=" + userVmId);
+                        s_logger.warn("Cannot find log record for Instance id=" + userVmId);
                         return;
                     }
                     seqnum = log.getLogsequence();
@@ -1281,7 +1281,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         }
         if (affectedVms.size() > 0) {
-            s_logger.info("Network Group full sync for agent " + agentId + " found " + affectedVms.size() + " vms out of sync");
+            s_logger.info("Network Group full sync for agent " + agentId + " found " + affectedVms.size() + " Instances out of sync");
             scheduleRulesetUpdateToHosts(affectedVms, false, null);
         }
 

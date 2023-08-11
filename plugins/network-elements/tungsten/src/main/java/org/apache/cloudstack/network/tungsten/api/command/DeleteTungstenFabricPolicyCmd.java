@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = DeleteTungstenFabricPolicyCmd.APINAME, description = "delete Tungsten-Fabric policy",
+@APICommand(name = DeleteTungstenFabricPolicyCmd.APINAME, description = "Delete Tungsten-Fabric policy",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTungstenFabricPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTungstenFabricPolicyCmd.class.getName());
@@ -46,10 +46,10 @@ public class DeleteTungstenFabricPolicyCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "the Uuid of Tungsten-Fabric tag type")
+    @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, required = true, description = "The Uuid of Tungsten-Fabric tag type")
     private String policyUuid;
 
     @Override

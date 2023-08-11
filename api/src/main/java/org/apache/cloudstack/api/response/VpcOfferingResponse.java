@@ -31,59 +31,59 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the id of the vpc offering")
+    @Param(description = "The id of the VPC offering")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the vpc offering")
+    @Param(description = "The name of the VPC offering")
     private String name;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "an alternate display text of the vpc offering.")
+    @Param(description = "An alternate display text of the VPC offering.")
     private String displayText;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this vpc offering was created")
+    @Param(description = "The date this VPC offering was created")
     private Date created;
 
     @SerializedName(ApiConstants.IS_DEFAULT)
-    @Param(description = "true if vpc offering is default, false otherwise")
+    @Param(description = "True if VPC offering is default, false otherwise")
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "state of the vpc offering. Can be Disabled/Enabled")
+    @Param(description = "State of the VPC offering. Can be Disabled/Enabled")
     private String state;
 
     @SerializedName(ApiConstants.SERVICE)
-    @Param(description = "the list of supported services", responseObject = ServiceResponse.class)
+    @Param(description = "The list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
     @SerializedName(ApiConstants.DISTRIBUTED_VPC_ROUTER)
-    @Param(description = " indicates if the vpc offering supports distributed router for one-hop forwarding", since = "4.4")
+    @Param(description = "Indicates if the VPC offering supports distributed router for one-hop forwarding", since = "4.4")
     private Boolean supportsDistributedRouter;
 
     @SerializedName((ApiConstants.SUPPORTS_REGION_LEVEL_VPC))
-    @Param(description = " indicated if the offering can support region level vpc", since = "4.4")
+    @Param(description = "Indicated if the offering can support region level VPC", since = "4.4")
     private Boolean supportsRegionLevelVpc;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "The domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "The domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    @Param(description = "The zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE)
-    @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    @Param(description = "The zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zone;
 
     @SerializedName(ApiConstants.INTERNET_PROTOCOL)
-    @Param(description = "the internet protocol of the vpc offering")
+    @Param(description = "The internet protocol of the VPC offering")
     private String internetProtocol;
 
     public void setId(String id) {

@@ -19,7 +19,7 @@ package org.apache.cloudstack.api;
 import org.apache.commons.lang3.BooleanUtils;
 
 public abstract class BaseListRetrieveOnlyResourceCountCmd extends BaseListTaggedResourcesCmd {
-    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "makes the API's response contains only the resource count")
+    @Parameter(name = ApiConstants.RETRIEVE_ONLY_RESOURCE_COUNT, type = CommandType.BOOLEAN, description = "Makes the API's response contains only the resource count")
     private Boolean retrieveOnlyResourceCount;
 
     public Boolean getRetrieveOnlyResourceCount() {

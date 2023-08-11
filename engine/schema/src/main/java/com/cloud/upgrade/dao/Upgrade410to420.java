@@ -667,25 +667,25 @@ public class Upgrade410to420 implements DbUpgrade {
                             newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
                             try(PreparedStatement update_pstmt =
                                     conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = ? where traffic_type = ? and vmware_network_label is not NULL;");) {
-                                s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
+                                s_logger.debug("Updating VMWare label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
                                 pstmt.setString(1, newLabel);
                                 pstmt.setString(2, trafficType);
                                 update_pstmt.executeUpdate();
                             }catch (SQLException e) {
-                                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                                throw new CloudRuntimeException("Unable to set VMWare traffic labels ", e);
                             }
                         }catch (SQLException e) {
-                            throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                            throw new CloudRuntimeException("Unable to set VMWare traffic labels ", e);
                         }
                     }catch (SQLException e) {
-                        throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                        throw new CloudRuntimeException("Unable to set VMWare traffic labels ", e);
                     }
                 }
             }catch (SQLException e) {
-                throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+                throw new CloudRuntimeException("Unable to set VMWare traffic labels ", e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to set vmware traffic labels ", e);
+            throw new CloudRuntimeException("Unable to set VMWare traffic labels ", e);
         }
     }
 

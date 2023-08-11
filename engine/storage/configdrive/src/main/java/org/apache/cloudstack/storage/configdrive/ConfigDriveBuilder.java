@@ -153,7 +153,7 @@ public class ConfigDriveBuilder {
         LOG.debug("Executing config drive creation command: " + command.toString());
         String result = command.execute();
         if (StringUtils.isNotBlank(result)) {
-            String errMsg = "Unable to create iso file: " + isoFileName + " due to ge" + result;
+            String errMsg = "Unable to create ISO file: " + isoFileName + " due to ge" + result;
             LOG.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -181,10 +181,10 @@ public class ConfigDriveBuilder {
             }
         }
         if (!isoCreator.exists()) {
-            throw new CloudRuntimeException("Cannot create iso for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
+            throw new CloudRuntimeException("Cannot create ISO for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
         }
         if (!isoCreator.canExecute()) {
-            throw new CloudRuntimeException("Cannot create iso for config drive using: " + isoCreator.getCanonicalPath());
+            throw new CloudRuntimeException("Cannot create ISO for config drive using: " + isoCreator.getCanonicalPath());
         }
         return isoCreator.getCanonicalPath();
     }

@@ -27,59 +27,59 @@ import java.util.Date;
 public class QuotaTariffResponse extends BaseResponse {
 
     @SerializedName("usageType")
-    @Param(description = "usageType")
+    @Param(description = "Usage type")
     private int usageType;
 
     @SerializedName("usageName")
-    @Param(description = "usageName")
+    @Param(description = "Usage name")
     private String usageName;
 
     @SerializedName("usageUnit")
-    @Param(description = "usageUnit")
+    @Param(description = "Usage unit")
     private String usageUnit;
 
     @SerializedName("usageDiscriminator")
-    @Param(description = "usageDiscriminator")
+    @Param(description = "Usage discriminator")
     private String usageDiscriminator;
 
     @SerializedName("tariffValue")
-    @Param(description = "tariffValue")
+    @Param(description = "Tariff value")
     private BigDecimal tariffValue;
 
     @SerializedName("effectiveDate")
-    @Param(description = "the start date of the quota tariff")
+    @Param(description = "The start date of the quota tariff")
     private Date effectiveOn = null;
 
     @SerializedName("usageTypeDescription")
-    @Param(description = "usage type description")
+    @Param(description = "Usage type description")
     private String usageTypeDescription;
 
     @SerializedName("currency")
-    @Param(description = "currency")
+    @Param(description = "Currency")
     private String currency;
 
     @SerializedName("endDate")
-    @Param(description = "the end date of the quota tariff")
+    @Param(description = "The end date of the quota tariff")
     private Date endDate;
 
     @SerializedName("activationRule")
-    @Param(description = "activation rule of the quota tariff")
+    @Param(description = "Tctivation rule of the quota tariff")
     private String activationRule;
 
     @SerializedName("name")
-    @Param(description = "name")
+    @Param(description = "Name")
     private String name;
 
     @SerializedName("description")
-    @Param(description = "description")
+    @Param(description = "Description")
     private String description;
 
     @SerializedName("uuid")
-    @Param(description = "uuid")
+    @Param(description = "UUID")
     private String uuid;
 
     @SerializedName("removed")
-    @Param(description = "when the quota tariff was removed")
+    @Param(description = "When the quota tariff was removed")
     private Date removed;
 
     public QuotaTariffResponse() {

@@ -104,7 +104,7 @@ public class LdapListUsersCmd extends BaseListCmd {
                     + " including those that are already in cloudstack, the later will be annotated with their userSource")
     private String userFilter;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Linked domain")
     private Long domainId;
 
     public LdapListUsersCmd() {

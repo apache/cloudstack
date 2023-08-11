@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = GetLoadBalancerSslCertificateCmd.APINAME, description = "get load balancer certificate",
+@APICommand(name = GetLoadBalancerSslCertificateCmd.APINAME, description = "Get load balancer certificate",
     responseObject = TlsDataResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetLoadBalancerSslCertificateCmd.class.getName());
@@ -47,7 +47,7 @@ public class GetLoadBalancerSslCertificateCmd extends BaseCmd {
     @Inject
     private LoadBalancingRulesManager lbMgr;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true, description = "the ID of Lb")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TlsDataResponse.class, required = true, description = "The ID of Lb")
     private Long id;
 
     @Override

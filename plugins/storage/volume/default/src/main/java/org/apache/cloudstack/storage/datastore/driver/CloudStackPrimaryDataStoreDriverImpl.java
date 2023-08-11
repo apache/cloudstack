@@ -348,7 +348,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
-        s_logger.debug("Taking snapshot of "+ snapshot);
+        s_logger.debug("Taking Snapshot of "+ snapshot);
         try {
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO) snapshot.getTO();
             Object payload = snapshot.getPayload();
@@ -362,7 +362,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             EndPoint ep = epSelector.select(snapshot, StorageAction.TAKESNAPSHOT, encryptionRequired);
             Answer answer = null;
 
-            s_logger.debug("Taking snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
+            s_logger.debug("Taking Snapshot of "+ snapshot + " and encryption required is " + encryptionRequired);
 
             if (ep == null) {
                 String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
@@ -380,7 +380,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            s_logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            s_logger.debug("Failed to take Snapshot: " + snapshot.getId(), e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -415,7 +415,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            s_logger.debug("Unable to revert snapshot " + snapshot.getId(), ex);
+            s_logger.debug("Unable to revert Snapshot " + snapshot.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);

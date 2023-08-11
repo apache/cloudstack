@@ -45,7 +45,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the disk volume")
+            required=true, description = "The ID of the disk volume")
     private Long id;
 
     /////////////////////////////////////////////////////

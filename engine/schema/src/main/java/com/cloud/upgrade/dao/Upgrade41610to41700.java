@@ -82,12 +82,12 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void updateSystemVmTemplates(Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        LOG.debug("Updating System VM Template IDs");
         initSystemVmTemplateRegistration();
         try {
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            throw new CloudRuntimeException("Failed to find / register SystemVM Template(s)");
         }
     }
 

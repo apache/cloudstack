@@ -50,13 +50,13 @@ public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<
 
             if (dm == null) {
                 return new CreateVMSnapshotAnswer(cmd, false,
-                        "Create VM Snapshot Failed due to can not find vm: " + vmName);
+                        "Create Instance Snapshot Failed due to can not find Instance: " + vmName);
             }
 
             DomainState domainState = dm.getInfo().state ;
             if (domainState != DomainState.VIR_DOMAIN_RUNNING) {
                 return new CreateVMSnapshotAnswer(cmd, false,
-                        "Create VM Snapshot Failed due to  vm is not running: " + vmName + " with domainState = " + domainState);
+                        "Create Instance Snapshot Failed due to Instance is not running: " + vmName + " with domainState = " + domainState);
             }
 
             String vmSnapshotXML = "<domainsnapshot>" + "  <name>" + vmSnapshotName + "</name>"
@@ -66,7 +66,7 @@ public final class LibvirtCreateVMSnapshotCommandWrapper extends CommandWrapper<
 
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (LibvirtException e) {
-            String msg = " Create VM snapshot failed due to " + e.toString();
+            String msg = " Create Instance Snapshot failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new CreateVMSnapshotAnswer(cmd, false, msg);
         } finally {

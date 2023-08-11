@@ -39,7 +39,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = DeleteTungstenFabricLogicalRouterCmd.APINAME, description = "delete Tungsten-Fabric logical router",
+@APICommand(name = DeleteTungstenFabricLogicalRouterCmd.APINAME, description = "Delete Tungsten-Fabric logical router",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTungstenFabricLogicalRouterCmd.class.getName());
@@ -48,10 +48,10 @@ public class DeleteTungstenFabricLogicalRouterCmd extends BaseAsyncCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, required = true, description = "the uuid of Tungsten-Fabric logical router")
+    @Parameter(name = ApiConstants.LOGICAL_ROUTER_UUID, type = CommandType.STRING, required = true, description = "The uuid of Tungsten-Fabric logical router")
     private String logicalRouterUuid;
 
     @Override

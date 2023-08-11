@@ -27,29 +27,29 @@ import org.apache.cloudstack.api.EntityReference;
 public class UserDataResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the ssh keypair")
+    @Param(description = "ID of the SSH keypair")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "Name of the userdata")
     private String name;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the owner id of the userdata")
+    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description = "The owner id of the userdata")
     private String accountId;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the userdata")
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description = "The owner of the userdata")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the userdata owner")
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description = "The domain id of the userdata owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
+    @SerializedName(ApiConstants.DOMAIN) @Param(description = "The domain name of the userdata owner")
     private String domain;
 
-    @SerializedName(ApiConstants.USER_DATA) @Param(description="base64 encoded userdata content")
+    @SerializedName(ApiConstants.USER_DATA) @Param(description = "Base64 encoded userdata content")
     private String userData;
 
-    @SerializedName(ApiConstants.PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
+    @SerializedName(ApiConstants.PARAMS) @Param(description = "List of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
     private String params;
 
     public UserDataResponse() {

@@ -277,8 +277,8 @@ public class OVFHelper {
         if (StringUtils.isNotBlank(path)) {
             File f = new File(path);
             if (!f.exists() || f.isDirectory()) {
-                s_logger.error("One of the attached disk or iso does not exists " + path);
-                throw new InternalErrorException("One of the attached disk or iso as stated on OVF does not exists " + path);
+                s_logger.error("One of the attached disk or ISO does not exists " + path);
+                throw new InternalErrorException("One of the attached disk or ISO as stated on OVF does not exists " + path);
             }
         }
         Long capacity = disk != null ? disk._capacity : file._size;
@@ -522,7 +522,7 @@ public class OVFHelper {
     public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("no document to parse; returning no prerequisite networks");
+                s_logger.trace("No document to parse; returning no prerequisite Networks");
             }
             return Collections.emptyList();
         }
@@ -540,7 +540,7 @@ public class OVFHelper {
         final DocumentTraversal traversal = (DocumentTraversal) systemElement;
         final NodeIterator iterator = traversal.createNodeIterator(systemElement, NodeFilter.SHOW_ELEMENT, null, true);
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("starting out with %d network-prerequisites, parsing hardware",nets.size()));
+            s_logger.trace(String.format("Starting out with %d network-prerequisites, parsing hardware",nets.size()));
         }
         int nicCount = 0;
         for (Node n = iterator.nextNode(); n != null; n = iterator.nextNode()) {
@@ -550,7 +550,7 @@ public class OVFHelper {
                 String name = e.getTextContent(); // should be in our nets
                 if(nets.get(name) == null) {
                     if(s_logger.isInfoEnabled()) {
-                        s_logger.info(String.format("found a nic definition without a network definition byname %s, adding it to the list.", name));
+                        s_logger.info(String.format("Found a NIC definition without a Network definition by name %s, adding it to the list.", name));
                     }
                     nets.put(name, new OVFNetworkTO());
                 }
@@ -561,7 +561,7 @@ public class OVFHelper {
             }
         }
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("ending up with %d network-prerequisites, parsed %d nics", nets.size(), nicCount));
+            s_logger.trace(String.format("Ending up with %d network-prerequisites, parsed %d NICs", nets.size(), nicCount));
         }
     }
 
@@ -630,7 +630,7 @@ public class OVFHelper {
             nets.put(networkName,network);
         }
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("found %d networks in template", nets.size()));
+            s_logger.trace(String.format("Found %d Networks in Template", nets.size()));
         }
         return nets;
     }

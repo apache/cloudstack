@@ -27,27 +27,27 @@ import com.cloud.serializer.Param;
  */
 public class SystemVmInstanceResponse extends BaseResponse {
     @SerializedName("id")
-    @Param(description = "the ID of the system VM")
+    @Param(description = "The ID of the System VM")
     private String id;
 
     @SerializedName("systemvmtype")
-    @Param(description = "the system VM type")
+    @Param(description = "The System VM type")
     private String systemVmType;
 
     @SerializedName("name")
-    @Param(description = "the name of the system VM")
+    @Param(description = "The name of the System VM")
     private String name;
 
     @SerializedName("hostid")
-    @Param(description = "the host ID for the system VM")
+    @Param(description = "The host ID for the System VM")
     private String hostId;
 
     @SerializedName("state")
-    @Param(description = "the state of the system VM")
+    @Param(description = "The state of the System VM")
     private String state;
 
     @SerializedName("role")
-    @Param(description = "the role of the system VM")
+    @Param(description = "The role of the System VM")
     private String role;
 
     public String getId() {

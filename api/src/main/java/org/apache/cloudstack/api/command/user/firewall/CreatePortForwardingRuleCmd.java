@@ -66,37 +66,37 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
             required = true,
-    description = "the IP address id of the port forwarding rule")
+    description = "The IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PRIVATE_START_PORT,
                type = CommandType.INTEGER,
                required = true,
-            description = "the starting port of port forwarding rule's private port range")
+            description = "The starting port of port forwarding rule's private port range")
     private Integer privateStartPort;
 
     @Parameter(name = ApiConstants.PROTOCOL,
                type = CommandType.STRING,
                required = true,
-            description = "the protocol for the port forwarding rule. Valid values are TCP or UDP.")
+            description = "The protocol for the port forwarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.PRIVATE_END_PORT,
                type = CommandType.INTEGER,
                required = false,
-               description = "the ending port of port forwarding rule's private port range")
+               description = "The ending port of port forwarding rule's private port range")
     private Integer privateEndPort;
 
     @Parameter(name = ApiConstants.PUBLIC_START_PORT,
                type = CommandType.INTEGER,
                required = true,
-            description = "the starting port of port forwarding rule's public port range")
+            description = "The starting port of port forwarding rule's public port range")
     private Integer publicStartPort;
 
     @Parameter(name = ApiConstants.PUBLIC_END_PORT,
                type = CommandType.INTEGER,
                required = false,
-               description = "the ending port of port forwarding rule's private port range")
+               description = "The ending port of port forwarding rule's private port range")
     private Integer publicEndPort;
 
     @ACL(accessType = AccessType.OperateEntry)
@@ -104,13 +104,13 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
             required = true,
-                description = "the ID of the virtual machine for the port forwarding rule")
+                description = "The ID of the  Instance for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "The cidr list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "If true, firewall rule for source/end public port is automatically created; "
         + "if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when PF"
         + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
@@ -118,16 +118,16 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the network of the virtual machine the port forwarding rule will be created for. "
+               description = "The network of the  Instance the port forwarding rule will be created for. "
                    + "Required when public IP address is not associated with any guest network yet (VPC case).")
     private Long networkId;
     @Parameter(name = ApiConstants.VM_GUEST_IP,
                type = CommandType.STRING,
                required = false,
-    description = "VM guest nic secondary IP address for the port forwarding rule")
+    description = "VM guest NIC secondary IP address for the port forwarding rule")
     private String vmSecondaryIp;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -343,7 +343,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
             if (!NetUtils.isValidIp4(privateIp.toString())) {
-                throw new InvalidParameterValueException("Invalid vm ip address");
+                throw new InvalidParameterValueException("Invalid Instance ip address");
             }
         }
 
@@ -365,7 +365,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return ("Applying port forwarding  rule for Ip: " + ip.getAddress() + " with virtual machine:" + virtualMachineId);
+        return ("Applying port forwarding  rule for Ip: " + ip.getAddress() + " with  Instance:" + virtualMachineId);
     }
 
     @Override

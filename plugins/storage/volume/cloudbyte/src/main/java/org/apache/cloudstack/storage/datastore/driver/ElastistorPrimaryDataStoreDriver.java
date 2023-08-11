@@ -370,7 +370,7 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            s_logger.info("taking elastistor volume snapshot");
+            s_logger.info("Taking elastistor volume Snapshot");
             SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
 
             String volumeid = snapshotTO.getVolume().getUuid();

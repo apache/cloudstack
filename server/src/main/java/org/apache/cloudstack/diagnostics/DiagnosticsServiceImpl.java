@@ -248,7 +248,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private Pair<Boolean, String> copyZipFileToSecondaryStorage(VMInstanceVO vmInstance, Long vmHostId, String fileToCopy, DataStore store) {
         String vmControlIp = getVMSshIp(vmInstance);
         if (StringUtils.isBlank(vmControlIp)) {
-            return new Pair<>(false, "Unable to find system vm ssh/control IP for  vm with ID: " + vmInstance.getId());
+            return new Pair<>(false, "Unable to find System VM SSH/Control IP for Instance with ID: " + vmInstance.getId());
         }
         Pair<Boolean, String> copyResult;
         if (vmInstance.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -420,7 +420,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
         Map<String, String> accessDetails = networkManager.getSystemVMAccessDetails(vmInstance);
         String controlIP = accessDetails.get(NetworkElementCommand.ROUTER_IP);
         if (StringUtils.isBlank(controlIP)) {
-            throw new CloudRuntimeException("Unable to find system vm ssh/control IP for  vm with ID: " + vmInstance.getId());
+            throw new CloudRuntimeException("Unable to find System VM SSH/control IP for Instance with ID: " + vmInstance.getId());
         }
         return controlIP;
     }

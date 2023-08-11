@@ -29,79 +29,79 @@ import com.google.gson.annotations.SerializedName;
 
 public class HostMetricsResponse extends HostResponse {
     @SerializedName("powerstate")
-    @Param(description = "out-of-band management power state")
+    @Param(description = "Out-of-band management power state")
     private OutOfBandManagement.PowerState powerState;
 
     @SerializedName("instances")
-    @Param(description = "instances on the host")
+    @Param(description = "Instances on the host")
     private String instances;
 
     @SerializedName("cputotalghz")
-    @Param(description = "the total cpu capacity in Ghz")
+    @Param(description = "The total cpu capacity in Ghz")
     private String cpuTotal;
 
     @SerializedName("cpuusedghz")
-    @Param(description = "the total cpu used in Ghz")
+    @Param(description = "The total cpu used in Ghz")
     private String cpuUsed;
 
     @SerializedName("cpuallocatedghz")
-    @Param(description = "the total cpu allocated in Ghz")
+    @Param(description = "The total cpu allocated in Ghz")
     private String cpuAllocated;
 
     @SerializedName("cpuloadaverage")
-    @Param(description = "the average cpu load the last minute")
+    @Param(description = "The average cpu load the last minute")
     private Double loadAverage;
 
     @SerializedName("memorytotalgb")
-    @Param(description = "the total memory capacity in GiB")
+    @Param(description = "The total memory capacity in GiB")
     private String memTotal;
 
     @SerializedName("memoryusedgb")
-    @Param(description = "the total memory used in GiB")
+    @Param(description = "The total memory used in GiB")
     private String memUsed;
 
     @SerializedName("memoryallocatedgb")
-    @Param(description = "the total memory allocated in GiB")
+    @Param(description = "The total memory allocated in GiB")
     private String memAllocated;
 
     @SerializedName("networkread")
-    @Param(description = "network read in GiB")
+    @Param(description = "Network read in GiB")
     private String networkRead;
 
     @SerializedName("networkwrite")
-    @Param(description = "network write in GiB")
+    @Param(description = "Network write in GiB")
     private String networkWrite;
 
     @SerializedName("cputhreshold")
-    @Param(description = "cpu usage notification threshold exceeded")
+    @Param(description = "CPU usage notification threshold exceeded")
     private Boolean cpuThresholdExceeded;
 
     @SerializedName("cpudisablethreshold")
-    @Param(description = "cpu usage disable threshold exceeded")
+    @Param(description = "CPU usage disable threshold exceeded")
     private Boolean cpuDisableThresholdExceeded;
 
     @SerializedName("cpuallocatedthreshold")
-    @Param(description = "cpu allocated notification threshold exceeded")
+    @Param(description = "CPU allocated notification threshold exceeded")
     private Boolean cpuAllocatedThresholdExceeded;
 
     @SerializedName("cpuallocateddisablethreshold")
-    @Param(description = "cpu allocated disable threshold exceeded")
+    @Param(description = "CPU allocated disable threshold exceeded")
     private Boolean cpuAllocatedDisableThresholdExceeded;
 
     @SerializedName("memorythreshold")
-    @Param(description = "memory usage notification threshold exceeded")
+    @Param(description = "Memory usage notification threshold exceeded")
     private Boolean memoryThresholdExceeded;
 
     @SerializedName("memorydisablethreshold")
-    @Param(description = "memory usage disable threshold exceeded")
+    @Param(description = "Memory usage disable threshold exceeded")
     private Boolean memoryDisableThresholdExceeded;
 
     @SerializedName("memoryallocatedthreshold")
-    @Param(description = "memory allocated notification threshold exceeded")
+    @Param(description = "Memory allocated notification threshold exceeded")
     private Boolean memoryAllocatedThresholdExceeded;
 
     @SerializedName("memoryallocateddisablethreshold")
-    @Param(description = "memory allocated disable threshold exceeded")
+    @Param(description = "Memory allocated disable threshold exceeded")
     private Boolean memoryAllocatedDisableThresholdExceeded;
 
     public void setPowerState(final OutOfBandManagement.PowerState powerState) {

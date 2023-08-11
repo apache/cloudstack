@@ -35,7 +35,7 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "createNetworkACLList", description = "Creates a network ACL for the given VPC", responseObject = NetworkACLResponse.class,
+@APICommand(name = "createNetworkACLList", description = "Creates a Network ACL for the given VPC", responseObject = NetworkACLResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLListCmd.class.getName());
@@ -45,20 +45,20 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the network ACL list")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the Network ACL list")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the network ACL list")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the Network ACL list")
     private String description;
 
     @Parameter(name = ApiConstants.VPC_ID,
                type = CommandType.UUID,
                required = true,
                entityType = VpcResponse.class,
-               description = "ID of the VPC associated with this network ACL list")
+               description = "ID of the VPC associated with this Network ACL list")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the list to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     // ///////////////////////////////////////////////////
@@ -105,7 +105,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
             setResponseObject(aclResponse);
             aclResponse.setResponseName(getCommandName());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Network ACL");
         }
     }
 

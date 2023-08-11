@@ -57,7 +57,7 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                 }
             } catch (Exception ex) {
                 s_logger.info("[ignored]"
-                        + "error during clicking test on iso: " + e.getLocalizedMessage());
+                        + "error during clicking test on ISO: " + e.getLocalizedMessage());
             }
 
             for (int second = 0;; second++) {
@@ -68,7 +68,7 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                         break;
                 } catch (Exception e) {
                     s_logger.info("[ignored]"
-                            + "error during visibility test of iso: " + e.getLocalizedMessage());
+                            + "error during visibility test of ISO: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(10000);
             }
@@ -106,7 +106,7 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                         break;
                 } catch (Exception e) {
                     s_logger.info("[ignored]"
-                            + "error checking visibility after test completion for iso: " + e.getLocalizedMessage());
+                            + "error checking visibility after test completion for ISO: " + e.getLocalizedMessage());
                 }
                 Thread.sleep(1000);
             }

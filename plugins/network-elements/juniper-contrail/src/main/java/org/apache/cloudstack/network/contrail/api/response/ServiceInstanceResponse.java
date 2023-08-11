@@ -28,35 +28,35 @@ import com.cloud.serializer.Param;
 public class ServiceInstanceResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the virtual machine")
+    @Param(description = "The ID of the virtual machine")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the virtual machine")
+    @Param(description = "The name of the Instance")
     private String name;
 
     @SerializedName("displayname")
-    @Param(description = "user generated name. The name of the virtual machine is returned if no displayname exists.")
+    @Param(description = "User generated name. The name of the Instance is returned if no displayname exists.")
     private String displayName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the virtual machine")
+    @Param(description = "The account associated with the Instance")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vm")
+    @Param(description = "The project id of the Instance")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm")
+    @Param(description = "The project name of the vm")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain in which the virtual machine exists")
+    @Param(description = "The ID of the domain in which the virtual machine exists")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the domain in which the virtual machine exists")
+    @Param(description = "The name of the domain in which the virtual machine exists")
     private String domainName;
 
     public void setId(String id) {

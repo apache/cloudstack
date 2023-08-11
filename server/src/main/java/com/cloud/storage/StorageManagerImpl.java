@@ -1289,7 +1289,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             try {
 
                                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                                s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());
+                                s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " Templates to clean up in storage pool: " + pool.getName());
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                                         s_logger.debug("Storage pool garbage collector is skipping template with ID: " + templatePoolVO.getTemplateId() + " on pool " + templatePoolVO.getPoolId()
@@ -1604,7 +1604,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 try {
                     long storeId = store.getId();
                     List<TemplateDataStoreVO> destroyedTemplateStoreVOs = _templateStoreDao.listDestroyed(storeId);
-                    s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateStoreVOs.size() + " templates to cleanup on template_store_ref for store: " + store.getName());
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateStoreVOs.size() + " Templates to cleanup on template_store_ref for store: " + store.getName());
                     for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Deleting template store DB entry: " + destroyedTemplateStoreVO);
@@ -1612,7 +1612,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         _templateStoreDao.remove(destroyedTemplateStoreVO.getId());
                     }
                 } catch (Exception e) {
-                    s_logger.warn("problem cleaning up templates in template_store_ref for store: " + store.getName(), e);
+                    s_logger.warn("Problem cleaning up Templates in template_store_ref for store: " + store.getName(), e);
                 }
             }
 
@@ -3113,7 +3113,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // search if there are user templates stored on this image store, excluding system, builtin templates
         List<TemplateJoinVO> templates = _templateViewDao.listActiveTemplates(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete image store with active templates backup!");
+            throw new InvalidParameterValueException("Cannot delete image store with active Templates backup!");
         }
 
         // ready to delete
@@ -3220,12 +3220,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         List<VolumeDataStoreVO> volumes = _volumeStoreDao.listActiveOnCache(storeId);
         if (volumes != null && volumes.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging volumes currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Volumes currently in use!");
         }
 
         List<TemplateDataStoreVO> templates = _templateStoreDao.listActiveOnCache(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging templates currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Templates currently in use!");
         }
 
         // ready to delete

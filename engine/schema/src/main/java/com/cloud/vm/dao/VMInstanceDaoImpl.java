@@ -827,7 +827,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
                 return rs.getLong(1);
             }
         } catch (Exception e) {
-            s_logger.warn(String.format("Error counting vms by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
+            s_logger.warn(String.format("Error counting Instances by host tag for dcId= %s, hostTag= %s", dcId, hostTag), e);
         }
         return 0L;
     }
@@ -933,7 +933,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public boolean isPowerStateUpToDate(final long instanceId) {
         VMInstanceVO instance = findById(instanceId);
         if(instance == null) {
-            throw new CloudRuntimeException("checking power state update count on non existing instance " + instanceId);
+            throw new CloudRuntimeException("Checking power state update count on non-existing Instance " + instanceId);
         }
         return instance.getPowerStateUpdateCount() < MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT;
     }

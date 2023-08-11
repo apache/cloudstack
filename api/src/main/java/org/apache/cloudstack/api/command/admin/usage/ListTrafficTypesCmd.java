@@ -46,7 +46,7 @@ public class ListTrafficTypesCmd extends BaseListCmd {
                type = CommandType.UUID,
                entityType = PhysicalNetworkResponse.class,
                required = true,
-               description = "the Physical Network ID")
+               description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     /////////////////////////////////////////////////////

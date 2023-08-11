@@ -885,7 +885,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             if (!allTemplatesDeleted) {
-                s_logger.warn("Failed to delete templates while removing account id=" + accountId);
+                s_logger.warn("Failed to delete Templates while removing account id=" + accountId);
                 accountCleanupNeeded = true;
             }
 
@@ -895,14 +895,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 try {
                     _vmSnapshotMgr.deleteVMSnapshot(vmSnapshot.getId());
                 } catch (Exception e) {
-                    s_logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
+                    s_logger.debug("Failed to cleanup Instance Snapshot " + vmSnapshot.getId() + " due to " + e.toString());
                 }
             }
 
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Expunging # of vms (accountId=" + accountId + "): " + vms.size());
+                s_logger.debug("Expunging # of Instances (accountId=" + accountId + "): " + vms.size());
             }
 
             for (UserVmVO vm : vms) {

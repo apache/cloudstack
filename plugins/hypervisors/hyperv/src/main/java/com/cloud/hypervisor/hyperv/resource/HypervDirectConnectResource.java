@@ -460,7 +460,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                             ((StartCommand)cmd).setSecondaryStorage(secondary);
                         }
                     } else {
-                        s_logger.error("Hyperv manager isn't available. Couldn't check and copy the systemvm iso.");
+                        s_logger.error("Hyperv manager isn't available. Couldn't check and copy the System VM ISO.");
                     }
                 }
             }
@@ -543,7 +543,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 modifyNicVlan(vmName, vlanId, publicNicInfo, true, cmd.getNic().getName());
                 return new PlugNicAnswer(cmd, true, "success");
             }
-            final String msg = " Plug Nic failed for the vm as it has reached max limit of NICs to be added";
+            final String msg = " Plug Nic failed for the Instance as it has reached max limit of NICs to be added";
             s_logger.warn(msg);
             return new PlugNicAnswer(cmd, false, msg);
 
@@ -707,7 +707,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             if (ethDeviceNum > 0) {
                 nic.setDeviceId(ethDeviceNum);
             } else {
-                return new ExecutionResult(false, "Prepare SetupGuestNetwork failed due to unable to find the nic");
+                return new ExecutionResult(false, "Prepare SetupGuestNetwork failed due to unable to find the NIC");
             }
         } catch (final Exception e) {
             final String msg = "Prepare SetupGuestNetwork failed due to " + e.toString();
@@ -743,7 +743,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 ip.setNicDevId(publicNicInfo);
             }
         } catch (final Exception e) {
-            s_logger.error("Prepare Ip Assoc failure on applying one ip due to exception:  ", e);
+            s_logger.error("Prepare IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.toString());
         }
 
@@ -761,7 +761,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             if (ethDeviceNum > 0) {
                 pubIp.setNicDevId(ethDeviceNum);
             } else {
-                return new ExecutionResult(false, "Prepare Ip SNAT failed due to unable to find the nic");
+                return new ExecutionResult(false, "Prepare Ip SNAT failed due to unable to find the NIC");
             }
         } catch (final Exception e) {
             final String msg = "Prepare Ip SNAT failure due to " + e.toString();
@@ -783,7 +783,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             if (ethDeviceNum > 0) {
                 nic.setDeviceId(ethDeviceNum);
             } else {
-                return new ExecutionResult(false, "Prepare SetNetworkACL failed due to unable to find the nic");
+                return new ExecutionResult(false, "Prepare SetNetworkACL failed due to unable to find the NIC");
             }
         } catch (final Exception e) {
             final String msg = "Prepare SetNetworkACL failed due to " + e.toString();
@@ -1485,7 +1485,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         data.put(cmd.getVmIpAddress(), cmd.getVmData());
 
         String json = new Gson().toJson(data);
-        s_logger.debug("VM data JSON IS:" + json);
+        s_logger.debug("Instance data JSON IS:" + json);
 
         json = Base64.encodeBase64String(json.getBytes(Charset.forName("UTF-8")));
         final String command = String.format("%s%s %s %s", "/opt/cloud/bin/", VRScripts.VMDATA, "-d", json);
@@ -2132,7 +2132,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping command port succeeded for vm " + vmName);
+            s_logger.debug("Ping command port succeeded for Instance " + vmName);
         }
 
         if (VirtualMachineName.isValidRouterName(vmName)) {
@@ -2371,7 +2371,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                     try {
                         Thread.sleep(5000);
                     } catch (final InterruptedException ex) {
-                        s_logger.debug("[ignored] interrupted while waiting to retry connecting to vm after exception: "+e.getLocalizedMessage());
+                        s_logger.debug("[ignored] interrupted while waiting to retry connecting to Instance after exception: "+e.getLocalizedMessage());
                     }
                 }
             }
@@ -2379,7 +2379,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             try {
                 Thread.sleep(1000);
             } catch (final InterruptedException ex) {
-                s_logger.debug("[ignored] interrupted while connecting to vm.");
+                s_logger.debug("[ignored] interrupted while connecting to Instance.");
             }
         }
 

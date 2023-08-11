@@ -34,13 +34,13 @@ import com.cloud.network.Network;
 public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmdByAdmin.class.getName());
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description = "The ID or VID of the network")
     private String vlan;
 
-    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during network creation for shared and L2 networks")
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description = "When true bypasses VLAN id/range overlap check during network creation for shared and L2 networks")
     private Boolean bypassVlanOverlapCheck;
 
-    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description="when true ip address usage for the network will not be exported by the listUsageRecords API")
+    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description = "When true ip address usage for the network will not be exported by the listUsageRecords API")
     private Boolean hideIpAddressUsage;
 
     @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to a router in a shared network", since = "4.16",

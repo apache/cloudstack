@@ -1182,7 +1182,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
                 if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
-                        s_logger.debug("There is already a VM snapshot task running, wait for it");
+                        s_logger.debug("There is already a Instance Snapshot task running, wait for it");
                         context.getVimClient().waitForTask(taskMor);
                     }
                 }
@@ -1353,17 +1353,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 return new DeleteVMSnapshotAnswer(cmd, false, msg);
             } else {
                 if (vmMo.getSnapshotMor(vmSnapshotName) == null) {
-                    s_logger.debug("can not find the snapshot " + vmSnapshotName + ", assume it is already removed");
+                    s_logger.debug("Can not find the Snapshot " + vmSnapshotName + ", assume it is already removed");
                 } else {
                     if (!vmMo.removeSnapshot(vmSnapshotName, false)) {
-                        String msg = "delete vm snapshot " + vmSnapshotName + " due to error occurred in vmware";
+                        String msg = "Delete Instance Snapshot " + vmSnapshotName + " due to error occurred in VMWare";
                         s_logger.error(msg);
 
                         return new DeleteVMSnapshotAnswer(cmd, false, msg);
                     }
                 }
 
-                s_logger.debug("snapshot: " + vmSnapshotName + " is removed");
+                s_logger.debug("Snapshot: " + vmSnapshotName + " is removed");
 
                 // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager
 
@@ -1373,7 +1373,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg, e);
+            s_logger.error("Failed to delete Instance Snapshot " + vmSnapshotName + " of Instance " + vmName + " due to " + msg, e);
 
             return new DeleteVMSnapshotAnswer(cmd, false, msg);
         }
@@ -1400,7 +1400,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
 
                 if (info.getEntityName().equals(cmd.getVmName()) && org.apache.commons.lang3.StringUtils.isNotBlank(info.getName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
-                    s_logger.debug("There is already a VM snapshot task running, wait for it");
+                    s_logger.debug("There is already an Instance Snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
                 }
             }

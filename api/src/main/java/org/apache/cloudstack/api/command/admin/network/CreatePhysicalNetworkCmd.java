@@ -51,36 +51,36 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "the Zone ID for the physical network")
+               description = "The Zone ID for the physical network")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical network")
     private String vlan;
 
-    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "the speed for the physical network[1G/10G]")
+    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "The speed for the physical Network[1G/10G]")
     private String speed;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "domain ID of the account owning a physical network")
+               description = "Domain ID of the Account owning a physical Network")
     private Long domainId;
 
     @Parameter(name = ApiConstants.BROADCAST_DOMAIN_RANGE,
                type = CommandType.STRING,
-               description = "the broadcast domain range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
+               description = "The broadcast domain range for the physical Network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
     private String broadcastDomainRange;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical network")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical Network")
     private List<String> tags;
 
     @Parameter(name = ApiConstants.ISOLATION_METHODS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "the isolation method for the physical network[VLAN/L3/GRE]")
+               description = "The isolation method for the physical Network[VLAN/L3/GRE]")
     private List<String> isolationMethods;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the physical network")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the physical Network")
     private String networkName;
 
     /////////////////////////////////////////////////////

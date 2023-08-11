@@ -162,7 +162,7 @@ public class LoadBalanceRuleHandler {
     public void handleDeleteLoadBalancerRule(final LoadBalancer lb, final long userId, final Account caller) {
         final List<LoadBalancerVO> remainingLbs = _loadBalancerDao.listByIpAddress(lb.getSourceIpAddressId());
         if (remainingLbs.size() == 0) {
-            s_logger.debug("ELB mgr: releasing ip " + lb.getSourceIpAddressId() + " since  no LB rules remain for this ip address");
+            s_logger.debug("ELB mgr: releasing IP " + lb.getSourceIpAddressId() + " since no LB rules remain for this IP address");
             releaseIp(lb.getSourceIpAddressId(), userId, caller);
         }
     }
@@ -181,8 +181,8 @@ public class LoadBalanceRuleHandler {
 
         account = _accountDao.acquireInLockTable(account.getId());
         if (account == null) {
-            s_logger.warn("ELB: CreateLoadBalancer: Failed to acquire lock on account");
-            throw new CloudRuntimeException("Failed to acquire lock on account");
+            s_logger.warn("ELB: CreateLoadBalancer: Failed to acquire lock on Account");
+            throw new CloudRuntimeException("Failed to acquire lock on Account");
         }
         try {
             return handleCreateLoadBalancerRuleWithLock(lb, account, networkId);
@@ -202,12 +202,12 @@ public class LoadBalanceRuleHandler {
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
         final Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         final DeployDestination dest = new DeployDestination(dc, pod, null, null);
-        s_logger.debug("About to deploy ELB vm ");
+        s_logger.debug("About to deploy ELB Instance ");
 
         try {
             final DomainRouterVO elbVm = deployELBVm(network, dest, owner, params);
             if (elbVm == null) {
-                throw new InvalidParameterValueException("Could not deploy or find existing ELB VM");
+                throw new InvalidParameterValueException("Could not deploy or find existing ELB Instance");
             }
             s_logger.debug("Deployed ELB  vm = " + elbVm);
 
@@ -337,14 +337,14 @@ public class LoadBalanceRuleHandler {
                 if (lb.getSourceIpAddressId() != null) {
                     throwExceptionIfSuppliedlLbNameIsNotAssociatedWithIpAddress(lb);
                 } else {
-                    s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
+                    s_logger.debug("Could not find any existing frontend IPs for this Account for this LB rule, acquiring a new frontent IP for ELB");
                     final PublicIp ip = allocDirectIp(account, networkId);
                     ipId = ip.getId();
                     newIp = true;
                 }
             } else {
                 ipId = existingLbs.get(0).getSourceIpAddressId();
-                s_logger.debug("ELB: Found existing frontend ip for this account for this LB rule " + ipId);
+                s_logger.debug("ELB: Found existing frontend IP for this Account for this LB rule " + ipId);
             }
         } else {
             s_logger.warn("ELB: Found existing load balancers matching requested new LB");
@@ -375,7 +375,7 @@ public class LoadBalanceRuleHandler {
                 elbVm = deployLoadBalancerVM(networkId, ipAddr);
                 if (elbVm == null) {
                     final Network network = _networkModel.getNetwork(networkId);
-                    s_logger.warn("Failed to deploy a new ELB vm for ip " + ipAddr + " in network " + network + "lb name=" + lb.getName());
+                    s_logger.warn("Failed to deploy a new ELB Instance for IP " + ipAddr + " in network " + network + "lb name=" + lb.getName());
                     if (newIp) {
                         releaseIp(ipId, CallContext.current().getCallingUserId(), account);
                     }

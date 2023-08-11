@@ -62,7 +62,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.VMDK.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Unable to find the vmware template file: " + templateFilePath);
+                s_logger.info("Unable to find the VMware Template file: " + templateFilePath);
             }
             return null;
         }
@@ -83,7 +83,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             return size;
         } catch (Exception e) {
             s_logger.info("[ignored]"
-                    + "failed to get template virtual size for vmdk: " + e.getLocalizedMessage());
+                    + "failed to get Template virtual size for vmdk: " + e.getLocalizedMessage());
         }
         return file.length();
     }

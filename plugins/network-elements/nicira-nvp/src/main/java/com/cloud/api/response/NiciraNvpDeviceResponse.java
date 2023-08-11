@@ -31,35 +31,35 @@ import com.cloud.serializer.Param;
 @EntityReference(value = NiciraNvpDeviceVO.class)
 public class NiciraNvpDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_ID)
-    @Param(description = "device id of the Nicire Nvp")
+    @Param(description = "Device id of the Nicire Nvp")
     private String id;
 
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
-    @Param(description = "the physical network to which this Nirica Nvp belongs to")
+    @Param(description = "The physical network to which this Nirica Nvp belongs to")
     private String physicalNetworkId;
 
     @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "name of the provider")
+    @Param(description = "Name of the provider")
     private String providerName;
 
     @SerializedName(ApiConstants.NICIRA_NVP_DEVICE_NAME)
-    @Param(description = "device name")
+    @Param(description = "Device name")
     private String deviceName;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the controller Ip address")
+    @Param(description = "The controller Ip address")
     private String hostName;
 
     @SerializedName(ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID)
-    @Param(description = "the transport zone Uuid")
+    @Param(description = "The transport zone Uuid")
     private String transportZoneUuid;
 
     @SerializedName(ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID)
-    @Param(description = "this L3 gateway service Uuid")
+    @Param(description = "This L3 gateway service Uuid")
     private String l3GatewayServiceUuid;
 
     @SerializedName(ApiConstants.NICIRA_NVP_L2_GATEWAYSERVICE_UUID)
-    @Param(description = "this L2 gateway service Uuid")
+    @Param(description = "This L2 gateway service Uuid")
     private String l2GatewayServiceUuid;
 
     public void setId(String nvpDeviceId) {

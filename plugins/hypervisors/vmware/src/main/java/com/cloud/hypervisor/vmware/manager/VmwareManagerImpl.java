@@ -1506,11 +1506,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String password = vmwareDatacenter.getPassword();
         List<PbmProfile> storageProfiles = null;
         try {
-            s_logger.debug(String.format("Importing vSphere Storage Policies for the vmware DC %d in zone %d", vmwareDcId, zoneId));
+            s_logger.debug(String.format("Importing vSphere Storage Policies for the VMWare DC %d in zone %d", vmwareDcId, zoneId));
             VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
             PbmProfileManagerMO profileManagerMO = new PbmProfileManagerMO(context);
             storageProfiles = profileManagerMO.getStorageProfiles();
-            s_logger.debug(String.format("Import vSphere Storage Policies for the vmware DC %d in zone %d is successful", vmwareDcId, zoneId));
+            s_logger.debug(String.format("Import vSphere Storage Policies for the VMWare DC %d in zone %d is successful", vmwareDcId, zoneId));
         } catch (Exception e) {
             String msg = String.format("Unable to list storage profiles from DC %s due to : %s", vmwareDcName, VmwareHelper.getExceptionMessage(e));
             s_logger.error(msg);
@@ -1603,14 +1603,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private void startTemplateCleanJobSchedule() {
         if(s_logger.isDebugEnabled()) {
-            s_logger.debug("checking to see if we should schedule a job to search for fully cloned templates to clean-up");
+            s_logger.debug("checking to see if we should schedule a job to search for fully cloned Templates to clean-up");
         }
         if(StorageManager.StorageCleanupEnabled.value() &&
                 StorageManager.TemplateCleanupEnabled.value() &&
                 templateCleanupInterval.value() > 0) {
             try {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("scheduling job to search for fully cloned templates to clean-up once per " + templateCleanupInterval.value() + " minutes.");
+                    s_logger.info("scheduling job to search for fully cloned Templates to clean-up once per " + templateCleanupInterval.value() + " minutes.");
                 }
 //                    futureTemplateCleanup =
                 Runnable task = getCleanupFullyClonedTemplatesTask();
@@ -1619,20 +1619,20 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         templateCleanupInterval.value(),
                         TimeUnit.MINUTES);
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("scheduled job to search for fully cloned templates to clean-up.");
+                    s_logger.trace("scheduled job to search for fully cloned Templates to clean-up.");
                 }
             } catch (RejectedExecutionException ree) {
-                s_logger.error("job to search for fully cloned templates cannot be scheduled");
-                s_logger.debug("job to search for fully cloned templates cannot be scheduled;", ree);
+                s_logger.error("job to search for fully cloned Templates cannot be scheduled");
+                s_logger.debug("job to search for fully cloned Templates cannot be scheduled;", ree);
             } catch (NullPointerException npe) {
-                s_logger.error("job to search for fully cloned templates is invalid");
-                s_logger.debug("job to search for fully cloned templates is invalid;", npe);
+                s_logger.error("job to search for fully cloned Templates is invalid");
+                s_logger.debug("job to search for fully cloned Templates is invalid;", npe);
             } catch (IllegalArgumentException iae) {
-                s_logger.error("job to search for fully cloned templates is scheduled at invalid intervals");
-                s_logger.debug("job to search for fully cloned templates is scheduled at invalid intervals;", iae);
+                s_logger.error("job to search for fully cloned Templates is scheduled at invalid intervals");
+                s_logger.debug("job to search for fully cloned Templates is scheduled at invalid intervals;", iae);
             } catch (Exception e) {
-                s_logger.error("job to search for fully cloned templates failed for unknown reasons");
-                s_logger.debug("job to search for fully cloned templates failed for unknown reasons;", e);
+                s_logger.error("job to search for fully cloned Templates failed for unknown reasons");
+                s_logger.debug("job to search for fully cloned Templates failed for unknown reasons;", e);
             }
         }
     }

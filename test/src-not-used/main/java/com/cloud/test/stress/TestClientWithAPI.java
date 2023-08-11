@@ -1304,20 +1304,20 @@ public class TestClientWithAPI {
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("Create private template response code: " + responseCode);
+        s_logger.info("Create private Template response code: " + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> values = getSingleValueFromXML(el, new String[] {"id"});
 
             if (values.get("id") == null) {
-                s_logger.info("create private template response code: 401");
+                s_logger.info("create private Template response code: 401");
                 return 401;
             } else {
-                s_logger.info("create private template response code: " + responseCode);
+                s_logger.info("create private Template response code: " + responseCode);
             }
         } else {
-            s_logger.error("create private template failed with error code: " + responseCode + ". Following URL was sent: " + url);
+            s_logger.error("create private Template failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
@@ -1735,7 +1735,7 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("list templates response code: " + responseCode);
+            s_logger.info("list Templates response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> templateNameValues = getMultipleValuesFromXML(is, new String[] {"name"});
@@ -1754,12 +1754,12 @@ public class TestClientWithAPI {
 
                         }
                         templateNameLogStr += "\n\n";
-                        s_logger.info("got template names: " + templateNameLogStr);
+                        s_logger.info("Got Template names: " + templateNameLogStr);
                     }
                 }
 
             } else {
-                s_logger.error("list templates failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                s_logger.error("List Templates failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
 
@@ -1942,8 +1942,8 @@ public class TestClientWithAPI {
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
-            s_logger.info("url is " + url);
-            s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
+            s_logger.info("URL is " + url);
+            s_logger.info("List IP addresses for User " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is, new String[] {"success"});
@@ -1967,15 +1967,15 @@ public class TestClientWithAPI {
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
-                    s_logger.info("disassociate ip address [" + userId + "/" + ipAddress + "] response code: " + responseCode);
+                    s_logger.info("Disassociate IP address [" + userId + "/" + ipAddress + "] response code: " + responseCode);
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element disassocipel = queryAsyncJobResult(server, input);
                         Map<String, String> success = getSingleValueFromXML(disassocipel, new String[] {"success"});
                         //       Map<String, String> success = getSingleValueFromXML(input, new String[] { "success" });
-                        s_logger.info("disassociate ip address..success? " + success.get("success"));
+                        s_logger.info("Disassociate IP address..success? " + success.get("success"));
                     } else {
-                        s_logger.error("disassociate ip address failed with error code: " + responseCode + ". Following URL was sent: " + url);
+                        s_logger.error("Disassociate IP address failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
                 }
@@ -2012,7 +2012,7 @@ public class TestClientWithAPI {
 
     private static String sshWinTest(String host) {
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring win ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring win SSH test");
             return null;
         }
 
@@ -2112,12 +2112,12 @@ public class TestClientWithAPI {
     private static String sshTest(String host, String password, String snapshotTest) {
         int i = 0;
         if (host == null) {
-            s_logger.info("Did not receive a host back from test, ignoring ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring SSH test");
             return null;
         }
 
         if (password == null) {
-            s_logger.info("Did not receive a password back from test, ignoring ssh test");
+            s_logger.info("Did not receive a password back from test, ignoring SSH test");
             return null;
         }
 
@@ -2205,7 +2205,7 @@ public class TestClientWithAPI {
                     return result;
                 else {
                     Long sleep = 300000L;
-                    s_logger.info("Sleeping for " + sleep / 1000 / 60 + "minutes before executing next ssh test");
+                    s_logger.info("Sleeping for " + sleep / 1000 / 60 + "minutes before executing next SSH test");
                     Thread.sleep(sleep);
                 }
             } catch (Exception e) {

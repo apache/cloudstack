@@ -41,7 +41,7 @@ import com.cloud.user.Account;
 
 import java.util.UUID;
 
-@APICommand(name = "linkDomainToLdap", description = "link an existing cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
+@APICommand(name = "linkDomainToLdap", description = "Link an existing Cloudstack domain to group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.6.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkDomainToLdapCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LinkDomainToLdapCmd.class.getName());
@@ -50,17 +50,17 @@ public class LinkDomainToLdapCmd extends BaseCmd {
             + "linked to LDAP.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "Name of the group or OU in LDAP")
     private String ldapDomain;
 
     @Deprecated
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Name of the group or OU in LDAP")
     private String name;
 
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "Domain admin username in LDAP ")
     private String admin;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for " +

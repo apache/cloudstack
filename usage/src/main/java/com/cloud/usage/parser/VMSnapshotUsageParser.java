@@ -67,7 +67,7 @@ public class VMSnapshotUsageParser {
         List<UsageVMSnapshotVO> usageUsageVMSnapshots = s_usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
-            s_logger.debug("No VM snapshot usage events for this period");
+            s_logger.debug("No Instance Snapshot usage events for this period");
             return true;
         }
 

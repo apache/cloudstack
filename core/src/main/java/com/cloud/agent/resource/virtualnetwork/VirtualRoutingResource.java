@@ -249,13 +249,13 @@ public class VirtualRoutingResource {
                     if (result.getDetails().contains(String.format("Interface with IP %s not found", ipAddressTO.getPublicIp()))) {
                         s_logger.warn(String.format("Skipping IP: %s as it isn't configured on router interface", ipAddressTO.getPublicIp()));
                     } else if (ipAddressTO.getDetails().get(ApiConstants.REDUNDANT_STATE).equals(VirtualRouter.RedundantState.PRIMARY.name())) {
-                        s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
+                        s_logger.warn(String.format("Failed to update interface MTU to %s on interface with IP: %s",
                                 ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                         finalResult = false;
                     }
                     continue;
                 }
-                s_logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
+                s_logger.info(String.format("Successfully updated MTU to %s on interface with IP: %s",
                         ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                 finalResult &= true;
             } catch (Exception e) {

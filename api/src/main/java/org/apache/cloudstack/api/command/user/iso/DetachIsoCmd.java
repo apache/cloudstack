@@ -34,7 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted,
+@APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to  an Instance.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
@@ -46,7 +46,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+            required = true, description = "The ID of the  Instance")
     protected Long virtualMachineId;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
@@ -80,7 +80,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
         if (vm != null) {
             return vm.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find VM by ID " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find Instance by ID " + getVirtualMachineId());
         }
     }
 
@@ -91,7 +91,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "detaching ISO from VM: " + getVirtualMachineId();
+        return  "detaching ISO from Instance: " + getVirtualMachineId();
     }
 
     @Override

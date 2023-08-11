@@ -25,19 +25,19 @@ import java.util.List;
 public class RollingMaintenanceResponse extends BaseResponse {
 
     @SerializedName("success")
-    @Param(description = "indicates if the rolling maintenance operation was successful")
+    @Param(description = "Indicates if the rolling maintenance operation was successful")
     private Boolean success;
 
     @SerializedName("details")
-    @Param(description = "in case of failure, details are displayed")
+    @Param(description = "In case of failure, details are displayed")
     private String details;
 
     @SerializedName("hostsupdated")
-    @Param(description = "the hosts updated", responseObject = RollingMaintenanceHostUpdatedResponse.class)
+    @Param(description = "The hosts updated", responseObject = RollingMaintenanceHostUpdatedResponse.class)
     private List<RollingMaintenanceHostUpdatedResponse> updatedHosts;
 
     @SerializedName("hostsskipped")
-    @Param(description = "the hosts skipped", responseObject = RollingMaintenanceHostSkippedResponse.class)
+    @Param(description = "The hosts skipped", responseObject = RollingMaintenanceHostSkippedResponse.class)
     private List<RollingMaintenanceHostSkippedResponse> skippedHosts;
 
     public RollingMaintenanceResponse(Boolean success, String details) {

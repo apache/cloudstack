@@ -129,7 +129,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             txn.commit();
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Unable to start VM " + vmName, ex);
+            throw new CloudRuntimeException("Unable to start Instance " + vmName, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -165,7 +165,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 txn.commit();
             } catch (final Exception ex) {
                 txn.rollback();
-                throw new CloudRuntimeException("unable to save vm to db " + vm.getName(), ex);
+                throw new CloudRuntimeException("Unable to save Instance to db " + vm.getName(), ex);
             } finally {
                 txn.close();
                 txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -181,7 +181,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                     txn.commit();
                 } catch (final Exception ex) {
                     txn.rollback();
-                    throw new CloudRuntimeException("unable to update vm " + vm.getName(), ex);
+                    throw new CloudRuntimeException("Unable to update Instance " + vm.getName(), ex);
                 } finally {
                     txn.close();
                     txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -247,7 +247,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return vmMap;
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("unable to fetch vms from host " + hostGuid, ex);
+            throw new CloudRuntimeException("Unable to fetch Instances from host " + hostGuid, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -291,7 +291,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             return states;
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("unable to fetch vms from host " + hostGuid, ex);
+            throw new CloudRuntimeException("Unable to fetch Instances from host " + hostGuid, ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -454,17 +454,17 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             final String vmName = cmd.getVmName();
             final MockVMVO vm = _mockVmDao.findByVmName(vmName);
             if (vm == null) {
-                return new ScaleVmAnswer(cmd, false, "Can't find VM " + vmName);
+                return new ScaleVmAnswer(cmd, false, "Can't find Instance " + vmName);
             }
             vm.setCpu(cmd.getCpus() * cmd.getMaxSpeed());
             vm.setMemory(cmd.getMaxRam());
             _mockVmDao.update(vm.getId(), vm);
-            s_logger.debug("Scaled up VM " + vmName);
+            s_logger.debug("Scaled up Instance " + vmName);
             txn.commit();
             return new ScaleVmAnswer(cmd, true, null);
         } catch (final Exception ex) {
             txn.rollback();
-            throw new CloudRuntimeException("Unable to scale up VM", ex);
+            throw new CloudRuntimeException("Unable to scale up Instance", ex);
         } finally {
             txn.close();
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -474,7 +474,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
 
     @Override
     public Answer plugSecondaryIp(final NetworkRulesVmSecondaryIpCommand cmd) {
-        s_logger.debug("Plugged secondary IP to VM " + cmd.getVmName());
+        s_logger.debug("Plugged secondary IP to Instance " + cmd.getVmName());
         return new Answer(cmd, true, null);
     }
 
@@ -483,7 +483,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final String vmName = cmd.getVmName();
         final String vmSnapshotName = cmd.getTarget().getSnapshotName();
 
-        s_logger.debug("Created snapshot " + vmSnapshotName + " for vm " + vmName);
+        s_logger.debug("Created Snapshot " + vmSnapshotName + " for Instance " + vmName);
         return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
     }
 
@@ -492,9 +492,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final String vm = cmd.getVmName();
         final String snapshotName = cmd.getTarget().getSnapshotName();
         if (_mockVmDao.findByVmName(cmd.getVmName()) == null) {
-            return new DeleteVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
+            return new DeleteVMSnapshotAnswer(cmd, false, "No Instance by name " + cmd.getVmName());
         }
-        s_logger.debug("Removed snapshot " + snapshotName + " of VM " + vm);
+        s_logger.debug("Removed Snapshot " + snapshotName + " of Instance " + vm);
         return new DeleteVMSnapshotAnswer(cmd, cmd.getVolumeTOs());
     }
 
@@ -504,9 +504,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final String snapshot = cmd.getTarget().getSnapshotName();
         final MockVMVO vmVo = _mockVmDao.findByVmName(cmd.getVmName());
         if (vmVo == null) {
-            return new RevertToVMSnapshotAnswer(cmd, false, "No VM by name " + cmd.getVmName());
+            return new RevertToVMSnapshotAnswer(cmd, false, "No Instance by name " + cmd.getVmName());
         }
-        s_logger.debug("Reverted to snapshot " + snapshot + " of VM " + vm);
+        s_logger.debug("Reverted to Snapshot " + snapshot + " of Instance " + vm);
         return new RevertToVMSnapshotAnswer(cmd, cmd.getVolumeTOs(), vmVo.getPowerState());
     }
 

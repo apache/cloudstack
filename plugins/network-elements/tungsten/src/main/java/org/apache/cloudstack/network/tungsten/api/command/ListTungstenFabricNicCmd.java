@@ -43,7 +43,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricNicCmd.APINAME, description = "list Tungsten-Fabric nic", responseObject =
+@APICommand(name = ListTungstenFabricNicCmd.APINAME, description = "List Tungsten-Fabric nic", responseObject =
     TungstenFabricNicResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTungstenFabricNicCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTungstenFabricNicCmd.class.getName());
@@ -52,10 +52,10 @@ public class ListTungstenFabricNicCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric nic")
+    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric nic")
     private String nicUuid;
 
     @Override

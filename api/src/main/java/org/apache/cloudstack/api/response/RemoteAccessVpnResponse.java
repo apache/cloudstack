@@ -30,51 +30,51 @@ import com.google.gson.annotations.SerializedName;
 public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
-    @Param(description = "the public ip address of the vpn server")
+    @Param(description = "The public IP address of the VPN server")
     private String publicIpId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public ip address of the vpn server")
+    @Param(description = "The public IP address of the VPN server")
     private String publicIp;
 
     @SerializedName("iprange")
-    @Param(description = "the range of ips to allocate to the clients")
+    @Param(description = "The range of IPs to allocate to the clients")
     private String ipRange;
 
     @SerializedName("presharedkey")
-    @Param(description = "the ipsec preshared key", isSensitive = true)
+    @Param(description = "The IPSec preshared key", isSensitive = true)
     private String presharedKey;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the remote access vpn")
+    @Param(description = "The Account of the remote access VPN")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vpn")
+    @Param(description = "The project id of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vpn")
+    @Param(description = "The project name of the VPN")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the account of the remote access vpn")
+    @Param(description = "The domain id of the Account of the remote access VPN")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the account of the remote access vpn")
+    @Param(description = "The domain name of the Account of the remote access VPN")
     private String domainName;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the rule")
+    @Param(description = "The state of the rule")
     private String state;
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the remote access vpn")
+    @Param(description = "The id of the remote access VPN")
     private String id;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
-    @Param(description = "is vpn for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
+    @Param(description = "Is VPN for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
     public void setPublicIp(String publicIp) {

@@ -43,7 +43,7 @@ public class TungstenFabricProviderResponse extends BaseResponse {
     private String zoneName;
 
     @SerializedName("securitygroupsenabled")
-    @Param(description = "true if security groups support is enabled, false otherwise")
+    @Param(description = "True if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
 
     @SerializedName(ApiConstants.TUNGSTEN_PROVIDER_HOSTNAME)

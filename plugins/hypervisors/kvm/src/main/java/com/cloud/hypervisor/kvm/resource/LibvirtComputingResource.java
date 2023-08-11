@@ -3649,7 +3649,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 dm = conn.domainLookupByID(ids[i]);
                 la.add(dm.getName());
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                s_logger.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
@@ -3730,7 +3730,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName()));
                 }
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                s_logger.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
@@ -3760,7 +3760,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     vmStates.put(vmName, new HostVmStateReportEntry(state, conn.getHostName()));
                 }
             } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
+                s_logger.warn("Unable to get Instances", e);
             } finally {
                 try {
                     if (dm != null) {
@@ -4833,11 +4833,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public List<Ternary<String, Boolean, String>> cleanVMSnapshotMetadata(Domain dm) throws LibvirtException {
-        s_logger.debug("Cleaning the metadata of vm snapshots of vm " + dm.getName());
+        s_logger.debug("Cleaning the metadata of Instance Snapshots of Instance " + dm.getName());
         List<Ternary<String, Boolean, String>> vmsnapshots = new ArrayList<Ternary<String, Boolean, String>>();
         if (dm.snapshotNum() == 0) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("VM [%s] does not have any snapshots. Skipping cleanup of snapshots for this VM.", dm.getName()));
+                s_logger.debug(String.format("Instance [%s] does not have any snapshots. Skipping cleanup of snapshots for this Instance.", dm.getName()));
             }
             return vmsnapshots;
         }
@@ -4911,12 +4911,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public void restoreVMSnapshotMetadata(Domain dm, String vmName, List<Ternary<String, Boolean, String>> vmsnapshots) {
-        s_logger.debug("Restoring the metadata of vm snapshots of vm " + vmName);
+        s_logger.debug("Restoring the metadata of Instance Snapshots of Instance " + vmName);
         for (Ternary<String, Boolean, String> vmsnapshot: vmsnapshots) {
             String snapshotName = vmsnapshot.first();
             Boolean isCurrent = vmsnapshot.second();
             String snapshotXML = vmsnapshot.third();
-            s_logger.debug("Restoring vm snapshot " + snapshotName + " on " + vmName + " with XML:\n " + snapshotXML);
+            s_logger.debug("Restoring Instance Snapshot " + snapshotName + " on " + vmName + " with XML:\n " + snapshotXML);
             try {
                 int flags = 1; // VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE = 1
                 if (isCurrent) {
@@ -4924,7 +4924,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 dm.snapshotCreateXML(snapshotXML, flags);
             } catch (LibvirtException e) {
-                s_logger.debug("Failed to restore vm snapshot " + snapshotName + ", continue");
+                s_logger.debug("Failed to restore Instance Snapshot " + snapshotName + ", continue");
                 continue;
             }
         }

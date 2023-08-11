@@ -40,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listBackupSchedule",
-        description = "List backup schedule of a VM",
+        description = "List backup schedule of an Instance",
         responseObject = BackupScheduleResponse.class, since = "4.14.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupScheduleCmd extends BaseCmd {
@@ -56,7 +56,7 @@ public class ListBackupScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "ID of the VM")
+            description = "ID of the Instance")
     private Long vmId;
 
     /////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ public class ListBackupScheduleCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new CloudRuntimeException("No backup schedule exists for the VM");
+                throw new CloudRuntimeException("No backup schedule exists for the Instance");
             }
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
