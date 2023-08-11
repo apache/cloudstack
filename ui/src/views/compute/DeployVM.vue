@@ -35,24 +35,27 @@
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
                       <div v-if="zones.length <= 8">
-                        <a-row type="flex" :gutter="5" justify="start">
+                        <a-row type="flex" :gutter="[16, 18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
                               :key="idx"
+                              :size="large"
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
-                              <a-col :span="8">
-                                <a-card style="width:200px;" :hoverable="false">
-                                  <a-radio :value="zoneItem.id" />
-                                  <div :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-30px', marginBottom: '10px'}">
-                                      <resource-icon
-                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :image="zoneItem.icon.base64image"
-                                        size="36" />
-                                      <global-outlined v-else/>
-                                    </div>
-                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
-                                </a-card>
+                              <a-col :span="6">
+                                <a-radio-button
+                                  :value="zoneItem.id"
+                                  style="border-width: 2px"
+                                  class="zone-radio-button">
+                                  <span>
+                                    <resource-icon
+                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                      :image="zoneItem.icon.base64image"
+                                      size="2x" />
+                                    <global-outlined size="2x" v-else />
+                                    {{ zoneItem.name }}
+                                    </span>
+                                </a-radio-button>
                               </a-col>
                             </a-radio-group>
                           </div>
@@ -72,7 +75,7 @@
                       >
                         <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
                           <span>
-                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
                             <global-outlined v-else style="margin-right: 5px" />
                             {{ zone1.name }}
                           </span>
@@ -2719,6 +2722,15 @@ export default {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
+  }
+
+  .zone-radio-button {
+    width:100%;
+    min-width: 345px;
+    height: 60px;
+    display: flex;
+    padding-left: 20px;
+    align-items: center;
   }
 
   .vm-info-card {
