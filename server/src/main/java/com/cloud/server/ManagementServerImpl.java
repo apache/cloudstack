@@ -2796,21 +2796,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
+        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
-        Map<String, String> details = cmd.getDetails();
-        Boolean forDisplay = cmd.getForDisplay();
-        persistGuestOsDetails(forDisplay, details, guestOsPersisted.getId());
+        persistGuestOsDetails(cmd.getDetails(), guestOsPersisted.getId());
 
         return guestOsPersisted;
     }
 
-    private void persistGuestOsDetails(Boolean forDisplay, Map<String, String> details, long guestOsPersistedId) {
-        if (Boolean.FALSE.equals(forDisplay)) {
-            details.put("display", Boolean.FALSE.toString());
-        } else {
-            details.put("display", Boolean.TRUE.toString());
-        }
+    private void persistGuestOsDetails(Map<String, String> details, long guestOsPersistedId) {
         for (Object key : details.keySet()) {
             _guestOsDetailsDao.addDetail(guestOsPersistedId, (String)key, details.get(key), false);
         }
@@ -2839,10 +2833,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-
-        Map<String, String> details = cmd.getDetails();
-        Boolean forDisplay = cmd.getForDisplay();
-        persistGuestOsDetails(forDisplay, details, id);
+        persistGuestOsDetails(cmd.getDetails(), id);
 
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
@@ -2856,6 +2847,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
+        if (cmd.getForDisplay() != null) {
+            guestOs.setDisplay(cmd.getForDisplay());
+        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {

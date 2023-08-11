@@ -72,17 +72,15 @@ public class GuestOsMapper {
         for (GuestOSVO oldGuestOs : setOfGuestOSes) {
             List<GuestOSHypervisorVO> mappings = guestOSHypervisorDao.listByGuestOsId(oldGuestOs.getId());
             copyMappings(guestOSVO, mappings);
-            // // find VMs
-            // // // for each VM
-            // // // // set the guest_os_id to the one to keep
-            // // find templates
-            // // // for each template
-            // // // // set the guest_os_id to the one to keep
-            // // mark as removed
-
+            makeHidden(oldGuestOs);
         }
         // set the lower id as not user defined, if that was not the premise anyway
 
+    }
+
+    private void makeHidden(GuestOSVO guestOSVO) {
+        guestOSVO.setDisplay(false);
+        guestOSDao.update(guestOSVO.getId(),guestOSVO);
     }
 
     private void copyMappings(GuestOSVO guestOSVO, List<GuestOSHypervisorVO> mappings) {
