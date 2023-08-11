@@ -289,14 +289,6 @@ export default {
       this[type] = key
       this.userDataParams = []
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     isUserAllowedToListUserDatas () {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
@@ -346,7 +338,7 @@ export default {
         id: this.resource.id
       }
       if (values.userdata && values.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
       }
       if (values.userdataid) {
         params.userdataid = values.userdataid

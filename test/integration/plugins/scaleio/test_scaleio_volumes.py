@@ -1144,6 +1144,249 @@ class TestScaleIOVolumes(cloudstackTestCase):
 
         test_virtual_machine.delete(self.apiClient, True)
 
+    @attr(tags=['advanced', 'migration'], required_hardware=False)
+    def test_11_live_migrate_volume_to_same_instance_pool(self):
+        '''Migrate volume to the same instance pool'''
+
+        if not TestData.migrationTests:
+            self.skipTest("Volume migration tests not enabled, skipping test")
+
+        #######################################
+        # STEP 1: Create VM and Start VM      #
+        #######################################
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine3],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=False
+        )
+
+        TestScaleIOVolumes._start_vm(test_virtual_machine)
+
+        #######################################
+        # STEP 2: Create vol and attach to VM #
+        #######################################
+
+        new_volume = Volume.create(
+            self.apiClient,
+            self.testdata[TestData.volume_3],
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_same_inst.id
+        )
+
+        volume_to_delete_later = new_volume
+
+        new_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            vm.id,
+            "Check if attached to virtual machine"
+        )
+
+        self.assertEqual(
+            vm.state.lower(),
+            'running',
+            str(vm.state)
+        )
+
+        #######################################
+        # STEP 3: Migrate volume  #
+        #######################################
+
+        pools = StoragePool.listForMigration(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        if not pools:
+            self.skipTest("No suitable storage pools found for volume migration, skipping test")
+
+        self.assertEqual(
+            validateList(pools)[0],
+            PASS,
+            "Invalid pool response from findStoragePoolsForMigration API"
+        )
+
+        pool = pools[0]
+        self.debug("Migrating Volume-ID: %s to Same Instance Pool: %s" % (new_volume.id, pool.id))
+
+        try:
+            Volume.migrate(
+                self.apiClient,
+                volumeid=new_volume.id,
+                storageid=pool.id
+            )
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+
+        #######################################
+        #  STEP 4: Detach and delete volume   #
+        #######################################
+
+        new_volume = test_virtual_machine.detach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            None,
+            "Check if attached to virtual machine"
+        )
+
+        volume_to_delete_later.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        self.assertEqual(
+            list_volumes_response,
+            None,
+            "Check volume was deleted"
+        )
+
+        #######################################
+        #  STEP 4: Delete VM                  #
+        #######################################
+
+        test_virtual_machine.delete(self.apiClient, True)
+
+    @attr(tags=['advanced', 'migration'], required_hardware=False)
+    def test_12_migrate_volume_to_distinct_instance_pool(self):
+        '''Migrate volume to distinct instance pool'''
+
+        if not TestData.migrationTests:
+            self.skipTest("Volume migration tests not enabled, skipping test")
+
+        #######################################
+        # STEP 1: Create VM and Start VM      #
+        #######################################
+
+        test_virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine4],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=False
+        )
+
+        TestScaleIOVolumes._start_vm(test_virtual_machine)
+
+        #######################################
+        # STEP 2: Create vol and attach to VM #
+        #######################################
+
+        new_volume = Volume.create(
+            self.apiClient,
+            self.testdata[TestData.volume_4],
+            account=self.account.name,
+            domainid=self.domain.id,
+            zoneid=self.zone.id,
+            diskofferingid=self.disk_offering_distinct_inst.id
+        )
+
+        volume_to_delete_later = new_volume
+
+        new_volume = test_virtual_machine.attach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        vm = self._get_vm(test_virtual_machine.id)
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            vm.id,
+            "Check if attached to virtual machine"
+        )
+
+        self.assertEqual(
+            vm.state.lower(),
+            'running',
+            str(vm.state)
+        )
+
+        #######################################
+        # STEP 3: Migrate volume  #
+        #######################################
+
+        pools = StoragePool.listForMigration(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        if not pools:
+            self.skipTest("No suitable storage pools found for volume migration, skipping test")
+
+        self.assertEqual(
+            validateList(pools)[0],
+            PASS,
+            "Invalid pool response from findStoragePoolsForMigration API"
+        )
+
+        pool = pools[0]
+        self.debug("Migrating Volume-ID: %s to Distinct Instance Pool: %s" % (new_volume.id, pool.id))
+
+        try:
+            Volume.migrate(
+                self.apiClient,
+                volumeid=new_volume.id,
+                storageid=pool.id
+            )
+        except Exception as e:
+            self.fail("Volume migration failed with error %s" % e)
+
+        #######################################
+        #  STEP 4: Detach and delete volume   #
+        #######################################
+
+        new_volume = test_virtual_machine.detach_volume(
+            self.apiClient,
+            new_volume
+        )
+
+        self.assertEqual(
+            new_volume.virtualmachineid,
+            None,
+            "Check if attached to virtual machine"
+        )
+
+        volume_to_delete_later.delete(self.apiClient)
+
+        list_volumes_response = list_volumes(
+            self.apiClient,
+            id=new_volume.id
+        )
+
+        self.assertEqual(
+            list_volumes_response,
+            None,
+            "Check volume was deleted"
+        )
+
+        #######################################
+        #  STEP 4: Delete VM                  #
+        #######################################
+
+        test_virtual_machine.delete(self.apiClient, True)
 
     def _create_vm_using_template_and_destroy_vm(self, template):
         vm_name = "VM-%d" % random.randint(0, 100)
