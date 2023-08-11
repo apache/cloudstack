@@ -73,6 +73,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -193,6 +194,8 @@ public class AccountManagetImplTestBase {
     OrchestrationService _orchSrvc;
     @Mock
     SSHKeyPairDao _sshKeyPairDao;
+    @Mock
+    UserDataDao userDataDao;
 
     @Spy
     @InjectMocks

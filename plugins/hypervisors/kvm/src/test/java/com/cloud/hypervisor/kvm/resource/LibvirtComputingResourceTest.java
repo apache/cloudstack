@@ -760,7 +760,7 @@ public class LibvirtComputingResourceTest {
 
     private void verifyMemory(VirtualMachineTO to, Document domainDoc, String minRam) {
         assertXpath(domainDoc, "/domain/maxMemory/text()", String.valueOf( to.getMaxRam() / 1024 ));
-        assertXpath(domainDoc, "/domain/currentMemory/text()",minRam);
+        assertXpath(domainDoc, "/domain/memory/text()",minRam);
         assertXpath(domainDoc, "/domain/cpu/numa/cell/@memory", minRam);
         assertXpath(domainDoc, "/domain/currentMemory/text()", minRam);
     }
@@ -5762,6 +5762,7 @@ public class LibvirtComputingResourceTest {
 
     public void validateGetCurrentMemAccordingToMemBallooningWithoutMemBalooning(){
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getType()).thenReturn(Type.User);
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
         libvirtComputingResource._noMemBalloon = true;
         long maxMemory = 2048;
@@ -5780,6 +5781,7 @@ public class LibvirtComputingResourceTest {
         long minMemory = ByteScaleUtils.mebibytesToBytes(64);
 
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
+        Mockito.when(vmTo.getType()).thenReturn(Type.User);
         Mockito.when(vmTo.getMinRam()).thenReturn(minMemory);
 
         long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
