@@ -51,7 +51,7 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
     }
 
     @Override
-    public GuestOSVO listOneByDisplayName(String displayName) {
+    public GuestOSVO findOneByDisplayName(String displayName) {
         SearchCriteria<GuestOSVO> sc = Search.create();
         sc.setParameters("display_name", displayName);
         return findOneBy(sc);
@@ -73,16 +73,15 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
     }
 
     /**
-     "select * from guest_os go2 where display_name in"
-     +       "(select display_name from"
-     +               "(select display_name, count(1) as count from guest_os go1 group by display_name having count > 1) tab0)";
+     +       "select display_name from"
+     +              "(select display_name, count(1) as count from guest_os go1 where removed is null group by display_name having count > 1) tab0";
      *
      * @return
      */
     @Override
     @DB
     public Set<String> findDoubleNames() {
-        String selectSql = "(select display_name from (select display_name, count(1) as count from guest_os go1 group by display_name having count > 1) tab0)";
+        String selectSql = "SELECT display_name FROM (SELECT display_name, count(1) AS count FROM guest_os go1 WHERE removed IS NULL GROUP BY display_name HAVING count > 1) tab0";
         Set<String> names = new HashSet<>();
         Connection conn = TransactionLegacy.getStandaloneConnection();
         try {

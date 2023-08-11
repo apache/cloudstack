@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -27,6 +26,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.acl.RoleType;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;

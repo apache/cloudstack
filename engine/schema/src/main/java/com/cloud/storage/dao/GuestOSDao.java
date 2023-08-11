@@ -24,7 +24,7 @@ import java.util.Set;
 
 public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
-    GuestOSVO listOneByDisplayName(String displayName);
+    GuestOSVO findOneByDisplayName(String displayName);
 
     GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
 
