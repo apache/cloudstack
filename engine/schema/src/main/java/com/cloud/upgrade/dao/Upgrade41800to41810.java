@@ -192,16 +192,6 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows11_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 11 (64-bit)", mappings);
         mappings.clear();
-
-        // Add support for windows12_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows12_64Guest"));
-        guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows 12 (64-bit)", mappings);
-        mappings.clear();
-
-        // Add support for windows2022srvNext_64Guest from VMware 8.0
-        mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "windows2022srvNext_64Guest"));
-        guestOsMapper.addGuestOsAndHypervisorMappings(6, "Windows Server 2025 (64-bit)", mappings);
-        mappings.clear();
     }
 
     private void copyGuestOsMappingsToVMware80u1() {
