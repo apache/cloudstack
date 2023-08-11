@@ -622,7 +622,7 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
-    console.log('DEBUG - Due to route change, cancelling any on-going API request', this.apiName)
+    console.log('DEBUG - Due to route change, ignoring results for any on-going API request', this.apiName)
     sourceToken.cancel()
     sourceToken.init()
     this.currentPath = this.$route.fullPath
