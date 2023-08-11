@@ -34,27 +34,28 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
-                      <div v-if="zones.length <= 8">
-                        <a-row type="flex" :gutter="5" justify="start">
+                      <div v-if="zones.length <= 9">
+                        <a-row type="flex" :gutter="[16,18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
                               :key="idx"
+                              :size="large"
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
-                              <a-col :span="8">
-                                <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
-                                  <a-radio :value="zoneItem.id">
-                                    <div>
-                                      <resource-icon
-                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :image="zoneItem.icon.base64image"
-                                        size="36"
-                                        style="marginTop: -30px; marginLeft: 60px" />
-                                      <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
-                                    </div>
-                                  </a-radio>
-                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
-                                </a-card-grid>
+                              <a-col :span="6">
+                                <a-radio-button
+                                  :value="zoneItem.id"
+                                  style="border-width: 2px"
+                                  class="zone-radio-button">
+                                  <span>
+                                    <resource-icon
+                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                      :image="zoneItem.icon.base64image"
+                                      size="2x" />
+                                    <global-outlined size="2x" v-else />
+                                    {{ zoneItem.name }}
+                                    </span>
+                                </a-radio-button>
                               </a-col>
                             </a-radio-group>
                           </div>
@@ -2936,6 +2937,15 @@ export default {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
+  }
+
+  .zone-radio-button {
+    width:100%;
+    min-width: 225px;
+    height: 60px;
+    display: flex;
+    padding-left: 20px;
+    align-items: center;
   }
 
   .vm-info-card {
