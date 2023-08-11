@@ -928,7 +928,7 @@
 "label.limitcpuuse": "Limite da CPU",
 "label.limits": "Configurar limites",
 "label.link.domain.to.ldap": "Link dom\u00ednio para LDAP",
-"label.linklocalip": "Endere\u00e7o IP do link local",
+"label.linklocalip": "Endere\u00e7o IP do Control",
 "label.linux": "Linux",
 "label.list.ciscoasa1000v": "ASA 1000v",
 "label.list.ciscovnmc": "Cisco VNMC",
