@@ -18,14 +18,13 @@ package com.cloud.storage.dao;
 
 import com.cloud.storage.BucketVO;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.response.BucketResponse;
 
 import java.util.List;
 
 public interface BucketDao extends GenericDao<BucketVO, Long> {
     List<BucketVO> listByObjectStoreId(long objectStoreId);
 
-    BucketResponse newBucketResponse(BucketVO bucket);
-
     List<BucketVO> listByObjectStoreIdAndAccountId(long objectStoreId, long accountId);
+
+    List<BucketVO> searchByIds(Long[] ids);
 }

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.object;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
@@ -158,6 +159,10 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @Override
     public boolean deleteBucket(long bucketId, Account caller) {
         Bucket bucket = _bucketDao.findById(bucketId);
+        if (bucket == null) {
+            throw new InvalidParameterValueException("Unable to find bucket with ID: " + bucketId);
+        }
+        _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         if (objectStore.deleteBucket(bucket.getName())) {
@@ -167,8 +172,12 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
-    public boolean updateBucket(UpdateBucketCmd cmd) {
+    public boolean updateBucket(UpdateBucketCmd cmd, Account caller) {
         BucketVO bucket = _bucketDao.findById(cmd.getId());
+        if (bucket == null) {
+            throw new InvalidParameterValueException("Unable to find bucket with ID: " + cmd.getId());
+        }
+        _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         if(cmd.getEncryption() != null) {

@@ -5107,31 +5107,55 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<BucketResponse> searchForBuckets(ListBucketsCmd listBucketsCmd) {
-        List<BucketVO> result = searchForBucketsInternal(listBucketsCmd);
+        List<BucketVO> buckets = searchForBucketsInternal(listBucketsCmd);
+        List<BucketResponse> bucketResponses = new ArrayList<>();
+        for (BucketVO bucket : buckets) {
+            bucketResponses.add(responseGenerator.createBucketResponse(bucket));
+        }
         ListResponse<BucketResponse> response = new ListResponse<>();
-        List<BucketResponse> bucketResponses = ViewResponseHelper.createBucketResponse(result.toArray(new BucketVO[result.size()]));
         response.setResponses(bucketResponses, bucketResponses.size());
         return response;
     }
 
     private List<BucketVO> searchForBucketsInternal(ListBucketsCmd cmd) {
 
-        Object id = cmd.getId();
-        Object name = cmd.getBucketName();
-        Object storeId = cmd.getObjectStorageId();
-        Object keyword = cmd.getKeyword();
+        Long id = cmd.getId();
+        String name = cmd.getBucketName();
+        Long storeId = cmd.getObjectStorageId();
+        String keyword = cmd.getKeyword();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        // Verify parameters
+        if (id != null) {
+            BucketVO bucket = bucketDao.findById(id);
+            if (bucket != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, bucket);
+            }
+        }
+
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
+                cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(BucketVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<BucketVO> sb = bucketDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
         SearchCriteria<BucketVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<BucketVO> ssc = bucketDao.createSearchCriteria();
@@ -5139,20 +5163,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (id != null) {
-            BucketVO bucket = bucketDao.findById((Long)id);
-            List<BucketVO> buckets = new ArrayList<>();
-            buckets.add(bucket);
-            return buckets;
-            //sc.setParameters("id", id);
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
             sc.setParameters("name", name);
         }
 
-        List<BucketVO> buckets = bucketDao.listAll();
-        //search(sc, searchFilter);
-        return buckets;
+        setIdsListToSearchCriteria(sc, ids);
+
+        // search Volume details by ids
+        Pair<List<BucketVO>, Integer> uniqueBktPair = bucketDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueBktPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueBktPair.first();
+        }
+        List<BucketVO> uniqueBkts = uniqueBktPair.first();
+        Long[] bktIds = new Long[uniqueBkts.size()];
+        int i = 0;
+        for (BucketVO b : uniqueBkts) {
+            bktIds[i++] = b.getId();
+        }
+
+        return bucketDao.searchByIds(bktIds);
     }
 
     @Override

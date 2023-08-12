@@ -276,7 +276,6 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.BucketVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -2230,9 +2229,5 @@ public class ApiDBUtils {
 
     public static ObjectStoreResponse fillObjectStoreDetails(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return s_objectStoreDao.setObjectStoreResponse(storeData, store);
-    }
-
-    public static BucketResponse newBucketResponse(BucketVO bucket) {
-        return s_bucketDao.newBucketResponse(bucket);
     }
 }

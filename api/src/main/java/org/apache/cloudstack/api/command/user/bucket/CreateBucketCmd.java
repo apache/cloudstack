@@ -187,7 +187,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
 
         Bucket bucket = _bucketService.createBucket(this);
         if (bucket != null) {
-            BucketResponse response = _responseGenerator.createBucketResponse(getResponseView(), bucket);
+            BucketResponse response = _responseGenerator.createBucketResponse(bucket);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

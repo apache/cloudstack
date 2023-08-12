@@ -53,9 +53,9 @@ public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCm
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the bucket")
     private String bucketName;
 
-    @Parameter(name = ApiConstants.OBJECT_STORAGE_ID, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the object storage pool, available to ROOT admin only", authorized = {
+    @Parameter(name = ApiConstants.OBJECT_STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "the ID of the object storage pool, available to ROOT admin only", authorized = {
             RoleType.Admin})
-    private String objectStorageId;
+    private Long objectStorageId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,7 +69,7 @@ public class ListBucketsCmd extends BaseListTaggedResourcesCmd implements UserCm
         return bucketName;
     }
 
-    public String getObjectStorageId() {
+    public Long getObjectStorageId() {
         return objectStorageId;
     }
 

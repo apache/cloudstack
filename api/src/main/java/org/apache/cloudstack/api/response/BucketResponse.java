@@ -17,11 +17,11 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
-import org.apache.cloudstack.storage.object.Bucket;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.storage.object.Bucket;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -29,7 +29,7 @@ import java.util.Set;
 
 @EntityReference(value = Bucket.class)
 @SuppressWarnings("unused")
-public class BucketResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
+public class BucketResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse, ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the Bucket")
     private String id;

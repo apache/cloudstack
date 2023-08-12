@@ -32,6 +32,24 @@ public interface Bucket extends ControlledEntity, Identity, InternalIdentity {
 
     void setName(String name);
 
+    long getSize();
+
+    Integer getQuota();
+
+    boolean isVersioning();
+
+    boolean isEncryption();
+
+    boolean isObjectLock();
+
+    String getPolicy();
+
+    String getBucketURL();
+
+    String getAccessKey();
+
+    String getSecretKey();
+
     public enum State {
         Allocated, Created, Destroyed;
         @Override

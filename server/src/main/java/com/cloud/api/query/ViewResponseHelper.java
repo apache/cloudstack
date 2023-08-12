@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -678,13 +677,5 @@ public class ViewResponseHelper {
             storeList.put(store.getId(), storeData);
         }
         return new ArrayList<>(storeList.values());
-    }
-
-    public static List<BucketResponse> createBucketResponse(BucketVO[] buckets) {
-        List<BucketResponse> bucketList = new ArrayList<>();
-        for (BucketVO bucket : buckets) {
-            bucketList.add(ApiDBUtils.newBucketResponse(bucket));
-        }
-        return bucketList;
     }
 }

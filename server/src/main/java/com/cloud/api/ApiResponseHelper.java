@@ -200,6 +200,8 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -476,6 +478,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     FirewallRulesDao firewallRulesDao;
     @Inject
     UserDataDao userDataDao;
+
+    @Inject
+    ObjectStoreDao _objectStoreDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -5131,13 +5136,28 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BucketResponse createBucketResponse(ResponseView responseView, Bucket bucket) {
+    public BucketResponse createBucketResponse(Bucket bucket) {
         BucketResponse bucketResponse = new BucketResponse();
         bucketResponse.setName(bucket.getName());
         bucketResponse.setId(bucket.getUuid());
-        //ToDo change to UUID
-        bucketResponse.setObjectStoragePoolId(""+bucket.getObjectStoreId());
+        bucketResponse.setCreated(bucket.getCreated());
+        bucketResponse.setState(bucket.getState());
+        bucketResponse.setSize(bucket.getSize());
+        if(bucket.getQuota() != null) {
+            bucketResponse.setQuota(bucket.getQuota());
+        }
+        bucketResponse.setVersioning(bucket.isVersioning());
+        bucketResponse.setEncryption(bucket.isEncryption());
+        bucketResponse.setObjectLock(bucket.isObjectLock());
+        bucketResponse.setPolicy(bucket.getPolicy());
+        bucketResponse.setBucketURL(bucket.getBucketURL());
+        bucketResponse.setAccessKey(bucket.getAccessKey());
+        bucketResponse.setSecretKey(bucket.getSecretKey());
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
+        bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
+        bucketResponse.setObjectStoragePool(objectStoreVO.getName());
         bucketResponse.setObjectName("bucket");
+        populateAccount(bucketResponse, bucket.getAccountId());
         return bucketResponse;
     }
 }

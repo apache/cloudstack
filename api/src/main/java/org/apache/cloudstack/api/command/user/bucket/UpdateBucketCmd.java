@@ -116,7 +116,7 @@ public class UpdateBucketCmd extends BaseCmd {
     @Override
     public void execute() throws ConcurrentOperationException {
         CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
-        boolean result = _bucketService.updateBucket(this);
+        boolean result = _bucketService.updateBucket(this, CallContext.current().getCallingAccount());
         if(result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

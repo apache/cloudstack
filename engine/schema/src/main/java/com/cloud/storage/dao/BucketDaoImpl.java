@@ -20,13 +20,9 @@ import com.cloud.storage.BucketVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.api.response.BucketResponse;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +32,11 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
     public static final Logger s_logger = Logger.getLogger(BucketDaoImpl.class.getName());
     private SearchBuilder<BucketVO> searchFilteringStoreId;
 
+    private SearchBuilder<BucketVO> bucketSearch;
+
     private static final String STORE_ID = "store_id";
     private static final String STATE = "state";
     private static final String ACCOUNT_ID = "account_id";
-
-    @Inject
-    ObjectStoreDao _objectStoreDao;
 
     protected BucketDaoImpl() {
 
@@ -56,6 +51,10 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
         searchFilteringStoreId.and(ACCOUNT_ID, searchFilteringStoreId.entity().getAccountId(), SearchCriteria.Op.EQ);
         searchFilteringStoreId.and(STATE, searchFilteringStoreId.entity().getState(), SearchCriteria.Op.NEQ);
         searchFilteringStoreId.done();
+
+        bucketSearch = createSearchBuilder();
+        bucketSearch.and("idIN", bucketSearch.entity().getId(), SearchCriteria.Op.IN);
+        bucketSearch.done();
 
         return true;
     }
@@ -77,27 +76,9 @@ public class BucketDaoImpl extends GenericDaoBase<BucketVO, Long> implements Buc
     }
 
     @Override
-    public BucketResponse newBucketResponse(BucketVO bucket) {
-        BucketResponse bucketResponse = new BucketResponse();
-        bucketResponse.setName(bucket.getName());
-        bucketResponse.setId(bucket.getUuid());
-        bucketResponse.setCreated(bucket.getCreated());
-        bucketResponse.setState(bucket.getState());
-        bucketResponse.setSize(bucket.getSize());
-        if(bucket.getQuota() != null) {
-            bucketResponse.setQuota(bucket.getQuota());
-        }
-        bucketResponse.setVersioning(bucket.isVersioning());
-        bucketResponse.setEncryption(bucket.isEncryption());
-        bucketResponse.setObjectLock(bucket.isObjectLock());
-        bucketResponse.setPolicy(bucket.getPolicy());
-        bucketResponse.setBucketURL(bucket.getBucketURL());
-        bucketResponse.setAccessKey(bucket.getAccessKey());
-        bucketResponse.setSecretKey(bucket.getSecretKey());
-        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
-        bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
-        bucketResponse.setObjectStoragePool(objectStoreVO.getName());
-        bucketResponse.setObjectName("bucket");
-        return bucketResponse;
+    public List<BucketVO> searchByIds(Long[] ids) {
+        SearchCriteria<BucketVO> sc = bucketSearch.create();
+        sc.setParameters("idIN", ids);
+        return search(sc, null, null, false);
     }
 }
