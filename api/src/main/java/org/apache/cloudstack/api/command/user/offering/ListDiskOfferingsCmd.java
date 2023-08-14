@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -24,14 +25,13 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 @APICommand(name = "listDiskOfferings", description = "Lists all available disk offerings.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
+public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
 
@@ -45,7 +45,7 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the disk offering")
     private String diskOfferingName;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account.")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project.")

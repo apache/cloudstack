@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -30,7 +31,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
+public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
 
@@ -38,7 +39,7 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the service offering")
@@ -83,7 +84,7 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.15")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account.")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project.")
