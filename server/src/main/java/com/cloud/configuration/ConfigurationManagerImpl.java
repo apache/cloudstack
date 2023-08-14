@@ -7626,7 +7626,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SystemVMUseLocalStorage, ControlCidr, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
+        return new ConfigKey<?>[] {SystemVMUseLocalStorage, ControlCidr, ControlGateway, IOPS_MAX_READ_LENGTH, IOPS_MAX_WRITE_LENGTH,
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE, VM_SERVICE_OFFERING_MAX_CPU_CORES,
                 VM_SERVICE_OFFERING_MAX_RAM_SIZE, VM_USERDATA_MAX_LENGTH, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN, ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS

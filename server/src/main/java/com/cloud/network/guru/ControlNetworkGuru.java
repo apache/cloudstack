@@ -61,7 +61,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     ConfigurationDao _configDao;
     @Inject
     NetworkModel networkModel;
-    String _gateway;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Control};
 
@@ -99,7 +98,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
                 plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         config.setCidr(ConfigurationManager.ControlCidr.valueIn(plan.getDataCenterId()));
-        config.setGateway(_gateway);
+        config.setGateway(ConfigurationManager.ControlGateway.valueIn(plan.getDataCenterId()));
 
         return config;
     }
@@ -151,14 +150,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         String netmask = NetUtils.cidr2Netmask(ConfigurationManager.ControlCidr.valueIn(dest.getDataCenter().getId()));
+        String gateway = ConfigurationManager.ControlGateway.valueIn(dest.getDataCenter().getId());
 
-        s_logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, _gateway));
+        s_logger.debug(String.format("Reserved NIC for %s [ipv4:%s netmask:%s gateway:%s]", vm.getInstanceName(), ip, netmask, gateway));
 
         nic.setIPv4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
         nic.setIPv4Netmask(netmask);
         nic.setFormat(AddressFormat.Ip4);
-        nic.setIPv4Gateway(_gateway);
+        nic.setIPv4Gateway(gateway);
     }
 
     @Override

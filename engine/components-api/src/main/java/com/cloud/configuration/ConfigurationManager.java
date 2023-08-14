@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.ehcache.management.ManagementServer;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 
@@ -76,6 +77,16 @@ public interface ConfigurationManager {
             "Advanced",
             "169.254.0.0/16",
             "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods",
+            true,
+            ConfigKey.Scope.Zone,
+            null);
+
+    ConfigKey<String> ControlGateway = new ConfigKey<>(
+            String.class,
+            "control.gateway",
+            "Advanced",
+            "169.254.0.1",
+            "gateway for the control network traffic",
             true,
             ConfigKey.Scope.Zone,
             null);

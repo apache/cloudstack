@@ -885,7 +885,6 @@ public enum Config {
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
             null),
-    ControlGateway("Advanced", ManagementServer.class, String.class, "control.gateway", "169.254.0.1", "gateway for the control network traffic", null),
     HostCapacityTypeToOrderClusters(
             "Advanced",
             ManagementServer.class,
