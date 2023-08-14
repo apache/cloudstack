@@ -31,17 +31,21 @@ export default {
     title: 'label.users',
     param: 'account'
   }],
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'locked']
+    return filters
+  },
   tabs: [
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
-      name: 'resources',
+      name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
-      name: 'limits',
+      name: 'limits.configure',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },

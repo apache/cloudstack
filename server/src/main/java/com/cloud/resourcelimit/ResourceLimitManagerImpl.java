@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -103,12 +105,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
@@ -172,6 +172,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     Map<ResourceType, Long> accountResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> domainResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
     Map<ResourceType, Long> projectResourceLimitMap = new EnumMap<ResourceType, Long>(ResourceType.class);
+
+    protected void removeResourceReservationIfNeededAndIncrementResourceCount(final long accountId, final ResourceType type, final long numToIncrement) {
+        Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+
+                Object obj = CallContext.current().getContextParameter(String.format("%s-%s", ResourceReservation.class.getSimpleName(), type.getName()));
+                if (obj instanceof Long) {
+                    reservationDao.remove((long)obj);
+                }
+                if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
+                    // we should fail the operation (resource creation) when failed to update the resource count
+                    throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
+                }
+            }
+        });
+    }
 
     @Override
     public boolean start() {
@@ -270,12 +287,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        if (!updateResourceCountForAccount(accountId, type, true, numToIncrement)) {
-            // we should fail the operation (resource creation) when failed to update the resource count
-            throw new CloudRuntimeException("Failed to increment resource count of type " + type + " for account id=" + accountId);
-        }
+        final long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
+        removeResourceReservationIfNeededAndIncrementResourceCount(accountId, type, numToIncrement);
     }
 
     @Override
@@ -433,8 +446,25 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
                 long currentResourceReservation = reservationDao.getDomainReservation(domainId, type);
                 long requestedDomainResourceCount = currentDomainResourceCount + currentResourceReservation + numResources;
-                String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
-                        + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
+
+                String convDomainResourceLimit = String.valueOf(domainResourceLimit);
+                String convCurrentDomainResourceCount = String.valueOf(currentDomainResourceCount);
+                String convCurrentResourceReservation = String.valueOf(currentResourceReservation);
+                String convNumResources = String.valueOf(numResources);
+
+                if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
+                    convDomainResourceLimit = toHumanReadableSize(domainResourceLimit);
+                    convCurrentDomainResourceCount = toHumanReadableSize(currentDomainResourceCount);
+                    convCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
+                    convNumResources = toHumanReadableSize(numResources);
+                }
+
+                String messageSuffix = String.format(
+                        " domain resource limits of Type '%s' for Domain Id = %s is exceeded: Domain Resource Limit = %s, " +
+                        "Current Domain Resource Amount = %s, Current Resource Reservation = %s, Requested Resource Amount = %s.",
+                        type, domainId, convDomainResourceLimit,
+                        convCurrentDomainResourceCount, convCurrentResourceReservation, convNumResources
+                );
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Checking if" + messageSuffix);
@@ -460,17 +490,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
+        String convertedCurrentResourceReservation = String.valueOf(currentResourceReservation);
         String convertedNumResources = String.valueOf(numResources);
 
         if (type == ResourceType.secondary_storage || type == ResourceType.primary_storage){
             convertedAccountResourceLimit = toHumanReadableSize(accountResourceLimit);
             convertedCurrentResourceCount = toHumanReadableSize(currentResourceCount);
+            convertedCurrentResourceReservation = toHumanReadableSize(currentResourceReservation);
             convertedNumResources = toHumanReadableSize(numResources);
         }
 
-        String messageSuffix = " amount of resources of Type = '" + type + "' for " + (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName())
-                + " in Domain Id = " + account.getDomainId() + " is exceeded: Account Resource Limit = " + convertedAccountResourceLimit + ", Current Account Resource Amount = " + convertedCurrentResourceCount
-                + ", Requested Resource Amount = " + convertedNumResources + ".";
+        String messageSuffix = String.format(
+                " amount of resources of Type = '%s' for %s in Domain Id = %s is exceeded: " +
+                "Account Resource Limit = %s, Current Account Resource Amount = %s, Current Account Resource Reservation = %s, Requested Resource Amount = %s.",
+                type, (project == null ? "Account Name = " + account.getAccountName() : "Project Name = " + project.getName()), account.getDomainId(),
+                convertedAccountResourceLimit, convertedCurrentResourceCount, convertedCurrentResourceReservation, convertedNumResources
+        );
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if" + messageSuffix);
@@ -510,6 +545,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             resourceLimit = Long.valueOf(Resource.RESOURCE_UNLIMITED);
         }
         return resourceLimit;
+    }
+
+    @Override
+    public long findCorrectResourceLimitForAccountAndDomain(Account account, Domain domain, ResourceType type) {
+        long maxSecondaryStorageForAccount = findCorrectResourceLimitForAccount(account, type);
+        long maxSecondaryStorageForDomain = findCorrectResourceLimitForDomain(domain, type);
+
+        if (maxSecondaryStorageForDomain == Resource.RESOURCE_UNLIMITED || maxSecondaryStorageForAccount == Resource.RESOURCE_UNLIMITED) {
+            return Math.max(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
+        }
+
+        return Math.min(maxSecondaryStorageForDomain, maxSecondaryStorageForAccount);
     }
 
     @Override

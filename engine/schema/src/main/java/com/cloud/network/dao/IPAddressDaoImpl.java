@@ -59,6 +59,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
     protected SearchBuilder<IPAddressVO> DeleteAllExceptGivenIp;
     protected GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;
+    protected SearchBuilder<IPAddressVO> tungstenFloatingIpSearch;
     @Inject
     protected VlanDao _vlanDao;
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
@@ -151,6 +152,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         CountFreePublicIps.join("vlans", join, CountFreePublicIps.entity().getVlanId(), join.entity().getId(), JoinBuilder.JoinType.INNER);
         CountFreePublicIps.done();
 
+        tungstenFloatingIpSearch = createSearchBuilder();
+        tungstenFloatingIpSearch.and("dc", tungstenFloatingIpSearch.entity().getDataCenterId(), Op.EQ);
+        tungstenFloatingIpSearch.and("state", tungstenFloatingIpSearch.entity().getState(), Op.EQ);
+        tungstenFloatingIpSearch.and("network", tungstenFloatingIpSearch.entity().getAssociatedWithNetworkId(), Op.NNULL);
+        tungstenFloatingIpSearch.and("sourceNat", tungstenFloatingIpSearch.entity().isSourceNat(), Op.EQ);
+        tungstenFloatingIpSearch.done();
+
         DeleteAllExceptGivenIp = createSearchBuilder();
         DeleteAllExceptGivenIp.and("vlanDbId", DeleteAllExceptGivenIp.entity().getVlanId(), Op.EQ);
         DeleteAllExceptGivenIp.and("ip", DeleteAllExceptGivenIp.entity().getAddress(), Op.NEQ);
@@ -215,6 +223,15 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("sourcenetwork", networkId);
         sc.setParameters("ipAddress", ipAddress);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public IPAddressVO findByIpAndNetworkIdAndDcId(long networkId, long dcId, String ipAddress) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("dataCenterId", dcId);
         return findOneBy(sc);
     }
 
@@ -499,6 +516,15 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("state", state);
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<IPAddressVO> listByDcIdAndAssociatedNetwork(final long dcId) {
+        SearchCriteria<IPAddressVO> sc = tungstenFloatingIpSearch.create();
+        sc.setParameters("dataCenterId", dcId);
+        sc.setParameters("sourceNat", false);
+        sc.setParameters("state", State.Allocated);
+        return listBy(sc);
     }
 
     @Override

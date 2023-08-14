@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -81,7 +83,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -144,7 +145,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -159,7 +159,6 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
@@ -247,6 +246,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
+import com.cloud.service.ServiceOfferingVO;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -376,8 +376,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AccountService _accountService;
     @Inject
-    NetworkAccountDao _networkAccountDao;
-    @Inject
     VirtualMachineManager vmManager;
     @Inject
     Ipv6Service ipv6Service;
@@ -386,15 +384,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     AlertManager alertManager;
     @Inject
-    VirtualRouterProviderDao vrProviderDao;
-    @Inject
     DomainRouterDao routerDao;
     @Inject
     DomainRouterJoinDao routerJoinDao;
     @Inject
     CommandSetupHelper commandSetupHelper;
     @Inject
-    AgentManager agentManager;
+    ServiceOfferingDao serviceOfferingDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -940,6 +936,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             });
 
+            _messageBus.publish(_name, MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, id);
+
             return getNicSecondaryIp(id);
         } else {
             return null;
@@ -1052,6 +1050,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 _nicSecondaryIpDao.remove(ipVO.getId());
             }
         });
+
+        _messageBus.publish(_name, MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT, PublishScope.LOCAL, ipVO);
 
         return true;
     }
@@ -1393,6 +1393,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if ((cmd.getAccountName() != null && domainId != null) || cmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), domainId, cmd.getProjectId());
         } else {
+            s_logger.info(String.format("Assigning the network to caller:%s because either projectId or accountname and domainId are not provided", caller.getAccountName()));
             owner = caller;
         }
 
@@ -2931,7 +2932,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest type " + GuestType.Isolated);
             }
             if (networkOfferingChanged) {
-                throw new InvalidParameterValueException("Cannot specify this nework offering change and guestVmCidr at same time. Specify only one.");
+                throw new InvalidParameterValueException("Cannot specify this network offering change and guestVmCidr at same time. Specify only one.");
             }
             if (!(network.getState() == Network.State.Implemented)) {
                 throw new InvalidParameterValueException("The network must be in " + Network.State.Implemented + " state. IP Reservation cannot be applied in " + network.getState() + " state");
@@ -3884,6 +3885,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     //Add Internal Load Balancer element as a default network service provider
                     addDefaultInternalLbProviderToPhysicalNetwork(pNetwork.getId());
 
+                    //Add tungsten network service provider
+                    addDefaultTungstenProviderToPhysicalNetwork(pNetwork.getId());
+
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
 
@@ -4136,6 +4140,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     }
 
+    public void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) {
+        s_logger.debug(String.format("Validating if service offering [%s] is active, and if system VM is of Domain Router type.", serviceOfferingId));
+        final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException(String.format("Could not find specified service offering [%s].", serviceOfferingId));
+        }
+
+        if (serviceOffering.getState() == ServiceOffering.State.Inactive) {
+            throw new InvalidParameterValueException(String.format("The specified service offering [%s] is inactive.", serviceOffering));
+        }
+
+        final String virtualMachineDomainRouterType = VirtualMachine.Type.DomainRouter.toString();
+        if (!virtualMachineDomainRouterType.equalsIgnoreCase(serviceOffering.getSystemVmType())) {
+            throw new InvalidParameterValueException(String.format("The specified service offering [%s] is of type [%s]. Virtual routers can only be created with service offering "
+                    + "of type [%s].", serviceOffering, serviceOffering.getSystemVmType(), virtualMachineDomainRouterType.toLowerCase()));
+        }
+    }
+
+
     public String generateVnetString(List<String> vnetList) {
         Collections.sort(vnetList, new Comparator<String>() {
             @Override
@@ -4231,23 +4255,37 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
-                // delete vlans for this zone
-                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
-                for (VlanVO vlan : vlans) {
-                    _vlanDao.remove(vlan.getId());
-                }
-
-                // Delete networks
-                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
-                if (networks != null && !networks.isEmpty()) {
-                    for (NetworkVO network : networks) {
-                        _networksDao.remove(network.getId());
-                    }
-                }
+                disablePhysicalNetwork(physicalNetworkId, pNetwork);
+                deleteIpAddresses();
+                deleteVlans();
+                deleteNetworks();
 
                 // delete vnets
                 _dcDao.deleteVnet(physicalNetworkId);
 
+                if (!deleteProviders()) {
+                    return false;
+                }
+
+                // delete traffic types
+                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+
+                return _physicalNetworkDao.remove(physicalNetworkId);
+            }
+
+            private void disablePhysicalNetwork(Long physicalNetworkId, PhysicalNetworkVO pNetwork) {
+                pNetwork.setState(PhysicalNetwork.State.Disabled);
+                _physicalNetworkDao.update(physicalNetworkId, pNetwork);
+            }
+
+            private void deleteIpAddresses() {
+                List<IPAddressVO> ipAddresses = _ipAddressDao.listByPhysicalNetworkId(physicalNetworkId);
+                for (IPAddressVO ipaddress : ipAddresses) {
+                    _ipAddressDao.remove(ipaddress.getId());
+                }
+            }
+
+            private boolean deleteProviders() {
                 // delete service providers
                 List<PhysicalNetworkServiceProviderVO> providers = _pNSPDao.listBy(physicalNetworkId);
 
@@ -4262,11 +4300,25 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         return false;
                     }
                 }
+                return true;
+            }
 
-                // delete traffic types
-                _pNTrafficTypeDao.deleteTrafficTypes(physicalNetworkId);
+            private void deleteNetworks() {
+                // Delete networks
+                List<NetworkVO> networks = _networksDao.listByPhysicalNetwork(physicalNetworkId);
+                if (CollectionUtils.isNotEmpty(networks)) {
+                    for (NetworkVO network : networks) {
+                        _networksDao.remove(network.getId());
+                    }
+                }
+            }
 
-                return _physicalNetworkDao.remove(physicalNetworkId);
+            private void deleteVlans() {
+                // delete vlans for this zone
+                List<VlanVO> vlans = _vlanDao.listVlansByPhysicalNetworkId(physicalNetworkId);
+                for (VlanVO vlan : vlans) {
+                    _vlanDao.remove(vlan.getId());
+                }
             }
         });
     }
@@ -4378,12 +4430,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         vlanOwnerId = vlanOwner.getAccountId();
 
-        // Verify physical network isolation type is VLAN
+        // Verify physical network isolation methods contain VLAN or VXLAN
         PhysicalNetworkVO physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
             throw new InvalidParameterValueException("Unable to find physical network by id " + physicalNetworkId);
-        } else if (!physicalNetwork.getIsolationMethods().isEmpty() && !physicalNetwork.getIsolationMethods().contains("VLAN")) {
-            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN");
+        } else if (!physicalNetwork.getIsolationMethods().isEmpty() &&
+                !physicalNetwork.getIsolationMethods().contains("VLAN") &&
+                !physicalNetwork.getIsolationMethods().contains("VXLAN")) {
+            throw new InvalidParameterValueException("Cannot dedicate guest vlan range. " + "Physical isolation type of network " + physicalNetworkId + " is not VLAN nor VXLAN");
         }
 
         // Get the start and end vlan
@@ -5165,6 +5219,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         _internalLbElementSvc.addInternalLoadBalancerElement(nsp.getId());
 
+        return nsp;
+    }
+
+    private PhysicalNetworkServiceProvider addDefaultTungstenProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.Tungsten.getName(), null, null);
+
+        NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.Tungsten.getName());
+        if (networkElement == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the " + Provider.Tungsten.getName() + " Provider");
+        }
         return nsp;
     }
 

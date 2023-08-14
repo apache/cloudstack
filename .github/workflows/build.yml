@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
@@ -63,4 +63,4 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
           rm -fr nonoss
-          mvn -B -P developer,systemvm -Dsimulator -Dnoredist clean install
+          mvn -B -P developer,systemvm -Dsimulator -Dnoredist clean install -T$(nproc)

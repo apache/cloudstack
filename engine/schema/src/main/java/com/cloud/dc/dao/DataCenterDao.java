@@ -52,14 +52,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     DataCenterVO findByName(String name);
 
-    /**
-     * @param id data center id
-     * @return a pair of mac address strings.  The first one is private and second is public.
-     */
-    String[] getNextAvailableMacAddressPair(long id);
-
-    String[] getNextAvailableMacAddressPair(long id, long mask);
-
     PrivateAllocationData allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId, boolean forSystemVms);
 
     DataCenterIpAddressVO allocatePrivateIpAddress(long id, String reservationId);
@@ -103,6 +95,8 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> listDisabledZones();
 
     List<DataCenterVO> listEnabledZones();
+
+    List<Long> listEnabledNonEdgeZoneIds();
 
     DataCenterVO findByToken(String zoneToken);
 

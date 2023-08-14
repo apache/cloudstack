@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -53,6 +54,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel;
@@ -73,7 +76,6 @@ import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -254,6 +256,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
     private Long overrideDiskOfferingId;
 
+    @Parameter(name = ApiConstants.IOTHREADS_ENABLED, type = CommandType.BOOLEAN, required = false,
+            description = "IOThreads are dedicated event loop threads for supported disk devices to perform block I/O requests in order to improve scalability especially on an SMP host/guest with many LUNs.")
+    private Boolean iothreadsEnabled;
+
+    @Parameter(name = ApiConstants.IO_DRIVER_POLICY, type = CommandType.STRING, description = "Controls specific policies on IO")
+    private String ioDriverPolicy;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -317,6 +326,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
+        }
+
+        IoDriverPolicy ioPolicy = getIoDriverPolicy();
+        if (ioPolicy != null) {
+            customparameterMap.put(VmDetailConstants.IO_POLICY, ioPolicy.toString());
+        }
+
+        if (BooleanUtils.toBoolean(iothreadsEnabled)) {
+            customparameterMap.put(VmDetailConstants.IOTHREADS, BooleanUtils.toStringTrueFalse(iothreadsEnabled));
         }
 
         return customparameterMap;
@@ -682,6 +700,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return overrideDiskOfferingId;
     }
 
+    public ApiConstants.IoDriverPolicy getIoDriverPolicy() {
+        if (StringUtils.isNotBlank(ioDriverPolicy)) {
+            try {
+                String policyType = ioDriverPolicy.trim().toUpperCase();
+                return ApiConstants.IoDriverPolicy.valueOf(policyType);
+            } catch (IllegalArgumentException e) {
+                String errMesg = String.format("Invalid io policy %s specified for vm %s. Valid values are: %s", ioDriverPolicy, getName(), Arrays.toString(ApiConstants.IoDriverPolicy.values()));
+                s_logger.warn(errMesg);
+                throw new InvalidParameterValueException(errMesg);
+            }
+        }
+        return null;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -722,7 +753,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Override
     public String getEventDescription() {
-        return "starting Vm. Vm Id: " + getEntityUuid();
+        if(getStartVm()) {
+            return "starting Vm. Vm Id: " + getEntityUuid();
+        }
+        return "deploying Vm. Vm Id: " + getEntityUuid();
     }
 
     @Override
@@ -734,9 +768,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public void execute() {
         UserVm result;
 
+        CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
         if (getStartVm()) {
             try {
-                CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
                 result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
@@ -754,12 +788,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                         message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                     }
                 }
-                s_logger.info(ex);
-                s_logger.info(message.toString(), ex);
+                s_logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+                s_logger.debug(message.toString(), ex);
                 throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
             }
         } else {
-            result = _userVmService.getUserVm(getEntityId());
+            s_logger.info("VM " + getEntityUuid() + " already created, load UserVm from DB");
+            result = _userVmService.finalizeCreateVirtualMachine(getEntityId());
         }
 
         if (result != null) {

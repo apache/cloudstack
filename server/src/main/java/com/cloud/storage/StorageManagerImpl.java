@@ -19,6 +19,7 @@ package com.cloud.storage;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,8 +47,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.Sets;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -229,11 +229,11 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import java.math.BigInteger;
-import java.util.UUID;
+import com.google.common.collect.Sets;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -1336,7 +1336,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                  continue;
                              }
                         }
-
+                        if (isVolumeSuspectedDestroyDuplicateOfVmVolume(vol)) {
+                            s_logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
+                            continue;
+                        }
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
                             // system, but not necessary.
@@ -1466,6 +1469,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } finally {
             scanLock.releaseRef();
         }
+    }
+
+    protected boolean isVolumeSuspectedDestroyDuplicateOfVmVolume(VolumeVO gcVolume) {
+        if (gcVolume.getPath() == null) {
+            return false;
+        }
+        if (gcVolume.getPoolId() == null) {
+            return false;
+        }
+        Long vmId = gcVolume.getInstanceId();
+        if (vmId == null) {
+            return false;
+        }
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return false;
+        }
+        List<VolumeVO> vmUsableVolumes = _volumeDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol : vmUsableVolumes) {
+            if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
+                s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1889,7 +1917,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return _storagePoolDao.findByUuid(uuid);
     }
 
-    private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
+    public void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
@@ -1904,8 +1932,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (dataStoreVO != null && !dataStoreVO.getStatus().equals(StoragePoolStatus.Up)) {
-                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not ready for syncing, " +
-                        "as the status is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
+                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not in Up state, " +
+                        "current state is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -3380,6 +3408,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 STORAGE_POOL_DISK_WAIT,
                 STORAGE_POOL_CLIENT_TIMEOUT,
                 STORAGE_POOL_CLIENT_MAX_CONNECTIONS,
+                STORAGE_POOL_IO_POLICY,
                 PRIMARY_STORAGE_DOWNLOAD_WAIT,
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,

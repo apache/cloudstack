@@ -18,6 +18,7 @@
 <template>
   <div style="width: auto;">
     <a-steps
+      v-if="steps.length > 1"
       ref="resourceStep"
       progressDot
       :current="currentStep"
@@ -54,7 +55,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="(!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
+        v-if="!isEdgeZone && (!localstorageenabled || !localstorageenabledforsystemvm) && checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -65,7 +66,7 @@
         :isFixError="isFixError"
       />
       <static-inputs-form
-        v-if="checkVisibleResource('secondaryResource')"
+        v-if="!isEdgeZone && checkVisibleResource('secondaryResource')"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -76,7 +77,7 @@
         :isFixError="isFixError"
       />
     </div>
-    <div v-else>
+    <div v-else-if="!isEdgeZone">
       <static-inputs-form
         v-if="checkVisibleResource('primaryResource')"
         @nextPressed="nextPressed"
@@ -133,6 +134,9 @@ export default {
     zoneType () {
       return this.prefillContent?.zoneType || null
     },
+    isAdvancedZone () {
+      return this.zoneType === 'Advanced'
+    },
     hypervisor () {
       return this.prefillContent?.hypervisor || null
     },
@@ -142,14 +146,19 @@ export default {
     localstorageenabledforsystemvm () {
       return this.prefillContent?.localstorageenabledforsystemvm || false
     },
+    isEdgeZone () {
+      return this.prefillContent?.zoneSuperType === 'Edge' || false
+    },
     steps () {
       const steps = []
       const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
-      steps.push({
-        title: 'label.cluster',
-        fromKey: 'clusterResource',
-        description: 'message.desc.cluster'
-      })
+      if (!this.isEdgeZone) {
+        steps.push({
+          title: 'label.cluster',
+          fromKey: 'clusterResource',
+          description: 'message.desc.cluster'
+        })
+      }
       if (hypervisor !== 'VMware') {
         steps.push({
           title: 'label.host',
@@ -157,18 +166,20 @@ export default {
           description: 'message.desc.host'
         })
       }
-      if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
+      if (!this.isEdgeZone) {
+        if (!this.localstorageenabled || !this.localstorageenabledforsystemvm) {
+          steps.push({
+            title: 'label.primary.storage',
+            fromKey: 'primaryResource',
+            description: 'message.desc.primary.storage'
+          })
+        }
         steps.push({
-          title: 'label.primary.storage',
-          fromKey: 'primaryResource',
-          description: 'message.desc.primary.storage'
+          title: 'label.secondary.storage',
+          fromKey: 'secondaryResource',
+          description: 'message.desc.secondary.storage'
         })
       }
-      steps.push({
-        title: 'label.secondary.storage',
-        fromKey: 'secondaryResource',
-        description: 'message.desc.secondary.storage'
-      })
 
       return steps
     },

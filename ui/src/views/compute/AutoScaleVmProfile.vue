@@ -243,6 +243,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -344,21 +345,29 @@ export default {
       })
     },
     fetchTemplateData () {
-      api('listTemplates', {
-        templatefilter: 'all',
+      const params = {
         listall: 'true',
         domainid: this.resource.domainid,
         account: this.resource.account
-      }).then(json => {
+      }
+      if (isAdmin()) {
+        params.templatefilter = 'all'
+      } else {
+        params.templatefilter = 'executable'
+      }
+      api('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
     },
     fetchServiceOfferingData () {
-      api('listServiceOfferings', {
+      const params = {
         listall: 'true',
-        isrecursive: 'true',
         issystem: 'false'
-      }).then(json => {
+      }
+      if (isAdminOrDomainAdmin()) {
+        params.isrecursive = 'true'
+      }
+      api('listServiceOfferings', params).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
@@ -510,7 +519,7 @@ export default {
         params.autoscaleuserid = this.autoscaleuserid
       }
       if (this.userdata && this.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(this.userdata)
       }
 
       const httpMethod = params.userdata ? 'POST' : 'GET'
@@ -529,14 +538,6 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-    },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
     },
     decodeUserData (userdata) {
       const decodedData = Buffer.from(userdata, 'base64')

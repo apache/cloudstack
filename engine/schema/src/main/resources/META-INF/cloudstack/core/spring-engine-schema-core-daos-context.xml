@@ -45,6 +45,7 @@
   <bean id="accountJoinDaoImpl" class="com.cloud.api.query.dao.AccountJoinDaoImpl" />
   <bean id="accountVlanMapDaoImpl" class="com.cloud.dc.dao.AccountVlanMapDaoImpl" />
   <bean id="alertDaoImpl" class="com.cloud.alert.dao.AlertDaoImpl" />
+  <bean id="consoleSessionDaoImpl" class="com.cloud.vm.dao.ConsoleSessionDaoImpl" />
   <bean id="asyncJobJoinDaoImpl" class="com.cloud.api.query.dao.AsyncJobJoinDaoImpl" />
   <bean id="autoScalePolicyConditionMapDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl" />
   <bean id="autoScalePolicyDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyDaoImpl" />
@@ -60,6 +61,8 @@
   <bean id="commandExecLogDaoImpl" class="com.cloud.secstorage.CommandExecLogDaoImpl" />
   <bean id="conditionDaoImpl" class="com.cloud.network.as.dao.ConditionDaoImpl" />
   <bean id="consoleProxyDaoImpl" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
+  <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
+  <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
   <bean id="counterDaoImpl" class="com.cloud.network.as.dao.CounterDaoImpl" />
   <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
   <bean id="domainVlanMapDaoImpl" class="com.cloud.dc.dao.DomainVlanMapDaoImpl" />
@@ -133,6 +136,7 @@
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
   <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
+  <bean id="tungstenControllerDaoImpl" class="com.cloud.network.dao.TungstenProviderDaoImpl"/>
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
   <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
@@ -225,6 +229,7 @@
   <bean id="volumeDetailsDaoImpl" class="com.cloud.storage.dao.VolumeDetailsDaoImpl" />
   <bean id="volumeJoinDaoImpl" class="com.cloud.api.query.dao.VolumeJoinDaoImpl" />
   <bean id="volumeReservationDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VolumeReservationDaoImpl" />
+  <bean id="volumeStatsDaoImpl" class="com.cloud.storage.dao.VolumeStatsDaoImpl" />
   <bean id="vpcDaoImpl" class="com.cloud.network.vpc.dao.VpcDaoImpl" />
   <bean id="vpcGatewayDaoImpl" class="com.cloud.network.vpc.dao.VpcGatewayDaoImpl" />
   <bean id="vpcOfferingDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDaoImpl" />
@@ -235,6 +240,8 @@
   <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
   <bean id="vpcOfferingDetailsDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
+  <bean id="tungstenGuestNetworkIpAddressDaoImpl" class="com.cloud.network.dao.TungstenGuestNetworkIpAddressDaoImpl"/>
+  <bean id="tungstenSecurityGroupRuleDaoImpl" class="com.cloud.network.security.dao.TungstenSecurityGroupRuleDaoImpl"/>
   <bean id="vlanDetailsDaoImpl" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
   <bean id="AffinityGroupDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl" />
   <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl" />

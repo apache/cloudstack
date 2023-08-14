@@ -177,6 +177,7 @@
                 :maxCpu="getMaxCpu()"
                 :minMemory="getMinMemory()"
                 :maxMemory="getMaxMemory()"
+                :cpuSpeed="getCPUSpeed()"
                 @update-iops-value="updateFieldValue"
                 @update-compute-cpunumber="updateFieldValue"
                 @update-compute-cpuspeed="updateFieldValue"
@@ -521,6 +522,15 @@ export default {
         return this.resource.memory
       }
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
+    },
+    getCPUSpeed () {
+      if (!this.computeOffering) {
+        return 0
+      }
+      if (this.computeOffering.cpuspeed) {
+        return this.computeOffering.cpuspeed * 1
+      }
+      return this.resource.cpuspeed * 1 || 0
     },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {

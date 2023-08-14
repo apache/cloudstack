@@ -27,9 +27,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -106,12 +103,15 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
@@ -119,6 +119,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -139,6 +140,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDevice;
@@ -146,13 +148,14 @@ import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
-import com.vmware.vim25.VirtualE1000;
+import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
+    private static final Gson GSON = GsonHelper.getGson();
 
 
     @Inject VmwareVmImplementer vmwareVmImplementer;
@@ -161,6 +164,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject VmwareManager _vmwareMgr;
+    @Inject VMInstanceDao vmDao;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject VirtualMachineManager vmManager;
@@ -697,7 +701,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volumeVO.setTemplateId(templateId);
         volumeVO.setAttached(new Date());
         volumeVO.setRemoved(null);
-        volumeVO.setChainInfo(new Gson().toJson(diskInfo));
+        volumeVO.setChainInfo(GSON.toJson(diskInfo));
         if (unitNumber != null) {
             volumeVO.setDeviceId(unitNumber.longValue());
         }
@@ -736,12 +740,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volume.setPath(volumeName);
         volume.setPoolId(poolId);
         VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
-        volume.setChainInfo(new Gson().toJson(diskInfo));
+        volume.setChainInfo(GSON.toJson(diskInfo));
         volume.setInstanceId(vm.getId());
         volume.setState(Volume.State.Ready);
         volume.setAttached(new Date());
         _volumeDao.update(volume.getId(), volume);
         if (volume.getRemoved() != null) {
+            s_logger.debug(String.format("Marking volume [uuid: %s] of restored VM [%s] as non removed.", volume.getUuid(),
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
             _volumeDao.unremove(volume.getId());
             if (vm.getType() == Type.User) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize(),
@@ -812,6 +818,23 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId, provisioningType, size, instanceId, poolId, templateId, unitNumber, diskInfo);
     }
 
+    protected String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+        try {
+            List<Backup.VolumeInfo> list = new ArrayList<>();
+            for (VolumeVO vol : vmVolumes) {
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+            }
+            return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
+        } catch (Exception e) {
+            if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
+                s_logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);
+            } else {
+                s_logger.error(String.format("Failed to create VolumeInfo of VM [id: %s] volumes due to: [%s].", vmVolumes.get(0).getInstanceId(), e.getMessage()), e);
+            }
+            throw e;
+        }
+    }
+
     /**
      * Get physical network ID from zoneId and Vmware label
      */
@@ -878,7 +901,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get network MO from VM NIC
      */
-    private NetworkMO getNetworkMO(VirtualE1000 nic, VmwareContext context) {
+    private NetworkMO getNetworkMO(VirtualEthernetCard nic, VmwareContext context) {
         VirtualDeviceConnectInfo connectable = nic.getConnectable();
         VirtualEthernetCardNetworkBackingInfo info = (VirtualEthernetCardNetworkBackingInfo)nic.getBacking();
         ManagedObjectReference networkMor = info.getNetwork();
@@ -889,7 +912,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private Pair<String, String> getNicMacAddressAndNetworkName(VirtualDevice nicDevice, VmwareContext context) throws Exception {
-        VirtualE1000 nic = (VirtualE1000)nicDevice;
+        VirtualEthernetCard nic = (VirtualEthernetCard)nicDevice;
         String macAddress = nic.getMacAddress();
         NetworkMO networkMO = getNetworkMO(nic, context);
         String networkName = networkMO.getName();
@@ -919,11 +942,25 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
         }
+
         List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
         Map<String, Boolean> usedVols = new HashMap<>();
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
 
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
+            VolumeVO volumeExtra = _volumeDao.findByUuid(backedUpVol.getUuid());
+            if (volumeExtra != null) {
+                s_logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
+                _volumeDao.remove(volumeExtra.getId());
+
+                if (vm.getType() == Type.User) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DETACH, volumeExtra.getAccountId(), volumeExtra.getDataCenterId(), volumeExtra.getId(),
+                            volumeExtra.getName(), volumeExtra.getDiskOfferingId(), null, volumeExtra.getSize(), Volume.class.getName(),
+                            volumeExtra.getUuid(), volumeExtra.isDisplayVolume());
+                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.volume, volumeExtra.isDisplayVolume());
+                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.primary_storage, volumeExtra.isDisplayVolume(), volumeExtra.getSize());
+                }
+            }
             for (VirtualDisk disk : virtualDisks) {
                 if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes()) && !usedVols.containsKey(backedUpVol.getUuid())) {
                     String volId = backedUpVol.getUuid();
@@ -1022,7 +1059,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return vm;
     }
 
-    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
             throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmRestored = findVM(dcMo, location);
@@ -1061,6 +1099,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(), poolId, vm.getTemplateId(), backup, false);
 
+        if (vm.getBackupOfferingId() == null) {
+            return true;
+        }
+        VMInstanceVO vmVO = (VMInstanceVO)vm;
+        vmVO.setBackupVolumes(createVolumeInfoFromVolumes(_volumeDao.findByInstance(vm.getId())));
+        vmDao.update(vmVO.getId(), vmVO);
         return true;
     }
 
@@ -1105,10 +1149,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public List<Command> finalizeMigrate(VirtualMachine vm, Map<Volume, StoragePool> volumeToPool) {
-        List<Command> commands = new ArrayList<Command>();
+        List<Command> commands = new ArrayList<>();
 
         // OfflineVmwareMigration: specialised migration command
-        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
+        List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<>();
         Long poolClusterId = null;
         StoragePool targetLocalPoolForVM = null;
         for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
@@ -1122,10 +1166,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
                 targetLocalPoolForVM = pool;
             }
-            volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
+            volumeToFilerTo.add(new Pair<>(volumeTo, filerTo));
         }
         final Long destClusterId = poolClusterId;
-        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
+        final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm, true).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         String targetHostGuid = getTargetHostGuid(targetLocalPoolForVM, destClusterId, isInterClusterMigration);
 

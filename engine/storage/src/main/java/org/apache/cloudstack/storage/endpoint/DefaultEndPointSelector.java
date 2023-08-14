@@ -330,9 +330,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (storeScope.getScopeType() == ScopeType.ZONE) {
             dcId = storeScope.getScopeId();
         }
-        // find ssvm that can be used to download data to store. For zone-wide
-        // image store, use SSVM for that zone. For region-wide store,
-        // we can arbitrarily pick one ssvm to do that task
+
+        return findSsvm(dcId);
+    }
+
+    /**
+     * Finds an SSVM that can be used to execute a command.
+     * For zone-wide image store, use SSVM for that zone. For region-wide store, we can arbitrarily pick one SSVM to do the task.
+     * */
+    public EndPoint findSsvm(long dcId) {
         List<HostVO> ssAHosts = listUpAndConnectingSecondaryStorageVmHost(dcId);
         if (ssAHosts == null || ssAHosts.isEmpty()) {
             return null;

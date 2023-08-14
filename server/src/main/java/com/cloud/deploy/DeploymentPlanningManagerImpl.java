@@ -1642,11 +1642,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // for each volume find list of suitable storage pools by calling the
         // allocators
-        Set<Long> originalAvoidPoolSet = avoid.getPoolsToAvoid();
-        if (originalAvoidPoolSet == null) {
-            originalAvoidPoolSet = new HashSet<Long>();
+        Set<Long> originalAvoidPoolSet = new HashSet<>();
+        if (avoid.getPoolsToAvoid() != null) {
+            originalAvoidPoolSet.addAll(avoid.getPoolsToAvoid());
         }
-        Set<Long> poolsToAvoidOutput = new HashSet<Long>(originalAvoidPoolSet);
+        Set<Long> poolsToAvoidOutput = new HashSet<>(originalAvoidPoolSet);
 
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug("Checking suitable pools for volume (Id, Type): (" + toBeCreated.getId() + "," + toBeCreated.getVolumeType().name() + ")");
@@ -1722,12 +1722,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             s_logger.debug("Calling StoragePoolAllocators to find suitable pools");
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
-
-            //FR123 check how is it different for service offering getTagsArray and disk offering's
-            //if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
-            //        && vmProfile.getServiceOffering().getTagsArray().length != 0) {
-            //    diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
-            //}
 
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;

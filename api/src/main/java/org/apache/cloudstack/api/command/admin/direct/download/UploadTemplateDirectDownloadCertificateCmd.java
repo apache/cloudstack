@@ -113,5 +113,3 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 }
-
-

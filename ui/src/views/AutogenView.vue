@@ -54,9 +54,12 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
-                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name)
+                        ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated' : ['account', 'guestnetwork', 'guestvlans'].includes($route.name)
+                        ? 'all' : ['volume'].includes($route.name)
+                        ? 'user' : 'self')"
                     style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -66,7 +69,9 @@
                     }" >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
-                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
+                      v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name) ||
+                      ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
                       {{ $t('label.all') }}
@@ -117,7 +122,7 @@
           :maskClosable="false"
           :cancelText="$t('label.cancel')"
           style="top: 20px;"
-          @cancel="closeAction"
+          @cancel="cancelAction"
           :confirmLoading="actionLoading"
           :footer="null"
           centered
@@ -161,7 +166,7 @@
         :ok-button-props="getOkProps()"
         :cancel-button-props="getCancelProps()"
         :confirmLoading="actionLoading"
-        @cancel="closeAction"
+        @cancel="cancelAction"
         centered
       >
         <template #title>
@@ -764,6 +769,10 @@ export default {
         this.dataView = false
       }
 
+      if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
+        params.listsystemvms = true
+      }
+
       if ('listview' in this.$refs && this.$refs.listview) {
         this.$refs.listview.resetSelection()
       }
@@ -807,7 +816,7 @@ export default {
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.customTitle
+            key = columnKey.field
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -847,10 +856,6 @@ export default {
         delete params.showunique
       }
 
-      if (['Admin'].includes(this.$store.getters.userInfo.roletype) && ['listVolumesMetrics', 'listVolumes'].includes(this.apiName)) {
-        params.listsystemvms = true
-      }
-
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -867,6 +872,21 @@ export default {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicy/')) {
+          params.policyuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenpolicyset/')) {
+          params.applicationpolicysetuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstennetworkroutertable/')) {
+          params.tungstennetworkroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
+          params.tungsteninterfaceroutetableuuid = this.$route.params.id
+        }
+        if (this.$route.path.startsWith('/tungstenfirewallpolicy/')) {
+          params.firewallpolicyuuid = this.$route.params.id
         }
       }
 
@@ -996,6 +1016,10 @@ export default {
       this.showAction = false
       this.currentAction = {}
     },
+    cancelAction () {
+      eventBus.emit('action-closing', { action: this.currentAction })
+      this.closeAction()
+    },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
       if (selection?.length > 0) {
@@ -1010,7 +1034,6 @@ export default {
       this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
-      const self = this
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
@@ -1048,6 +1071,7 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      this.currentAction.paramFilters = []
       if ('message' in action) {
         var message = action.message
         if (typeof action.message === 'function') {
@@ -1055,6 +1079,29 @@ export default {
         }
         action.message = message
       }
+
+      this.getArgs(action, isGroupAction, paramFields)
+      this.getFilters(action, isGroupAction, paramFields)
+      this.getFirstIndexFocus()
+
+      this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+          param.type = 'string'
+        }
+        this.setRules(param)
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
+        }
+      }
+      this.actionLoading = false
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
+        this.fillEditFormFieldValues()
+      }
+    },
+    getArgs (action, isGroupAction, paramFields) {
+      const self = this
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -1076,22 +1123,14 @@ export default {
           })
         }
       }
-      this.getFirstIndexFocus()
-
-      this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
-      for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
-          param.type = 'string'
+    },
+    getFilters (action, isGroupAction, paramFields) {
+      if ('filters' in action) {
+        var filters = action.filters
+        if (typeof action.filters === 'function') {
+          filters = action.filters(action.resource, this.$store.getters, isGroupAction)
         }
-        this.setRules(param)
-        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param)
-        }
-      }
-      this.actionLoading = false
-      if (action.dataView && listIconForFillValues.includes(action.icon)) {
-        this.fillEditFormFieldValues()
+        this.currentAction.paramFilters = filters
       }
     },
     getFirstIndexFocus () {
@@ -1104,13 +1143,16 @@ export default {
         }
       }
     },
-    listUuidOpts (param) {
+    listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {
@@ -1399,13 +1441,13 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1448,7 +1490,7 @@ export default {
               if (!action.mapping[key].value) {
                 continue
               }
-              params[key] = action.mapping[key].value(this.resource, params)
+              params[key] = action.mapping[key].value(this.resource, params, this.$route.query)
             }
           }
         }
@@ -1542,14 +1584,45 @@ export default {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter
+      } else if (this.$route.name === 'volume') {
+        if (filter === 'all') {
+          query.listsystemvms = true
+        } else {
+          delete query.listsystemvms
+        }
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
           delete query.networkfilter
         } else {
           query.networkfilter = filter
         }
-      } else if (this.$route.name === 'publicip') {
-        query.state = filter
+      } else if (['account', 'publicip', 'systemvm', 'router'].includes(this.$route.name)) {
+        if (filter !== 'all') {
+          query.state = filter
+        }
+      } else if (this.$route.name === 'storagepool') {
+        if (filter === 'all') {
+          delete query.status
+        } else {
+          query.status = filter
+        }
+      } else if (['pod', 'cluster'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.allocationstate
+        } else {
+          query.allocationstate = filter
+        }
+      } else if (['host'].includes(this.$route.name)) {
+        if (filter === 'all') {
+          delete query.resourcestate
+          delete query.state
+        } else if (['up', 'down', 'alert'].includes(filter)) {
+          delete query.resourcestate
+          query.state = filter
+        } else {
+          delete query.state
+          query.resourcestate = filter
+        }
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account
@@ -1586,9 +1659,7 @@ export default {
         if ('searchQuery' in opts) {
           const value = opts.searchQuery
           if (value && value.length > 0) {
-            if (this.$route.name === 'role') {
-              query.name = value
-            } else if (this.$route.name === 'quotaemailtemplate') {
+            if (this.$route.name === 'quotaemailtemplate') {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value

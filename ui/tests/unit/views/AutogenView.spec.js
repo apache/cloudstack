@@ -920,7 +920,7 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(router.currentRoute.value.path).toEqual('/role')
-        expect(router.currentRoute.value.query).toEqual({ name: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        expect(router.currentRoute.value.query).toEqual({ keyword: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
         done()
       })
 
@@ -1140,10 +1140,9 @@ describe('Views > AutogenView.vue', () => {
         ])
         expect(wrapper.vm.showAction).toBeTruthy()
         expect(listUuidOpts).toHaveBeenCalledTimes(4)
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'id', type: 'uuid' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column1', type: 'list' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column2', type: 'string' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'account', type: 'string' })
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'id', type: 'uuid' }, undefined)
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column1', type: 'list' }, undefined)
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column2', type: 'string' }, undefined)
         done()
       })
 

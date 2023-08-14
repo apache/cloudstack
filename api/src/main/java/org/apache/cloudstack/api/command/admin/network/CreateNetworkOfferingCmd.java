@@ -126,6 +126,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
 
+    @Parameter(name = ApiConstants.FOR_TUNGSTEN,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for Tungsten-Fabric, false otherwise.")
+    private Boolean forTungsten;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
             + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
             + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
@@ -233,6 +238,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getForVpc() {
         return forVpc;
+    }
+
+    public Boolean getForTungsten() {
+        return forTungsten;
     }
 
     public Boolean getEgressDefaultPolicy() {

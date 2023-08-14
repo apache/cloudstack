@@ -32,7 +32,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -73,9 +73,9 @@
     <template #name="{text, record}">
       <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
         <span v-if="record.icon && record.icon.base64image">
-          <resource-icon :image="record.icon.base64image" size="1x"/>
+          <resource-icon :image="record.icon.base64image" size="2x"/>
         </span>
-        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="lg" />
+        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="2x" />
       </span>
       <span style="min-width: 120px" >
         <QuickView
@@ -88,8 +88,8 @@
           <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
         </span>
         <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
-          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" />
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="2x" />
           <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
           <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
         </span>
@@ -105,9 +105,19 @@
           <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
         </span>
         <span v-else-if="$route.path.startsWith('/globalsetting')">{{ text }}</span>
+        <span v-else-if="$route.path.startsWith('/preferences')">{{ text }}</span>
         <span v-else-if="$route.path.startsWith('/alert')">
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
+        <span v-else-if="$route.path.startsWith('/tungstenfabric')">
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
+        <span v-else-if="isTungstenPath()">
+          <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
         <span v-else>
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -133,7 +143,7 @@
     </template>
     <template #username="{text, record}">
       <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
+        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
         <user-outlined v-else style="font-size: 16px;" />
       </span>
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
@@ -152,10 +162,16 @@
     </template>
     <template #ipaddress="{ text, record }" href="javascript:;">
       <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <span v-else>
+        <copy-label :label="text" />
+      </span>
       <span v-if="record.issourcenat">
         &nbsp;
         <a-tag>source-nat</a-tag>
+      </span>
+      <span v-if="record.isstaticnat">
+        &nbsp;
+        <a-tag>static-nat</a-tag>
       </span>
     </template>
     <template #ip6address="{ text, record }" href="javascript:;">
@@ -174,6 +190,25 @@
     <template #virtualmachinename="{ text, record }">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
     </template>
+    <template #volumename="{ text, record }">
+      <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
+    </template>
+    <template #size="{ text }">
+      <span v-if="text">
+        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      </span>
+    </template>
+    <template #physicalsize="{ text }">
+      <span v-if="text">
+        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+      </span>
+    </template>
+    <template #physicalnetworkname="{ text, record }">
+      <router-link :to="{ path: '/physicalnetwork/' + record.physicalnetworkid }">{{ text }}</router-link>
+    </template>
+    <template #serviceofferingname="{ text, record }">
+      <router-link :to="{ path: '/computeoffering/' + record.serviceofferingid }">{{ text }}</router-link>
+    </template>
     <template #hypervisor="{ text, record }">
       <span v-if="$route.name === 'hypervisorcapability'">
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -183,6 +218,9 @@
     <template #state="{ text, record }">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
       <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
+    </template>
+    <template #status="{ text }">
+      <status :text="text ? text : ''" displayText />
     </template>
     <template #allocationstate="{ text }">
       <status :text="text ? text : ''" displayText />
@@ -289,6 +327,7 @@
     </template>
     <template #zonename="{ text, record }">
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <router-link v-else-if="$router.resolve('/zones/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zones/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #rolename="{ text, record }">
@@ -417,6 +456,7 @@ import { api } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
+import CopyLabel from '@/components/widgets/CopyLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
@@ -428,6 +468,7 @@ export default {
     OsLogo,
     Status,
     QuickView,
+    CopyLabel,
     TooltipButton,
     ResourceIcon,
     ResourceLabel
@@ -515,6 +556,10 @@ export default {
     }
   },
   methods: {
+    isTungstenPath () {
+      return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
+    },
     createPathBasedOnVmType: createPathBasedOnVmType,
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
@@ -523,7 +568,8 @@ export default {
         '/template', '/iso',
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering'].join('|'))
+        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+        '/tungstenfabric'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -790,6 +836,12 @@ export default {
       return host.state
     },
     getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      }
+      return name
+    },
+    getColumTitle (name) {
       if (typeof name === 'object') {
         name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }

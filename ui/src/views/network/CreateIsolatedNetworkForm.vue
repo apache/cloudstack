@@ -85,6 +85,36 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item ref="account" name="account" v-if="accountVisible">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
+            <a-select
+             v-model:value="form.account"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="accountLoading"
+              :placeholder="apiParams.account.description"
+              @change="val => { handleAccountChange(accounts[val]) }">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+                {{ opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item
+            ref="networkdomain"
+            name="networkdomain"
+            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
+            <template #label>
+              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            </template>
+            <a-input
+             v-model:value="form.networkdomain"
+              :placeholder="apiParams.networkdomain.description"/>
+          </a-form-item>
           <a-form-item ref="networkofferingid" name="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -261,28 +291,6 @@
               </a-col>
             </a-row>
           </div>
-          <a-form-item
-            ref="networkdomain"
-            name="networkdomain"
-            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
-            <template #label>
-              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
-            </template>
-            <a-input
-             v-model:value="form.networkdomain"
-              :placeholder="apiParams.networkdomain.description"/>
-          </a-form-item>
-          <a-form-item
-            ref="account"
-            name="account"
-            v-if="accountVisible">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-input
-             v-model:value="form.account"
-              :placeholder="apiParams.account.description"/>
-          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -339,6 +347,10 @@ export default {
       domains: [],
       domainLoading: false,
       selectedDomain: {},
+      accountVisible: isAdminOrDomainAdmin(),
+      accounts: [],
+      accountLoading: false,
+      selectedAccount: {},
       zones: [],
       zoneLoading: false,
       selectedZone: {},
@@ -348,7 +360,6 @@ export default {
       vpcs: [],
       vpcLoading: false,
       selectedVpc: {},
-      accountVisible: isAdminOrDomainAdmin(),
       privateMtuMax: 1500,
       publicMtuMax: 1500,
       minMTU: 68,
@@ -394,7 +405,6 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vpcid: [{ required: true, message: this.$t('message.error.select') }]
@@ -430,7 +440,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
             this.zones.push(zone)
           }
         }
@@ -467,7 +477,11 @@ export default {
       this.accountVisible = domain.id !== '-1'
       if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
+        this.fetchAccounts()
       }
+    },
+    handleAccountChange (account) {
+      this.selectedAccount = account
     },
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
@@ -545,6 +559,31 @@ export default {
         }
       })
     },
+    fetchAccounts () {
+      this.accountLoading = true
+      var params = {}
+      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
+        params.domainid = this.selectedDomain.id
+      }
+      this.accounts = [
+        {
+          id: '-1',
+          name: ' '
+        }
+      ]
+      this.selectedAccount = {}
+      api('listAccounts', params).then(json => {
+        const listAccounts = json.listaccountsresponse.account || []
+        this.accounts = this.accounts.concat(listAccounts)
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.accountLoading = false
+        if (this.arrayHasItems(this.accounts)) {
+          this.form.account = null
+        }
+      })
+    },
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
@@ -557,7 +596,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'externalid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
@@ -569,10 +608,13 @@ export default {
         if (this.isValidTextValueForKey(values, 'privatemtu')) {
           params.privatemtu = values.privatemtu
         }
+        if ('vpcid' in values) {
+          params.vpcid = this.selectedVpc.id
+        }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account')) {
-            params.account = values.account
+          if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
+            params.account = this.selectedAccount.name
           }
         }
         api('createNetwork', params).then(json => {

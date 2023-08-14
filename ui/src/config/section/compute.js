@@ -46,8 +46,8 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'displayname', 'state', 'ipaddress']
-        const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
+        const fields = ['name', 'state', 'ipaddress']
+        const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
               if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
@@ -56,7 +56,7 @@ export default {
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
           },
-          'memorytotal', 'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
+          'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
@@ -66,18 +66,17 @@ export default {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
           fields.push('hostname')
-          fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          fields.push('zonename')
         } else {
-          fields.push('zonename')
+          fields.push('serviceofferingname')
         }
+        fields.push('zonename')
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
       details: () => {
-        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+        var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
@@ -164,6 +163,14 @@ export default {
           message: 'message.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
+          filters: (record) => {
+            var filters = {}
+            var filterParams = {}
+            filterParams.hypervisortype = record.hypervisor
+            filterParams.zoneid = record.zoneid
+            filters.templateid = filterParams
+            return filters
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
           mapping: {
             virtualmachineid: {
@@ -447,7 +454,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: (store) => {
-        var fields = ['name', 'state', 'size', 'cpunumber', 'memory']
+        var fields = ['name', 'state', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
         }
@@ -504,7 +511,7 @@ export default {
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running'].includes(record.state) },
+          show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
         },
@@ -540,7 +547,7 @@ export default {
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      columns: ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account'],
       details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
       related: [{
         name: 'vm',
@@ -644,7 +651,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-      columns: ['name', 'account'],
+      columns: ['name', 'account', 'domain'],
       details: ['name', 'id', 'account', 'domain', 'created'],
       related: [{
         name: 'vm',
@@ -698,11 +705,12 @@ export default {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
       resourceType: 'SSHKeyPair',
-      details: ['id', 'name', 'fingerprint', 'account', 'domain'],
+      details: ['id', 'name', 'fingerprint', 'account', 'domain', 'project'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -734,10 +742,13 @@ export default {
           label: 'label.remove.ssh.key.pair',
           message: 'message.please.confirm.remove.ssh.key.pair',
           dataView: true,
-          args: ['name', 'account', 'domainid'],
+          args: ['name', 'account', 'domainid', 'projectid'],
           mapping: {
             name: {
               value: (record, params) => { return record.name }
+            },
+            projectid: {
+              value: (record, params) => { return record.projectid }
             },
             account: {
               value: (record, params) => { return record.account }
@@ -752,7 +763,10 @@ export default {
             return selection.map(x => {
               const data = record.filter(y => { return y.id === x })
               return {
-                name: data[0].name, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name,
+                account: data[0].account,
+                domainid: data[0].domainid,
+                projectid: data[0].projectid
               }
             })
           }
@@ -769,6 +783,7 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -840,6 +855,7 @@ export default {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },

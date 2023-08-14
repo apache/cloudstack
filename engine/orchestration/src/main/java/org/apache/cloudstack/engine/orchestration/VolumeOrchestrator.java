@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -37,16 +38,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEvent;
-import com.cloud.storage.StorageUtil;
-
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.secret.dao.PassphraseDao;
-import org.apache.cloudstack.secret.PassphraseVO;
+import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -75,6 +72,9 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secret.PassphraseVO;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -84,8 +84,10 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DatadiskTO;
@@ -99,6 +101,7 @@ import com.cloud.dc.Pod;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
@@ -120,6 +123,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StorageUtil;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
@@ -139,11 +143,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
@@ -166,9 +170,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-
-import org.apache.cloudstack.snapshot.SnapshotHelper;
-import org.jetbrains.annotations.Nullable;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -318,8 +319,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         newVol.setFormat(oldVol.getFormat());
 
         if (oldVol.getPassphraseId() != null) {
-            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
-            passphrase.clearPassphrase();
+            PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
             newVol.setPassphraseId(passphrase.getId());
         }
 
@@ -819,7 +819,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol.getTemplateId());
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     @Override
     public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
                                          Long deviceId) {
@@ -1035,13 +1035,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private void updateRootDiskVolumeEventDetails(Type type, VirtualMachine vm, List<DiskProfile> diskProfiles) {
         CallContext callContext = CallContext.current();
         // Update only for volume type ROOT and API command resource type Volume
-        if (type == Type.ROOT && callContext != null && callContext.getEventResourceType() == ApiCommandResourceType.Volume) {
+        if ((type == Type.ROOT || type == Type.DATADISK) && callContext != null && callContext.getEventResourceType() == ApiCommandResourceType.Volume) {
             List<Long> volumeIds = diskProfiles.stream().map(DiskProfile::getVolumeId).filter(volumeId -> volumeId != null).collect(Collectors.toList());
             if (!volumeIds.isEmpty()) {
                 callContext.setEventResourceId(volumeIds.get(0));
             }
             String volumeUuids = volumeIds.stream().map(volumeId -> this._uuidMgr.getUuid(Volume.class, volumeId)).collect(Collectors.joining(", "));
-            callContext.setEventDetails("Volume Id: " + volumeUuids + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
+            callContext.setEventDetails("Volume Type: " + type + "Volume Id: " + volumeUuids + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, vm.getId()));
         }
     }
 
@@ -1245,7 +1245,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         // Destroy volume if not already destroyed
                         boolean volumeAlreadyDestroyed = (vol.getState() == Volume.State.Destroy || vol.getState() == Volume.State.Expunged || vol.getState() == Volume.State.Expunging);
                         if (!volumeAlreadyDestroyed) {
-                            volService.destroyVolume(vol.getId());
+                            destroyVolumeInContext(vol);
                         } else {
                             s_logger.debug(String.format("Skipping destroy for the volume [%s] as it is in [%s] state.", volumeToString, vol.getState().toString()));
                         }
@@ -1274,6 +1274,21 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 s_logger.error(String.format("Failed to expunge volume [%s] due to [%s].", expungeToString, e.getMessage()));
                 s_logger.debug("Exception: ", e);
             }
+        }
+    }
+
+    private void destroyVolumeInContext(Volume volume) {
+        // Create new context and inject correct event resource type, id and details,
+        // otherwise VOLUME.DESTROY event will be associated with VirtualMachine and contain VM id and other information.
+        CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
+        volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " +  volume.getUuid() + " Vm Id: " + _uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
+        volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
+        volumeContext.setEventResourceId(volume.getId());
+        try {
+            _volumeApiService.destroyVolume(volume.getId());
+        } finally {
+            // Remove volumeContext and pop vmContext back
+            CallContext.unregister();
         }
     }
 
@@ -1520,6 +1535,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
 
+        setIoDriverPolicy(details, storagePool, volume);
         ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
 
         if (chapInfo != null) {
@@ -1530,6 +1546,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         return details;
+    }
+
+    private void setIoDriverPolicy(Map<String, String> details, StoragePoolVO storagePool, VolumeVO volume) {
+        if (volume.getInstanceId() != null) {
+            UserVmDetailVO ioDriverPolicy = userVmDetailsDao.findDetail(volume.getInstanceId(),
+                    VmDetailConstants.IO_POLICY);
+            if (ioDriverPolicy != null) {
+                if (IoDriverPolicy.STORAGE_SPECIFIC.toString().equals(ioDriverPolicy.getValue())) {
+                    String storageIoPolicyDriver = StorageManager.STORAGE_POOL_IO_POLICY.valueIn(storagePool.getId());
+                    if (storageIoPolicyDriver != null) {
+                        details.put(VmDetailConstants.IO_POLICY, storageIoPolicyDriver);
+                    }
+                } else {
+                    details.put(VmDetailConstants.IO_POLICY, ioDriverPolicy.getValue());
+                }
+            }
+        }
     }
 
     private static enum VolumeTaskType {
@@ -1640,6 +1673,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return tasks;
     }
 
+    protected void checkAndUpdateVolumeAccountResourceCount(VolumeVO originalEntry, VolumeVO updateEntry) {
+        if (Objects.equals(originalEntry.getSize(), updateEntry.getSize())) {
+            return;
+        }
+        s_logger.debug(String.format("Size mismatch found for %s after creation, old size: %d, new size: %d. Updating resource count", updateEntry, originalEntry.getSize(), updateEntry.getSize()));
+        if (ObjectUtils.anyNull(originalEntry.getSize(), updateEntry.getSize())) {
+            _resourceLimitMgr.recalculateResourceCount(updateEntry.getAccountId(), updateEntry.getDomainId(),
+                    ResourceType.primary_storage.getOrdinal());
+            return;
+        }
+        if (updateEntry.getSize() > originalEntry.getSize()) {
+            _resourceLimitMgr.incrementResourceCount(updateEntry.getAccountId(), ResourceType.primary_storage, updateEntry.isDisplayVolume(), updateEntry.getSize() - originalEntry.getSize());
+        } else {
+            _resourceLimitMgr.decrementResourceCount(updateEntry.getAccountId(), ResourceType.primary_storage, updateEntry.isDisplayVolume(), originalEntry.getSize() - updateEntry.getSize());
+        }
+    }
+
     private Pair<VolumeVO, DataStore> recreateVolume(VolumeVO vol, VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, StorageAccessException {
         String volToString = getReflectOnlySelectedFields(vol);
 
@@ -1692,6 +1742,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
+                final VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+                if (template == null) {
+                    s_logger.error(String.format("Failed to find template: %d for %s", templateId, volume));
+                    throw new CloudRuntimeException(String.format("Failed to find template for volume ID: %s", volume.getUuid()));
+                }
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;
 
@@ -1772,8 +1827,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw new StorageUnavailableException(msg, destPool.getId());
             }
         }
-
-        return new Pair<VolumeVO, DataStore>(newVol, destPool);
+        checkAndUpdateVolumeAccountResourceCount(vol, newVol);
+        return new Pair<>(newVol, destPool);
     }
 
     private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
@@ -1782,8 +1837,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
         s_logger.debug("Creating passphrase for the volume: " + volume.getName());
         long startTime = System.currentTimeMillis();
-        PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO());
-        passphrase.clearPassphrase();
+        PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
         s_logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
@@ -1917,7 +1971,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             "Enable/disable storage migration across primary storage", true);
 
     static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
-            "Check the url for a volume before downloading it from the management server. Set to flase when you managment has no internet access.", true);
+            "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
@@ -2041,7 +2095,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
             } else {
-                volService.destroyVolume(volume.getId());
+                destroyVolumeInContext(volume);
             }
             // FIXME - All this is boiler plate code and should be done as part of state transition. This shouldn't be part of orchestrator.
             // publish usage event for the volume
