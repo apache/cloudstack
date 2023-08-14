@@ -70,12 +70,12 @@ public class GuestOsMapper {
 
     private void makeNormative(GuestOSVO guestOSVO, Set<GuestOSVO> setOfGuestOSes) {
         for (GuestOSVO oldGuestOs : setOfGuestOSes) {
-            List<GuestOSHypervisorVO> mappings = guestOSHypervisorDao.listByGuestOsId(oldGuestOs.getId());
-            copyMappings(guestOSVO, mappings);
-            makeHidden(oldGuestOs);
+            if (guestOSVO.getId() != oldGuestOs.getId()) {
+                List<GuestOSHypervisorVO> mappings = guestOSHypervisorDao.listByGuestOsId(oldGuestOs.getId());
+                copyMappings(guestOSVO, mappings);
+                makeHidden(oldGuestOs);
+            }
         }
-        // set the lower id as not user defined, if that was not the premise anyway
-
     }
 
     private void makeHidden(GuestOSVO guestOSVO) {
