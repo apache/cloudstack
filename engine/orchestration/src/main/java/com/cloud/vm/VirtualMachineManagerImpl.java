@@ -500,22 +500,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
 
-            if (dataDiskOfferings != null) {
-                for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
-                            dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
+            // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
+            CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
+            try {
+                if (dataDiskOfferings != null) {
+                    for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
+                    }
                 }
-            }
-            if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
-                int diskNumber = 1;
-                for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
-                    DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
-                    long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
-                    VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
-                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
-                            persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
-                    diskNumber++;
+                if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
+                    int diskNumber = 1;
+                    for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
+                        DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
+                        long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
+                        VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
+                                persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
+                        diskNumber++;
+                    }
                 }
+            } finally {
+                // Remove volumeContext and pop vmContext back
+                CallContext.unregister();
             }
 
             if (s_logger.isDebugEnabled()) {
