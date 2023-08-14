@@ -101,6 +101,7 @@ public class GuestOsMapper {
         for (GuestOSVO guestOSVO: setOfGuestOSes) {
             if (rc == null || (guestOSVO.getId() > rc.getId() && !guestOSVO.getIsUserDefined())) {
                 rc = guestOSVO;
+                break;
             }
         }
         return rc;
