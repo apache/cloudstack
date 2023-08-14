@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
@@ -114,11 +115,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = session.isOpen();
-                            try {
-                                Thread.sleep(1);
-                            } catch (Exception e) {
-                                s_logger.warn("Error on sleep for vnc over websocket", e);
-                            }
+                            Thread.sleep(1);
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
@@ -143,6 +140,10 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     s_logger.info(String.format("Connection with client [%s] is dead.", clientId));
                 } catch (IOException e) {
                     s_logger.error("Error on VNC client", e);
+                } catch (InterruptedException e) {
+                    String message = "Error on sleep for vnc over websocket";
+                    s_logger.error(message, e);
+                    throw new CloudRuntimeException(message, e);
                 }
             }
 
