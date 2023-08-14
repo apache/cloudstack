@@ -95,6 +95,46 @@ public class BucketObject implements BucketInfo {
     }
 
     @Override
+    public Integer getQuota() {
+        return null;
+    }
+
+    @Override
+    public boolean isVersioning() {
+        return false;
+    }
+
+    @Override
+    public boolean isEncryption() {
+        return false;
+    }
+
+    @Override
+    public boolean isObjectLock() {
+        return false;
+    }
+
+    @Override
+    public String getPolicy() {
+        return null;
+    }
+
+    @Override
+    public String getBucketURL() {
+        return null;
+    }
+
+    @Override
+    public String getAccessKey() {
+        return null;
+    }
+
+    @Override
+    public String getSecretKey() {
+        return null;
+    }
+
+    @Override
     public long getPhysicalSize() {
         return 0;
     }

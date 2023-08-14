@@ -32,7 +32,7 @@ public interface Bucket extends ControlledEntity, Identity, InternalIdentity {
 
     void setName(String name);
 
-    long getSize();
+    Long getSize();
 
     Integer getQuota();
 

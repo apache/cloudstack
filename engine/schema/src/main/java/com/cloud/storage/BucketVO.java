@@ -141,7 +141,7 @@ public class BucketVO implements Bucket {
         return name;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
