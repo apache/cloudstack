@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.storage.GuestOSVO;
 import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -24,6 +25,7 @@ import org.apache.log4j.Logger;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate {
@@ -66,6 +68,9 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     private void mergeDuplicateGuestOSes() {
         guestOsMapper.mergeDuplicates();
+        List<GuestOSVO> nines = guestOsMapper.listByDisplayName("Red Hat Enterprise Linux 9");
+        GuestOSVO nineDotZero = guestOsMapper.listByDisplayName("Red Hat Enterprise Linux 9.0").get(0);
+        guestOsMapper.makeNormative(nineDotZero, new HashSet<>(nines));
     }
 
     @Override

@@ -25,6 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.storage.GuestOS;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -107,4 +109,29 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         sc.setParameters("display_name", displayName);
         return listBy(sc);
     }
+
+    public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, Long id, Long osCategoryId, String description, String keyword) {
+        final Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, startIndex, pageSize);
+        final SearchCriteria<GuestOSVO> sc = createSearchCriteria();
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (osCategoryId != null) {
+            sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
+        }
+
+        if (description != null) {
+            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
+        }
+
+        if (keyword != null) {
+            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+
+        final Pair<List<GuestOSVO>, Integer> result = searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends GuestOS>, Integer>(result.first(), result.second());
+    }
+
 }

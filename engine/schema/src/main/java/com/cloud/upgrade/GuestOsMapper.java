@@ -68,7 +68,7 @@ public class GuestOsMapper {
         }
     }
 
-    private void makeNormative(GuestOSVO guestOSVO, Set<GuestOSVO> setOfGuestOSes) {
+    public void makeNormative(GuestOSVO guestOSVO, Set<GuestOSVO> setOfGuestOSes) {
         for (GuestOSVO oldGuestOs : setOfGuestOSes) {
             if (guestOSVO.getId() != oldGuestOs.getId()) {
                 List<GuestOSHypervisorVO> mappings = guestOSHypervisorDao.listByGuestOsId(oldGuestOs.getId());
@@ -129,6 +129,10 @@ public class GuestOsMapper {
             }
         }
         return rc;
+    }
+
+    public List<GuestOSVO> listByDisplayName(String displayName) {
+        return guestOSDao.listByDisplayName(displayName);
     }
 
     private long getGuestOsId(long categoryId, String displayName) {
