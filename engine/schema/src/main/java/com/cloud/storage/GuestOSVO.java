@@ -124,6 +124,9 @@ public class GuestOSVO implements GuestOS {
         this.isUserDefined = isUserDefined;
     }
 
+    public boolean getForDisplay() {
+        return isDisplay();
+    }
     public boolean isDisplay() {
         return display;
     }
