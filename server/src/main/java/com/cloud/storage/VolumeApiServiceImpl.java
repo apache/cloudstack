@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -332,6 +333,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected SnapshotHelper snapshotHelper;
 
     @Inject
+    protected DomainDao domainDao;
+
+    @Inject
     protected ProjectManager projectManager;
     @Inject
     protected StoragePoolDetailsDao storagePoolDetailsDao;
@@ -486,13 +490,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 //using the existing max upload size configuration
                 command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
                 command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
-                command.setAccountId(vol.getAccountId());
-                Account account = _accountDao.findById(vol.getAccountId());
-                if (account.getType().equals(Account.Type.PROJECT)) {
-                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
-                } else {
-                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
-                }
+
+                long accountId = vol.getAccountId();
+                Account account = _accountDao.findById(accountId);
+                Domain domain = domainDao.findById(account.getDomainId());
+
+                command.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage));
+                command.setAccountId(accountId);
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
                 response.setMetadata(metadata);
