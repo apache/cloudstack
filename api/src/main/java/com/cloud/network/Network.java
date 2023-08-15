@@ -205,6 +205,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         //Add Tungsten Fabric provider
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
+        //TODO: should it be true?
+        public static final Provider Nsx = new Provider("Nsx", false);
+
         private final String name;
         private final boolean isExternal;
 
