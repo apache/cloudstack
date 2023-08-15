@@ -1285,6 +1285,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (kubernetesCluster == null) {
             throw new InvalidParameterValueException("Invalid Kubernetes cluster ID specified");
         }
+        Account caller = CallContext.current().getCallingAccount();
+        accountManager.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
         KubernetesClusterConfigResponse response = new KubernetesClusterConfigResponse();
         response.setId(kubernetesCluster.getUuid());
         response.setName(kubernetesCluster.getName());
