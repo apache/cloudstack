@@ -20,19 +20,20 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 import org.apache.cloudstack.storage.browser.StorageBrowser;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listImageStoreObjects", description = "Lists objects at specified path on image stores.",
+
+@APICommand(name = "listStoragePoolObjects", description = "Lists objects at specified path on image stores.",
             responseObject = DataStoreObjectResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
-public class ListImageStoreObjectsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListImageStoreObjectsCmd.class.getName());
+public class ListStoragePoolObjectsCmd extends BaseListCmd {
+    public static final Logger s_logger = Logger.getLogger(ListStoragePoolObjectsCmd.class.getName());
 
     @Inject
     StorageBrowser storageBrowser;
@@ -41,8 +42,8 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ImageStoreResponse.class, required = true,
-               description = "id of the image store")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true,
+               description = "id of the storage pool")
     private Long storeId;
 
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "path to list on image store")
@@ -70,7 +71,7 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStore(this);
+        ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStore(this);
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);

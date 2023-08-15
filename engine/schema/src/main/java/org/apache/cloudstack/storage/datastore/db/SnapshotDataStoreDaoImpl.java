@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
+
+    private SearchBuilder<SnapshotDataStoreVO> imageStoreAndInstallPathSearch;
 
     protected static final List<Hypervisor.HypervisorType> HYPERVISORS_SUPPORTING_SNAPSHOTS_CHAINING = List.of(Hypervisor.HypervisorType.XenServer);
 
@@ -122,6 +125,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotCreatedSearch.and(STORE_ID, snapshotCreatedSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         snapshotCreatedSearch.and(CREATED,  snapshotCreatedSearch.entity().getCreated(), SearchCriteria.Op.BETWEEN);
         snapshotCreatedSearch.done();
+
+        imageStoreAndInstallPathSearch = createSearchBuilder();
+        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        imageStoreAndInstallPathSearch.done();
 
         return true;
     }
@@ -461,6 +469,18 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STATE, State.Ready);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, List<String> pathList) {
+        if (pathList == null || pathList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        SearchCriteria<SnapshotDataStoreVO> sc = imageStoreAndInstallPathSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("install_pathIN", pathList.toArray());
         return listBy(sc);
     }
 }

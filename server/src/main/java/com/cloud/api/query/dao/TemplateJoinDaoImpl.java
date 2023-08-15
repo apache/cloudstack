@@ -104,6 +104,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
 
+    private final SearchBuilder<TemplateJoinVO> imageStoreAndInstallPathSearch;
+
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
@@ -136,6 +138,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.cp();
         activeTmpltSearch.cp();
         activeTmpltSearch.done();
+
+        imageStoreAndInstallPathSearch = createSearchBuilder();
+        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        imageStoreAndInstallPathSearch.done();
 
         // select distinct pair (template_id, zone_id)
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
@@ -591,5 +598,17 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
         sc.setParameters("idsIN", ids);
         return searchIncludingRemoved(sc, searchFilter, null, false);
+    }
+
+    @Override
+    public List<TemplateJoinVO> listByStoreAndInstallPath(long storeId, List<String> pathList) {
+        if (pathList == null || pathList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        SearchCriteria<TemplateJoinVO> sc = imageStoreAndInstallPathSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("install_pathIN", pathList.toArray());
+        return listBy(sc);
     }
 }

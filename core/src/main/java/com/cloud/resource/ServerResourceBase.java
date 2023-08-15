@@ -19,6 +19,7 @@
 
 package com.cloud.resource;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.NetworkInterface;
@@ -30,9 +31,12 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -148,6 +152,32 @@ public abstract class ServerResourceBase implements ServerResource {
         }
 
         return true;
+    }
+
+    protected Answer listFilesAtPath(String nfsMountPoint, String relativePath) {
+        File file = new File(nfsMountPoint, relativePath);
+        if (file.isFile()) {
+            return new ListDataStoreObjectsAnswer(file.exists(), List.of(file.getName()),
+                    List.of(file.getPath().replace(nfsMountPoint, "")), List.of(false), List.of(file.length()),
+                    List.of(file.lastModified()), "file.isFile()");
+        } else if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files == null) {
+                return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList()
+                        , Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "files == null");
+            } else {
+                List<String> names = Arrays.stream(files).map(File::getName).collect(Collectors.toList());
+                List<String> paths = Arrays.stream(files).map(f -> f.getPath().replace(nfsMountPoint, "")).collect(Collectors.toList());
+                List<Boolean> isDirs = Arrays.stream(files).map(File::isDirectory).collect(Collectors.toList());
+                List<Long> sizes = Arrays.stream(files).map(File::length).collect(Collectors.toList());
+                List<Long> modifiedList = Arrays.stream(files).map(File::lastModified).collect(Collectors.toList());
+
+                return new ListDataStoreObjectsAnswer(file.exists(), names, paths, isDirs, sizes, modifiedList,
+                        "files == null else");
+            }
+        }
+        return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "");
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {

@@ -17,15 +17,41 @@
  * under the License.
  */
 
-package org.apache.cloudstack.storage.browser;
+package org.apache.cloudstack.storage.command.browser;
 
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.api.command.admin.storage.ListImageStoreObjectsCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd;
-import org.apache.cloudstack.api.response.ListResponse;
+import com.cloud.agent.api.storage.StorageCommand;
+import com.cloud.agent.api.to.DataStoreTO;
 
-public interface StorageBrowser extends PluggableService {
-    ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd);
+public class ListDataStoreObjectsCommand extends StorageCommand {
 
-    ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd);
+    private DataStoreTO store;
+
+    private String path;
+
+    public ListDataStoreObjectsCommand() {
+    }
+
+    public ListDataStoreObjectsCommand(String path) {
+        super();
+        this.path = path;
+    }
+
+    public ListDataStoreObjectsCommand(DataStoreTO store, String path) {
+        this.store = store;
+        this.path = path;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public DataStoreTO getStore() {
+        return store;
+    }
+
 }

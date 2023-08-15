@@ -54,6 +54,14 @@ export default {
     ilbvms,
     managementServers,
     {
+      name: 'imagestorebrowser',
+      title: 'label.image.store.browser',
+      icon: 'InboxOutlined',
+      docHelp: 'adminguide/management.html#reporting-cpu-sockets',
+      permission: ['listImageStoreObjects'],
+      component: () => import('@/views/infra/StorageBrowser.vue')
+    },
+    {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
       icon: 'InboxOutlined',

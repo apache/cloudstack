@@ -195,6 +195,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "error_str")
     private String errorString;
 
+    @Column(name = "install_path")
+    private String installPath;
+
     @Column(name = "size")
     private long size;
 
@@ -475,6 +478,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public String getErrorString() {
         return errorString;
+    }
+
+    public String getInstallPath() {
+        return installPath;
     }
 
     public Long getDataStoreId() {
