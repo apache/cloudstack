@@ -34,7 +34,7 @@ export default {
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
-        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'domain', 'account', 'zonename']
+        var fields = ['name', 'state', 'type', 'vpcname', 'cidr', 'ip6cidr', 'broadcasturi', 'account', 'domain', 'zonename']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -193,7 +193,7 @@ export default {
       docHelp: 'adminguide/networking_and_traffic.html#configuring-a-virtual-private-cloud',
       permission: ['listVPCs'],
       resourceType: 'Vpc',
-      columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
+      columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'domain', 'zonename'],
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
@@ -323,8 +323,8 @@ export default {
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
-      columns: ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
-      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
+      columns: ['ipaddress', 'state', 'associatednetworkname', 'vpcname', 'virtualmachinename', 'allocated', 'account', 'domain', 'zonename'],
+      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'domain', 'zonename'],
       filters: ['allocated', 'reserved', 'free'],
       component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),
       tabs: [{
@@ -427,7 +427,7 @@ export default {
       icon: 'gateway-outlined',
       hidden: true,
       permission: ['listPrivateGateways'],
-      columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account'],
+      columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account', 'domain'],
       details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclname', 'account', 'domain', 'zone', 'associatednetwork', 'associatednetworkid'],
       tabs: [{
         name: 'details',
@@ -713,7 +713,7 @@ export default {
       title: 'label.vpncustomergatewayid',
       icon: 'lock-outlined',
       permission: ['listVpnCustomerGateways'],
-      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
+      columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account', 'domain'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
       searchFilters: ['keyword', 'domainid', 'account'],
       resourceType: 'VPNCustomerGateway',
@@ -913,8 +913,8 @@ export default {
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],
-      columns: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project'],
-      details: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project', 'isdedicated'],
+      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename'],
+      details: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'isdedicated', 'zonename'],
       searchFilters: ['zoneid'],
       tabs: [{
         name: 'details',

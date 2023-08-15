@@ -392,6 +392,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %posttrans common
 
+unalias cp
 python_dir=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")
 if [ ! -z $python_dir ];then
   cp -f -r /usr/share/cloudstack-common/python-site/* $python_dir/

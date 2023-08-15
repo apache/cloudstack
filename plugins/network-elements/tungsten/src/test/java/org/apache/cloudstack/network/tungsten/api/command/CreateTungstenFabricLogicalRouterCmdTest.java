@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricLogicalRouterCmdTest {
 
     @Mock
@@ -40,13 +44,20 @@ public class CreateTungstenFabricLogicalRouterCmdTest {
 
     CreateTungstenFabricLogicalRouterCmd createTungstenFabricLogicalRouterCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricLogicalRouterCmd = new CreateTungstenFabricLogicalRouterCmd();
         createTungstenFabricLogicalRouterCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricLogicalRouterCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricLogicalRouterCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricLogicalRouterCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricLogicalRouterCmd, "name", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
