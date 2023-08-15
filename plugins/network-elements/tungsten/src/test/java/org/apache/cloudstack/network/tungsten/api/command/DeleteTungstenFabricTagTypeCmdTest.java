@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,13 +27,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DeleteTungstenFabricTagTypeCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteTungstenFabricTagTypeCmdTest {
 
     @Mock
@@ -40,13 +38,20 @@ public class DeleteTungstenFabricTagTypeCmdTest {
 
     DeleteTungstenFabricTagTypeCmd deleteTungstenFabricTagTypeCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteTungstenFabricTagTypeCmd = new DeleteTungstenFabricTagTypeCmd();
         deleteTungstenFabricTagTypeCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(deleteTungstenFabricTagTypeCmd, "zoneId", 1L);
-        Whitebox.setInternalState(deleteTungstenFabricTagTypeCmd, "tagTypeUuid", "test");
+        ReflectionTestUtils.setField(deleteTungstenFabricTagTypeCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(deleteTungstenFabricTagTypeCmd, "tagTypeUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -54,8 +59,7 @@ public class DeleteTungstenFabricTagTypeCmdTest {
         SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Mockito.when(tungstenService.deleteTungstenTagType(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         deleteTungstenFabricTagTypeCmd.execute();
-        Assert.assertEquals(successResponse, deleteTungstenFabricTagTypeCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse)deleteTungstenFabricTagTypeCmd.getResponseObject()).getSuccess());
     }
 }
