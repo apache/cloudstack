@@ -64,7 +64,7 @@ setup_k8s_node() {
       # see PR https://github.com/canonical/cloud-init/pull/4281
       sed -i 's/dscheck_CloudStack() {/&\n    if [ "$DI_VIRT" = "vmware" ] || [ "$DI_VIRT" = "xen" ]; then return $DS_MAYBE; fi/g' /usr/lib/cloud-init/ds-identify
     fi
-    sed -i "s/datasource_list: .*/datasource_list: ['CloudStack', 'ConfigDrive']/g" /etc/cloud/cloud.cfg.d/cloudstack.cfg
+    sed -i "s/datasource_list: .*/datasource_list: ['ConfigDrive', 'CloudStack']/g" /etc/cloud/cloud.cfg.d/cloudstack.cfg
 
     log_it "Starting cloud-init services"
     systemctl enable --now --no-block containerd
