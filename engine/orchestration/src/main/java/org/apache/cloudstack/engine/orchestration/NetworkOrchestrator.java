@@ -469,6 +469,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
         final Set<Network.Provider> tungstenProvider = new HashSet<>();
+        final Set<Network.Provider> nsxProvider = new HashSet<>();
 
         defaultProviders.add(Network.Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -501,6 +502,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.Dns, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.UserData, tungstenProvider);
         defaultTungstenSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, tungstenProvider);
+
+        nsxProvider.add(Provider.Nsx);
+        final Map<Network.Service, Set<Network.Provider>> defaultNSXEnabledNetworkOfferingProviders = new HashMap<>();
+        defaultNSXEnabledNetworkOfferingProviders.put(Service.Connectivity, nsxProvider);
+        defaultNSXEnabledNetworkOfferingProviders.put(Service.Dhcp, nsxProvider);
+        defaultNSXEnabledNetworkOfferingProviders.put(Service.Dns, nsxProvider);
 
         final Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
@@ -576,6 +583,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
                             defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, null, null, true, null);
+                }
+
+                if (_networkOfferingDao.findByUniqueName(NetworkOffering.DEFAULT_NSX_OFFERING) == null) {
+                    offering = _configMgr.createNetworkOffering(NetworkOffering.DEFAULT_NSX_OFFERING, "Offering for Nsx networks",
+                            TrafficType.Guest, null, false, Availability.Optional, null,
+                            defaultNSXEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, null, null, true, null);
+                    offering.setState(NetworkOffering.State.Enabled);
+                    _networkOfferingDao.update(offering.getId(), offering);
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -3793,8 +3808,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         for (final NicVO nic : result) {
             if (_networkModel.isProviderForNetwork(Provider.NiciraNvp, nic.getNetworkId())) {
-                //For NSX Based networks, add nsxlogicalswitch, nsxlogicalswitchport to each result
-                s_logger.info("Listing NSX logical switch and logical switch por for each nic");
+                //For Nsx Based networks, add nsxlogicalswitch, nsxlogicalswitchport to each result
+                s_logger.info("Listing Nsx logical switch and logical switch por for each nic");
                 final NetworkVO network = _networksDao.findById(nic.getNetworkId());
                 final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, network.getGuruName());
                 final NetworkGuruAdditionalFunctions guruFunctions = (NetworkGuruAdditionalFunctions) guru;
