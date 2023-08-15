@@ -141,9 +141,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                 } catch (IOException e) {
                     s_logger.error("Error on VNC client", e);
                 } catch (InterruptedException e) {
-                    String message = "Error on sleep for vnc over websocket";
-                    s_logger.error(message, e);
-                    throw new CloudRuntimeException(message, e);
+                    s_logger.error("Error on sleep for vnc over websocket", e);
                 }
             }
 
