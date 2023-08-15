@@ -14,12 +14,14 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider {
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
