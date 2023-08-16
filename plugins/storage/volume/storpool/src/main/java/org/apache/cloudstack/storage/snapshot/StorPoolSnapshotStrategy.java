@@ -255,7 +255,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             boolean result = deleteSnapshotChain(snapshotOnImage);
             obj.processEvent(Snapshot.Event.OperationSucceeded);
             if (result) {
-                SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+                SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
                     snapshotOnPrimary.setState(State.Destroyed);
                     _snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);

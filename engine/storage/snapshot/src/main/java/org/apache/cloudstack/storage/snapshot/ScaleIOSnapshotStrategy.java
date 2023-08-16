@@ -83,7 +83,7 @@ public class ScaleIOSnapshotStrategy extends StorageSystemSnapshotStrategy {
     }
 
     protected boolean isSnapshotStoredOnScaleIOStoragePool(Snapshot snapshot) {
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotStore == null) {
             return false;
         }

@@ -68,6 +68,13 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.SNAPSHOT, type = CommandType.BOOLEAN, description = "temp parameter")
     private boolean newWay;
 
+    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages")
+    private Boolean showUnique;
+
+    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "list snapshots by location type. Used only when showunique=false." +
+            "Valid location types: 'primary', 'secondary'. Default is empty")
+    private String locationType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -97,7 +104,24 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     }
 
     public boolean isNewWay() {
-        return newWay;
+        if (Boolean.FALSE.equals(newWay)) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean isShowUnique() {
+        if (Boolean.FALSE.equals(showUnique)) {
+            return false;
+        }
+        return true;
+    }
+
+    public String getLocationType() {
+        if (!isShowUnique()) {
+            return locationType;
+        }
+        return null;
     }
 
     /////////////////////////////////////////////////////

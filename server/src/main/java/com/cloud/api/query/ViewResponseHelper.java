@@ -598,7 +598,7 @@ public class ViewResponseHelper {
     public static List<SnapshotResponse> createSnapshotResponse(ResponseView view, SnapshotJoinVO... snapshots) {
         LinkedHashMap<String, SnapshotResponse> vrDataList = new LinkedHashMap<>();
         for (SnapshotJoinVO vr : snapshots) {
-            SnapshotResponse vrData = vrDataList.get(vr.getSnapshotZonePair());
+            SnapshotResponse vrData = vrDataList.get(vr.getSnapshotStorePair());
             if (vrData == null) {
                 // first time encountering this snapshot
                 vrData = ApiDBUtils.newSnapshotResponse(view, vr);
@@ -607,7 +607,7 @@ public class ViewResponseHelper {
                 // update tags
                 vrData = ApiDBUtils.fillSnapshotDetails(view, vrData, vr);
             }
-            vrDataList.put(vr.getSnapshotZonePair(), vrData);
+            vrDataList.put(vr.getSnapshotStorePair(), vrData);
         }
         return new ArrayList<SnapshotResponse>(vrDataList.values());
     }

@@ -143,7 +143,7 @@ public class SnapshotObject implements SnapshotInfo {
         List<SnapshotInfo> children = new ArrayList<>();
         if (vos != null) {
             for (SnapshotDataStoreVO vo : vos) {
-                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo info = snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), DataStoreRole.Image);
                 if (info != null) {
                     children.add(info);
                 }
@@ -165,7 +165,7 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public long getPhysicalSize() {
         long physicalSize = 0;
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
         if (snapshotStore != null) {
             physicalSize = snapshotStore.getPhysicalSize();
         }

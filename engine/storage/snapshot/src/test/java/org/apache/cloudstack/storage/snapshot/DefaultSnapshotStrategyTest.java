@@ -18,13 +18,8 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -41,7 +36,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -74,27 +72,22 @@ public class DefaultSnapshotStrategyTest {
     @Mock
     SnapshotService snapshotServiceMock;
 
-    Map<String, SnapshotInfo> mapStringSnapshotInfoInstance = new LinkedHashMap<>();
+    List<SnapshotInfo> mockSnapshotInfos = new ArrayList<>();
 
     @Before
     public void setup() {
-        mapStringSnapshotInfoInstance.put("secondary storage", snapshotInfo1Mock);
-        mapStringSnapshotInfoInstance.put("primary storage", snapshotInfo1Mock);
+        mockSnapshotInfos.add(snapshotInfo1Mock);
+        mockSnapshotInfos.add(snapshotInfo2Mock);
     }
 
     @Test
     public void validateRetrieveSnapshotEntries() {
         Long snapshotId = 1l;
-        Mockito.doReturn(snapshotInfo1Mock, snapshotInfo2Mock).when(snapshotDataFactoryMock).getSnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class), Mockito.anyBoolean());
-        Map<String, SnapshotInfo> result = defaultSnapshotStrategySpy.retrieveSnapshotEntries(snapshotId);
+        Mockito.doReturn(mockSnapshotInfos).when(snapshotDataFactoryMock).getSnapshots(Mockito.anyLong());
+        List<SnapshotInfo> result = defaultSnapshotStrategySpy.retrieveSnapshotEntries(snapshotId);
 
-        Mockito.verify(snapshotDataFactoryMock).getSnapshot(snapshotId, DataStoreRole.Image, false);
-        Mockito.verify(snapshotDataFactoryMock).getSnapshot(snapshotId, DataStoreRole.Primary, false);
-
-        Assert.assertTrue(result.containsKey("secondary storage"));
-        Assert.assertTrue(result.containsKey("primary storage"));
-        Assert.assertEquals(snapshotInfo1Mock, result.get("secondary storage"));
-        Assert.assertEquals(snapshotInfo2Mock, result.get("primary storage"));
+        Assert.assertTrue(result.contains(snapshotInfo1Mock));
+        Assert.assertTrue(result.contains(snapshotInfo2Mock));
     }
 
     @Test
@@ -119,26 +112,16 @@ public class DefaultSnapshotStrategyTest {
 
     @Test
     public void validateDeleteSnapshotInfosFailToDeleteReturnsFalse() {
-        Mockito.doReturn(mapStringSnapshotInfoInstance).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
-        Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
+        Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
         Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock));
     }
 
     @Test
     public void validateDeleteSnapshotInfosDeletesSuccessfullyReturnsTrue() {
-        Mockito.doReturn(mapStringSnapshotInfoInstance).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
-        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
+        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
         Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock));
-    }
-
-    @Test
-    public void validateDeleteSnapshotInfoSnapshotInfoIsNullOnSecondaryStorageReturnsTrue() {
-        Assert.assertNull(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "secondary storage", snapshotVoMock));
-    }
-
-    @Test
-    public void validateDeleteSnapshotInfoSnapshotInfoIsNullOnPrimaryStorageReturnsFalse() {
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "primary storage", snapshotVoMock));
     }
 
     @Test
@@ -147,8 +130,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Primary);
 
-        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock);
         Assert.assertTrue(result);
     }
 
@@ -158,8 +142,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doReturn(false).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Primary);
 
-        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock);
         Assert.assertFalse(result);
     }
 
@@ -169,8 +154,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doThrow(CloudRuntimeException.class).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Primary);
 
-        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "primary storage", snapshotVoMock);
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock);
         Assert.assertFalse(result);
     }
 
@@ -181,8 +167,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotChain(Mockito.any(), Mockito.anyString());
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Image);
 
-        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock);
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock);
         Assert.assertTrue(result);
     }
 
@@ -193,8 +180,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
         Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotChain(Mockito.any(), Mockito.anyString());
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Image);
 
-        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock);
+        boolean result = defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock);
         Assert.assertTrue(result);
     }
 
@@ -203,8 +191,9 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
         Mockito.doThrow(NoTransitionException.class).when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+        Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Image);
 
-        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, "secondary storage", snapshotVoMock));
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfo(snapshotInfo1Mock, snapshotVoMock));
     }
 
     @Test

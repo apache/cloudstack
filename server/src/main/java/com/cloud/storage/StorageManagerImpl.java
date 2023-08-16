@@ -1317,7 +1317,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
                     for (SnapshotDataStoreVO ssSnapshotVO : ssSnapshots) {
                         try {
-                            _snapshotService.deleteSnapshot(snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image));
+                            _snapshotService.deleteSnapshot(snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), ssSnapshotVO.getDataStoreId(), DataStoreRole.Image));
                         } catch (Exception e) {
                             s_logger.debug("Failed to delete snapshot: " + ssSnapshotVO.getId() + " from storage");
                         }

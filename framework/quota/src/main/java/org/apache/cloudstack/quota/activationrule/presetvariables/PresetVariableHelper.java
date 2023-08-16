@@ -566,12 +566,12 @@ public class PresetVariableHelper {
      */
     protected long getSnapshotDataStoreId(Long snapshotId) {
         if (backupSnapshotAfterTakingSnapshot) {
-            SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+            SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Image);
             validateIfObjectIsNull(snapshotStore, snapshotId, "data store for snapshot");
             return snapshotStore.getDataStoreId();
         }
 
-        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
         validateIfObjectIsNull(snapshotStore, snapshotId, "data store for snapshot");
         return snapshotStore.getDataStoreId();
     }

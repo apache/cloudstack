@@ -4481,8 +4481,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long zoneId = cmd.getZoneId();
         boolean listAll = cmd.listAll();
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        Snapshot.LocationType locationType = null;
+        String locationTypeStr = cmd.getLocationType();
+        if (locationTypeStr != null) {
+            try {
+                locationType = Snapshot.LocationType.valueOf(locationTypeStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException(String.format("Invalid %s specified, %s", ApiConstants.LOCATION_TYPE, locationTypeStr));
+            }
+        }
 
-        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotZonePair", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
 
         List<Long> permittedAccountIds = new ArrayList<>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
@@ -4499,6 +4508,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
+        if (cmd.isShowUnique()) {
+            sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct snapshotId
+        } else {
+            sb.select(null, Func.DISTINCT, sb.entity().getSnapshotStorePair()); // select distinct (snapshotId, store_role, store_id) key
+        }
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
         sb.and("statusNEQ", sb.entity().getStatus(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -4508,6 +4522,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("locationType", sb.entity().getStoreRole(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -4554,6 +4569,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("id", id);
         }
 
+        if (locationType != null) {
+            sc.setParameters("locationType", locationType.name());
+        }
+
         if (keyword != null) {
             SearchCriteria<SnapshotJoinVO> ssc = snapshotJoinDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -4581,7 +4600,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal(), Snapshot.Type.GROUP.ordinal());
         }
 
-        return snapshotJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
+        Pair<List<SnapshotJoinVO>, Integer> snapshotDataPair;
+        if (cmd.isShowUnique()) {
+            snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.id"});
+        } else {
+            snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.snapshot_store_pair"});
+        }
+
+        Integer count = snapshotDataPair.second();
+        if (count == 0) {
+            // empty result
+            return snapshotDataPair;
+        }
+        List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
+        List<SnapshotJoinVO> snapshots;
+        if (cmd.isShowUnique()) {
+            snapshots = snapshotJoinDao.findByDistinctIds(snapshotData.stream().map(SnapshotJoinVO::getId).toArray(Long[]::new));
+        } else {
+            snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
+        }
+
+        return new Pair<>(snapshots, count);
     }
 
     @Override

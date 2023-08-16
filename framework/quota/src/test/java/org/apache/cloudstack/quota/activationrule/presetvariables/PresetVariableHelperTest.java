@@ -891,7 +891,7 @@ public class PresetVariableHelperTest {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
         Long expected = 1l;
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = false;
 
@@ -901,9 +901,9 @@ public class PresetVariableHelperTest {
 
         Arrays.asList(DataStoreRole.values()).forEach(role -> {
             if (role == DataStoreRole.Primary) {
-                Mockito.verify(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             } else {
-                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             }
         });
     }
@@ -913,7 +913,7 @@ public class PresetVariableHelperTest {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
         Long expected = 2l;
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
 
@@ -923,9 +923,9 @@ public class PresetVariableHelperTest {
 
         Arrays.asList(DataStoreRole.values()).forEach(role -> {
             if (role == DataStoreRole.Image) {
-                Mockito.verify(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             } else {
-                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             }
         });
     }

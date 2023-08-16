@@ -45,6 +45,7 @@
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
+            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(copyApi in $store.getters.apis)"
             :title="$t('label.action.copy.snapshot')"
@@ -52,6 +53,7 @@
             :loading="copyLoading"
             @onClick="showCopySnapshot(record)" />
           <tooltip-button
+            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(deleteApi in $store.getters.apis)"
             :title="$t('label.action.delete.snapshot')"
@@ -252,6 +254,10 @@ export default {
         dataIndex: 'zonename'
       },
       {
+        title: this.$t('label.storagetype'),
+        dataIndex: 'datastoretype'
+      },
+      {
         title: this.$t('label.status'),
         dataIndex: 'state'
       }
@@ -286,6 +292,8 @@ export default {
     fetchData () {
       const params = {}
       params.id = this.resource.id
+      params.showunique = false
+      params.snapshot = true
       params.listall = true
       params.page = this.page
       params.pagesize = this.pageSize
@@ -295,7 +303,6 @@ export default {
       this.fetchLoading = true
       api('listSnapshots', params).then(json => {
         this.dataSource = json.listsnapshotsresponse.snapshot || []
-        console.log(this.dataSource)
         this.itemCount = json.listsnapshotsresponse.count || 0
       }).catch(error => {
         this.$notifyError(error)

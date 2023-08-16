@@ -434,7 +434,7 @@ public class SnapshotManagerTest {
         Mockito.doReturn(null).when(snapshotSchedulerMock).scheduleNextSnapshotJob(Mockito.any());
 
         SnapshotPolicyVO result = _snapshotMgr.createSnapshotPolicy(TEST_VOLUME_ID, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL,
-          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
+          TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, null);
 
         assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
     }
@@ -449,7 +449,7 @@ public class SnapshotManagerTest {
           TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY);
 
         _snapshotMgr.updateSnapshotPolicy(snapshotPolicyVo, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE,
-          TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE);
+          TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
 
         assertSnapshotPolicyResultAgainstPreBuiltInstance(snapshotPolicyVo);
     }
@@ -484,7 +484,7 @@ public class SnapshotManagerTest {
         Mockito.doReturn(false).when(globalLockMock).lock(Mockito.anyInt());
 
         _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, TEST_SNAPSHOT_POLICY_INTERVAL, TEST_SNAPSHOT_POLICY_MAX_SNAPS,
-                TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, mapStringStringMock);
+                TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, mapStringStringMock, null);
     }
 
     @Test
@@ -498,20 +498,20 @@ public class SnapshotManagerTest {
 
             Mockito.doReturn(null).when(snapshotPolicyDaoMock).findOneByVolumeInterval(Mockito.anyLong(), Mockito.eq(intervalType));
             Mockito.doReturn(snapshotPolicyVoInstance).when(_snapshotMgr).createSnapshotPolicy(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.eq(intervalType),
-              Mockito.anyInt(), Mockito.anyBoolean());
+              Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyList());
             Mockito.doNothing().when(_snapshotMgr).createTagsForSnapshotPolicy(mapStringStringMock, snapshotPolicyVoMock);
 
             SnapshotPolicyVO result = _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, intervalType,
-              TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
+              TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null, null);
 
             assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
         }
 
         VerificationMode timesVerification = Mockito.times(listIntervalTypes.size());
         Mockito.verify(_snapshotMgr, timesVerification).createSnapshotPolicy(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.any(DateUtil.IntervalType.class),
-            Mockito.anyInt(), Mockito.anyBoolean());
+            Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyList());
         Mockito.verify(_snapshotMgr, Mockito.never()).updateSnapshotPolicy(Mockito.any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-          Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
+          Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyList());
         Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(Mockito.any(), Mockito.any());
     }
 
@@ -525,20 +525,20 @@ public class SnapshotManagerTest {
         for (IntervalType intervalType : listIntervalTypes) {
             Mockito.doReturn(snapshotPolicyVoInstance).when(snapshotPolicyDaoMock).findOneByVolumeInterval(Mockito.anyLong(), Mockito.eq(intervalType));
             Mockito.doNothing().when(_snapshotMgr).updateSnapshotPolicy(Mockito.any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-              Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
+              Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyList());
             Mockito.doNothing().when(_snapshotMgr).createTagsForSnapshotPolicy(mapStringStringMock, snapshotPolicyVoMock);
 
             SnapshotPolicyVO result = _snapshotMgr.persistSnapshotPolicy(volumeMock, TEST_SNAPSHOT_POLICY_SCHEDULE, TEST_SNAPSHOT_POLICY_TIMEZONE, intervalType,
-              TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null);
+              TEST_SNAPSHOT_POLICY_MAX_SNAPS, TEST_SNAPSHOT_POLICY_DISPLAY, TEST_SNAPSHOT_POLICY_ACTIVE, null, null);
 
             assertSnapshotPolicyResultAgainstPreBuiltInstance(result);
         }
 
         VerificationMode timesVerification = Mockito.times(listIntervalTypes.size());
         Mockito.verify(_snapshotMgr, Mockito.never()).createSnapshotPolicy(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.any(DateUtil.IntervalType.class),
-            Mockito.anyInt(), Mockito.anyBoolean());
+            Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyList());
         Mockito.verify(_snapshotMgr, timesVerification).updateSnapshotPolicy(Mockito.any(SnapshotPolicyVO.class), Mockito.anyString(), Mockito.anyString(),
-          Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean());
+          Mockito.any(DateUtil.IntervalType.class), Mockito.anyInt(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyList());
         Mockito.verify(_snapshotMgr, timesVerification).createTagsForSnapshotPolicy(Mockito.any(), Mockito.any());
     }
 

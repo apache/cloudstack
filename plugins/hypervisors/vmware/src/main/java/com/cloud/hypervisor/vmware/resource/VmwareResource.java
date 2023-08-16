@@ -589,6 +589,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
+                s_logger.info("=====================will be handled by storageHandler - " + storageHandler.getClass().getSimpleName());
                 checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand) cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
             } else if (clz == ScaleVmCommand.class) {

@@ -28,8 +28,8 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
-import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyAnswer;
-import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -70,8 +70,6 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((AttachCommand)command);
         } else if (command instanceof DettachCommand) {
             return execute((DettachCommand)command);
-        } else if (command instanceof PrepareSnapshotZoneCopyCommand) {
-            return execute((PrepareSnapshotZoneCopyCommand)command);
         } else if (command instanceof IntroduceObjectCmd) {
             return processor.introduceObject((IntroduceObjectCmd)command);
         } else if (command instanceof SnapshotAndCopyCommand) {
@@ -84,6 +82,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return processor.checkDataStoreStoragePolicyCompliance((CheckDataStoreStoragePolicyComplainceCommand) command);
         } else if (command instanceof SyncVolumePathCommand) {
             return processor.syncVolumePath((SyncVolumePathCommand) command);
+        } else if (command instanceof QuerySnapshotZoneCopyCommand) {
+            return execute((QuerySnapshotZoneCopyCommand)command);
         }
 
         return new Answer((Command)command, false, "not implemented yet");
@@ -178,8 +178,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
         }
     }
 
-    protected Answer execute(PrepareSnapshotZoneCopyCommand cmd) {
-        return new PrepareSnapshotZoneCopyAnswer(cmd, "Unsupported command");
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
+        return new QuerySnapshotZoneCopyAnswer(cmd, "Unsupported command");
     }
 
     private void logCommand(Command cmd) {

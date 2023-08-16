@@ -17,31 +17,27 @@
 
 package org.apache.cloudstack.storage.command;
 
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import java.util.List;
 
 import com.cloud.agent.api.Answer;
 
-public class PrepareSnapshotZoneCopyAnswer extends Answer {
-    private SnapshotObjectTO snapshot;
+public class QuerySnapshotZoneCopyAnswer extends Answer {
+    private List<String> files;
 
-    public PrepareSnapshotZoneCopyAnswer() {
+    public QuerySnapshotZoneCopyAnswer() {
         super(null);
     }
 
-    public PrepareSnapshotZoneCopyAnswer(PrepareSnapshotZoneCopyCommand cmd, SnapshotObjectTO snapshot) {
+    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, List<String> files) {
         super(cmd);
-        setSnapshot(snapshot);
+        this.files = files;
     }
 
-    public PrepareSnapshotZoneCopyAnswer(PrepareSnapshotZoneCopyCommand cmd, String errMsg) {
+    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, String errMsg) {
         super(null, false, errMsg);
     }
 
-    public SnapshotObjectTO getSnapshot() {
-        return snapshot;
-    }
-
-    public void setSnapshot(SnapshotObjectTO snapshot) {
-        this.snapshot = snapshot;
+    public List<String> getFiles() {
+        return files;
     }
 }

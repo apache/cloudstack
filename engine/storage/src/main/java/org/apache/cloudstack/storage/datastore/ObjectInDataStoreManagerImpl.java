@@ -392,7 +392,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     vo = templateDataStoreDao.findByTemplate(objId, role);
                     break;
                 case SNAPSHOT:
-                    vo = snapshotDataStoreDao.findBySnapshot(objId, role);
+                    vo = snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(objId, role);
                     break;
                 case VOLUME:
                     vo = volumeDataStoreDao.findByVolume(objId);

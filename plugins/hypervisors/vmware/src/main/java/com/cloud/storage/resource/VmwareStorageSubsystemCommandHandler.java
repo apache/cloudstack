@@ -19,13 +19,21 @@
 package com.cloud.storage.resource;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyAnswer;
-import org.apache.cloudstack.storage.command.PrepareSnapshotZoneCopyCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -205,17 +213,28 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
     }
 
     @Override
-    protected Answer execute(PrepareSnapshotZoneCopyCommand cmd) {
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
         SnapshotObjectTO snapshot = cmd.getSnapshot();
         String parentPath = storageResource.getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
         String path = snapshot.getPath();
         int index = path.lastIndexOf(File.separator);
-        String name = path.substring(index + 1);
+//        String name = path.substring(index + 1);
         String snapDir = path.substring(0, index);
-        int timeout = NumbersUtil.parseInt(cmd.getContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key()),
-                Integer.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.defaultValue()) * VmwareManager.s_vmwareOVAPackageTimeout.multiplier());
-        storageManager.createOva(parentPath + File.separator + snapDir, name, timeout);
-        snapshot.setPath(snapDir + File.separator + name + ".ova");
-        return new PrepareSnapshotZoneCopyAnswer(cmd, snapshot);
+//        int timeout = NumbersUtil.parseInt(cmd.getContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key()),
+//                Integer.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.defaultValue()) * VmwareManager.s_vmwareOVAPackageTimeout.multiplier());
+//        storageManager.createOva(parentPath + File.separator + snapDir, name, timeout);
+//        snapshot.setPath(snapDir + File.separator + name + ".ova");
+        List<String> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
+            List<String> fileNames = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            files.addAll(fileNames);
+        } catch (IOException ioe) {
+            s_logger.error("Error preparing file list for snapshot copy", ioe);
+        }
+        return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }
 }

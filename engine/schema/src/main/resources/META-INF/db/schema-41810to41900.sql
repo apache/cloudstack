@@ -52,7 +52,7 @@ CREATE VIEW `cloud`.`async_job_view` AS
                 async_job.instance_type = 'Template'
                     or async_job.instance_type = 'Iso'
             THEN
-                snapshots.uuid
+                vm_template.uuid
             WHEN
                 async_job.instance_type = 'VirtualMachine'
                     or async_job.instance_type = 'ConsoleProxy'
@@ -91,7 +91,7 @@ CREATE VIEW `cloud`.`async_job_view` AS
             left join
         `cloud`.`volumes` ON async_job.instance_id = volumes.id
             left join
-        `cloud`.`snapshots` ON async_job.instance_id = snapshots.id
+        `cloud`.`vm_template` ON async_job.instance_id = vm_template.id
             left join
         `cloud`.`vm_instance` ON async_job.instance_id = vm_instance.id
             left join
@@ -262,7 +262,9 @@ CREATE VIEW `cloud`.`snapshot_view` AS
          `resource_tags`.`customer` AS `tag_customer`,
           CONCAT(`snapshots`.`id`,
                  '_',
-                 IFNULL(`data_center`.`id`, 0)) AS `snapshot_zone_pair`
+                 IFNULL(`snapshot_store_ref`.`store_role`, 'UNKNOWN'),
+                 '_',
+                 IFNULL(`snapshot_store_ref`.`store_id`, 0)) AS `snapshot_store_pair`
      FROM
          ((((((((((`snapshots`
          JOIN `account` ON ((`account`.`id` = `snapshots`.`account_id`)))

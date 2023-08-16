@@ -28,12 +28,12 @@ import javax.persistence.Table;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
-import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name = "snapshot_view")
@@ -66,8 +66,7 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Expose
-    @Column(name = "location_type", updatable = true, nullable = true)
+    @Column(name = "location_type")
     @Enumerated(value = EnumType.STRING)
     private Snapshot.LocationType locationType;
 
@@ -101,7 +100,7 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     private String domainPath = null;
 
     @Column(name = "project_id")
-    private long projectId;
+    private Long projectId;
 
     @Column(name = "project_uuid")
     private String projectUuid;
@@ -110,7 +109,7 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     private String projectName;
 
     @Column(name = "data_center_id")
-    private long dataCenterId;
+    private Long dataCenterId;
 
     @Column(name = "data_center_uuid")
     private String dataCenterUuid;
@@ -138,11 +137,12 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     private Long storeId;
 
     @Column(name = "store_role")
-    private String storeRole;
+    @Enumerated(EnumType.STRING)
+    private DataStoreRole storeRole;
 
     @Column(name = "store_state")
     @Enumerated(EnumType.STRING)
-    private ObjectInDataStoreStateMachine storeState;
+    private ObjectInDataStoreStateMachine.State storeState;
 
     @Column(name = "download_state")
     @Enumerated(EnumType.STRING)
@@ -160,8 +160,8 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "created_on_store")
     private Date createdOnStore = null;
 
-    @Column(name = "snapshot_zone_pair")
-    private String snapshotZonePair;
+    @Column(name = "snapshot_store_pair")
+    private String snapshotStorePair;
 
     @Override
     public String getUuid() {
@@ -299,11 +299,11 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
         return storeId;
     }
 
-    public String getStoreRole() {
+    public DataStoreRole getStoreRole() {
         return storeRole;
     }
 
-    public ObjectInDataStoreStateMachine getStoreState() {
+    public ObjectInDataStoreStateMachine.State getStoreState() {
         return storeState;
     }
 
@@ -327,8 +327,8 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
         return createdOnStore;
     }
 
-    public String getSnapshotZonePair() {
-        return snapshotZonePair;
+    public String getSnapshotStorePair() {
+        return snapshotStorePair;
     }
 
     @Override

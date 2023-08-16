@@ -139,9 +139,9 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item ref="zoneid" name="zoneid">
+              <a-form-item ref="zoneids" name="zoneids">
                 <template #label>
-                  <tooltip-label :title="$t('label.zoneid')" :tooltip="''"/>
+                  <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
                 </template>
                 <a-alert type="info" style="margin-bottom: 2%">
                   <template #message>
@@ -150,7 +150,7 @@
                 </a-alert>
                 <a-select
                   id="zone-selection"
-                  v-model:value="form.zoneid"
+                  v-model:value="form.zoneids"
                   mode="multiple"
                   showSearch
                   optionFilterProp="label"
@@ -159,7 +159,7 @@
                   }"
                   :loading="zoneLoading"
                   :placeholder="''">
-                  <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
+                  <a-select-option v-for="opt in this.zones" :key="opt.id" :label="opt.name || opt.description">
                     <span>
                       <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                       <global-outlined v-else style="margin-right: 5px"/>
@@ -271,7 +271,8 @@ export default {
       dayOfMonth: [],
       timeZoneMap: [],
       fetching: false,
-      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+      zones: []
     }
   },
   created () {
@@ -413,6 +414,9 @@ export default {
         params.intervaltype = values.intervaltype
         params.timezone = values.timezone
         params.maxsnaps = values.maxsnaps
+        if (values.zoneids && values.zoneids.length > 0) {
+          params.zoneids = values.zoneids.join()
+        }
         switch (values.intervaltype) {
           case 'hourly':
             params.schedule = values.time

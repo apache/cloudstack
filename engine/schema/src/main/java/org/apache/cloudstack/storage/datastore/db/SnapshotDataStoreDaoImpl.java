@@ -274,13 +274,6 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
-        sc.setParameters(STATE, State.Ready);
-        return findOneBy(sc);
-    }
-
-    @Override
     public List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters(STATE, State.Ready);
@@ -303,20 +296,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role) {
-        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
-        sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(STORE_ROLE, role);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role) {
+    public List<SnapshotDataStoreVO> findByVolume(long snapshotId, long volumeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(VOLUME_ID, volumeId);
         sc.setParameters(STORE_ROLE, role);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -495,5 +480,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_id", storeId);
         sc.setParameters("downloadState", (Object[])status);
         return search(sc, null);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findOneBySnapshotAndDatastoreRole(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        sc.setParameters(STATE, State.Ready);
+        return findOneBy(sc);
     }
 }

@@ -32,7 +32,10 @@ public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
 
     SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, SnapshotJoinVO snapshotJoinVO);
 
-    SnapshotResponse setSnapshotResponse(ResponseObject.ResponseView view, SnapshotResponse snapsData, SnapshotJoinVO snapshot);
+    SnapshotResponse setSnapshotResponse(ResponseObject.ResponseView view, SnapshotResponse snapshotResponse, SnapshotJoinVO snapshot);
 
     Pair<List<SnapshotJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<SnapshotJoinVO> sc, final Filter filter);
+
+    List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs);
+    List<SnapshotJoinVO> findByDistinctIds(Long... ids);
 }

@@ -118,6 +118,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "virtual size of backedup snapshot on image store")
     private long virtualSize;
 
+    @SerializedName(ApiConstants.DATASTORE_TYPE)
+    @Param(description = "type of the datastore for the snapshot entry")
+    private String datastoreType;
+
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -238,5 +242,9 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVirtualSize(long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public void setDatastoreType(String datastoreType) {
+        this.datastoreType = datastoreType;
     }
 }

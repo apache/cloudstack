@@ -64,7 +64,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
-    public List<SnapshotInfo> getSnapshots(long volumeId, DataStoreRole role) {
+    public List<SnapshotInfo> getSnapshotsForVolumeAndStoreRole(long volumeId, DataStoreRole role) {
         List<SnapshotDataStoreVO> allSnapshotsFromVolumeAndDataStore = snapshotStoreDao.listAllByVolumeAndDataStore(volumeId, role);
         if (CollectionUtils.isEmpty(allSnapshotsFromVolumeAndDataStore)) {
             return new ArrayList<>();
@@ -84,6 +84,42 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
+    public List<SnapshotInfo> getSnapshots(long snapshotId) {
+        List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotId(snapshotId);
+        if (CollectionUtils.isEmpty(allSnapshotsAndDataStore)) {
+            return new ArrayList<>();
+        }
+        List<SnapshotInfo> infos = new ArrayList<>();
+        for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsAndDataStore) {
+            DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
+            SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+            if (snapshot == null){ //snapshot may have been removed;
+                continue;
+            }
+            SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
+
+            infos.add(info);
+        }
+        return infos;
+    }
+
+
+
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role) {
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        if (snapshot == null) {
+            return null;
+        }
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByStoreSnapshot(role, storeId, snapshotId);
+        if (snapshotStore == null) {
+            return null;
+        }
+        DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
+        return SnapshotObject.getSnapshotObject(snapshot, store);
+    }
+
+    @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
         return getSnapshot(snapshotId, role, true);
     }
@@ -94,13 +130,19 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) {
             return null;
         }
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId, role);
+        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listBySnapshot(snapshotId, role);
+        SnapshotDataStoreVO snapshotStore = null;
+        if (CollectionUtils.isNotEmpty(snapshotStores)) {
+            snapshotStore = snapshotStores.get(0);
+        }
         if (snapshotStore == null) {
             if (!retrieveAnySnapshotFromVolume) {
                 return null;
             }
-
-            snapshotStore = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
+            snapshotStores = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
+            if (CollectionUtils.isNotEmpty(snapshotStores)) {
+                snapshotStore = snapshotStores.get(0);
+            }
             if (snapshotStore == null) {
                 return null;
             }

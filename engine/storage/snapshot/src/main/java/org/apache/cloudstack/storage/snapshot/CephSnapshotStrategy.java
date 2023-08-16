@@ -21,7 +21,6 @@ package org.apache.cloudstack.storage.snapshot;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -82,7 +81,7 @@ public class CephSnapshotStrategy extends StorageSystemSnapshotStrategy {
     }
 
     protected boolean isSnapshotStoredOnRbdStoragePool(Snapshot snapshot) {
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotStore == null) {
             return false;
         }

@@ -44,8 +44,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
-    SnapshotDataStoreVO findBySnapshot(long snapshotId, DataStoreRole role);
-
     List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role);
 
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
@@ -71,9 +69,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     void updateVolumeIds(long oldVolId, long newVolId);
 
-    SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
-
-    SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role);
+    List<SnapshotDataStoreVO> findByVolume(long snapshotId, long volumeId, DataStoreRole role);
 
     /**
      * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.
@@ -98,4 +94,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
 
     List<SnapshotDataStoreVO> listBySnasphotStoreDownloadStatus(long snapshotId, long storeId, VMTemplateStorageResourceAssoc.Status... status);
+
+    SnapshotDataStoreVO findOneBySnapshotAndDatastoreRole(long snapshotId, DataStoreRole role);
 }

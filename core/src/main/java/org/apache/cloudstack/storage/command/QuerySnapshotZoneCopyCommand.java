@@ -19,11 +19,15 @@ package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
-public class PrepareSnapshotZoneCopyCommand extends StorageSubSystemCommand {
+/*
+Command to get the list of snapshot files for copying a snapshot to a different zone
+ */
+
+public class QuerySnapshotZoneCopyCommand extends StorageSubSystemCommand {
 
     private SnapshotObjectTO snapshot;
 
-    public PrepareSnapshotZoneCopyCommand(final SnapshotObjectTO snapshot) {
+    public QuerySnapshotZoneCopyCommand(final SnapshotObjectTO snapshot) {
         super();
         this.snapshot = snapshot;
     }
