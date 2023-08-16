@@ -349,4 +349,24 @@ public class ApiResponseHelperTest {
         assertEquals(userDataName, response.getUserDataName());
         assertEquals(userdataDetails, response.getUserDataDetails());
     }
+
+    @Test
+    @PrepareForTest(ApiDBUtils.class)
+    public void testAutoScaleVmProfileResponseWithoutUserData() {
+        AutoScaleVmProfileVO vmProfile = new AutoScaleVmProfileVO(zoneId, domainId, accountId, serviceOfferingId, templateId, null, null, null, null, autoScaleUserId);
+
+        PowerMockito.mockStatic(ApiDBUtils.class);
+        when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
+        when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());
+
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        when(ApiDBUtils.findTemplateById(anyLong())).thenReturn(templateVO);
+
+        AutoScaleVmProfileResponse response = apiResponseHelper.createAutoScaleVmProfileResponse(vmProfile);
+        assertNull(response.getUserDataPolicy());
+        assertNull(response.getUserData());
+        assertNull(response.getUserDataId());
+        assertNull(response.getUserDataName());
+        assertNull(response.getUserDataDetails());
+    }
 }
