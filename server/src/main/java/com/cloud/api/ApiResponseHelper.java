@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -735,7 +736,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
             vmSnapshotResponse.setVirtualMachineName(StringUtils.isEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
-            vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
+            vmSnapshotResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
                 vmSnapshotResponse.setZoneId(datacenter.getUuid());
@@ -1437,7 +1438,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             clusterResponse.setZoneId(dc.getUuid());
             clusterResponse.setZoneName(dc.getName());
         }
-        clusterResponse.setHypervisorType(cluster.getHypervisorType().toString());
+        clusterResponse.setHypervisorType(cluster.getHypervisorType().getHypervisorDisplayName());
         clusterResponse.setClusterType(cluster.getClusterType().toString());
         clusterResponse.setAllocationState(cluster.getAllocationState().toString());
         clusterResponse.setManagedState(cluster.getManagedState().toString());
@@ -1633,7 +1634,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
-            vmResponse.setHypervisor(vm.getHypervisorType().toString());
+            vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
 
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
@@ -2792,7 +2793,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public HypervisorCapabilitiesResponse createHypervisorCapabilitiesResponse(HypervisorCapabilities hpvCapabilities) {
         HypervisorCapabilitiesResponse hpvCapabilitiesResponse = new HypervisorCapabilitiesResponse();
         hpvCapabilitiesResponse.setId(hpvCapabilities.getUuid());
-        hpvCapabilitiesResponse.setHypervisor(hpvCapabilities.getHypervisorType());
+        hpvCapabilitiesResponse.setHypervisor(hpvCapabilities.getHypervisorType().getHypervisorDisplayName());
         hpvCapabilitiesResponse.setHypervisorVersion(hpvCapabilities.getHypervisorVersion());
         hpvCapabilitiesResponse.setIsSecurityGroupEnabled(hpvCapabilities.isSecurityGroupEnabled());
         hpvCapabilitiesResponse.setMaxGuestsLimit(hpvCapabilities.getMaxGuestsLimit());
@@ -3690,7 +3691,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor guestOSHypervisor) {
         GuestOsMappingResponse response = new GuestOsMappingResponse();
         response.setId(guestOSHypervisor.getUuid());
-        response.setHypervisor(guestOSHypervisor.getHypervisorType());
+        response.setHypervisor(Hypervisor.HypervisorType.getType(guestOSHypervisor.getHypervisorType()).getHypervisorDisplayName());
         response.setHypervisorVersion(guestOSHypervisor.getHypervisorVersion());
         response.setOsNameForHypervisor((guestOSHypervisor.getGuestOsName()));
         response.setIsUserDefined(Boolean.valueOf(guestOSHypervisor.getIsUserDefined()).toString());
@@ -4940,7 +4941,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(certificate.getUuid());
         response.setAlias(certificate.getAlias());
         handleCertificateResponse(certificate.getCertificate(), response);
-        response.setHypervisor(certificate.getHypervisorType().name());
+        response.setHypervisor(certificate.getHypervisorType().getHypervisorDisplayName());
         response.setObjectName("directdownloadcertificate");
         return response;
     }

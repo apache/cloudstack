@@ -14,30 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package common;
+package com.cloud.hypervisor.discoverer;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.discoverer.LibvirtServerDiscoverer;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import org.springframework.test.util.ReflectionTestUtils;
-import streamer.Element;
-import streamer.SocketWrapper;
-
-@RunWith(MockitoJUnitRunner.class)
-public class ClientTest {
-
-    @Test(expected = NullPointerException.class)
-    public void testAssemblePipelineWhenMainElementIsNull() throws Exception {
-        SocketWrapper socketMock = mock(SocketWrapper.class);
-        when(socketMock.getId()).thenReturn("socket");
-        ReflectionTestUtils.setField(Client.class, "socket", socketMock);
-        Element main = null;
-
-        Client.assemblePipeline(main);
+public class CustomServerDiscoverer extends LibvirtServerDiscoverer {
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return Hypervisor.HypervisorType.Custom;
     }
 
+    @Override
+    protected String getPatchPath() {
+        return "scripts/vm/hypervisor/kvm/";
+    }
 }

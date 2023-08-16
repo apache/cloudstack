@@ -221,6 +221,9 @@ public class UserVmManagerImplTest {
     @Mock
     UserDataManager userDataManager;
 
+    @Mock
+    VirtualMachineProfile virtualMachineProfile;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -248,6 +251,8 @@ public class UserVmManagerImplTest {
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
         lenient().doNothing().when(resourceLimitMgr).incrementResourceCount(anyLong(), any(Resource.ResourceType.class));
         lenient().doNothing().when(resourceLimitMgr).decrementResourceCount(anyLong(), any(Resource.ResourceType.class), anyLong());
+
+        Mockito.when(virtualMachineProfile.getId()).thenReturn(vmId);
     }
 
     @After
@@ -561,13 +566,10 @@ public class UserVmManagerImplTest {
     public void verifyIfHypervisorSupportRootdiskSizeOverrideTest() {
         Hypervisor.HypervisorType[] hypervisorTypeArray = Hypervisor.HypervisorType.values();
         int exceptionCounter = 0;
-        int expectedExceptionCounter = hypervisorTypeArray.length - 4;
+        int expectedExceptionCounter = hypervisorTypeArray.length - 5;
 
         for(int i = 0; i < hypervisorTypeArray.length; i++) {
-            if (Hypervisor.HypervisorType.KVM == hypervisorTypeArray[i]
-                    || Hypervisor.HypervisorType.XenServer == hypervisorTypeArray[i]
-                    || Hypervisor.HypervisorType.VMware == hypervisorTypeArray[i]
-                    || Hypervisor.HypervisorType.Simulator == hypervisorTypeArray[i]) {
+            if (UserVmManagerImpl.ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorTypeArray[i])) {
                 userVmManagerImpl.verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorTypeArray[i]);
             } else {
                 try {
@@ -1040,5 +1042,22 @@ public class UserVmManagerImplTest {
         Host destinationHost = Mockito.mock(Host.class);
         Pair<VMInstanceVO, Host> pair = mockObjectsForChooseVmMigrationDestinationUsingVolumePoolMapTest(false, destinationHost);
         Assert.assertEquals(destinationHost, userVmManagerImpl.chooseVmMigrationDestinationUsingVolumePoolMap(pair.first(), pair.second(), null));
+    }
+
+    @Test
+    public void testUpdateVncPasswordIfItHasChanged() {
+        String vncPassword = "12345678";
+        userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, vncPassword, virtualMachineProfile);
+        Mockito.verify(userVmDao, Mockito.never()).update(vmId, userVmVoMock);
+    }
+
+    @Test
+    public void testUpdateVncPasswordIfItHasChangedNewPassword() {
+        String vncPassword = "12345678";
+        String newPassword = "87654321";
+        Mockito.when(userVmVoMock.getId()).thenReturn(vmId);
+        userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, newPassword, virtualMachineProfile);
+        Mockito.verify(userVmDao).findById(vmId);
+        Mockito.verify(userVmDao).update(vmId, userVmVoMock);
     }
 }
