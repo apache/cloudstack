@@ -506,7 +506,9 @@ export default {
       this.fetchOsTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
-      this.fetchDomains()
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
       if (Object.prototype.hasOwnProperty.call(store.getters.apis, 'listConfigurations')) {
         if (this.allowed && this.hyperXenServerShow) {
           this.fetchXenServerProvider()
