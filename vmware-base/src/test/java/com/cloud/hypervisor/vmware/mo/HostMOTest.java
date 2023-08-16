@@ -21,19 +21,16 @@ import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.VimPortType;
-import com.vmware.vim25.VirtualMachineConfigOption;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +39,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(HostMO.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HostMOTest {
 
     @Mock
@@ -56,17 +52,16 @@ public class HostMOTest {
     ManagedObjectReference _environmentBrowser;
 
     @Mock
-    VirtualMachineConfigOption vmConfigOption;
-
-    @Mock
     GuestOsDescriptor guestOsDescriptor;
 
     HostMO hostMO ;
     ClusterMO clusterMO ;
 
+    AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         hostMO = new HostMO(_context, _mor);
         clusterMO = new ClusterMO(_context, _mor);
         clusterMO._environmentBrowser = _environmentBrowser;
@@ -77,37 +72,26 @@ public class HostMOTest {
 
     @After
     public void tearDown() throws Exception {
-
+        closeable.close();
     }
 
     @Test
     public void testGetGuestOsDescriptors() throws Exception {
-        VimPortType vimPortType = PowerMockito.mock(VimPortType.class);
-        Mockito.when(_context.getService()).thenReturn(vimPortType);
-        Mockito.when(vimPortType.queryConfigOption(_environmentBrowser, null, null)).thenReturn(vmConfigOption);
-        PowerMockito.whenNew(ClusterMO.class).withArguments(_context, _mor).thenReturn(clusterMO);
-
         List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
         guestOsDescriptors.add(guestOsDescriptor);
-        Mockito.when(clusterMO.getGuestOsDescriptors()).thenReturn(guestOsDescriptors);
-        List<GuestOsDescriptor> result = hostMO.getGuestOsDescriptors();
-
-        Assert.assertEquals(guestOsDescriptor, result.get(0));
+        try (MockedConstruction<ClusterMO> ignored = Mockito.mockConstruction(ClusterMO.class,
+                (mock, context) -> when(mock.getGuestOsDescriptors()).thenReturn(guestOsDescriptors))) {
+            List<GuestOsDescriptor> result = hostMO.getGuestOsDescriptors();
+            Assert.assertEquals(guestOsDescriptor, result.get(0));
+        }
     }
 
     @Test
     public void testGetGuestOsDescriptor() throws Exception {
-        VimPortType vimPortType = PowerMockito.mock(VimPortType.class);
-        Mockito.when(_context.getService()).thenReturn(vimPortType);
-        Mockito.when(vimPortType.queryConfigOption(_environmentBrowser, null, null)).thenReturn(vmConfigOption);
-        PowerMockito.whenNew(ClusterMO.class).withArguments(_context, _mor).thenReturn(clusterMO);
-
-        Mockito.when(guestOsDescriptor.getId()).thenReturn("1");
-        List<GuestOsDescriptor> guestOsDescriptors = new ArrayList<>();
-        guestOsDescriptors.add(guestOsDescriptor);
-        Mockito.when(vmConfigOption.getGuestOSDescriptor()).thenReturn(guestOsDescriptors);
-        GuestOsDescriptor result = hostMO.getGuestOsDescriptor("1");
-
-        Assert.assertEquals(guestOsDescriptor, result);
+        try (MockedConstruction<ClusterMO> ignored = Mockito.mockConstruction(ClusterMO.class,
+                (mock, context) -> when(mock.getGuestOsDescriptor(any(String.class))).thenReturn(guestOsDescriptor))) {
+            GuestOsDescriptor result = hostMO.getGuestOsDescriptor("1");
+            Assert.assertEquals(guestOsDescriptor, result);
+        }
     }
 }

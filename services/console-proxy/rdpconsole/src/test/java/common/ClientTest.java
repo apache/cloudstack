@@ -21,20 +21,20 @@ import static org.mockito.Mockito.when;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
 
+import org.springframework.test.util.ReflectionTestUtils;
 import streamer.Element;
 import streamer.SocketWrapper;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ClientTest {
 
     @Test(expected = NullPointerException.class)
     public void testAssemblePipelineWhenMainElementIsNull() throws Exception {
         SocketWrapper socketMock = mock(SocketWrapper.class);
         when(socketMock.getId()).thenReturn("socket");
-        Whitebox.setInternalState(Client.class, "socket", socketMock);
+        ReflectionTestUtils.setField(Client.class, "socket", socketMock);
         Element main = null;
 
         Client.assemblePipeline(main);

@@ -85,27 +85,25 @@ import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVRouterPor
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.DeleteTungstenVmInterfaceCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.GetTungstenNatIpCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingIpCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetTungstenNetworkGatewayCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(TungstenGuestNetworkGuru.class)
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenGuestNetworkGuruTest {
 
     @Mock
@@ -155,14 +153,16 @@ public class TungstenGuestNetworkGuruTest {
 
     TungstenGuestNetworkGuru guru;
 
+    AutoCloseable closeable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         guru = new TungstenGuestNetworkGuru();
-        Whitebox.setInternalState(guru, "_physicalNetworkDao", physicalNetworkDao);
-        Whitebox.setInternalState(guru, "_dcDao", dcDao);
-        Whitebox.setInternalState(guru, "_networkModel", networkModel);
-        Whitebox.setInternalState(guru, "_nicDao", nicDao);
+        ReflectionTestUtils.setField(guru, "_physicalNetworkDao", physicalNetworkDao);
+        ReflectionTestUtils.setField(guru, "_dcDao", dcDao);
+        ReflectionTestUtils.setField(guru, "_networkModel", networkModel);
+        ReflectionTestUtils.setField(guru, "_nicDao", nicDao);
         guru.networkOfferingServiceMapDao = ntwkOfferingSrvcDao;
         guru.tungstenFabricUtils = tungstenFabricUtils;
         guru.tungstenService = tungstenService;
@@ -180,10 +180,8 @@ public class TungstenGuestNetworkGuruTest {
 
         when(dc.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(dc.getGuestNetworkCidr()).thenReturn("10.1.1.1/24");
-        when(dc.getId()).thenReturn(1L);
         when(dcDao.findById(anyLong())).thenReturn(dc);
 
-        when(physicalNetwork.getId()).thenReturn(1L);
         when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("TF"));
         when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
@@ -196,6 +194,11 @@ public class TungstenGuestNetworkGuruTest {
 
         when(plan.getDataCenterId()).thenReturn(1L);
         when(plan.getPhysicalNetworkId()).thenReturn(1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -401,13 +404,7 @@ public class TungstenGuestNetworkGuruTest {
         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         final HostVO host = mock(HostVO.class);
 
-        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         when(hostDao.findById(anyLong())).thenReturn(host);
-        when(ipAddressDao.findByAssociatedVmId(anyLong())).thenReturn(ipAddressVO);
-        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(new NetworkVO());
-        when(
-            tungstenFabricUtils.sendTungstenCommand(any(ReleaseTungstenFloatingIpCommand.class), anyLong())).thenReturn(
-            new TungstenAnswer(new TungstenCommand(), true, ""));
         when(
             tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(
             new TungstenAnswer(new TungstenCommand(), true, ""));
