@@ -22,7 +22,10 @@ import org.junit.Test;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.network.Networks;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class BridgeVifDriverTest {
 
     private BridgeVifDriver driver;

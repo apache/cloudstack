@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.Domain;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -93,7 +94,6 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
-import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
@@ -148,20 +148,21 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     /**
-     * Validate on random running KVM host that URL is reachable
+     * Validate on random running host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+    private Long performDirectDownloadUrlValidation(final String format, final Hypervisor.HypervisorType hypervisor,
+                                                    final String url, final List<Long> zoneIds) {
         HostVO host = null;
         if (zoneIds != null && !zoneIds.isEmpty()) {
             for (Long zoneId : zoneIds) {
-                host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+                host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, zoneId);
                 if (host != null) {
                     break;
                 }
             }
         } else {
-            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, null);
+            host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, null);
         }
 
         if (host == null) {
@@ -198,7 +199,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 zoneIds =  new ArrayList<>();
                 zoneIds.add(cmd.getZoneId());
             }
-            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(),
+                    Hypervisor.HypervisorType.KVM, url, zoneIds);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -221,9 +223,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(),
+                    hypervisor, url, cmd.getZoneIds());
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -402,13 +406,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateOnStore.getDataStore().getRole().toString());
                     //using the existing max template size configuration
                     payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
-                    payload.setAccountId(template.getAccountId());
-                    Account account = _accountDao.findById(template.getAccountId());
-                    if (account.getType().equals(Account.Type.PROJECT)) {
-                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
-                    } else {
-                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
-                    }
+
+                    Long accountId = template.getAccountId();
+                    Account account = _accountDao.findById(accountId);
+                    Domain domain = _domainDao.findById(account.getDomainId());
+
+                    payload.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage));
+                    payload.setAccountId(accountId);
                     payload.setRemoteEndPoint(ep.getPublicAddr());
                     payload.setRequiresHvm(template.requiresHvm());
                     payload.setDescription(template.getDisplayText());

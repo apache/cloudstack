@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -342,9 +343,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter zoneids cannot combine all zones (-1) option with other zones");
 
-        if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    "Parameter directdownload is only allowed for KVM templates");
+        String customHypervisor = HypervisorGuru.HypervisorCustomDisplayName.value();
+        if (isDirectDownload() && !(getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())
+                || getHypervisor().equalsIgnoreCase(customHypervisor))) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Parameter directdownload " +
+                    "is only allowed for KVM or %s templates", customHypervisor));
         }
 
         if (!isDeployAsIs() && osTypeId == null) {
