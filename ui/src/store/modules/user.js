@@ -24,6 +24,7 @@ import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+import { axios } from '../../utils/request'
 
 import {
   ACCESS_TOKEN,
@@ -36,6 +37,9 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
+  LATEST_CS_VERSION,
+  NETWORK_RESTART_REQUIRED,
+  VPC_RESTART_REQUIRED,
   CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
@@ -151,6 +155,18 @@ const user = {
     },
     SET_LOGIN_FLAG: (state, flag) => {
       state.loginFlag = flag
+    },
+    SET_LATEST_VERSION: (state, version) => {
+      vueProps.$localStorage.set(LATEST_CS_VERSION, version)
+      state.latestVersion = version
+    },
+    SET_NETWORK_RESTART_REQUIRED: (state, flag) => {
+      vueProps.$localStorage.set(NETWORK_RESTART_REQUIRED, flag)
+      state.networkRestartRequired = flag
+    },
+    SET_VPC_RESTART_REQUIRED: (state, flag) => {
+      vueProps.$localStorage.set(VPC_RESTART_REQUIRED, flag)
+      state.vpcRestartRequired = flag
     }
   },
 
@@ -196,6 +212,12 @@ const user = {
           commit('SET_2FA_PROVIDER', result.providerfor2fa)
           commit('SET_2FA_ISSUER', result.issuerfor2fa)
           commit('SET_LOGIN_FLAG', false)
+          const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+          const networkRestartRequired = vueProps.$localStorage.get(NETWORK_RESTART_REQUIRED, false)
+          const vpcRestartRequired = vueProps.$localStorage.get(VPC_RESTART_REQUIRED, false)
+          commit('SET_LATEST_VERSION', latestVersion)
+          commit('SET_NETWORK_RESTART_REQUIRED', networkRestartRequired)
+          commit('SET_VPC_RESTART_REQUIRED', vpcRestartRequired)
           notification.destroy()
 
           resolve()
@@ -214,10 +236,16 @@ const user = {
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
+        const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
+        const networkRestartRequired = vueProps.$localStorage.get(NETWORK_RESTART_REQUIRED, false)
+        const vpcRestartRequired = vueProps.$localStorage.get(VPC_RESTART_REQUIRED, false)
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
+        commit('SET_LATEST_VERSION', latestVersion)
+        commit('SET_NETWORK_RESTART_REQUIRED', networkRestartRequired)
+        commit('SET_VPC_RESTART_REQUIRED', vpcRestartRequired)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -231,6 +259,7 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -266,12 +295,21 @@ const user = {
           }).catch(error => {
             reject(error)
           })
+
+          api('listNetworks', { restartrequired: true }).then(response => {
+            commit('SET_NETWORK_RESTART_REQUIRED', response.listnetworksresponse.count > 0)
+          }).catch(ignored => {})
+
+          api('listVPCs', { restartrequired: true }).then(response => {
+            commit('SET_VPC_RESTART_REQUIRED', response.listvpcsresponse.count > 0)
+          }).catch(ignored => {})
         }
 
         api('listUsers', { username: Cookies.get('username') }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
@@ -406,6 +444,22 @@ const user = {
     SetDomainStore ({ commit }, domainStore) {
       commit('SET_DOMAIN_STORE', domainStore)
     },
+    SetCsLatestVersion ({ commit }, rolename) {
+      if (rolename === 'Root Admin' && (+new Date() - store.getters.latestVersion.fetchedTs) > 24 * 60 * 60 * 1000) {
+        axios.get(
+          'https://api.github.com/repos/apache/cloudstack/releases'
+        ).then(response => {
+          for (const release of response) {
+            if (release.tag_name.toLowerCase().includes('rc')) {
+              continue
+            } else {
+              commit('SET_LATEST_VERSION', { version: release.tag_name, fetchedTs: (+new Date()) })
+              break
+            }
+          }
+        }).catch(ignored => {})
+      }
+    },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
     },
@@ -413,6 +467,18 @@ const user = {
       commit('SET_LOGIN_FLAG', loggedIn)
     }
   }
+}
+
+export function newVersionAvailable () {
+  return store.getters.userInfo.rolename === 'Root Admin' && store.getters.features.cloudstackversion &&
+    store.getters?.latestVersion?.version &&
+    store.getters.features.cloudstackversion.split('-')[0] !== store.getters.latestVersion.version
+}
+
+export function numberOfAlerts () {
+  return store.getters.shutdownTriggered +
+    store.getters.networkRestartRequired +
+    store.getters.vpcRestartRequired + newVersionAvailable()
 }
 
 export default user
