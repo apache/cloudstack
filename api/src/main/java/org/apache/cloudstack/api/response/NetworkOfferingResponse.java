@@ -99,6 +99,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by VPC networks only")
     private Boolean forVpc;
 
+    @SerializedName(ApiConstants.FOR_NSX)
+    @Param(description = "true if network offering can be used by NSX networks only")
+    private Boolean forNsx;
+
     @SerializedName(ApiConstants.FOR_TUNGSTEN)
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
@@ -213,6 +217,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setForVpc(Boolean forVpc) {
         this.forVpc = forVpc;
+    }
+
+    public void setForNsx(Boolean forNsx) {
+        this.forNsx = forNsx;
     }
 
     public void setForTungsten(Boolean forTungsten) {

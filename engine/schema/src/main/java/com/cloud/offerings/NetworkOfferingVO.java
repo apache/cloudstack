@@ -136,6 +136,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "for_tungsten")
     boolean forTungsten = false;
 
+    @Column(name = "for_nsx")
+    boolean forNsx = false;
+
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
 
@@ -193,6 +196,15 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setForTungsten(boolean forTungsten) {
         this.forTungsten = forTungsten;
+    }
+
+    @Override
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    public void setForNsx(boolean forNsx) {
+        this.forNsx = forNsx;
     }
 
     @Override

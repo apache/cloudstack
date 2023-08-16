@@ -999,6 +999,11 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.Dns, Provider.Tungsten);
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
 
+        final Map<Network.Service, Network.Provider> defaultNSXNetworkOfferingProviders = new HashMap<>();
+        defaultNSXNetworkOfferingProviders.put(Service.Connectivity, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.Dhcp, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.Dns, Provider.Nsx);
+
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -1200,6 +1205,20 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
+                // Offering #9 - network offering for nsx provider
+                NetworkOfferingVO defaultNSXNetworkOffering =
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_NSX_OFFERING, "Offering for NSX enabled networks",
+                                TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, GuestType.Isolated, true, true, false, false, false, false);
+
+                defaultNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultTungstenSharedSGNetworkOffering);
+
+                for (Map.Entry<Network.Service, Network.Provider> service : defaultNSXNetworkOfferingProviders.entrySet()) {
+                    NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultNSXNetworkOffering.getId(), service.getKey(), service.getValue());
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
             }
         });
     }
