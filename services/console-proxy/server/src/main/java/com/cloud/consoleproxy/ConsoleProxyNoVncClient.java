@@ -118,7 +118,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             try {
                                 Thread.sleep(1);
                             } catch (Exception e) {
-                                s_logger.warn("Error on sleep for vnc over websocket", e);
+                                logger.warn("Error on sleep for vnc over websocket", e);
                             }
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;

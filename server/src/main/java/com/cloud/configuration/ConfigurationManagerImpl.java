@@ -870,7 +870,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String hypervisors = _configDao.getValue(hypervisorListConfigName);
         if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
             hypervisors = hypervisors.replace(previousValue, newValue);
-            s_logger.info(String.format("Updating the hypervisor list configuration '%s' " +
+            logger.info(String.format("Updating the hypervisor list configuration '%s' " +
                     "to match the new custom hypervisor display name", hypervisorListConfigName));
             _configDao.update(hypervisorListConfigName, hypervisors);
         }

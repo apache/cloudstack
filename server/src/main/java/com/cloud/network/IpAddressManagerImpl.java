@@ -1944,22 +1944,22 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     protected boolean checkIfIpResourceCountShouldBeUpdated(IPAddressVO ip) {
         boolean isDirectIp = ip.getAssociatedWithNetworkId() == null && ip.getVpcId() == null;
         if (isDirectIp) {
-            s_logger.debug(String.format("IP address [%s] is direct; therefore, the resource count should not be updated.", ip));
+            logger.debug(String.format("IP address [%s] is direct; therefore, the resource count should not be updated.", ip));
             return false;
         }
 
         if (isIpDedicated(ip)) {
-            s_logger.debug(String.format("IP address [%s] is dedicated; therefore, the resource count should not be updated.", ip));
+            logger.debug(String.format("IP address [%s] is dedicated; therefore, the resource count should not be updated.", ip));
             return false;
         }
 
         boolean isReservedIp = ip.getState() == IpAddress.State.Reserved;
         if (isReservedIp) {
-            s_logger.debug(String.format("IP address [%s] is reserved; therefore, the resource count should not be updated.", ip));
+            logger.debug(String.format("IP address [%s] is reserved; therefore, the resource count should not be updated.", ip));
             return false;
         }
 
-        s_logger.debug(String.format("IP address [%s] is not direct, dedicated or reserved; therefore, the resource count should be updated.", ip));
+        logger.debug(String.format("IP address [%s] is not direct, dedicated or reserved; therefore, the resource count should be updated.", ip));
         return true;
     }
 

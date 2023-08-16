@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.resource;
 
 import org.apache.logging.log4j.Logger;
+import org.junit.Before;
 import static org.mockito.Matchers.any;
 import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
