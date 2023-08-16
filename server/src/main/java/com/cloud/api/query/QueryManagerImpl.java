@@ -3109,20 +3109,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
 
-        caller = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
-        if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
+        if (!_accountMgr.isRootAdmin(owner.getId()) && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system offerings.");
         }
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this
         // domain
-        if (domainId != null && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (domainId != null && !_accountMgr.isRootAdmin(owner.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
-            if (!isPermissible(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("The account:" + caller.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
+            if (!isPermissible(owner.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + owner.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
             }
         }
 
@@ -3134,7 +3134,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw ex;
             }
 
-            _accountMgr.checkAccess(caller, null, true, vmInstance);
+            _accountMgr.checkAccess(owner, null, true, vmInstance);
 
             currentVmOffering = _srvOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
             if (! currentVmOffering.isDynamic()) {
@@ -3182,19 +3182,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         // boolean includePublicOfferings = false;
-        if ((_accountMgr.isNormalUser(caller.getId()) || _accountMgr.isDomainAdmin(caller.getId())) || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+        if ((_accountMgr.isNormalUser(owner.getId()) || _accountMgr.isDomainAdmin(owner.getId())) || owner.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
             // For non-root users.
             if (isSystem) {
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
             if (isRecursive) { // domain + all sub-domains
-                if (caller.getType() == Account.Type.NORMAL) {
+                if (owner.getType() == Account.Type.NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
             }
         } else {
             // for root users
-            if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
+            if (owner.getDomainId() != 1 && isSystem) { // NON ROOT admin
                 throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering.");
             }
             if (domainId != null && accountName == null) {
@@ -3281,8 +3281,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        if (owner.getType() != Account.Type.ADMIN) {
+            Domain callerDomain = _domainDao.findById(owner.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);

@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
-import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
@@ -39,7 +37,7 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the service offering")
