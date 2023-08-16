@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
