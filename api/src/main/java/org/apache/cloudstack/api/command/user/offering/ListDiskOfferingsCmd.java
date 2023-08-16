@@ -45,12 +45,6 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the disk offering")
     private String diskOfferingName;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account.")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project.")
-    private Long projectId;
-
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
@@ -90,14 +84,6 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
     public Long getStoragePoolId() { return storagePoolId; }
 
     public Boolean getEncrypt() { return encrypt; }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

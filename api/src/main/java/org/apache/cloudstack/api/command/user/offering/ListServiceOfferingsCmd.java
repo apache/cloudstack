@@ -84,12 +84,6 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.15")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "list resources by account.")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project.")
-    private Long projectId;
-
     @Parameter(name = ApiConstants.ENCRYPT_ROOT,
         type = CommandType.BOOLEAN,
         description = "listed offerings support root disk encryption",
@@ -137,14 +131,6 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     }
 
     public Boolean getEncryptRoot() { return encryptRoot; }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
