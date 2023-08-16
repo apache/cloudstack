@@ -14,30 +14,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package common;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+<template>
+  <span @click="$message.success($t('label.copied.clipboard') + ': ' + label)">
+    <a-tooltip :title="tooltip ? tooltip : $t('label.copy')" :placement="tooltipPlacement">
+      <a href="javascript:;" v-clipboard:copy="label">{{ label }}</a>
+    </a-tooltip>
+  </span>
+</template>
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+<script>
 
-import org.springframework.test.util.ReflectionTestUtils;
-import streamer.Element;
-import streamer.SocketWrapper;
-
-@RunWith(MockitoJUnitRunner.class)
-public class ClientTest {
-
-    @Test(expected = NullPointerException.class)
-    public void testAssemblePipelineWhenMainElementIsNull() throws Exception {
-        SocketWrapper socketMock = mock(SocketWrapper.class);
-        when(socketMock.getId()).thenReturn("socket");
-        ReflectionTestUtils.setField(Client.class, "socket", socketMock);
-        Element main = null;
-
-        Client.assemblePipeline(main);
+export default {
+  name: 'CopyLabel',
+  props: {
+    label: {
+      type: String,
+      default: ''
+    },
+    tooltip: {
+      type: String,
+      default: ''
+    },
+    tooltipPlacement: {
+      type: String,
+      default: 'top'
     }
-
+  }
 }
+</script>
+
+<style scoped lang="scss">
+  .tooltip-icon {
+    color: rgba(0,0,0,.45);
+  }
+</style>
