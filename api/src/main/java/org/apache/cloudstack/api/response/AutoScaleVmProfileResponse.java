@@ -221,4 +221,24 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
     }
+
+    public String getUserData() {
+        return userData;
+    }
+
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public String getUserDataPolicy() {
+        return userDataPolicy;
+    }
+
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
 }
