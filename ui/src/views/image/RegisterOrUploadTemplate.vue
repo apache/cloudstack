@@ -117,7 +117,7 @@
             </a-select>
           </a-form-item>
         </div>
-        <a-form-item name="domainid" ref="domainid">
+        <a-form-item name="domainid" ref="domainid" v-if="'listDomains' in $store.getters.apis">
           <template #label>
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
