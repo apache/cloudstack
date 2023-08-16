@@ -154,7 +154,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && hyperKVMShow && currentForm !== 'Upload'">
+        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm !== 'Upload'">
           <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload" :label="$t('label.directdownload')">
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
@@ -398,6 +398,7 @@ export default {
       userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
+      hyperCustomShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
       selectedFormat: '',
@@ -408,7 +409,8 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
+      customHypervisorName: 'Custom'
     }
   },
   beforeCreate () {
@@ -456,6 +458,7 @@ export default {
       })
     },
     fetchData () {
+      this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
       this.fetchUserData()
@@ -514,6 +517,23 @@ export default {
           description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
           duration: 0
         })
+      })
+    },
+    fetchCustomHypervisorName () {
+      const params = {
+        name: 'hypervisor.custom.display.name'
+      }
+      this.loading = true
+      api('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.customHypervisorName = config.value
+            store.dispatch('SetCustomHypervisorName', this.customHypervisorName)
+          }
+        }
+      }).finally(() => {
+        this.loading = false
       })
     },
     fetchZone () {
@@ -781,6 +801,13 @@ export default {
             description: 'TAR'
           })
           break
+        case this.customHypervisorName:
+          this.hyperCustomShow = true
+          format.push({
+            id: 'RAW',
+            description: 'RAW'
+          })
+          break
         default:
           break
       }
@@ -839,6 +866,7 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.hyperCustomShow = false
       this.deployasis = false
       this.allowDirectDownload = false
       this.selectedFormat = null
