@@ -47,6 +47,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
@@ -342,6 +343,8 @@ public class AutoScaleManagerImplTest {
     private static final Long networkOfferingId = 40L;
     private static final String userData = "VGVzdFVzZXJEYXRh";  //TestUserData
     private static final Long userDataId = 41L;
+    private static final Map<String, HashMap<String, String>> userDataDetails = new HashMap<>();
+    private static final String userDataFinal = "VGVzdFVzZXJEYXRhRmluYWw=";  //TestUserDataFinal
 
     @Mock
     DataCenterVO zoneMock;
@@ -406,6 +409,10 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
 
         when(asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asScaleUpPolicyMock);
+
+        userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
+        Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.doReturn(userDataFinal).when(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @After
@@ -751,11 +758,16 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
 
         ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+        ReflectionTestUtils.setField(cmd, "userDataDetails", userDataDetails);
 
         AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.createAutoScaleVmProfile(cmd);
 
         Assert.assertEquals(asVmProfileMock, vmProfile);
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
+
+        Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -809,10 +821,17 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
         ReflectionTestUtils.setField(cmd, "templateId", templateId);
 
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+        ReflectionTestUtils.setField(cmd, "userDataDetails", userDataDetails);
+
         AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.updateAutoScaleVmProfile(cmd);
 
         Assert.assertEquals(asVmProfileMock, vmProfile);
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
+
+        Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test

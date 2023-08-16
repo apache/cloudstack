@@ -105,11 +105,11 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the userdata",
             since = "4.18.1")
-    private Long userdataId;
+    private Long userDataId;
 
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.",
             since = "4.18.1")
-    private Map userdataDetails;
+    private Map userDataDetails;
 
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
@@ -165,12 +165,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
         return userData;
     }
 
-    public Long getUserdataId() {
-        return userdataId;
+    public Long getUserDataId() {
+        return userDataId;
     }
 
-    public Map<String, String> getUserdataDetails() {
-        return convertDetailsToMap(userdataDetails);
+    public Map<String, String> getUserDataDetails() {
+        return convertDetailsToMap(userDataDetails);
     }
 
     public Long getAutoscaleUserId() {

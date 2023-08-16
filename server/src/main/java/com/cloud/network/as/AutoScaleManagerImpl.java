@@ -600,12 +600,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map<String, HashMap<String, String>> otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
         String userData = cmd.getUserData();
-        Long userDataId = cmd.getUserdataId();
+        Long userDataId = cmd.getUserDataId();
         String userDataDetails = null;
-        if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
-            userDataDetails = cmd.getUserdataDetails().toString();
+        if (MapUtils.isNotEmpty(cmd.getUserDataDetails())) {
+            userDataDetails = cmd.getUserDataDetails().toString();
         }
-        boolean userdataUpdate = userData != null || userDataId != null || MapUtils.isNotEmpty(cmd.getUserdataDetails());
+        boolean userdataUpdate = userData != null || userDataId != null || MapUtils.isNotEmpty(cmd.getUserDataDetails());
 
         Integer expungeVmGracePeriod = cmd.getExpungeVmGracePeriod();
 
