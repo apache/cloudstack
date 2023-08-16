@@ -134,36 +134,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     }
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public void setName(String name) {
-
-    }
-
-    @Override
-    public void setConfigParams(Map<String, Object> params) {
-
-    }
-
-    @Override
-    public Map<String, Object> getConfigParams() {
-        return null;
-    }
-
-    @Override
-    public int getRunLevel() {
-        return 0;
-    }
-
-    @Override
-    public void setRunLevel(int level) {
-
-    }
-
-    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         return false;
     }

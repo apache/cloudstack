@@ -180,3 +180,15 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
 -- Add support for different cluster types for kubernetes
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
+
+CREATE TABLE `cloud`.`nsx_providers` (
+    `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+    `uuid` varchar(40),
+    `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `provider_name` varchar(40),
+    `hostname` varchar(255) NOT NULL ,
+    `username` varchar(255) NOT NULL ,
+    `password` varchar(255) NOT NULL,
+    `tier0_gateway` varchar(255),
+    `edge_cluster` varchar(255)
+)
