@@ -2631,12 +2631,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String keyword = cmd.getKeyword();
         final Long startIndex = cmd.getStartIndex();
         final Long pageSize = cmd.getPageSizeVal();
-        boolean showHidden = false;
-        if (_accountMgr.isRootAdmin(getCaller().getId())) {
-            showHidden = true;
-        }
+        Boolean forDisplay = cmd.getDisplay();
 
-        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, showHidden);
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override

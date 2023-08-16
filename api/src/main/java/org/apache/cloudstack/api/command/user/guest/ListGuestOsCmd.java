@@ -19,8 +19,10 @@ package org.apache.cloudstack.api.command.user.guest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -51,6 +53,10 @@ public class ListGuestOsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "list os by description", since = "3.0.1")
     private String description;
 
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter",
+            since = "4.18.1", authorized = {RoleType.Admin})
+    private Boolean display;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -65,6 +71,10 @@ public class ListGuestOsCmd extends BaseListCmd {
 
     public String getDescription() {
         return description;
+    }
+
+    public Boolean getDisplay() {
+        return BooleanUtils.toBooleanDefaultIfNull(display, true);
     }
 
     /////////////////////////////////////////////////////
