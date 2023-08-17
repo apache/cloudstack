@@ -31,7 +31,7 @@
             }" >
             <a-select-option v-for="(zone, index) in zones" :key="index" :label="zone.name">
               <span>
-                <resource-icon v-if="zone.icon && zone.icon.base64image" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <resource-icon v-if="zone.icon && zone.icon.base64image" :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
                 {{ zone.name }}
               </span>

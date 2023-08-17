@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -147,8 +148,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
             volResponse.setSize(volume.getVolumeStoreSize());
             volResponse.setCreated(volume.getCreatedOnStore());
 
-            if (view == ResponseView.Full)
-                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
+            if (view == ResponseView.Full) {
+                Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
+                volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
+            }
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
                 if (volume.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
@@ -209,9 +212,10 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         if (view == ResponseView.Full) {
             if (volume.getState() != Volume.State.UploadOp) {
                 if (volume.getHypervisorType() != null) {
-                    volResponse.setHypervisor(volume.getHypervisorType().toString());
+                    volResponse.setHypervisor(volume.getHypervisorType().getHypervisorDisplayName());
                 } else {
-                    volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
+                    Hypervisor.HypervisorType hypervisorTypeFromFormat = ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat());
+                    volResponse.setHypervisor(hypervisorTypeFromFormat.getHypervisorDisplayName());
                 }
             }
             Long poolId = volume.getPoolId();

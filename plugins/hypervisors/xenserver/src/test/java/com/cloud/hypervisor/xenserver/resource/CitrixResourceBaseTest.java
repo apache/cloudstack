@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.xmlrpc.XmlRpcException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,11 +32,9 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
@@ -52,13 +51,13 @@ import com.xensource.xenapi.Host.Record;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Host.class, Script.class, SR.class})
+@RunWith(MockitoJUnitRunner.class)
 public class CitrixResourceBaseTest {
 
     @Spy
@@ -87,40 +86,48 @@ public class CitrixResourceBaseTest {
     final static String publicIp = "10.10.10.10";
     final static Integer port = 8080;
 
+    MockedStatic<Host> hostMocked;
+
     @Before
     public void beforeTest() throws XenAPIException, XmlRpcException {
         citrixResourceBase._host.setUuid(hostUuidMock);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, hostUuidMock)).thenReturn(hostMock);
+        hostMocked = Mockito.mockStatic(Host.class);
+        hostMocked.when(() -> Host.getByUuid(connectionMock, hostUuidMock)).thenReturn(hostMock);
 
         hostRecordMock.softwareVersion = new HashMap<>();
         Mockito.when(hostMock.getRecord(connectionMock)).thenReturn(hostRecordMock);
 
     }
 
-    public void testGetPathFilesExeption() {
+    public void testGetPathFilesException() {
         String patch = citrixResourceBase.getPatchFilePath();
 
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(Script.findScript("", patch)).thenReturn(null);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.findScript("", patch)).thenReturn(null);
 
-        citrixResourceBase.getPatchFiles();
-
+            citrixResourceBase.getPatchFiles();
+        }
     }
 
     public void testGetPathFilesListReturned() {
         String patch = citrixResourceBase.getPatchFilePath();
 
-        PowerMockito.mockStatic(Script.class);
-        Mockito.when(Script.findScript("", patch)).thenReturn(patch);
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            Mockito.when(Script.findScript("", patch)).thenReturn(patch);
 
-        File expected = new File(patch);
-        String pathExpected = expected.getAbsolutePath();
+            File expected = new File(patch);
+            String pathExpected = expected.getAbsolutePath();
 
-        List<File> files = citrixResourceBase.getPatchFiles();
-        String receivedPath = files.get(0).getAbsolutePath();
-        Assert.assertEquals(receivedPath, pathExpected);
+            List<File> files = citrixResourceBase.getPatchFiles();
+            String receivedPath = files.get(0).getAbsolutePath();
+            Assert.assertEquals(receivedPath, pathExpected);
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        hostMocked.close();
     }
 
     @Test
@@ -233,14 +240,14 @@ public class CitrixResourceBaseTest {
         Map<SR, SR.Record> mapOfSrsRecords = new HashMap<>();
         mapOfSrsRecords.put(srExtShared, srExtSharedRecord);
         mapOfSrsRecords.put(srExtNonShared, srExtNonSharedRecord);
+        try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+            BDDMockito.given(SR.getAllRecords(connectionMock)).willReturn(mapOfSrsRecords);
 
-        PowerMockito.mockStatic(SR.class);
-        BDDMockito.given(SR.getAllRecords(connectionMock)).willReturn(mapOfSrsRecords);
+            List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
 
-        List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
-
-        Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
-        Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
+            Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
+            Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
+        }
     }
 
     @Test
@@ -287,9 +294,7 @@ public class CitrixResourceBaseTest {
         String hostUuid = "hostUuid";
         citrixResourceBase._host.setUuid(hostUuid);
 
-        PowerMockito.mockStatic(Host.class);
-        PowerMockito.when(Host.getByUuid(connectionMock, hostUuid)).thenReturn(hostMock);
-
+        Mockito.when(Host.getByUuid(connectionMock, hostUuid)).thenReturn(hostMock);
         String srType = "ext";
         String srUuid = "srUuid";
         long srPhysicalSize = 100l;
@@ -432,7 +437,6 @@ public class CitrixResourceBaseTest {
         CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
         Connection connection = Mockito.mock(Connection.class);
 
-        String args = "-g -l " + publicIp;
         doReturn(networkStats[0] + ":" + networkStats[1]).when(citrixResourceBaseSpy).networkUsage(Mockito.any(Connection.class),
                 Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
 

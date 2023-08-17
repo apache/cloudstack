@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -57,7 +58,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "Optional name for Guest OS")
     private String osName;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = true, description = "Map of (key/value pairs)")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
     private Map details;
 
 
@@ -79,7 +80,7 @@ public class AddGuestOsCmd extends BaseAsyncCreateCmd {
 
     public Map getDetails() {
         Map<String, String> detailsMap = new HashMap<String, String>();
-        if (!details.isEmpty()) {
+        if (!MapUtils.isEmpty(details)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
