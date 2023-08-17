@@ -31,7 +31,9 @@ The following commands assume that the CloudStack source is present in **/tmp/cl
 
 ``docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-7-jdk genisoimage python-mysql.connector maven lsb-release devscripts && /src/cloudstack/packaging/build-deb.sh"``
 
-The commands above will generate Ubuntu 14.04 and 16.04 packages which you will find in */tmp* on your system after the build succeeds.
+``docker run -ti -v /tmp:/src ubuntu:22.04 /bin/bash -c "apt-get update && apt-get install -y software-properties-common &&apt-add-repository universe --yes && apt-get update && apt-get install -y dpkg-dev debhelper lsb-release devscripts openjdk-11-jdk libws-commons-util-java genisoimage libcommons-codec-java libcommons-httpclient-java liblog4j1.2-java maven python3 python3-mysql.connector python3-setuptools python-setuptools python3-openssl python3-dev libffi-dev build-essential libssl-dev libffi-dev fakeroot python-is-python3 && curl -sL https://deb.nodesource.com/setup_14.x | bash - && apt-get install -y nodejs &&  /src/cloudstack/packaging/build-deb.sh"``
+
+The commands above will generate Ubuntu 14.04, 16.04, and 22.04 packages which you will find in */tmp* on your system after the build succeeds.
 
 ## RPM
 The *package.sh* script can be used to build RPM packages for CloudStack. In the *packaging* script you can run the following command:

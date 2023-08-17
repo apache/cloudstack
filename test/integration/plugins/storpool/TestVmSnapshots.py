@@ -60,6 +60,12 @@ class TestVmSnapshot(cloudstackTestCase):
 
     @classmethod
     def setUpCloudStack(cls):
+        config = cls.getClsConfig()
+        StorPoolHelper.logger = cls
+
+        zone = config.zones[0]
+        assert zone is not None
+
         testClient = super(TestVmSnapshot, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls._cleanup = []
@@ -74,13 +80,9 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = None
-        zones = list_zones(cls.apiclient)
-
-        for z in zones:
-            if z.name == cls.getClsConfig().mgtSvr[0].zone:
-                cls.zone = z
-
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
+        cls.debug(cls.zone)
+        cls.debug(list_zones(cls.apiclient, name=zone.name))
         assert cls.zone is not None
 
         cls.cluster = list_clusters(cls.apiclient)[0]

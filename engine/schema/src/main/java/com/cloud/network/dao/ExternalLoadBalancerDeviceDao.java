@@ -34,14 +34,14 @@ public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBa
     /**
      * list the load balancer devices added in to this physical network of certain provider type?
      * @param physicalNetworkId physical Network Id
-     * @param providerName netwrok service provider name
+     * @param providerName network service provider name
      */
     List<ExternalLoadBalancerDeviceVO> listByPhysicalNetworkAndProvider(long physicalNetworkId, String providerName);
 
     /**
      * list the load balancer devices added in to this physical network by their allocation state
      * @param physicalNetworkId physical Network Id
-     * @param providerName netwrok service provider name
+     * @param providerName network service provider name
      * @param allocationState load balancer device allocation state
      * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network with a device allocation state
      */
@@ -50,7 +50,7 @@ public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBa
     /**
      * list the load balancer devices added in to this physical network by the device status (enabled/disabled)
      * @param physicalNetworkId physical Network Id
-     * @param providerName netwrok service provider name
+     * @param providerName network service provider name
      * @param state load balancer device status
      * @return list of ExternalLoadBalancerDeviceVO for the devices in the physical network with a device state
      */
@@ -59,7 +59,7 @@ public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBa
     /**
      * list the load balancer devices added in to this physical network by the managed type (external/cloudstack managed)
      * @param physicalNetworkId physical Network Id
-     * @param providerName netwrok service provider name
+     * @param providerName network service provider name
      * @param managed managed type
      * @return list of ExternalLoadBalancerDeviceVO for the devices in to this physical network of a managed type
      */

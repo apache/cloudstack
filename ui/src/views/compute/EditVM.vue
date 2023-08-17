@@ -123,7 +123,6 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'EditVM',
@@ -284,6 +283,10 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
+    decodeUserData (userdata) {
+      const decodedData = Buffer.from(userdata, 'base64')
+      return decodedData.toString('utf-8')
+    },
     fetchUserData () {
       const params = {
         id: this.resource.id,
@@ -291,7 +294,7 @@ export default {
       }
 
       api('listVirtualMachines', params).then(json => {
-        this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
       })
     },
     handleSubmit () {
@@ -317,7 +320,7 @@ export default {
           params.group = values.group
         }
         if (values.userdata && values.userdata.length > 0) {
-          params.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+          params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         this.loading = true
 

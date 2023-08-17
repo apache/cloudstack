@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -40,7 +40,6 @@ import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
-import com.cloud.hypervisor.xenserver.resource.XsHost;
 import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
@@ -52,7 +51,7 @@ import com.xensource.xenapi.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class XenServer56WrapperTest {
 
     @Mock
@@ -260,15 +259,12 @@ public class XenServer56WrapperTest {
 
     @Test
     public void testSetupCommand() {
-        final XsHost xsHost = Mockito.mock(XsHost.class);
         final HostEnvironment env = Mockito.mock(HostEnvironment.class);
 
         final SetupCommand setupCommand = new SetupCommand(env);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
-
-        when(xenServer56Resource.getHost()).thenReturn(xsHost);
 
         final Answer answer = wrapper.execute(setupCommand, xenServer56Resource);
         verify(xenServer56Resource, times(1)).getConnection();
