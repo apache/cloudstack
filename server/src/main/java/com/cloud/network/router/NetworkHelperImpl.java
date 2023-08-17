@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -502,7 +503,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         // failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
 
-        int allocateRetry = 0;
         int startRetry = 0;
         DomainRouterVO router = null;
         for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
@@ -547,14 +547,12 @@ public class NetworkHelperImpl implements NetworkHelper {
                 reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
                 router = _routerDao.findById(router.getId());
             } catch (final InsufficientCapacityException ex) {
-                if (allocateRetry < 2 && iter.hasNext()) {
+                if (iter.hasNext()) {
                     s_logger.debug("Failed to allocate the VR with hypervisor type " + hType + ", retrying one more time");
                     continue;
                 } else {
                     throw ex;
                 }
-            } finally {
-                allocateRetry++;
             }
 
             if (startRouter) {
@@ -618,7 +616,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throw new InsufficientServerCapacityException("Unable to create virtual router, there are no clusters in the zone." + getNoHypervisorsErrMsgDetails(),
                     DataCenter.class, dest.getDataCenter().getId());
         }
-        return hypervisors;
+        return new ArrayList(new LinkedHashSet<>(hypervisors));
     }
 
     /*
