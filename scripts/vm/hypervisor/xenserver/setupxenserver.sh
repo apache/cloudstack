@@ -62,4 +62,3 @@ cat /dev/null > /root/.ssh/known_hosts
 rm -f /opt/xensource/packages/iso/systemvm-premium.iso
 
 echo "success"
-

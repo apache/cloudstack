@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
@@ -34,6 +35,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
+
+    ConfigKey<String> HypervisorCustomDisplayName = new ConfigKey<>(String.class,
+            "hypervisor.custom.display.name", ConfigKey.CATEGORY_ADVANCED, "Custom",
+            "Display name for custom hypervisor", true, ConfigKey.Scope.Global, null);
 
     HypervisorType getHypervisorType();
 

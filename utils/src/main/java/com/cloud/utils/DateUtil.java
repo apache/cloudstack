@@ -22,6 +22,9 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -31,6 +34,13 @@ import java.time.format.DateTimeParseException;
 import java.time.OffsetDateTime;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
+import org.springframework.scheduling.support.CronExpression;
+
 
 public class DateUtil {
     public static final int HOURS_IN_A_MONTH = 30 * 24;
@@ -294,5 +304,36 @@ public class DateUtil {
 
         return (dateCalendar1.getTimeInMillis() - dateCalendar2.getTimeInMillis() )/1000;
 
+    }
+
+    public static CronExpression parseSchedule(String schedule) {
+        if (schedule != null) {
+            // CronExpression's granularity is in seconds. Prepending "0 " to change the granularity to minutes.
+            return CronExpression.parse(String.format("0 %s", schedule));
+        } else {
+            return null;
+        }
+    }
+
+    public static String getHumanReadableSchedule(CronExpression schedule) {
+        CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING);
+        CronParser parser = new CronParser(cronDefinition);
+        CronDescriptor descriptor = CronDescriptor.instance();
+        return descriptor.describe(parser.parse(schedule.toString()));
+    }
+
+    public static ZonedDateTime getZoneDateTime(Date date, ZoneId tzId) {
+        if (date == null) {
+            return null;
+        }
+        ZonedDateTime zonedDate = ZonedDateTime.ofInstant(date.toInstant(), tzId);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(date.toInstant(), TimeZone.getDefault().toZoneId());
+        zonedDate = zonedDate.withYear(localDateTime.getYear())
+                .withMonth(localDateTime.getMonthValue())
+                .withDayOfMonth(localDateTime.getDayOfMonth())
+                .withHour(localDateTime.getHour())
+                .withMinute(localDateTime.getMinute())
+                .withSecond(localDateTime.getSecond());
+        return zonedDate;
     }
 }

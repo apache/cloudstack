@@ -39,6 +39,10 @@ import javax.naming.ConfigurationException;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -300,6 +304,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private AlertManager alertManager;
     @Inject
     private AnnotationService annotationService;
+    @Inject
+    private VolumeDao volumeDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -547,7 +553,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         // save cluster details for later cluster/host cross-checking
-        final Map<String, String> details = new HashMap<String, String>();
+        final Map<String, String> details = new HashMap<>();
         details.put("url", url);
         details.put("username", StringUtils.defaultString(username));
         details.put("password", StringUtils.defaultString(password));
@@ -647,7 +653,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
 
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor(), hostTags, cmd.getFullUrlParams(), false);
+        String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
+                "Custom" : cmd.getHypervisor();
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false);
     }
 
     @Override
@@ -985,6 +993,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     final Long poolId = pool.getPoolId();
                     final StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
                     if (storagePool.isLocal() && isForceDeleteStorage) {
+                        destroyLocalStoragePoolVolumes(poolId);
                         storagePool.setUuid(null);
                         storagePool.setClusterId(null);
                         _storagePoolDao.update(poolId, storagePool);
@@ -1015,6 +1024,27 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         return true;
+    }
+
+    private void addVolumesToList(List<VolumeVO> volumes, List<VolumeVO> volumesToAdd) {
+        if (CollectionUtils.isNotEmpty(volumesToAdd)) {
+            volumes.addAll(volumesToAdd);
+        }
+    }
+
+    protected void destroyLocalStoragePoolVolumes(long poolId) {
+        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+
+        List<VolumeVO> volumes = new ArrayList<>();
+        addVolumesToList(volumes, rootDisks);
+        addVolumesToList(volumes, dataVolumes);
+
+        if (CollectionUtils.isNotEmpty(volumes)) {
+            for (VolumeVO volume : volumes) {
+                volumeDao.updateAndRemoveVolume(volume);
+            }
+        }
     }
 
     /**
