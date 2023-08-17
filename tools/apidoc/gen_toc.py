@@ -133,6 +133,8 @@ known_categories = {
     'removeTungstenFabricNetworkGatewayFromLogicalRouter': 'Tungsten',
     'updateTungstenFabricLBHealthMonitor': 'Tungsten',
     'listTungstenFabricLBHealthMonitor': 'Tungsten',
+    'listNsxControllers': 'NSX',
+    'addNsxController': 'NSX',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
