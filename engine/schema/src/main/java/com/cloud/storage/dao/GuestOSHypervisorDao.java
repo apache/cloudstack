@@ -44,4 +44,6 @@ public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Lo
                                                                       String minHypervisorVersion);
 
     List<String> listHypervisorSupportedVersionsFromMinimumVersion(String hypervisorType, String hypervisorVersion);
+
+    List<GuestOSHypervisorVO> listByHypervisorTypeAndVersion(String hypervisorType, String hypervisorVersion);
 }

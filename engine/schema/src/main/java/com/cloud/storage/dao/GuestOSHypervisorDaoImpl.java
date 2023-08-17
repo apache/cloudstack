@@ -38,6 +38,7 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     protected final SearchBuilder<GuestOSHypervisorVO> userDefinedMappingSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsNameSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> availableHypervisorVersionSearch;
+    protected final SearchBuilder<GuestOSHypervisorVO> hypervisorTypeAndVersionSearch;
 
     public GuestOSHypervisorDaoImpl() {
         guestOsSearch = createSearchBuilder();
@@ -72,6 +73,11 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         availableHypervisorVersionSearch.select(null, SearchCriteria.Func.DISTINCT,
                 availableHypervisorVersionSearch.entity().getHypervisorVersion());
         availableHypervisorVersionSearch.done();
+
+        hypervisorTypeAndVersionSearch = createSearchBuilder();
+        hypervisorTypeAndVersionSearch.and("hypervisor_type", hypervisorTypeAndVersionSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hypervisorTypeAndVersionSearch.and("hypervisor_version", hypervisorTypeAndVersionSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        hypervisorTypeAndVersionSearch.done();
     }
 
     @Override
@@ -174,4 +180,11 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         return versions;
     }
 
+    @Override
+    public List<GuestOSHypervisorVO> listByHypervisorTypeAndVersion(String hypervisorType, String hypervisorVersion) {
+        SearchCriteria<GuestOSHypervisorVO> sc = hypervisorTypeAndVersionSearch.create();
+        sc.setParameters("hypervisor_type", hypervisorType);
+        sc.setParameters("hypervisor_version", hypervisorVersion);
+        return listIncludingRemovedBy(sc);
+    }
 }
