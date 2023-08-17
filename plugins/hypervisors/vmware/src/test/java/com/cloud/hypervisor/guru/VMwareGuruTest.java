@@ -16,30 +16,22 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateVmToPoolCommand;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
-
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,22 +41,27 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import static org.junit.Assert.assertEquals;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Logger.class, VMwareGuru.class})
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VMwareGuruTest {
 
@@ -88,22 +85,21 @@ public class VMwareGuruTest {
     ClusterDetailsDao _clusterDetailsDao;
 
     @Mock
-    Logger logger;
-
-    @Mock
     VolumeDao volumeDao;
 
     @Mock
     VolumeApiService volumeService;
 
+    AutoCloseable closeable;
 
     @Before
     public void testSetUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        vMwareGuru.volumeService = volumeService;
-        vMwareGuru._volumeDao = volumeDao;
-        vMwareGuru.s_logger = logger;
+        closeable = MockitoAnnotations.openMocks(this);
+    }
 
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -122,14 +118,13 @@ public class VMwareGuruTest {
         HostVO hostVO = Mockito.mock(HostVO.class);
 
         Mockito.when(localStorage.getId()).thenReturn(1L);
-        Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(_storagePoolDao.findById(1L)).thenReturn(storagePoolVO);
         Mockito.when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
         Mockito.when(dataVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
         Mockito.when(localStorage.isLocal()).thenReturn(true);
         Pair<Long, Long> clusterAndHost = new Pair<>(1L, 1L);
 
-        Mockito.when(vmManager.findClusterAndHostIdForVm(1L)).thenReturn(clusterAndHost);
+        Mockito.when(vmManager.findClusterAndHostIdForVm(vm, true)).thenReturn(clusterAndHost);
 
         List<StoragePoolHostVO> storagePoolHostVOS = new ArrayList<>();
         storagePoolHostVOS.add(storagePoolHostVO);
@@ -197,8 +192,6 @@ public class VMwareGuruTest {
 
     @Test
     public void detachVolumeTestWhenVolumeExistsButDetachFail() {
-        PowerMockito.mockStatic(Logger.class);
-        PowerMockito.when(Logger.getLogger(Mockito.eq(VMwareGuru.class))).thenReturn(logger);
         VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
         VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
@@ -218,13 +211,10 @@ public class VMwareGuruTest {
 
         vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
         Mockito.verify(volumeService, Mockito.times(1)).detachVolumeFromVM(Mockito.any());
-        Mockito.verify(logger, Mockito.times(1)).warn("Failed to detach volume [uuid: 123] from VM [uuid: 1234, name: test1], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: 321]).");
     }
 
     @Test
     public void detachVolumeTestWhenVolumeExistsAndDetachDontFail() {
-        PowerMockito.mockStatic(Logger.class);
-        PowerMockito.when(Logger.getLogger(Mockito.eq(VMwareGuru.class))).thenReturn(logger);
         VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
         VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
@@ -244,7 +234,6 @@ public class VMwareGuruTest {
 
         vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
         Mockito.verify(volumeService, Mockito.times(1)).detachVolumeFromVM(Mockito.any());
-        Mockito.verify(logger, Mockito.times(1)).debug("Volume [uuid: 123] detached with success from VM [uuid: 1234, name: test1], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: 321]).");
     }
 
     @Test

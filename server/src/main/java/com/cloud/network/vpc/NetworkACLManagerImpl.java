@@ -41,6 +41,8 @@ import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -73,6 +75,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private VpcService _vpcSvc;
     @Inject
     private MessageBus _messageBus;
+    @Inject
+    private ResourceTagDao resourceTagDao;
 
     private List<NetworkACLServiceProvider> _networkAclElements;
 
@@ -275,7 +279,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
-            _networkACLItemDao.remove(rule.getId());
+            removeRule(rule);
         } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
             rule.setState(State.Revoke);
             _networkACLItemDao.update(rule.getId(), rule);
@@ -353,8 +357,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return rules;
     }
 
-    private void removeRule(final NetworkACLItem rule) {
-        _networkACLItemDao.remove(rule.getId());
+    boolean removeRule(final NetworkACLItem rule) {
+        boolean rc = resourceTagDao.removeByIdAndType(rule.getId(), ResourceTag.ResourceObjectType.NetworkACL);
+        return rc && _networkACLItemDao.remove(rule.getId());
     }
 
     @Override
@@ -390,7 +395,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
 
     /**
      * Updates and applies the network ACL rule ({@link NetworkACLItemVO}).
-     * We will first try to update the ACL rule in the database using {@link NetworkACLItemDao#update(Long, NetworkACLItemVO)}. If it does not work, a {@link CloudRuntimeException} is thrown.
+     * We will first try to update the ACL rule in the database using {@link NetworkACLItemDao#updateNumberFieldNetworkItem(long, int)}. If it does not work, a {@link CloudRuntimeException} is thrown.
      * If we manage to update the ACL rule in the database, we proceed to apply it using {@link #applyNetworkACL(long)}. If this does not work we throw a {@link CloudRuntimeException}.
      * If all is working we return the {@link NetworkACLItemVO} given as parameter. We wil set the state of the rule to {@link com.cloud.network.vpc.NetworkACLItem.State#Add}.
      */

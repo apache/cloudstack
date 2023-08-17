@@ -499,10 +499,9 @@ export default {
       this.selectedTier = null
       this.tiers.loading = true
       api('listNetworks', {
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         supportedservices: 'PortForwarding',
-        vpcid: this.resource.vpcid
+        vpcid: this.resource.vpcid,
+        listall: this.resource.vpcid !== null
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
         if (this.tiers.data && this.tiers.data.length > 0) {
@@ -804,9 +803,7 @@ export default {
         keyword: this.searchQuery,
         page: this.vmPage,
         pagesize: this.vmPageSize,
-        networkid: networkId,
-        account: this.resource.account,
-        domainid: this.resource.domainid
+        networkid: networkId
       }).then(response => {
         this.vmCount = response.listvirtualmachinesresponse.count || 0
         this.vms = response.listvirtualmachinesresponse.virtualmachine

@@ -80,12 +80,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -104,11 +101,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
-@PrepareForTest({ComponentContext.class, ApplicationContext.class})
 public class VmwareDatacenterApiUnitTest {
 
     @Inject
@@ -166,11 +163,13 @@ public class VmwareDatacenterApiUnitTest {
     @Mock
     private static RemoveVmwareDcCmd removeCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void testSetUp() {
         Mockito.when(_configDao.isPremium()).thenReturn(true);
         ComponentContext.initComponentsLifeCycle();
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         DataCenterVO zone =
             new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
@@ -208,21 +207,21 @@ public class VmwareDatacenterApiUnitTest {
 
         dcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDcId);
 
-        Mockito.when(_dcDao.persist(Matchers.any(DataCenterVO.class))).thenReturn(zone);
+        Mockito.when(_dcDao.persist(any(DataCenterVO.class))).thenReturn(zone);
         Mockito.when(_dcDao.findById(1L)).thenReturn(zone);
-        Mockito.when(_podDao.persist(Matchers.any(HostPodVO.class))).thenReturn(pod);
+        Mockito.when(_podDao.persist(any(HostPodVO.class))).thenReturn(pod);
         Mockito.when(_podDao.findById(1L)).thenReturn(pod);
-        Mockito.when(_clusterDao.persist(Matchers.any(ClusterVO.class))).thenReturn(cluster);
+        Mockito.when(_clusterDao.persist(any(ClusterVO.class))).thenReturn(cluster);
         Mockito.when(_clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(_clusterDao.listByZoneId(1L)).thenReturn(null);
         Mockito.when(_clusterDao.expunge(1L)).thenReturn(true);
-        Mockito.when(_clusterDetailsDao.persist(Matchers.any(ClusterDetailsVO.class))).thenReturn(clusterDetails);
+        Mockito.when(_clusterDetailsDao.persist(any(ClusterDetailsVO.class))).thenReturn(clusterDetails);
         Mockito.when(_clusterDetailsDao.expunge(1L)).thenReturn(true);
-        Mockito.when(_vmwareDcDao.persist(Matchers.any(VmwareDatacenterVO.class))).thenReturn(dc);
+        Mockito.when(_vmwareDcDao.persist(any(VmwareDatacenterVO.class))).thenReturn(dc);
         Mockito.when(_vmwareDcDao.findById(1L)).thenReturn(null);
         Mockito.when(_vmwareDcDao.expunge(1L)).thenReturn(true);
         Mockito.when(_vmwareDcDao.getVmwareDatacenterByNameAndVcenter(vmwareDcName, vCenterHost)).thenReturn(null);
-        Mockito.when(_vmwareDcZoneMapDao.persist(Matchers.any(VmwareDatacenterZoneMapVO.class))).thenReturn(dcZoneMap);
+        Mockito.when(_vmwareDcZoneMapDao.persist(any(VmwareDatacenterZoneMapVO.class))).thenReturn(dcZoneMap);
         Mockito.when(_vmwareDcZoneMapDao.findByZoneId(1L)).thenReturn(null);
         Mockito.when(_vmwareDcZoneMapDao.expunge(1L)).thenReturn(true);
         Mockito.when(addCmd.getZoneId()).thenReturn(1L);
@@ -234,8 +233,9 @@ public class VmwareDatacenterApiUnitTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
 
     //@Test(expected = InvalidParameterValueException.class)

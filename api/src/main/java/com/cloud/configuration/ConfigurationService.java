@@ -274,7 +274,7 @@ public interface ConfigurationService {
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.
      *
-     * @param UpdateZoneCmd
+     * @param cmd command object containing the id of the zone to update and relevant attributes
      * @return Updated zone
      */
     DataCenter editZone(UpdateZoneCmd cmd);
@@ -282,8 +282,7 @@ public interface ConfigurationService {
     /**
      * Deletes a zone from the database. Will not allow you to delete zones that are being used anywhere in the system.
      *
-     * @param userId
-     * @param zoneId
+     * @param cmd command object containg the zoneid
      */
     boolean deleteZone(DeleteZoneCmd cmd);
 
@@ -319,13 +318,12 @@ public interface ConfigurationService {
     Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
             ResourceUnavailableException, ResourceAllocationException;
     /**
-     * Marks the the account with the default zone-id.
+     * Marks the account with the default zone-id.
      *
      * @param accountName
      * @param domainId
-     * @param zoneId
+     * @param defaultZoneId
      * @return The new account object
-     * @throws ,
      */
     Account markDefaultZone(String accountName, long domainId, long defaultZoneId);
 

@@ -76,6 +76,3 @@ CREATE TABLE  `cloud_usage`.`usage_network_offering` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 update `cloud_usage`.`usage_volume` set size = (size * 1048576);
-
-
-

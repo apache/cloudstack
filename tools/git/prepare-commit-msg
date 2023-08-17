@@ -101,4 +101,3 @@ case "$2,$3" in
   run_generic_commit $1
   ;;
 esac
-
