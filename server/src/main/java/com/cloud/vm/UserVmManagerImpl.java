@@ -650,6 +650,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.Simulator
     ));
 
+    protected static final List<HypervisorType> ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS = Arrays.asList(
+            HypervisorType.KVM,
+            HypervisorType.XenServer,
+            HypervisorType.VMware,
+            HypervisorType.Simulator,
+            HypervisorType.Custom
+    );
+
     private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
 
     @Override
@@ -3274,9 +3282,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         autoScaleManager.removeVmFromVmGroup(vmId);
 
-        vmScheduleManager.removeScheduleByVmId(vmId, expunge);
-
-        deleteVolumesFromVm(volumesToBeDeleted, expunge);
+        deleteVolumesFromVm(vm, volumesToBeDeleted, expunge);
 
         if (getDestroyRootVolumeOnVmDestruction(vm.getDomainId())) {
             VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
@@ -3718,6 +3724,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return createVirtualMachine(zone, serviceOffering, template, hostName, displayName, owner, diskOfferingId, diskSize, networkList, null, group, httpmethod, userData,
                 userDataId, userDataDetails, sshKeyPairs, hypervisor, caller, requestedIps, defaultIps, displayvm, keyboard, affinityGroupIdList, customParametrs, customId, dhcpOptionsMap,
                 dataDiskTemplateToDiskOfferingMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, overrideDiskOfferingId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm")
+    public UserVm finalizeCreateVirtualMachine(long vmId) {
+        s_logger.info("Loading UserVm " + vmId + " from DB");
+        UserVm userVm = getUserVm(vmId);
+        if (userVm == null) {
+            s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
+        } else {
+            s_logger.warn("UserVm " + vmId + " does not exist in DB");
+        }
+        return userVm;
     }
 
     private NetworkVO getNetworkToAddToNetworkList(VirtualMachineTemplate template, Account owner, HypervisorType hypervisor,
@@ -4327,7 +4346,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+        if (!ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorType)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -4993,6 +5012,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
+        String originalVncPassword = profile.getVirtualMachine().getVncPassword();
+        String returnedVncPassword = null;
         if (startAnswer != null) {
             StartAnswer startAns = (StartAnswer)startAnswer;
             VirtualMachineTO vmTO = startAns.getVirtualMachine();
@@ -5001,6 +5022,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     returnedIp = nicTO.getIp();
                 }
             }
+            returnedVncPassword = vmTO.getVncPassword();
         }
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -5052,6 +5074,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        updateVncPasswordIfItHasChanged(originalVncPassword, returnedVncPassword, profile);
+
         // get system ip and create static nat rule for the vm
         try {
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
@@ -5084,6 +5108,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
 
         return true;
+    }
+
+    protected void updateVncPasswordIfItHasChanged(String originalVncPassword, String returnedVncPassword, VirtualMachineProfile profile) {
+        if (returnedVncPassword != null && !originalVncPassword.equals(returnedVncPassword)) {
+            UserVmVO userVm = _vmDao.findById(profile.getId());
+            userVm.setVncPassword(returnedVncPassword);
+            _vmDao.update(userVm.getId(), userVm);
+        }
     }
 
     @Override
@@ -7974,7 +8006,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Create new context and inject correct event resource type, id and details,
             // otherwise VOLUME.DETACH event will be associated with VirtualMachine and contain VM id and other information.
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
-            volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
+            volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
             volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
             volumeContext.setEventResourceId(volume.getId());
 
@@ -7992,15 +8024,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void deleteVolumesFromVm(List<VolumeVO> volumes, boolean expunge) {
+    private void deleteVolumesFromVm(UserVmVO vm, List<VolumeVO> volumes, boolean expunge) {
 
         for (VolumeVO volume : volumes) {
+            destroyVolumeInContext(vm, expunge, volume);
+        }
+    }
 
+    private void destroyVolumeInContext(UserVmVO vm, boolean expunge, VolumeVO volume) {
+        // Create new context and inject correct event resource type, id and details,
+        // otherwise VOLUME.DESTROY event will be associated with VirtualMachine and contain VM id and other information.
+        CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
+        volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + vm.getUuid());
+        volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
+        volumeContext.setEventResourceId(volume.getId());
+        try {
             Volume result = _volumeService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, false);
 
             if (result == null) {
-                s_logger.error("DestroyVM remove volume - failed to delete volume " + volume.getInstanceId() + " from instance " + volume.getId());
+                s_logger.error(String.format("DestroyVM remove volume - failed to delete volume %s from instance %s", volume.getId(), volume.getInstanceId()));
             }
+        } finally {
+            // Remove volumeContext and pop vmContext back
+            CallContext.unregister();
         }
     }
 

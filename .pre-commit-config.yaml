@@ -41,3 +41,19 @@ repos:
       - id: mixed-line-ending
         files: \.(java|md|py|txt|yaml|yml)$
       # - id: trailing-whitespace
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+    - id: flake8
+      args: [--config, .github/linters/.flake8]
+      exclude: >
+        (?x)
+        ^agent/bindir/cloud-setup-agent\.in$|
+        ^client/bindir/cloud-update-xenserver-licenses\.in$|
+        ^cloud-cli/bindir/cloud-tool$|
+        ^python/bindir/cloud-grab-dependent-library-versions$|
+        ^python/bindir/cloud-setup-baremetal$|
+        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
+        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
+        ^setup/bindir/cloud-setup-encryption\.in$|
+        ^venv/.*$

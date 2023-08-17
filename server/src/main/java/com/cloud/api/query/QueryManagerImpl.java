@@ -727,6 +727,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        // additional order by since createdDate does not have milliseconds
+        // and two events, created within one second can be incorrectly ordered (for example VM.CREATE Completed before Scheduled)
+        searchFilter.addOrderBy(EventJoinVO.class, "id", false);
+
         SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -1317,7 +1321,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vmIds[i++] = v.getId();
         }
         List<UserVmJoinVO> vms = _userVmJoinDao.searchByIds(vmIds);
-        return new Pair<List<UserVmJoinVO>, Integer>(vms, count);
+        return new Pair<>(vms, count);
     }
 
     @Override

@@ -23,9 +23,13 @@ import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.PoolType;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef.AuthenticationType;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtStoragePoolDefTest extends TestCase {
 
+    @Test
     public void testSetGetStoragePool() {
         PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
@@ -45,6 +49,7 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(targetPath, pool.getTargetPath());
     }
 
+    @Test
     public void testNfsStoragePool() {
         PoolType type = PoolType.NETFS;
         String name = "myNFSPool";
@@ -62,6 +67,7 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(expectedXml, pool.toString());
     }
 
+    @Test
     public void testRbdStoragePool() {
         PoolType type = PoolType.RBD;
         String name = "myRBDPool";
@@ -83,6 +89,7 @@ public class LibvirtStoragePoolDefTest extends TestCase {
         assertEquals(expectedXml, pool.toString());
     }
 
+    @Test
     public void testRbdStoragePoolWithoutPort() {
         PoolType type = PoolType.RBD;
         String name = "myRBDPool";
