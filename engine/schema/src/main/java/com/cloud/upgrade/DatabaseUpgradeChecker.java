@@ -80,6 +80,8 @@ import com.cloud.upgrade.dao.Upgrade41610to41700;
 import com.cloud.upgrade.dao.Upgrade41700to41710;
 import com.cloud.upgrade.dao.Upgrade41710to41720;
 import com.cloud.upgrade.dao.Upgrade41720to41800;
+import com.cloud.upgrade.dao.Upgrade41800to41810;
+import com.cloud.upgrade.dao.Upgrade41810to41900;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -216,6 +218,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.17.0.1", new Upgrade41700to41710())
                 .next("4.17.1.0", new Upgrade41710to41720())
                 .next("4.17.2.0", new Upgrade41720to41800())
+                .next("4.18.0.0", new Upgrade41800to41810())
+                .next("4.18.1.0", new Upgrade41810to41900())
                 .build();
     }
 
@@ -442,10 +446,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     @VisibleForTesting
-    protected static final class NoopDbUpgrade implements DbUpgrade {
+    protected static final class NoopDbUpgrade implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
         private final String upgradedVersion;
         private final String[] upgradeRange;
+        private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
         private NoopDbUpgrade(final CloudStackVersion fromVersion, final CloudStackVersion toVersion) {
 
@@ -486,5 +491,19 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             return new InputStream[0];
         }
 
+        private void initSystemVmTemplateRegistration() {
+            systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+        }
+
+        @Override
+        public void updateSystemVmTemplates(Connection conn) {
+            s_logger.debug("Updating System Vm template IDs");
+            initSystemVmTemplateRegistration();
+            try {
+                systemVmTemplateRegistration.updateSystemVmTemplates(conn);
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+            }
+        }
     }
 }

@@ -19,6 +19,7 @@ package com.cloud.storage;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,8 +47,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.Sets;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -229,11 +229,11 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import java.math.BigInteger;
-import java.util.UUID;
+import com.google.common.collect.Sets;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -248,8 +248,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected AccountManager _accountMgr;
     @Inject
     protected ConfigurationManager _configMgr;
-    @Inject
-    protected VolumeDao _volsDao;
     @Inject
     private VolumeDataStoreDao _volumeDataStoreDao;
     @Inject
@@ -299,7 +297,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
-    protected VolumeDao _volumeDao;
+    protected VolumeDao volumeDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -372,7 +370,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
-        List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), Type.ROOT);
+        List<VolumeVO> rootVolForGivenVm = volumeDao.findByInstanceAndType(vm.getId(), Type.ROOT);
         if (rootVolForGivenVm != null && rootVolForGivenVm.size() > 0) {
             boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());
             if (!isPoolAvailable) {
@@ -436,7 +434,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
             StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
             if (PrimaryDataStoreVO.getPoolType() == StoragePoolType.LVM || PrimaryDataStoreVO.getPoolType() == StoragePoolType.EXT) {
-                SearchBuilder<VolumeVO> volumeSB = _volsDao.createSearchBuilder();
+                SearchBuilder<VolumeVO> volumeSB = volumeDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
                 volumeSB.and("state", volumeSB.entity().getState(), SearchCriteria.Op.NIN);
@@ -450,7 +448,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state", State.Starting, State.Running, State.Stopping, State.Migrating);
 
-                List<VolumeVO> volumes = _volsDao.search(volumeSC, null);
+                List<VolumeVO> volumes = volumeDao.search(volumeSC, null);
                 if (volumes.size() > 0) {
                     return true;
                 }
@@ -598,7 +596,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         StoragePoolSearch = _vmInstanceDao.createSearchBuilder();
 
-        SearchBuilder<VolumeVO> volumeSearch = _volumeDao.createSearchBuilder();
+        SearchBuilder<VolumeVO> volumeSearch = volumeDao.createSearchBuilder();
         volumeSearch.and("volumeType", volumeSearch.entity().getVolumeType(), SearchCriteria.Op.EQ);
         volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         volumeSearch.and("state", volumeSearch.entity().getState(), SearchCriteria.Op.EQ);
@@ -1035,10 +1033,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<StoragePoolVO> childStoragePools = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(sPool.getId());
         boolean canDelete = true;
         for (StoragePoolVO childPool : childStoragePools) {
-            Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(childPool.getId());
+            Pair<Long, Long> vlms = volumeDao.getCountAndTotalByPool(childPool.getId());
             if (forced) {
                 if (vlms.first() > 0) {
-                    Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(childPool.getId());
+                    Pair<Long, Long> nonDstrdVlms = volumeDao.getNonDestroyedCountAndTotalByPool(childPool.getId());
                     if (nonDstrdVlms.first() > 0) {
                         canDelete = false;
                         break;
@@ -1055,15 +1053,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private boolean deleteDataStoreInternal(StoragePoolVO sPool, boolean forced) {
-        Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(sPool.getId());
+        Pair<Long, Long> vlms = volumeDao.getCountAndTotalByPool(sPool.getId());
         if (forced) {
             if (vlms.first() > 0) {
-                Pair<Long, Long> nonDstrdVlms = _volsDao.getNonDestroyedCountAndTotalByPool(sPool.getId());
+                Pair<Long, Long> nonDstrdVlms = volumeDao.getNonDestroyedCountAndTotalByPool(sPool.getId());
                 if (nonDstrdVlms.first() > 0) {
                     throw new CloudRuntimeException("Cannot delete pool " + sPool.getName() + " as there are associated " + "non-destroyed vols for this pool");
                 }
                 // force expunge non-destroyed volumes
-                List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
+                List<VolumeVO> vols = volumeDao.listVolumesToBeDestroyed();
                 for (VolumeVO vol : vols) {
                     AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
                     try {
@@ -1326,7 +1324,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     }
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
+                    List<VolumeVO> vols = volumeDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
                         if (Type.ROOT.equals(vol.getVolumeType())) {
                              VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(vol.getInstanceId());
@@ -1336,7 +1334,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                  continue;
                              }
                         }
-
+                        if (isVolumeSuspectedDestroyDuplicateOfVmVolume(vol)) {
+                            s_logger.warn(String.format("Skipping cleaning up %s as it could be a duplicate for another volume on same pool", vol));
+                            continue;
+                        }
                         try {
                             // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
                             // system, but not necessary.
@@ -1375,7 +1376,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     // destroy uploaded volumes in abandoned/error state
                     List<VolumeDataStoreVO> volumeDataStores = _volumeDataStoreDao.listByVolumeState(Volume.State.UploadError, Volume.State.UploadAbandoned);
                     for (VolumeDataStoreVO volumeDataStore : volumeDataStores) {
-                        VolumeVO volume = _volumeDao.findById(volumeDataStore.getVolumeId());
+                        VolumeVO volume = volumeDao.findById(volumeDataStore.getVolumeId());
                         if (volume == null) {
                             s_logger.warn("Uploaded volume with id " + volumeDataStore.getVolumeId() + " not found, so cannot be destroyed");
                             continue;
@@ -1466,6 +1467,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } finally {
             scanLock.releaseRef();
         }
+    }
+
+    protected boolean isVolumeSuspectedDestroyDuplicateOfVmVolume(VolumeVO gcVolume) {
+        if (gcVolume.getPath() == null) {
+            return false;
+        }
+        if (gcVolume.getPoolId() == null) {
+            return false;
+        }
+        Long vmId = gcVolume.getInstanceId();
+        if (vmId == null) {
+            return false;
+        }
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return false;
+        }
+        List<VolumeVO> vmUsableVolumes = volumeDao.findUsableVolumesForInstance(vmId);
+        for (VolumeVO vol : vmUsableVolumes) {
+            if (gcVolume.getPoolId().equals(vol.getPoolId()) && gcVolume.getPath().equals(vol.getPath())) {
+                s_logger.debug(String.format("%s meant for garbage collection could a possible duplicate for %s", gcVolume, vol));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1889,7 +1915,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return _storagePoolDao.findByUuid(uuid);
     }
 
-    private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
+    public void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
@@ -1904,8 +1930,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (dataStoreVO != null && !dataStoreVO.getStatus().equals(StoragePoolStatus.Up)) {
-                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not ready for syncing, " +
-                        "as the status is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
+                String msg = String.format("Cannot synchronise datastore cluster %s because primary storage with id %s is not in Up state, " +
+                        "current state is %s", datastoreClusterPool.getUuid(), dataStoreVO.getUuid(), dataStoreVO.getStatus().toString());
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -1948,7 +1974,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (String childDatastoreUUID : childDatastoreUUIDs) {
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childDatastoreUUID);
-            List<VolumeVO> allVolumes = _volumeDao.findByPoolId(dataStoreVO.getId());
+            List<VolumeVO> allVolumes = volumeDao.findByPoolId(dataStoreVO.getId());
             allVolumes.removeIf(volumeVO -> volumeVO.getInstanceId() == null);
             allVolumes.removeIf(volumeVO -> volumeVO.getState() != Volume.State.Ready);
             for (VolumeVO volume : allVolumes) {
@@ -1984,7 +2010,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         volume.getUuid() + "Host=" + hostId;
 
                 // check for the changed details of volume and update database
-                VolumeVO volumeVO = _volumeDao.findById(volumeId);
+                VolumeVO volumeVO = volumeDao.findById(volumeId);
                 String datastoreName = answer.getContextParam("datastoreName");
                 if (datastoreName != null) {
                     StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
@@ -2005,7 +2031,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     volumeVO.setChainInfo(chainInfo);
                 }
 
-                _volumeDao.update(volumeVO.getId(), volumeVO);
+                volumeDao.update(volumeVO.getId(), volumeVO);
             }
             dataStoreVO.setParent(0L);
             _storagePoolDao.update(dataStoreVO.getId(), dataStoreVO);
@@ -2426,14 +2452,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // might be clearer that this "volume" in "volumeDiskProfilesList" still might have an old value for hv_ss_reverse.
             Volume volume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
-            VolumeVO volumeVO = _volumeDao.findById(volume.getId());
+            VolumeVO volumeVO = volumeDao.findById(volume.getId());
 
             if (volumeVO.getHypervisorSnapshotReserve() == null) {
                 // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
                 volService.updateHypervisorSnapshotReserveForVolume(getDiskOfferingVO(volumeVO), volumeVO.getId(), getHypervisorType(volumeVO));
 
                 // hv_ss_reserve field might have been updated; refresh from DB to make use of it in getDataObjectSizeIncludingHypervisorSnapshotReserve
-                volumeVO = _volumeDao.findById(volume.getId());
+                volumeVO = volumeDao.findById(volume.getId());
             }
 
             // this if statement should resolve to true at most once per execution of the for loop its contained within (for a root disk that is
@@ -3271,9 +3297,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (activeVolumeIds.contains(volumeId)) {
                 continue;
             }
-            Volume volume = _volumeDao.findById(volumeId);
+            Volume volume = volumeDao.findById(volumeId);
             if (volume != null && volume.getState() == Volume.State.Expunged) {
-                _volumeDao.remove(volumeId);
+                volumeDao.remove(volumeId);
             }
         }
 

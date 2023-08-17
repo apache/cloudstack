@@ -16,24 +16,32 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.quota.QuotaService;
+import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
@@ -44,10 +52,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -56,8 +62,9 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 
 import junit.framework.TestCase;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
@@ -87,10 +94,37 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Mock
     QuotaTariffVO quotaTariffVoMock;
 
+    @Mock
+    QuotaStatement quotaStatementMock;
+
+    @Mock
+    DomainDao domainDaoMock;
+
+    @Mock
+    QuotaUsageDao quotaUsageDaoMock;
+
     @InjectMocks
     QuotaResponseBuilderImpl quotaResponseBuilderSpy = Mockito.spy(QuotaResponseBuilderImpl.class);
 
     Date date = new Date();
+
+    @Mock
+    Account accountMock;
+
+    @Mock
+    DomainVO domainVOMock;
+
+    private void overrideDefaultQuotaEnabledConfigValue(final Object value) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(QuotaConfig.QuotaAccountEnabled, value);
+    }
+
+    private Calendar[] createPeriodForQuotaSummary() {
+        final Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR, 0);
+        return new Calendar[] {calendar, calendar};
+    }
 
     private QuotaTariffVO makeTariffTestData() {
         QuotaTariffVO tariffVO = new QuotaTariffVO();
@@ -287,12 +321,13 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     @Test
-    @PrepareForTest(QuotaResponseBuilderImpl.class)
     public void getNewQuotaTariffObjectTestCreateFromCurrentQuotaTariff() throws Exception {
-        PowerMockito.whenNew(QuotaTariffVO.class).withArguments(Mockito.any(QuotaTariffVO.class)).thenReturn(quotaTariffVoMock);
-
-        quotaResponseBuilderSpy.getNewQuotaTariffObject(quotaTariffVoMock, "", 0);
-        PowerMockito.verifyNew(QuotaTariffVO.class).withArguments(Mockito.any(QuotaTariffVO.class));
+        try (MockedConstruction<QuotaTariffVO> quotaTariffVOMockedConstruction = Mockito.mockConstruction(QuotaTariffVO.class, (mock,
+                                                                                                        context) -> {
+        })) {
+            QuotaTariffVO result = quotaResponseBuilderSpy.getNewQuotaTariffObject(quotaTariffVoMock, "", 0);
+            Assert.assertEquals(quotaTariffVOMockedConstruction.constructed().get(0), result);
+        }
     }
 
     @Test (expected = InvalidParameterValueException.class)
@@ -325,7 +360,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Test (expected = ServerApiException.class)
     public void deleteQuotaTariffTestQuotaDoesNotExistThrowsServerApiException() {
-        Mockito.doReturn(null).when(quotaTariffDaoMock).findById(Mockito.anyLong());
         quotaResponseBuilderSpy.deleteQuotaTariff("");
     }
 
@@ -338,5 +372,35 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Assert.assertTrue(quotaResponseBuilderSpy.deleteQuotaTariff(""));
 
         Mockito.verify(quotaTariffVoMock).setRemoved(Mockito.any(Date.class));
+    }
+
+    @Test
+    public void getQuotaSummaryResponseTestAccountIsNotNullQuotaIsDisabledShouldReturnFalse() throws NoSuchFieldException, IllegalAccessException {
+        Calendar[] period = createPeriodForQuotaSummary();
+        overrideDefaultQuotaEnabledConfigValue("false");
+
+        Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
+        Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));
+        Mockito.doReturn(BigDecimal.ZERO).when(quotaUsageDaoMock).findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Date.class), Mockito.any(Date.class));
+
+        QuotaSummaryResponse quotaSummaryResponse = quotaResponseBuilderSpy.getQuotaSummaryResponse(accountMock);
+
+        assertFalse(quotaSummaryResponse.getQuotaEnabled());
+    }
+
+    @Test
+    public void getQuotaSummaryResponseTestAccountIsNotNullQuotaIsEnabledShouldReturnTrue() throws NoSuchFieldException, IllegalAccessException {
+        Calendar[] period = createPeriodForQuotaSummary();
+        overrideDefaultQuotaEnabledConfigValue("true");
+
+        Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
+        Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));
+        Mockito.doReturn(BigDecimal.ZERO).when(quotaUsageDaoMock).findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Date.class), Mockito.any(Date.class));
+
+        QuotaSummaryResponse quotaSummaryResponse = quotaResponseBuilderSpy.getQuotaSummaryResponse(accountMock);
+
+        assertTrue(quotaSummaryResponse.getQuotaEnabled());
     }
 }

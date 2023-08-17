@@ -108,6 +108,8 @@ class Role:
             cmd.roleid = services["roleid"]
         if "description" in services:
             cmd.description = services["description"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.createRole(cmd).__dict__)
 
@@ -122,6 +124,8 @@ class Role:
             cmd.description = services["description"]
         if "forced" in services:
             cmd.type = services["forced"]
+        if "ispublic" in services:
+            cmd.ispublic = services["ispublic"]
 
         return Role(apiclient.importRole(cmd).__dict__)
 
@@ -522,7 +526,8 @@ class VirtualMachine:
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
-               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None, userdataid=None, userdatadetails=None):
+               properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
+               userdataid=None, userdatadetails=None, extraconfig=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -677,6 +682,9 @@ class VirtualMachine:
 
         if boottype:
             cmd.boottype = boottype
+
+        if extraconfig:
+            cmd.extraconfig = extraconfig
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -3477,7 +3485,8 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None,
+               sourcenatipaddress=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3559,6 +3568,8 @@ class Network:
             cmd.publicmtu = publicmtu
         if privatemtu:
             cmd.privatemtu = privatemtu
+        if sourcenatipaddress:
+            cmd.sourcenatipaddress = sourcenatipaddress
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -6510,3 +6521,182 @@ class PolicyRule:
         cmd.policyuuid = policyuuid
         cmd.ruleuuid = ruleuuid
         return apiclient.removeTungstenFabricPolicyRule(cmd)
+
+class GuestOSCategory:
+    """Manage Guest OS Categories"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, id=None, name=None, **kwargs):
+        """List all Guest OS categories"""
+        cmd = listOsCategories.listOsCategoriesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if name is not None:
+            cmd.name = name
+
+        return (apiclient.listOsCategories(cmd))
+
+class GuestOS:
+    """Manage Guest OS"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, osdisplayname=None,
+                  oscategoryid=None, name=None, details=None):
+        """Add Guest OS"""
+        cmd = addGuestOs.addGuestOsCmd()
+        cmd.osdisplayname = osdisplayname
+        cmd.oscategoryid = oscategoryid
+        if name is not None:
+            cmd.name = name
+        if details is not None:
+            cmd.details = details
+
+        return (apiclient.addGuestOs(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS"""
+        cmd = removeGuestOs.removeGuestOsCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOs(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osdisplayname=None, details=None):
+        """Update Guest OS"""
+        cmd = updateGuestOs.updateGuestOsCmd()
+        cmd.id = id
+        cmd.osdisplayname = osdisplayname
+        if details is not None:
+            cmd.details = details
+
+        return apiclient.updateGuestOs(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, oscategoryid=None, description=None, **kwargs):
+        """List all Guest OS"""
+        cmd = listOsTypes.listOsTypesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if oscategoryid is not None:
+            cmd.oscategoryid = oscategoryid
+        if description is not None:
+            cmd.description = description
+
+        return (apiclient.listOsTypes(cmd))
+
+class GuestOsMapping:
+    """Manage Guest OS Mappings"""
+
+    def __init__(self, items, services):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, ostypeid=None,
+                  hypervisor=None, hypervisorversion=None,
+                  osnameforhypervisor=None, osmappingcheckenabled=None, forced=None):
+        """Add Guest OS mapping"""
+        cmd = addGuestOsMapping.addGuestOsMappingCmd()
+        cmd.ostypeid = ostypeid
+        cmd.hypervisor = hypervisor
+        cmd.hypervisorversion = hypervisorversion
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+        if forced is not None:
+            cmd.forced = forced
+
+        return (apiclient.addGuestOsMapping(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, id):
+        """Remove Guest OS mapping"""
+        cmd = removeGuestOsMapping.removeGuestOsMappingCmd()
+        cmd.id = id
+
+        return apiclient.removeGuestOsMapping(cmd)
+
+    @classmethod
+    def update(cls, apiclient, id, osnameforhypervisor=None, osmappingcheckenabled=None):
+        """Update Guest OS mapping"""
+        cmd = updateGuestOsMapping.updateGuestOsMappingCmd()
+        cmd.id = id
+        cmd.osnameforhypervisor = osnameforhypervisor
+        if osmappingcheckenabled is not None:
+            cmd.osmappingcheckenabled = osmappingcheckenabled
+
+        return apiclient.updateGuestOsMapping(cmd)
+
+    @classmethod
+    def list(cls, apiclient, id=None, ostypeid=None, osdisplayname=None,
+             osnameforhypervisor=None, hypervisor=None, hypervisorversion=None, **kwargs):
+        """List all Guest OS mappings"""
+        cmd = listGuestOsMapping.listGuestOsMappingCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        if id is not None:
+            cmd.id = id
+        if ostypeid is not None:
+            cmd.ostypeid = ostypeid
+        if osdisplayname is not None:
+            cmd.osdisplayname = osdisplayname
+        if osnameforhypervisor is not None:
+            cmd.osnameforhypervisor = osnameforhypervisor
+        if hypervisor is not None:
+            cmd.hypervisor = hypervisor
+        if hypervisorversion is not None:
+            cmd.hypervisorversion = hypervisorversion
+
+        return (apiclient.listGuestOsMapping(cmd))
+
+class VMSchedule:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, virtualmachineid, action, schedule, timezone, startdate, enabled=False, description=None, enddate=None):
+        cmd = createVMSchedule.createVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.description = description
+        cmd.action = action
+        cmd.schedule = schedule
+        cmd.timezone = timezone
+        cmd.startdate = startdate
+        cmd.enddate = enddate
+        cmd.enabled = enabled
+        return VMSchedule(apiclient.createVMSchedule(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, virtualmachineid, id=None, enabled=None, action=None):
+        cmd = listVMSchedule.listVMScheduleCmd()
+        cmd.virtualmachineid = virtualmachineid
+        cmd.id = id
+        cmd.enabled = enabled
+        cmd.action = action
+        return apiclient.listVMSchedule(cmd)
+
+    def update(self, apiclient, **kwargs):
+        cmd = updateVMSchedule.updateVMScheduleCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateVMSchedule(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSchedule.deleteVMScheduleCmd()
+        cmd.id = self.id
+        cmd.virtualmachineid = self.virtualmachineid
+        return (apiclient.deleteVMSchedule(cmd))

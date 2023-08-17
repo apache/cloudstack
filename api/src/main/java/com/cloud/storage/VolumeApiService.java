@@ -21,6 +21,7 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.util.Map;
 
+import com.cloud.utils.fsm.NoTransitionException;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
@@ -163,6 +164,8 @@ public interface VolumeApiService {
 
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 
+    void destroyVolume(long volumeId);
+
     Volume recoverVolume(long volumeId);
 
     void validateCustomDiskOfferingSizeRange(Long sizeInGB);
@@ -172,4 +175,6 @@ public interface VolumeApiService {
     Volume changeDiskOfferingForVolume(ChangeOfferingForVolumeCmd cmd) throws ResourceAllocationException;
 
     void publishVolumeCreationUsageEvent(Volume volume);
+
+    boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException;
 }

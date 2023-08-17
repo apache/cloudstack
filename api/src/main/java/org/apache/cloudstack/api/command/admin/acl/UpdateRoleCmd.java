@@ -52,6 +52,9 @@ public class UpdateRoleCmd extends RoleCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = BaseCmd.CommandType.STRING, description = "The description of the role")
     private String roleDescription;
 
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Indicates whether the role will be visible to all users (public) or only to root admins (private).")
+    private Boolean publicRole;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,6 +65,10 @@ public class UpdateRoleCmd extends RoleCmd {
 
     public String getRoleName() {
         return roleName;
+    }
+
+    public Boolean isPublicRole() {
+        return publicRole;
     }
 
     /////////////////////////////////////////////////////
@@ -80,7 +87,7 @@ public class UpdateRoleCmd extends RoleCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
         CallContext.current().setEventDetails("Role: " + getRoleName() + ", type:" + getRoleType() + ", description: " + getRoleDescription());
-        role = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription());
+        role = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription(), isPublicRole());
         setupResponse(role);
     }
 

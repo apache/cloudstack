@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.deploy;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
@@ -33,20 +36,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.fsm.StateMachine2;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -59,6 +48,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -67,6 +58,10 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -98,6 +93,7 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -118,14 +114,18 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
@@ -133,12 +133,14 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -147,8 +149,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
 StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
@@ -270,6 +270,35 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         _affinityProcessors = affinityProcessors;
     }
 
+    protected void avoidOtherClustersForDeploymentIfMigrationDisabled(VirtualMachine vm, Host lastHost, ExcludeList avoids) {
+        if (lastHost == null || lastHost.getClusterId() == null ||
+                ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId())) {
+            return;
+        }
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vm.getId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            return;
+        }
+        boolean storageMigrationNeededDuringClusterMigration = false;
+        for (Volume volume : volumes) {
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (List.of(ScopeType.HOST, ScopeType.CLUSTER).contains(pool.getScope())) {
+                storageMigrationNeededDuringClusterMigration = true;
+                break;
+            }
+        }
+        if (!storageMigrationNeededDuringClusterMigration) {
+            return;
+        }
+        final Long lastHostClusterId = lastHost.getClusterId();
+        s_logger.warn(String.format("VM last host ID: %d belongs to zone ID: %s for which config - %s is false and storage migration would be needed for inter-cluster migration, therefore, adding all other clusters except ID: %d from this zone to avoid list",
+                lastHost.getId(), vm.getDataCenterId(), ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.key(), lastHostClusterId));
+        List<Long> clusterIds = _clusterDao.listAllClusters(lastHost.getDataCenterId());
+        Set<Long> existingAvoidedClusters = avoids.getClustersToAvoid();
+        clusterIds = clusterIds.stream().filter(x -> !Objects.equals(x, lastHostClusterId) && (existingAvoidedClusters == null || !existingAvoidedClusters.contains(x))).collect(Collectors.toList());
+        avoids.addClusterList(clusterIds);
+    }
+
     @Override
     public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
             throws InsufficientServerCapacityException, AffinityConflictException {
@@ -347,12 +376,24 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             planner = getDeploymentPlannerByName(plannerName);
         }
 
-        if (vm.getLastHostId() != null && haVmTag == null) {
-            DeployDestination deployDestination = deployInVmLastHostWithoutHA(vmProfile, plan, avoids, planner, vm, dc, uefiFlag, offering, cpuRequested, ramRequested);
+        Host lastHost = null;
+
+        String considerLastHostStr = (String)vmProfile.getParameter(VirtualMachineProfile.Param.ConsiderLastHost);
+        boolean considerLastHost = vm.getLastHostId() != null && haVmTag == null &&
+                (considerLastHostStr == null || Boolean.TRUE.toString().equalsIgnoreCase(considerLastHostStr));
+        if (considerLastHost) {
+            s_logger.debug("This VM has last host_id specified, trying to choose the same host: " + vm.getLastHostId());
+
+            HostVO host = _hostDao.findById(vm.getLastHostId());
+            lastHost = host;
+
+            DeployDestination deployDestination = deployInVmLastHost(vmProfile, plan, avoids, planner, vm, dc, offering, cpuRequested, ramRequested, volumesRequireEncryption);
             if (deployDestination != null) {
                 return deployDestination;
             }
         }
+
+        avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, avoids);
 
         DeployDestination dest = null;
         List<Long> clusterList = null;
@@ -414,98 +455,95 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         return dest;
     }
 
-    private DeployDestination deployInVmLastHostWithoutHA(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,
-            DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, String uefiFlag, ServiceOffering offering, int cpuRequested, long ramRequested) throws InsufficientServerCapacityException {
-        s_logger.debug(String.format("VM [%s] has specified last host [%s] without HA flag. Choosing this host to deploy VM.", vm.getUuid(), vm.getLastHostId()));
-
+    private DeployDestination deployInVmLastHost(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids,
+            DeploymentPlanner planner, VirtualMachine vm, DataCenter dc, ServiceOffering offering, int cpuRequested, long ramRequested,
+            boolean volumesRequireEncryption) throws InsufficientServerCapacityException {
         HostVO host = _hostDao.findById(vm.getLastHostId());
+        _hostDao.loadHostTags(host);
+        _hostDao.loadDetails(host);
 
-        if (canUseLastHost(host, avoids, plan, vm, offering)) {
+        if (canUseLastHost(host, avoids, plan, vm, offering, volumesRequireEncryption)) {
             if (host.getStatus() != Status.Up) {
                 s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host is not in UP state or is not enabled. Host current status [%s] and resource status [%s].",
                         vm.getUuid(), host.getUuid(), host.getState().name(), host.getResourceState()));
                 return null;
             }
+            if (checkVmProfileAndHost(vmProfile, host)) {
+                long cluster_id = host.getClusterId();
+                ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
+                ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
+                Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
+                Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-            if (offering.getHostTag() != null) {
-                _hostDao.loadHostTags(host);
-                if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
-                    s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host does not contain the tags [%s] used by the VM offering [%s].",
-                            vm.getUuid(), host.getUuid(), offering.getHostTag(), offering.getUuid()));
+                boolean hostHasCpuCapability, hostHasCapacity = false;
+                hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+
+                if (hostHasCpuCapability) {
+                    // first check from reserved capacity
+                    hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested, true, cpuOvercommitRatio, memoryOvercommitRatio, true);
+
+                    // if not reserved, check the free capacity
+                    if (!hostHasCapacity)
+                        hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested, false, cpuOvercommitRatio, memoryOvercommitRatio, true);
+                    }
+
+                boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
+                if (!hostHasCapacity || !hostHasCpuCapability) {
+                    s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host does not have enough capacity to deploy this VM.", vm.getUuid(), host.getUuid()));
                     return null;
                 }
-            }
+                s_logger.debug(String.format("Last host [%s] of VM [%s] is UP and has enough capacity. Checking for suitable pools for this host under zone [%s], pod [%s] and cluster [%s].",
+                        host.getUuid(), vm.getUuid(), host.getDataCenterId(), host.getPodId(), host.getClusterId()));
 
-            long clusterId = host.getClusterId();
-            ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio");
-            ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(clusterId, "memoryOvercommitRatio");
-            Float cpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
-            Float memoryOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
-
-            boolean hostHasCpuCapability = false;
-            boolean hostHasCapacity = false;
-
-            hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
-
-            if (hostHasCpuCapability) {
-                hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested, true,
-                        cpuOvercommitRatio, memoryOvercommitRatio, true);
-
-                if (!hostHasCapacity)
-                    hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpuRequested, ramRequested,
-                            false, cpuOvercommitRatio, memoryOvercommitRatio, true);
-            }
-
-            boolean displayStorage = getDisplayStorageFromVmProfile(vmProfile);
-            if (!hostHasCapacity || !hostHasCpuCapability) {
-                s_logger.debug(String.format("Cannot deploy VM [%s] to the last host [%s] because this host does not have enough capacity to deploy this VM.", vm.getUuid(), host.getUuid()));
-                return null;
-            }
-
-            s_logger.debug(String.format("Last host [%s] of VM [%s] is UP and has enough capacity. Checking for suitable pools for this host under zone [%s], pod [%s] and cluster [%s].",
-                    host.getUuid(), vm.getUuid(), host.getDataCenterId(), host.getPodId(), host.getClusterId()));
-
-            Pod pod = _podDao.findById(host.getPodId());
-            Cluster cluster = _clusterDao.findById(host.getClusterId());
-            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                DeployDestination dest = new DeployDestination(dc, pod, cluster, host,
-                        new HashMap<Volume, StoragePool>(), displayStorage);
-                s_logger.debug("Returning Deployment Destination: " + dest);
-                return dest;
-            }
-
-            DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(),
-                    host.getClusterId(), host.getId(), plan.getPoolId(), null);
-            Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, lastPlan,
-                    avoids, HostAllocator.RETURN_UPTO_ALL);
-            Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
-            List<Volume> readyAndReusedVolumes = result.second();
-
-            if (suitableVolumeStoragePools.isEmpty()) {
-                s_logger.debug(String.format("Cannot find suitable storage pools in host [%s] to deploy VM [%s]", host.getUuid(), vm.getUuid()));
-                return null;
-            }
-
-            List<Host> suitableHosts = new ArrayList<Host>();
-            suitableHosts.add(host);
-            Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts,
-                    suitableVolumeStoragePools, avoids, getPlannerUsage(planner, vmProfile, plan, avoids),
-                    readyAndReusedVolumes, plan.getPreferredHosts(), vm);
-            if (potentialResources != null) {
-                Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-                for (Volume vol : readyAndReusedVolumes) {
-                    storageVolMap.remove(vol);
+                Pod pod = _podDao.findById(host.getPodId());
+                Cluster cluster = _clusterDao.findById(host.getClusterId());
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>(), displayStorage);
+                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    return dest;
                 }
-                DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap, displayStorage);
-                s_logger.debug("Returning Deployment Destination: " + dest);
-                return dest;
+
+                // search for storage under the zone, pod, cluster
+                // of
+                // the last host.
+                DataCenterDeployment lastPlan = new DataCenterDeployment(host.getDataCenterId(),
+                        host.getPodId(), host.getClusterId(), host.getId(), plan.getPoolId(), null);
+                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(
+                        vmProfile, lastPlan, avoids, HostAllocator.RETURN_UPTO_ALL);
+                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                List<Volume> readyAndReusedVolumes = result.second();
+
+                // choose the potential pool for this VM for this
+                // host
+                if (suitableVolumeStoragePools.isEmpty()) {
+                    s_logger.debug(String.format("Cannot find suitable storage pools in host [%s] to deploy VM [%s]", host.getUuid(), vm.getUuid()));
+                    return null;
+                }
+                List<Host> suitableHosts = new ArrayList<Host>();
+                suitableHosts.add(host);
+                Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
+                        suitableHosts, suitableVolumeStoragePools, avoids,
+                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts(), vm);
+                if (potentialResources != null) {
+                    Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                    // remove the reused vol<->pool from
+                    // destination, since we don't have to
+                    // prepare
+                    // this volume.
+                    for (Volume vol : readyAndReusedVolumes) {
+                        storageVolMap.remove(vol);
+                    }
+                    DeployDestination dest = new DeployDestination(dc, pod, cluster, host, storageVolMap, displayStorage);
+                    s_logger.debug("Returning Deployment Destination: " + dest);
+                    return dest;
+                }
             }
         }
-        s_logger.debug("Cannot choose the last host to deploy this VM ");
+        s_logger.debug(String.format("Cannot choose the last host to deploy this VM %s", vm));
         return null;
     }
 
-    private boolean canUseLastHost(HostVO host, ExcludeList avoids, DeploymentPlan plan, VirtualMachine vm, ServiceOffering offering) {
+    private boolean canUseLastHost(HostVO host, ExcludeList avoids, DeploymentPlan plan, VirtualMachine vm, ServiceOffering offering, boolean volumesRequireEncryption) {
         if (host == null) {
             s_logger.warn(String.format("Could not find last host of VM [%s] with id [%s]. Skipping this and trying other available hosts.", vm.getUuid(), vm.getLastHostId()));
             return false;
@@ -533,6 +571,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())) {
             s_logger.debug(String.format("Cannot deploy VM [%s] in the last host [%s] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
                     vm.getUuid(), host.getUuid()));
+            return false;
+        }
+
+        if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
+            s_logger.warn(String.format("The last host of this VM %s does not support volume encryption, which is required by this VM.", host));
             return false;
         }
         return true;
@@ -1671,11 +1714,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // for each volume find list of suitable storage pools by calling the
         // allocators
-        Set<Long> originalAvoidPoolSet = avoid.getPoolsToAvoid();
-        if (originalAvoidPoolSet == null) {
-            originalAvoidPoolSet = new HashSet<Long>();
+        Set<Long> originalAvoidPoolSet = new HashSet<>();
+        if (avoid.getPoolsToAvoid() != null) {
+            originalAvoidPoolSet.addAll(avoid.getPoolsToAvoid());
         }
-        Set<Long> poolsToAvoidOutput = new HashSet<Long>(originalAvoidPoolSet);
+        Set<Long> poolsToAvoidOutput = new HashSet<>(originalAvoidPoolSet);
 
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug(String.format("Checking suitable pools for volume [%s, %s] of VM [%s].", toBeCreated.getUuid(), toBeCreated.getVolumeType().name(), vmProfile.getUuid()));
@@ -1697,12 +1740,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
-
-            //FR123 check how is it different for service offering getTagsArray and disk offering's
-            //if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
-            //        && vmProfile.getServiceOffering().getTagsArray().length != 0) {
-            //    diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
-            //}
 
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;

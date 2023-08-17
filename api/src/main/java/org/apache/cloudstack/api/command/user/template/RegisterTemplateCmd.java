@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,6 +40,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
@@ -60,8 +62,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
                type = CommandType.STRING,
-               required = true,
-               description = "the display text of the template. This is usually used for display purposes.",
+               description = "The display text of the template, defaults to 'name'.",
                length = 4096)
     private String displayText;
 
@@ -176,7 +177,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? templateName : displayText;
     }
 
     public String getFormat() {
@@ -342,9 +343,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Parameter zoneids cannot combine all zones (-1) option with other zones");
 
-        if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    "Parameter directdownload is only allowed for KVM templates");
+        String customHypervisor = HypervisorGuru.HypervisorCustomDisplayName.value();
+        if (isDirectDownload() && !(getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())
+                || getHypervisor().equalsIgnoreCase(customHypervisor))) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Parameter directdownload " +
+                    "is only allowed for KVM or %s templates", customHypervisor));
         }
 
         if (!isDeployAsIs() && osTypeId == null) {

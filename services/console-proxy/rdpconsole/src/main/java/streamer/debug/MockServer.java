@@ -198,8 +198,8 @@ public class MockServer implements Runnable {
         return shutdowned;
     }
 
-    public void waitUntilShutdowned(long timeToWaitMiliseconds) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + timeToWaitMiliseconds;
+    public void waitUntilShutdowned(long timeToWaitMilliseconds) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeToWaitMilliseconds;
         while (!shutdowned && System.currentTimeMillis() < deadline) {
             Thread.sleep(10);
         }

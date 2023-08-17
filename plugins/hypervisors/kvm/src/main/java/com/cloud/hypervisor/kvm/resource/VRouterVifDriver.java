@@ -107,7 +107,8 @@ public class VRouterVifDriver extends VifDriverBase {
     @Override
     public boolean isExistingBridge(String bridgeName) {
         File f = new File("/sys/devices/virtual/net/" + bridgeName);
-        return f.exists();
+        File bridge = new File("/sys/devices/virtual/net/" + bridgeName + "/bridge");
+        return f.exists() && ! bridge.exists();
     }
 
     @Override

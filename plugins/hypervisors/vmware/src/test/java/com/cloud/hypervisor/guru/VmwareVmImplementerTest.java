@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,16 +32,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.vm.VmDetailConstants;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ConfigKey.class, VmwareVmImplementer.class})
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VmwareVmImplementerTest {
 
@@ -54,9 +52,16 @@ public class VmwareVmImplementerTest {
 
     private Map<String,String> vmDetails = new HashMap<String, String>();
 
+    AutoCloseable closeable;
+
     @Before
     public void testSetUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     private void setConfigValues(Boolean globalNV, Boolean globalNVPVM, String localNV){

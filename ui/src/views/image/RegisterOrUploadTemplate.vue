@@ -44,7 +44,7 @@
             <a-upload-dragger
               :multiple="false"
               :fileList="fileList"
-              :remove="handleRemove"
+              @remove="handleRemove"
               :beforeUpload="beforeUpload"
               v-model:value="form.file">
               <p class="ant-upload-drag-icon">
@@ -128,9 +128,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex">
+                <a-select-option v-for="(opt, optIndex) in hyperVisor.opts" :key="optIndex" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -145,16 +145,16 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in format.opts" :key="opt.id">
+                <a-select-option v-for="opt in format.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && hyperKVMShow && currentForm !== 'Upload'">
+        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm !== 'Upload'">
           <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload" :label="$t('label.directdownload')">
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
@@ -191,9 +191,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
+                <a-select-option v-for="opt in rootDisk.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -206,10 +206,10 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 :placeholder="$t('label.nicadaptertype')">
-                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
+                <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -226,10 +226,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.keyboard')">
-            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
+            <a-select-option v-for="opt in keyboardType.opts" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -243,12 +243,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="form.ostypeid"
             :loading="osTypes.loading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
+            <a-select-option v-for="opt in osTypes.opts" :key="opt.id" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -263,12 +263,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 v-model:value="userdataid"
                 :placeholder="linkUserDataParams.userdataid.description"
                 :loading="userdata.loading">
-                <a-select-option v-for="opt in userdata.opts" :key="opt.id">
+                <a-select-option v-for="opt in userdata.opts" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -280,13 +280,14 @@
                 <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
               </template>
               <a-select
+                showSearch
                 v-model:value="userdatapolicy"
                 :placeholder="linkUserDataParams.userdatapolicy.description"
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id">
+                <a-select-option v-for="opt in userdatapolicylist.opts" :key="opt.id" :label="opt.id || opt.description">
                   {{ opt.id || opt.description }}
                 </a-select-option>
               </a-select>
@@ -397,6 +398,7 @@ export default {
       userdatapolicylist: {},
       defaultOsId: null,
       hyperKVMShow: false,
+      hyperCustomShow: false,
       hyperXenServerShow: false,
       hyperVMWShow: false,
       selectedFormat: '',
@@ -407,7 +409,8 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
+      customHypervisorName: 'Custom'
     }
   },
   beforeCreate () {
@@ -441,7 +444,6 @@ export default {
         url: [{ required: true, message: this.$t('message.error.required.input') }],
         file: [{ required: true, message: this.$t('message.error.required.input') }],
         name: [{ required: true, message: this.$t('message.error.required.input') }],
-        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneids: [
           { type: 'array', required: true, message: this.$t('message.error.select') },
           {
@@ -454,9 +456,9 @@ export default {
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
-      console.log(this.form)
     },
     fetchData () {
+      this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
       this.fetchUserData()
@@ -515,6 +517,23 @@ export default {
           description: `${this.$t('message.upload.template.failed.description')} -  ${e}`,
           duration: 0
         })
+      })
+    },
+    fetchCustomHypervisorName () {
+      const params = {
+        name: 'hypervisor.custom.display.name'
+      }
+      this.loading = true
+      api('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.customHypervisorName = config.value
+            store.dispatch('SetCustomHypervisorName', this.customHypervisorName)
+          }
+        }
+      }).finally(() => {
+        this.loading = false
       })
     },
     fetchZone () {
@@ -576,7 +595,7 @@ export default {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
-        this.defaultOsId = this.osTypes.opts[1].id
+        this.defaultOsId = this.osTypes.opts[1].name
       }).finally(() => {
         this.osTypes.loading = false
       })
@@ -782,6 +801,13 @@ export default {
             description: 'TAR'
           })
           break
+        case this.customHypervisorName:
+          this.hyperCustomShow = true
+          format.push({
+            id: 'RAW',
+            description: 'RAW'
+          })
+          break
         default:
           break
       }
@@ -840,6 +866,7 @@ export default {
       this.hyperXenServerShow = false
       this.hyperVMWShow = false
       this.hyperKVMShow = false
+      this.hyperCustomShow = false
       this.deployasis = false
       this.allowDirectDownload = false
       this.selectedFormat = null

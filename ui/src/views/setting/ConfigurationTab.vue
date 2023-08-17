@@ -138,12 +138,12 @@ export default {
         {
           title: 'name',
           dataIndex: 'name',
-          slots: { customRender: 'name' }
+          key: 'name'
         },
         {
           title: 'value',
           dataIndex: 'value',
-          slots: { customRender: 'value' },
+          key: 'value',
           width: '29%'
         }
       ]
@@ -156,7 +156,15 @@ export default {
       this.page = parseInt(this.$route.query.page) || 1
       this.pagesize = parseInt(this.$route.query.pagesize) || this.pagesize
       this.filter = this.$route.query.filter || ''
-      this.fetchConfigurationData()
+    },
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchConfigurationData()
+      }
     }
   },
   created () {

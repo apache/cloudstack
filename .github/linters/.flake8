@@ -20,6 +20,8 @@
 # E242 Tab after ','
 # E273 Tab after keyword
 # E274 Tab before keyword
+# E742 Do not define classes named 'I', 'O', or 'l'
+# E743 Do not define functions named 'I', 'O', or 'l'
 # E901 SyntaxError or IndentationError
 # E902 IOError
 # W291 Trailing whitespace
@@ -28,4 +30,4 @@
 # W391 Blank line at end of file
 
 [flake8]
-select = E223,E224,E242,E273,E274,E901,E902,W291,W292,W293,W391
+select = E223,E224,E242,E273,E274,E742,E743,E901,E902,W291,W292,W293,W391

@@ -114,6 +114,11 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = client.isVncOverWebSocketConnectionAlive();
+                            try {
+                                Thread.sleep(1);
+                            } catch (Exception e) {
+                                s_logger.warn("Error on sleep for vnc over websocket", e);
+                            }
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
@@ -200,7 +205,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         client.processHandshakeSecurityType(secType, getClientHostPassword(),
                 getClientHostAddress(), getClientHostPort());
 
-        client.processSecurityResultMsg(secType);
+        client.processSecurityResultMsg();
         byte[] securityResultToClient = new byte[] { 0, 0, 0, 0 };
         sendMessageToVNCClient(securityResultToClient, 4);
         client.setWaitForNoVnc(true);

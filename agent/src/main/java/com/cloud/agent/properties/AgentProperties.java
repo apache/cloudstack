@@ -312,6 +312,9 @@ public class AgentProperties{
      */
     public static final Property<String> OPENVSWITCH_DPDK_OVS_PATH = new Property<>("openvswitch.dpdk.ovs.path", null, String.class);
 
+    public static final Property<String> HEALTH_CHECK_SCRIPT_PATH =
+            new Property<>("agent.health.check.script.path", null, String.class);
+
     /**
      * Sets the hypervisor type.<br>
      * Possible values: kvm | lxc <br>
@@ -720,6 +723,13 @@ public class AgentProperties{
      * Default value: <code>1</code>
      */
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
+
+    /**
+     * BGP controll CIDR
+     * Data type: String.<br>
+     * Default value: <code>169.254.0.0/16</code>
+     */
+    public static final Property<String> CONTROL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
 
     public static class Property <T>{
         private String name;
