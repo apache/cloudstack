@@ -8,4 +8,7 @@ public interface NsxProvider extends InternalIdentity, Identity {
     String getProviderName();
     String getUsername();
     long getZoneId();
+
+    String getTier0Gateway();
+    String getEdgeCluster();
 }

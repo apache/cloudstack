@@ -13,5 +13,5 @@ public interface NsxProviderService extends PluggableService {
 
     NsxControllerResponse createNsxControllerResponse(NsxProvider tungstenProvider);
 
-    List<BaseResponse> listTungstenProvider(Long zoneId);
+    List<BaseResponse> listNsxProviders(Long zoneId);
 }
