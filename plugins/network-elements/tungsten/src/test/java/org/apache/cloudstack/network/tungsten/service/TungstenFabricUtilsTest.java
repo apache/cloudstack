@@ -28,11 +28,15 @@ import com.cloud.network.dao.TungstenProviderDao;
 import com.cloud.network.element.TungstenProviderVO;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenCommand;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenFabricUtilsTest {
     @Mock
     AgentManager agentMgr;
@@ -41,12 +45,19 @@ public class TungstenFabricUtilsTest {
 
     TungstenFabricUtils tungstenFabricUtils;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         tungstenFabricUtils = new TungstenFabricUtils();
         tungstenFabricUtils.agentMgr = agentMgr;
         tungstenFabricUtils.tungstenProviderDao = tungstenProviderDao;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -88,7 +99,6 @@ public class TungstenFabricUtilsTest {
         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
         when(agentMgr.easySend(anyLong(), any(TungstenCommand.class))).thenReturn(tungstenAnswer);
         when(tungstenAnswer.getResult()).thenReturn(false);
-        when(tungstenAnswer.getDetails()).thenReturn("");
 
         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
     }

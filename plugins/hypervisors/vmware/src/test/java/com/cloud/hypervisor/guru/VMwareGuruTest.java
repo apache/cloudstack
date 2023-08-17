@@ -16,6 +16,29 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.dc.ClusterDetailsDao;
@@ -30,31 +53,8 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({VMwareGuru.class})
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VMwareGuruTest {
 
@@ -77,9 +77,16 @@ public class VMwareGuruTest {
     @Mock
     ClusterDetailsDao _clusterDetailsDao;
 
+    AutoCloseable closeable;
+
     @Before
     public void testSetUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -98,14 +105,13 @@ public class VMwareGuruTest {
         HostVO hostVO = Mockito.mock(HostVO.class);
 
         Mockito.when(localStorage.getId()).thenReturn(1L);
-        Mockito.when(vm.getId()).thenReturn(1L);
         Mockito.when(_storagePoolDao.findById(1L)).thenReturn(storagePoolVO);
         Mockito.when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
         Mockito.when(dataVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
         Mockito.when(localStorage.isLocal()).thenReturn(true);
         Pair<Long, Long> clusterAndHost = new Pair<>(1L, 1L);
 
-        Mockito.when(vmManager.findClusterAndHostIdForVm(1L)).thenReturn(clusterAndHost);
+        Mockito.when(vmManager.findClusterAndHostIdForVm(vm, true)).thenReturn(clusterAndHost);
 
         List<StoragePoolHostVO> storagePoolHostVOS = new ArrayList<>();
         storagePoolHostVOS.add(storagePoolHostVO);

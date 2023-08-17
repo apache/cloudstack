@@ -490,7 +490,7 @@ class TestRegionVpcOffering(cloudstackTestCase):
                                   vpcid=vpc.id
                                   )
 
-        self.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.debug("Adding NetworkACl rules to make PF and LB accessible")
         NetworkACL.create(
                 self.apiclient,
                 networkid=network.id,

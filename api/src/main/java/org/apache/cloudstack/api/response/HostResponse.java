@@ -29,7 +29,6 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -89,7 +88,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
-    private HypervisorType hypervisor;
+    private String hypervisor;
 
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
@@ -335,7 +334,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.version = version;
     }
 
-    public void setHypervisor(HypervisorType hypervisor) {
+    public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 
@@ -602,7 +601,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return version;
     }
 
-    public HypervisorType getHypervisor() {
+    public String getHypervisor() {
         return hypervisor;
     }
 

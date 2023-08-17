@@ -35,8 +35,17 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'hypervisor', 'ostypename']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
@@ -45,8 +54,8 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
-          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
+          'crossZones', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype', 'url')
@@ -187,8 +196,17 @@ export default {
       resourceType: 'ISO',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
