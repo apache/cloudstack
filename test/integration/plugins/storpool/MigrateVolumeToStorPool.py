@@ -78,9 +78,18 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
 
     @classmethod
     def setUpCloudStack(cls):
-        cls.spapi = spapi.Api(host="10.2.23.248", port="81", auth="6549874687", multiCluster=True)
+        config = cls.getClsConfig()
+        StorPoolHelper.logger = cls
+
+        zone = config.zones[0]
+        assert zone is not None
+
+        cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestMigrateVolumeToAnotherPool, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
+
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
+        assert cls.zone is not None
 
         cls._cleanup = []
 
@@ -93,14 +102,6 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = None
-        zones = list_zones(cls.apiclient)
-
-        for z in zones:
-            if z.name == cls.getClsConfig().mgtSvr[0].zone:
-                cls.zone = z
-
-        assert cls.zone is not None
 
         td = TestData()
         cls.testdata = td.testdata

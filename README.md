@@ -62,7 +62,7 @@ via GitHub pull requests.
 ## Documentation
 
 * [Project Documentation](https://docs.cloudstack.apache.org)
-* [Release notes](https://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
+* [Release notes](https://docs.cloudstack.apache.org/en/latest/releasenotes/index.html)
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
@@ -135,7 +135,7 @@ This distribution includes cryptographic software. The country in which you curr
 reside may have restrictions on the import, possession, use, and/or re-export to another
 country, of encryption software. BEFORE using any encryption software, please check your
 country's laws, regulations and policies concerning the import, possession, or use, and
-re-export of encryption software, to see if this is permitted. See http://www.wassenaar.org/
+re-export of encryption software, to see if this is permitted. See [The Wassenaar Arrangement](http://www.wassenaar.org/) 
 for more information.
 
 The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS), has

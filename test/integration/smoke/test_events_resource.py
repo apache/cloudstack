@@ -16,6 +16,7 @@
 # under the License.
 """ BVT tests for Events Resource
 """
+import json
 import os
 import tempfile
 import time
@@ -184,7 +185,7 @@ class TestEventsResource(cloudstackTestCase):
         for event in events:
             if event.type.startswith("VM.") or (event.type.startswith("NETWORK.") and not event.type.startswith("NETWORK.ELEMENT")) or event.type.startswith("VOLUME.") or event.type.startswith("ACCOUNT.") or event.type.startswith("DOMAIN.") or event.type.startswith("TEMPLATE."):
                 if event.resourceid is None or event.resourcetype is None:
-                    self.debug("Failed event:: %" % event)
+                    self.debug("Failed event:: %s" % json.dumps(event, indent=2))
                     self.fail("resourceid or resourcetype for the event not found!")
                 else:
                     self.debug("Event %s at %s:: Resource Type: %s, Resource ID: %s" % (event.type, event.created, event.resourcetype, event.resourceid))

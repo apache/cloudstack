@@ -53,4 +53,3 @@ $(xe vm-param-set HVM-boot-params:order=nc uuid=$vmuuid)
 #Minimum mem requirements for RHEL/Ubuntu
 $(xe vm-memory-limits-set  static-min=1GiB static-max=1GiB dynamic-min=1GiB dynamic-max=1GiB uuid=$vmuuid)
 $(xe vm-start uuid=$vmuuid)
-

@@ -25,7 +25,7 @@
       <a-tab-pane :tab="$t('label.details')" key="details">
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.access')" key="access">
+      <a-tab-pane v-if="resource.clustertype == 'CloudManaged'" :tab="$t('label.access')" key="access">
         <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
           <div v-if="clusterConfig !== ''">
             <a-textarea :value="clusterConfig" :rows="5" readonly />
@@ -78,6 +78,11 @@
                 {{ $t('label.open.url') }}<br><br>
                 <a href="http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"><code>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</code></a>
               </p>
+            </a-timeline-item>
+            <a-timeline-item>
+              <p v-html="$t('label.kubernetes.dashboard.create.token')"></p>
+              <p v-html="$t('label.kubernetes.dashboard.create.token.desc')"></p>
+              <a-textarea :value="'kubectl --kubeconfig /custom/path/kube.conf apply -f - <<EOF\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRoleBinding\nmetadata:\n  name: kubernetes-dashboard-admin-user\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: ClusterRole\n  name: cluster-admin\nsubjects:\n- kind: ServiceAccount\n  name: kubernetes-dashboard-admin-user\n  namespace: kubernetes-dashboard\n---\napiVersion: v1\nkind: Secret\ntype: kubernetes.io/service-account-token\nmetadata:\n  name: kubernetes-dashboard-token\n  namespace: kubernetes-dashboard\n  annotations:\n    kubernetes.io/service-account.name: kubernetes-dashboard-admin-user\nEOF'" :rows="10" readonly />
             </a-timeline-item>
             <a-timeline-item>
               <p>
@@ -239,6 +244,9 @@ export default {
     ]
     if (!isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
+    }
+    if (this.resource.clustertype === 'ExternalManaged') {
+      this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
     }
     this.handleFetchData()
     const self = this

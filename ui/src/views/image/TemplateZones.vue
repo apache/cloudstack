@@ -38,7 +38,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+            <resource-icon :image="zoneIcon" size="2x" style="margin-right: 5px"/>
           </span>
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
@@ -126,7 +126,7 @@
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
-                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <resource-icon :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                   </span>
                   <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}

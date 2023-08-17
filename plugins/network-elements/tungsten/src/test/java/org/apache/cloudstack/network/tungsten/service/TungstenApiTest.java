@@ -58,6 +58,8 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,6 +68,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenApiTest {
 
     private static final Logger s_logger = Logger.getLogger(TungstenApiTest.class);
