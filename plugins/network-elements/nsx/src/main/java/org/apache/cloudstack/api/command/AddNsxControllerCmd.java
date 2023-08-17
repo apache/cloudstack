@@ -9,6 +9,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.response.NsxControllerResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.service.NsxProviderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,8 @@ import javax.inject.Inject;
 
 
 @APICommand(name = AddNsxControllerCmd.APINAME, description = "Add NSX Controller to CloudStack",
-        responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false, since = "4.19.0.0")
 public class AddNsxControllerCmd extends BaseCmd {
     public static final String APINAME = "addNsxController";
     public static final Logger LOGGER = LoggerFactory.getLogger(AddNsxControllerCmd.class.getName());
@@ -94,6 +96,6 @@ public class AddNsxControllerCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return 0;
+        return CallContext.current().getCallingAccount().getId();
     }
 }
