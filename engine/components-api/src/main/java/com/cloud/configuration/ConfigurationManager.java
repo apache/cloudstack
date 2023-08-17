@@ -76,7 +76,7 @@ public interface ConfigurationManager {
             "Advanced",
             "169.254.0.0/16",
             "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods",
-            true,
+            false,
             ConfigKey.Scope.Zone,
             null);
 
@@ -86,7 +86,7 @@ public interface ConfigurationManager {
             "Advanced",
             "169.254.0.1",
             "gateway for the control network traffic",
-            true,
+            false,
             ConfigKey.Scope.Zone,
             null);
 
