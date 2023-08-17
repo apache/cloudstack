@@ -27,25 +27,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    permissions:
-      contents: read  # for actions/checkout to fetch code
-      statuses: write  # for github/super-linter to mark status of each linter run
-    name: Super-Linter Check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          # Full git history is needed to get a proper list of changed files within `super-linter`
-          fetch-depth: 0
-      - name: SuperLinter
-        uses: github/super-linter/slim@v4.9.6
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          VALIDATE_PYTHON_FLAKE8: true
   pre-commit:
     name: Run pre-commit
     runs-on: ubuntu-22.04

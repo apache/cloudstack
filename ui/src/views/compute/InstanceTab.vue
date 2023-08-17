@@ -34,13 +34,21 @@
         <barcode-outlined /> {{ vm.isoid }}
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.volumes')" key="volumes">
-        <volumes-tab :resource="vm" :items="volumes" :loading="loading" />
+        <a-button
+          type="primary"
+          style="width: 100%; margin-bottom: 10px"
+          @click="showAddVolModal"
+          :loading="loading"
+          :disabled="!('createVolume' in $store.getters.apis)">
+          <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
+        </a-button>
+        <volumes-tab :resource="vm" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <a-button
-          type="dashed"
+          type="primary"
           style="width: 100%; margin-bottom: 10px"
-          @click="showAddModal"
+          @click="showAddNicModal"
           :loading="loadingNic"
           :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
           <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
@@ -116,6 +124,11 @@
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.schedules')" key="schedules" v-if="'listVMSchedule' in $store.getters.apis">
+        <InstanceSchedules
+          :virtualmachine="vm"
+          :loading="loading"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
@@ -129,6 +142,16 @@
         </AnnotationsTab>
       </a-tab-pane>
     </a-tabs>
+
+    <a-modal
+      :visible="showAddVolumeModal"
+      :title="$t('label.action.create.volume.add')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="closeModals">
+      <CreateVolume :resource="resource" @close-action="closeModals" />
+    </a-modal>
 
     <a-modal
       :visible="showAddNetworkModal"
@@ -289,7 +312,9 @@ import DetailsTab from '@/components/view/DetailsTab'
 import StatsTab from '@/components/view/StatsTab'
 import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
+import CreateVolume from '@/views/storage/CreateVolume'
 import NicsTable from '@/views/network/NicsTable'
+import InstanceSchedules from '@/views/compute/InstanceSchedules.vue'
 import ListResourceTable from '@/components/view/ListResourceTable'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -304,7 +329,9 @@ export default {
     StatsTab,
     EventsTab,
     DetailSettings,
+    CreateVolume,
     NicsTable,
+    InstanceSchedules,
     ListResourceTable,
     TooltipButton,
     ResourceIcon,
@@ -328,9 +355,11 @@ export default {
       vm: {},
       totalStorage: 0,
       currentTab: 'details',
+      showAddVolumeModal: false,
       showAddNetworkModal: false,
       showUpdateIpModal: false,
       showSecondaryIpModal: false,
+      diskOfferings: [],
       addNetworkData: {
         allNetworks: [],
         network: '',
@@ -408,6 +437,14 @@ export default {
         }
       })
     },
+    listDiskOfferings () {
+      api('listDiskOfferings', {
+        listAll: 'true',
+        zoneid: this.vm.zoneid
+      }).then(response => {
+        this.diskOfferings = response.listdiskofferingsresponse.diskoffering
+      })
+    },
     listNetworks () {
       api('listNetworks', {
         listAll: 'true',
@@ -456,11 +493,16 @@ export default {
         this.listIps.loading = false
       })
     },
-    showAddModal () {
+    showAddVolModal () {
+      this.showAddVolumeModal = true
+      this.listDiskOfferings()
+    },
+    showAddNicModal () {
       this.showAddNetworkModal = true
       this.listNetworks()
     },
     closeModals () {
+      this.showAddVolumeModal = false
       this.showAddNetworkModal = false
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false

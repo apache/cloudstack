@@ -166,7 +166,7 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                     networkOfferingVO = new NetworkOfferingVO(NETWORKOFFERING,
                             "Default offering for Tungsten-Fabric Network", Networks.TrafficType.Guest, false, false,
                             null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated,
-                            true, false, false, false, true, false);
+                            false, false, false, false, true, false);
                     networkOfferingVO.setForTungsten(true);
                     networkOfferingVO.setState(NetworkOffering.State.Enabled);
                     networkOfferingDao.persist(networkOfferingVO);

@@ -19,6 +19,8 @@ package org.apache.cloudstack.network.tungsten.api.command;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import org.apache.cloudstack.network.tungsten.api.response.TlsDataResponse;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,13 +29,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(GetLoadBalancerSslCertificateCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class GetLoadBalancerSslCertificateCmdTest {
 
     @Mock
@@ -41,24 +40,34 @@ public class GetLoadBalancerSslCertificateCmdTest {
 
     GetLoadBalancerSslCertificateCmd getLoadBalancerSslCertificateCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         getLoadBalancerSslCertificateCmd = new GetLoadBalancerSslCertificateCmd();
-        Whitebox.setInternalState(getLoadBalancerSslCertificateCmd, "lbMgr", loadBalancingRulesManager);
-        Whitebox.setInternalState(getLoadBalancerSslCertificateCmd, "id", 1L);
+        ReflectionTestUtils.setField(getLoadBalancerSslCertificateCmd, "lbMgr", loadBalancingRulesManager);
+        ReflectionTestUtils.setField(getLoadBalancerSslCertificateCmd, "id", 1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
         LoadBalancingRule.LbSslCert lbSslCert = Mockito.mock(LoadBalancingRule.LbSslCert.class);
-        TlsDataResponse tlsDataResponse = Mockito.mock(TlsDataResponse.class);
-        Mockito.when(lbSslCert.getCert()).thenReturn("test");
-        Mockito.when(lbSslCert.getKey()).thenReturn("test");
-        Mockito.when(lbSslCert.getChain()).thenReturn("test");
+        Mockito.when(lbSslCert.getCert()).thenReturn("testCrt");
+        Mockito.when(lbSslCert.getKey()).thenReturn("testKey");
+        Mockito.when(lbSslCert.getChain()).thenReturn("testChain");
         Mockito.when(loadBalancingRulesManager.getLbSslCert(ArgumentMatchers.anyLong())).thenReturn(lbSslCert);
-        PowerMockito.whenNew(TlsDataResponse.class).withAnyArguments().thenReturn(tlsDataResponse);
         getLoadBalancerSslCertificateCmd.execute();
-        Assert.assertEquals(tlsDataResponse, getLoadBalancerSslCertificateCmd.getResponseObject());
+        TlsDataResponse response = (TlsDataResponse) getLoadBalancerSslCertificateCmd.getResponseObject();
+
+        Assert.assertEquals(Base64.encodeBase64String("testCrt".getBytes()), response.getCrt());
+        Assert.assertEquals(Base64.encodeBase64String("testChain".getBytes()), response.getChain());
+        Assert.assertEquals(Base64.encodeBase64String("testKey".getBytes()), response.getKey());
+
     }
 }

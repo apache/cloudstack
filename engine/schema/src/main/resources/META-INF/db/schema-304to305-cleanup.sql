@@ -19,4 +19,3 @@
 
 
 ALTER TABLE `cloud`.`domain_router` DROP COLUMN network_id;
-

@@ -87,6 +87,102 @@ export default {
           args: ['maxguestslimit']
         }
       ]
+    },
+    {
+      name: 'guestos',
+      title: 'label.guest.os',
+      docHelp: 'adminguide/guest_os.html#guest-os',
+      icon: 'laptop-outlined',
+      permission: ['listOsTypes', 'listOsCategories'],
+      columns: ['name', 'oscategoryname', 'isuserdefined'],
+      details: ['name', 'oscategoryname', 'isuserdefined'],
+      related: [{
+        name: 'guestoshypervisormapping',
+        title: 'label.guest.os.hypervisor.mappings',
+        param: 'ostypeid'
+      }],
+      actions: [
+        {
+          api: 'addGuestOs',
+          icon: 'plus-outlined',
+          label: 'label.add.guest.os',
+          listView: true,
+          dataView: false,
+          args: ['osdisplayname', 'oscategoryid'],
+          mapping: {
+            oscategoryid: {
+              api: 'listOsCategories',
+              params: (record) => { return { oscategoryid: record.id } }
+            }
+          }
+        },
+        {
+          api: 'updateGuestOs',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['osdisplayname']
+        },
+        {
+          api: 'addGuestOsMapping',
+          icon: 'link-outlined',
+          label: 'label.add.guest.os.hypervisor.mapping',
+          dataView: true,
+          popup: true,
+          args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced'],
+          mapping: {
+            ostypeid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'removeGuestOs',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.guest.os',
+          message: 'message.action.delete.guest.os',
+          dataView: true,
+          popup: true
+        }
+      ]
+    },
+    {
+      name: 'guestoshypervisormapping',
+      title: 'label.guest.os.hypervisor.mappings',
+      docHelp: 'adminguide/guest_os.html#guest-os-hypervisor-mapping',
+      icon: 'api-outlined',
+      permission: ['listGuestOsMapping'],
+      columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
+      details: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor', 'isuserdefined'],
+      filters: ['all', 'kvm', 'vmware', 'xenserver', 'lxc', 'ovm3'],
+      searchFilters: ['osdisplayname', 'osnameforhypervisor', 'hypervisor', 'hypervisorversion'],
+      actions: [
+        {
+          api: 'addGuestOsMapping',
+          icon: 'plus-outlined',
+          label: 'label.add.guest.os.hypervisor.mapping',
+          listView: true,
+          dataView: false,
+          args: ['ostypeid', 'hypervisor', 'hypervisorversion', 'osnameforhypervisor', 'osmappingcheckenabled', 'forced']
+        },
+        {
+          api: 'updateGuestOsMapping',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['osnameforhypervisor', 'osmappingcheckenabled']
+        },
+        {
+          api: 'removeGuestOsMapping',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.guest.os.hypervisor.mapping',
+          message: 'message.action.delete.guest.os.hypervisor.mapping',
+          dataView: true,
+          popup: true
+        }
+      ]
     }
   ]
 }

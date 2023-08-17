@@ -20,10 +20,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
@@ -85,9 +85,11 @@ public class HypervisorHostHelperTest {
     String prefix;
     String svlanId = null;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         when(context.getServiceContent()).thenReturn(serviceContent);
         when(serviceContent.getAbout()).thenReturn(aboutInfo);
         when(clusterMO.getClusterConfigInfo()).thenReturn(clusterConfigInfo);
@@ -102,12 +104,9 @@ public class HypervisorHostHelperTest {
     public static void tearDownAfterClass() throws Exception {
     }
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
     @After
     public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -129,8 +128,8 @@ public class HypervisorHostHelperTest {
     @Test
     public void testGetVcenterApiVersionWithNullContextObject() throws Exception {
         assertNull(HypervisorHostHelper.getVcenterApiVersion(null));
-        verifyZeroInteractions(aboutInfo);
-        verifyZeroInteractions(serviceContent);
+        verifyNoInteractions(aboutInfo);
+        verifyNoInteractions(serviceContent);
     }
 
     @Test

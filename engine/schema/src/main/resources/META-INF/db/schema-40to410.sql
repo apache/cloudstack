@@ -1668,4 +1668,3 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 UPDATE `cloud`.`configuration` set category='Advanced' where category='Advanced ';
 UPDATE `cloud`.`configuration` set category='Hidden' where category='Hidden ';
-

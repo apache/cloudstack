@@ -47,18 +47,16 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 
 
 @RunWith(MockitoJUnitRunner.class)
-@PrepareForTest(StorPoolUtil.class)
 public class StorPoolPrimaryDataStoreDriverTest {
 
     @Mock

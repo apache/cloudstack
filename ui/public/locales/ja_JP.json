@@ -2046,6 +2046,8 @@
   "label.shared": "共有",
   "label.sharedexecutable": "共有",
   "label.sharedmountpoint": "SharedMountPoint",
+  "label.sharedrouterip": "共有ネットワークのルーターのIPv4アドレス",
+  "label.sharedrouteripv6": "共有ネットワークのルーターのIPv6アドレス",
   "label.sharewith": "共有",
   "label.show.ingress.rule": "受信ルールの表示",
   "label.showing": "表示中",

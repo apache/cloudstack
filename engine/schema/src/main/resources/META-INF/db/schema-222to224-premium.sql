@@ -21,4 +21,3 @@
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD COLUMN `hypervisor_type` varchar(255);
 
 ALTER TABLE `cloud_usage`.`usage_event` ADD COLUMN `resource_type` varchar(32);
-

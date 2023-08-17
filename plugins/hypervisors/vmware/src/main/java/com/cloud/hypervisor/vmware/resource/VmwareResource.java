@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -47,12 +48,6 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.agent.api.PatchSystemVmAnswer;
-import com.cloud.agent.api.PatchSystemVmCommand;
-import com.cloud.resource.ServerResourceBase;
-import com.cloud.utils.FileUtil;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -66,8 +61,8 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.joda.time.Duration;
@@ -78,6 +73,8 @@ import com.cloud.agent.api.AttachIsoAnswer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -99,6 +96,8 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesAnswer;
 import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -137,6 +136,8 @@ import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -260,6 +261,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.ServerResourceBase;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -274,6 +276,8 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
+import com.cloud.utils.FileUtil;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -286,6 +290,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.utils.validation.ChecksumUtil;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachineName;
@@ -307,6 +312,7 @@ import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.GuestNicInfo;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostConfigInfo;
 import com.vmware.vim25.HostFileSystemMountInfo;
@@ -605,6 +611,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetVmVncTicketCommand) cmd);
             } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
+            } else if (clz == CheckGuestOsMappingCommand.class) {
+                answer = execute((CheckGuestOsMappingCommand) cmd);
+            } else if (clz == GetHypervisorGuestOsNamesCommand.class) {
+                answer = execute((GetHypervisorGuestOsNamesCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7371,7 +7381,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     continue;
                 }
                 // Filter managed instances
-                if (cmd.hasManagedInstance(vmMo.getName())) {
+                if (cmd.hasManagedInstance(vmMo.getName()) ||
+                        (StringUtils.isNotEmpty(vmMo.getInternalCSName())
+                                && Objects.equals(vmMo.getName(), vmMo.getInternalCSName())
+                                && cmd.hasManagedInstance(vmMo.getInternalCSName()))) {
                     continue;
                 }
                 // Filter instance if answer is requested for a particular instance name
@@ -7720,6 +7733,60 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
+        }
+    }
+
+    protected CheckGuestOsMappingAnswer execute(CheckGuestOsMappingCommand cmd) {
+        String guestOsName = cmd.getGuestOsName();
+        String guestOsMappingName = cmd.getGuestOsHypervisorMappingName();
+        s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            GuestOsDescriptor guestOsDescriptor = hyperHost.getGuestOsDescriptor(guestOsMappingName);
+            if (guestOsDescriptor == null) {
+                return new CheckGuestOsMappingAnswer(cmd, "Guest os mapping name: " + guestOsMappingName + " not found in the hypervisor");
+            }
+            s_logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
+            if (guestOsDescriptor.getFullName().equalsIgnoreCase(guestOsName)) {
+                s_logger.debug("Hypervisor guest os name in the descriptor matches with os name: " + guestOsName);
+            }
+            s_logger.info("Hypervisor guest os name in the descriptor matches with os mapping: " + guestOsMappingName + " from user");
+            return new CheckGuestOsMappingAnswer(cmd);
+        } catch (Exception e) {
+            s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
+            return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
+        }
+    }
+
+    protected GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
+        String keyword = cmd.getKeyword();
+        s_logger.info("Getting guest os names in the hypervisor");
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            List<GuestOsDescriptor> guestOsDescriptors = hyperHost.getGuestOsDescriptors();
+            if (guestOsDescriptors == null) {
+                return new GetHypervisorGuestOsNamesAnswer(cmd, "Guest os names not found in the hypervisor");
+            }
+            List<Pair<String, String>> hypervisorGuestOsNames = new ArrayList<>();
+            for (GuestOsDescriptor guestOsDescriptor : guestOsDescriptors) {
+                String osDescriptorFullName = guestOsDescriptor.getFullName();
+                String osDescriptorId = guestOsDescriptor.getId();
+                if (StringUtils.isNotBlank(keyword)) {
+                    if (osDescriptorFullName.toLowerCase().contains(keyword.toLowerCase()) || osDescriptorId.toLowerCase().contains(keyword.toLowerCase())) {
+                        Pair<String, String> hypervisorGuestOs = new Pair<>(osDescriptorFullName, osDescriptorId);
+                        hypervisorGuestOsNames.add(hypervisorGuestOs);
+                    }
+                } else {
+                    Pair<String, String> hypervisorGuestOs = new Pair<>(osDescriptorFullName, osDescriptorId);
+                    hypervisorGuestOsNames.add(hypervisorGuestOs);
+                }
+            }
+            return new GetHypervisorGuestOsNamesAnswer(cmd, hypervisorGuestOsNames);
+        } catch (Exception e) {
+            s_logger.error("Failed to get the hypervisor guest names due to: " + e.getLocalizedMessage(), e);
+            return new GetHypervisorGuestOsNamesAnswer(cmd, e.getLocalizedMessage());
         }
     }
 

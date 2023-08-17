@@ -28,14 +28,6 @@ public interface EngineDataCenterDao extends GenericDao<EngineDataCenterVO, Long
         StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
     EngineDataCenterVO findByName(String name);
 
-    /**
-     * @param id data center id
-     * @return a pair of mac address strings.  The first one is private and second is public.
-     */
-    String[] getNextAvailableMacAddressPair(long id);
-
-    String[] getNextAvailableMacAddressPair(long id, long mask);
-
     List<EngineDataCenterVO> findZonesByDomainId(Long domainId);
 
     List<EngineDataCenterVO> listPublicZones(String keyword);

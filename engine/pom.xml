@@ -58,6 +58,8 @@
         <module>storage/image</module>
         <module>storage/snapshot</module>
         <module>storage/volume</module>
+        <module>userdata/cloud-init</module>
+        <module>userdata</module>
     </modules>
     <profiles>
         <profile>

@@ -739,12 +739,14 @@ describe('Views > AutogenView.vue', () => {
         expect(wrapper.vm.items).toEqual([{
           id: 'test-id',
           name: 'test-name-value',
-          key: 0
+          key: 0,
+          column1: 'test-name-value'
         }])
         expect(wrapper.vm.resource).toEqual({
           id: 'test-id',
           name: 'test-name-value',
-          key: 0
+          key: 0,
+          column1: 'test-name-value'
         })
         done()
       })
@@ -1146,10 +1148,9 @@ describe('Views > AutogenView.vue', () => {
         ])
         expect(wrapper.vm.showAction).toBeTruthy()
         expect(listUuidOpts).toHaveBeenCalledTimes(4)
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'id', type: 'uuid' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column1', type: 'list' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column2', type: 'string' })
-        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'account', type: 'string' })
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'id', type: 'uuid' }, undefined)
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column1', type: 'list' }, undefined)
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column2', type: 'string' }, undefined)
         done()
       })
 

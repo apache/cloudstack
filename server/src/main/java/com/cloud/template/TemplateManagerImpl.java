@@ -309,8 +309,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (type == HypervisorType.BareMetal) {
             adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
         } else {
-            // see HypervisorTemplateAdapter
-            adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
+            // Get template adapter according to hypervisor
+            adapter = AdapterBase.getAdapterByName(_adapters, type.name());
+            // Otherwise, default to generic hypervisor template adapter
+            if (adapter == null) {
+                adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.Hypervisor.getName());
+            }
         }
 
         if (adapter == null) {

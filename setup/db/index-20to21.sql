@@ -57,4 +57,3 @@ ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__last_host_id`(`last_
 
 -- drop foreign key constraits temporarily to allow data update in migration process
 ALTER TABLE `cloud`.`user_vm` DROP FOREIGN KEY `fk_user_vm__service_offering_id`;
-

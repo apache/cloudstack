@@ -87,4 +87,3 @@ ALTER TABLE `cloud_usage`.`user_statistics` MODIFY `device_type` varchar(32) NOT
 
 ALTER TABLE `cloud`.`keystore` ADD seq int;
 ALTER TABLE `cloud`.`keystore` MODIFY `cloud`.`keystore`.`key` text;
-

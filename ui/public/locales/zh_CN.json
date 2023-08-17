@@ -2333,6 +2333,8 @@
   "label.shared": "\u5DF2\u5171\u4EAB",
   "label.sharedexecutable": "\u5DF2\u5171\u4EAB",
   "label.sharedmountpoint": "\u5171\u4EAB\u6302\u8F7D\u70B9",
+  "label.sharedrouterip": "\u5171\u4EAB\u7F51\u7EDC\u4E2D\u8DEF\u7531\u5668\u7684 IPv4 \u5730\u5740",
+  "label.sharedrouteripv6": "\u5171\u4EAB\u7F51\u7EDC\u4E2D\u8DEF\u7531\u5668\u7684 IPv6 \u5730\u5740",
   "label.sharewith": "\u5206\u4EAB",
 
   "label.show.ingress.rule": "\u663E\u793A\u5165\u53E3\u89C4\u5219",

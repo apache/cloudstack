@@ -169,7 +169,7 @@ export default {
   methods: {
     fetchData () {
       this.stats = [{}, {}, {}, {}, {}, {}]
-      api('listVirtualMachines', { state: 'Running', listall: true }).then(json => {
+      api('listVirtualMachines', { state: 'Running', listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
@@ -177,7 +177,7 @@ export default {
         var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
         this.stats.splice(0, 1, { name: this.$t('label.running.vms'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
       })
-      api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
+      api('listVirtualMachines', { state: 'Stopped', listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
@@ -185,7 +185,7 @@ export default {
         var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
         this.stats.splice(1, 1, { name: this.$t('label.stopped.vms'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
       })
-      api('listVirtualMachines', { listall: true }).then(json => {
+      api('listVirtualMachines', { listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
@@ -193,7 +193,7 @@ export default {
         var tileColor = this.$config.theme['@dashboard-tile-totalvms-bg'] || '#ffffff'
         this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number-outlined', bgcolor: tileColor, path: '/vm' })
       })
-      api('listVolumes', { listall: true }).then(json => {
+      api('listVolumes', { listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
@@ -201,7 +201,7 @@ export default {
         var tileColor = this.$config.theme['@dashboard-tile-totalvolumes-bg'] || '#ffffff'
         this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database-outlined', bgcolor: tileColor, path: '/volume' })
       })
-      api('listNetworks', { listall: true }).then(json => {
+      api('listNetworks', { listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
@@ -209,7 +209,7 @@ export default {
         var tileColor = this.$config.theme['@dashboard-tile-totalnetworks-bg'] || '#ffffff'
         this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment-outlined', bgcolor: tileColor, path: '/guestnetwork' })
       })
-      api('listPublicIpAddresses', { listall: true }).then(json => {
+      api('listPublicIpAddresses', { listall: true, retrieveonlyresourcecount: true }).then(json => {
         var count = 0
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count

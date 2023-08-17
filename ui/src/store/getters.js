@@ -48,7 +48,8 @@ const getters = {
   twoFaEnabled: state => state.user.twoFaEnabled,
   twoFaProvider: state => state.user.twoFaProvider,
   twoFaIssuer: state => state.user.twoFaIssuer,
-  loginFlag: state => state.user.loginFlag
+  loginFlag: state => state.user.loginFlag,
+  customHypervisorName: state => state.user.customHypervisorName
 }
 
 export default getters

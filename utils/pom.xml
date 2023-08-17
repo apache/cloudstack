@@ -118,6 +118,11 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+            <version>${cs.cron-utils.version}</version>
+        </dependency>
         <!-- Test dependency in mysql for db tests -->
         <dependency>
             <groupId>mysql</groupId>

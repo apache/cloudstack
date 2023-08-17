@@ -107,4 +107,3 @@ for hostSlave in $hostSlaves; do
   fi
 done
 echo "#check is successful, you can add these hosts to CloudStack."
-

@@ -23,6 +23,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import junit.framework.TestCase;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,14 +31,12 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(LibvirtComputingResource.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
     @Spy
@@ -69,6 +68,8 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
 
     String scalingDetails;
 
+    MockedStatic<LibvirtComputingResource> libvirtComputingResourceMocked;
+
     @Before
     public void init() {
         wrapper = LibvirtRequestWrapper.getInstance();
@@ -81,7 +82,13 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         int cpuShares = vcpus * vmTo.getSpeed();
         scalingDetails = String.format("%s memory to [%s KiB], CPU cores to [%s] and cpu_shares to [%s]", vmTo.toString(), memory, vcpus, cpuShares);
 
-        PowerMockito.mockStatic(LibvirtComputingResource.class);
+        libvirtComputingResourceMocked = Mockito.mockStatic(LibvirtComputingResource.class);
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        libvirtComputingResourceMocked.close();
     }
 
     @Test
@@ -89,7 +96,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long runningVcpus = 1;
         int newVcpus = 2;
 
-        PowerMockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
+        Mockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
         Mockito.doNothing().when(domainMock).setVcpus(Mockito.anyInt());
 
         libvirtScaleVmCommandWrapperSpy.scaleVcpus(domainMock, newVcpus, scalingDetails);
@@ -102,7 +109,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long runningVcpus = 2;
         int newVcpus = 2;
 
-        PowerMockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
+        Mockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
 
         libvirtScaleVmCommandWrapperSpy.scaleVcpus(domainMock, newVcpus, scalingDetails);
 
@@ -114,7 +121,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long runningVcpus = 2;
         int newVcpus = 1;
 
-        PowerMockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
+        Mockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
 
         libvirtScaleVmCommandWrapperSpy.scaleVcpus(domainMock, newVcpus, scalingDetails);
 
@@ -126,7 +133,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long runningVcpus = 1;
         int newVcpus = 2;
 
-        PowerMockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
+        Mockito.when(LibvirtComputingResource.countDomainRunningVcpus(Mockito.any())).thenReturn(runningVcpus);
         Mockito.doThrow(LibvirtException.class).when(domainMock).setVcpus(Mockito.anyInt());
 
         libvirtScaleVmCommandWrapperSpy.scaleVcpus(domainMock, newVcpus, scalingDetails);
@@ -139,7 +146,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long currentMemory = 1l;
         long newMemory = 0l;
 
-        PowerMockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
+        Mockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
 
         libvirtScaleVmCommandWrapperSpy.scaleMemory(domainMock, newMemory, scalingDetails);
 
@@ -152,7 +159,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long currentMemory = 1l;
         long newMemory = 1l;
 
-        PowerMockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
+        Mockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
 
         libvirtScaleVmCommandWrapperSpy.scaleMemory(domainMock, newMemory, scalingDetails);
 
@@ -165,7 +172,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long currentMemory = 1l;
         long newMemory = 2l;
 
-        PowerMockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
+        Mockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
         Mockito.doReturn("").when(domainMock).getXMLDesc(Mockito.anyInt());
 
         libvirtScaleVmCommandWrapperSpy.scaleMemory(domainMock, newMemory, scalingDetails);
@@ -179,7 +186,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long currentMemory = 1l;
         long newMemory = 2l;
 
-        PowerMockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
+        Mockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
         Mockito.doReturn("<maxMemory slots='16' unit='KiB'>").when(domainMock).getXMLDesc(Mockito.anyInt());
         Mockito.doThrow(LibvirtException.class).when(domainMock).attachDevice(Mockito.anyString());
 
@@ -194,7 +201,7 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         long currentMemory = 1l;
         long newMemory = 2l;
 
-        PowerMockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
+        Mockito.when(LibvirtComputingResource.getDomainMemory(Mockito.any())).thenReturn(currentMemory);
         Mockito.doReturn("<maxMemory slots='16' unit='KiB'>").when(domainMock).getXMLDesc(Mockito.anyInt());
         Mockito.doNothing().when(domainMock).attachDevice(Mockito.anyString());
 
@@ -248,11 +255,12 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         int oldShares = 2000;
         int newShares = 3000;
 
-        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        Mockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
         libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
 
-        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(1));
-        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
+        libvirtComputingResourceMocked.verify(() -> LibvirtComputingResource.setCpuShares(domainMock, newShares),
+                Mockito.times(1));
+        ;
     }
 
     @Test
@@ -260,11 +268,12 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         int oldShares = 3000;
         int newShares = 2000;
 
-        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        Mockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
         libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
 
-        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(0));
-        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
+
+        libvirtComputingResourceMocked.verify(() -> LibvirtComputingResource.setCpuShares(domainMock, newShares),
+                Mockito.times(0));
     }
 
     @Test
@@ -272,10 +281,10 @@ public class LibvirtScaleVmCommandWrapperTest extends TestCase {
         int oldShares = 2000;
         int newShares = 2000;
 
-        PowerMockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
+        Mockito.when(LibvirtComputingResource.getCpuShares(Mockito.any())).thenReturn(oldShares);
         libvirtScaleVmCommandWrapperSpy.updateCpuShares(domainMock, newShares);
 
-        PowerMockito.verifyStatic(LibvirtComputingResource.class, Mockito.times(0));
-        libvirtComputingResourceMock.setCpuShares(domainMock, newShares);
+        libvirtComputingResourceMocked.verify(() -> LibvirtComputingResource.setCpuShares(domainMock, newShares),
+                Mockito.times(0));
     }
 }

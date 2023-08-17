@@ -2475,4 +2475,3 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
-

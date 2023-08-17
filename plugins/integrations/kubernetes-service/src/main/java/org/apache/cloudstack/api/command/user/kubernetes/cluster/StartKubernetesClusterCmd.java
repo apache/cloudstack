@@ -36,7 +36,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "startKubernetesCluster", description = "Starts a stopped Kubernetes cluster",
+@APICommand(name = "startKubernetesCluster", description = "Starts a stopped CloudManaged Kubernetes cluster",
         responseObject = KubernetesClusterResponse.class,
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {KubernetesCluster.class},
@@ -98,6 +98,10 @@ public class StartKubernetesClusterCmd extends BaseAsyncCmd {
         final KubernetesCluster kubernetesCluster = kubernetesClusterService.findById(getId());
         if (kubernetesCluster == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Given Kubernetes cluster was not found");
+        }
+        if (!kubernetesClusterService.isCommandSupported(kubernetesCluster, getActualCommandName())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Start kubernetes cluster is not supported for an externally managed cluster (%s)", kubernetesCluster.getName()));
         }
         return kubernetesCluster;
     }

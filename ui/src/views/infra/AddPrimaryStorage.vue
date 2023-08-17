@@ -586,11 +586,6 @@ export default {
     },
     rbdURL (monitor, pool, id, secret) {
       var url
-      /*  Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
-          It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
-      */
-      secret = secret.replace(/\+/g, '-')
-      secret = secret.replace(/\//g, '_')
       if (id !== null && secret !== null) {
         monitor = id + ':' + secret + '@' + monitor
       }

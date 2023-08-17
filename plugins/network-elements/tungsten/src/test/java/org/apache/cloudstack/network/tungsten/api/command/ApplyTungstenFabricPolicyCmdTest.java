@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ApplyTungstenFabricPolicyCmdTest {
 
     @Mock
@@ -40,16 +44,23 @@ public class ApplyTungstenFabricPolicyCmdTest {
 
     ApplyTungstenFabricPolicyCmd applyTungstenFabricPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         applyTungstenFabricPolicyCmd = new ApplyTungstenFabricPolicyCmd();
         applyTungstenFabricPolicyCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(applyTungstenFabricPolicyCmd, "zoneId", 1L);
-        Whitebox.setInternalState(applyTungstenFabricPolicyCmd, "networkUuid", "test");
-        Whitebox.setInternalState(applyTungstenFabricPolicyCmd, "policyUuid", "test");
-        Whitebox.setInternalState(applyTungstenFabricPolicyCmd, "majorSequence", 1);
-        Whitebox.setInternalState(applyTungstenFabricPolicyCmd, "minorSequence", 1);
+        ReflectionTestUtils.setField(applyTungstenFabricPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(applyTungstenFabricPolicyCmd, "networkUuid", "test");
+        ReflectionTestUtils.setField(applyTungstenFabricPolicyCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(applyTungstenFabricPolicyCmd, "majorSequence", 1);
+        ReflectionTestUtils.setField(applyTungstenFabricPolicyCmd, "minorSequence", 1);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

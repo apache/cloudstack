@@ -24,17 +24,21 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AddTungstenFabricNetworkGatewayToLogicalRouterCmdTest {
 
     @Mock
@@ -42,16 +46,23 @@ public class AddTungstenFabricNetworkGatewayToLogicalRouterCmdTest {
 
     AddTungstenFabricNetworkGatewayToLogicalRouterCmd addTungstenFabricNetworkGatewayToLogicalRouterCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         addTungstenFabricNetworkGatewayToLogicalRouterCmd = new AddTungstenFabricNetworkGatewayToLogicalRouterCmd();
         addTungstenFabricNetworkGatewayToLogicalRouterCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "zoneId", 1L);
-        Whitebox.setInternalState(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "networkUuid", "005f0dea-0196" +
+        ReflectionTestUtils.setField(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "networkUuid", "005f0dea-0196" +
                 "-11ec-a1ed-b42e99f6e187");
-        Whitebox.setInternalState(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "logicalRouterUuid", "125f0dea" +
+        ReflectionTestUtils.setField(addTungstenFabricNetworkGatewayToLogicalRouterCmd, "logicalRouterUuid", "125f0dea" +
                 "-0196-11ec-a1ed-b42e99f6e187");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

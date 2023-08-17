@@ -54,6 +54,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,7 +69,10 @@ import java.util.UUID;
 public class StorPoolUtil {
     private static final Logger log = Logger.getLogger(StorPoolUtil.class);
 
-    private static final File spLogFile = new File("/var/log/cloudstack/management/storpool-plugin.log");
+    private static final File spLogFile = new File(
+            Files.exists(Paths.get("/var/log/cloudstack/management/")) ?
+                    "/var/log/cloudstack/management/storpool-plugin.log" :
+                    "/tmp/storpool-plugin.log");
     private static PrintWriter spLogPrinterWriter = spLogFileInitialize();
 
     private static PrintWriter spLogFileInitialize() {
@@ -404,6 +409,18 @@ public class StorPoolUtil {
         JsonObject obj = resp.fullJson.getAsJsonObject();
         JsonArray data = obj.getAsJsonArray("data");
         return data;
+    }
+
+    public static JsonArray volumesSpace(SpConnectionDesc conn) {
+        SpApiResponse resp = GET("MultiCluster/AllClusters/VolumesSpace", conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
+    }
+
+    public static JsonArray templatesStats(SpConnectionDesc conn) {
+        SpApiResponse resp = GET("MultiCluster/AllClusters/VolumeTemplatesStatus", conn);
+        JsonObject obj = resp.fullJson.getAsJsonObject();
+        return obj.getAsJsonObject("data").getAsJsonArray("clusters");
     }
 
     private static boolean objectExists(SpApiError err) {

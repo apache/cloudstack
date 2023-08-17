@@ -40,14 +40,12 @@ import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.xmlrpc.XmlRpcException;
-import org.apache.xmlrpc.client.XmlRpcClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -144,9 +142,9 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {Pool.Record.class})
+@RunWith(MockitoJUnitRunner.class)
 public class CitrixRequestWrapperTest {
 
     @Mock
@@ -411,14 +409,11 @@ public class CitrixRequestWrapperTest {
     @Test
     public void testDeleteStoragePoolCommand() {
         final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
-        final XsHost xsHost = Mockito.mock(XsHost.class);
 
         final DeleteStoragePoolCommand deleteStorageCommand = new DeleteStoragePoolCommand(poolVO);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
-
-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
 
         final Answer answer = wrapper.execute(deleteStorageCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
@@ -536,15 +531,12 @@ public class CitrixRequestWrapperTest {
 
     @Test
     public void testSetupCommand() {
-        final XsHost xsHost = Mockito.mock(XsHost.class);
         final HostEnvironment env = Mockito.mock(HostEnvironment.class);
 
         final SetupCommand setupCommand = new SetupCommand(env);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);
-
-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
 
         final Answer answer = wrapper.execute(setupCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
@@ -560,10 +552,6 @@ public class CitrixRequestWrapperTest {
 
         final Connection conn = Mockito.mock(Connection.class);
         final XsHost xsHost = Mockito.mock(XsHost.class);
-        final XmlRpcClient client = Mockito.mock(XmlRpcClient.class);
-
-        // final Host.Record hr = PowerMockito.mock(Host.Record.class);
-        // final Host host = PowerMockito.mock(Host.class);
 
         final MaintainCommand maintainCommand = new MaintainCommand();
 
@@ -582,8 +570,8 @@ public class CitrixRequestWrapperTest {
 
         try {
             final Object[] params = { Marshalling.toXMLRPC("befc4dcd"), Marshalling.toXMLRPC(uuid) };
-            when(client.execute("host.get_by_uuid", new Object[] { "befc4dcd", uuid })).thenReturn(spiedMap);
-            PowerMockito.when(conn, "dispatch", "host.get_by_uuid", params).thenReturn(spiedMap);
+
+            when(ReflectionTestUtils.invokeMethod(conn, "dispatch", "host.get_by_uuid", params)).thenReturn(spiedMap);
         } catch (final Exception e) {
             fail(e.getMessage());
         }
@@ -936,11 +924,6 @@ public class CitrixRequestWrapperTest {
             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, physicalTopology.getBridgeName())).thenReturn(network);
             when(network.getBridge(conn)).thenReturn(bridge);
 
-            when(
-                            citrixResourceBase.callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_network_topology", "bridge", bridge, "config",
-                                            physicalTopology.getVpcConfigInJson(), "host-id", ((Long) physicalTopology.getHostId()).toString(), "seq-no", Long.toString(1))).thenReturn(
-                            "SUCCESS");
-
         } catch (final BadServerResponse e) {
             fail(e.getMessage());
         } catch (final XenAPIException e) {
@@ -974,11 +957,6 @@ public class CitrixRequestWrapperTest {
         try {
             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, routingPolicy.getBridgeName())).thenReturn(network);
             when(network.getBridge(conn)).thenReturn(bridge);
-
-            when(
-                            citrixResourceBase.callHostPlugin(conn, "ovstunnel", "configure_ovs_bridge_for_routing_policies", "bridge", bridge, "host-id",
-                                            ((Long) routingPolicy.getHostId()).toString(), "config", routingPolicy.getVpcConfigInJson(), "seq-no", Long.toString(1))).thenReturn(
-                            "SUCCESS");
 
         } catch (final BadServerResponse e) {
             fail(e.getMessage());
@@ -1468,7 +1446,7 @@ public class CitrixRequestWrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final XsHost xsHost = Mockito.mock(XsHost.class);
 
-        final Pool pool = PowerMockito.mock(Pool.class);
+        final Pool pool = Mockito.mock(Pool.class);
         final Pool.Record poolr = Mockito.mock(Pool.Record.class);
         final Host.Record hostr = Mockito.mock(Host.Record.class);
         final Host master = Mockito.mock(Host.class);
@@ -1479,30 +1457,16 @@ public class CitrixRequestWrapperTest {
         assertNotNull(wrapper);
 
         when(citrixResourceBase.getConnection()).thenReturn(conn);
-        try {
+        try (MockedStatic<Pool.Record> ignored = Mockito.mockStatic(Pool.Record.class)){
             when(citrixResourceBase.getHost()).thenReturn(xsHost);
-            when(citrixResourceBase.getHost().getUuid()).thenReturn(uuid);
-
-            PowerMockito.mockStatic(Pool.Record.class);
-
-            when(pool.getRecord(conn)).thenReturn(poolr);
             poolr.master = master;
-            when(poolr.master.getRecord(conn)).thenReturn(hostr);
-            hostr.uuid = uuid;
 
-        } catch (final BadServerResponse e) {
-            fail(e.getMessage());
-        } catch (final XenAPIException e) {
-            fail(e.getMessage());
-        } catch (final XmlRpcException e) {
-            fail(e.getMessage());
+            final Answer answer = wrapper.execute(vmDataSync, citrixResourceBase);
+
+            verify(citrixResourceBase, times(1)).getConnection();
+
+            assertTrue(answer.getResult());
         }
-
-        final Answer answer = wrapper.execute(vmDataSync, citrixResourceBase);
-
-        verify(citrixResourceBase, times(1)).getConnection();
-
-        assertTrue(answer.getResult());
     }
 
     @Test
@@ -1694,14 +1658,6 @@ public class CitrixRequestWrapperTest {
         when(citrixResourceBase.getConnection()).thenReturn(conn);
         when(citrixResourceBase.getHost()).thenReturn(xsHost);
         when(citrixResourceBase.getHost().getUuid()).thenReturn(uuid);
-
-        try {
-            when(citrixResourceBase.isDmcEnabled(conn, host)).thenReturn(true);
-        } catch (final XenAPIException e) {
-            fail(e.getMessage());
-        } catch (final XmlRpcException e) {
-            fail(e.getMessage());
-        }
 
         final Answer answer = wrapper.execute(scaleVm, citrixResourceBase);
 

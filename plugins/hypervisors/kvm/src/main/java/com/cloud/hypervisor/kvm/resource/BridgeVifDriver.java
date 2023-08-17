@@ -65,10 +65,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
         String networkScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_SCRIPTS_DIR);
 
-        String controlCidr = (String)params.get("control.cidr");
-        if (StringUtils.isNotBlank(controlCidr)) {
-            _controlCidr = controlCidr;
-        }
+        _controlCidr = getControlCidr(_controlCidr);
 
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;

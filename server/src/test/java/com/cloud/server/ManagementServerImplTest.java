@@ -22,6 +22,35 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
@@ -49,37 +78,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
-
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
-import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
-import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CallContext.class)
@@ -121,6 +121,9 @@ public class ManagementServerImplTest {
     @Mock
     UserVmDao _userVmDao;
 
+    @Mock
+    UserDataManager userDataManager;
+
     @Spy
     ManagementServerImpl spy = new ManagementServerImpl();
 
@@ -145,6 +148,7 @@ public class ManagementServerImplTest {
         spy.annotationDao = annotationDao;
         spy._UserVmDetailsDao = userVmDetailsDao;
         spy._detailsDao = hostDetailsDao;
+        spy.userDataManager = userDataManager;
     }
 
     @After
@@ -304,13 +308,15 @@ public class ManagementServerImplTest {
         when(callContextMock.getCallingAccount()).thenReturn(account);
         when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
+        String testUserData = "testUserdata";
         RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
-        when(cmd.getUserData()).thenReturn("testUserdata");
+        when(cmd.getUserData()).thenReturn(testUserData);
         when(cmd.getName()).thenReturn("testName");
         when(cmd.getHttpMethod()).thenReturn(BaseCmd.HTTPMethod.GET);
 
         when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
-        when(_userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), "testUserdata")).thenReturn(null);
+        when(_userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), testUserData)).thenReturn(null);
+        when(userDataManager.validateUserData(testUserData,BaseCmd.HTTPMethod.GET)).thenReturn(testUserData);
 
         UserData userData = spy.registerUserData(cmd);
         Assert.assertEquals("testName", userData.getName());

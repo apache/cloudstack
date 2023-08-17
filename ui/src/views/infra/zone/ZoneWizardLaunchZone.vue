@@ -345,7 +345,7 @@ export default {
       params.internaldns1 = this.prefillContent?.internalDns1 || null
       params.internaldns2 = this.prefillContent?.internalDns2 || null
       params.domain = this.prefillContent?.networkDomain || null
-      params.isedge = this.prefillContent?.zoneSuperType === 'Edge' || false
+      params.isedge = this.isEdgeZone
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -835,7 +835,10 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent?.podName || this.stepData.zoneReturned.type === 'Edge' ? 'Pod-' + this.stepData.zoneReturned.name : null
+      params.name = this.prefillContent?.podName || null
+      if (this.isEdgeZone) {
+        params.name = 'Pod-' + this.stepData.zoneReturned.name
+      }
       params.gateway = this.prefillContent?.podReservedGateway || null
       params.netmask = this.prefillContent?.podReservedNetmask || null
       params.startIp = this.prefillContent?.podReservedStartIp || null
@@ -1218,7 +1221,10 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName || this.stepData.zoneReturned.type === 'Edge' ? 'Cluster-' + this.stepData.zoneReturned.name : null
+      let clusterName = this.prefillContent?.clusterName || null
+      if (this.isEdgeZone) {
+        clusterName = 'Cluster-' + this.stepData.zoneReturned.name
+      }
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -2051,7 +2057,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        api('addCluster', args).then(json => {
+        api('addCluster', args, 'POST').then(json => {
           const result = json.addclusterresponse.cluster[0]
           resolve(result)
         }).catch(error => {

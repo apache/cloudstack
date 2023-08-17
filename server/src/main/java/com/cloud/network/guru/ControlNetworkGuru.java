@@ -59,7 +59,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    NetworkModel _networkMgr;
+    NetworkModel networkModel;
     String _cidr;
     String _gateway;
 
@@ -114,7 +114,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         if (vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            String mac = networkModel.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
             return nicProf;
         }
@@ -140,7 +140,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         if (((hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv)) && isRouterVm(vm)) {
             super.reserve(nic, config, vm, dest, context);
 
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            String mac = networkModel.getNextAvailableMacAddressInNetwork(config.getId());
             nic.setMacAddress(mac);
             return;
         }

@@ -31,9 +31,14 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 import junit.framework.TestCase;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtDomainXMLParserTest extends TestCase {
 
+    @Test
     public void testDomainXMLParser() {
         int vncPort = 5900;
 

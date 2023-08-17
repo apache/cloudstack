@@ -164,5 +164,3 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state', 'Auto', 'console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.management.state.last', 'Auto', 'last console proxy service management state');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'cluster.message.timeout.seconds', '300', 'Time (in seconds) to wait before a inter-management server message post times out.');
-
-

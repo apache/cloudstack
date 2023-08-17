@@ -32,7 +32,7 @@ config_htaccess() {
 }
 
 ips(){
-  echo "allow from $1" >> $HTACCESS
+  grep -e "^allow from $1$" $HTACCESS || echo "allow from $1" >> $HTACCESS
   result=$?
   return $result
 }

@@ -70,8 +70,3 @@ for ip in $ips; do
   echo "$ip"
   deploy_server $ip
 done
-
-
-
-
-

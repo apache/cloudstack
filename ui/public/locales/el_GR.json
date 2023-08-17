@@ -1578,6 +1578,8 @@
 "label.shared": "Κοινόχρηστο",
 "label.sharedexecutable": "Κοινόχρηστο",
 "label.sharedmountpoint": "Κοινόχρηστο μέσο",
+"label.sharedrouterip": "Διεύθυνση IPv4 του δρομολογητή στο κοινόχρηστο δίκτυο ",
+"label.sharedrouteripv6": "Διεύθυνση IPv6 του δρομολογητή στο κοινόχρηστο δίκτυο",
 "label.sharewith": "Κοινή χρήση με",
 "label.showing": "Προβολή",
 "label.shrinkok": "Συρρίκνωση OK",

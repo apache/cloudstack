@@ -42,7 +42,7 @@ module.exports = {
     '**/tests/unit/**/*.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx)'
   ],
   transformIgnorePatterns: [
-    '<rootDir>/node_modules/(?!ant-design-vue|vue|@babel/runtime|lodash-es|@ant-design)'
+    '<rootDir>/node_modules/(?!ant-design-vue|vue|@babel/runtime|lodash-es|@ant-design|@vue-js-cron)'
   ],
   collectCoverage: true,
   collectCoverageFrom: [

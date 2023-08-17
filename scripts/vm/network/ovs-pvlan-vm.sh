@@ -97,4 +97,3 @@ else
     ovs-ofctl del-flows --strict $br priority=50,dl_vlan=0xffff,dl_src=$vm_mac
     ovs-ofctl del-flows --strict $br priority=60,dl_vlan=$sec_iso_vlan,dl_src=$vm_mac
 fi
-

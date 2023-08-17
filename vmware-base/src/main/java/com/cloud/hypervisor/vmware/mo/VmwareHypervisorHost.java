@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.VirtualMachineConfigSpec;
@@ -91,5 +92,10 @@ public interface VmwareHypervisorHost {
     ComputeResourceSummary getHyperHostHardwareSummary() throws Exception;
 
     LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception;
+
     String getRecommendedDiskController(String guestOsId) throws Exception;
+
+    GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception;
+
+    List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception;
 }

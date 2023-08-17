@@ -135,5 +135,48 @@ CREATE VIEW `cloud`.`async_job_view` AS
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
 ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
+
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
+
+-- Add tables for VM Scheduler
+DROP TABLE IF EXISTS `cloud`.`vm_schedule`;
+CREATE TABLE `cloud`.`vm_schedule` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40) NOT NULL COMMENT 'schedule uuid',
+  `description` varchar(1024) COMMENT 'description of the vm schedule',
+  `schedule` varchar(255) NOT NULL COMMENT 'schedule frequency in cron format',
+  `timezone` varchar(100) NOT NULL COMMENT 'the timezone in which the schedule time is specified',
+  `action` varchar(20) NOT NULL COMMENT 'action to perform',
+  `enabled` int(1) NOT NULL COMMENT 'Enabled or disabled',
+  `start_date` datetime NOT NULL COMMENT 'start time for this schedule',
+  `end_date` datetime COMMENT 'end time for this schedule',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  INDEX `i_vm_schedule__vm_id`(`vm_id`),
+  INDEX `i_vm_schedule__enabled_end_date`(`enabled`, `end_date`),
+  CONSTRAINT `fk_vm_schedule__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`vm_scheduled_job`;
+CREATE TABLE `cloud`.`vm_scheduled_job` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `vm_schedule_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40) NOT NULL COMMENT 'scheduled job uuid',
+  `action` varchar(20) NOT NULL COMMENT 'action to perform',
+  `scheduled_timestamp` datetime NOT NULL COMMENT 'Time at which the action is taken',
+  `async_job_id` bigint unsigned DEFAULT NULL COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`vm_schedule_id`, `scheduled_timestamp`),
+  INDEX `i_vm_scheduled_job__scheduled_timestamp`(`scheduled_timestamp`),
+  INDEX `i_vm_scheduled_job__vm_id`(`vm_id`),
+  CONSTRAINT `fk_vm_scheduled_job__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vm_scheduled_job__vm_schedule_id` FOREIGN KEY (`vm_schedule_id`) REFERENCES `vm_schedule`(`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add support for different cluster types for kubernetes
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
+ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';

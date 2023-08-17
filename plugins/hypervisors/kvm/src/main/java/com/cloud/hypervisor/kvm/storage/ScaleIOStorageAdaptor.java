@@ -387,6 +387,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             boolean forceSourceFormat = srcQemuFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
             LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcQemuFile.getFileName(), srcQemuFile.getFormat(), destQemuFile.getFileName(), destQemuFile.getFormat(), forceSourceFormat));
+            qemuImageOpts.setImageOptsFlag(true);
             qemu.convert(srcQemuFile, destQemuFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
             LOGGER.debug("Successfully converted source disk image " + srcQemuFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
 

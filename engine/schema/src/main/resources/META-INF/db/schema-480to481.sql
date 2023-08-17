@@ -18,4 +18,3 @@
 --;
 -- Schema upgrade from 4.8.0 to 4.8.1;
 --;
-

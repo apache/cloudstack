@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
@@ -1171,12 +1172,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Association of VMware DC to zone is not allowed if zone already has resources added.
         validateZoneWithResources(zoneId, "add VMware datacenter to zone");
 
-        // Check if DC is already part of zone
-        // In that case vmware_data_center table should have the DC
-        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
-        if (vmwareDc != null) {
-            throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
-        }
+        checkIfDcIsUsed(vCenterHost, vmwareDcName, zoneId);
 
         VmwareContext context = null;
         DatacenterMO dcMo = null;
@@ -1210,11 +1206,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 throw new ResourceInUseException("This DC is being managed by other CloudStack deployment. Cannot add this DC to zone.");
             }
 
-            // Add DC to database into vmware_data_center table
-            vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
-            vmwareDc = vmwareDcDao.persist(vmwareDc);
+            vmwareDc = createOrUpdateDc(guid, vmwareDcName, vCenterHost, userName, password);
 
-            // Map zone with vmware datacenter
+                // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
             vmwareDcZoneMap = vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
@@ -1241,6 +1235,41 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
+    }
+
+    VmwareDatacenterVO createOrUpdateDc(String guid, String name, String host, String user, String password) {
+        VmwareDatacenterVO vmwareDc = new VmwareDatacenterVO(guid, name, host, user, password);
+        // Add DC to database into vmware_data_center table
+        try {
+            vmwareDc = vmwareDcDao.persist(vmwareDc);
+        } catch (EntityExistsException e) {
+            // if that fails just get the record as is
+            vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(guid);
+            // we could now update the `vmwareDC` with the user supplied `password`, `user`, `name` and `host`,
+            // but let's assume user error for now
+        }
+
+        return vmwareDc;
+    }
+
+    /**
+     * Check if DC is already part of zone
+     * In that case vmware_data_center table should have the DC and a dc zone mapping should exist
+     *
+     * @param vCenterHost
+     * @param vmwareDcName
+     * @param zoneId
+     * @throws ResourceInUseException if the DC can not be used.
+     */
+    private void checkIfDcIsUsed(String vCenterHost, String vmwareDcName, Long zoneId) throws ResourceInUseException {
+        VmwareDatacenterVO vmwareDc;
+        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        if (vmwareDc != null) {
+            VmwareDatacenterZoneMapVO mapping = vmwareDatacenterZoneMapDao.findByVmwareDcId(vmwareDc.getId());
+            if (mapping != null && Long.compare(zoneId, mapping.getZoneId()) == 0) {
+                throw new ResourceInUseException(String.format("This DC (%s) is already part of other CloudStack zone (%d). Cannot add this DC to more zones.", vmwareDc.getUuid(), zoneId));
+            }
+        }
     }
 
     @Override

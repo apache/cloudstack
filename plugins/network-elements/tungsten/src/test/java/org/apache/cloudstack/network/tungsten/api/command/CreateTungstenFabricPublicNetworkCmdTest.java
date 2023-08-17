@@ -23,6 +23,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,16 +32,13 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CreateTungstenFabricPublicNetworkCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricPublicNetworkCmdTest {
 
     @Mock
@@ -52,19 +50,25 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
 
     CreateTungstenFabricPublicNetworkCmd createTungstenFabricPublicNetworkCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricPublicNetworkCmd = new CreateTungstenFabricPublicNetworkCmd();
         createTungstenFabricPublicNetworkCmd.tungstenService = tungstenService;
         createTungstenFabricPublicNetworkCmd.vlanDao = vlanDao;
         createTungstenFabricPublicNetworkCmd.networkModel = networkModel;
-        Whitebox.setInternalState(createTungstenFabricPublicNetworkCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricPublicNetworkCmd, "zoneId", 1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Network publicNetwork = Mockito.mock(Network.class);
         SearchCriteria<VlanVO> sc = Mockito.mock(SearchCriteria.class);
         List<VlanVO> pubVlanVOList = Arrays.asList(Mockito.mock(VlanVO.class));
@@ -75,8 +79,7 @@ public class CreateTungstenFabricPublicNetworkCmdTest {
 
         Mockito.when(tungstenService.createPublicNetwork(ArgumentMatchers.anyLong())).thenReturn(true);
         Mockito.when(tungstenService.addPublicNetworkSubnet(ArgumentMatchers.any())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         createTungstenFabricPublicNetworkCmd.execute();
-        Assert.assertEquals(successResponse, createTungstenFabricPublicNetworkCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse) createTungstenFabricPublicNetworkCmd.getResponseObject()).getSuccess());
     }
 }

@@ -45,4 +45,3 @@ scp -o BatchMode\ yes -r $src $host:$dest
 scp -o BatchMode\ yes -r "$srcbootstrapper" $host:$destbootstrapper
 
 ssh -o BatchMode\ yes $host $destbootstrapper
-

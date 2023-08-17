@@ -25,14 +25,14 @@ import static org.mockito.Mockito.when;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ElasticLoadBalancerManagerImplTest {
@@ -90,7 +90,7 @@ public class ElasticLoadBalancerManagerImplTest {
     public void testGarbageCollectUnusedElbVmsWhenVariableUnusedElbVmsIsNull() throws Exception {
         ElasticLbVmMapDao elasticLbVmMapDaoMock = mock(ElasticLbVmMapDao.class);
         when(elasticLbVmMapDaoMock.listUnusedElbVms()).thenReturn(null);
-        Whitebox.setInternalState(elasticLoadBalancerManagerImpl, "_elbVmMapDao", elasticLbVmMapDaoMock);
+        ReflectionTestUtils.setField(elasticLoadBalancerManagerImpl, "_elbVmMapDao", elasticLbVmMapDaoMock);
 
         try {
             elasticLoadBalancerManagerImpl.garbageCollectUnusedElbVms();

@@ -101,7 +101,7 @@ then
 else
     echo "ERROR: Storage $storage is not currently mounted"
     echo "Verifying if we can at least ping the storage"
-    STORAGE_ADDRESS=`grep "secondaryStorageServerAddress" $CMDLINE | sed -E 's/.*secondaryStorageServerAddress=([^ ]*).*/\1/g'`
+    STORAGE_ADDRESSES=`grep "secondaryStorageServerAddress" $CMDLINE | sed -E 's/.*secondaryStorageServerAddress=([^ ]*).*/\1/g'`
 
     if [[ -z "$STORAGE_ADDRESS" ]]
     then
@@ -117,16 +117,21 @@ else
         route -n
       fi
     else
-      echo "Storage address is $STORAGE_ADDRESS, trying to ping it"
-      ping -c 2  $STORAGE_ADDRESS
-      if [ $? -eq 0 ]
-      then
-        echo "Good: Can ping $storage storage address"
-      else
-        echo "WARNING: Cannot ping $storage storage address"
-        echo routing table follows
-        route -n
-      fi
+      echo "Storage address(s): $STORAGE_ADDRESSES, trying to ping"
+      STORAGE_ADDRESS_LIST=$(echo $STORAGE_ADDRESSES | tr ",")
+      for STORAGE_ADDRESS in $STORAGE_ADDRESS_LIST
+      do
+        echo "Pinging storage address: $STORAGE_ADDRESS"
+        ping -c 2  $STORAGE_ADDRESS
+        if [ $? -eq 0 ]
+        then
+          echo "Good: Can ping $storage storage address"
+        else
+          echo "WARNING: Cannot ping $storage storage address"
+          echo routing table follows
+          route -n
+        fi
+      done
     fi
 
 fi

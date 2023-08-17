@@ -251,7 +251,23 @@ public class CreateNetworkCmdTest {
         try {
             cmd.getPhysicalNetworkId();
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().startsWith("Physical network ID can be specified for networks of guest IP type Shared only"));
+            Assert.assertTrue(e.getMessage().startsWith("Physical network ID can be specified for networks of guest IP type Shared or L2 only."));
+        }
+    }
+
+    @Test
+    public void testGetPhysicalNetworkIdForL2Net() {
+        Long physicalNetworkId = 1L;
+        Long networkOfferingId = 1L;
+        ReflectionTestUtils.setField(cmd, "networkOfferingId", networkOfferingId);
+        NetworkOffering networkOffering = Mockito.mock(NetworkOffering.class);
+        ReflectionTestUtils.setField(cmd, "physicalNetworkId", physicalNetworkId);
+        Mockito.when(_entityMgr.findById(NetworkOffering.class, networkOfferingId)).thenReturn(networkOffering);
+        Mockito.when(networkOffering.getGuestType()).thenReturn(Network.GuestType.L2);
+        try {
+            Assert.assertEquals(cmd.getPhysicalNetworkId(), physicalNetworkId);
+        } catch (Exception e) {
+            Assert.fail("Failed to get physical network id");
         }
     }
 

@@ -26,13 +26,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DeleteTungstenFabricTagCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteTungstenFabricTagCmdTest {
 
     @Mock
@@ -40,22 +37,25 @@ public class DeleteTungstenFabricTagCmdTest {
 
     DeleteTungstenFabricTagCmd deleteTungstenFabricTagCmd;
 
+    AutoCloseable closeable;
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteTungstenFabricTagCmd = new DeleteTungstenFabricTagCmd();
         deleteTungstenFabricTagCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(deleteTungstenFabricTagCmd, "zoneId", 1L);
-        Whitebox.setInternalState(deleteTungstenFabricTagCmd, "tagUuid", "test");
+        ReflectionTestUtils.setField(deleteTungstenFabricTagCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(deleteTungstenFabricTagCmd, "tagUuid", "test");
+    }
+
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Mockito.when(tungstenService.deleteTungstenTag(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         deleteTungstenFabricTagCmd.execute();
-        Assert.assertEquals(successResponse, deleteTungstenFabricTagCmd.getResponseObject());
+        Assert.assertEquals(true, ((SuccessResponse) deleteTungstenFabricTagCmd.getResponseObject()).getSuccess());
     }
 }

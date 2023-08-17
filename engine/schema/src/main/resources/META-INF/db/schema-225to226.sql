@@ -49,4 +49,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`cmd_exec_log` (
   INDEX `i_cmd_exec_log__instance_id`(`instance_id`),
   CONSTRAINT `fk_cmd_exec_log_ref__inst_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

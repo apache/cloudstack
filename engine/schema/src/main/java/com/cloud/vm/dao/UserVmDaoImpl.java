@@ -71,6 +71,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected SearchBuilder<UserVmVO> RunningSearch;
     protected SearchBuilder<UserVmVO> StateChangeSearch;
     protected SearchBuilder<UserVmVO> AccountHostSearch;
+    protected SearchBuilder<UserVmVO> IdsSearch;
 
     protected SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
@@ -134,6 +135,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         AccountSearch = createSearchBuilder();
         AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
+
+        IdsSearch = createSearchBuilder();
+        IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
+        IdsSearch.done();
 
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -776,6 +781,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public List<UserVmVO> findByUserDataId(long userdataId) {
         SearchCriteria<UserVmVO> sc = listByUserdataId.create();
         sc.setParameters("userDataId", userdataId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmVO> listByIds(List<Long> ids) {
+        SearchCriteria<UserVmVO> sc = IdsSearch.create();
+        sc.setParameters("ids", ids.toArray());
         return listBy(sc);
     }
 }

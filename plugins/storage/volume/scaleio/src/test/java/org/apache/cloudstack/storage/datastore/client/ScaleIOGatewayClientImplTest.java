@@ -48,7 +48,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOGatewayClientImplTest {
-    private final int port = 443;
+    private final int port = 8443;
     private final int timeout = 30;
     private final int maxConnections = 50;
     private final String username = "admin";
@@ -70,7 +70,7 @@ public class ScaleIOGatewayClientImplTest {
                         .withHeader("content-type", "application/json;charset=UTF-8")
                         .withBody(sessionKey)));
 
-        client = new ScaleIOGatewayClientImpl("https://localhost/api", username, password, false, timeout, maxConnections);
+        client = new ScaleIOGatewayClientImpl(String.format("https://localhost:%d/api", port), username, password, false, timeout, maxConnections);
 
         wireMockRule.stubFor(post("/api/types/Volume/instances")
                 .willReturn(aResponse()

@@ -19,9 +19,12 @@ package com.cloud.storage.dao;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
     GuestOSVO listByDisplayName(String displayName);
 
+    List<GuestOSVO> listLikeDisplayName(String displayName);
     GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
 }

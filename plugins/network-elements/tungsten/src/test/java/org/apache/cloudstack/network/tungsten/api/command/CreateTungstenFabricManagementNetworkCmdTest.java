@@ -20,6 +20,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,13 +29,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CreateTungstenFabricManagementNetworkCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricManagementNetworkCmdTest {
 
     @Mock
@@ -44,24 +42,29 @@ public class CreateTungstenFabricManagementNetworkCmdTest {
 
     CreateTungstenFabricManagementNetworkCmd createTungstenFabricManagementNetworkCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricManagementNetworkCmd = new CreateTungstenFabricManagementNetworkCmd();
         createTungstenFabricManagementNetworkCmd.tungstenService = tungstenService;
         createTungstenFabricManagementNetworkCmd.podDao = podDao;
-        Whitebox.setInternalState(createTungstenFabricManagementNetworkCmd, "podId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricManagementNetworkCmd, "podId", 1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         HostPodVO pod = Mockito.mock(HostPodVO.class);
         Mockito.when(podDao.findById(ArgumentMatchers.anyLong())).thenReturn(pod);
         Mockito.when(tungstenService.createManagementNetwork(ArgumentMatchers.anyLong())).thenReturn(true);
         Mockito.when(tungstenService.addManagementNetworkSubnet(ArgumentMatchers.any())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         createTungstenFabricManagementNetworkCmd.execute();
-        Assert.assertEquals(successResponse, createTungstenFabricManagementNetworkCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse)createTungstenFabricManagementNetworkCmd.getResponseObject()).getSuccess());
     }
 }

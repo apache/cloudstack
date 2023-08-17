@@ -19,7 +19,10 @@ package com.cloud.hypervisor.kvm.storage;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ScaleIOStorageAdaptorTest {
     @Test
     public void getUsableBytesFromRawBytesTest() {

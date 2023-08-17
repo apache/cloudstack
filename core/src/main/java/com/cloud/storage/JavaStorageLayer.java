@@ -22,8 +22,11 @@ package com.cloud.storage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -186,8 +189,12 @@ public class JavaStorageLayer implements StorageLayer {
     @Override
     public File createUniqDir() throws IOException {
         String dirName = System.getProperty("java.io.tmpdir");
+        String subDirNamePrefix = "";
+        FileAttribute<Set<PosixFilePermission>> perms = PosixFilePermissions
+                .asFileAttribute(PosixFilePermissions.fromString("rwxrwx---"));
         if (dirName != null) {
-            File dir = new File(dirName);
+            Path p = Files.createTempDirectory(Path.of(dirName), subDirNamePrefix, perms);
+            File dir = p.toFile();
             if (dir.exists()) {
                 if (isWorldReadable(dir)) {
                     if (STD_TMP_DIR_PATH.equals(dir.getAbsolutePath())) {

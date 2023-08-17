@@ -314,9 +314,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
-    public IPAddressVO findByVmIp(String vmIp) {
+    public IPAddressVO findByIp(String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("associatedVmIp", vmIp);
+        sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
 

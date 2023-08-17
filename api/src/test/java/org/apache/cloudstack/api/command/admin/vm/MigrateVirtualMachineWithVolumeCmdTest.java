@@ -16,16 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.host.Host;
-import com.cloud.resource.ResourceService;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.vm.UserVmService;
-import com.cloud.vm.VirtualMachine;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -40,13 +34,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.List;
-import java.util.Map;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.host.Host;
+import com.cloud.resource.ResourceService;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.vm.UserVmService;
+import com.cloud.vm.VirtualMachine;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class MigrateVirtualMachineWithVolumeCmdTest {
     @Mock
     UserVmService userVmServiceMock;
@@ -68,44 +70,46 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
 
     @Spy
     @InjectMocks
-    MigrateVirtualMachineWithVolumeCmd cmdSpy = new MigrateVirtualMachineWithVolumeCmd();
+    MigrateVirtualMachineWithVolumeCmd cmdSpy;
 
     private Long hostId = 1L;
-    private Long virtualMachineUuid = 1L;
+    private Long virtualMachineId = 1L;
     private String virtualMachineName = "VM-name";
-    private Map<String, String> migrateVolumeTo = Map.of("key","value");
+    private  Map<String, String> migrateVolumeTo = null;
     private SystemVmResponse systemVmResponse = new SystemVmResponse();
     private UserVmResponse userVmResponse = new UserVmResponse();
 
     @Before
-    public void setup() {
-        Mockito.when(cmdSpy.getVirtualMachineId()).thenReturn(virtualMachineUuid);
-        Mockito.when(cmdSpy.getHostId()).thenReturn(hostId);
-        Mockito.when(cmdSpy.getVolumeToPool()).thenReturn(migrateVolumeTo);
+    public void setUp() throws Exception {
+        ReflectionTestUtils.setField(cmdSpy, "virtualMachineId", virtualMachineId);
+        migrateVolumeTo = new HashMap<>();
+        migrateVolumeTo.put("volume", "abc");
+        migrateVolumeTo.put("pool", "xyz");
     }
 
     @Test
-    public void executeTestHostIdIsNullAndMigrateVolumeToIsNullThrowsInvalidParameterValueException(){
+    public void executeTestRequiredArgsNullThrowsInvalidParameterValueException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", null);
+        ReflectionTestUtils.setField(cmdSpy, "autoSelect", null);
 
         try {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("Either %s or %s must be passed for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO);
+            String expected = String.format("Either %s or %s must be passed or %s must be true for migrating the VM.", ApiConstants.HOST_ID, ApiConstants.MIGRATE_TO, ApiConstants.AUTO_SELECT);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
 
     @Test
-    public void executeTestVMIsStoppedAndHostIdIsNotNullThrowsInvalidParameterValueException(){
+    public void executeTestVMIsStoppedAndHostIdIsNotNullThrowsInvalidParameterValueException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", hostId);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Stopped);
-        Mockito.when(virtualMachineMock.toString()).thenReturn(String.format("VM [uuid: %s, name: %s]", virtualMachineUuid, virtualMachineName));
+        Mockito.when(virtualMachineMock.toString()).thenReturn(String.format("VM [uuid: %s, name: %s]", virtualMachineId, virtualMachineName));
 
         try {
             cmdSpy.execute();
@@ -117,33 +121,35 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     }
 
     @Test
-    public void executeTestVMIsRunningAndHostIdIsNullThrowsInvalidParameterValueException(){
+    public void executeTestVMIsRunningHostIdIsNullAndAutoSelectIsFalseThrowsInvalidParameterValueException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
+        ReflectionTestUtils.setField(cmdSpy, "autoSelect", false);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(virtualMachineMock.toString()).thenReturn(String.format("VM [uuid: %s, name: %s]", virtualMachineUuid, virtualMachineName));
+        Mockito.when(virtualMachineMock.toString()).thenReturn(String.format("VM [uuid: %s, name: %s]", virtualMachineId, virtualMachineName));
 
         try {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.", virtualMachineMock,
-                    ApiConstants.HOST_ID);
+            String expected = String.format("%s is not in the Stopped state to migrate, use the %s or %s parameter to migrate it to a new host.", virtualMachineMock,
+                    ApiConstants.HOST_ID, ApiConstants.AUTO_SELECT);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
 
     @Test
-    public void executeTestHostIdIsNullThrowsInvalidParameterValueException(){
+    public void executeTestHostIdIsNullThrowsInvalidParameterValueException() {
+        ReflectionTestUtils.setField(cmdSpy, "virtualMachineId", virtualMachineId);
         ReflectionTestUtils.setField(cmdSpy, "hostId", hostId);
         ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
+        ReflectionTestUtils.setField(cmdSpy, "autoSelect", false);
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(resourceServiceMock.getHost(Mockito.anyLong())).thenReturn(null);
-        Mockito.when(uuidManagerMock.getUuid(Host.class, virtualMachineUuid)).thenReturn(virtualMachineUuid.toString());
 
         try {
             cmdSpy.execute();
@@ -154,15 +160,22 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
         }
     }
 
+    private Map getMockedMigrateVolumeToApiCmdParam() {
+        Map<String, String> migrateVolumeTo = new HashMap<>();
+        migrateVolumeTo.put("volume", "abc");
+        migrateVolumeTo.put("pool", "xyz");
+        return Map.of("", migrateVolumeTo);
+    }
+
     @Test
     public void executeTestHostIsNotNullMigratedVMIsNullThrowsServerApiException() throws ManagementServerException, ResourceUnavailableException, VirtualMachineMigrationException {
         ReflectionTestUtils.setField(cmdSpy, "hostId", hostId);
-        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
+        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", getMockedMigrateVolumeToApiCmdParam());
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Running);
-        Mockito.when(resourceServiceMock.getHost(Mockito.anyLong())).thenReturn(hostMock);
-        Mockito.when(userVmServiceMock.migrateVirtualMachineWithVolume(virtualMachineUuid, hostMock, migrateVolumeTo)).thenReturn(null);
+        Mockito.when(resourceServiceMock.getHost(hostId)).thenReturn(hostMock);
+        Mockito.when(userVmServiceMock.migrateVirtualMachineWithVolume(Mockito.anyLong(), Mockito.any(), Mockito.anyMap())).thenReturn(null);
 
         try {
             cmdSpy.execute();
@@ -176,11 +189,11 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     @Test
     public void executeTestHostIsNullMigratedVMIsNullThrowsServerApiException() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
-        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
+        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", getMockedMigrateVolumeToApiCmdParam());
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Stopped);
-        Mockito.when(userVmServiceMock.vmStorageMigration(virtualMachineUuid, migrateVolumeTo)).thenReturn(null);
+        Mockito.when(userVmServiceMock.vmStorageMigration(Mockito.anyLong(), Mockito.anyMap())).thenReturn(null);
 
         try {
             cmdSpy.execute();
@@ -194,11 +207,11 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     @Test
     public void executeTestSystemVMMigratedWithSuccess() {
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
-        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
+        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", getMockedMigrateVolumeToApiCmdParam());
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getState()).thenReturn(VirtualMachine.State.Stopped);
-        Mockito.when(userVmServiceMock.vmStorageMigration(virtualMachineUuid, migrateVolumeTo)).thenReturn(virtualMachineMock);
+        Mockito.when(userVmServiceMock.vmStorageMigration(Mockito.anyLong(), Mockito.anyMap())).thenReturn(virtualMachineMock);
         Mockito.when(virtualMachineMock.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
         Mockito.when(responseGeneratorMock.createSystemVmResponse(virtualMachineMock)).thenReturn(systemVmResponse);
 
@@ -211,11 +224,11 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
     public void executeTestUserVMMigratedWithSuccess() {
         UserVm userVmMock = Mockito.mock(UserVm.class);
         ReflectionTestUtils.setField(cmdSpy, "hostId", null);
-        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", migrateVolumeTo);
+        ReflectionTestUtils.setField(cmdSpy, "migrateVolumeTo", getMockedMigrateVolumeToApiCmdParam());
 
         Mockito.when(userVmServiceMock.getVm(Mockito.anyLong())).thenReturn(userVmMock);
         Mockito.when(userVmMock.getState()).thenReturn(VirtualMachine.State.Stopped);
-        Mockito.when(userVmServiceMock.vmStorageMigration(virtualMachineUuid, migrateVolumeTo)).thenReturn(userVmMock);
+        Mockito.when(userVmServiceMock.vmStorageMigration(Mockito.anyLong(), Mockito.anyMap())).thenReturn(userVmMock);
         Mockito.when(userVmMock.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(responseGeneratorMock.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVmMock)).thenReturn(List.of(userVmResponse));
 

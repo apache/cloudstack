@@ -85,6 +85,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByClusterId(Long clusterId);
 
+    List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId);
+
     /**
      * Returns hosts that are 'Up' and 'Enabled' from the given Data Center/Zone
      */
@@ -140,6 +142,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 
     HostVO findByName(String name);
+
+    HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion);
 
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 

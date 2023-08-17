@@ -30,6 +30,7 @@ public class QemuImageOptions {
     private static final String LUKS_KEY_SECRET_PARAM_KEY = "key-secret";
     private static final String QCOW2_KEY_SECRET_PARAM_KEY = "encrypt.key-secret";
     private static final String DRIVER = "driver";
+    private boolean addImageOpts = false;
 
     private QemuImg.PhysicalDiskFormat format;
     private static final List<QemuImg.PhysicalDiskFormat> DISK_FORMATS_THAT_SUPPORT_OPTION_IMAGE_OPTS = Arrays.asList(QemuImg.PhysicalDiskFormat.QCOW2, QemuImg.PhysicalDiskFormat.LUKS);
@@ -71,13 +72,19 @@ public class QemuImageOptions {
         }
     }
 
+    public void setImageOptsFlag(boolean addImageOpts) {
+        this.addImageOpts = addImageOpts;
+    }
+
     /**
      * Converts QemuImageOptions into the command strings required by qemu-img flags
      * @return array of strings representing command flag and value (--image-opts)
      */
     public String[] toCommandFlag() {
-        if (format == null || !DISK_FORMATS_THAT_SUPPORT_OPTION_IMAGE_OPTS.contains(format)) {
-            return new String[] { params.get(FILENAME_PARAM_KEY) };
+        if (!addImageOpts) {
+            if (format == null || !DISK_FORMATS_THAT_SUPPORT_OPTION_IMAGE_OPTS.contains(format)) {
+                return new String[] { params.get(FILENAME_PARAM_KEY) };
+            }
         }
         Map<String, String> sorted = new TreeMap<>(params);
         String paramString = Joiner.on(",").withKeyValueSeparator("=").join(sorted);

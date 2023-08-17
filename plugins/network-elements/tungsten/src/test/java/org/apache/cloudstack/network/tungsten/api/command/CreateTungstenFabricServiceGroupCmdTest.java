@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricServiceGroupResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateTungstenFabricServiceGroupCmdTest {
 
     @Mock
@@ -40,16 +44,23 @@ public class CreateTungstenFabricServiceGroupCmdTest {
 
     CreateTungstenFabricServiceGroupCmd createTungstenFabricServiceGroupCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         createTungstenFabricServiceGroupCmd = new CreateTungstenFabricServiceGroupCmd();
         createTungstenFabricServiceGroupCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(createTungstenFabricServiceGroupCmd, "zoneId", 1L);
-        Whitebox.setInternalState(createTungstenFabricServiceGroupCmd, "name", "test");
-        Whitebox.setInternalState(createTungstenFabricServiceGroupCmd, "protocol", "test");
-        Whitebox.setInternalState(createTungstenFabricServiceGroupCmd, "startPort", 1);
-        Whitebox.setInternalState(createTungstenFabricServiceGroupCmd, "endPort", 1);
+        ReflectionTestUtils.setField(createTungstenFabricServiceGroupCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(createTungstenFabricServiceGroupCmd, "name", "test");
+        ReflectionTestUtils.setField(createTungstenFabricServiceGroupCmd, "protocol", "test");
+        ReflectionTestUtils.setField(createTungstenFabricServiceGroupCmd, "startPort", 1);
+        ReflectionTestUtils.setField(createTungstenFabricServiceGroupCmd, "endPort", 1);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

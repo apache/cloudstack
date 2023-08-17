@@ -498,5 +498,3 @@ if [ "$vpc" == "1" ]
 then
       restart_vpcs
 fi
-
-

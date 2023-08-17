@@ -26,7 +26,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.l2')" key="3" v-if="isAdvancedZoneWithoutSGAvailable">
+      <a-tab-pane :tab="$t('label.l2')" key="3">
         <CreateL2NetworkForm
           :loading="loading"
           :resource="resource"

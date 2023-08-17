@@ -98,4 +98,3 @@ do
     echo "Warning : Don't know how to handle VM $vm, it is in $state state"
   fi
 done
-

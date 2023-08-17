@@ -19,22 +19,22 @@
 package com.cloud.hypervisor.kvm.dpdk;
 
 import com.cloud.utils.script.Script;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
 
 import java.util.HashMap;
 import java.util.Map;
 
-@PrepareForTest({ Script.class })
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DpdkDriverTest {
 
     private static final int dpdkPortNumber = 7;
@@ -43,12 +43,22 @@ public class DpdkDriverTest {
 
     private Map<String, String> extraConfig;
 
+    private MockedStatic<Script> scriptMockedStatic;
+
+    private AutoCloseable closeable;
+
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(Script.class);
+        closeable = MockitoAnnotations.openMocks(this);
+        scriptMockedStatic = Mockito.mockStatic(Script.class);
         Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(null);
         extraConfig = new HashMap<>();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        scriptMockedStatic.close();
+        closeable.close();
     }
 
     @Test

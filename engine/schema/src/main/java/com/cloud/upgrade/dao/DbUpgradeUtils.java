@@ -23,7 +23,10 @@ public class DbUpgradeUtils {
 
     private static DatabaseAccessObject dao = new DatabaseAccessObject();
 
-    public static void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
+    public static void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
+        dao.addForeignKey(conn, tableName, tableColumn, foreignTableName, foreignColumnName);
+    }
+   public static void dropKeysIfExist(Connection conn, String tableName, List<String> keys, boolean isForeignKey) {
         for (String key : keys) {
             dao.dropKey(conn, tableName, key, isForeignKey);
         }

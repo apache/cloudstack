@@ -24,4 +24,3 @@
         <property name="name" value="networker"/>
     </bean>
 </beans>
-

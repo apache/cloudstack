@@ -621,4 +621,3 @@ def revert_memory_snapshot(session, args):
 if __name__ == "__main__":
     XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "getSnapshotSize":getSnapshotSize})
     
-

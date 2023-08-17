@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -84,7 +83,7 @@ public class HostForMigrationResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
-    private HypervisorType hypervisor;
+    private String hypervisor;
 
     @SerializedName("cpunumber")
     @Param(description = "the CPU number of the host")
@@ -295,7 +294,7 @@ public class HostForMigrationResponse extends BaseResponse {
         this.version = version;
     }
 
-    public void setHypervisor(HypervisorType hypervisor) {
+    public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
     }
 

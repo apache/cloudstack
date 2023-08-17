@@ -76,7 +76,7 @@ public class NiciraRestClient extends BasicRestClient {
         return execute(request, 0);
     }
 
-    private CloseableHttpResponse execute(final HttpUriRequest request, final int previousStatusCode) throws CloudstackRESTException {
+    CloseableHttpResponse execute(final HttpUriRequest request, final int previousStatusCode) throws CloudstackRESTException {
         if (counter.hasReachedExecutionLimit()) {
             throw new CloudstackRESTException("Reached max executions limit of " + executionLimit);
         }

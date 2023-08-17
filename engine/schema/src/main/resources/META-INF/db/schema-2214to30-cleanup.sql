@@ -65,4 +65,3 @@ DROP TABLE IF EXISTS `cloud`.`network_tags`;
 DROP TABLE IF EXISTS `cloud_usage`.`event`;
 
 DELETE from `cloud`.`guest_os` where id=204 or id=205;
-
