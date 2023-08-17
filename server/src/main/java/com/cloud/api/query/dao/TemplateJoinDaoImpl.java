@@ -208,7 +208,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
-        templateResponse.setHypervisor(template.getHypervisorType().toString());
+        templateResponse.setHypervisor(template.getHypervisorType().getHypervisorDisplayName());
 
         templateResponse.setOsTypeId(template.getGuestOSUuid());
         templateResponse.setOsTypeName(template.getGuestOSName());
@@ -330,7 +330,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         response.setOsTypeId(result.getGuestOSUuid());
         response.setOsTypeName(result.getGuestOSName());
         response.setBootable(result.isBootable());
-        response.setHypervisor(result.getHypervisorType().toString());
+        response.setHypervisor(result.getHypervisorType().getHypervisorDisplayName());
         response.setDynamicallyScalable(result.isDynamicallyScalable());
 
         // populate owner.

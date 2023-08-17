@@ -1864,7 +1864,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
             "List public Ip for network should list the Ip addr"
         )
 
-        self.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.debug("Adding NetworkACl rules to make PF and LB accessible")
         nw_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
@@ -2023,7 +2023,7 @@ class TestVPCNetworkUpgrade(cloudstackTestCase):
         )
         self.cleanup.append(nat_rule)
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
+        self.debug("Adding NetworkACl rules to make NAT rule accessible")
         nat_acl = NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
