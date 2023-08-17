@@ -114,7 +114,11 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                                 updateFrontEndActivityTime();
                             }
                             connectionAlive = session.isOpen();
-                            Thread.sleep(1);
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException e) {
+                                s_logger.error("Error on sleep for vnc over websocket", e);
+                            }
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
@@ -139,8 +143,6 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                     s_logger.info(String.format("Connection with client [%s] is dead.", clientId));
                 } catch (IOException e) {
                     s_logger.error("Error on VNC client", e);
-                } catch (InterruptedException e) {
-                    s_logger.error("Error on sleep for vnc over websocket", e);
                 }
             }
 
