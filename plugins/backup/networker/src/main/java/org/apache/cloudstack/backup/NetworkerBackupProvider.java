@@ -51,6 +51,8 @@ import javax.inject.Inject;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -605,7 +607,14 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                         strayBackup.setVmId(vm.getId());
                         strayBackup.setExternalId(strayNetworkerBackup.getId());
                         strayBackup.setType(strayNetworkerBackup.getType());
-                        strayBackup.setDate(strayNetworkerBackup.getSaveTime());
+                        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                        try {
+                            strayBackup.setDate(formatterDateTime.parse(strayNetworkerBackup.getSaveTime()));
+                        } catch (ParseException e) {
+                            String msg = String.format("Unable to parse date [%s].", strayNetworkerBackup.getSaveTime());
+                            LOG.error(msg, e);
+                            throw new CloudRuntimeException(msg, e);
+                        }
                         strayBackup.setStatus(Backup.Status.BackedUp);
                         for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
                             vmBackupSize += (thisVMVol.getSize() / 1024L /1024L);

@@ -19,33 +19,30 @@ package com.cloud.consoleproxy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ConsoleProxyHttpHandlerHelperTest {
 
-    @Mock
-    ConsoleProxyPasswordBasedEncryptor encryptor;
-
     @Test
-    @PrepareForTest({ConsoleProxy.class, ConsoleProxyHttpHandlerHelper.class})
     public void testQueryMapExtraParameter() throws Exception {
-        PowerMockito.mockStatic(ConsoleProxy.class);
-        PowerMockito.when(ConsoleProxy.getEncryptorPassword()).thenReturn("password");
-        PowerMockito.whenNew(ConsoleProxyPasswordBasedEncryptor.class).withArguments(Mockito.anyString()).thenReturn(encryptor);
-        Mockito.when(encryptor.decryptObject(Mockito.eq(ConsoleProxyClientParam.class), Mockito.anyString())).thenReturn(null);
+        try (MockedStatic<ConsoleProxy> ignore = Mockito.mockStatic(ConsoleProxy.class);
+             MockedConstruction<ConsoleProxyPasswordBasedEncryptor> ignored = Mockito.mockConstruction(ConsoleProxyPasswordBasedEncryptor.class, (mock, context) -> {
+                 Mockito.when(mock.decryptObject(Mockito.eq(ConsoleProxyClientParam.class), Mockito.anyString())).thenReturn(null);
+             });) {
+            Mockito.when(ConsoleProxy.getEncryptorPassword()).thenReturn("password");
 
-        String extraValidationToken = "test-token";
-        String query = String.format("token=SOME_TOKEN&extra=%s", extraValidationToken);
+            String extraValidationToken = "test-token";
+            String query = String.format("token=SOME_TOKEN&extra=%s", extraValidationToken);
 
-        Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(query);
-        Assert.assertTrue(queryMap.containsKey("extra"));
-        Assert.assertEquals(extraValidationToken, queryMap.get("extra"));
+            Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(query);
+            Assert.assertTrue(queryMap.containsKey("extra"));
+            Assert.assertEquals(extraValidationToken, queryMap.get("extra"));
+        }
     }
 }
