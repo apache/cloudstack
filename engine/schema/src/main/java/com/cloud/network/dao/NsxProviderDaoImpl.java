@@ -18,11 +18,34 @@ package com.cloud.network.dao;
 
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 import java.util.List;
 
 public class NsxProviderDaoImpl extends GenericDaoBase<NsxProviderVO, Long>
         implements NsxProviderDao {
+
+    final SearchBuilder<NsxProviderVO> allFieldsSearch;
+    public NsxProviderDaoImpl() {
+        super();
+        allFieldsSearch = createSearchBuilder();
+        allFieldsSearch.and("id", allFieldsSearch.entity().getId(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("uuid", allFieldsSearch.entity().getUuid(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("hostname", allFieldsSearch.entity().getHostname(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("provider_name", allFieldsSearch.entity().getProviderName(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("tier0_gateway", allFieldsSearch.entity().getTier0Gateway(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("zone_id", allFieldsSearch.entity().getZoneId(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.and("edge_cluster", allFieldsSearch.entity().getEdgeCluster(),
+                SearchCriteria.Op.EQ);
+        allFieldsSearch.done();
+    }
     @Override
     public NsxProviderVO findByZoneId(long zoneId) {
         return null;
