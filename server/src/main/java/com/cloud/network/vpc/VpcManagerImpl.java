@@ -271,7 +271,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private List<VpcProvider> vpcElements = null;
     private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler,
-            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive);
+            Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx);
 
     int _cleanupInterval;
     int _maxNetworks;
@@ -365,6 +365,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, true);
+                }
+
+                // configure default vpc offering with NSX as network service provider
+                if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSXSOfferingName) == null) {
+                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.defaultVPCNSXSOfferingName);
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
+                    for (final Service svc : getSupportedServices()) {
+                        if (svc == Service.UserData) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.defaultVPCNSXSOfferingName, VpcOffering.defaultVPCNSXSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false);
+
                 }
             }
         });
