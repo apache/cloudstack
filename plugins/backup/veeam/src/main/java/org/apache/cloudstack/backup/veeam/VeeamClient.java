@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
+import java.util.Date;
+import java.util.Calendar;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -660,7 +662,7 @@ public class VeeamClient {
     private Backup.RestorePoint getRestorePointFromBlock(String[] parts) {
         LOG.debug(String.format("Processing block of restore points: [%s].", StringUtils.join(parts, ", ")));
         String id = null;
-        String created = null;
+        Date created = null;
         String type = null;
         for (String part : parts) {
             if (part.matches("Id(\\s)+:(.)*")) {
@@ -668,7 +670,11 @@ public class VeeamClient {
                 id = split[1].trim();
             } else if (part.matches("CreationTime(\\s)+:(.)*")) {
                 String [] split = part.split(":", 2);
-                created = split[1].trim();
+                split[1] = StringUtils.trim(split[1]);
+                String [] time = split[1].split("[:/ ]");
+                Calendar cal = Calendar.getInstance();
+                cal.set(Integer.parseInt(time[2]), Integer.parseInt(time[0]) - 1, Integer.parseInt(time[1]), Integer.parseInt(time[3]), Integer.parseInt(time[4]), Integer.parseInt(time[5]));
+                created = cal.getTime();
             } else if (part.matches("Type(\\s)+:(.)*")) {
                 String [] split = part.split(":");
                 type = split[1].trim();
