@@ -1211,7 +1211,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                                 TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, GuestType.Isolated, true, true, false, false, false, false);
 
                 defaultNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
-                defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultTungstenSharedSGNetworkOffering);
+                defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNSXNetworkOffering);
 
                 for (Map.Entry<Network.Service, Network.Provider> service : defaultNSXNetworkOfferingProviders.entrySet()) {
                     NetworkOfferingServiceMapVO offService =
