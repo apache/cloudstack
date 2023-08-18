@@ -1119,7 +1119,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null, ctx);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-            s_logger.debug(DeploymentPlanningManagerImpl.logDeploymentWithoutException((VirtualMachine) vm, planToDeploy, planToDeploy.getAvoids(), (DeploymentPlanner) plan));
+            s_logger.debug(DeploymentPlanningManagerImpl.logDeploymentWithoutException(vm, planToDeploy, planToDeploy.getAvoids(), planner));
             plan =
                     new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
                             planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId(), ctx);
