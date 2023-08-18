@@ -135,6 +135,7 @@ known_categories = {
     'listTungstenFabricLBHealthMonitor': 'Tungsten',
     'listNsxControllers': 'NSX',
     'addNsxController': 'NSX',
+    'deleteNsxController': 'NSX',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',

@@ -27,7 +27,9 @@ import java.util.List;
 public interface NsxProviderService extends PluggableService {
     NsxProvider addProvider(AddNsxControllerCmd cmd);
 
-    NsxControllerResponse createNsxControllerResponse(NsxProvider tungstenProvider);
+    NsxControllerResponse createNsxControllerResponse(NsxProvider nsxProvider);
 
     List<BaseResponse> listNsxProviders(Long zoneId);
+
+    boolean deleteNsxController(Long nsxControllerId);
 }

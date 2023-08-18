@@ -16,10 +16,18 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.NsxProvider;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -40,6 +48,10 @@ public class NsxProviderServiceImpl implements NsxProviderService {
     NsxProviderDao nsxProviderDao;
     @Inject
     DataCenterDao dataCenterDao;
+    @Inject
+    PhysicalNetworkDao physicalNetworkDao;
+    @Inject
+    NetworkDao networkDao;
 
     @Override
     public NsxProvider addProvider(AddNsxControllerCmd cmd) {
@@ -83,6 +95,32 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         }
 
         return nsxControllersResponseList;
+    }
+
+    @Override
+    public boolean deleteNsxController(Long nsxControllerId) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findById(nsxControllerId);
+        if (Objects.isNull(nsxProvider)) {
+            throw new InvalidParameterValueException(String.format("Failed to find NSX controller with id: %s", nsxControllerId));
+        }
+        Long zoneId = nsxProvider.getZoneId();
+        // Find the physical network we work for
+        List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZone(zoneId);
+        for (PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            List<NetworkVO> networkList = networkDao.listByPhysicalNetwork(physicalNetwork.getId());
+            if (!CollectionUtils.isNullOrEmpty(networkList)) {
+                // Networks with broadcast type vcs are ours
+                for (NetworkVO network : networkList) {
+                    if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
+                        if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
+                            throw new CloudRuntimeException("This NSX Controller cannot be deleted as there are one or more logical networks provisioned by CloudStack on it.");
+                        }
+                    }
+                }
+            }
+        }
+        nsxProviderDao.remove(nsxControllerId);
+        return true;
     }
 
     @Override

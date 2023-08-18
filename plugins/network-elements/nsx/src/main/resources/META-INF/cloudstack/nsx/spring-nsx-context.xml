@@ -31,5 +31,6 @@
     <bean id="NsxGuestNetworkGuru" class="org.apache.cloudstack.service.NsxGuestNetworkGuru">
         <property name="name" value="NsxGuestNetworkGuru" />
     </bean>
+    <bean id="nsxProviderService" class="org.apache.cloudstack.service.NsxProviderServiceImpl"/>
 
 </beans>
