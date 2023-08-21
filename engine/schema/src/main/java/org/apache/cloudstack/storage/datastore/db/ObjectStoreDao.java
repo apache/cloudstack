@@ -35,4 +35,6 @@ public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
     ObjectStoreResponse newObjectStoreResponse(ObjectStoreVO store);
 
     ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store);
+
+    Integer countAllObjectStores();
 }

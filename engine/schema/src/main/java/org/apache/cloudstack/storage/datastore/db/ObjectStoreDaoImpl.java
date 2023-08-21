@@ -140,4 +140,10 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
     public ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store) {
         return storeData;
     }
+
+    @Override
+    public Integer countAllObjectStores() {
+        SearchCriteria<ObjectStoreVO> sc = createSearchCriteria();
+        return getCount(sc);
+    }
 }
