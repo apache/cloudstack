@@ -20,6 +20,9 @@ import com.amazonaws.util.CollectionUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.network.NsxProvider;
@@ -29,6 +32,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -36,11 +40,11 @@ import org.apache.cloudstack.api.command.ListNsxControllersCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNsxControllerCmd;
 import org.apache.cloudstack.api.response.NsxControllerResponse;
+import org.apache.cloudstack.resource.NsxResource;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import javax.naming.ConfigurationException;
+import java.util.*;
 
 public class NsxProviderServiceImpl implements NsxProviderService {
 
@@ -52,17 +56,57 @@ public class NsxProviderServiceImpl implements NsxProviderService {
     PhysicalNetworkDao physicalNetworkDao;
     @Inject
     NetworkDao networkDao;
+    @Inject
+    ResourceManager resourceManager;
+    @Inject
+    HostDetailsDao hostDetailsDao;
 
     @Override
     public NsxProvider addProvider(AddNsxControllerCmd cmd) {
-        NsxProviderVO nsxProvider = Transaction.execute((TransactionCallback<NsxProviderVO>) status -> {
-            NsxProviderVO nsxProviderVO = new NsxProviderVO(cmd.getZoneId(), cmd.getName(), cmd.getHostname(),
-                    cmd.getUsername(),  cmd.getPassword(),
-                    cmd.getTier0Gateway(), cmd.getEdgeCluster());
-            nsxProviderDao.persist(nsxProviderVO);
-            return nsxProviderVO;
-        });
-        return  null;
+        Long zoneId = cmd.getZoneId();
+        String name = cmd.getName();
+        String hostname = cmd.getHostname();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        String tier0Gateway = cmd.getTier0Gateway();
+        String edgeCluster = cmd.getEdgeCluster();
+
+        Map<String, String> params = new HashMap<>();
+        params.put("guid", UUID.randomUUID().toString());
+        params.put("zoneId", zoneId.toString());
+        params.put("name", name);
+        params.put("hostname", hostname);
+        params.put("username", username);
+        params.put("password", password);
+        params.put("tier0Gateway", tier0Gateway);
+        params.put("edgeCluster", edgeCluster);
+
+        Map<String, Object> hostdetails = new HashMap<>(params);
+        NsxProvider nsxProvider;
+
+        NsxResource nsxResource = new NsxResource();
+        try {
+            nsxResource.configure(hostname, hostdetails);
+            final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
+            if (host != null) {
+                 nsxProvider = Transaction.execute((TransactionCallback<NsxProviderVO>) status -> {
+                    NsxProviderVO nsxProviderVO = new NsxProviderVO(zoneId, name, hostname,
+                            username, password, tier0Gateway, edgeCluster);
+                    nsxProviderDao.persist(nsxProviderVO);
+
+                    DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
+                            String.valueOf(nsxProviderVO.getId()));
+                    hostDetailsDao.persist(detail);
+
+                    return nsxProviderVO;
+                });
+            } else {
+                throw new CloudRuntimeException("Failed to add NSX controller due to internal error.");
+            }
+        } catch (ConfigurationException e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
+        return  nsxProvider;
     }
 
     @Override

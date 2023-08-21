@@ -61,6 +61,9 @@ public class NsxProviderVO implements NsxProvider {
     @Column(name = "edge_cluster")
     private String edgeCluster;
 
+    public NsxProviderVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
 
     public NsxProviderVO( long zoneId,String providerName, String hostname, String username, String password, String tier0Gateway, String edgeCluster) {
         this.zoneId = zoneId;
