@@ -38,7 +38,7 @@ export default {
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'events',
-    resourceType: 'ObjectStorage',
+    resourceType: 'ObjectStore',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
     show: () => { return 'listEvents' in store.getters.apis }
   }, {

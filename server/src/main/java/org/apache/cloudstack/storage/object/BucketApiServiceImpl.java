@@ -18,6 +18,8 @@ package org.apache.cloudstack.storage.object;
 
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import com.amazonaws.services.s3.model.IllegalBucketNameException;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
@@ -103,6 +105,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BUCKET_CREATE, eventDescription = "creating bucket", create = true)
     public Bucket allocBucket(CreateBucketCmd cmd) {
         try {
             BucketNameUtils.validateBucketName(cmd.getBucketName());
@@ -132,6 +135,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BUCKET_CREATE, eventDescription = "creating bucket", async = true)
     public Bucket createBucket(CreateBucketCmd cmd) {
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
@@ -170,6 +174,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BUCKET_DELETE, eventDescription = "deleting bucket")
     public boolean deleteBucket(long bucketId, Account caller) {
         Bucket bucket = _bucketDao.findById(bucketId);
         if (bucket == null) {
@@ -185,6 +190,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_BUCKET_UPDATE, eventDescription = "updating bucket")
     public boolean updateBucket(UpdateBucketCmd cmd, Account caller) {
         BucketVO bucket = _bucketDao.findById(cmd.getId());
         if (bucket == null) {
