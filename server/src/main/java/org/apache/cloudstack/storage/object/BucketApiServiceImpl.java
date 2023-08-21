@@ -108,8 +108,14 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         Account owner = _accountMgr.getActiveAccountById(ownerId);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(cmd.getObjectStoragePoolId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        if(!objectStore.createUser(ownerId)) {
-            throw new CloudRuntimeException("Failed to create user in objectstore "+ objectStore.getName());
+        try {
+            if(!objectStore.createUser(ownerId)) {
+                s_logger.error("Failed to create user in objectstore "+ objectStore.getName());
+                return null;
+            }
+        } catch (CloudRuntimeException e) {
+            s_logger.error("Error while checking object store user.", e);
+            return null;
         }
 
         BucketVO bucket = new BucketVO(ownerId, owner.getDomainId(), cmd.getObjectStoragePoolId(), cmd.getBucketName(), cmd.getQuota(),
