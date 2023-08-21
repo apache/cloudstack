@@ -38,6 +38,7 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -54,6 +55,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     public TemplateDownloader.Status currentStatus;
     public TemplateDownloader.Status status;
     private String errorString = null;
+    private long totalRemoteSize = 0;
     private long currentRemoteSize = 0;
     public long downloadTime = 0;
     public long currentTotalBytes;
@@ -133,8 +135,31 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         };
     }
 
+    private void tryAndGetTotalRemoteSize() {
+        for (String downloadUrl : downloadUrls) {
+            if (StringUtils.isBlank(downloadUrl)) {
+                continue;
+            }
+            HeadMethod headMethod = new HeadMethod(downloadUrl);
+            try {
+                if (client.executeMethod(headMethod) != HttpStatus.SC_OK) {
+                    continue;
+                }
+                Header contentLengthHeader = request.getResponseHeader("content-length");
+                if (contentLengthHeader == null) {
+                    continue;
+                }
+                totalRemoteSize += Long.parseLong(contentLengthHeader.getValue());
+            } catch (IOException e) {
+                s_logger.warn(String.format("Cannot reach URL: %s while trying to get remote sizes due to: %s", downloadUrl, e.getMessage()), e);
+            } finally {
+                headMethod.releaseConnection();
+            }
+        }
+    }
+
     private long downloadFile(String downloadUrl) {
-        s_logger.info("Starting download for " + downloadUrl);
+        s_logger.debug("Starting download for " + downloadUrl);
         File file = null;
         request = null;
         try {
@@ -153,7 +178,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                 out.seek(localFileSize);
                 s_logger.info("Starting download from " + downloadUrl + " to " + currentToFile + " remoteSize=" + toHumanReadableSize(currentRemoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
                 if (copyBytes(file, in, out)) return 0;
-                checkDowloadCompletion();
+                checkDownloadCompletion();
             }
             return currentTotalBytes;
         } catch (HttpException hte) {
@@ -184,9 +209,10 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
-        s_logger.info("~~~~~Starting downloads");
+        s_logger.debug("Starting downloads");
         status = Status.IN_PROGRESS;
         Date start = new Date();
+        tryAndGetTotalRemoteSize();
         for (String downloadUrl : downloadUrls) {
             if (StringUtils.isBlank(downloadUrl)) {
                 continue;
@@ -231,7 +257,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         return offset;
     }
 
-    private void checkDowloadCompletion() {
+    private void checkDownloadCompletion() {
         String downloaded = "(incomplete download)";
         if (currentTotalBytes >= currentRemoteSize) {
             currentStatus = Status.DOWNLOAD_FINISHED;
@@ -253,6 +279,9 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
     private void checkAndSetDownloadSize() {
         if (currentRemoteSize == 0) {
             currentRemoteSize = maxTemplateSizeInBytes;
+        }
+        if (totalRemoteSize == 0) {
+            totalRemoteSize = currentRemoteSize;
         }
     }
 
@@ -382,7 +411,11 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
 
     @Override
     public int getDownloadPercent() {
-        return 0;
+        if (totalRemoteSize == 0) {
+            return 0;
+        }
+
+        return (int)(100.0 * totalBytes / totalRemoteSize);
     }
 
     @Override
