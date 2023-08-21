@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 
+@SuppressWarnings("rawtypes")
 @APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateStoragePoolCmd extends BaseCmd {
@@ -60,6 +62,12 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = false, description = "false to disable the pool for allocation of new volumes, true to" +
             " enable it back.")
     private Boolean enabled;
+
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "the details for the storage pool")
+    private Map details;
+
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the URL of the storage pool")
+    private String url;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,6 +114,22 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.StoragePool;
+    }
+
+    public Map<String,String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String,String> details) {
+        this.details = details;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override

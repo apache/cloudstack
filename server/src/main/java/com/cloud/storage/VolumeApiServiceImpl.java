@@ -1246,7 +1246,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (storagePoolId != null) {
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
 
-                if (storagePoolVO.isManaged() && !storagePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+                if (storagePoolVO.isManaged() && !(storagePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) ||
+                                                   storagePoolVO.getPoolType().equals(Storage.StoragePoolType.FiberChannel))) {
                     Long instanceId = volume.getInstanceId();
 
                     if (instanceId != null) {

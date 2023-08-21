@@ -471,13 +471,17 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             s_logger.error(errMsg);
             answer = new Answer(command, false, errMsg);
         } else {
+            s_logger.info("Sending MIGRATE_COPY request to node " + ep);
             answer = ep.sendMessage(command);
+            s_logger.info("Received MIGRATE_COPY response from node with answer: " + answer);
         }
 
         if (answer == null || !answer.getResult()) {
             throw new CloudRuntimeException("Failed to migrate volume " + volume + " to storage pool " + destPool);
         } else {
             // Update the volume details after migration.
+            s_logger.info("MIGRATE_COPY updating volume");
+
             VolumeVO volumeVo = volDao.findById(volume.getId());
             Long oldPoolId = volume.getPoolId();
             volumeVo.setPath(((MigrateVolumeAnswer)answer).getVolumePath());
@@ -496,6 +500,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             volumeVo.setFolder(folder);
             volDao.update(volume.getId(), volumeVo);
+            s_logger.info("MIGRATE_COPY update volume data complete");
+
         }
 
         return answer;
@@ -516,11 +522,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 answer = cloneVolume(srcData, destData);
             } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME &&
                 srcData.getDataStore().getRole() == DataStoreRole.Primary && destData.getDataStore().getRole() == DataStoreRole.Primary) {
+                s_logger.info("About to MIGRATE copy between datasources");
                 if (srcData.getId() == destData.getId()) {
                     // The volume has to be migrated across storage pools.
+                    s_logger.info("MIGRATE copy using migrateVolumeToPool STARTING");
                     answer = migrateVolumeToPool(srcData, destData);
+                    s_logger.info("MIGRATE copy using migrateVolumeToPool DONE: " + answer.getResult());
                 } else {
+                    s_logger.info("MIGRATE copy using copyVolumeBetweenPools STARTING");
                     answer = copyVolumeBetweenPools(srcData, destData);
+                    s_logger.info("MIGRATE copy using copyVolumeBetweenPools DONE: " + answer.getResult());
                 }
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.SNAPSHOT) {
                 answer = copySnapshot(srcData, destData);
