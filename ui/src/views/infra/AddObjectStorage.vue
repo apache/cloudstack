@@ -99,6 +99,7 @@ export default {
       })
       this.rules = reactive({
         url: [{ required: true, message: this.$t('label.required') }],
+        name: [{ required: true, message: this.$t('label.required') }],
         accessKey: [{ required: true, message: this.$t('label.required') }],
         secretKey: [{ required: true, message: this.$t('label.required') }]
       })
@@ -134,7 +135,7 @@ export default {
 
           this.$notification.success({
             message: this.$t('label.add.object.storage'),
-            description: this.$t('label.add.object.storage')
+            description: this.$t('message.success.add.object.storage')
           })
           this.loading = false
           this.closeModal()

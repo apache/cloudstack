@@ -165,7 +165,7 @@ export default {
         api('createBucket', data).then(response => {
           this.$pollJob({
             jobId: response.createbucketresponse.jobid,
-            title: this.$t('message.success.create.bucket'),
+            title: this.$t('label.create.bucket'),
             description: values.name,
             successMessage: this.$t('message.success.create.bucket'),
             errorMessage: this.$t('message.create.bucket.failed'),
