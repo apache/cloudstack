@@ -121,6 +121,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -3663,6 +3664,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("The object store with name " + name + " already exists, try creating with another name");
         }
 
+        try {
+            // Check URL
+            UriUtils.validateUrl(url);
+        } catch (final Exception e) {
+            throw new InvalidParameterValueException(url + " is not a valid URL");
+        }
+
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
         params.put("name", name);
@@ -3720,11 +3728,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (objectStoreVO == null) {
             throw new IllegalArgumentException("Unable to find object store with ID: " + id);
         }
+
+        if(cmd.getUrl() != null ) {
+            String url = cmd.getUrl();
+            try {
+                // Check URL
+                UriUtils.validateUrl(url);
+            } catch (final Exception e) {
+                throw new InvalidParameterValueException(url + " is not a valid URL");
+            }
+            ObjectStoreEntity objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+            String oldUrl = objectStoreVO.getUrl();
+            objectStoreVO.setUrl(url);
+            _objectStoreDao.update(id, objectStoreVO);
+            //Update URL and check access
+            try {
+                objectStore.listBuckets();
+            } catch (CloudRuntimeException e) {
+                //Revert to old URL on failure
+                objectStoreVO.setUrl(oldUrl);
+                _objectStoreDao.update(id, objectStoreVO);
+                throw new IllegalArgumentException("Unable to access Object Storage with URL: " + cmd.getUrl());
+            }
+        }
+
         if(cmd.getName() != null ) {
             objectStoreVO.setName(cmd.getName());
-        }
-        if(cmd.getUrl() != null ) {
-            objectStoreVO.setUrl(cmd.getUrl());
         }
         _objectStoreDao.update(id, objectStoreVO);
         s_logger.debug("Successfully updated object store with Id: "+id);

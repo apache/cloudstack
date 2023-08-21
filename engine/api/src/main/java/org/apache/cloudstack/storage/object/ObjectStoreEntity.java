@@ -20,10 +20,13 @@ package org.apache.cloudstack.storage.object;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 
+import java.util.List;
 import java.util.Map;
 
 public interface ObjectStoreEntity extends DataStore, ObjectStore {
     Bucket createBucket(Bucket bucket, boolean objectLock);
+
+    List<Bucket> listBuckets();
 
     boolean createUser(long accountId);
 

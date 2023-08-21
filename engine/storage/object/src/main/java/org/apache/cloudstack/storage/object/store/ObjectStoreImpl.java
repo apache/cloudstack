@@ -32,6 +32,7 @@ import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.log4j.Logger;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ObjectStoreImpl implements ObjectStoreEntity {
@@ -147,6 +148,10 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
         return driver.getAllBucketsUsage(objectStoreVO.getId());
     }
 
+    @Override
+    public List<Bucket> listBuckets() {
+        return driver.listBuckets(objectStoreVO.getId());
+    }
 
     /*
     Create user if not exists
