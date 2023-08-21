@@ -17,16 +17,21 @@
 package com.cloud.network.dao;
 
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
+@DB()
 public class NsxProviderDaoImpl extends GenericDaoBase<NsxProviderVO, Long>
         implements NsxProviderDao {
 
     final SearchBuilder<NsxProviderVO> allFieldsSearch;
+
     public NsxProviderDaoImpl() {
         super();
         allFieldsSearch = createSearchBuilder();
@@ -48,11 +53,13 @@ public class NsxProviderDaoImpl extends GenericDaoBase<NsxProviderVO, Long>
     }
     @Override
     public NsxProviderVO findByZoneId(long zoneId) {
-        return null;
+        SearchCriteria<NsxProviderVO> sc = allFieldsSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        return findOneBy(sc);
     }
 
     @Override
     public List<NsxProviderVO> findAll() {
-        return null;
+        return listAll();
     }
 }
