@@ -5159,6 +5159,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (keyword != null) {
             SearchCriteria<BucketVO> ssc = bucketDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
