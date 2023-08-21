@@ -16,8 +16,9 @@
 // under the License.
 package org.apache.cloudstack.storage.object;
 
+import com.amazonaws.services.s3.internal.BucketNameUtils;
+import com.amazonaws.services.s3.model.IllegalBucketNameException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.BucketDao;
@@ -102,7 +103,13 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     }
 
     @Override
-    public Bucket allocBucket(CreateBucketCmd cmd) throws ResourceAllocationException {
+    public Bucket allocBucket(CreateBucketCmd cmd) {
+        try {
+            BucketNameUtils.validateBucketName(cmd.getBucketName());
+        } catch (IllegalBucketNameException e) {
+            s_logger.error("Invalid Bucket Name: " +cmd.getBucketName(), e);
+            throw new InvalidParameterValueException("Invalid Bucket Name: "+e.getMessage());
+        }
         //ToDo check bucket exists
         long ownerId = cmd.getEntityOwnerId();
         Account owner = _accountMgr.getActiveAccountById(ownerId);
