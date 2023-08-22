@@ -350,7 +350,9 @@ const user = {
       } else {
         noticeArray[noticeIdx] = noticeJson
       }
-
+      noticeArray.sort(function (a, b) {
+        return new Date(b.timestamp) - new Date(a.timestamp)
+      })
       commit('SET_HEADER_NOTICES', noticeArray)
     },
     ProjectView ({ commit }, projectid) {

@@ -65,7 +65,8 @@ export const pollJobPlugin = {
         key: jobId,
         title,
         description,
-        status: 'progress'
+        status: 'progress',
+        timestamp: new Date()
       })
 
       eventBus.on('update-job-details', (args) => {
@@ -107,7 +108,8 @@ export const pollJobPlugin = {
             title,
             description,
             status: 'done',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
@@ -157,7 +159,8 @@ export const pollJobPlugin = {
             title,
             description: desc,
             status: 'failed',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
