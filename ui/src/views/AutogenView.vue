@@ -932,11 +932,8 @@ export default {
           break
         }
 
-        if ((this.apiName.toLowerCase() + 'response') !== responseName.toLowerCase()) {
-          console.log('DEBUG - Found that API', this.apiName, ' does not match its expected response key name (apiname+response): ', responseName)
-        }
         if ('id' in this.$route.params && this.$route.params.id !== params.id) {
-          console.log('DEBUG - Discarding API response as its `id` does not match $route.param.id')
+          console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
           return
         }
         if (this.dataView && apiItemCount > 1) {
@@ -949,9 +946,6 @@ export default {
           this.items = []
         }
         this.itemCount = apiItemCount
-        if (this.itemCount !== this.items.length) {
-          console.log('WARN: API items length does not match the API return count, something is wrong')
-        }
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
