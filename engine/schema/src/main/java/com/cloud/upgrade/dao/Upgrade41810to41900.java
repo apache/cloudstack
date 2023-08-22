@@ -94,13 +94,13 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     public void migrateBackupDates(Connection conn) {
-        LOG.info("Trying to convert backups' date column from varchar(255) to datetime type.");
+        logger.info("Trying to convert backups' date column from varchar(255) to datetime type.");
 
         modifyDateColumnNameAndCreateNewOne(conn);
         fetchDatesAndMigrateToNewColumn(conn);
         dropOldColumn(conn);
 
-        LOG.info("Finished converting backups' date column from varchar(255) to datetime.");
+        logger.info("Finished converting backups' date column from varchar(255) to datetime.");
     }
 
     private void modifyDateColumnNameAndCreateNewOne(Connection conn) {
@@ -109,7 +109,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to alter backups' date column name due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
 
@@ -118,7 +118,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to crate new backups' column date due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -138,7 +138,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
             }
         } catch (SQLException e) {
             String message = String.format("Unable to retrieve backup dates due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -159,7 +159,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
         }
         if (parsedDate == null) {
             String msg = String.format("Unable to parse date [%s]. Will change backup date to null.", date);
-            LOG.error(msg);
+            logger.error(msg);
             return null;
         }
 
@@ -175,7 +175,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
             pstmt.executeUpdate();
         } catch (SQLException e) {
             String message = String.format("Unable to update backup date with id [%s] to date [%s] due to [%s].", id, date, e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }
@@ -186,7 +186,7 @@ public class Upgrade41810to41900 extends DbUpgradeAbstractImpl implements DbUpgr
             pstmt.execute();
         } catch (SQLException e) {
             String message = String.format("Unable to drop old_date column due to [%s].", e.getMessage());
-            LOG.error(message, e);
+            logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }

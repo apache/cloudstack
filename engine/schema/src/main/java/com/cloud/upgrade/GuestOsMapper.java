@@ -238,7 +238,7 @@ public class GuestOsMapper {
 
         long guestOsId = getGuestOsId(categoryId, displayName);
         if (guestOsId == 0) {
-            LOG.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
+            logger.error(String.format("no guest os found for category %d and name %s, skipping mapping it to %s/%s", guestOsId, displayName, mapping.getHypervisorType(), mapping.getHypervisorVersion()));
             return;
         }
 

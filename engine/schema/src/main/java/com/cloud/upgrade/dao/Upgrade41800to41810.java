@@ -91,12 +91,12 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void updateGuestOsMappings(Connection conn) {
-        LOG.debug("Updating guest OS mappings");
+        logger.debug("Updating guest OS mappings");
 
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         List<GuestOSHypervisorMapping> mappings = new ArrayList<>();
 
-        LOG.debug("Adding Ubuntu 20.04 support for VMware 6.5+");
+        logger.debug("Adding Ubuntu 20.04 support for VMware 6.5+");
         guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "6.5", "ubuntu64Guest"), 10, "Ubuntu 20.04 LTS");
         guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "6.7", "ubuntu64Guest"), 10, "Ubuntu 20.04 LTS");
         guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "6.7.1", "ubuntu64Guest"), 10, "Ubuntu 20.04 LTS");
@@ -108,7 +108,7 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
         guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "7.0.3.0", "ubuntu64Guest"), 10, "Ubuntu 20.04 LTS");
         guestOsMapper.addGuestOsHypervisorMapping(new GuestOSHypervisorMapping("VMware", "8.0", "ubuntu64Guest"), 10, "Ubuntu 20.04 LTS");
 
-        LOG.debug("Adding Ubuntu 22.04 support for KVM and VMware 6.5+");
+        logger.debug("Adding Ubuntu 22.04 support for KVM and VMware 6.5+");
         mappings.add(new GuestOSHypervisorMapping("KVM", "default", "Ubuntu 22.04 LTS"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.5", "ubuntu64Guest"));
         mappings.add(new GuestOSHypervisorMapping("VMware", "6.7", "ubuntu64Guest"));
@@ -123,7 +123,7 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
         guestOsMapper.addGuestOsAndHypervisorMappings(10, "Ubuntu 22.04 LTS", mappings);
         mappings.clear();
 
-        LOG.debug("Correcting guest OS names in hypervisor mappings for VMware 8.0 ad 8.0.0.1");
+        logger.debug("Correcting guest OS names in hypervisor mappings for VMware 8.0 ad 8.0.0.1");
         final String hypervisorVMware = Hypervisor.HypervisorType.VMware.name();
         final String hypervisorVersionVmware8 = "8.0";
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "AlmaLinux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "almalinux_64Guest"));
@@ -133,7 +133,7 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Oracle Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "8.0.0.1", "oracleLinux9_64Guest"));
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Rocky Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "8.0.0.1", "rockylinux_64Guest"));
 
-        LOG.debug("Correcting guest OS names in hypervisor mappings for Red Hat Enterprise Linux 9");
+        logger.debug("Correcting guest OS names in hypervisor mappings for Red Hat Enterprise Linux 9");
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0", "rhel9_64Guest"));
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0.1.0", "rhel9_64Guest"));
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "7.0.2.0", "rhel9_64Guest"));
@@ -141,7 +141,7 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "rhel9_64Guest"));
         guestOsMapper.updateGuestOsNameInHypervisorMapping(1, "Red Hat Enterprise Linux 9", new GuestOSHypervisorMapping(hypervisorVMware, "8.0.0.1", "rhel9_64Guest"));
 
-        LOG.debug("Adding new guest OS ids in hypervisor mappings for VMware 8.0");
+        logger.debug("Adding new guest OS ids in hypervisor mappings for VMware 8.0");
         // Add support for darwin22_64Guest from VMware 8.0
         mappings.add(new GuestOSHypervisorMapping(hypervisorVMware, hypervisorVersionVmware8, "darwin22_64Guest"));
         guestOsMapper.addGuestOsAndHypervisorMappings(7, "macOS 13 (64-bit)", mappings);
@@ -194,7 +194,7 @@ public class Upgrade41800to41810 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void copyGuestOsMappingsToVMware80u1() {
-        LOG.debug("Copying guest OS mappings from VMware 8.0 to VMware 8.0.1");
+        logger.debug("Copying guest OS mappings from VMware 8.0 to VMware 8.0.1");
         GuestOsMapper guestOsMapper = new GuestOsMapper();
         guestOsMapper.copyGuestOSHypervisorMappings(Hypervisor.HypervisorType.VMware, "8.0", "8.0.1");
     }

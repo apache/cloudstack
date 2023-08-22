@@ -125,7 +125,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             int nextBytes = client.getNextBytes();
                             bytesArr = new byte[nextBytes];
                             client.readBytes(bytesArr, nextBytes);
-                            s_logger.trace(String.format("Read [%s] bytes from client [%s]", nextBytes, clientId));
+                            logger.trace(String.format("Read [%s] bytes from client [%s]", nextBytes, clientId));
                             if (nextBytes > 0) {
                                 session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
                                 updateFrontEndActivityTime();
@@ -135,13 +135,13 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
-                            s_logger.trace(String.format("Read [%s] bytes from client [%s]", readBytes, clientId));
+                            logger.trace(String.format("Read [%s] bytes from client [%s]", readBytes, clientId));
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
                         }
                     }
-                    s_logger.info(String.format("Connection with client [%s] is dead.", clientId));
+                    logger.info(String.format("Connection with client [%s] is dead.", clientId));
                 } catch (IOException e) {
                     logger.error("Error on VNC client", e);
                 }
