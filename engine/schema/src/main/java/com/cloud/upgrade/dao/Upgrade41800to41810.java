@@ -63,6 +63,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         fixForeignKeyNames(conn);
         updateGuestOsMappings(conn);
         copyGuestOsMappingsToVMware80u1();
+        addForeignKeyToAutoscaleVmprofiles(conn);
     }
 
     @Override
@@ -224,5 +225,9 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.volumes", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.volumes", keys, false);
         DbUpgradeUtils.addForeignKey(conn, "volumes", "passphrase_id","passphrase", "id");
+    }
+
+    private void addForeignKeyToAutoscaleVmprofiles(Connection conn) {
+        DbUpgradeUtils.addForeignKey(conn, "autoscale_vmprofiles", "user_data_id", "user_data", "id");
     }
 }
