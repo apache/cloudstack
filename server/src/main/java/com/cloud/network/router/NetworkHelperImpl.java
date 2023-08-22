@@ -503,7 +503,6 @@ public class NetworkHelperImpl implements NetworkHelper {
         // failed both times, throw the exception up
         final List<HypervisorType> hypervisors = getHypervisors(routerDeploymentDefinition);
 
-        int startRetry = 0;
         DomainRouterVO router = null;
         for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final HypervisorType hType = iter.next();
@@ -560,7 +559,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                     router = startVirtualRouter(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount(), routerDeploymentDefinition.getParams());
                     break;
                 } catch (final InsufficientCapacityException ex) {
-                    if (startRetry < 2 && iter.hasNext()) {
+                    if (iter.hasNext()) {
                         s_logger.debug("Failed to start the VR  " + router + " with hypervisor type " + hType + ", " + "destroying it and recreating one more time");
                         // destroy the router
                         destroyRouter(router.getId(), _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM), User.UID_SYSTEM);
@@ -568,8 +567,6 @@ public class NetworkHelperImpl implements NetworkHelper {
                     } else {
                         throw ex;
                     }
-                } finally {
-                    startRetry++;
                 }
             } else {
                 // return stopped router
