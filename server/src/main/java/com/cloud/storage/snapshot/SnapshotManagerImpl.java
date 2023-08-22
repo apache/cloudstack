@@ -607,7 +607,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (policy != null) {
                 s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             }
-            if (deleteSnapshot(oldSnapId)) {
+            if (deleteSnapshot(oldSnapId, null)) {
                 //log Snapshot delete event
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE,
                         "Successfully deleted oldest snapshot: " + oldSnapId, oldSnapId, ApiCommandResourceType.Snapshot.toString(), 0);
@@ -619,7 +619,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async = true)
-    public boolean deleteSnapshot(long snapshotId) {
+    public boolean deleteSnapshot(long snapshotId, Long zoneId) {
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
@@ -647,9 +647,24 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
-        DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshotCheck);
+        List<SnapshotDataStoreVO> snapshotStoreRefs;
+        if (zoneId != null) {
+            DataCenterVO zone = dataCenterDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("unable to find a zone with the specified id");
+            }
+            snapshotStoreRefs = new ArrayList<>();
+            List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+            for (SnapshotDataStoreVO snapshotStore : allSnapshotStoreRefs) {
+                DataStore store = dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+                if (store.getScope())
+                if (snapshotStore.)
+            }
+        } else {
 
-        List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.listBySnapshot(snapshotId, dataStoreRole);
+            DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshotCheck);
+            snapshotStoreRefs = _snapshotStoreDao.listBySnapshot(snapshotId, dataStoreRole);
+        }
 
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
@@ -1458,7 +1473,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Destroying);
         for (SnapshotVO snapshotVO : snapshots) {
             try {
-                if (!deleteSnapshot(snapshotVO.getId())) {
+                if (!deleteSnapshot(snapshotVO.getId(), null)) {
                     s_logger.debug("Failed to delete snapshot in destroying state with id " + snapshotVO.getUuid());
                 }
             } catch (Exception e) {

@@ -52,7 +52,7 @@ public interface SnapshotApiService {
      * @param snapshotId
      *            TODO
      */
-    boolean deleteSnapshot(long snapshotId);
+    boolean deleteSnapshot(long snapshotId, Long zoneId);
 
     /**
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be

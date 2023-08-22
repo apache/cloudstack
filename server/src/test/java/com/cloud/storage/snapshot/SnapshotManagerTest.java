@@ -325,7 +325,7 @@ public class SnapshotManagerTest {
         when(snapshotMock.getAccountId()).thenReturn(2L);
         when(snapshotMock.getDataCenterId()).thenReturn(2L);
 
-        _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID);
+        _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID, null);
     }
 
     // vm state not stopped

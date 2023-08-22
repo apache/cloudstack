@@ -4574,7 +4574,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (locationType != null) {
-            sc.setParameters("locationType", locationType.name());
+            sc.setParameters("locationType", Snapshot.LocationType.PRIMARY.equals(locationType) ? locationType.name() : DataStoreRole.Image.name());
         }
 
         if (keyword != null) {

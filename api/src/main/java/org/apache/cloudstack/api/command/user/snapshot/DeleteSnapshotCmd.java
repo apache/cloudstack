@@ -103,7 +103,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
-        boolean result = _snapshotService.deleteSnapshot(getId());
+        boolean result = _snapshotService.deleteSnapshot(getId(), getZoneId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
