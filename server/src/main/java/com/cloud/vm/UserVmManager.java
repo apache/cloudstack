@@ -90,6 +90,10 @@ public interface UserVmManager extends UserVmService {
 
     void removeInstanceFromInstanceGroup(long vmId);
 
+    String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
+
+    String validateUserData(String userData, HTTPMethod httpmethod);
+
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
     boolean expunge(UserVmVO vm);
