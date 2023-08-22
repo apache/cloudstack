@@ -58,6 +58,8 @@ public interface UserVmManager extends UserVmService {
             "Destroys the VM's root volume when the VM is destroyed.",
             true, ConfigKey.Scope.Domain);
 
+    static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
+
     public  static  final String CKS_NODE = "cksnode";
 
     /**
@@ -89,6 +91,10 @@ public interface UserVmManager extends UserVmService {
     InstanceGroupVO getGroupForVm(long vmId);
 
     void removeInstanceFromInstanceGroup(long vmId);
+
+    String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
+
+    String validateUserData(String userData, HTTPMethod httpmethod);
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 

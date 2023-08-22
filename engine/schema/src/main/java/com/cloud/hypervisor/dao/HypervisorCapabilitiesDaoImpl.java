@@ -19,6 +19,7 @@ package com.cloud.hypervisor.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -71,6 +72,12 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeAndVersionSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
+        HypervisorCapabilitiesVO result = findOneBy(sc);
+        if (result != null || !HypervisorType.VMware.equals(hypervisorType) ||
+                CloudStackVersion.getVMwareParentVersion(hypervisorVersion) == null) {
+            return result;
+        }
+        sc.setParameters("hypervisorVersion", CloudStackVersion.getVMwareParentVersion(hypervisorVersion));
         return findOneBy(sc);
     }
 

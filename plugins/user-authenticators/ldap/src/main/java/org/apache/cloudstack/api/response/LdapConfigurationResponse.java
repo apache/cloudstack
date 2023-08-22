@@ -32,7 +32,7 @@ public class LdapConfigurationResponse extends BaseResponse {
     private String hostname;
 
     @SerializedName(ApiConstants.PORT)
-    @Param(description = "port teh ldap server is running on")
+    @Param(description = "port the ldap server is running on")
     private int port;
 
     @SerializedName(ApiConstants.DOMAIN_ID)

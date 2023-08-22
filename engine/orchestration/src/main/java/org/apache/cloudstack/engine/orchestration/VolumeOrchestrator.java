@@ -122,6 +122,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageUtil;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
@@ -130,6 +131,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -241,6 +243,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     VolumeApiService _volumeApiService;
     @Inject
     PassphraseDao passphraseDao;
+    @Inject
+    StoragePoolHostDao storagePoolHostDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -654,7 +658,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @DB
-    public VolumeInfo createVolume(VolumeInfo volumeInfo, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering, DiskOffering diskOffering,
+    public VolumeInfo createVolume(VolumeInfo volumeInfo, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId,
+                                   Long hostId, ServiceOffering offering, DiskOffering diskOffering,
                                    List<StoragePool> avoids, long size, HypervisorType hyperType) {
         // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
         volumeInfo = volService.updateHypervisorSnapshotReserveForVolume(diskOffering, volumeInfo.getId(), hyperType);
@@ -689,7 +694,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
 
-        pool = findStoragePool(dskCh, dc, pod, clusterId, vm.getHostId(), vm, avoidPools);
+        pool = findStoragePool(dskCh, dc, pod, clusterId, hostId, vm, avoidPools);
         if (pool == null) {
             String msg = String.format("Unable to find suitable primary storage when creating volume [%s].", volumeToString);
             logger.error(msg);
@@ -1120,10 +1125,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("storage-pool %s/%s is associated with cluster %d",storagePool.getName(), storagePool.getUuid(), clusterId));
         }
+        Long hostId = vm.getHostId();
+        if (hostId == null && storagePool.isLocal()) {
+            List<StoragePoolHostVO> poolHosts = storagePoolHostDao.listByPoolId(storagePool.getId());
+            if (poolHosts.size() > 0) {
+                hostId = poolHosts.get(0).getHostId();
+            }
+        }
 
         VolumeInfo vol = null;
         if (volumeInfo.getState() == Volume.State.Allocated) {
-            vol = createVolume(volumeInfo, vm, rootDiskTmplt, dcVO, pod, clusterId, svo, diskVO, new ArrayList<StoragePool>(), volumeInfo.getSize(), rootDiskHyperType);
+            vol = createVolume(volumeInfo, vm, rootDiskTmplt, dcVO, pod, clusterId, hostId, svo, diskVO, new ArrayList<StoragePool>(), volumeInfo.getSize(), rootDiskHyperType);
         } else if (volumeInfo.getState() == Volume.State.Uploaded) {
             vol = copyVolume(storagePool, volumeInfo, vm, rootDiskTmplt, dcVO, pod, diskVO, svo, rootDiskHyperType);
             if (vol != null) {

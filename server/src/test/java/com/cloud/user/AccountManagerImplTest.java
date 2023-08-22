@@ -875,19 +875,17 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void testDisableUserTwoFactorAuthentication() {
         Long userId = 1L;
+        Long accountId = 2L;
 
         UserVO userVO = Mockito.mock(UserVO.class);
         Account caller = Mockito.mock(Account.class);
+        Account owner = Mockito.mock(Account.class);
 
-        AccountVO accountMock = Mockito.mock(AccountVO.class);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
 
-        Mockito.when(caller.getDomainId()).thenReturn(1L);
         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
-        Mockito.when(userVO.getAccountId()).thenReturn(1L);
-        Mockito.when(_accountDao.findById(1L)).thenReturn(accountMock);
-        Mockito.when(accountMock.getDomainId()).thenReturn(1L);
-        Mockito.when(_accountService.getActiveAccountById(1L)).thenReturn(caller);
+        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+        Mockito.when(_accountService.getActiveAccountById(accountId)).thenReturn(owner);
 
         userVoMock.setKeyFor2fa("EUJEAEDVOURFZTE6OGWVTJZMI54QGMIL");
         userVoMock.setUser2faProvider("totp");
@@ -895,8 +893,9 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.when(userDaoMock.createForUpdate()).thenReturn(userVoMock);
 
-        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.disableTwoFactorAuthentication(userId, caller, caller);
+        UserTwoFactorAuthenticationSetupResponse response = accountManagerImpl.disableTwoFactorAuthentication(userId, caller, owner);
 
+        Mockito.verify(accountManagerImpl).checkAccess(caller, null, true, owner);
         Assert.assertNull(response.getSecretCode());
         Assert.assertNull(userVoMock.getKeyFor2fa());
         Assert.assertNull(userVoMock.getUser2faProvider());

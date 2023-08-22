@@ -74,12 +74,12 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         if (roleService.isEnabled()) {
             logger.debug("RoleService is enabled. We will use it instead of StaticRoleBasedAPIAccessChecker.");
         }
-        return roleService.isEnabled();
+        return !roleService.isEnabled();
     }
 
     @Override
     public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
-        if (isEnabled()) {
+        if (!isEnabled()) {
             return apiNames;
         }
 
@@ -91,7 +91,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        if (isEnabled()) {
+        if (!isEnabled()) {
             return true;
         }
 
@@ -105,6 +105,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
 
     @Override
     public boolean checkAccess(Account account, String commandName) {
+        if (!isEnabled()) {
+            return true;
+        }
+
         RoleType roleType = accountService.getRoleType(account);
         if (isApiAllowed(commandName, roleType)) {
             return true;
