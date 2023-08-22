@@ -171,6 +171,7 @@ class TestUpdateVirtualMachine(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id
         )
+        self.cleanup.append(self.virtual_machine)
 
         vm = self.listVmById(self.virtual_machine.id)
 
