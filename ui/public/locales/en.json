@@ -1625,6 +1625,7 @@
 "label.reset.config.value": "Reset to default value",
 "label.reset.ssh.key.pair": "Reset SSH key pair",
 "label.reset.to.default": "Reset to default",
+"label.reset.userdata.on.autoscale.vm.group": "Reset Userdata on AutoScale VM Group",
 "label.reset.userdata.on.vm": "Reset Userdata on VM",
 "label.reset.vpn.connection": "Reset VPN connection",
 "label.resource": "Resource",
