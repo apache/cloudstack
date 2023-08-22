@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -126,6 +127,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -601,6 +603,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected static long ROOT_DEVICE_ID = 0;
 
+    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int NUM_OF_2K_BLOCKS = 512;
+    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
+
     @Inject
     private OrchestrationService _orchSrvc;
 
@@ -649,6 +655,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.XenServer,
             HypervisorType.Simulator
     ));
+
+    protected static final List<HypervisorType> ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS = Arrays.asList(
+            HypervisorType.KVM,
+            HypervisorType.XenServer,
+            HypervisorType.VMware,
+            HypervisorType.Simulator,
+            HypervisorType.Custom
+    );
 
     private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
 
@@ -4338,7 +4352,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+        if (!ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorType)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -4772,6 +4786,56 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public String validateUserData(String userData, HTTPMethod httpmethod) {
+        byte[] decodedUserData = null;
+        if (userData != null) {
+
+            if (userData.contains("%")) {
+                try {
+                    userData = URLDecoder.decode(userData, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
+                }
+            }
+
+            if (!Base64.isBase64(userData)) {
+                throw new InvalidParameterValueException("User data is not base64 encoded");
+            }
+            // If GET, use 4K. If POST, support up to 1M.
+            if (httpmethod.equals(HTTPMethod.GET)) {
+                if (userData.length() >= MAX_HTTP_GET_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for an http GET request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+                }
+                decodedUserData = Base64.decodeBase64(userData.getBytes());
+                if (decodedUserData.length > MAX_HTTP_GET_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for GET request");
+                }
+            } else if (httpmethod.equals(HTTPMethod.POST)) {
+                if (userData.length() >= MAX_HTTP_POST_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for an http POST request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+                }
+                decodedUserData = Base64.decodeBase64(userData.getBytes());
+                if (decodedUserData.length > MAX_HTTP_POST_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for POST request");
+                }
+            }
+
+            if (decodedUserData == null || decodedUserData.length < 1) {
+                throw new InvalidParameterValueException("User data is too short");
+            }
+            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
+            return Base64.encodeBase64String(decodedUserData);
+        }
+        return null;
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -5004,6 +5068,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
+        String originalVncPassword = profile.getVirtualMachine().getVncPassword();
+        String returnedVncPassword = null;
         if (startAnswer != null) {
             StartAnswer startAns = (StartAnswer)startAnswer;
             VirtualMachineTO vmTO = startAns.getVirtualMachine();
@@ -5012,6 +5078,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     returnedIp = nicTO.getIp();
                 }
             }
+            returnedVncPassword = vmTO.getVncPassword();
         }
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -5063,6 +5130,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        updateVncPasswordIfItHasChanged(originalVncPassword, returnedVncPassword, profile);
+
         // get system ip and create static nat rule for the vm
         try {
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
@@ -5095,6 +5164,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
 
         return true;
+    }
+
+    protected void updateVncPasswordIfItHasChanged(String originalVncPassword, String returnedVncPassword, VirtualMachineProfile profile) {
+        if (returnedVncPassword != null && !originalVncPassword.equals(returnedVncPassword)) {
+            UserVmVO userVm = _vmDao.findById(profile.getId());
+            userVm.setVncPassword(returnedVncPassword);
+            _vmDao.update(userVm.getId(), userVm);
+        }
     }
 
     @Override
@@ -5656,7 +5733,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm.getHypervisorType();
     }
 
-    protected String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
+    @Override
+    public String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
         if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }

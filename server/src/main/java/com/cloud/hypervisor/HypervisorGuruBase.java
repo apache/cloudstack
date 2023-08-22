@@ -360,7 +360,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor, VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor };
+        return new ConfigKey<?>[] {VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor,
+                VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor,
+                HypervisorCustomDisplayName
+        };
     }
 
 }

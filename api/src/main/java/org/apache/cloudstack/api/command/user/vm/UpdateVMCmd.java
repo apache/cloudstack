@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -176,18 +175,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     }
 
     public Map<String, String> getUserdataDetails() {
-        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
-        if (userdataDetails != null && userdataDetails.size() != 0) {
-            Collection parameterCollection = userdataDetails.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
-                }
-            }
-        }
-        return userdataDetailsMap;
+        return convertDetailsToMap(userdataDetails);
     }
 
     public Boolean getDisplayVm() {
