@@ -933,8 +933,7 @@ export default {
         }
 
         if ((this.apiName.toLowerCase() + 'response') !== responseName.toLowerCase()) {
-          console.log('DEBUG - Discarding API response as expected API response key does not match response name:', responseName)
-          return
+          console.log('DEBUG - Found that API', this.apiName, ' does not match its expected response key name (apiname+response): ', responseName)
         }
         if ('id' in this.$route.params && this.$route.params.id !== params.id) {
           console.log('DEBUG - Discarding API response as its `id` does not match $route.param.id')
