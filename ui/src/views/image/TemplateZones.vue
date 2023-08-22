@@ -66,7 +66,7 @@
           @onClick="showCopyTemplate(record)" />
         <tooltip-button
           style="margin-right: 5px"
-          :disabled="!('deleteTemplate' in $store.getters.apis)"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
           :title="$t('label.action.delete.template')"
           type="primary"
           :danger="true"
