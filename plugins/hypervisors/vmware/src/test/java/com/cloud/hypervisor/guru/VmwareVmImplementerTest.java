@@ -16,14 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.guru;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,7 +79,7 @@ public class VmwareVmImplementerTest {
 
     private void executeAndVerifyTest(Boolean globalNV, Boolean globalNVPVM, String localNV, Boolean expectedResult){
         Boolean result = implementer.shouldEnableNestedVirtualization(globalNV, globalNVPVM, localNV);
-        assertEquals(expectedResult, result);
+        Assert.assertEquals(expectedResult, result);
     }
 
     @Test
@@ -91,8 +90,8 @@ public class VmwareVmImplementerTest {
 
         verify(implementer).shouldEnableNestedVirtualization(true, true, null);
 
-        assertTrue(vmDetails.containsKey(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
-        assertEquals(Boolean.toString(true), vmDetails.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
+        Assert.assertTrue(vmDetails.containsKey(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
+        Assert.assertEquals(Boolean.toString(true), vmDetails.get(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG));
 
     }
 
