@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.apache.cloudstack.utils.CloudStackVersion;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -43,6 +44,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -168,6 +170,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     RouterHealthCheckResultDao _routerHealthCheckResultDao;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    CapacityManager capacityMgr;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -507,6 +511,8 @@ public class NetworkHelperImpl implements NetworkHelper {
         for (final Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final HypervisorType hType = iter.next();
             try {
+                checkIfZoneHasCapacity(routerDeploymentDefinition.getDest().getDataCenter(), hType, routerOffering);
+
                 final long id = _routerDao.getNextInSequence(Long.class, "id");
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Allocating the VR with id=%s in datacenter %s with the hypervisor type %s", id, routerDeploymentDefinition.getDest()
@@ -575,6 +581,25 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         return router;
+    }
+
+    private void checkIfZoneHasCapacity(final DataCenter zone, final HypervisorType hypervisorType, final ServiceOfferingVO routerOffering) throws InsufficientServerCapacityException {
+        List <HostVO> hosts = _hostDao.listByDataCenterIdAndHypervisorType(zone.getId(), hypervisorType);
+        if (CollectionUtils.isEmpty(hosts)) {
+            String msg = String.format("Zone %s has no %s host available which is enabled and in Up state", zone.getName(), hypervisorType);
+            s_logger.debug(msg);
+            throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+        }
+        for (HostVO host : hosts) {
+            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, routerOffering, false);
+            if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
+                s_logger.debug("Host " + host + " has enough capacity for the router");
+                return;
+            }
+        }
+        String msg = String.format("Zone %s has no %s host which has enough capacity", zone.getName(), hypervisorType);
+        s_logger.debug(msg);
+        throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
 
     protected void filterSupportedHypervisors(final List<HypervisorType> hypervisors) {
