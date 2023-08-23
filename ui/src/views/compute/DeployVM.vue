@@ -1797,7 +1797,7 @@ export default {
           this.fetchBootModes(this.form.boottype)
           this.defaultBootMode = template.details?.UEFI || this.options.bootModes?.[0]?.id || undefined
           this.form.bootmode = this.defaultBootMode
-          this.form.iothreadsenabled = template.details?.iothreads ? template.details.iothreads === 'enabled' : null
+          this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
           this.form.iodriverpolicy = template.details?.['io.policy']
           this.form.keyboard = template.details?.keyboard
         }
