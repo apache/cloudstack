@@ -4769,7 +4769,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    protected String validateUserData(String userData, HTTPMethod httpmethod) {
+    @Override
+    public String validateUserData(String userData, HTTPMethod httpmethod) {
         byte[] decodedUserData = null;
         if (userData != null) {
 
@@ -5703,7 +5704,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm.getHypervisorType();
     }
 
-    protected String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
+    @Override
+    public String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
         if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }

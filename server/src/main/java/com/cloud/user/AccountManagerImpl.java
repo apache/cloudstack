@@ -162,6 +162,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -292,6 +293,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -1089,6 +1092,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SSHKeyPairVO keypair : sshkeypairs) {
                 _sshKeyPairDao.remove(keypair.getId());
             }
+
+            // Delete registered UserData
+            userDataDao.removeByAccountId(accountId);
+
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
@@ -3320,7 +3327,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
         UserVO userVO = null;
         if (userId != null) {
-            userVO = validateUser(userId, caller.getDomainId());
+            userVO = validateUser(userId);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
@@ -3342,15 +3349,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserVO validateUser(Long userId, Long domainId) {
+    private UserVO validateUser(Long userId) {
         UserVO user = null;
         if (userId != null) {
             user = _userDao.findById(userId);
             if (user == null) {
                 throw new InvalidParameterValueException("Invalid user ID provided");
-            }
-            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
-                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
             }
         }
         return user;

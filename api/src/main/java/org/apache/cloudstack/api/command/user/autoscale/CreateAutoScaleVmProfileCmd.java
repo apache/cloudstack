@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -107,6 +108,12 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             since = "4.18.0")
     private String userData;
 
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.18.1")
+    private Long userDataId;
+
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18.1")
+    private Map userDataDetails;
+
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
                entityType = UserResponse.class,
@@ -161,6 +168,14 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public String getUserData() {
         return userData;
+    }
+
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public Map<String, String> getUserDataDetails() {
+        return convertDetailsToMap(userDataDetails);
     }
 
     public Long getAutoscaleUserId() {

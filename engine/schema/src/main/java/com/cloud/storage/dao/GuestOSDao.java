@@ -16,12 +16,23 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
+import java.util.Set;
 
 public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
-    GuestOSVO listByDisplayName(String displayName);
+    GuestOSVO findOneByDisplayName(String displayName);
 
     GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName);
+
+    Set<String> findDoubleNames();
+
+    List<GuestOSVO> listByDisplayName(String displayName);
+
+    Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, Long id, Long osCategoryId, String description, String keyword, Boolean forDisplay);
 }
