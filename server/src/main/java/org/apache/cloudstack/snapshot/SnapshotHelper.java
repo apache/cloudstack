@@ -127,12 +127,12 @@ public class SnapshotHelper {
             return snapInfo;
         }
 
-        snapInfo = getSnapshotInfoByIdAndRole(snapshot.getId(), DataStoreRole.Primary);
+        snapInfo = getSnapshotInfoByIdAndRole(snapshot.getId(), DataStoreRole.Primary, null);
 
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotStrategy.SnapshotOperation.BACKUP);
         snapshotStrategy.backupSnapshot(snapInfo);
 
-        return getSnapshotInfoByIdAndRole(snapshot.getId(), kvmSnapshotOnlyInPrimaryStorage ? DataStoreRole.Image : dataStoreRole);
+        return getSnapshotInfoByIdAndRole(snapshot.getId(), kvmSnapshotOnlyInPrimaryStorage ? DataStoreRole.Image : dataStoreRole, dataStorageManager.getStoreZoneId(snapInfo.getDataStore().getId(), snapInfo.getDataStore().getRole()));
     }
 
     /**
@@ -140,8 +140,13 @@ public class SnapshotHelper {
      * @return The snapshot info if it exists, else throws an exception.
      * @throws CloudRuntimeException
      */
-    protected SnapshotInfo getSnapshotInfoByIdAndRole(long snapshotId, DataStoreRole dataStoreRole) throws CloudRuntimeException{
-        SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+    protected SnapshotInfo getSnapshotInfoByIdAndRole(long snapshotId, DataStoreRole dataStoreRole, Long zoneId) throws CloudRuntimeException {
+        SnapshotInfo snapInfo = null;
+        if (DataStoreRole.Primary.equals(dataStoreRole)) {
+            snapInfo = snapshotFactory.getSnapshotOnPrimaryStore(snapshotId);
+        } else {
+            snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
+        }
 
         if (snapInfo != null) {
             return snapInfo;

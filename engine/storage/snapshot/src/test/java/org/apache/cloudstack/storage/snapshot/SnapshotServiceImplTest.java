@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.snapshot;
 
-import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -43,6 +42,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import com.cloud.storage.DataStoreRole;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SnapshotServiceImpl.class})
@@ -77,7 +78,7 @@ public class SnapshotServiceImplTest {
 
         Mockito.when(snapshot.getId()).thenReturn(1L);
         Mockito.when(snapshot.getVolumeId()).thenReturn(1L);
-        Mockito.when(_snapshotFactory.getSnapshot(1L, DataStoreRole.Primary)).thenReturn(null);
+        Mockito.when(_snapshotFactory.getSnapshotOnPrimaryStore(1L)).thenReturn(null);
         Mockito.when(volFactory.getVolume(1L, DataStoreRole.Primary)).thenReturn(volumeInfo);
 
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);

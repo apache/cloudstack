@@ -841,7 +841,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             if (zoneId == null) {
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
-                zoneId = snapshotCheck.getDataCenterId();
+                zoneId = parentVolume.getDataCenterId();
             }
 
             if (diskOffering == null) { // Pure snapshot is being used to create volume.

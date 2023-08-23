@@ -84,18 +84,22 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
-    public List<SnapshotInfo> getSnapshots(long snapshotId) {
+    public List<SnapshotInfo> getSnapshots(long snapshotId, Long zoneId) {
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        if (snapshot == null) { //snapshot may have been removed;
+            return new ArrayList<>();
+        }
         List<SnapshotDataStoreVO> allSnapshotsAndDataStore = snapshotStoreDao.findBySnapshotId(snapshotId);
         if (CollectionUtils.isEmpty(allSnapshotsAndDataStore)) {
             return new ArrayList<>();
         }
         List<SnapshotInfo> infos = new ArrayList<>();
         for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsAndDataStore) {
-            DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
-            SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
-            if (snapshot == null){ //snapshot may have been removed;
+            Long entryZoneId = storeMgr.getStoreZoneId(snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
+            if (zoneId != null && !zoneId.equals(entryZoneId)) {
                 continue;
             }
+            DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
             SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
 
             infos.add(info);
@@ -120,28 +124,54 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
-    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
-        return getSnapshot(snapshotId, role, true);
+    public SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId) {
+        return null;
     }
 
     @Override
-    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, boolean retrieveAnySnapshotFromVolume) {
+    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
+        return getSnapshot(snapshotId, role, 1L, true);
+    }
+
+    @Override
+    public SnapshotInfo getSnapshotOnPrimaryStore(long snapshotId) {
+        SnapshotVO snapshot = snapshotDao.findById(snapshotId);
+        if (snapshot == null) {
+            return null;
+        }
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
+        if (snapshotStore == null) {
+            return null;
+        }
+        DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+        SnapshotObject so = SnapshotObject.getSnapshotObject(snapshot, store);
+        return so;
+    }
+
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, long zoneId, boolean retrieveAnySnapshotFromVolume) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             return null;
         }
         List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listBySnapshot(snapshotId, role);
         SnapshotDataStoreVO snapshotStore = null;
-        if (CollectionUtils.isNotEmpty(snapshotStores)) {
-            snapshotStore = snapshotStores.get(0);
+        for (SnapshotDataStoreVO ref : snapshotStores) {
+            if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())); {
+                snapshotStore = ref;
+                break;
+            }
         }
         if (snapshotStore == null) {
             if (!retrieveAnySnapshotFromVolume) {
                 return null;
             }
             snapshotStores = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
-            if (CollectionUtils.isNotEmpty(snapshotStores)) {
-                snapshotStore = snapshotStores.get(0);
+            for (SnapshotDataStoreVO ref : snapshotStores) {
+                if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())); {
+                    snapshotStore = ref;
+                    break;
+                }
             }
             if (snapshotStore == null) {
                 return null;

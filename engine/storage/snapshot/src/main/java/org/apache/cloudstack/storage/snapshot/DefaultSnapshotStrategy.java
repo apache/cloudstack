@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,6 +64,7 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -96,6 +98,18 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
     VolumeDetailsDao _volumeDetailsDaoImpl;
+    @Inject
+    SnapshotZoneDao snapshotZoneDao;
+
+    private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        for (SnapshotDataStoreVO ref : snaps) {
+            if (zoneId == dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
+                return ref;
+            }
+        }
+        return null;
+    }
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
@@ -103,7 +117,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
             // don't need to backup this snapshot
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(parentSnapshot.getId(), DataStoreRole.Image);
+            SnapshotDataStoreVO parentSnapshotOnBackupStore = getSnapshotImageStoreRef(parentSnapshot.getId(),
+                    dataStoreMgr.getStoreZoneId(parentSnapshot.getDataStore().getId(), parentSnapshot.getDataStore().getRole()));
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
                 DataStore store = dataStoreMgr.getDataStore(parentSnapshotOnBackupStore.getDataStoreId(), parentSnapshotOnBackupStore.getRole());
 
@@ -155,7 +170,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         if (prevBackupId == 0) {
                             break;
                         }
-                        parentSnapshotOnBackupStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(prevBackupId, DataStoreRole.Image);
+                        parentSnapshotOnBackupStore = getSnapshotImageStoreRef(prevBackupId, volume.getDataCenterId());
                         if (parentSnapshotOnBackupStore == null) {
                             break;
                         }
@@ -242,9 +257,12 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public boolean deleteSnapshot(Long snapshotId) {
+    public boolean deleteSnapshot(Long snapshotId, Long zoneId) {
         SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
 
+        if (zoneId != null && List.of(Snapshot.State.Allocated, Snapshot.State.CreatedOnPrimary).contains(snapshotVO.getState())) {
+            throw new InvalidParameterValueException(String.format("Snapshot in %s can not be deleted for a zone", snapshotVO.getState()));
+        }
         if (snapshotVO.getState() == Snapshot.State.Allocated) {
             snapshotDao.remove(snapshotId);
             return true;
@@ -256,10 +274,21 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
             List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
-                snapshotStoreDao.expunge(ref.getId());
+                boolean refZoneIdMatch = false;
+                if (zoneId != null) {
+                    Long refZoneId = dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole());
+                    refZoneIdMatch = zoneId.equals(refZoneId);
+                }
+                if (zoneId == null || refZoneIdMatch) {
+                    snapshotStoreDao.expunge(ref.getId());
+                    deletedRefs.add(ref.getId());
+                }
             }
-            snapshotDao.remove(snapshotId);
+            if (deletedRefs.size() == storeRefs.size()) {
+                snapshotStoreDao.remove(snapshotId);
+            }
             return true;
         }
 
@@ -274,20 +303,26 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
 
-        return destroySnapshotEntriesAndFiles(snapshotVO);
+        return destroySnapshotEntriesAndFiles(snapshotVO, zoneId);
     }
 
     /**
      * Destroys the snapshot entries and files on both primary and secondary storage (if it exists).
      * @return true if destroy successfully, else false.
      */
-    protected boolean destroySnapshotEntriesAndFiles(SnapshotVO snapshotVo) {
-        if (!deleteSnapshotInfos(snapshotVo)) {
+    protected boolean destroySnapshotEntriesAndFiles(SnapshotVO snapshotVo, Long zoneId) {
+        if (!deleteSnapshotInfos(snapshotVo, zoneId)) {
             return false;
         }
-
+        if (zoneId != null) {
+            snapshotZoneDao.removeSnapshotFromZone(snapshotVo.getId(), zoneId);
+        } else {
+            snapshotZoneDao.removeSnapshotFromZones(snapshotVo.getId());
+        }
+        if (CollectionUtils.isNotEmpty(retrieveSnapshotEntries(snapshotVo.getId(), null))) {
+            return true;
+        }
         updateSnapshotToDestroyed(snapshotVo);
-
         return true;
     }
 
@@ -299,8 +334,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         snapshotDao.update(snapshotVo.getId(), snapshotVo);
     }
 
-    protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo) {
-        List<SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId());
+    protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo, Long zoneId) {
+        List<SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), zoneId);
 
         boolean result = false;
         for (var snapshotInfo : snapshotInfos) {
@@ -389,13 +424,13 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
      * @param snapshotId The snapshot to retrieve the infos.
      * @return A list of snapshot infos.
      */
-    protected List<SnapshotInfo> retrieveSnapshotEntries(long snapshotId) {
-        return snapshotDataFactory.getSnapshots(snapshotId);
+    protected List<SnapshotInfo> retrieveSnapshotEntries(long snapshotId, Long zoneId) {
+        return snapshotDataFactory.getSnapshots(snapshotId, zoneId);
     }
 
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
-        if (canHandle(snapshot, SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
+        if (canHandle(snapshot, null, SnapshotOperation.REVERT) == StrategyPriority.CANT_HANDLE) {
             throw new CloudRuntimeException("Reverting not supported. Create a template or volume based on the snapshot instead.");
         }
 
@@ -530,7 +565,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         if (SnapshotOperation.REVERT.equals(op)) {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
@@ -541,7 +576,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
             return StrategyPriority.CANT_HANDLE;
         }
-
+        if (zoneId != null && SnapshotOperation.DELETE.equals(op)) {
+            s_logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
+        }
         return StrategyPriority.DEFAULT;
     }
 

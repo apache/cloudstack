@@ -65,8 +65,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.SNAPSHOT, type = CommandType.BOOLEAN, description = "temp parameter")
-    private boolean newWay;
+    @Parameter(name = ApiConstants.SNAPSHOT, type = CommandType.BOOLEAN, description = "parameter for debugging, to be removed. If true, snapshots will be listed using old way otherwise new way")
+    private boolean oldWay;
 
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages")
     private Boolean showUnique;
@@ -103,11 +103,11 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public boolean isNewWay() {
-        if (Boolean.FALSE.equals(newWay)) {
-            return false;
+    public boolean isOldWay() {
+        if (Boolean.TRUE.equals(oldWay)) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     public boolean isShowUnique() {
@@ -136,9 +136,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Override
     public void execute() {
         ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
-        if (isNewWay()) {
-            response = _queryService.listSnapshots(this);
-        } else {
+        if (isOldWay()) {
             Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
             List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
             for (Snapshot snapshot : result.first()) {
@@ -147,6 +145,8 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
                 snapshotResponses.add(snapshotResponse);
             }
             response.setResponses(snapshotResponses, result.second());
+        } else {
+            response = _queryService.listSnapshots(this);
         }
         response.setResponseName(getCommandName());
 

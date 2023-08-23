@@ -83,8 +83,8 @@ public class DefaultSnapshotStrategyTest {
     @Test
     public void validateRetrieveSnapshotEntries() {
         Long snapshotId = 1l;
-        Mockito.doReturn(mockSnapshotInfos).when(snapshotDataFactoryMock).getSnapshots(Mockito.anyLong());
-        List<SnapshotInfo> result = defaultSnapshotStrategySpy.retrieveSnapshotEntries(snapshotId);
+        Mockito.doReturn(mockSnapshotInfos).when(snapshotDataFactoryMock).getSnapshots(Mockito.anyLong(), Mockito.any());
+        List<SnapshotInfo> result = defaultSnapshotStrategySpy.retrieveSnapshotEntries(snapshotId, null);
 
         Assert.assertTrue(result.contains(snapshotInfo1Mock));
         Assert.assertTrue(result.contains(snapshotInfo2Mock));
@@ -100,28 +100,28 @@ public class DefaultSnapshotStrategyTest {
 
     @Test
     public void validateDestroySnapshotEntriesAndFilesFailToDeleteReturnsFalse() {
-        Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotInfos(Mockito.any());
-        Assert.assertFalse(defaultSnapshotStrategySpy.destroySnapshotEntriesAndFiles(snapshotVoMock));
+        Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotInfos(Mockito.any(), Mockito.any());
+        Assert.assertFalse(defaultSnapshotStrategySpy.destroySnapshotEntriesAndFiles(snapshotVoMock, null));
     }
 
     @Test
     public void validateDestroySnapshotEntriesAndFilesDeletesSuccessfullyReturnsTrue() {
-        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfos(Mockito.any());
-        Assert.assertTrue(defaultSnapshotStrategySpy.destroySnapshotEntriesAndFiles(snapshotVoMock));
+        Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfos(Mockito.any(), Mockito.any());
+        Assert.assertTrue(defaultSnapshotStrategySpy.destroySnapshotEntriesAndFiles(snapshotVoMock, null));
     }
 
     @Test
     public void validateDeleteSnapshotInfosFailToDeleteReturnsFalse() {
-        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
+        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(false).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
-        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock));
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock, null));
     }
 
     @Test
     public void validateDeleteSnapshotInfosDeletesSuccessfullyReturnsTrue() {
-        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong());
+        Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock));
+        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock, null));
     }
 
     @Test

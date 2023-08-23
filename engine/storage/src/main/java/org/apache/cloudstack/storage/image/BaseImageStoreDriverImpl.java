@@ -349,10 +349,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             updateBuilder.setSize(answer.getTemplateSize());
             updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
             snapshotDataStoreDao.update(snapshotStoreVO.getId(), updateBuilder);
-            // update size in snapshot table
-//            SnapshotVO snapshotUpdater = snapshotDao.createForUpdate();
-//            snapshotUpdater.setSize(answer.getTemplateSize());
-//            snapshotDao.update(obj.getId(), snapshotUpdater);
         }
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();

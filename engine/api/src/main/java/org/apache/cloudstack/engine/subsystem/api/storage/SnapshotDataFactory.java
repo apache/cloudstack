@@ -29,13 +29,17 @@ public interface SnapshotDataFactory {
 
     SnapshotInfo getSnapshot(long snapshotId, long storeId, DataStoreRole role);
 
+    SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId);
+
     SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role);
 
-    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, boolean retrieveAnySnapshotFromVolume);
+    SnapshotInfo getSnapshotOnPrimaryStore(long snapshotId);
+
+    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, long zoneId, boolean retrieveAnySnapshotFromVolume);
 
     List<SnapshotInfo> getSnapshotsForVolumeAndStoreRole(long volumeId, DataStoreRole store);
 
-    List<SnapshotInfo> getSnapshots(long snapshotId);
+    List<SnapshotInfo> getSnapshots(long snapshotId, Long zoneId);
 
     List<SnapshotInfo> listSnapshotOnCache(long snapshotId);
 

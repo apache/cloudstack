@@ -23,4 +23,6 @@ import com.cloud.utils.db.GenericDao;
 public interface SnapshotZoneDao extends GenericDao<SnapshotZoneVO, Long> {
     SnapshotZoneVO findByZoneSnapshot(long zoneId, long templateId);
     void addSnapshotToZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZones(long snapshotId);
 }

@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -73,6 +76,8 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     private SnapshotDataFactory snapshotDataFactory;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    DataStoreManager dataStoreMgr;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -92,7 +97,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     @Override
-    public boolean deleteSnapshot(Long snapshotId) {
+    public boolean deleteSnapshot(Long snapshotId, Long zoneId) {
 
         final SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
         VolumeVO volume = _volumeDao.findByIdIncludingRemoved(snapshotVO.getVolumeId());
@@ -108,11 +113,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
                     StorPoolUtil.spLog(err);
                 } else {
-                    SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, snapshotVO.getUuid());
-                    if (snapshotDetails != null) {
-                        _snapshotDetailsDao.removeDetails(snapshotId);
-                    }
-                    res = deleteSnapshotFromDb(snapshotId);
+                    res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
                     StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
                 }
             } catch (Exception e) {
@@ -125,13 +126,19 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     @Override
-    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         log.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
         }
-
+        if (zoneId != null) { // If zoneId is present, then it should be same as the zoneId of primary store
+            SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
+            StoragePoolVO storagePoolVO = _primaryDataStoreDao.findById(snapshotOnPrimary.getDataStoreId());
+            if (!zoneId.equals(storagePoolVO.getDataCenterId())) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
         String name = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), _snapshotStoreDao, _snapshotDetailsDao);
         if (name != null) {
             StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: globalId=%s", name);
@@ -147,6 +154,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     private boolean deleteSnapshotChain(SnapshotInfo snapshot) {
         log.debug("delete snapshot chain for snapshot: " + snapshot.getId());
+        final SnapshotInfo snapOnImage = snapshot;
         boolean result = false;
         boolean resultIsSet = false;
         try {
@@ -174,8 +182,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     }
                 }
                 if (!deleted) {
-                    SnapshotInfo snap = snapshotDataFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
-                    if (StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getPath(), true) == null) {
+                    if (StorPoolStorageAdaptor.getVolumeNameFromPath(snapOnImage.getPath(), true) == null) {
                         try {
                             boolean r = snapshotSvr.deleteSnapshot(snapshot);
                             if (r) {
@@ -204,45 +211,8 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         return result;
     }
 
-    private boolean deleteSnapshotFromDb(Long snapshotId) {
-        SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
-
-        if (snapshotVO.getState() == Snapshot.State.Allocated) {
-            _snapshotDao.remove(snapshotId);
-            return true;
-        }
-
-        if (snapshotVO.getState() == Snapshot.State.Destroyed) {
-            return true;
-        }
-
-        if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
-            for (SnapshotDataStoreVO ref : storeRefs) {
-                _snapshotStoreDao.expunge(ref.getId());
-            }
-            _snapshotDao.remove(snapshotId);
-            return true;
-        }
-
-        if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
-            snapshotVO.setState(Snapshot.State.Destroyed);
-            _snapshotDao.update(snapshotId, snapshotVO);
-            return true;
-        }
-
-        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
-                !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
-            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
-        }
-
-        SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Image);
-        if (snapshotOnImage == null) {
-            log.debug("Can't find snapshot on backup storage, delete it in db");
-            _snapshotDao.remove(snapshotId);
-            return true;
-        }
-
+    protected boolean deleteSnapshotOnImage(long snapshotId, DataStore store) {
+        SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, store);
         SnapshotObject obj = (SnapshotObject)snapshotOnImage;
         try {
             obj.processEvent(Snapshot.Event.DestroyRequested);
@@ -255,7 +225,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             boolean result = deleteSnapshotChain(snapshotOnImage);
             obj.processEvent(Snapshot.Event.OperationSucceeded);
             if (result) {
-                SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary);
+                SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotOnImage.getSnapshotId(), DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
                     snapshotOnPrimary.setState(State.Destroyed);
                     _snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
@@ -272,6 +242,69 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         }
         return true;
     }
+
+    private boolean deleteSnapshotFromDbIfNeeded(SnapshotVO snapshotVO, Long zoneId) {
+        final long snapshotId = snapshotVO.getId();
+        SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshotId, snapshotVO.getUuid());
+        if (snapshotDetails != null) {
+            _snapshotDetailsDao.removeDetails(snapshotId);
+        }
+
+        if (zoneId != null && List.of(Snapshot.State.Allocated, Snapshot.State.CreatedOnPrimary).contains(snapshotVO.getState())) {
+            throw new InvalidParameterValueException(String.format("Snapshot in %s can not be deleted for a zone", snapshotVO.getState()));
+        }
+
+        if (snapshotVO.getState() == Snapshot.State.Allocated) {
+            _snapshotDao.remove(snapshotId);
+            return true;
+        }
+
+        if (snapshotVO.getState() == Snapshot.State.Destroyed) {
+            return true;
+        }
+
+        if (Snapshot.State.Error.equals(snapshotVO.getState())) {
+            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<Long> deletedRefs = new ArrayList<>();
+            for (SnapshotDataStoreVO ref : storeRefs) {
+                boolean refZoneIdMatch = false;
+                if (zoneId != null) {
+                    Long refZoneId = dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole());
+                    refZoneIdMatch = zoneId.equals(refZoneId);
+                }
+                if (zoneId == null || refZoneIdMatch) {
+                    _snapshotStoreDao.expunge(ref.getId());
+                    deletedRefs.add(ref.getId());
+                }
+            }
+            if (deletedRefs.size() == storeRefs.size()) {
+                _snapshotDao.remove(snapshotId);
+            }
+            return true;
+        }
+
+        if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
+            snapshotVO.setState(Snapshot.State.Destroyed);
+            _snapshotDao.update(snapshotId, snapshotVO);
+            return true;
+        }
+
+        if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
+                !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
+            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
+        }
+        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        if (zoneId != null) {
+            storeRefs.removeIf(ref -> !zoneId.equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())));
+        }
+        for (SnapshotDataStoreVO ref : storeRefs) {
+            if (!deleteSnapshotOnImage(snapshotId, dataStoreMgr.getDataStore(ref.getId(), ref.getRole()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     @Override
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {

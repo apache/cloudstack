@@ -249,12 +249,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     private ScheduledExecutorService backupSnapshotExecutor;
 
     private DataStore getSnapshotZoneImageStore(long snapshotId, long zoneId) {
-        List<DataStore> zoneStores = dataStoreMgr.getImageStoresByScope(new ZoneScope(zoneId));
         List<SnapshotDataStoreVO> snapshotImageStoreList = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
-        List<Long> snapshotImageStoreIds = snapshotImageStoreList.stream().map(SnapshotDataStoreVO::getDataStoreId).collect(Collectors.toList());
-        zoneStores = zoneStores.stream().filter(s -> snapshotImageStoreIds.contains(s.getId())).collect(Collectors.toList());
-        if (CollectionUtils.isNotEmpty(zoneStores)) {
-            return zoneStores.get(0);
+        for (SnapshotDataStoreVO ref : snapshotImageStoreList) {
+            Long entryZoneId = dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole());
+            if (entryZoneId != null && entryZoneId.equals(zoneId)) {
+                return dataStoreMgr.getDataStore(ref.getDataStoreId(), ref.getRole());
+            }
         }
         return null;
     }
@@ -365,7 +365,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
 
-        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, volume.getDataCenterId());
 
         if (snapshotInfo == null) {
             throw new CloudRuntimeException(String.format("snapshot %s [%s] does not exists in data store", snapshot.getName(), snapshot.getUuid()));
@@ -438,7 +438,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // does the caller have the authority to act on this volume
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
 
-        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotInfo snapshot = snapshotFactory.getSnapshotOnPrimaryStore(snapshotId);
         if (snapshot == null) {
             s_logger.debug("Failed to create snapshot");
             throw new CloudRuntimeException("Failed to create snapshot");
@@ -463,7 +463,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public Snapshot archiveSnapshot(Long snapshotId) {
-        SnapshotInfo snapshotOnPrimary = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotInfo snapshotOnPrimary = snapshotFactory.getSnapshotOnPrimaryStore(snapshotId);
 
         if (snapshotOnPrimary == null || !snapshotOnPrimary.getStatus().equals(ObjectInDataStoreStateMachine.State.Ready)) {
             throw new CloudRuntimeException("Can only archive snapshots present on primary storage. " + "Cannot find snapshot " + snapshotId + " on primary storage");
@@ -639,7 +639,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         _accountMgr.checkAccess(caller, null, true, snapshotCheck);
 
-        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, SnapshotOperation.DELETE);
+        SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshotCheck, zoneId, SnapshotOperation.DELETE);
 
         if (snapshotStrategy == null) {
             s_logger.error("Unable to find snapshot strategy to handle snapshot with id '" + snapshotId + "'");
@@ -656,9 +656,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             snapshotStoreRefs = new ArrayList<>();
             List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
             for (SnapshotDataStoreVO snapshotStore : allSnapshotStoreRefs) {
-                DataStore store = dataStoreMgr.getDataStore(snapshotStore.getDataStoreId(), snapshotStore.getRole());
-                if (store.getScope())
-                if (snapshotStore.)
+                Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+                if (zoneId.equals(entryZoneId)) {
+                    snapshotStoreRefs.add(snapshotStore);
+                }
             }
         } else {
 
@@ -667,18 +668,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         try {
-            boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
+            boolean result = snapshotStrategy.deleteSnapshot(snapshotId, zoneId);
 
             if (result) {
-                annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
+                List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+                if (CollectionUtils.isEmpty(allSnapshotStoreRefs)) {
+                    annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
 
-                if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
-                            snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
-                }
+                    if (snapshotCheck.getState() == Snapshot.State.BackedUp) { // ToDo: When and for which zone event should be published?
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
+                                snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
+                    }
 
-                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
-                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                    if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
+                        _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                    }
                 }
 
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
@@ -867,7 +871,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 }
                 List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.listBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
-                if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
+                if (snapshotStrategy.deleteSnapshot(snapshot.getId(), null)) {
                     if (Type.MANUAL == snapshot.getRecurringType()) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
                         for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {

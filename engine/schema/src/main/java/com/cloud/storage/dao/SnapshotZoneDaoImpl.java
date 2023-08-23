@@ -39,10 +39,10 @@ public class SnapshotZoneDaoImpl extends GenericDaoBase<SnapshotZoneVO, Long> im
     }
 
     @Override
-    public SnapshotZoneVO findByZoneSnapshot(long zoneId, long templateId) {
+    public SnapshotZoneVO findByZoneSnapshot(long zoneId, long snapshotId) {
         SearchCriteria<SnapshotZoneVO> sc = ZoneSnapshotSearch.create();
         sc.setParameters("zone_id", zoneId);
-        sc.setParameters("snapshot_id", templateId);
+        sc.setParameters("snapshot_id", snapshotId);
         return findOneBy(sc);
     }
 
@@ -57,5 +57,20 @@ public class SnapshotZoneDaoImpl extends GenericDaoBase<SnapshotZoneVO, Long> im
             snapshotZone.setLastUpdated(new Date());
             update(snapshotZone.getId(), snapshotZone);
         }
+    }
+
+    @Override
+    public void removeSnapshotFromZone(long snapshotId, long zoneId) {
+        SearchCriteria<SnapshotZoneVO> sc = ZoneSnapshotSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        sc.setParameters("snapshot_id", snapshotId);
+        remove(sc);
+    }
+
+    @Override
+    public void removeSnapshotFromZones(long snapshotId) {
+        SearchCriteria<SnapshotZoneVO> sc = ZoneSnapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        remove(sc);
     }
 }

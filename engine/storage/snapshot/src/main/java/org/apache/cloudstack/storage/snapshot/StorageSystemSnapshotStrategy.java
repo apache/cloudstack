@@ -151,7 +151,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public boolean deleteSnapshot(Long snapshotId) {
+    public boolean deleteSnapshot(Long snapshotId, Long zoneId) {
         Preconditions.checkArgument(snapshotId != null, "'snapshotId' cannot be 'null'.");
 
         SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
@@ -182,7 +182,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
      */
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, eventDescription = "deleting snapshot", async = true)
     private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
-        SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshotOnPrimaryStore(snapshotId);
 
         if (snapshotObj == null) {
             s_logger.debug("Can't find snapshot; deleting it in DB");
@@ -912,7 +912,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         Snapshot.LocationType locationType = snapshot.getLocationType();
 
         // If the snapshot exists on Secondary Storage, we can't delete it.
@@ -935,6 +935,12 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             }
 
             long snapshotStoragePoolId = snapshotStore.getDataStoreId();
+            if (zoneId != null) { // If zoneId is present, then it should be same as the zoneId of primary store
+                StoragePoolVO storagePoolVO = storagePoolDao.findById(snapshotStoragePoolId);
+                if (!zoneId.equals(storagePoolVO.getDataCenterId())) {
+                    return StrategyPriority.CANT_HANDLE;
+                }
+            }
 
             boolean storageSystemSupportsCapability = storageSystemSupportsCapability(snapshotStoragePoolId, DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
 

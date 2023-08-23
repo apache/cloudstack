@@ -46,6 +46,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -61,7 +62,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
-import org.apache.log4j.Logger;
 
 public class DataMigrationUtility {
     private static Logger LOGGER = Logger.getLogger(DataMigrationUtility.class);
@@ -223,7 +223,7 @@ public class DataMigrationUtility {
             if (snapshot.getState() == ObjectInDataStoreStateMachine.State.Ready &&
                     snapshotVO != null && snapshotVO.getHypervisorType() != Hypervisor.HypervisorType.Simulator
                     && snapshot.getParentSnapshotId() == 0 ) {
-                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
                 if (snap != null) {
                     files.add(snap);
                 }

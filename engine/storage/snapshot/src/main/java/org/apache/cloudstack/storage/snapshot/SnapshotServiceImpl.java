@@ -305,7 +305,13 @@ public class SnapshotServiceImpl implements SnapshotService {
             // find the image store where the parent snapshot backup is located
             SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
             if (parentSnapshot != null) {
-                parentSnapshotOnBackupStore = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(parentSnapshot.getId(), DataStoreRole.Image);
+                List<SnapshotDataStoreVO> snaps = _snapshotStoreDao.listBySnapshot(snapshot.getId(), DataStoreRole.Image);
+                for (SnapshotDataStoreVO ref : snaps) {
+                    if (snapshot.getDataCenterId() != null && snapshot.getDataCenterId().equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole()))) {
+                        parentSnapshotOnBackupStore = ref;
+                        break;
+                    }
+                }
             }
             if (parentSnapshotOnBackupStore == null) {
                 return dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
@@ -531,7 +537,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
         PrimaryDataStore store = null;
-        SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
+        SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), DataStoreRole.Primary, snapshot.getDataCenterId());
         if (snapshotOnPrimaryStore == null) {
             s_logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
             VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);

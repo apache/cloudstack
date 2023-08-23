@@ -56,6 +56,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -223,6 +224,9 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private SnapshotDao snapshotDaoMock;
+
+    @Mock
+    private SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
     @Mock
     private Project projectMock;

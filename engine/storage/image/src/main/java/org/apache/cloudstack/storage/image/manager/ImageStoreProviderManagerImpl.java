@@ -257,4 +257,10 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager,
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { ImageStoreAllocationAlgorithm };
     }
+
+    @Override
+    public long getImageStoreZoneId(long dataStoreId) {
+        ImageStoreVO dataStore = dataStoreDao.findById(dataStoreId);
+        return dataStore.getDataCenterId();
+    }
 }

@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -81,7 +82,11 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    @Inject
+    DataStoreManager dataStoreManager;
     private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
+
+    private Long zoneId = null;
 
     public SnapshotObject() {
 
@@ -90,6 +95,7 @@ public class SnapshotObject implements SnapshotInfo {
     protected void configure(SnapshotVO snapshot, DataStore store) {
         this.snapshot = snapshot;
         this.store = store;
+        this.zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
     }
 
     public static SnapshotObject getSnapshotObject(SnapshotVO snapshot, DataStore store) {
@@ -317,7 +323,7 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getDataCenterId() {
-        return snapshot.getDataCenterId();
+        return zoneId;
     }
 
     public void processEvent(Snapshot.Event event) throws NoTransitionException {
