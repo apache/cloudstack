@@ -2230,7 +2230,7 @@
 "message.action.delete.system.service.offering": "Please confirm that you want to delete this system service offering.",
 "message.action.delete.template": "Please confirm that you want to delete this template.",
 "message.action.delete.tungsten.router.table": "Please confirm that you want to remove Route Table from this network?",
-"message.action.delete.volume": "Please confirm that you want to delete this volume.",
+"message.action.delete.volume": "Please confirm that you want to delete this volume. Note: this will not delete any snapshots of this volume.",
 "message.action.delete.vpn.user": "Please confirm that you want to delete the VPN user.",
 "message.action.delete.zone": "Please confirm that you want to delete this zone.",
 "message.action.destroy.instance": "Please confirm that you want to destroy the instance.",
