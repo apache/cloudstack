@@ -103,7 +103,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String group;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the availablility zone for the virtual machine")
+    @Param(description = "the ID of the availability zone for the virtual machine")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)

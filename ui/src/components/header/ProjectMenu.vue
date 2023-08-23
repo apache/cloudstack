@@ -66,6 +66,7 @@ export default {
       let projectIndex = 0
       if (this.$store.getters?.project?.id) {
         projectIndex = this.projects.findIndex(project => project.id === this.$store.getters.project.id)
+        this.$store.dispatch('ToggleTheme', projectIndex === undefined ? 'light' : 'dark')
       }
 
       return projectIndex

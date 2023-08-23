@@ -1071,7 +1071,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                             } else {
                                 return;
                             }
-                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(),
+                            SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress(), vm.getId(),
                                     generateRulesetSignature(ingressRules, egressRules), seqnum, ingressRules, egressRules, nicSecIps);
                             Commands cmds = new Commands(cmd);
                             try {

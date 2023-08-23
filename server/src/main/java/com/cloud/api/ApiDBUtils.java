@@ -1104,7 +1104,7 @@ public class ApiDBUtils {
     }
 
     public static GuestOS findGuestOSByDisplayName(String displayName) {
-        return s_guestOSDao.listByDisplayName(displayName);
+        return s_guestOSDao.findOneByDisplayName(displayName);
     }
 
     public static HostVO findHostById(Long hostId) {

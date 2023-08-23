@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -95,17 +92,7 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (details != null && details.size() != 0) {
-            Collection parameterCollection = details.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (String key : value.keySet()) {
-                    customparameterMap.put(key, value.get(key));
-                }
-            }
-        }
+        Map<String, String> customparameterMap = convertDetailsToMap(details);
 
         if (shrinkOk != null) customparameterMap.put(ApiConstants.SHRINK_OK, String.valueOf(isShrinkOk()));
         if (autoMigrate != null) customparameterMap.put(ApiConstants.AUTO_MIGRATE, String.valueOf(getAutoMigrate()));

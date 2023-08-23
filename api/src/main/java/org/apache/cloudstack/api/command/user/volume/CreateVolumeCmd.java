@@ -70,7 +70,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                description = "the domain ID associated with the disk offering. If used with the account parameter"
-                   + " returns the disk volume associated with the account for the specified domain.")
+                   + " returns the disk volume associated with the account for the specified domain." +
+                       "If account is NOT provided then the volume will be assigned to the caller account and domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,

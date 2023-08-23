@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -27,6 +28,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "backups")
@@ -49,7 +52,8 @@ public class BackupVO implements Backup {
     private String backupType;
 
     @Column(name = "date")
-    private String date;
+    @Temporal(value = TemporalType.DATE)
+    private Date date;
 
     @Column(name = "size")
     private Long size;
@@ -114,11 +118,11 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public String getDate() {
-        return date;
+    public Date getDate() {
+        return this.date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 

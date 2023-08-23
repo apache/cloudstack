@@ -62,7 +62,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-            description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
+            description = "The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume. If account is NOT provided then snapshot will be assigned to the caller account and domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")

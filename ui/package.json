@@ -1,7 +1,7 @@
 {
   "name": "cloudstack-ui",
   "description": "Modern role-based Apache CloudStack UI",
-  "version": "1.0.0",
+  "version": "4.18.1",
   "homepage": "https://cloudstack.apache.org/",
   "repository": {
     "type": "git",

@@ -21,6 +21,7 @@ package org.apache.cloudstack.utils;
 import com.google.common.testing.EqualsTester;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -203,5 +204,24 @@ public final class CloudStackVersionTest {
 
         assertEquals(expected, CloudStackVersion.trimRouterVersion(value));
 
+    }
+
+    private void verifyGetVMwareParentVersion(String hypervisorVersion, String expectedParentVersion) {
+        if (expectedParentVersion == null) {
+            Assert.assertNull(CloudStackVersion.getVMwareParentVersion(hypervisorVersion));
+        } else {
+            Assert.assertEquals(CloudStackVersion.getVMwareParentVersion(hypervisorVersion), expectedParentVersion);
+        }
+    }
+    @Test
+    public void testGetParentVersion() {
+        verifyGetVMwareParentVersion(null, null);
+        verifyGetVMwareParentVersion("6.5", null);
+        verifyGetVMwareParentVersion("6.7.3", "6.7.3");
+        verifyGetVMwareParentVersion("7.0.3.0", "7.0.3");
+        verifyGetVMwareParentVersion("8.0", null);
+        verifyGetVMwareParentVersion("8.0.0", "8.0");
+        verifyGetVMwareParentVersion("8.0.0.2", "8.0");
+        verifyGetVMwareParentVersion("8.0.1.0", "8.0.1");
     }
 }

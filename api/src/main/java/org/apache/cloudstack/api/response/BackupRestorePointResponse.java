@@ -25,6 +25,8 @@ import org.apache.cloudstack.backup.Backup;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
+
 @EntityReference(value = Backup.RestorePoint.class)
 public class BackupRestorePointResponse extends BaseResponse {
 
@@ -34,7 +36,7 @@ public class BackupRestorePointResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "created time")
-    private String created;
+    private Date created;
 
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "restore point type")
@@ -48,11 +50,11 @@ public class BackupRestorePointResponse extends BaseResponse {
         this.id = id;
     }
 
-    public String getCreated() {
-        return created;
+    public Date getCreated() {
+        return this.created;
     }
 
-    public void setCreated(String created) {
+    public void setCreated(Date created) {
         this.created = created;
     }
 

@@ -78,7 +78,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId. If the account parameter is used, domainId must also be used.")
+               description = "an optional domainId. If the account parameter is used, domainId must also be used. If account is NOT provided then volume will be assigned to the caller account and domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")

@@ -682,8 +682,10 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
             final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
 
-            Long upInstances = 0L;
-            Long totalInstances = 0L;
+            long upInstances = 0L;
+            long totalInstances = 0L;
+            long upSystemInstances = 0L;
+            long totalSystemInstances = 0L;
             for (final VMInstanceVO instance: vmInstanceDao.listByHostId(hostId)) {
                 if (instance == null) {
                     continue;
@@ -693,10 +695,16 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
                     if (instance.getState() == VirtualMachine.State.Running) {
                         upInstances++;
                     }
+                } else if (instance.getType().isUsedBySystem()) {
+                    totalSystemInstances++;
+                    if (instance.getState() == VirtualMachine.State.Running) {
+                        upSystemInstances++;
+                    }
                 }
             }
             metricsResponse.setPowerState(hostResponse.getOutOfBandManagementResponse().getPowerState());
             metricsResponse.setInstances(upInstances, totalInstances);
+            metricsResponse.setSystemInstances(upSystemInstances, totalSystemInstances);
             metricsResponse.setCpuTotal(hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuUsed(hostResponse.getCpuUsed(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());
             metricsResponse.setCpuAllocated(hostResponse.getCpuAllocated(), hostResponse.getCpuNumber(), hostResponse.getCpuSpeed());

@@ -532,7 +532,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
-        String userData = cmd.getUserData();
 
         DataCenter zone = entityMgr.findById(DataCenter.class, zoneId);
 
@@ -543,6 +542,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         ServiceOffering serviceOffering = entityMgr.findById(ServiceOffering.class, serviceOfferingId);
         if (serviceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id");
+        }
+
+        VirtualMachineTemplate template = entityMgr.findById(VirtualMachineTemplate.class, cmd.getTemplateId());
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template by id " + cmd.getTemplateId());
         }
 
         // validations
@@ -562,8 +566,22 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             profileVO.setDisplay(cmd.getDisplay());
         }
 
+        String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserDataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserDataDetails())) {
+            userDataDetails = cmd.getUserDataDetails().toString();
+        }
+        userData = userVmMgr.finalizeUserData(userData, userDataId, template);
+        userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
         if (userData != null) {
             profileVO.setUserData(userData);
+        }
+        if (userDataId != null) {
+            profileVO.setUserDataId(userDataId);
+        }
+        if (userDataDetails != null) {
+            profileVO.setUserDataDetails(userDataDetails);
         }
 
         profileVO = checkValidityAndPersist(profileVO, true);
@@ -582,12 +600,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map<String, HashMap<String, String>> otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
         String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserDataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserDataDetails())) {
+            userDataDetails = cmd.getUserDataDetails().toString();
+        }
+        boolean userdataUpdate = userData != null || userDataId != null || MapUtils.isNotEmpty(cmd.getUserDataDetails());
 
         Integer expungeVmGracePeriod = cmd.getExpungeVmGracePeriod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, autoScaleVmProfileDao);
 
-        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null || expungeVmGracePeriod != null || userData != null);
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null
+                || otherDeployParams != null || expungeVmGracePeriod != null || userdataUpdate);
 
         if (serviceOfferingId != null) {
             vmProfile.setServiceOfferingId(serviceOfferingId);
@@ -609,10 +634,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             vmProfile.setCounterParamsForUpdate(counterParamList);
         }
 
-        if (userData != null) {
-            vmProfile.setUserData(userData);
-        }
-
         if (expungeVmGracePeriod != null) {
             vmProfile.setExpungeVmGracePeriod(expungeVmGracePeriod);
         }
@@ -623,6 +644,18 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (cmd.getDisplay() != null) {
             vmProfile.setDisplay(cmd.getDisplay());
+        }
+
+        if (userdataUpdate) {
+            if (templateId == null) {
+                templateId = vmProfile.getTemplateId();
+            }
+            VirtualMachineTemplate template = entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId);
+            userData = userVmMgr.finalizeUserData(userData, userDataId, template);
+            userData = userVmMgr.validateUserData(userData, cmd.getHttpMethod());
+            vmProfile.setUserDataId(userDataId);
+            vmProfile.setUserData(userData);
+            vmProfile.setUserDataDetails(userDataDetails);
         }
 
         List<AutoScaleVmGroupVO> vmGroupList = autoScaleVmGroupDao.listByAll(null, profileId);
@@ -1740,6 +1773,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             }
 
             String userData = profileVo.getUserData();
+            Long userDataId = profileVo.getUserDataId();
+            String userDataDetails = profileVo.getUserDataDetails();
 
             UserVm vm = null;
             IpAddresses addrs = new IpAddresses(null, null);
@@ -1763,20 +1798,20 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
                         vmHostName, diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                        hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                         null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                             owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
-                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, null, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
                             diskOfferingId, dataDiskSize, null,
-                            hypervisorType, HTTPMethod.GET, userData, null, null, sshKeyPairs,
+                            hypervisorType, HTTPMethod.GET, userData, userDataId, userDataDetails, sshKeyPairs,
                             null, addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
                             null, true, null, overrideDiskOfferingId);
                 }

@@ -339,7 +339,6 @@ export default {
       this.loadingData = true
       console.log(values)
       const params = {
-        id: this.resource.id
       }
       if (values.userdata && values.userdata.length > 0) {
         params.userdata = this.$toBase64AndURIEncoded(values.userdata)
@@ -360,7 +359,14 @@ export default {
           idx++
         }
       }
-      api('resetUserDataForVirtualMachine', params).then(json => {
+      params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
+
+      const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
           content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2

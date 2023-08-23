@@ -61,7 +61,7 @@ public class ListTungstenFabricTagCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.VM_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric vm")
     private String vmUuid;
 
-    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "tthe uuid of Tungsten-Fabric nic")
+    @Parameter(name = ApiConstants.NIC_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric nic")
     private String nicUuid;
 
     @Parameter(name = ApiConstants.POLICY_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric policy")
