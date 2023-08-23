@@ -120,14 +120,6 @@
             <a-input v-model:value="formUpdRange.netmask"></a-input>
           </a-form-item>
         </div>
-        <div v-if="selectedItem.ip6gateway && !selectedItem.gateway">
-          <a-form-item name="ip6gateway" ref="ip6gateway" :label="$t('label.gateway')" class="form__item">
-            <a-input v-model:value="formUpdRange.ip6gateway" />
-          </a-form-item>
-          <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
-            <a-input v-model:value="formUpdRange.ip6cidr" />
-          </a-form-item>
-        </div>
 
         <div :span="24" class="action-button">
           <a-button @click="showUpdateForm = false">{{ $t('label.cancel') }}</a-button>
@@ -244,9 +236,7 @@ export default {
         startip: [{ required: true, message: this.$t('label.required') }],
         endip: [{ required: true, message: this.$t('label.required') }],
         gateway: [{ required: true, message: this.$t('label.required') }],
-        netmask: [{ required: true, message: this.$t('label.required') }],
-        ip6gateway: [{ required: true, message: this.$t('label.required') }],
-        ip6cidr: [{ required: true, message: this.$t('label.required') }]
+        netmask: [{ required: true, message: this.$t('label.required') }]
       })
     },
     handleUpdateIpRangeModal (item) {
@@ -259,8 +249,6 @@ export default {
       this.formUpdRange.endip = this.selectedItem?.endip || ''
       this.formUpdRange.gateway = this.selectedItem?.gateway || ''
       this.formUpdRange.netmask = this.selectedItem?.netmask || ''
-      this.formUpdRange.ip6gateway = this.selectedItem?.ip6gateway || ''
-      this.formUpdRange.ip6cidr = this.selectedItem?.ip6cidr || ''
     },
     handleUpdateIpRange (e) {
       if (this.componentLoading) return
@@ -273,9 +261,6 @@ export default {
           id: this.selectedItem.id
         }
         var ipRangeKeys = ['gateway', 'netmask', 'startip', 'endip']
-        if (this.selectedItem.ip6gateway && !this.selectedItem.gateway) {
-          ipRangeKeys = ['ip6gateway', 'ip6cidr']
-        }
         for (const key of ipRangeKeys) {
           params[key] = values[key]
         }
