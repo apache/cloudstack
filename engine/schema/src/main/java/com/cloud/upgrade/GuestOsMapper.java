@@ -57,15 +57,15 @@ public class GuestOsMapper {
     }
 
     public void mergeDuplicates() {
-        LOG.info("merging duplicate guest osses");
+        logger.info("merging duplicate guest osses");
         Set<Set<GuestOSVO>> duplicates = findDuplicates();
-        LOG.debug(String.format("merging %d sets of duplicates", duplicates.size()));
+        logger.debug(String.format("merging %d sets of duplicates", duplicates.size()));
         for (Set<GuestOSVO> setOfGuestOSes : duplicates) {
             // decide which to (mark as) remove(d)
             // # highest/lowest id
             // # or is user_defined == false
             GuestOSVO guestOSVO = highestIdFrom(setOfGuestOSes);
-            LOG.info(String.format("merging %d duplicates for %s ", setOfGuestOSes.size(), guestOSVO.getDisplayName()));
+            logger.info(String.format("merging %d duplicates for %s ", setOfGuestOSes.size(), guestOSVO.getDisplayName()));
             makeNormative(guestOSVO, setOfGuestOSes);
 
         }
@@ -164,7 +164,7 @@ public class GuestOsMapper {
     public void addGuestOsAndHypervisorMappings(long categoryId, String displayName, List<GuestOSHypervisorMapping> mappings) {
         long guestOsId = getGuestOsId(categoryId, displayName);
         if (guestOsId == 0) {
-            LOG.debug("No guest OS found with category id: " + categoryId + " and display name: " + displayName);
+            logger.debug("No guest OS found with category id: " + categoryId + " and display name: " + displayName);
             if (!addGuestOs(categoryId, displayName)) {
                 logger.warn("Couldn't add the guest OS with category id: " + categoryId + " and display name: " + displayName);
                 return;
