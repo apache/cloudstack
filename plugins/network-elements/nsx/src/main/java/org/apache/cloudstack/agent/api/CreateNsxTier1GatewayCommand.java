@@ -14,19 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package org.apache.cloudstack.agent.api;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class CreateNsxTier1GatewayCommand extends NsxCommand {
+    private String vpcName;
 
-public interface NsxProvider extends InternalIdentity, Identity {
-    String getHostname();
+    public CreateNsxTier1GatewayCommand(String zoneName, Long zoneId, String accountName, Long accountId, String vpcName) {
+        super(zoneName, zoneId, accountName, accountId);
+        this.vpcName = vpcName;
+    }
 
-    String getPort();
-    String getProviderName();
-    String getUsername();
-    long getZoneId();
+    public String getVpcName() {
+        return vpcName;
+    }
 
-    String getTier0Gateway();
-    String getEdgeCluster();
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
+    }
 }

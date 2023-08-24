@@ -83,6 +83,10 @@ public class AddNsxControllerCmd extends BaseCmd {
         return hostname;
     }
 
+    public String getPort() {
+        return port;
+    }
+
     public String getUsername() {
         return username;
     }

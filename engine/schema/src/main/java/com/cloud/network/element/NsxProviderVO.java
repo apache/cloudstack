@@ -48,6 +48,9 @@ public class NsxProviderVO implements NsxProvider {
     @Column(name = "hostname")
     private String hostname;
 
+    @Column(name = "port")
+    private String port = "443";
+
     @Column(name = "username")
     private String username;
 
@@ -115,6 +118,15 @@ public class NsxProviderVO implements NsxProvider {
     @Override
     public String getHostname() {
         return hostname;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
+    @Override
+    public String getPort() {
+        return port;
     }
 
     public void setHostname(String hostname) {
