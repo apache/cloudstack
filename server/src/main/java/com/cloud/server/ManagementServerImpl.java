@@ -2475,7 +2475,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         } else if (vlanType == VlanType.DirectAttached && network != null && !isAllocatedTemp && isAllocated) {
             if (caller.getType() != Account.Type.ADMIN && !IpAddressManager.AllowUserListAvailableIpsOnSharedNetwork.value()) {
-                s_logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
+                logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
             } else {
                 final SearchBuilder<IPAddressVO> searchBuilder = _publicIpAddressDao.createSearchBuilder();
                 buildParameters(searchBuilder, cmd, false);
