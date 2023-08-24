@@ -63,4 +63,4 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss && cd nonoss && bash -x install-non-oss.sh && cd ..
           rm -fr nonoss
-          mvn clean install -Dsimulator -Dnoredist -P developer,systemvm -pl plugins/hypervisors/kvm -T$(nproc)
+          mvn clean install -am -Dsimulator -Dnoredist -P developer,systemvm -pl plugins/hypervisors/kvm

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -195,6 +196,8 @@ public class LibvirtReplugNicCommandWrapperTest {
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
 
+    private MockedStatic<Script> scriptMocked;
+
     @Before
     public void setUp() throws Exception {
 
@@ -229,13 +232,17 @@ public class LibvirtReplugNicCommandWrapperTest {
         doReturn(ovsVifDriver).when(res).getVifDriver(Networks.TrafficType.Guest, GUEST_BR);
         doReturn(Arrays.asList(bridgeVifDriver, ovsVifDriver)).when(res).getAllVifDrivers();
 
-        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
-            BDDMockito.given(Script.findScript(Mockito.anyString(), Mockito.anyString())).willReturn(
-                    "dummypath/tofile.sh");
+        scriptMocked = Mockito.mockStatic(Script.class);
+        BDDMockito.given(Script.findScript(Mockito.anyString(), Mockito.anyString())).willReturn(
+                "dummypath/tofile.sh");
 
-            bridgeVifDriver.configure(params);
-            ovsVifDriver.configure(params);
-        }
+        bridgeVifDriver.configure(params);
+        ovsVifDriver.configure(params);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        scriptMocked.close();
     }
 
     @Test
@@ -280,8 +287,6 @@ public class LibvirtReplugNicCommandWrapperTest {
         final LibvirtVMDef.InterfaceDef interfaceDef = Mockito.mock(LibvirtVMDef.InterfaceDef.class);
         final List<LibvirtVMDef.InterfaceDef> ifaces = new ArrayList<LibvirtVMDef.InterfaceDef>();
         ifaces.add(interfaceDef);
-
-        final Connect conn = Mockito.mock(Connect.class);
 
         final LibvirtReplugNicCommandWrapper wrapper = new LibvirtReplugNicCommandWrapper();
         final NicTO nic = new NicTO();
