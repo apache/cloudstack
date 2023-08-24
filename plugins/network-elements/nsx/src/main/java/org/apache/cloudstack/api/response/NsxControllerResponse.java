@@ -25,6 +25,9 @@ import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = {NsxProvider.class})
 public class NsxControllerResponse extends BaseResponse {
+    @SerializedName(ApiConstants.NSX_PROVIDER_UUID)
+    @Param(description = "NSX controller ID")
+    private String uuid;
     @SerializedName(ApiConstants.NAME)
     @Param(description = "NSX controller name")
     private String name;
@@ -56,6 +59,14 @@ public class NsxControllerResponse extends BaseResponse {
     @SerializedName(ApiConstants.EDGE_CLUSTER)
     @Param(description = "The name of the edge cluster. An edge cluster is a logical grouping of edge nodes in NSX")
     private String edgeCluster;
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
     public String getName() {
         return name;

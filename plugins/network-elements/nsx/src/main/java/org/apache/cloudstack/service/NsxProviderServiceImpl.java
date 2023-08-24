@@ -34,6 +34,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.DeleteNsxControllerCmd;
 import org.apache.cloudstack.api.command.ListNsxControllersCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNsxControllerCmd;
@@ -126,12 +127,14 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         }
         NsxControllerResponse response = new NsxControllerResponse();
         response.setName(nsxProvider.getProviderName());
+        response.setUuid(nsxProvider.getUuid());
         response.setHostname(nsxProvider.getHostname());
         response.setPort(nsxProvider.getPort());
         response.setZoneId(nsxProvider.getZoneId());
         response.setZoneName(zone.getName());
         response.setTier0Gateway(nsxProvider.getTier0Gateway());
         response.setTier0Gateway(nsxProvider.getEdgeCluster());
+        response.setObjectName("nsxController");
         return response;
     }
 
@@ -184,6 +187,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(AddNsxControllerCmd.class);
         cmdList.add(ListNsxControllersCmd.class);
+        cmdList.add(DeleteNsxControllerCmd.class);
         return cmdList;
     }
 }
