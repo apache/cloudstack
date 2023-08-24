@@ -2341,7 +2341,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement};
+        return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness, VrouterRedundantTiersPlacement, AllowUserListAvailableIpsOnSharedNetwork};
     }
 
     /**
