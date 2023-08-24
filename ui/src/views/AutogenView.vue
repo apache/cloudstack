@@ -693,8 +693,10 @@ export default {
       }
       api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
+        const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
         this.$store.dispatch('SetProject', project)
+        this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
         this.$message.success(`${this.$t('message.switch.to')} "${project.name}"`)
         const query = Object.assign({}, this.$route.query)
@@ -937,6 +939,7 @@ export default {
         }
 
         if (this.apiName === 'listProjects' && this.items.length > 0) {
+          this.$store.commit('RELOAD_ALL_PROJECTS', this.items)
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
@@ -1808,7 +1811,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
-          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)
