@@ -38,6 +38,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -71,6 +72,9 @@ public class DefaultSnapshotStrategyTest {
 
     @Mock
     SnapshotService snapshotServiceMock;
+
+    @Mock
+    SnapshotZoneDao snapshotZoneDaoMock;
 
     List<SnapshotInfo> mockSnapshotInfos = new ArrayList<>();
 
@@ -107,6 +111,7 @@ public class DefaultSnapshotStrategyTest {
     @Test
     public void validateDestroySnapshotEntriesAndFilesDeletesSuccessfullyReturnsTrue() {
         Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfos(Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(snapshotZoneDaoMock).removeSnapshotFromZones(Mockito.anyLong());
         Assert.assertTrue(defaultSnapshotStrategySpy.destroySnapshotEntriesAndFiles(snapshotVoMock, null));
     }
 

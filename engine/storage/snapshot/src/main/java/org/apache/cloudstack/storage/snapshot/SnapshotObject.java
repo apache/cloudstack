@@ -95,7 +95,6 @@ public class SnapshotObject implements SnapshotInfo {
     protected void configure(SnapshotVO snapshot, DataStore store) {
         this.snapshot = snapshot;
         this.store = store;
-        this.zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
     }
 
     public static SnapshotObject getSnapshotObject(SnapshotVO snapshot, DataStore store) {
@@ -323,6 +322,9 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public Long getDataCenterId() {
+        if (zoneId == null) {
+            zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
+        }
         return zoneId;
     }
 
