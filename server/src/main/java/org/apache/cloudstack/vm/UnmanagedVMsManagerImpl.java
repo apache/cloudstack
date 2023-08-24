@@ -1214,7 +1214,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         String osName = unmanagedInstance.getOperatingSystem();
                         GuestOS guestOS = null;
                         if (StringUtils.isNotEmpty(osName)) {
-                            guestOS = guestOSDao.listByDisplayName(osName);
+                            guestOS = guestOSDao.findOneByDisplayName(osName);
                         }
                         GuestOSHypervisor guestOSHypervisor = null;
                         if (guestOS != null) {

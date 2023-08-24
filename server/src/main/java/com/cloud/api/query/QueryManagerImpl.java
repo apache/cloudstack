@@ -721,6 +721,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        // additional order by since createdDate does not have milliseconds
+        // and two events, created within one second can be incorrectly ordered (for example VM.CREATE Completed before Scheduled)
+        searchFilter.addOrderBy(EventJoinVO.class, "id", false);
+
         SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -965,7 +969,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
-        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
+        ListResponse<UserVmResponse> response = new ListResponse<>();
         ResponseView respView = ResponseView.Restricted;
         Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isRootAdmin(caller.getId())) {
@@ -991,14 +995,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
         Long userId = cmd.getUserId();
         Map<String, String> tags = cmd.getTags();
         Boolean display = cmd.getDisplay();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1011,7 +1015,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             if (cmd.getIds() != null && !cmd.getIds().isEmpty()) {
                 throw new InvalidParameterValueException("Specify either id or ids but not both parameters");
             }
-            ids = new ArrayList<Long>();
+            ids = new ArrayList<>();
             ids.add(cmd.getId());
         } else {
             ids = cmd.getIds();
@@ -1303,7 +1307,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vmIds[i++] = v.getId();
         }
         List<UserVmJoinVO> vms = _userVmJoinDao.searchByIds(vmIds);
-        return new Pair<List<UserVmJoinVO>, Integer>(vms, count);
+        return new Pair<>(vms, count);
     }
 
     @Override
@@ -3936,7 +3940,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd) {
         Pair<List<TemplateJoinVO>, Integer> result = searchForIsosInternal(cmd);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+        ListResponse<TemplateResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListIsosCmdByAdmin) {
@@ -3963,11 +3967,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             listAll = true;
         }
 
-        List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        List<Long> permittedAccountIds = new ArrayList<>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        List<Account> permittedAccounts = new ArrayList<Account>();
+        List<Account> permittedAccounts = new ArrayList<>();
         for (Long accountId : permittedAccountIds) {
             permittedAccounts.add(_accountMgr.getAccount(accountId));
         }

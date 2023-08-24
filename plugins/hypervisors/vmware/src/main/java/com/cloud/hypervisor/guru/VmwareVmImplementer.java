@@ -47,6 +47,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -165,7 +166,7 @@ class VmwareVmImplementer {
 
         GuestOSHypervisorVO guestOsMapping = null;
         if (host != null) {
-            guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), host.getHypervisorVersion());
+            guestOsMapping = getGuestOsMapping(guestOS, host.getHypervisorVersion());
         }
         if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator(null);
@@ -404,5 +405,18 @@ class VmwareVmImplementer {
         });
 
         return listForSort.toArray(new NicTO[0]);
+    }
+
+    protected GuestOSHypervisorVO getGuestOsMapping(GuestOSVO guestOS , String hypervisorVersion) {
+        GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), hypervisorVersion);
+        if (guestOsMapping == null) {
+            LOGGER.debug(String.format("Cannot find guest os mappings for guest os \"%s\" on VMware %s", guestOS.getDisplayName(), hypervisorVersion));
+            String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
+            if (parentVersion != null) {
+                guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), parentVersion);
+                LOGGER.debug(String.format("Found guest os mappings for guest os \"%s\" on VMware %s: %s", guestOS.getDisplayName(), parentVersion, guestOsMapping));
+            }
+        }
+        return guestOsMapping;
     }
 }
