@@ -1056,6 +1056,22 @@ export default {
               columns: ['name', 'tungstenproviderhostname', 'tungstenproviderport', 'tungstengateway', 'tungstenprovidervrouterport', 'tungstenproviderintrospectport']
             }
           ]
+        },
+        {
+          title: 'Nsx',
+          details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+          lists: [
+            {
+              title: 'label.nsx.controller',
+              api: 'listNsxControllers',
+              mapping: {
+                zoneid: {
+                  value: (record) => { return record.zoneid }
+                }
+              },
+              columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster']
+            }
+          ]
         }
       ]
     }
@@ -1096,6 +1112,7 @@ export default {
       this.fetchLoading = true
       api('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
         const sps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
+        console.log(sps)
         if (sps.length > 0) {
           for (const sp of sps) {
             this.nsps[sp.name] = sp

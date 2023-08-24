@@ -812,7 +812,7 @@ public class ApiConstants {
     public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
     public static final String NSX_PROVIDER_HOSTNAME = "nsxproviderhostname";
     public static final String NSX_PROVIDER_PORT = "nsxproviderport";
-
+    public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";

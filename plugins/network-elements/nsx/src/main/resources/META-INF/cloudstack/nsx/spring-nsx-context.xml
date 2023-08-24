@@ -28,9 +28,11 @@
     <bean id="Nsx" class="org.apache.cloudstack.service.NsxElement">
         <property name="name" value="Nsx"/>
     </bean>
-    <bean id="NsxGuestNetworkGuru" class="org.apache.cloudstack.service.NsxGuestNetworkGuru">
+    <bean id="nsxGuestNetworkGuru" class="org.apache.cloudstack.service.NsxGuestNetworkGuru">
         <property name="name" value="NsxGuestNetworkGuru" />
     </bean>
     <bean id="nsxProviderService" class="org.apache.cloudstack.service.NsxProviderServiceImpl"/>
+    <bean id="nsxService" class="org.apache.cloudstack.service.NsxServiceImpl"/>
+    <bean id="nsxControllerUtils" class="org.apache.cloudstack.service.NsxControllerUtils" />
 
 </beans>

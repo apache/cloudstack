@@ -41,6 +41,10 @@ public class NsxControllerResponse extends BaseResponse {
     @Param(description = "NSX controller hostname or IP address")
     private String hostname;
 
+    @SerializedName(ApiConstants.PORT)
+    @Param(description = "NSX controller port")
+    private String port;
+
     // TODO: Should Password be returned?
 
     @SerializedName(ApiConstants.TIER0_GATEWAY)
@@ -83,6 +87,14 @@ public class NsxControllerResponse extends BaseResponse {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
     }
 
     public String getTier0Gateway() {

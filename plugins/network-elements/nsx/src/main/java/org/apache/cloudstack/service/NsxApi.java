@@ -14,19 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network;
+package org.apache.cloudstack.service;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import com.vmware.vapi.client.ApiClient;
+import org.apache.log4j.Logger;
 
-public interface NsxProvider extends InternalIdentity, Identity {
-    String getHostname();
+public class NsxApi {
 
-    String getPort();
-    String getProviderName();
-    String getUsername();
-    long getZoneId();
+    private static final Logger S_LOGGER = Logger.getLogger(NsxApi.class);
 
-    String getTier0Gateway();
-    String getEdgeCluster();
+    ApiClient apiClient;
+
+    public ApiClient getApiClient() {
+        return apiClient;
+    }
+
+    public void setApiClient(ApiClient apiClient) {
+        this.apiClient = apiClient;
+    }
 }

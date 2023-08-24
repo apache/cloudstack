@@ -20,8 +20,6 @@ import com.amazonaws.util.CollectionUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.DetailVO;
-import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
@@ -41,10 +39,19 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNsxControllerCmd;
 import org.apache.cloudstack.api.response.NsxControllerResponse;
 import org.apache.cloudstack.resource.NsxResource;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+
+
 
 public class NsxProviderServiceImpl implements NsxProviderService {
 
@@ -63,19 +70,21 @@ public class NsxProviderServiceImpl implements NsxProviderService {
 
     @Override
     public NsxProvider addProvider(AddNsxControllerCmd cmd) {
-        Long zoneId = cmd.getZoneId();
-        String name = cmd.getName();
-        String hostname = cmd.getHostname();
-        String username = cmd.getUsername();
-        String password = cmd.getPassword();
-        String tier0Gateway = cmd.getTier0Gateway();
-        String edgeCluster = cmd.getEdgeCluster();
+        final Long zoneId = cmd.getZoneId();
+        final String name = cmd.getName();
+        final String hostname = cmd.getHostname();
+        final String port = cmd.getPort() == null || cmd.getPort().equals(StringUtils.EMPTY) ? "443" : cmd.getPort();
+        final String username = cmd.getUsername();
+        final String password = cmd.getPassword();
+        final String tier0Gateway = cmd.getTier0Gateway();
+        final String edgeCluster = cmd.getEdgeCluster();
 
         Map<String, String> params = new HashMap<>();
         params.put("guid", UUID.randomUUID().toString());
         params.put("zoneId", zoneId.toString());
         params.put("name", name);
         params.put("hostname", hostname);
+        params.put("port", port);
         params.put("username", username);
         params.put("password", password);
         params.put("tier0Gateway", tier0Gateway);
@@ -87,22 +96,22 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         NsxResource nsxResource = new NsxResource();
         try {
             nsxResource.configure(hostname, hostdetails);
-            final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
-            if (host != null) {
+            //final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
+            //if (host != null) {
                  nsxProvider = Transaction.execute((TransactionCallback<NsxProviderVO>) status -> {
                     NsxProviderVO nsxProviderVO = new NsxProviderVO(zoneId, name, hostname,
                             username, password, tier0Gateway, edgeCluster);
                     nsxProviderDao.persist(nsxProviderVO);
 
-                    DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
-                            String.valueOf(nsxProviderVO.getId()));
-                    hostDetailsDao.persist(detail);
+//                    DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
+//                            String.valueOf(nsxProviderVO.getId()));
+//                    hostDetailsDao.persist(detail);
 
                     return nsxProviderVO;
                 });
-            } else {
-                throw new CloudRuntimeException("Failed to add NSX controller due to internal error.");
-            }
+//            } else {
+//                throw new CloudRuntimeException("Failed to add NSX controller due to internal error.");
+//            }
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -118,6 +127,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         NsxControllerResponse response = new NsxControllerResponse();
         response.setName(nsxProvider.getProviderName());
         response.setHostname(nsxProvider.getHostname());
+        response.setPort(nsxProvider.getPort());
         response.setZoneId(nsxProvider.getZoneId());
         response.setZoneName(zone.getName());
         response.setTier0Gateway(nsxProvider.getTier0Gateway());
@@ -130,7 +140,9 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         List<BaseResponse> nsxControllersResponseList = new ArrayList<>();
         if (zoneId != null) {
             NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);
-            nsxControllersResponseList.add(createNsxControllerResponse(nsxProviderVO));
+            if (Objects.nonNull(nsxProviderVO)) {
+                nsxControllersResponseList.add(createNsxControllerResponse(nsxProviderVO));
+            }
         } else {
             List<NsxProviderVO> nsxProviderVOList = nsxProviderDao.listAll();
             for (NsxProviderVO nsxProviderVO : nsxProviderVOList) {
