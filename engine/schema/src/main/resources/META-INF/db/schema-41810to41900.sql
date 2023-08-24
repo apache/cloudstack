@@ -186,13 +186,15 @@ CREATE TABLE `cloud`.`nsx_providers` (
     `uuid` varchar(40),
     `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
     `provider_name` varchar(40),
-    `hostname` varchar(255) NOT NULL ,
-    `username` varchar(255) NOT NULL ,
+    `hostname` varchar(255) NOT NULL,
+    `port` varchar(255),
+    `username` varchar(255) NOT NULL,
     `password` varchar(255) NOT NULL,
     `tier0_gateway` varchar(255),
     `edge_cluster` varchar(255),
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_nsx_providers_zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_nsx_providers__zone_id` FOREIGN KEY `fk_nsx_providers__zone_id` (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+    INDEX `i_nsx_providers__zone_id`(`zone_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
