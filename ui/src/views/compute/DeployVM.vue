@@ -34,7 +34,7 @@
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
-                      <div v-if="zones.length <= 9">
+                      <div v-if="zones.length <= 8">
                         <a-row type="flex" :gutter="[16, 18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
@@ -2698,7 +2698,7 @@ export default {
 
   .zone-radio-button {
     width:100%;
-    min-width: 225px;
+    min-width: 345px;
     height: 60px;
     display: flex;
     padding-left: 20px;

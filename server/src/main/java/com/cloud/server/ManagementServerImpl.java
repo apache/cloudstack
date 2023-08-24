@@ -2323,6 +2323,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 isAllocated = Boolean.TRUE;
             }
         }
+        boolean isAllocatedTemp = isAllocated;
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
@@ -2333,6 +2334,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Account caller = getCaller();
         List<IPAddressVO> addrs = new ArrayList<>();
+        NetworkVO network = null;   // shared network
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
             if (caller.getType() != Account.Type.ADMIN) {
@@ -2341,7 +2343,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else if (vlanType == VlanType.DirectAttached) {
             // list public ip address on shared network
             // access control. admin: all Ips, domain admin/user: all Ips in shared network in the domain/sub-domain/user
-            NetworkVO network = null;
             if (networkId == null) {
                 IPAddressVO ip = _publicIpAddressDao.findById(ipId);
                 if (ip == null) {
@@ -2475,7 +2476,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             for (IPAddressVO addr: freeAddrs) {
                 freeAddrIds.add(addr.getId());
             }
+        } else if (vlanType == VlanType.DirectAttached && network != null && !isAllocatedTemp && isAllocated) {
+            if (caller.getType() != Account.Type.ADMIN && !IpAddressManager.AllowUserListAvailableIpsOnSharedNetwork.value()) {
+                s_logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
+            } else {
+                final SearchBuilder<IPAddressVO> searchBuilder = _publicIpAddressDao.createSearchBuilder();
+                buildParameters(searchBuilder, cmd, false);
+
+                SearchCriteria<IPAddressVO> searchCriteria = searchBuilder.create();
+                setParameters(searchCriteria, cmd, vlanType, false);
+                searchCriteria.setParameters("state", IpAddress.State.Free.name());
+                addrs.addAll(_publicIpAddressDao.search(searchCriteria, searchFilter)); // Free IPs on shared network
+            }
         }
+
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
@@ -2625,32 +2639,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final Long id = cmd.getId();
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
+        final Long startIndex = cmd.getStartIndex();
+        final Long pageSize = cmd.getPageSizeVal();
+        Boolean forDisplay = cmd.getDisplay();
 
-        final SearchCriteria<GuestOSVO> sc = _guestOSDao.createSearchCriteria();
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (osCategoryId != null) {
-            sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
-        }
-
-        if (description != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
-        }
-
-        if (keyword != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-        }
-
-        final Pair<List<GuestOSVO>, Integer> result = _guestOSDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends GuestOS>, Integer>(result.first(), result.second());
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override
@@ -2796,16 +2793,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
+        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(), (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), guestOsPersisted.getId());
 
         return guestOsPersisted;
+    }
+
+    private void persistGuestOsDetails(Map<String, String> details, long guestOsPersistedId) {
+        for (Object key : details.keySet()) {
+            _guestOsDetailsDao.addDetail(guestOsPersistedId, (String)key, details.get(key), false);
+        }
     }
 
     @Override
@@ -2831,12 +2830,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(id, (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), id);
 
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
@@ -2850,6 +2844,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
+        if (cmd.getForDisplay() != null) {
+            guestOs.setDisplay(cmd.getForDisplay());
+        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {
