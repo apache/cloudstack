@@ -22,50 +22,54 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.StringWriter;
 
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.test.TestAppender;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockIgnore({ "javax.xml.*", "org.xml.*"})
 public class NfsSecondaryStorageResourceTest {
 
-    @Spy
     private NfsSecondaryStorageResource resource;
 
+    @Before
+    public void setUp() {
+        resource = new NfsSecondaryStorageResource();
+    }
+
     @Test
+    @PrepareForTest(NfsSecondaryStorageResource.class)
     public void testSwiftWriteMetadataFile() throws Exception {
-        String metaFileName = "test_metadata_file";
+        String filename = "testfile";
         try {
-            String uniqueName = "test_unique_name";
-            String filename = "test_filename";
-            long size = 1024L;
-            long virtualSize = 2048L;
+            String expected = "uniquename=test\nfilename=" + filename + "\nsize=100\nvirtualsize=1000";
 
-            File metaFile = resource.swiftWriteMetadataFile(metaFileName, uniqueName, filename, size, virtualSize);
+            StringWriter stringWriter = new StringWriter();
+            BufferedWriter bufferWriter = new BufferedWriter(stringWriter);
+            PowerMockito.whenNew(BufferedWriter.class).withArguments(any(FileWriter.class)).thenReturn(bufferWriter);
 
-            Assert.assertTrue(metaFile.exists());
-            Assert.assertEquals(metaFileName, metaFile.getName());
+            resource.swiftWriteMetadataFile(filename, "test", filename, 100, 1000);
 
-            String expectedContent = "uniquename=" + uniqueName + "\n" +
-                    "filename=" + filename + "\n" +
-                    "size=" + size + "\n" +
-                    "virtualsize=" + virtualSize;
-
-            String actualContent = new String(java.nio.file.Files.readAllBytes(metaFile.toPath()));
-            Assert.assertEquals(expectedContent, actualContent);
+            Assert.assertEquals(expected, stringWriter.toString());
         } finally {
-            File metaFile = new File(metaFileName);
-            metaFile.delete();
+            File remnance = new File(filename);
+            remnance.delete();
         }
     }
 
