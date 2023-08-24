@@ -494,6 +494,12 @@ public class TemplateServiceImpl implements TemplateService {
                         } else if (tmplt.isDirectDownload()) {
                             s_logger.info("Template " + tmplt.getName() + ":" + tmplt.getId() + " is marked for direct download, discarding it for download on image stores");
                             toBeDownloaded.remove(tmplt);
+                        } else if (tmplt.getParentTemplateId() != null && tmplt.getUrl().startsWith("vpx://") &&
+                                tmpltStore != null && tmpltStore.getDownloadState() == Status.DOWNLOADED) {
+                            String msg = String.format("Template %s is downloaded by the parent template %s, avoiding re-download",
+                                    tmplt.getName(), tmplt.getParentTemplateId());
+                            s_logger.info(msg);
+                            toBeDownloaded.remove(tmplt);
                         } else {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId + ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {

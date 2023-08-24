@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 

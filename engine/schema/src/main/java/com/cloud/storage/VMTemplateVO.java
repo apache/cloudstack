@@ -39,6 +39,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
+import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "vm_template")
@@ -647,6 +648,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Override public boolean isDeployAsIs() {
         return deployAsIs;
+    }
+
+    @Override
+    public boolean isMigratedFromVmwareVM() {
+        return hypervisorType == HypervisorType.KVM && StringUtils.isNotBlank(url) && url.startsWith("vpx://");
     }
 
     public void setDeployAsIs(boolean deployAsIs) {

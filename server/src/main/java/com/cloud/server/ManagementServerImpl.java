@@ -491,6 +491,7 @@ import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplat
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
@@ -3626,6 +3627,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListTemplatesCmd.class);
         cmdList.add(ListDetailOptionsCmd.class);
         cmdList.add(RegisterTemplateCmd.class);
+        cmdList.add(RegisterTemplateFromVMwareVMCmd.class);
         cmdList.add(UpdateTemplateCmd.class);
         cmdList.add(UpdateTemplatePermissionsCmd.class);
         cmdList.add(AddNicToVMCmd.class);

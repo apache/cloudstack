@@ -84,4 +84,15 @@ public interface VmDetailConstants {
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
+
+    // VMware to KVM VM migrations specific
+    String VMWARE_TO_KVM_PREFIX = "vmw-to-kvm";
+    String VMWARE_VCENTER = String.format("%s-vcenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DATACENTER = String.format("%s-datacenter", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_CLUSTER = String.format("%s-cluster", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_USERNAME = String.format("%s-username", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VCENTER_PASSWORD = String.format("%s-password", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_VM_NAME = String.format("%s-vmname", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_HOST = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
+    String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
 }

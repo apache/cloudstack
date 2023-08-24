@@ -28,6 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.HypervisorOutOfBandVMClone;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -43,6 +44,7 @@ import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
@@ -50,6 +52,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
     private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
@@ -76,6 +79,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
     @Override
     public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
         throw new CloudRuntimeException("Baremetal doesn't support ISO template");
+    }
+
+    @Override
+    public TemplateProfile prepareTemplateFromVmwareMigration(RegisterTemplateFromVMwareVMCmd cmd,
+                                                              Map<String, String> params, HypervisorOutOfBandVMClone clone) throws ResourceAllocationException {
+        throw new CloudRuntimeException("Baremetal doesn't support registering a template from a VMware VM");
     }
 
     private void templateCreateUsage(VMTemplateVO template, long dcId) {

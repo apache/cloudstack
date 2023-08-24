@@ -48,6 +48,10 @@ public class OVFInformationTO {
     public OVFInformationTO() {
     }
 
+    public OVFInformationTO(List<DatadiskTO> disks) {
+        this.disks = disks;
+    }
+
     public List<OVFPropertyTO> getProperties() {
         return properties;
     }

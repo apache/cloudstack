@@ -413,6 +413,14 @@ public class TemplateObject implements TemplateInfo {
         return this.imageVO.isDeployAsIs();
     }
 
+    @Override
+    public boolean isMigratedFromVmwareVM() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isMigratedFromVmwareVM();
+    }
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }

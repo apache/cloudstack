@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.hypervisor.vmware;
+package com.cloud.dc;
 
 import java.util.UUID;
 

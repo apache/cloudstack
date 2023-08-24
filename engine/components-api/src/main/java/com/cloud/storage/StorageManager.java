@@ -96,6 +96,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> KvmTemplateFromVmwareVmMigrationWait = new ConfigKey<>(Integer.class,
+            "kvm.template.from.vmware.vm.migration.wait",
+            "Storage",
+            "7200000",
+            "Timeout in milliseconds for virt-v2v migration from VMware VM to secondary storage completes on KVM hosts",
+            true,
+            ConfigKey.Scope.Global,
+            null);
     ConfigKey<Boolean> KvmAutoConvergence = new ConfigKey<>(Boolean.class,
             "kvm.auto.convergence",
             "Storage",

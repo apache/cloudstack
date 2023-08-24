@@ -25,6 +25,13 @@ import java.util.Timer;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.VmwareVmForMigrationTO;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -73,6 +80,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     private ConfigurationDao _configDao;
     @Inject
     private EndPointSelector _epSelector;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
 
     private String _copyAuthPasswd;
     private String _proxy = null;
@@ -115,20 +124,95 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         return (downloadsInProgress.size() == 0);
     }
 
-    private void initiateTemplateDownload(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
-        boolean downloadJobExists = false;
-        TemplateDataStoreVO vmTemplateStore;
-        DataStore store = template.getDataStore();
+    protected TemplateDataStoreVO persistTemplateDataStoreRecord(DataObject template, DataStore store) {
+        TemplateDataStoreVO vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(),
+                new Date(), 0, Status.NOT_DOWNLOADED, null, null,
+                "jobid0000", null, template.getUri());
+        vmTemplateStore.setDataStoreRole(store.getRole());
+        return _vmTemplateStoreDao.persist(vmTemplateStore);
+    }
 
-        vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
+    /**
+     * The first element indicates if there is an existing download job, and second element is the templateDataStoreVO
+     */
+    protected Pair<Boolean, TemplateDataStoreVO> getTemplateDataStoreRecordPair(DataObject template, DataStore store) {
+        boolean downloadJobExists = false;
+        TemplateDataStoreVO vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
-            vmTemplateStore =
-                new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
-            vmTemplateStore.setDataStoreRole(store.getRole());
-            vmTemplateStore = _vmTemplateStoreDao.persist(vmTemplateStore);
+            vmTemplateStore = persistTemplateDataStoreRecord(template, store);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
+        return new Pair<>(downloadJobExists, vmTemplateStore);
+    }
+
+    protected String getValueFromTemplateDetail(Long templateId, String key) {
+        VMTemplateDetailVO detail = templateDetailsDao.findDetail(templateId, key);
+        if (detail == null) {
+            throw new InvalidParameterValueException(String.format("Could not find the template detail" +
+                    " with key %s for the template with ID: %s", key, templateId));
+        }
+        return detail.getValue();
+    }
+
+    protected void sendMigrateVmwareVmCommandToKvmHost(DataObject template, DataStore imageStore, AsyncCompletionCallback<DownloadAnswer> callback) {
+        String vcenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER);
+        String datacenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_DATACENTER);
+        String cluster = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_CLUSTER);
+        String username = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER_USERNAME);
+        String password = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        String hostName = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_HOST);
+        String vmName = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VM_NAME);
+
+        // Migrate the clone of the stopped VM
+        EndPoint endPoint = _epSelector.select(template);
+        LOGGER.debug(String.format("Found host %s to send command for VMware to KVM migration", endPoint.getHostAddr()));
+
+        Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
+        VmwareVmForMigrationTO vmTO = new VmwareVmForMigrationTO(vcenter, datacenter, cluster,
+                username, password, null, hostName, vmName, imageStore.getUri());
+        DownloadCommand cmd = new DownloadCommand((TemplateObjectTO) template.getTO(), maxTemplateSizeInBytes);
+        cmd.setVmwareVmForMigrationTO(vmTO);
+        cmd.setWait(StorageManager.KvmTemplateFromVmwareVmMigrationWait.value());
+
+        DownloadListener dl = new DownloadListener(endPoint, imageStore, template, _timer,
+                this, cmd, callback);
+        ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
+        try {
+            endPoint.sendMessageAsync(cmd, new UploadListener.Callback(endPoint.getId(), dl));
+            LOGGER.debug(String.format("Sent DownloadCommand to endpoint: %s for template %s",
+                    endPoint.getHostAddr(), template.getUuid()));
+            updateTemplateStoreRefRecordForVmwareVmToKvmMigration(template, imageStore, endPoint);
+        } catch (Exception e) {
+            String err = String.format("Could not migrate VM from VMware: %s", e.getMessage());
+            LOGGER.error(err, e);
+        }
+    }
+
+    private void updateTemplateStoreRefRecordForVmwareVmToKvmMigration(DataObject template, DataStore imageStore, EndPoint endPoint) {
+        TemplateDataStoreVO storeRef = _vmTemplateStoreDao.findByStoreTemplate(imageStore.getId(), template.getId());
+        storeRef.setDownloadState(Status.NOT_DOWNLOADED);
+        storeRef.setErrorString(String.format("Downloading, virt-v2v migration initiated on host %s",
+                endPoint.getHostAddr()));
+        _vmTemplateStoreDao.update(storeRef.getId(), storeRef);
+    }
+
+    protected void migrateVmwareVmToSecondaryStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
+        DataStore imageStore = template.getDataStore();
+        Pair<Boolean, TemplateDataStoreVO> pair = getTemplateDataStoreRecordPair(template, imageStore);
+        TemplateDataStoreVO templateDataStoreVO = pair.second();
+        if (templateDataStoreVO != null) {
+            imageStore.getScope().getScopeId();
+            sendMigrateVmwareVmCommandToKvmHost(template, imageStore, callback);
+        }
+    }
+
+    private void initiateTemplateDownload(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback) {
+        DataStore store = template.getDataStore();
+
+        Pair<Boolean, TemplateDataStoreVO> pair = getTemplateDataStoreRecordPair(template, store);
+        boolean downloadJobExists = pair.first();
+        TemplateDataStoreVO vmTemplateStore = pair.second();
 
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         if (vmTemplateStore != null) {
@@ -176,7 +260,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             DataStore store = template.getDataStore();
             if (isTemplateUpdateable(templateId, store.getId())) {
                 if (template.getUri() != null) {
-                    initiateTemplateDownload(template, callback);
+                    String templateUri = template.getUri();
+                    if (templateUri.startsWith("vpx://")) {
+                        migrateVmwareVmToSecondaryStorage(template, callback);
+                    } else {
+                        initiateTemplateDownload(template, callback);
+                    }
                 } else {
                     LOGGER.info("Template url is null, cannot download");
                     DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);

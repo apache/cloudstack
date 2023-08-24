@@ -20,7 +20,7 @@ package com.cloud.agent.api.to;
 
 public class DatadiskTO {
     private String path;
-    private long virtualSize;
+    private Long virtualSize;
     private long fileSize;
     boolean bootable;
     private String diskId;
@@ -29,11 +29,19 @@ public class DatadiskTO {
     private String diskControllerSubType;
     private int diskNumber;
     private String configuration;
+    private Long templateId;
 
     public DatadiskTO() {
     }
 
-    public DatadiskTO(String path, long virtualSize, long fileSize, String diskId, boolean isIso, boolean bootable,
+    public DatadiskTO(String path, Long virtualSize, long fileSize, int diskNumber) {
+        this.path = path;
+        this.virtualSize = virtualSize;
+        this.fileSize = fileSize;
+        this.diskNumber = diskNumber;
+    }
+
+    public DatadiskTO(String path, Long virtualSize, long fileSize, String diskId, boolean isIso, boolean bootable,
                       String controller, String controllerSubType, int diskNumber, String configuration) {
         this.path = path;
         this.virtualSize = virtualSize;
@@ -109,5 +117,17 @@ public class DatadiskTO {
 
     public String getConfiguration() {
         return configuration;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
+    public void setDiskNumber(int diskNumber) {
+        this.diskNumber = diskNumber;
     }
 }

@@ -109,6 +109,15 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
+          api: 'registerTemplate',
+          icon: 'import-outlined',
+          docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
+          label: 'label.register.template.from.vmware.vm',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
+        },
+        {
           api: 'updateTemplate',
           icon: 'edit-outlined',
           label: 'label.action.edit.template',

@@ -19,6 +19,7 @@
 
 package org.apache.cloudstack.storage.command;
 
+import com.cloud.agent.api.to.VmwareVmForMigrationTO;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -47,6 +48,7 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
     private String installPath;
     private DataStoreTO _store;
     private DataStoreTO cacheStore;
+    private VmwareVmForMigrationTO vmwareVmForMigrationTO;
 
     protected DownloadCommand() {
     }
@@ -180,5 +182,13 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
 
     public DataStoreTO getCacheStore() {
         return cacheStore;
+    }
+
+    public VmwareVmForMigrationTO getVmwareVmForMigrationTO() {
+        return vmwareVmForMigrationTO;
+    }
+
+    public void setVmwareVmForMigrationTO(VmwareVmForMigrationTO vmwareVmForMigrationTO) {
+        this.vmwareVmForMigrationTO = vmwareVmForMigrationTO;
     }
 }

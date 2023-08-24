@@ -14,24 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.hypervisor;
 
-package com.cloud.hypervisor.vmware;
+public class HypervisorOutOfBandVMClone {
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+    private String cloneName;
+    private int disksNumber;
+    private long capacity;
 
-public interface VmwareDatacenter extends Identity, InternalIdentity {
+    public HypervisorOutOfBandVMClone(String cloneName, int disksNumber, long capacity) {
+        this.cloneName = cloneName;
+        this.disksNumber = disksNumber;
+        this.capacity = capacity;
+    }
 
-    String getVmwareDatacenterName();
+    public String getCloneName() {
+        return cloneName;
+    }
 
-    String getGuid();
+    public int getDisksNumber() {
+        return disksNumber;
+    }
 
-    String getVcenterHost();
-
-    @Override
-    long getId();
-
-    String getPassword();
-
-    String getUser();
+    public long getCapacity() {
+        return capacity;
+    }
 }

@@ -45,6 +45,7 @@ public class QemuImg {
     public static final String FILE_FORMAT = "file_format";
     public static final String IMAGE = "image";
     public static final String VIRTUAL_SIZE = "virtual_size";
+    public static final String DISK_SIZE = "disk_size";
     public static final String ENCRYPT_FORMAT = "encrypt.format";
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";

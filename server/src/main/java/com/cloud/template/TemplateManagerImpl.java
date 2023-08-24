@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VmwareDatacenterVO;
+import com.cloud.dc.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.HypervisorOutOfBandVMClone;
 import com.cloud.user.UserData;
 import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -55,6 +58,7 @@ import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
@@ -303,6 +307,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+    @Inject
+    private VmwareDatacenterDao vmwareDatacenterDao;
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -364,6 +370,76 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             throw new CloudRuntimeException("Failed to create a template");
         }
+    }
+
+    @Override
+    public VirtualMachineTemplate registerTemplateFromVMwareVM(RegisterTemplateFromVMwareVMCmd cmd) throws ResourceAllocationException {
+        Long zoneId = cmd.getZoneId();
+        Long existingVcenterId = cmd.getExistingVcenterId();
+        String vcenter = cmd.getVcenter();
+        String datacenterName = cmd.getDatacenterName();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        String clusterName = cmd.getClusterName();
+        String sourceVM = cmd.getVmName();
+        String sourceHostName = cmd.getHost();
+
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            s_logger.error(String.format("Cannot find a zone with ID %s", zoneId));
+            return null;
+        }
+
+        HypervisorGuru vmwareGuru = _hvGuruMgr.getGuru(HypervisorType.VMware);
+
+        if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
+            throw new CloudRuntimeException("Please provide an existing vCenter ID or a vCenter IP/Name, parameters are mutually exclusive");
+        } else if (existingVcenterId == null && org.apache.commons.lang3.StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
+            throw new CloudRuntimeException("Please set all the information for a vCenter IP/Name, datacenter, username and password");
+        }
+
+        Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(existingVcenterId,
+                vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
+
+        HypervisorOutOfBandVMClone cloneResult = vmwareGuru.cloneHypervisorVMOutOfBand(cmd.getHost(), cmd.getVmName(), params);
+        String cloneName = cloneResult.getCloneName();
+        params.put(VmDetailConstants.VMWARE_VM_NAME, cloneName);
+
+        TemplateAdapter adapter = getAdapter(HypervisorType.KVM);
+        TemplateProfile profile = adapter.prepareTemplateFromVmwareMigration(cmd, params, cloneResult);
+        VMTemplateVO vmTemplate = adapter.create(profile);
+
+        if (vmTemplate != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, vmTemplate.getUuid());
+            return vmTemplate;
+        } else {
+            throw new CloudRuntimeException("Failed to create a template");
+        }
+    }
+
+    protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(Long existingVcenterId,
+                                                                               String vcenter, String datacenterName,
+                                                                               String username, String password,
+                                                                               String clusterName, String sourceHostName,
+                                                                               String sourceVMName) {
+        Map<String, String> params = new HashMap<>();
+        VmwareDatacenterVO existingDC = null;
+        if (existingVcenterId != null) {
+            existingDC = vmwareDatacenterDao.findById(existingVcenterId);
+            if (existingDC == null) {
+                String err = String.format("Cannot find any existing Vmware DC with ID %s", existingDC);
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
+        }
+        params.put(VmDetailConstants.VMWARE_VCENTER, existingDC != null ? existingDC.getVcenterHost() : vcenter);
+        params.put(VmDetailConstants.VMWARE_DATACENTER, existingDC != null ? existingDC.getVmwareDatacenterName() : datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, existingDC != null ? existingDC.getUser() : username);
+        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, existingDC != null ? existingDC.getPassword() : password);
+        params.put(VmDetailConstants.VMWARE_CLUSTER, clusterName);
+        params.put(VmDetailConstants.VMWARE_HOST, sourceHostName);
+        params.put(VmDetailConstants.VMWARE_VM_NAME, sourceVMName);
+        return params;
     }
 
     /**

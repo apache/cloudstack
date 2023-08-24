@@ -17,7 +17,7 @@
 
 <template>
   <div
-    class="form-layout"
+    :class="currentForm !== 'MigrateFromVMware' ? 'form-layout' : 'form-layout-migrate'"
     @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
@@ -42,7 +42,7 @@
               :placeholder="apiParams.url.description" />
           </a-form-item>
         </div>
-        <div v-if="currentForm === 'Upload'">
+        <div v-else-if="currentForm === 'Upload'">
           <a-form-item :label="$t('label.templatefileupload')" name="file" ref="file">
             <a-upload-dragger
               :multiple="false"
@@ -59,6 +59,12 @@
             </a-upload-dragger>
           </a-form-item>
         </div>
+        <div v-else-if="currentForm === 'MigrateFromVMware'">
+          <RegisterTemplateFromVcenter
+            :zoneid="zone"
+            @select-stopped-vm="($event) => selectStoppedVM($event)"
+          />
+        </div>
         <a-form-item ref="name" name="name">
           <template #label>
             <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -66,7 +72,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            v-focus="currentForm !== 'Create'"/>
+            v-focus="currentForm === 'Upload'"/>
         </a-form-item>
         <a-form-item ref="displaytext" name="displaytext">
           <template #label>
@@ -214,7 +220,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm !== 'Upload'">
+        <a-row :gutter="12" v-if="allowed && (hyperKVMShow || hyperCustomShow) && currentForm === 'Create'">
           <a-col :md="24" :lg="12">
             <a-form-item ref="directdownload" name="directdownload">
               <template #label>
@@ -433,6 +439,7 @@ import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import RegisterTemplateFromVcenter from './RegisterTemplateFromVcenter.vue'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -449,7 +456,8 @@ export default {
   },
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    RegisterTemplateFromVcenter
   },
   data () {
     return {
@@ -482,7 +490,9 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create'
+        : this.action.currentAction.label.includes('vmware') ? 'MigrateFromVMware' : 'Upload',
+      stoppedVM: null,
       domains: [],
       accounts: [],
       domainLoading: false,
@@ -658,7 +668,7 @@ export default {
         if (listResponse) {
           listhyperVisors = listhyperVisors.concat(listResponse)
         }
-        if (this.currentForm !== 'Upload') {
+        if (this.currentForm === 'Create') {
           listhyperVisors.push({
             name: 'Simulator'
           })
@@ -1044,7 +1054,7 @@ export default {
           }).finally(() => {
             this.loading = false
           })
-        } else {
+        } else if (this.currentForm === 'Upload') {
           this.loading = true
           if (this.fileList.length > 1) {
             this.$notification.error({
@@ -1059,6 +1069,34 @@ export default {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.postuploadtemplateresponse.template[0].id)
             }
+          }).catch(error => {
+            this.$notifyError(error)
+          }).finally(() => {
+            this.loading = false
+          })
+        } else if (this.currentForm === 'MigrateFromVMware') {
+          this.loading = true
+          if (this.stoppedVM.vcenterid) {
+            params.existingvcenterid = this.stoppedVM.vcenterid
+          } else {
+            params.vcenter = this.stoppedVM.vcenter
+            params.datacentername = this.stoppedVM.datacentername
+            params.clustername = this.stoppedVM.clustername
+            params.username = this.stoppedVM.username
+            params.password = this.stoppedVM.password
+          }
+          params.hostip = this.stoppedVM.host
+          params.virtualmachinename = this.stoppedVM.vmname
+          api('registerTemplateFromVmware', params).then(json => {
+            if (this.userdataid !== null) {
+              this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
+            }
+            this.$notification.success({
+              message: this.$t('label.register.template'),
+              description: `${this.$t('message.success.register.template')} ${params.name}`
+            })
+            this.$emit('refresh-data')
+            this.closeAction()
           }).catch(error => {
             this.$notifyError(error)
           }).finally(() => {
@@ -1108,6 +1146,9 @@ export default {
         this.form[name] = undefined
       })
     },
+    selectStoppedVM (vm) {
+      this.stoppedVM = vm
+    },
     fetchDomains () {
       const params = {}
       params.listAll = true
@@ -1155,6 +1196,14 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
+    }
+  }
+
+  .form-layout-migrate {
+    width: 80vw;
+
+    @media (min-width: 900px) {
+      width: 850px;
     }
   }
 </style>

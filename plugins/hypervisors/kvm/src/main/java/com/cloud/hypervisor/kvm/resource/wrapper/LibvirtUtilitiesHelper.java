@@ -22,6 +22,10 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -143,5 +147,44 @@ public class LibvirtUtilitiesHelper {
         s_logger.debug(String.format("The current Libvirt's version [%s]%s supports the flag '--delete' on command 'virsh blockcommit'.", result.first(),
                 result.second() ? "" : " does not"));
         return result.second();
+    }
+
+    private static Map<String, String> getQemuInfo(String path) {
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(path);
+            return qemu.info(qemuFile);
+        } catch (QemuImgException | LibvirtException e) {
+            String err = String.format("Error when inspecting volume at path %s", path);
+            s_logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
+    }
+
+    protected static long[] getSizesFromQemuInfo(Map<String, String> info, String path, String... sizeKeys) {
+        long[] sizes = new long[sizeKeys.length];
+        int i = 0;
+        for (String sizeKey : sizeKeys) {
+            if (info.containsKey(sizeKey)) {
+                long size = Long.parseLong(info.get(sizeKey));
+                sizes[i] = size;
+            } else {
+                String err = String.format("Unable to determine %s of volume at path %s", sizeKey, path);
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
+            i++;
+        }
+        return sizes;
+    }
+
+    protected static long getSingleSizeValueFromSizes(String path, String sizeKey) {
+        Map<String, String> info = getQemuInfo(path);
+        long[] sizes = getSizesFromQemuInfo(info, path, sizeKey);
+        return sizes[0];
+    }
+
+    public static long getVirtualSizeFromFile(String path) {
+        return getSingleSizeValueFromSizes(path, QemuImg.VIRTUAL_SIZE);
     }
 }

@@ -46,6 +46,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -84,7 +85,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
                             + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
 
-    private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
+    private String findOneHypervisorHostInScopeByHypervisorType = "select h.id from " +
+            "host h where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and h.hypervisor_type = ? ";
     private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
@@ -124,16 +126,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
     }
 
     protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId) {
-        return findEndPointInScope(scope, sqlBase, poolId, false);
+        return findEndPointInScope(scope, sqlBase, poolId, null, false);
     }
 
-    @DB
-    protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId, boolean volumeEncryptionSupportRequired) {
-        StringBuilder sbuilder = new StringBuilder();
-        sbuilder.append(sqlBase);
+    protected EndPoint findEndPointInScopeHypervisorType(Scope scope, String sqlBase, Hypervisor.HypervisorType hypervisorType) {
+        return findEndPointInScope(scope, sqlBase, null, hypervisorType.toString(), false);
+    }
 
-        List<Long> dedicatedHosts = new ArrayList<Long>();
-
+    protected List<Long> getDedicatedHostsAndAppendStringFromPoolScope(Scope scope,StringBuilder sbuilder) {
+        List<Long> dedicatedHosts = new ArrayList<>();
         if (scope != null) {
             if (scope.getScopeType() == ScopeType.HOST) {
                 sbuilder.append(" and h.id = ");
@@ -150,24 +151,18 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } else {
             dedicatedHosts = dedicatedResourceDao.listAllHosts();
         }
+        return dedicatedHosts;
+    }
 
-        sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
-
-        if (volumeEncryptionSupportRequired) {
-            sbuilder.append(String.format(" and t.%s='true'", VOL_ENCRYPT_COLUMN_NAME));
-        }
-
-        // TODO: order by rand() is slow if there are lot of hosts
-        sbuilder.append(" ORDER by ");
-        if (dedicatedHosts.size() > 0) {
-            moveDedicatedHostsToLowerPriority(sbuilder, dedicatedHosts);
-        }
-        sbuilder.append(" rand() limit 1");
-        String sql = sbuilder.toString();
+    protected HostVO getHostFromSqlQuery(String sql, Long poolId, String hypervisor) {
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(sql)) {
-            pstmt.setLong(1, poolId);
+            if (poolId != null) {
+                pstmt.setLong(1, poolId);
+            } else {
+                pstmt.setString(1, hypervisor);
+            }
             try(ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     long id = rs.getLong(1);
@@ -179,6 +174,36 @@ public class DefaultEndPointSelector implements EndPointSelector {
         } catch (SQLException e) {
             s_logger.warn("can't find endpoint", e);
         }
+        return host;
+    }
+
+    private void appendOrderAndLimitToSql(StringBuilder sbuilder, List<Long> dedicatedHosts) {
+        // TODO: order by rand() is slow if there are lot of hosts
+        sbuilder.append(" ORDER by ");
+        if (dedicatedHosts.size() > 0) {
+            moveDedicatedHostsToLowerPriority(sbuilder, dedicatedHosts);
+        }
+        sbuilder.append(" rand() limit 1");
+    }
+
+    @DB
+    protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId, String hypervisor, boolean volumeEncryptionSupportRequired) {
+        StringBuilder sbuilder = new StringBuilder();
+        sbuilder.append(sqlBase);
+
+        List<Long> dedicatedHosts = getDedicatedHostsAndAppendStringFromPoolScope(scope, sbuilder);
+
+        if (sqlBase.equals(findOneHostOnPrimaryStorage)) {
+            sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
+        }
+
+        if (volumeEncryptionSupportRequired) {
+            sbuilder.append(String.format(" and t.%s='true'", VOL_ENCRYPT_COLUMN_NAME));
+        }
+
+        appendOrderAndLimitToSql(sbuilder, dedicatedHosts);
+
+        HostVO host = getHostFromSqlQuery(sbuilder.toString(), poolId, hypervisor);
         if (host == null) {
             return null;
         }
@@ -247,7 +272,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 poolId = destStore.getId();
             }
         }
-        return findEndPointInScope(selectedScope, findOneHostOnPrimaryStorage, poolId, volumeEncryptionSupportRequired);
+        return findEndPointInScope(selectedScope, findOneHostOnPrimaryStorage, poolId, null, volumeEncryptionSupportRequired);
     }
 
     @Override
@@ -324,6 +349,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId());
     }
 
+    protected EndPoint findEndpointForVmwareVmMigration(DataObject template) {
+        Scope scope = template.getDataStore().getScope();
+        TemplateObjectTO tmpl = (TemplateObjectTO) template.getTO();
+        return findEndPointInScopeHypervisorType(scope, findOneHypervisorHostInScopeByHypervisorType, tmpl.getHypervisorType());
+    }
+
     protected EndPoint findEndpointForImageStorage(DataStore store) {
         Long dcId = null;
         Scope storeScope = store.getScope();
@@ -384,7 +415,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     public EndPoint select(DataObject object, boolean encryptionSupportRequired) {
         DataStore store = object.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
-            return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId(), encryptionSupportRequired);
+            return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId(), null, encryptionSupportRequired);
         }
         throw new CloudRuntimeException(String.format("Storage role %s doesn't support encryption", store.getRole()));
     }
@@ -392,6 +423,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
+        if (object instanceof TemplateInfo && object.getUri().startsWith("vpx://")) {
+            return findEndpointForVmwareVmMigration(object);
+        }
         EndPoint ep = select(store);
         if (ep != null) {
             return ep;
