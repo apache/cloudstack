@@ -32,6 +32,7 @@ import java.util.UUID;
 
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
@@ -52,17 +53,22 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.cloud.domain.DomainVO;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -86,11 +92,26 @@ public class ApiResponseHelperTest {
     @Mock
     AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDaoMock;
 
+    @Mock
+    UserDataDao userDataDaoMock;
+
     @Spy
     @InjectMocks
     ApiResponseHelper apiResponseHelper = new ApiResponseHelper();
 
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss ZZZ");
+
+    static long zoneId = 1L;
+    static long domainId = 2L;
+    static long accountId = 3L;
+    static long serviceOfferingId = 4L;
+    static long templateId  = 5L;
+    static String userdata = "userdata";
+    static long userdataId = 6L;
+    static String userdataDetails = "userdataDetails";
+    static String userdataNew = "userdataNew";
+
+    static long autoScaleUserId = 7L;
 
     @Before
     public void injectMocks() throws SecurityException, NoSuchFieldException,
@@ -296,5 +317,56 @@ public class ApiResponseHelperTest {
         assertEquals("10.10.10.10", response.getPublicIp());
         assertEquals("8080", response.getPublicPort());
         assertEquals("8081", response.getPrivatePort());
+    }
+
+    @Test
+    @PrepareForTest(ApiDBUtils.class)
+    public void testAutoScaleVmProfileResponse() {
+        AutoScaleVmProfileVO vmProfile = new AutoScaleVmProfileVO(zoneId, domainId, accountId, serviceOfferingId, templateId, null, null, userdata, null, autoScaleUserId);
+        vmProfile.setUserDataId(userdataId);
+        vmProfile.setUserDataDetails(userdataDetails);
+
+        PowerMockito.mockStatic(ApiDBUtils.class);
+        when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
+        when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());
+
+        UserData.UserDataOverridePolicy templatePolicy = UserData.UserDataOverridePolicy.APPEND;
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        when(ApiDBUtils.findTemplateById(anyLong())).thenReturn(templateVO);
+        when(templateVO.getUserDataOverridePolicy()).thenReturn(templatePolicy);
+
+        UserDataVO userDataVO =  Mockito.mock(UserDataVO.class);
+        String userDataUuid = "userDataUuid";
+        String userDataName = "userDataName";
+        when(userDataDaoMock.findById(anyLong())).thenReturn(userDataVO);
+        when(userDataVO.getUuid()).thenReturn(userDataUuid);
+        when(userDataVO.getName()).thenReturn(userDataName);
+
+        AutoScaleVmProfileResponse response = apiResponseHelper.createAutoScaleVmProfileResponse(vmProfile);
+        assertEquals(templatePolicy.toString(), response.getUserDataPolicy());
+        assertEquals(userdata, response.getUserData());
+        assertEquals(userDataUuid, response.getUserDataId());
+        assertEquals(userDataName, response.getUserDataName());
+        assertEquals(userdataDetails, response.getUserDataDetails());
+    }
+
+    @Test
+    @PrepareForTest(ApiDBUtils.class)
+    public void testAutoScaleVmProfileResponseWithoutUserData() {
+        AutoScaleVmProfileVO vmProfile = new AutoScaleVmProfileVO(zoneId, domainId, accountId, serviceOfferingId, templateId, null, null, null, null, autoScaleUserId);
+
+        PowerMockito.mockStatic(ApiDBUtils.class);
+        when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
+        when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());
+
+        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+        when(ApiDBUtils.findTemplateById(anyLong())).thenReturn(templateVO);
+
+        AutoScaleVmProfileResponse response = apiResponseHelper.createAutoScaleVmProfileResponse(vmProfile);
+        assertNull(response.getUserDataPolicy());
+        assertNull(response.getUserData());
+        assertNull(response.getUserDataId());
+        assertNull(response.getUserDataName());
+        assertNull(response.getUserDataDetails());
     }
 }
