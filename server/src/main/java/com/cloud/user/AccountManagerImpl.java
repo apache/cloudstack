@@ -3327,7 +3327,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
         UserVO userVO = null;
         if (userId != null) {
-            userVO = validateUser(userId);
+            userVO = validateUser(userId, caller.getDomainId());
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
@@ -3349,12 +3349,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserVO validateUser(Long userId) {
+    private UserVO validateUser(Long userId, Long domainId) {
         UserVO user = null;
         if (userId != null) {
             user = _userDao.findById(userId);
             if (user == null) {
                 throw new InvalidParameterValueException("Invalid user ID provided");
+            }
+            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
+                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
             }
         }
         return user;

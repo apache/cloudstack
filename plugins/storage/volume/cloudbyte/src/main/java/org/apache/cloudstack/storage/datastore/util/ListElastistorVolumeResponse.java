@@ -48,7 +48,7 @@ public class ListElastistorVolumeResponse extends BaseResponse {
     private String compression;
 
     @SerializedName("sync")
-    @Param(description = "synchronization")
+    @Param(description = "syncronization")
     private String sync;
 
     public String getGraceAllowed() {

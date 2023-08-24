@@ -1219,7 +1219,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             tmplt = _tmplFactory.getReadyBypassedTemplateOnPrimaryStore(isoId, poolId, hostId);
             bypassed = true;
         } else {
-            tmplt = _tmplFactory.getReadyTemplateOnImageStore(isoId, dcId);
+            tmplt = _tmplFactory.getTemplate(isoId, DataStoreRole.Image, dcId);
         }
 
         if (tmplt == null || tmplt.getFormat() != ImageFormat.ISO) {

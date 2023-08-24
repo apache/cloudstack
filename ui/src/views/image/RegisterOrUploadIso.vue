@@ -35,10 +35,8 @@
         <a-form-item
           v-if="currentForm === 'Create'"
           ref="url"
-          name="url">
-          <template #label>
-            <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
-          </template>
+          name="url"
+          :label="$t('label.url')">
           <a-input
             v-focus="currentForm === 'Create'"
             v-model:value="form.url"
@@ -63,35 +61,23 @@
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item ref="name" name="name">
-          <template #label>
-            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-          </template>
+        <a-form-item ref="name" name="name" :label="$t('label.name')">
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             v-focus="currentForm !== 'Create'" />
         </a-form-item>
-        <a-form-item ref="displaytext" name="displaytext">
-          <template #label>
-            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
-          </template>
+        <a-form-item ref="displaytext" name="displaytext" :label="$t('label.displaytext')">
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description" />
         </a-form-item>
 
-        <a-form-item ref="directdownload" name="directdownload" v-if="allowed && currentForm !== 'Upload'">
-          <template #label>
-            <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
-          </template>
+        <a-form-item ref="directdownload" name="directdownload" v-if="allowed && currentForm !== 'Upload'" :label="$t('label.directdownload')">
           <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
-        <a-form-item ref="zoneid" name="zoneid">
-          <template #label>
-            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
-          </template>
+        <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
           <a-select
             v-model:value="form.zoneid"
             showSearch
@@ -153,17 +139,11 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item ref="bootable" name="bootable">
-          <template #label>
-            <tooltip-label :title="$t('label.bootable')" :tooltip="apiParams.bootable.description"/>
-          </template>
+        <a-form-item ref="bootable" name="bootable" :label="$t('label.bootable')">
           <a-switch v-model:checked="form.bootable" />
         </a-form-item>
 
-        <a-form-item ref="ostypeid" name="ostypeid" v-if="form.bootable">
-          <template #label>
-            <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
-          </template>
+        <a-form-item ref="ostypeid" name="ostypeid" v-if="form.bootable" :label="$t('label.ostypeid')">
           <a-select
             v-model:value="form.ostypeid"
             showSearch
@@ -187,10 +167,8 @@
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
-              ref="userdataid">
-              <template #label>
-                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
-              </template>
+              ref="userdataid"
+              :label="$t('label.userdata')">
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -209,7 +187,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
               </template>
               <a-select
                 showSearch
@@ -227,27 +205,19 @@
           </a-col>
         </a-row>
 
-        <a-form-item ref="isextractable" name="isextractable">
-          <template #label>
-            <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
-          </template>
+        <a-form-item ref="isextractable" name="isextractable" :label="$t('label.isextractable')">
           <a-switch v-model:checked="form.isextractable" />
         </a-form-item>
 
         <a-form-item
           ref="ispublic"
           name="ispublic"
+          :label="$t('label.ispublic')"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
-          <template #label>
-            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
-          </template>
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
 
-        <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
-          <template #label>
-            <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
-          </template>
+        <a-form-item ref="isfeatured" name="isfeatured" :label="$t('label.isfeatured')" v-if="$store.getters.userInfo.roletype === 'Admin'">
           <a-switch v-model:checked="form.isfeatured" />
         </a-form-item>
 
@@ -356,7 +326,7 @@ export default {
       params.showicon = true
 
       this.zoneLoading = true
-      if (store.getters.userInfo.roletype === 'Admin') {
+      if (store.getters.userInfo.roletype === this.rootAdmin) {
         this.allowed = true
       }
       api('listZones', params).then(json => {

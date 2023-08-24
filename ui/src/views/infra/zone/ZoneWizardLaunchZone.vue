@@ -483,9 +483,6 @@ export default {
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
             }
-            if (physicalNetwork.traffics.findIndex(traffic => traffic.type === 'guest') > -1) {
-              this.stepData.guestPhysicalNetworkId = physicalNetworkReturned.id
-            }
           } catch (e) {
             this.messageError = e
             this.processStatus = STATUS_FAILED
@@ -1184,7 +1181,7 @@ export default {
             }
 
             const updateParams = {}
-            updateParams.id = this.stepData.guestPhysicalNetworkId
+            updateParams.id = this.stepData.physicalNetworkReturned.id
             updateParams.vlan = vlan
 
             try {

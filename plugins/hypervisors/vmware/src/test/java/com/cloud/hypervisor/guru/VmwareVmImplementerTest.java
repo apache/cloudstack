@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,9 +37,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.storage.GuestOSHypervisorVO;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.vm.VmDetailConstants;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -53,9 +49,6 @@ public class VmwareVmImplementerTest {
 
     @Mock
     VirtualMachineTO vmTO;
-
-    @Mock
-    GuestOSHypervisorDao guestOsHypervisorDao;
 
     private Map<String,String> vmDetails = new HashMap<String, String>();
 
@@ -157,43 +150,4 @@ public class VmwareVmImplementerTest {
         executeAndVerifyTest(false, false, "false", false);
     }
 
-    @Test
-    public void testGetGuestOsMapping1() {
-        GuestOSVO guestOs = Mockito.mock(GuestOSVO.class);
-        GuestOSHypervisorVO guestOsMapping = Mockito.mock(GuestOSHypervisorVO.class);
-        Mockito.when(guestOs.getId()).thenReturn(200L);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0.1.0")).thenReturn(guestOsMapping);
-        GuestOSHypervisorVO result = implementer.getGuestOsMapping(guestOs, "8.0.1.0");
-        Assert.assertEquals(guestOsMapping, result);
-    }
-
-    @Test
-    public void testGetGuestOsMapping2() {
-        GuestOSVO guestOs = Mockito.mock(GuestOSVO.class);
-        GuestOSHypervisorVO guestOsMapping = Mockito.mock(GuestOSHypervisorVO.class);
-        Mockito.when(guestOs.getId()).thenReturn(200L);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0.1.0")).thenReturn(null);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0.1")).thenReturn(guestOsMapping);
-        GuestOSHypervisorVO result = implementer.getGuestOsMapping(guestOs, "8.0.1.0");
-        Assert.assertEquals(guestOsMapping, result);
-    }
-
-    @Test
-    public void testGetGuestOsMapping3() {
-        GuestOSVO guestOs = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOs.getId()).thenReturn(200L);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0.1.0")).thenReturn(null);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0.1")).thenReturn(null);
-        GuestOSHypervisorVO result = implementer.getGuestOsMapping(guestOs, "8.0.1.0");
-        Assert.assertNull(result);
-    }
-
-    @Test
-    public void testGetGuestOsMapping4() {
-        GuestOSVO guestOs = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOs.getId()).thenReturn(200L);
-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(200L, "VMware", "8.0")).thenReturn(null);
-        GuestOSHypervisorVO result = implementer.getGuestOsMapping(guestOs, "8.0");
-        Assert.assertNull(result);
-    }
 }
