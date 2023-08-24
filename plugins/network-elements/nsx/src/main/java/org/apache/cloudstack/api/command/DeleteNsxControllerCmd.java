@@ -33,7 +33,7 @@ import javax.inject.Inject;
 
 import static org.apache.cloudstack.api.command.DeleteNsxControllerCmd.APINAME;
 
-@APICommand(name = APINAME, description = "Add NSX Controller to CloudStack",
+@APICommand(name = APINAME, description = "delete NSX Controller to CloudStack",
         responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false, since = "4.19.0.0")
 public class DeleteNsxControllerCmd extends BaseCmd {
