@@ -48,15 +48,9 @@ import java.util.Map;
             responseHasSensitiveInfo = false)
 public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
 
-    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.UUID, entityType = ClusterResponse.class,
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true,
                description = "ID of cluster")
-    private Long clusterId;
-
-
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterDrsPlanResponse.class,
-               description = "ID of drs plan")
     private Long id;
-
 
     @Parameter(
             name = ApiConstants.MIGRATE_TO,
@@ -140,9 +134,6 @@ public class ExecuteClusterDrsPlanCmd extends BaseAsyncCmd {
         return ApiCommandResourceType.Cluster;
     }
 
-    public Long getClusterId() {
-        return clusterId;
-    }
 
     @Override
     public String getEventType() {

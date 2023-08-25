@@ -84,7 +84,11 @@
       <br/>
     </template>
     <template #bodyCell="{ column, text }">
-      <template v-if="column.key === 'created'">
+      <template v-if="column.key === 'successfulMigrations'">
+        {{  text.migrations.filter(m => m.jobstatus === 'SUCCEEDED').length }} / {{  text.migrations.length }}
+        <!-- {{  text.migrations }} -->
+      </template>
+      <template v-else-if="column.key === 'created'">
         {{ $toLocaleDate(text) }}
       </template>
       <template v-else-if="column.key === 'eventid'" >
@@ -114,7 +118,7 @@
       :columns="generatedPlanMigrationColumns"
       :dataSource="generatedMigrations"
       :rowKey="(record, index) => index"
-      :pagination="true">
+      :pagination="{ showTotal: (total, range) => [range[0], '-', range[1], $t('label.of'), total, $t('label.items')].join(' ') }" >
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'vm'">
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }">
@@ -185,6 +189,10 @@ export default {
           dataIndex: 'type'
         },
         {
+          title: this.$t('label.success.migrations'),
+          key: 'successfulMigrations'
+        },
+        {
           title: this.$t('label.status'),
           dataIndex: 'status'
         },
@@ -243,8 +251,8 @@ export default {
 
       for (var i = 0; i < this.generatedMigrations.length; i++) {
         const mapping = this.generatedMigrations[i]
-        params['migrateto[' + i + '].vm'] = mapping.vm.id
-        params['migrateto[' + i + '].host'] = mapping.destinationhost.id
+        params['migrateto[' + i + '].vm'] = mapping.virtualmachineid
+        params['migrateto[' + i + '].host'] = mapping.destinationhostid
       }
 
       api('executeClusterDrsPlan', params).then(json => {

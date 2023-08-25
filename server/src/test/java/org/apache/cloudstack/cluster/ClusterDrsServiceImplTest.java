@@ -266,7 +266,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
-        Mockito.when(cmd.getIterations()).thenReturn(0.0);
+        Mockito.when(cmd.getIterations()).thenReturn(0.0F);
 
         clusterDrsService.generateDrsPlan(cmd);
     }
@@ -279,7 +279,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(clusterDrsService.getDrsPlan(cluster, 0.5)).thenThrow(new ConfigurationException("test"));
-        Mockito.when(cmd.getIterations()).thenReturn(0.5);
+        Mockito.when(cmd.getIterations()).thenReturn(0.5F);
 
         clusterDrsService.generateDrsPlan(cmd);
     }
@@ -302,7 +302,7 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(eventDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(EventVO.class));
-        Mockito.when(cmd.getIterations()).thenReturn(0.5);
+        Mockito.when(cmd.getIterations()).thenReturn(0.5F);
         Mockito.when(cmd.getSavePlan()).thenReturn(false);
         Mockito.doReturn(List.of(new Ternary<>(vm, srcHost,
                 destHost))).when(clusterDrsService).getDrsPlan(Mockito.any(Cluster.class), Mockito.anyDouble());

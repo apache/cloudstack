@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsLevel;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 
 public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
@@ -52,8 +52,6 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
                 return cpuImbalance < threshold;
             case "memory":
                 return memoryImbalance < threshold;
-            case "both":
-                return cpuImbalance < threshold && memoryImbalance < threshold;
             default:
                 throw new ConfigurationException(
                         String.format("Invalid metric: %s for cluster: %d", metric, clusterId));
@@ -61,7 +59,7 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
     }
 
     private double getThreshold(long clusterId) throws ConfigurationException {
-        return ClusterDrsLevel.valueIn(clusterId) / 10.0;
+        return ClusterDrsImbalanceThreshold.valueIn(clusterId);
     }
 
     @Override
@@ -78,7 +76,7 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         Double postMemoryImbalance = imbalancePair.second();
 
         // TODO: Cost should also include the cost of storage motion
-        // TODO: Cost should also consider dirt memory pages
+        // TODO: Cost should also consider dirty memory pages
         double cost = serviceOffering.getRamSize();
         double benefit = (postMemoryImbalance - preMemoryImbalance) * destHost.getTotalMemory() / (1024L * 1024L);
 

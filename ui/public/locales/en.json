@@ -1929,6 +1929,7 @@
 "label.submit": "Submit",
 "label.succeeded": "Succeeded",
 "label.success": "Success",
+"label.success.migrations": "Successful migrations",
 "label.success.set": "Successfully set",
 "label.success.updated": "Successfully updated",
 "label.suitability": "Suitability",

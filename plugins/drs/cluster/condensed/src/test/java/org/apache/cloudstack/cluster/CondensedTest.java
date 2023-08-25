@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsLevel;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsImbalanceThreshold;
 import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMetric;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -95,7 +95,7 @@ public class CondensedTest {
         Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
         Mockito.when(serviceOffering.getRamSize()).thenReturn(512);
 
-        overrideDefaultConfigValue(ClusterDrsLevel, "_defaultValue", "5");
+        overrideDefaultConfigValue(ClusterDrsImbalanceThreshold, "_defaultValue", "0.5");
 
         cpuList = Arrays.asList(1L, 2L);
         memoryList = Arrays.asList(512L, 2048L);
@@ -127,8 +127,7 @@ public class CondensedTest {
      * <p>Scenarios to test for needsDrs
      * <p>1. cluster with cpu metric
      * <p>2. cluster with memory metric
-     * <p>3. cluster with "both" metric
-     * <p>4. cluster with "unknown" metric
+     * <p>3. cluster with "unknown" metric
      * <p>
      * <p>CPU imbalance = 0.333
      * <p>Memory imbalance = 0.6
@@ -154,17 +153,7 @@ public class CondensedTest {
         assertFalse(condensed.needsDrs(clusterId, cpuList, memoryList));
     }
 
-    /*
-     3. cluster with "both" metric
-     0.3333 < 0.5 && 0.6 < 0.5 -> False
-    */
-    @Test
-    public void needsDrsWithBoth() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
-        overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "both");
-        assertFalse(condensed.needsDrs(clusterId, cpuList, memoryList));
-    }
-
-    /* 4. cluster with "unknown" metric */
+    /* 3. cluster with "unknown" metric */
     @Test
     public void needsDrsWithUnknown() throws ConfigurationException, NoSuchFieldException, IllegalAccessException {
         overrideDefaultConfigValue(ClusterDrsMetric, "_defaultValue", "unknown");

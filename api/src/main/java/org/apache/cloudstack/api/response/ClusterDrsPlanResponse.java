@@ -62,11 +62,13 @@ public class ClusterDrsPlanResponse extends BaseResponse {
     public ClusterDrsPlanResponse(String clusterId, ClusterDrsPlan plan, String eventId,
                                   List<ClusterDrsPlanMigrationResponse> migrationPlans) {
         this.clusterId = clusterId;
-        this.id = plan.getUuid();
         this.eventId = eventId;
-        this.type = plan.getType();
-        this.status = plan.getStatus();
-        this.created = plan.getCreated();
+        if (plan != null) {
+            this.id = plan.getUuid();
+            this.type = plan.getType();
+            this.status = plan.getStatus();
+            this.created = plan.getCreated();
+        }
         this.migrationPlans = migrationPlans;
         this.setObjectName("drsPlan");
     }

@@ -211,3 +211,10 @@ CREATE TABLE `cloud`.`cluster_drs_plan_migration` (
   INDEX `i_cluster_drs_plan_migration__plan_id_status`(`plan_id`, `status`),
   CONSTRAINT `fk_cluster_drs_plan_migration__plan_id` FOREIGN KEY (`plan_id`) REFERENCES `cluster_drs_plan`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('DRS', 'drs', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
+
+UPDATE `cloud`.`configuration`
+    SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'DRS')
+    WHERE name IN ('drs.automatic.enable', 'drs.algorithm', 'drs.automatic.interval', 'drs.iterations', 'drs.imbalance', 'drs.metric', 'drs.plan.expire.interval');
+

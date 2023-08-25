@@ -42,11 +42,11 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
                description = "the ID of the Cluster")
     private Long id;
 
-    @Parameter(name = "iterations", type = CommandType.DOUBLE,
+    @Parameter(name = "iterations", type = CommandType.FLOAT,
                description = "The maximum number of VM migrations to perform for DRS. This is defined as a percentage" +
                        " (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's " +
                        "drs.iterations setting")
-    private Double iterations;
+    private Float iterations;
 
     @Parameter(name = "saveplan", type = CommandType.BOOLEAN, entityType = ClusterResponse.class, description = "save" +
             " plan in the database")
@@ -55,7 +55,7 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
     @Inject
     private ClusterDrsService clusterDrsService;
 
-    public Double getIterations() {
+    public Float getIterations() {
         if (iterations == null) {
             return ClusterDrsIterations.valueIn(getId());
         }
