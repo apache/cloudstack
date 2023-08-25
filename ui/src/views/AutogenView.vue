@@ -859,7 +859,6 @@ export default {
       }
 
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
-        delete params.state
         delete params.details
       }
 
