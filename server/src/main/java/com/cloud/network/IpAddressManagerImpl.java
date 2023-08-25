@@ -334,19 +334,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     private IPAddressVO assignAndAllocateIpAddressEntry(final Account owner, final VlanType vlanUse, final Long guestNetworkId,
                                                         final boolean sourceNat, final boolean allocate, final boolean isSystem,
-                                                        final Long vpcId, final Boolean displayIp, final boolean fetchFromDedicatedRange,
+                                                        final Long vpcId, final Boolean displayIp,
                                                         final List<IPAddressVO> addressVOS) throws CloudRuntimeException {
         return Transaction.execute((TransactionCallbackWithException<IPAddressVO, CloudRuntimeException>) status -> {
             IPAddressVO finalAddress = null;
-            if (!fetchFromDedicatedRange && VlanType.VirtualNetwork.equals(vlanUse)) {
-                // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                try {
-                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
-                } catch (ResourceAllocationException ex) {
-                    s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
-                    throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
-                }
-            }
 
             for (IPAddressVO possibleAddr : addressVOS) {
                 if (possibleAddr.getState() != State.Free) {
@@ -826,6 +817,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     throws InsufficientAddressCapacityException {
         List<IPAddressVO> addrs = listAvailablePublicIps(dcId, podId, vlanDbIds, owner, vlanUse, guestNetworkId, sourceNat, assign, allocate, requestedIp, requestedGateway, isSystem, vpcId, displayIp, forSystemVms, true);
         IPAddressVO addr = addrs.get(0);
+        if (assign) {
+            addr = assignAndAllocateIpAddressEntry(owner, vlanUse, guestNetworkId, sourceNat, allocate,
+                    isSystem,vpcId, displayIp, addrs);
+        }
         if (vlanUse == VlanType.VirtualNetwork) {
             _firewallMgr.addSystemFirewallRules(addr, owner);
         }
@@ -837,128 +832,99 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public List<IPAddressVO> listAvailablePublicIps(final long dcId, final Long podId, final List<Long> vlanDbIds, final Account owner, final VlanType vlanUse, final Long guestNetworkId,
                                                     final boolean sourceNat, final boolean assign, final boolean allocate, final String requestedIp, final String requestedGateway, final boolean isSystem,
                                                     final Long vpcId, final Boolean displayIp, final boolean forSystemVms, final boolean lockOneRow) throws InsufficientAddressCapacityException {
-        return Transaction.execute(new TransactionCallbackWithException<List<IPAddressVO>, InsufficientAddressCapacityException>() {
-            @Override
-            public List<IPAddressVO> doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
-                StringBuilder errorMessage = new StringBuilder("Unable to get ip address in ");
-                boolean fetchFromDedicatedRange = false;
-                List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
-                List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
-                DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
-                SearchCriteria<IPAddressVO> sc = null;
-                if (podId != null) {
-                    sc = AssignIpAddressFromPodVlanSearch.create();
-                    sc.setJoinParameters("podVlanMapSB", "podId", podId);
-                    errorMessage.append(" pod id=" + podId);
-                } else {
-                    sc = AssignIpAddressSearch.create();
-                    errorMessage.append(" zone id=" + dcId);
-                }
+        StringBuilder errorMessage = new StringBuilder("Unable to get ip address in ");
+        boolean fetchFromDedicatedRange = false;
+        List<Long> dedicatedVlanDbIds = new ArrayList<Long>();
+        List<Long> nonDedicatedVlanDbIds = new ArrayList<Long>();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, dcId);
 
-                // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
-                // Otherwise fetch IP from the system pool
-                Network network = _networksDao.findById(guestNetworkId);
-                //Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
-                if(network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
-                    List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
-                    for (AccountVlanMapVO map : maps) {
-                        if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
-                            dedicatedVlanDbIds.add(map.getVlanDbId());
-                    }
-                }
-                List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
-                for (DomainVlanMapVO map : domainMaps) {
+        SearchCriteria<IPAddressVO> sc = null;
+        if (podId != null) {
+            sc = AssignIpAddressFromPodVlanSearch.create();
+            sc.setJoinParameters("podVlanMapSB", "podId", podId);
+            errorMessage.append(" pod id=" + podId);
+        } else {
+            sc = AssignIpAddressSearch.create();
+            errorMessage.append(" zone id=" + dcId);
+        }
+
+        sc.setParameters("dc", dcId);
+
+        // for direct network take ip addresses only from the vlans belonging to the network
+        if (vlanUse == VlanType.DirectAttached) {
+            sc.setJoinParameters("vlan", "networkId", guestNetworkId);
+            errorMessage.append(", network id=" + guestNetworkId);
+        }
+        if (requestedGateway != null) {
+            sc.setJoinParameters("vlan", "vlanGateway", requestedGateway);
+            errorMessage.append(", requested gateway=" + requestedGateway);
+        }
+        sc.setJoinParameters("vlan", "type", vlanUse);
+
+        Network network = _networksDao.findById(guestNetworkId);
+        String routerIpAddress = null;
+        if (network != null) {
+            NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
+            routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
+        }
+        if (requestedIp != null) {
+            sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
+            errorMessage.append(": requested ip " + requestedIp + " is not available");
+        } else if (routerIpAddress != null) {
+            sc.addAnd("address", Op.NEQ, routerIpAddress);
+        }
+
+        boolean ascOrder = ! forSystemVms;
+        Filter filter = new Filter(IPAddressVO.class, "forSystemVms", ascOrder, 0l, 1l);
+
+        filter.addOrderBy(IPAddressVO.class,"vlanId", true);
+
+        List<IPAddressVO> addrs = new ArrayList<>();
+
+        if (forSystemVms) {
+            // Get Public IPs for system vms in dedicated ranges
+            sc.setParameters("forSystemVms", true);
+            if (lockOneRow) {
+                addrs = _ipAddressDao.lockRows(sc, filter, true);
+            } else {
+                addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
+            }
+        }
+        if ((!lockOneRow || (lockOneRow && CollectionUtils.isEmpty(addrs))) &&
+                !(forSystemVms && SystemVmPublicIpReservationModeStrictness.value())) {
+            sc.setParameters("forSystemVms", false);
+            // If owner has dedicated Public IP ranges, fetch IP from the dedicated range
+            // Otherwise fetch IP from the system pool
+            // Checking if network is null in the case of system VM's. At the time of allocation of IP address to systemVm, no network is present.
+            if (network == null || !(network.getGuestType() == GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
+                List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(owner.getId());
+                for (AccountVlanMapVO map : maps) {
                     if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
                         dedicatedVlanDbIds.add(map.getVlanDbId());
                 }
-                List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(dcId);
-                for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
-                    if (vlanDbIds == null || vlanDbIds.contains(nonDedicatedVlan.getId()))
-                        nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
-                }
-
-                if (vlanUse == VlanType.VirtualNetwork) {
-                    if (!dedicatedVlanDbIds.isEmpty()) {
-                        fetchFromDedicatedRange = true;
-                        sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
-                        errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
-                    } else if (!nonDedicatedVlanDbIds.isEmpty()) {
-                        sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                        errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
-                    } else {
-                        if (podId != null) {
-                            InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
-                            ex.addProxyObject(ApiDBUtils.findPodById(podId).getUuid());
-                            throw ex;
-                        }
-                        s_logger.warn(errorMessage.toString());
-                        InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
-                        ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
-                        throw ex;
-                    }
-                }
-
-                sc.setParameters("dc", dcId);
-
-                // for direct network take ip addresses only from the vlans belonging to the network
-                if (vlanUse == VlanType.DirectAttached) {
-                    sc.setJoinParameters("vlan", "networkId", guestNetworkId);
-                    errorMessage.append(", network id=" + guestNetworkId);
-                }
-                if (requestedGateway != null) {
-                    sc.setJoinParameters("vlan", "vlanGateway", requestedGateway);
-                    errorMessage.append(", requested gateway=" + requestedGateway);
-                }
-                sc.setJoinParameters("vlan", "type", vlanUse);
-                String routerIpAddress = null;
-                if (network != null) {
-                    NetworkDetailVO routerIpDetail = _networkDetailsDao.findDetail(network.getId(), ApiConstants.ROUTER_IP);
-                    routerIpAddress = routerIpDetail != null ? routerIpDetail.getValue() : null;
-                }
-                if (requestedIp != null) {
-                    sc.addAnd("address", SearchCriteria.Op.EQ, requestedIp);
-                    errorMessage.append(": requested ip " + requestedIp + " is not available");
-                } else if (routerIpAddress != null) {
-                    sc.addAnd("address", Op.NEQ, routerIpAddress);
-                }
-
-                boolean ascOrder = ! forSystemVms;
-                Filter filter = new Filter(IPAddressVO.class, "forSystemVms", ascOrder, 0l, 1l);
-                if (SystemVmPublicIpReservationModeStrictness.value()) {
-                    sc.setParameters("forSystemVms", forSystemVms);
-                }
-
-                filter.addOrderBy(IPAddressVO.class,"vlanId", true);
-
-                List<IPAddressVO> addrs;
-
-                if (lockOneRow) {
-                    addrs = _ipAddressDao.lockRows(sc, filter, true);
+            }
+            List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
+            for (DomainVlanMapVO map : domainMaps) {
+                if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                    dedicatedVlanDbIds.add(map.getVlanDbId());
+            }
+            List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(dcId);
+            for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {
+                if (vlanDbIds == null || vlanDbIds.contains(nonDedicatedVlan.getId()))
+                    nonDedicatedVlanDbIds.add(nonDedicatedVlan.getId());
+            }
+            if (vlanUse == VlanType.VirtualNetwork) {
+                if (!dedicatedVlanDbIds.isEmpty()) {
+                    fetchFromDedicatedRange = true;
+                    sc.setParameters("vlanId", dedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(dedicatedVlanDbIds.toArray()));
+                } else if (!nonDedicatedVlanDbIds.isEmpty()) {
+                    sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
                 } else {
-                    addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
-                }
-
-                // If all the dedicated IPs of the owner are in use fetch an IP from the system pool
-                if ((!lockOneRow || (lockOneRow && addrs.size() == 0)) && fetchFromDedicatedRange && vlanUse == VlanType.VirtualNetwork) {
-                    // Verify if account is allowed to acquire IPs from the system
-                    boolean useSystemIps = UseSystemPublicIps.valueIn(owner.getId());
-                    if (useSystemIps && !nonDedicatedVlanDbIds.isEmpty()) {
-                        fetchFromDedicatedRange = false;
-                        sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
-                        errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
-                        if (lockOneRow) {
-                            addrs = _ipAddressDao.lockRows(sc, filter, true);
-                        } else {
-                            addrs.addAll(_ipAddressDao.search(sc, null));
-                        }
-                    }
-                }
-
-                if (lockOneRow && addrs.size() == 0) {
                     if (podId != null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
-                        // for now, we hardcode the table names, but we should ideally do a lookup for the tablename from the VO object.
                         ex.addProxyObject(ApiDBUtils.findPodById(podId).getUuid());
                         throw ex;
                     }
@@ -967,17 +933,58 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
                     throw ex;
                 }
-
-                if (lockOneRow) {
-                    assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
-                }
-                if (assign) {
-                    assignAndAllocateIpAddressEntry(owner, vlanUse, guestNetworkId, sourceNat, allocate,
-                            isSystem,vpcId, displayIp, fetchFromDedicatedRange, addrs);
-                }
-                return addrs;
             }
-        });
+            if (lockOneRow) {
+                addrs = _ipAddressDao.lockRows(sc, filter, true);
+            } else {
+                addrs = new ArrayList<>(_ipAddressDao.search(sc, null));
+            }
+
+            // If all the dedicated IPs of the owner are in use fetch an IP from the system pool
+            if ((!lockOneRow || (lockOneRow && addrs.size() == 0)) && fetchFromDedicatedRange && vlanUse == VlanType.VirtualNetwork) {
+                // Verify if account is allowed to acquire IPs from the system
+                boolean useSystemIps = UseSystemPublicIps.valueIn(owner.getId());
+                if (useSystemIps && !nonDedicatedVlanDbIds.isEmpty()) {
+                    fetchFromDedicatedRange = false;
+                    sc.setParameters("vlanId", nonDedicatedVlanDbIds.toArray());
+                    errorMessage.append(", vlanId id=" + Arrays.toString(nonDedicatedVlanDbIds.toArray()));
+                    if (lockOneRow) {
+                        addrs = _ipAddressDao.lockRows(sc, filter, true);
+                    } else {
+                        addrs.addAll(_ipAddressDao.search(sc, null));
+                    }
+                }
+            }
+        }
+
+        if (lockOneRow && addrs.size() == 0) {
+            if (podId != null) {
+                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", Pod.class, podId);
+                // for now, we hardcode the table names, but we should ideally do a lookup for the tablename from the VO object.
+                ex.addProxyObject(ApiDBUtils.findPodById(podId).getUuid());
+                throw ex;
+            }
+            s_logger.warn(errorMessage.toString());
+            InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
+            ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
+            throw ex;
+        }
+
+        if (lockOneRow) {
+            assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
+        }
+
+        if (assign && !fetchFromDedicatedRange && VlanType.VirtualNetwork.equals(vlanUse)) {
+            // Check that the maximum number of public IPs for the given accountId will not be exceeded
+            try {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
+            } catch (ResourceAllocationException ex) {
+                s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
+                throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
+            }
+        }
+
+        return addrs;
     }
 
     @DB
