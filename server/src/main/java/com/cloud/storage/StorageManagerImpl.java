@@ -2919,7 +2919,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     }
                                     SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
                                     if (templateVO != null && vmTemplateVO != null) {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, filePath);
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
                                     } else {
                                         systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
                                     }
