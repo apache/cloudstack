@@ -862,6 +862,10 @@ export default {
         delete params.showunique
       }
 
+      if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
+        delete params.details
+      }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
