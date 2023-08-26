@@ -241,6 +241,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             EndPoint ep = null;
             if (data.getType() == DataObjectType.VOLUME) {
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
+            } else if (data.getType() == DataObjectType.TEMPLATE) {
+                ep = epSelector.select(data, StorageAction.DELETETEMPLATE);
             } else {
                 ep = epSelector.select(data);
             }

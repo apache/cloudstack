@@ -420,10 +420,10 @@ public class DefaultEndPointSelector implements EndPointSelector {
         throw new CloudRuntimeException(String.format("Storage role %s doesn't support encryption", store.getRole()));
     }
 
-    @Override
-    public EndPoint select(DataObject object) {
+    private EndPoint selectInternal(DataObject object, StorageAction action) {
         DataStore store = object.getDataStore();
-        if (object instanceof TemplateInfo && object.getUri().startsWith("vpx://")) {
+        if (action == StorageAction.DELETETEMPLATE && object instanceof TemplateInfo &&
+                ((TemplateInfo) object).isMigratedFromVmwareVM()) {
             return findEndpointForVmwareVmMigration(object);
         }
         EndPoint ep = select(store);
@@ -437,6 +437,11 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
         }
         return null;
+    }
+
+    @Override
+    public EndPoint select(DataObject object) {
+        return selectInternal(object, StorageAction.DEFAULT);
     }
 
     @Override
@@ -523,6 +528,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
                     }
                 }
             }
+        } else if (action == StorageAction.DELETETEMPLATE) {
+            return selectInternal(object, action);
         }
         return select(object, encryptionRequired);
     }
