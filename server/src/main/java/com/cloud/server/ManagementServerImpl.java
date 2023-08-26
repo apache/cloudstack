@@ -2323,6 +2323,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 isAllocated = Boolean.TRUE;
             }
         }
+        boolean isAllocatedTemp = isAllocated;
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
@@ -2333,6 +2334,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Account caller = getCaller();
         List<IPAddressVO> addrs = new ArrayList<>();
+        NetworkVO network = null;   // shared network
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
             if (caller.getType() != Account.Type.ADMIN) {
@@ -2341,7 +2343,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else if (vlanType == VlanType.DirectAttached) {
             // list public ip address on shared network
             // access control. admin: all Ips, domain admin/user: all Ips in shared network in the domain/sub-domain/user
-            NetworkVO network = null;
             if (networkId == null) {
                 IPAddressVO ip = _publicIpAddressDao.findById(ipId);
                 if (ip == null) {
@@ -2475,7 +2476,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             for (IPAddressVO addr: freeAddrs) {
                 freeAddrIds.add(addr.getId());
             }
+        } else if (vlanType == VlanType.DirectAttached && network != null && !isAllocatedTemp && isAllocated) {
+            if (caller.getType() != Account.Type.ADMIN && !IpAddressManager.AllowUserListAvailableIpsOnSharedNetwork.value()) {
+                s_logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
+            } else {
+                final SearchBuilder<IPAddressVO> searchBuilder = _publicIpAddressDao.createSearchBuilder();
+                buildParameters(searchBuilder, cmd, false);
+
+                SearchCriteria<IPAddressVO> searchCriteria = searchBuilder.create();
+                setParameters(searchCriteria, cmd, vlanType, false);
+                searchCriteria.setParameters("state", IpAddress.State.Free.name());
+                addrs.addAll(_publicIpAddressDao.search(searchCriteria, searchFilter)); // Free IPs on shared network
+            }
         }
+
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
