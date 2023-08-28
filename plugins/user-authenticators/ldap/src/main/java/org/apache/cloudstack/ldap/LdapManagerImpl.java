@@ -67,6 +67,7 @@ import com.cloud.utils.Pair;
 @Component
 public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManager, LdapValidator {
     private static final Logger LOGGER = Logger.getLogger(LdapManagerImpl.class.getName());
+    public static final String REMOVING_LDAP_LINK_ON_DOMAIN = "Removing link between LDAP: %s - type: %s  and account: %s on domain: %s";
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
@@ -124,7 +125,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                     long domainId = account.getDomainId();
                     LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.findByAccount(domainId, account.getAccountId());
                     if (ldapTrustMapVO != null) {
-                        String msg = String.format("Removing link between LDAP: %s - type: %s and account: %s on domain: %s",
+                        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
                                 ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), account.getAccountId(), domainId);
                         LOGGER.debug(msg);
                         _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
@@ -143,10 +144,10 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 try {
                     final Domain domain = domainDao.findByIdIncludingRemoved((Long) args);
                     long domainId = domain.getId();
-                    LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.findByDomainId(domainId);
-                    if (ldapTrustMapVO != null) {
-                        String msg = String.format("Removing link between LDAP: %s - type: %s on domain: %s",
-                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), domainId);
+                    List<LdapTrustMapVO> ldapTrustMapVOs = _ldapTrustMapDao.searchByDomainId(domainId);
+                    for (LdapTrustMapVO ldapTrustMapVO : ldapTrustMapVOs) {
+                        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
+                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), ldapTrustMapVO.getAccountId(), domainId);
                         LOGGER.debug(msg);
                         _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
                     }
