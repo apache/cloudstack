@@ -49,7 +49,8 @@
               v-for="network in validNetworks[record.id]"
               :key="network.id"
               :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
-              {{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}
+              <div v-if="hypervisor==='KVM'">{{ network.displaytext }}</div>
+              <div v-else>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
             </a-select-option>
           </a-select>
           <span v-else>
@@ -198,9 +199,9 @@ export default {
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))))
+          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Allocated' && this.hypervisor == 'KVM') || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))))
         }
-        if (this.filterMatchKey) {
+        if (this.filterMatchKey && this.hypervisor === 'VMWare') {
           this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
         }
       }
