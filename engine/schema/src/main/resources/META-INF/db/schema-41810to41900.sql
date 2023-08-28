@@ -217,4 +217,3 @@ INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, 
 UPDATE `cloud`.`configuration`
     SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'DRS')
     WHERE name IN ('drs.automatic.enable', 'drs.algorithm', 'drs.automatic.interval', 'drs.iterations', 'drs.imbalance', 'drs.metric', 'drs.plan.expire.interval');
-
