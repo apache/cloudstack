@@ -215,7 +215,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         if (isRevokeAccessNotNeeded(dataObject)) {
-            LOGGER.debug("Skipping revoke access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
+            logger.debug("Skipping revoke access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
             return;
         }
 
@@ -235,7 +235,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             throw new CloudRuntimeException(errMsg);
         }
 
-        LOGGER.debug("Revoking access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
+        logger.debug("Revoking access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
 
         try {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);

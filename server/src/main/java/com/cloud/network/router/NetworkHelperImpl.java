@@ -589,18 +589,18 @@ public class NetworkHelperImpl implements NetworkHelper {
         List <HostVO> hosts = _hostDao.listByDataCenterIdAndHypervisorType(zone.getId(), hypervisorType);
         if (CollectionUtils.isEmpty(hosts)) {
             String msg = String.format("Zone %s has no %s host available which is enabled and in Up state", zone.getName(), hypervisorType);
-            s_logger.debug(msg);
+            logger.debug(msg);
             throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
         }
         for (HostVO host : hosts) {
             Pair<Boolean, Boolean> cpuCapabilityAndCapacity = capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, routerOffering, false);
             if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
-                s_logger.debug("Host " + host + " has enough capacity for the router");
+                logger.debug("Host " + host + " has enough capacity for the router");
                 return;
             }
         }
         String msg = String.format("Zone %s has no %s host which has enough capacity", zone.getName(), hypervisorType);
-        s_logger.debug(msg);
+        logger.debug(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
 
