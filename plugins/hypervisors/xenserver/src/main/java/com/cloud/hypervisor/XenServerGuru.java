@@ -97,11 +97,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             HostVO host = hostDao.findById(userVmVO.getHostId());
             if (host != null) {
                 List<HostVO> clusterHosts = hostDao.listByClusterAndHypervisorType(host.getClusterId(), host.getHypervisorType());
-                HostVO hostWithMinSocket = clusterHosts.stream().min(Comparator.comparing(HostVO::getCpuSockets)).orElse(null);
+                HostVO hostWithMinCpus = clusterHosts.stream().min(Comparator.comparing(HostVO::getCpus)).orElse(null);
                 Integer vCpus = MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId());
-                if (hostWithMinSocket != null && hostWithMinSocket.getCpuSockets() != null &&
-                        hostWithMinSocket.getCpuSockets() < vCpus) {
-                    vCpus = hostWithMinSocket.getCpuSockets();
+                if (hostWithMinCpus != null && hostWithMinCpus.getCpus() != null &&
+                        hostWithMinCpus.getCpus() < vCpus) {
+                    vCpus = hostWithMinCpus.getCpus();
                 }
                 to.setVcpuMaxLimit(vCpus);
             }
