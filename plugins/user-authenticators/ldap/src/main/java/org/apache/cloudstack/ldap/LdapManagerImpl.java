@@ -27,7 +27,9 @@ import javax.naming.ldap.LdapContext;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.domain.Domain;
 import com.cloud.user.AccountManager;
+import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.LdapValidator;
@@ -107,6 +109,13 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         super.configure(name, params);
         LOGGER.debug("Configuring LDAP Manager");
 
+        addAccountRemovalListener();
+        addDomainRemovalListener();
+
+        return true;
+    }
+
+    private void addAccountRemovalListener() {
         messageBus.subscribe(AccountManager.MESSAGE_REMOVE_ACCOUNT_EVENT, new MessageSubscriber() {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
@@ -125,10 +134,28 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                 }
             }
         });
-
-        return true;
     }
 
+    private void addDomainRemovalListener() {
+        messageBus.subscribe(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                try {
+                    final Domain domain = domainDao.findByIdIncludingRemoved((Long) args);
+                    long domainId = domain.getId();
+                    LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.findByDomainId(domainId);
+                    if (ldapTrustMapVO != null) {
+                        String msg = String.format("Removing link between LDAP: %s - type: %s on domain: %s",
+                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), domainId);
+                        LOGGER.debug(msg);
+                        _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
+                    }
+                } catch (final Exception e) {
+                    LOGGER.error("Caught exception while removing trust-map for domain linked to LDAP", e);
+                }
+            }
+        });
+    }
     @Override
     public LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException {
         return addConfigurationInternal(cmd.getHostname(),cmd.getPort(),cmd.getDomainId());

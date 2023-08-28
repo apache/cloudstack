@@ -136,7 +136,7 @@ public class DomainManagerImplTest {
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
         Mockito.doReturn(adminAccount).when(domainManager).getCaller();
-        Mockito.doReturn(lock).when(domainManager).getGlobalLock("AccountCleanup");
+        Mockito.doReturn(lock).when(domainManager).getGlobalLock("DomainCleanup");
         Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
         Mockito.when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(domain);
         Mockito.when(domain.getAccountId()).thenReturn(ACCOUNT_ID);
