@@ -19,7 +19,6 @@ package org.apache.cloudstack.service;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.NsxAnswer;
@@ -46,7 +45,8 @@ public class NsxControllerUtils {
             throw new InvalidParameterValueException("Failed to find an NSX controller");
         }
 
-        Answer answer = agentMgr.sendTo(zoneId, Hypervisor.HypervisorType.VMware, cmd);
+        //Answer answer = agentMgr.sendTo(zoneId, Hypervisor.HypervisorType.VMware, cmd);
+        Answer answer = agentMgr.easySend(nsxProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("NSX API Command failed");

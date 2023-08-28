@@ -34,7 +34,7 @@ public class NsxControllerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "Zone ID to which the NSX controller is associated with")
-    private long zoneId;
+    private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
     @Param(description = "Zone name to which the NSX controller is associated with")
@@ -76,11 +76,11 @@ public class NsxControllerResponse extends BaseResponse {
         this.name = name;
     }
 
-    public long getZoneId() {
+    public String getZoneId() {
         return zoneId;
     }
 
-    public void setZoneId(long zoneId) {
+    public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
     }
 

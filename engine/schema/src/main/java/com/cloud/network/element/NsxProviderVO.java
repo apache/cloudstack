@@ -39,6 +39,9 @@ public class NsxProviderVO implements NsxProvider {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "host_id")
+    private long hostId;
+
     @Column(name = "uuid")
     private String uuid;
 
@@ -68,8 +71,9 @@ public class NsxProviderVO implements NsxProvider {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NsxProviderVO( long zoneId,String providerName, String hostname, String username, String password, String tier0Gateway, String edgeCluster) {
+    public NsxProviderVO( long zoneId, long hostId, String providerName, String hostname, String username, String password, String tier0Gateway, String edgeCluster) {
         this.zoneId = zoneId;
+        this.hostId = hostId;
         this.uuid = UUID.randomUUID().toString();
         this.providerName = providerName;
         this.hostname = hostname;
@@ -95,6 +99,14 @@ public class NsxProviderVO implements NsxProvider {
 
     public void setZoneId(long zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(long hostId) {
+        this.hostId = hostId;
     }
 
     @Override
