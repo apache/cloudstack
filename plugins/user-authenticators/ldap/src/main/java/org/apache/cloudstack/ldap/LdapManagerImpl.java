@@ -66,7 +66,6 @@ import com.cloud.utils.Pair;
 @Component
 public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManager, LdapValidator {
     private static final Logger LOGGER = Logger.getLogger(LdapManagerImpl.class.getName());
-    public static final String REMOVING_LDAP_LINK_ON_DOMAIN = "Removing link between LDAP: %s - type: %s  and account: %s on domain: %s";
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
@@ -151,7 +150,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     }
 
     private void removeTrustmap(LdapTrustMapVO ldapTrustMapVO) {
-        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
+        String msg = String.format("Removing link between LDAP: %s - type: %s  and account: %s on domain: %s",
                 ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), ldapTrustMapVO.getAccountId(), ldapTrustMapVO.getDomainId());
         LOGGER.debug(msg);
         _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
