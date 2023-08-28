@@ -1812,7 +1812,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (checkDeleteNeeded(account, caller)) {
+        if (! isDeleteNeeded(account, caller)) {
             return true;
         }
 
@@ -1832,14 +1832,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean checkDeleteNeeded(AccountVO account, Account caller) {
+    private boolean isDeleteNeeded(AccountVO account, Account caller) {
         if (account == null) {
             s_logger.info("The account:" + account.getAccountName() + " doesn't exist");
-            return true;
+            return false;
         }
         if (account.getRemoved() != null) {
             s_logger.info("The account:" + account.getAccountName() + " is already removed");
-            return true;
+            return false;
         }
         // don't allow removing Project account
         if (account.getType() == Account.Type.PROJECT) {
@@ -1852,7 +1852,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account.isDefault()) {
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
-        return false;
+        return true;
     }
 
     @Override
