@@ -3136,19 +3136,19 @@ class Cluster:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.listClusterDrsPlan(cmd)
 
-    def generateDrsPlan(cls, apiclient, iterations=None):
+    def generateDrsPlan(cls, apiclient, migrations=None):
         """Generate a drs plan for cluster"""
 
         cmd = generateClusterDrsPlan.generateClusterDrsPlanCmd()
         cmd.id = cls.id
-        cmd.iterations = iterations
+        cmd.migrations = migrations
         return apiclient.generateClusterDrsPlan(cmd)
 
     def executeDrsPlan(cls, apiclient, migrateto=None):
         """Execute drs plan on cluster"""
 
         cmd = executeClusterDrsPlan.executeClusterDrsPlanCmd()
-        cmd.clusterid = cls.id
+        cmd.id = cls.id
         if migrateto:
             cmd.migrateto = []
             for vm, host in list(migrateto.items()):

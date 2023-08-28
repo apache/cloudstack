@@ -45,12 +45,10 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             "The interval in minutes after which a periodic background thread will schedule DRS for a cluster.", true,
             ConfigKey.Scope.Cluster, null, "Interval for Automatic DRS ", null, null, null);
 
-    ConfigKey<Float> ClusterDrsIterations = new ConfigKey<>(Float.class, "drs.iterations",
-            ConfigKey.CATEGORY_ADVANCED, "0.2",
-            "The maximum number of instance migrations to perform for DRS. This is defined as a percentage (as a value " +
-            "between 0 and 1) of total number of workloads. The minimum number of iterations per round will " +
-            "be 1 and maximum will be equal to the total number of workloads in a cluster.",
-            true, ConfigKey.Scope.Cluster, null, "DRS iterations", null, null, null);
+    ConfigKey<Integer> ClusterDrsVmMigrations = new ConfigKey<>(Integer.class, "drs.vm.migrations",
+            ConfigKey.CATEGORY_ADVANCED, "50",
+            "Maximum number of VMs to migrate for a DRS execution.",
+            true, ConfigKey.Scope.Cluster, null, "Maximum number of migrations for DRS", null, null, null);
 
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm",
             ConfigKey.CATEGORY_ADVANCED, "condensed", "DRS algorithm to execute on the cluster.",

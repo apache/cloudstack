@@ -89,7 +89,6 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import static com.cloud.org.Grouping.AllocationState.Disabled;
-import static java.lang.Math.round;
 
 public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsService, PluggableService {
 
@@ -292,7 +291,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 if (clusterLock.lock(30)) {
                     try {
                         List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster,
-                                ClusterDrsIterations.valueIn(cluster.getId()));
+                                ClusterDrsVmMigrations.valueIn(cluster.getId()));
                         savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED,
                                 ClusterDrsPlan.Status.READY);
                         logger.info(String.format("Generated DRS plan for cluster %s [id=%s]", cluster.getName(),
@@ -317,7 +316,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *
      * @param cluster
      *         The cluster to generate DRS for.
-     * @param iterationPercentage
+     * @param maxIterations
      *         The percentage of VMs to consider for migration
      *         during each iteration. Value between 0 and 1.
      *
@@ -328,10 +327,10 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      *         If there is an error in the DRS configuration.
      */
     List<Ternary<VirtualMachine, Host, Host>> getDrsPlan(Cluster cluster,
-            double iterationPercentage) throws ConfigurationException {
+            int maxIterations) throws ConfigurationException {
         List<Ternary<VirtualMachine, Host, Host>> migrationPlan = new ArrayList<>();
 
-        if (cluster.getAllocationState() == Disabled || iterationPercentage <= 0) {
+        if (cluster.getAllocationState() == Disabled || maxIterations <= 0) {
             return Collections.emptyList();
         }
         ClusterDrsAlgorithm algorithm = getDrsAlgorithm(ClusterDrsAlgorithm.valueIn(cluster.getId()));
@@ -339,7 +338,6 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         List<VirtualMachine> vmList = new ArrayList<>(vmInstanceDao.listByClusterId(cluster.getId()));
 
         int iteration = 0;
-        long maxIterations = Math.max(round(iterationPercentage * vmList.size()), 1);
 
         Map<Long, Host> hostMap = hostList.stream().collect(Collectors.toMap(HostVO::getId, host -> host));
 
@@ -630,7 +628,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
-                ClusterDrsIterations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
+                ClusterDrsVmMigrations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
     }
 
     @Override
@@ -666,36 +664,28 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             throw new InvalidParameterValueException(
                     String.format("Unable to execute DRS on the cluster %s as it is disabled", cluster.getName()));
         }
-        if (cmd.getIterations() <= 0) {
+        if (cmd.getMaxMigrations() <= 0) {
             throw new InvalidParameterValueException(
                     String.format("Unable to execute DRS on the cluster %s as the number of iterations [%s] is invalid",
-                            cluster.getName(), cmd.getIterations()));
+                            cluster.getName(), cmd.getMaxMigrations()));
         }
 
         try {
-            List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, cmd.getIterations());
+            List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster, cmd.getMaxMigrations());
             long eventId = ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN,
                     EventTypes.EVENT_CLUSTER_DRS_GENERATE,
                     String.format("Generating DRS plan for cluster %s", cluster.getUuid()), cluster.getId(),
                     ApiCommandResourceType.Cluster.toString());
             List<ClusterDrsPlanMigrationVO> migrations;
-            ClusterDrsPlanVO drsPlan;
-            if (cmd.getSavePlan()) {
-                Pair<ClusterDrsPlanVO, List<ClusterDrsPlanMigrationVO>> pair = savePlan(cluster.getId(), plan,
-                        eventId, ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
-                drsPlan = pair.first();
-                migrations = pair.second();
-            } else {
-                drsPlan = new ClusterDrsPlanVO(
-                        cluster.getId(), eventId, ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
-                migrations = new ArrayList<>();
-                for (Ternary<VirtualMachine, Host, Host> migration : plan) {
-                    VirtualMachine vm = migration.first();
-                    Host srcHost = migration.second();
-                    Host destHost = migration.third();
-                    migrations.add(new ClusterDrsPlanMigrationVO(0L, vm.getId(), srcHost.getId(), destHost.getId()));
-                }
+            ClusterDrsPlanVO drsPlan = new ClusterDrsPlanVO(
+                    cluster.getId(), eventId, ClusterDrsPlan.Type.MANUAL, ClusterDrsPlan.Status.UNDER_REVIEW);
+            migrations = new ArrayList<>();
+            for (Ternary<VirtualMachine, Host, Host> migration : plan) {
+                VirtualMachine vm = migration.first();
+                Host srcHost = migration.second();
+                Host destHost = migration.third();
+                migrations.add(new ClusterDrsPlanMigrationVO(0L, vm.getId(), srcHost.getId(), destHost.getId()));
             }
 
             CallContext.current().setEventResourceType(ApiCommandResourceType.Cluster);

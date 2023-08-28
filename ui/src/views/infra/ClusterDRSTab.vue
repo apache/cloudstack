@@ -22,17 +22,14 @@
   <a-row>
     <strong>{{ $t('label.algorithm') }}:</strong>&nbsp;{{ algorithm }}
   </a-row>
+  <br/>
   <a-row>
-    <a-col span="10">
-      <a-slider v-model:value="iterations" :min="1" :max="100" :step="1" />
-    </a-col>
-    <a-col span="3">
+    <a-col span="4">
       <a-input-number
-          v-model:value="iterations"
+          v-model:value="maxMigrations"
+          :addonBefore="$t('label.max.migrations')"
           :min="1"
-          :max="100"
           :step="1"
-          style="margin-left: 16px"
         />
       </a-col>
       <a-col span="3">
@@ -40,7 +37,8 @@
           type="primary"
           @click="generateDrsPlan"
           :loading="loading"
-          :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
+          :disabled="!('generateClusterDrsPlan' in $store.getters.apis)"
+          style="margin-left: 16px">
           {{ $t('label.drs.generate.plan') }}
         </a-button>
       </a-col>
@@ -218,7 +216,7 @@ export default {
       loading: false,
       drsPlans: [],
       algorithm: '',
-      iterations: 0,
+      maxMigrations: 0,
       generatedMigrations: reactive([]),
       showModal: false
     }
@@ -266,7 +264,7 @@ export default {
       })
     },
     generateDrsPlan () {
-      api('generateClusterDrsPlan', { id: this.resource.id, iterations: this.iterations / 100.0 }).then(json => {
+      api('generateClusterDrsPlan', { id: this.resource.id, migrations: this.maxMigrations }).then(json => {
         this.generatedMigrations = json?.generateclusterdrsplanresponse?.generateclusterdrsplanresponse?.migrations || []
         this.showModal = true
       })
@@ -275,8 +273,8 @@ export default {
       this.loading = true
       api('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
         this.algorithm = reactive(json.listconfigurationsresponse.configuration[0].value)
-        api('listConfigurations', { clusterid: this.resource.id, name: 'drs.iterations' }).then(json => {
-          this.iterations = reactive(json.listconfigurationsresponse.configuration[0].value) * 100
+        api('listConfigurations', { clusterid: this.resource.id, name: 'drs.vm.migrations' }).then(json => {
+          this.maxMigrations = reactive(json.listconfigurationsresponse.configuration[0].value)
           this.loading = false
         })
       })

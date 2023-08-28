@@ -77,7 +77,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GlobalLock.class, ActionEventUtils.class})
@@ -154,7 +154,7 @@ public class ClusterDrsServiceImplTest {
 
     @Test
     public void testGetCommands() {
-        assertTrue(clusterDrsService.getCommands().size() > 0);
+        assertFalse(clusterDrsService.getCommands().isEmpty());
     }
 
     @Test
@@ -218,11 +218,11 @@ public class ClusterDrsServiceImplTest {
                 serviceOffering);
         Mockito.when(hostJoinDao.searchByIds(host1.getId(), host2.getId())).thenReturn(List.of(hostJoin1, hostJoin2));
 
-        List<Ternary<VirtualMachine, Host, Host>> iterations = clusterDrsService.getDrsPlan(cluster, 0.5);
+        List<Ternary<VirtualMachine, Host, Host>> iterations = clusterDrsService.getDrsPlan(cluster, 5);
 
         Mockito.verify(hostDao, Mockito.times(1)).findByClusterId(1L);
         Mockito.verify(vmInstanceDao, Mockito.times(1)).listByClusterId(1L);
-        Mockito.verify(balancedAlgorithm, Mockito.times(1)).needsDrs(Mockito.anyLong(), Mockito.anyList(),
+        Mockito.verify(balancedAlgorithm, Mockito.times(2)).needsDrs(Mockito.anyLong(), Mockito.anyList(),
                 Mockito.anyList());
 
         assertEquals(1, iterations.size());
@@ -266,7 +266,7 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
-        Mockito.when(cmd.getIterations()).thenReturn(0.0F);
+        Mockito.when(cmd.getMaxMigrations()).thenReturn(0);
 
         clusterDrsService.generateDrsPlan(cmd);
     }
@@ -278,8 +278,8 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
         Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
-        Mockito.when(clusterDrsService.getDrsPlan(cluster, 0.5)).thenThrow(new ConfigurationException("test"));
-        Mockito.when(cmd.getIterations()).thenReturn(0.5F);
+        Mockito.when(clusterDrsService.getDrsPlan(cluster, 5)).thenThrow(new ConfigurationException("test"));
+        Mockito.when(cmd.getMaxMigrations()).thenReturn(1);
 
         clusterDrsService.generateDrsPlan(cmd);
     }
@@ -302,10 +302,9 @@ public class ClusterDrsServiceImplTest {
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(eventDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(EventVO.class));
-        Mockito.when(cmd.getIterations()).thenReturn(0.5F);
-        Mockito.when(cmd.getSavePlan()).thenReturn(false);
+        Mockito.when(cmd.getMaxMigrations()).thenReturn(2);
         Mockito.doReturn(List.of(new Ternary<>(vm, srcHost,
-                destHost))).when(clusterDrsService).getDrsPlan(Mockito.any(Cluster.class), Mockito.anyDouble());
+                destHost))).when(clusterDrsService).getDrsPlan(Mockito.any(Cluster.class), Mockito.anyInt());
 
         ClusterDrsPlanMigrationResponse migrationResponse = Mockito.mock(ClusterDrsPlanMigrationResponse.class);
 

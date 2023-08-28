@@ -31,7 +31,7 @@ import org.apache.cloudstack.cluster.ClusterDrsService;
 
 import javax.inject.Inject;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsIterations;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsVmMigrations;
 
 @APICommand(name = "generateClusterDrsPlan", description = "Generate DRS plan for a cluster",
             responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
@@ -42,24 +42,18 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
                description = "the ID of the Cluster")
     private Long id;
 
-    @Parameter(name = "iterations", type = CommandType.FLOAT,
-               description = "The maximum number of VM migrations to perform for DRS. This is defined as a percentage" +
-                       " (as a value between 0 and 1) of total number of workloads. Defaults to value of cluster's " +
-                       "drs.iterations setting")
-    private Float iterations;
-
-    @Parameter(name = "saveplan", type = CommandType.BOOLEAN, entityType = ClusterResponse.class, description = "save" +
-            " plan in the database")
-    private Boolean savePlan;
+    @Parameter(name = ApiConstants.MIGRATIONS, type = CommandType.INTEGER,
+               description = "Maximum number of VMs to migrate for a DRS execution. Defaults to value of cluster's drs.vm.migrations setting")
+    private Integer migrations;
 
     @Inject
     private ClusterDrsService clusterDrsService;
 
-    public Float getIterations() {
-        if (iterations == null) {
-            return ClusterDrsIterations.valueIn(getId());
+    public Integer getMaxMigrations() {
+        if (migrations == null) {
+            return ClusterDrsVmMigrations.valueIn(getId());
         }
-        return iterations;
+        return migrations;
     }
 
     public Long getId() {
@@ -69,16 +63,9 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
     @Override
     public void execute() {
         final ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(this);
-        if (!getSavePlan()) {
-            response.setId(null);
-        }
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);
-    }
-
-    public boolean getSavePlan() {
-        return savePlan != null && savePlan;
     }
 
     @Override

@@ -50,8 +50,7 @@ class TestClusterDRS(cloudstackTestCase):
         cls.logger.addHandler(cls.stream_handler)
 
         cls.skipTests = False
-        clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id, allocationstate='Enabled',
-                                clustertype='CloudManaged')
+        clusters = Cluster.list(cls.apiclient, zoneid=cls.zone.id, allocationstate='Enabled')
 
         if not clusters or not isinstance(clusters, list) or len(clusters) < 1:
             cls.logger.debug("This test requires at least 1 (Up and Enabled) cluster in the zone")
@@ -151,9 +150,10 @@ class TestClusterDRS(cloudstackTestCase):
         return res
 
     def get_migrations(self):
-        """ Wait until migrations are generated """
+        """ Wait until migrations are generated. Sometimes it takes a little bit of time for stats to get updated. We generate migrations
+        until we get at least one migration """
         def generate_migrations():
-            drs_plan = self.cluster.generateDrsPlan(self.apiclient, iterations=1)
+            drs_plan = self.cluster.generateDrsPlan(self.apiclient, migrations=4)
             if len(drs_plan["migrations"]) > 0:
                 return True, drs_plan["migrations"]
             return False, drs_plan["migrations"]
@@ -197,7 +197,7 @@ class TestClusterDRS(cloudstackTestCase):
 
         # 3. Generate & execute DRS to move all VMs on the same host
         Configurations.update(self.apiclient, "drs.algorithm", "condensed", clusterid=self.cluster.id)
-        Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+        Configurations.update(self.apiclient, "drs.imbalance", "1.0", clusterid=self.cluster.id)
 
         migrations = self.get_migrations()
         vm_to_dest_host_map = {
@@ -249,7 +249,7 @@ class TestClusterDRS(cloudstackTestCase):
 
         # 3. Execute DRS to move all VMs on different hosts
         Configurations.update(self.apiclient, "drs.algorithm", "balanced", clusterid=self.cluster.id)
-        Configurations.update(self.apiclient, "drs.level", "10", clusterid=self.cluster.id)
+        Configurations.update(self.apiclient, "drs.imbalance", "1.0", clusterid=self.cluster.id)
 
         migrations = self.get_migrations()
         vm_to_dest_host_map = {
