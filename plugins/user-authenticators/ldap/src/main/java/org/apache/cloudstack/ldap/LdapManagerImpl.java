@@ -124,10 +124,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                     long domainId = account.getDomainId();
                     LdapTrustMapVO ldapTrustMapVO = _ldapTrustMapDao.findByAccount(domainId, account.getAccountId());
                     if (ldapTrustMapVO != null) {
-                        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
-                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), account.getAccountId(), domainId);
-                        LOGGER.debug(msg);
-                        _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
+                        removeTrustmap(ldapTrustMapVO);
                     }
                 } catch (final Exception e) {
                     LOGGER.error("Caught exception while removing account linked to LDAP", e);
@@ -144,10 +141,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
                     long domainId = ((DomainVO) args).getId();
                     List<LdapTrustMapVO> ldapTrustMapVOs = _ldapTrustMapDao.searchByDomainId(domainId);
                     for (LdapTrustMapVO ldapTrustMapVO : ldapTrustMapVOs) {
-                        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
-                                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), ldapTrustMapVO.getAccountId(), domainId);
-                        LOGGER.debug(msg);
-                        _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
+                        removeTrustmap(ldapTrustMapVO);
                     }
                 } catch (final Exception e) {
                     LOGGER.error("Caught exception while removing trust-map for domain linked to LDAP", e);
@@ -155,6 +149,14 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             }
         });
     }
+
+    private void removeTrustmap(LdapTrustMapVO ldapTrustMapVO) {
+        String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
+                ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), ldapTrustMapVO.getAccountId(), ldapTrustMapVO.getDomainId());
+        LOGGER.debug(msg);
+        _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
+    }
+
     @Override
     public LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException {
         return addConfigurationInternal(cmd.getHostname(),cmd.getPort(),cmd.getDomainId());
