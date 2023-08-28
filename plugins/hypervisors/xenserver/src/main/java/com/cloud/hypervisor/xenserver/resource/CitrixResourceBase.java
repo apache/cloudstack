@@ -1338,7 +1338,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 vmr.VCPUsMax = (long)vmSpec.getCpus();
             } else {
                 if (vmSpec.getVcpuMaxLimit() != null) {
-                    vmr.VCPUsMax = Math.min(vcpuMaxLimit, _host.getCpus());
+                    vmr.VCPUsMax = Math.min(vmSpec.getVcpuMaxLimit(), _host.getCpus());
                 }
             }
         } else {
