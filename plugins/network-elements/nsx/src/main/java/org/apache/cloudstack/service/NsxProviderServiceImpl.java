@@ -20,6 +20,8 @@ import com.amazonaws.util.CollectionUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
@@ -97,22 +99,22 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         NsxResource nsxResource = new NsxResource();
         try {
             nsxResource.configure(hostname, hostdetails);
-            //final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
-            //if (host != null) {
+            final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
+            if (host != null) {
                  nsxProvider = Transaction.execute((TransactionCallback<NsxProviderVO>) status -> {
-                    NsxProviderVO nsxProviderVO = new NsxProviderVO(zoneId, name, hostname,
+                    NsxProviderVO nsxProviderVO = new NsxProviderVO(zoneId, host.getId(), name, hostname,
                             username, password, tier0Gateway, edgeCluster);
                     nsxProviderDao.persist(nsxProviderVO);
 
-//                    DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
-//                            String.valueOf(nsxProviderVO.getId()));
-//                    hostDetailsDao.persist(detail);
+                    DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
+                            String.valueOf(nsxProviderVO.getId()));
+                    hostDetailsDao.persist(detail);
 
                     return nsxProviderVO;
                 });
-//            } else {
-//                throw new CloudRuntimeException("Failed to add NSX controller due to internal error.");
-//            }
+            } else {
+                throw new CloudRuntimeException("Failed to add NSX controller due to internal error.");
+            }
         } catch (ConfigurationException e) {
             throw new CloudRuntimeException(e.getMessage());
         }
@@ -130,7 +132,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         response.setUuid(nsxProvider.getUuid());
         response.setHostname(nsxProvider.getHostname());
         response.setPort(nsxProvider.getPort());
-        response.setZoneId(nsxProvider.getZoneId());
+        response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
         response.setTier0Gateway(nsxProvider.getTier0Gateway());
         response.setTier0Gateway(nsxProvider.getEdgeCluster());

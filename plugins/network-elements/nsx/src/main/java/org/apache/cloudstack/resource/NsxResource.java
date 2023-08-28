@@ -27,25 +27,32 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx_policy.infra.Tier1s;
+import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.model.ApiError;
+import com.vmware.nsx_policy.model.ChildLocaleServices;
+import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.Tier1;
+import com.vmware.vapi.bindings.Service;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApi;
 import org.apache.log4j.Logger;
 
 
 import javax.naming.ConfigurationException;
+import java.util.List;
 import java.util.Map;
 
 public class NsxResource implements ServerResource {
-    private static final Logger s_logger = Logger.getLogger(NsxResource.class);
+    private static final Logger LOGGER = Logger.getLogger(NsxResource.class);
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
 //    private static final String ROUTING = "ROUTING";
@@ -88,7 +95,9 @@ public class NsxResource implements ServerResource {
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof ReadyCommand) {
             return executeRequest((ReadyCommand) cmd);
-        } if (cmd instanceof CreateNsxTier1GatewayCommand) {
+        } else if (cmd instanceof DeleteNsxTier1GatewayCommand) {
+            return executeRequest((DeleteNsxTier1GatewayCommand) cmd);
+        } else if (cmd instanceof CreateNsxTier1GatewayCommand) {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -176,6 +185,11 @@ public class NsxResource implements ServerResource {
             throw new ConfigurationException("Unable to find zone");
         }
 
+        tier0Gateway = (String) params.get("tier0Gateway");
+        if (tier0Gateway == null) {
+            throw new ConfigurationException("Missing NSX tier0 gateway");
+        }
+
         edgeCluster = (String) params.get("edgeCluster");
         if (edgeCluster == null) {
             throw new ConfigurationException("Missing NSX edgeCluster");
@@ -190,18 +204,35 @@ public class NsxResource implements ServerResource {
         return new ReadyAnswer(cmd);
     }
 
+    private Service getService(Class serviceClass) {
+        return nsxApi.getApiClient().createStub(serviceClass);
+    }
+
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
-        String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
         String name = getVpcName(cmd);
-        Tier1s tier1service = nsxApi.getApiClient().createStub(Tier1s.class);
-        Tier1 tier1 = new Tier1.Builder()
+        Tier1 tier1 = getTier1Gateway(name);
+        if (tier1 != null) {
+            throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone: %s and account %s", name, cmd.getZoneName(), cmd.getAccountName()));
+        }
+        List<com.vmware.nsx_policy.model.LocaleServices> localeServices = getTier0LocalServices(tier0Gateway);
+        String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
+
+        Tier1s tier1service = (Tier1s) getService(Tier1s.class);
+        tier1 = new Tier1.Builder()
                 .setTier0Path(tier0GatewayPath)
                 .setResourceType(TIER_1_RESOURCE_TYPE)
                 .setPoolAllocation(ROUTING.name())
                 .setHaMode(ACTIVE_STANDBY.name())
                 .setId(name)
                 .setDisplayName(name)
-                .build();
+                .setChildren(
+                        List.of(new ChildLocaleServices.Builder("ChildLocaleServices")
+                                        .setLocaleServices(
+                                                new com.vmware.nsx_policy.model.LocaleServices.Builder()
+                                                        .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath())
+                                                        .setResourceType("LocaleServices")
+                                                        .build()
+                                        ).build())).build();
         try {
             tier1service.patch(name, tier1);
         } catch (Error error) {
@@ -209,6 +240,36 @@ public class NsxResource implements ServerResource {
             return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
         }
         return new NsxAnswer(cmd, true, "");
+    }
+
+    private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
+        try {
+            Tier1s tier1service = (Tier1s) getService(Tier1s.class);
+            tier1service.delete(cmd.getVpcName());
+        } catch (Exception e) {
+            return new Answer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new Answer(cmd, true, null);
+    }
+
+    private List<com.vmware.nsx_policy.model.LocaleServices> getTier0LocalServices(String tier0Gateway) {
+        try {
+            LocaleServices tier0LocaleServices = (LocaleServices) getService(LocaleServices.class);
+            LocaleServicesListResult result =tier0LocaleServices.list(tier0Gateway, null, false, null, null, null, null);
+            return result.getResults();
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch locale services for tier gateway %s due to %s", tier0Gateway, e.getMessage()));
+        }
+    }
+
+    private Tier1 getTier1Gateway(String tier1GatewayId) {
+        try {
+            Tier1s tier1service = (Tier1s) getService(Tier1s.class);
+            return tier1service.get(tier1GatewayId);
+        } catch (Exception e) {
+            LOGGER.debug(String.format("NSX Tier-1 gateway with name: %s not found", tier1GatewayId));
+        }
+        return null;
     }
 
     private String getVpcName(CreateNsxTier1GatewayCommand cmd) {

@@ -16,15 +16,24 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -35,6 +44,7 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
@@ -44,7 +54,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -58,16 +68,19 @@ import java.util.Objects;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        ResourceStateAdapter {
+        ResourceStateAdapter, Listener {
 
-    @Inject
-    RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
     @Inject
     AccountManager accountMgr;
     @Inject
     NsxServiceImpl nsxService;
     @Inject
     DataCenterDao dataCenterDao;
+    @Inject
+    AgentManager agentManager;
+    @Inject
+    ResourceManager resourceManager;
+
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
     private final Map<Network.Service, Map<Network.Capability, String>> capabilities = initCapabilities();
@@ -160,7 +173,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        return false;
+        return true;
     }
 
     @Override
@@ -180,6 +193,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        agentManager.registerForHostEvents(this, true, true, true);
+        resourceManager.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return false;
     }
 
@@ -200,7 +215,11 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
-        return null;
+        if (!(startup[0] instanceof StartupNsxCommand)) {
+            return null;
+        }
+        host.setType(Host.Type.L2Networking);
+        return host;
     }
 
     @Override
@@ -225,8 +244,19 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     }
 
     @Override
-    public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        return false;
+    public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException {
+        DataCenterVO zone = dataCenterDao.findById(vpc.getZoneId());
+        if (Network.Provider.Nsx.getName().equalsIgnoreCase(zone.getDhcpProvider())) {
+            if (Objects.isNull(zone)) {
+                throw new InvalidParameterValueException(String.format("Failed to find zone with id %s", vpc.getZoneId()));
+            }
+            Account account = accountMgr.getAccount(vpc.getAccountId());
+            if (Objects.isNull(account)) {
+                throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
+            }
+            return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        }
+        return true;
     }
 
     @Override
@@ -246,6 +276,61 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        return false;
+    }
+
+    @Override
+    public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+        return false;
+    }
+
+    @Override
+    public boolean processCommands(long agentId, long seq, Command[] commands) {
+        return false;
+    }
+
+    @Override
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
+        return null;
+    }
+
+    @Override
+    public void processHostAdded(long hostId) {
+
+    }
+
+    @Override
+    public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
+
+    }
+
+    @Override
+    public boolean processDisconnect(long agentId, Status state) {
+        return false;
+    }
+
+    @Override
+    public void processHostAboutToBeRemoved(long hostId) {
+
+    }
+
+    @Override
+    public void processHostRemoved(long hostId, long clusterId) {
+
+    }
+
+    @Override
+    public boolean isRecurring() {
+        return false;
+    }
+
+    @Override
+    public int getTimeout() {
+        return 0;
+    }
+
+    @Override
+    public boolean processTimeout(long agentId, long seq) {
         return false;
     }
 }

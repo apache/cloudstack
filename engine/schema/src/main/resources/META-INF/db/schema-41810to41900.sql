@@ -185,6 +185,7 @@ CREATE TABLE `cloud`.`nsx_providers` (
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
     `uuid` varchar(40),
     `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
+    `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
     `provider_name` varchar(40),
     `hostname` varchar(255) NOT NULL,
     `port` varchar(255),

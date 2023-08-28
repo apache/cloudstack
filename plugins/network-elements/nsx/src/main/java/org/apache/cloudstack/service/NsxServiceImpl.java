@@ -18,6 +18,7 @@ package org.apache.cloudstack.service;
 
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 
 import javax.inject.Inject;
 
@@ -28,6 +29,13 @@ public class NsxServiceImpl implements NsxService {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
                 new CreateNsxTier1GatewayCommand(zoneName, zoneId, accountName, accountId, vpcName);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
+        return result.getResult();
+    }
+
+    public boolean deleteVpcNetwork(Long zoneId, String zoneName, Long accountId, String accountName, String vpcName) {
+        DeleteNsxTier1GatewayCommand deleteNsxTier1GatewayCommand =
+                new DeleteNsxTier1GatewayCommand(zoneName, zoneId, accountName, accountId, vpcName);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 }
