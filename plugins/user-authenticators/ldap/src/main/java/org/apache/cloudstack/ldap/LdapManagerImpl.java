@@ -27,7 +27,6 @@ import javax.naming.ldap.LdapContext;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.domain.Domain;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentLifecycleBase;
