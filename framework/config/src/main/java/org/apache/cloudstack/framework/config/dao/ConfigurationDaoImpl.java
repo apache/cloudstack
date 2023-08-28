@@ -25,6 +25,7 @@ import javax.annotation.PostConstruct;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -170,7 +171,20 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     @Override
     public String getValue(String name) {
         ConfigurationVO config = findByName(name);
-        return (config == null) ? null : config.getValue();
+
+        if (config == null) {
+            return null;
+        }
+
+        if (isEncrypted(config)) {
+            return DBEncryptionUtil.decrypt(config.getValue());
+        }
+
+        return config.getValue();
+    }
+
+    private boolean isEncrypted(ConfigurationVO configuration) {
+        return StringUtils.equalsAny(configuration.getCategory(), "Hidden", "Secure");
     }
 
     @Override

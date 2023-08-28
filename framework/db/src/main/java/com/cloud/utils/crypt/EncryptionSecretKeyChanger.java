@@ -504,7 +504,7 @@ public class EncryptionSecretKeyChanger {
 
         String tableName = "account_details";
         String selectSql = "SELECT details.id, details.value from account_details details, cloud.configuration c " +
-                "WHERE details.name = c.name AND c.category NOT IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
         String updateSql = "UPDATE cloud.account_details SET value = ? WHERE id = ?;";
         migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
 
@@ -516,8 +516,8 @@ public class EncryptionSecretKeyChanger {
 
         String tableName = "domain_details";
         String selectSql = "SELECT details.id, details.value from domain_details details, cloud.configuration c " +
-                "WHERE details.name = c.name AND c.category NOT IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
-        String updateSql = "UPDATE cloud.account_details SET value = ? WHERE id = ?;";
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+        String updateSql = "UPDATE cloud.domain_details SET value = ? WHERE id = ?;";
         migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
 
         System.out.println("End migration of domain details values");
