@@ -110,7 +110,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
     private UnmanagedInstanceTO getUnmanagedInstance(LibvirtComputingResource libvirtComputingResource, Domain domain, Connect conn) {
         try {
             final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-            parser.parseDomainXML(domain.getXMLDesc(0));
+            parser.parseDomainXML(domain.getXMLDesc(1));
 
             final UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
             instance.setName(domain.getName());
@@ -124,7 +124,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
-            instance.setVncPasswd(parser.getVncPasswd());
+            instance.setVncPasswd(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
 
             return instance;
         } catch (Exception e) {
