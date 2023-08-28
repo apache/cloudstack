@@ -142,8 +142,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object args) {
                 try {
-                    final Domain domain = domainDao.findByIdIncludingRemoved((Long) args);
-                    long domainId = domain.getId();
+                    long domainId = ((DomainVO) args).getId();
                     List<LdapTrustMapVO> ldapTrustMapVOs = _ldapTrustMapDao.searchByDomainId(domainId);
                     for (LdapTrustMapVO ldapTrustMapVO : ldapTrustMapVOs) {
                         String msg = String.format(REMOVING_LDAP_LINK_ON_DOMAIN,
