@@ -932,7 +932,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             internalCSName = instanceName;
         }
         Map<String, String> allDetails = new HashMap<>(details);
-        allDetails.put(VmDetailConstants.KVM_IMPORT_DYNAMIC_SCALING, String.valueOf(validatedServiceOffering.isDynamic()));
         if (validatedServiceOffering.isDynamic()) {
             allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(validatedServiceOffering.getCpu()));
             allDetails.put(VmDetailConstants.MEMORY, String.valueOf(validatedServiceOffering.getRamSize()));

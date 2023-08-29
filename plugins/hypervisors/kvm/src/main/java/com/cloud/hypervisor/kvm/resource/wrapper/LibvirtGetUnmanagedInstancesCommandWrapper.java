@@ -170,11 +170,11 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             }
 
             final UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
-            QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
-            QemuImg qemu = new QemuImg(0);
             Long size = null;
             String imagePath = null;
             try {
+                QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
+                QemuImg qemu = new QemuImg(0);
                 Map<String, String> info = qemu.info(file);
                 size = Long.parseLong(info.getOrDefault("virtual_size", "0"));
                 imagePath = info.getOrDefault("image", null);
