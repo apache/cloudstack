@@ -7074,7 +7074,12 @@ class VnfAppliance:
         apiclient.destroyVirtualMachine(cmd)
 
 class ObjectStoragePool:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
     """Manage Object Stores"""
+    @classmethod
     def create(cls, apiclient, name, url, provider, services=None):
         """Add Object Store"""
         cmd = addObjectStoragePool.addObjectStoragePoolCmd()

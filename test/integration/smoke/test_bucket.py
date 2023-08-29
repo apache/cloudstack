@@ -50,8 +50,8 @@ class TestObjectStore(cloudstackTestCase):
 
         object_store = ObjectStoragePool.create(
             self.apiclient,
-            "testOS-8",
-            "http://localhost",
+            "testOS-9",
+            "http://192.168.0.1",
             "Simulator",
             None
         )
@@ -60,7 +60,7 @@ class TestObjectStore(cloudstackTestCase):
 
         bucket = Bucket.create(
             self.apiclient,
-            "myBucket",
+            "mybucket",
             object_store.id
         )
 
@@ -82,7 +82,7 @@ class TestObjectStore(cloudstackTestCase):
             "Check object store id of the created Bucket"
         )
         self.assertEqual(
-            "myBucket",
+            "mybucket",
             bucket_response.name,
             "Check Name of the created Bucket"
         )

@@ -45,13 +45,12 @@ class TestObjectStore(cloudstackTestCase):
     @attr(tags=["smoke"], required_hardware="false")
     def test_01_create_object_store(self):
         """Test to create object store
-
         """
 
         object_store = ObjectStoragePool.create(
             self.apiclient,
-            "testOS-6",
-            "http://localhost",
+            "testOS-10",
+            "http://192.168.0.1",
             "Simulator",
             None
         )
@@ -76,12 +75,12 @@ class TestObjectStore(cloudstackTestCase):
             "Check Provider of the created Object Store"
         )
         self.assertEqual(
-            "testOS-6",
+            "testOS-10",
             object_store_response.name,
             "Check Name of the created Object Store"
         )
         self.assertEqual(
-            "http://localhost",
+            "http://192.168.0.1",
             object_store_response.url,
             "Check URL of the created Object Store"
         )
