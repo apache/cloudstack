@@ -1812,7 +1812,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, caller)) {
+        if (! isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
@@ -1832,9 +1832,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    private boolean isDeleteNeeded(AccountVO account, Account caller) {
+    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
-            s_logger.info("The account:" + account.getAccountName() + " doesn't exist");
+            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
         }
         if (account.getRemoved() != null) {
