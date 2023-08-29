@@ -27,4 +27,5 @@ public class NsxAnswer extends Answer {
     public NsxAnswer(final Command command, final Exception e) {
         super(command, e);
     }
+
 }

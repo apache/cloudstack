@@ -16,26 +16,30 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.VpcProvider;
@@ -50,21 +54,24 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
@@ -80,6 +87,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     AgentManager agentManager;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    PhysicalNetworkDao physicalNetworkDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -229,34 +238,48 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        DataCenterVO zone = dataCenterDao.findById(vpc.getZoneId());
-        if (Network.Provider.Nsx.getName().equalsIgnoreCase(zone.getDhcpProvider())) {
-            if (Objects.isNull(zone)) {
-                throw new InvalidParameterValueException(String.format("Failed to find zone with id %s", vpc.getZoneId()));
-            }
-            Account account = accountMgr.getAccount(vpc.getAccountId());
-            if (Objects.isNull(account)) {
-                throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
-            }
-            return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
+        Pair<Boolean, Account> isNsxAndAccount = validateVpcConfigurationAndGetAccount(zone, vpc);
+        if (!isNsxAndAccount.first()) {
+            return true;
         }
-        return true;
+        if (isNsxAndAccount.first() && Objects.isNull(isNsxAndAccount.second())) {
+            throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
+        }
+        Account account = isNsxAndAccount.second();
+        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
     }
 
     @Override
     public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException {
-        DataCenterVO zone = dataCenterDao.findById(vpc.getZoneId());
-        if (Network.Provider.Nsx.getName().equalsIgnoreCase(zone.getDhcpProvider())) {
-            if (Objects.isNull(zone)) {
-                throw new InvalidParameterValueException(String.format("Failed to find zone with id %s", vpc.getZoneId()));
-            }
-            Account account = accountMgr.getAccount(vpc.getAccountId());
-            if (Objects.isNull(account)) {
-                throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
-            }
-            return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
+        Pair<Boolean, Account> isNsxAndAccount = validateVpcConfigurationAndGetAccount(zone, vpc);
+        if (!isNsxAndAccount.first()) {
+            return true;
         }
-        return true;
+        if (isNsxAndAccount.first() && Objects.isNull(isNsxAndAccount.second())) {
+            throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
+        }
+        Account account = isNsxAndAccount.second();
+
+        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+    }
+
+    private Pair<Boolean, Account> validateVpcConfigurationAndGetAccount(DataCenterVO zone, Vpc vpc) {
+        if (Objects.isNull(zone)) {
+            throw new InvalidParameterValueException(String.format("Failed to find zone with id %s", vpc.getZoneId()));
+        }
+        Account account = null;
+        boolean forNsx = false;
+        List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZoneAndTrafficType(zone.getId(), Networks.TrafficType.Guest);
+        if (CollectionUtils.isNullOrEmpty(physicalNetworks) || physicalNetworks.size() > 1 ) {
+            throw new InvalidConfigurationException(String.format("Desired number of physical networks is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name()));
+        }
+        if (physicalNetworks.get(0).getIsolationMethods().contains(Network.Provider.Nsx.getName())) {
+            account = accountMgr.getAccount(vpc.getAccountId());
+            forNsx = true;
+        }
+        return new Pair<>(forNsx, account);
     }
 
     @Override
@@ -333,4 +356,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean processTimeout(long agentId, long seq) {
         return false;
     }
+
+    private final Function<Long, DataCenterVO> zoneFunction = zoneId -> { return dataCenterDao.findById(zoneId); };
 }
