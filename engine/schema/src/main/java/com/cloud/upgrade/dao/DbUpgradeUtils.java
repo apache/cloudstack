@@ -21,10 +21,14 @@ import java.util.List;
 
 public class DbUpgradeUtils {
 
-    private static DatabaseAccessObject dao = new DatabaseAccessObject();
+    private static final DatabaseAccessObject dao = new DatabaseAccessObject();
 
-    public static void addIndex(Connection conn, String tableName, String columnName) {
-        dao.addIndexIfNeeded(conn, tableName, columnName);
+    public static void addIndexIfNeeded(Connection conn, String tableName, String columnName) {
+        String indexName = dao.generateIndexName(tableName, columnName);
+
+        if (!dao.indexExists(conn, tableName, indexName)) {
+            dao.createIndex(conn, tableName, columnName, indexName);
+        }
     }
 
     public static void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {

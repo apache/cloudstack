@@ -245,6 +245,6 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     private void addIndexes(Connection conn) {
-        DbUpgradeUtils.addIndex(conn, "cluster_details", "name");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "cluster_details", "name");
     }
 }

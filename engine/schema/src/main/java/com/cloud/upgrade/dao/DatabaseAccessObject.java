@@ -85,28 +85,30 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
-    public void addIndexIfNeeded(Connection conn, String tableName, String columnName) {
-        boolean indexExists = false;
-        String indexName = String.format("i_%s__%s", tableName, columnName);
+    public String generateIndexName(String tableName, String columnName) {
+        return String.format("i_%s__%s", tableName, columnName);
+    }
 
+    public boolean indexExists(Connection conn, String tableName, String indexName) {
         try (PreparedStatement pstmt = conn.prepareStatement(String.format("SHOW INDEXES FROM %s where Key_name = \"%s\"", tableName, indexName))) {
             ResultSet result = pstmt.executeQuery();
             if (result.next()) {
-                indexExists = true;
+                return true;
             }
         } catch (SQLException e) {
             s_logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName, e.getMessage()));
         }
+        return false;
+    }
 
-        if (indexExists) {
-            s_logger.debug(String.format("Index %s already exists", indexName));
-        } else {
-            try (PreparedStatement pstmt = conn.prepareStatement(String.format("CREATE INDEX %s on %s (%s)", indexName, tableName, columnName))) {
-                pstmt.execute();
-                s_logger.debug(String.format("Created index %s", indexName));
-            } catch (SQLException e) {
-                s_logger.warn(String.format("Unable to create index %s", indexName), e);
-            }
+    public void createIndex(Connection conn, String tableName, String columnName, String indexName) {
+        String stmt = String.format("CREATE INDEX %s on %s (%s)", indexName, tableName, columnName);
+        s_logger.debug("Statement: " + stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            s_logger.debug(String.format("Created index %s", indexName));
+        } catch (SQLException e) {
+            s_logger.warn(String.format("Unable to create index %s", indexName), e);
         }
     }
 
