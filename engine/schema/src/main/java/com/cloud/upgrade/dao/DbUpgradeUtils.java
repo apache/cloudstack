@@ -23,6 +23,10 @@ public class DbUpgradeUtils {
 
     private static DatabaseAccessObject dao = new DatabaseAccessObject();
 
+    public static void addIndex(Connection conn, String tableName, String columnName) {
+        dao.addIndexIfNeeded(conn, tableName, columnName);
+    }
+
     public static void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
         dao.addForeignKey(conn, tableName, tableColumn, foreignTableName, foreignColumnName);
     }

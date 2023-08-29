@@ -18,6 +18,7 @@ package com.cloud.upgrade.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
@@ -84,6 +85,31 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
+    public void addIndexIfNeeded(Connection conn, String tableName, String columnName) {
+        boolean indexExists = false;
+        String indexName = String.format("i_%s__%s", tableName, columnName);
+
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("SHOW INDEXES FROM %s where Key_name = \"%s\"", tableName, indexName))) {
+            ResultSet result = pstmt.executeQuery();
+            if (result.next()) {
+                indexExists = true;
+            }
+        } catch (SQLException e) {
+            s_logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName, e.getMessage()));
+        }
+
+        if (indexExists) {
+            s_logger.debug(String.format("Index %s already exists", indexName));
+        } else {
+            try (PreparedStatement pstmt = conn.prepareStatement(String.format("CREATE INDEX %s on %s (%s)", indexName, tableName, columnName))) {
+                pstmt.execute();
+                s_logger.debug(String.format("Created index %s", indexName));
+            } catch (SQLException e) {
+                s_logger.warn(String.format("Unable to create index %s", indexName), e);
+            }
+        }
+    }
+
     protected static void closePreparedStatement(PreparedStatement pstmt, String errorMessage) {
         try {
             if (pstmt != null) {
@@ -93,5 +119,4 @@ public class DatabaseAccessObject {
             s_logger.warn(errorMessage, e);
         }
     }
-
 }
