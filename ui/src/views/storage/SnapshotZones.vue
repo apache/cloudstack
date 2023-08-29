@@ -293,7 +293,7 @@ export default {
       const params = {}
       params.id = this.resource.id
       params.showunique = false
-      params.snapshot = true
+      params.locationtype = 'Secondary'
       params.listall = true
       params.page = this.page
       params.pagesize = this.pageSize

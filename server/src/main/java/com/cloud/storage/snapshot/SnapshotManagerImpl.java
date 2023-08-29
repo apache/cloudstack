@@ -1669,7 +1669,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(dstSnapshotStore.getDownloadState()) ||
                 !List.of(ObjectInDataStoreStateMachine.State.Creating,
                         ObjectInDataStoreStateMachine.State.Copying).contains(dstSnapshotStore.getState())) {
-            _snapshotStoreDao.removeBySnapshotStore(DataStoreRole.Image, snapshot.getId(), dstSecStore.getId());
+            _snapshotStoreDao.removeBySnapshotStore(snapshot.getId(), dstSecStore.getId(), DataStoreRole.Image);
         }
         return false;
     }

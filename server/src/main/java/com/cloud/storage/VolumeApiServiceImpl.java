@@ -3612,7 +3612,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (CollectionUtils.isNotEmpty(zoneIds)) {
-            if (policyId != null) {
+            if (policyId != null && policyId > 0) {
                 throw new InvalidParameterValueException(String.format("%s parameter can not be specified with %s parameter", ApiConstants.ZONE_ID_LIST, ApiConstants.POLICY_ID));
             }
             if (Snapshot.LocationType.PRIMARY.equals(locationType)) {

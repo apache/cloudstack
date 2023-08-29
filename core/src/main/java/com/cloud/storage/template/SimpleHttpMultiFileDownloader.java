@@ -145,7 +145,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                 if (client.executeMethod(headMethod) != HttpStatus.SC_OK) {
                     continue;
                 }
-                Header contentLengthHeader = request.getResponseHeader("content-length");
+                Header contentLengthHeader = headMethod.getResponseHeader("content-length");
                 if (contentLengthHeader == null) {
                     continue;
                 }

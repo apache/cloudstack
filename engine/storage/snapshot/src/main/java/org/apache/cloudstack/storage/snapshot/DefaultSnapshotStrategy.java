@@ -340,6 +340,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         boolean result = false;
         for (var snapshotInfo : snapshotInfos) {
             if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(snapshotInfo, snapshotVo), false)) {
+                snapshotStoreDao.markDestroyedBySnapshotStore(snapshotInfo.getId(), snapshotInfo.getDataStore().getId(), snapshotInfo.getDataStore().getRole());
                 result = true;
             }
         }
@@ -354,34 +355,30 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo) {
         DataStore dataStore = snapshotInfo.getDataStore();
         String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", dataStore.getRole().name(), dataStore.getUuid(), dataStore.getName());
-
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
-            snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
-
+            if (DataStoreRole.Primary.equals(dataStore.getRole())) {
+                snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
+            }
             if (!DataStoreRole.Primary.equals(dataStore.getRole())) {
-
                 verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
-
                 if (deleteSnapshotChain(snapshotInfo, storageToString)) {
                     s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
                 } else {
                     s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
                 }
-
-                snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 return true;
             } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject)) {
                 return true;
             }
-
             s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
-            snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+            if (DataStoreRole.Primary.equals(dataStore.getRole())) {
+                snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+            }
         } catch (NoTransitionException ex) {
             s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
-
         return false;
     }
 

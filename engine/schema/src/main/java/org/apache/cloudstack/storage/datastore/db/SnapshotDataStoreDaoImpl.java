@@ -212,12 +212,26 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public void removeBySnapshotStore(DataStoreRole role, long storeId, long snapshotId) {
+    public void removeBySnapshotStore(long snapshotId, long storeId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
         sc.setParameters(STORE_ID, storeId);
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, role);
         remove(sc);
+    }
+
+    @Override
+    public void markDestroyedBySnapshotStore(long snapshotId, long storeId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
+        SnapshotDataStoreVO ref = findOneBy(sc);
+        if (ref == null) {
+            return;
+        }
+        ref.setState(State.Destroyed);
+        update(ref.getId(), ref);
     }
 
     @Override
