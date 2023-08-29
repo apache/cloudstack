@@ -44,8 +44,6 @@ public class NsxControllerUtils {
             s_logger.error("No NSX controller was found!");
             throw new InvalidParameterValueException("Failed to find an NSX controller");
         }
-
-        //Answer answer = agentMgr.sendTo(zoneId, Hypervisor.HypervisorType.VMware, cmd);
         Answer answer = agentMgr.easySend(nsxProviderVO.getHostId(), cmd);
 
         if (answer == null || !answer.getResult()) {
