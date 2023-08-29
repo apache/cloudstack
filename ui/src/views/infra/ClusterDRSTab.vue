@@ -24,24 +24,24 @@
   </a-row>
   <br/>
   <a-row>
-    <a-col span="4">
+    <a-col>
       <a-input-number
           v-model:value="maxMigrations"
           :addonBefore="$t('label.max.migrations')"
           :min="1"
           :step="1"
         />
-      </a-col>
-      <a-col span="3">
-        <a-button
-          type="primary"
-          @click="generateDrsPlan"
-          :loading="loading"
-          :disabled="!('generateClusterDrsPlan' in $store.getters.apis)"
-          style="margin-left: 16px">
-          {{ $t('label.drs.generate.plan') }}
-        </a-button>
-      </a-col>
+        &nbsp;&nbsp;
+    </a-col>
+    <a-col>
+      <a-button
+        type="primary"
+        @click="generateDrsPlan"
+        :loading="loading"
+        :disabled="!('generateClusterDrsPlan' in $store.getters.apis)">
+        {{ $t('label.drs.generate.plan') }}
+      </a-button>
+    </a-col>
   </a-row>
   <br/>
   <a-table
@@ -273,10 +273,16 @@ export default {
       this.loading = true
       api('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
         this.algorithm = reactive(json.listconfigurationsresponse.configuration[0].value)
-        api('listConfigurations', { clusterid: this.resource.id, name: 'drs.vm.migrations' }).then(json => {
+        api('listConfigurations', { clusterid: this.resource.id, name: 'drs.max.migrations' }).then(json => {
           this.maxMigrations = reactive(json.listconfigurationsresponse.configuration[0].value)
           this.loading = false
+        }).catch((err) => {
+          console.error(err)
+          this.loading = false
         })
+      }).catch((err) => {
+        console.error(err)
+        this.loading = false
       })
     },
     closeModal () {

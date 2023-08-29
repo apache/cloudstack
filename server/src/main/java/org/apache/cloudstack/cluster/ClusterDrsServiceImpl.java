@@ -291,7 +291,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 if (clusterLock.lock(30)) {
                     try {
                         List<Ternary<VirtualMachine, Host, Host>> plan = getDrsPlan(cluster,
-                                ClusterDrsVmMigrations.valueIn(cluster.getId()));
+                                ClusterDrsMaxMigrations.valueIn(cluster.getId()));
                         savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED,
                                 ClusterDrsPlan.Status.READY);
                         logger.info(String.format("Generated DRS plan for cluster %s [id=%s]", cluster.getName(),
@@ -628,7 +628,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{ClusterDrsPlanExpireInterval, ClusterDrsEnabled, ClusterDrsInterval,
-                ClusterDrsVmMigrations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
+                ClusterDrsMaxMigrations, ClusterDrsAlgorithm, ClusterDrsImbalanceThreshold, ClusterDrsMetric};
     }
 
     @Override
@@ -644,13 +644,13 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
      * Generates a DRS plan for the given cluster and returns a list of migration responses.
      *
      * @param cmd
-     *         the command containing the cluster ID and number of iterations for the DRS plan
+     *         the command containing the cluster ID and number of migrations for the DRS plan
      *
      * @return a list response of migration responses for the generated DRS plan
      *
      * @throws InvalidParameterValueException
      *         if the cluster is not found, is disabled, or is not a cloud stack managed cluster, or if the number of
-     *         iterations is invalid
+     *         migrations is invalid
      * @throws CloudRuntimeException
      *         if there is an error scheduling the DRS plan
      */
@@ -666,7 +666,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
         if (cmd.getMaxMigrations() <= 0) {
             throw new InvalidParameterValueException(
-                    String.format("Unable to execute DRS on the cluster %s as the number of iterations [%s] is invalid",
+                    String.format("Unable to execute DRS on the cluster %s as the number of migrations [%s] is invalid",
                             cluster.getName(), cmd.getMaxMigrations()));
         }
 

@@ -45,9 +45,9 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             "The interval in minutes after which a periodic background thread will schedule DRS for a cluster.", true,
             ConfigKey.Scope.Cluster, null, "Interval for Automatic DRS ", null, null, null);
 
-    ConfigKey<Integer> ClusterDrsVmMigrations = new ConfigKey<>(Integer.class, "drs.vm.migrations",
+    ConfigKey<Integer> ClusterDrsMaxMigrations = new ConfigKey<>(Integer.class, "drs.max.migrations",
             ConfigKey.CATEGORY_ADVANCED, "50",
-            "Maximum number of VMs to migrate for a DRS execution.",
+            "Maximum number of live migrations in a DRS execution.",
             true, ConfigKey.Scope.Cluster, null, "Maximum number of migrations for DRS", null, null, null);
 
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm",
@@ -58,20 +58,21 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
     ConfigKey<Float> ClusterDrsImbalanceThreshold = new ConfigKey<>(Float.class, "drs.imbalance",
             ConfigKey.CATEGORY_ADVANCED, "0.4",
             "Percentage (as a value between 0.0 and 1.0) of imbalance allowed in the cluster. 1.0 means no imbalance " +
-            "is allowed and 0.0 means imbalance is allowed",
+                    "is allowed and 0.0 means imbalance is allowed.",
             true, ConfigKey.Scope.Cluster, null, "DRS imbalance", null, null, null);
 
     ConfigKey<String> ClusterDrsMetric = new ConfigKey<>(String.class, "drs.metric", ConfigKey.CATEGORY_ADVANCED,
             "memory",
-            "The cluster imbalance metric to use when considering the imbalance in cluster. Possible values are " +
-            "memory, cpu.",
+            "The cluster imbalance metric to use when considering the imbalance in cluster. Possible values are memory, cpu.",
             true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
             "memory,cpu");
 
     /**
      * Generate a DRS plan for a cluster and save it as per the parameters
      *
-     * @param cmd the GenerateClusterDrsPlanCmd object containing the command parameters
+     * @param cmd
+     *         the GenerateClusterDrsPlanCmd object containing the command parameters
+     *
      * @return a ClusterDrsPlanResponse object containing information regarding the migrations
      */
     ClusterDrsPlanResponse generateDrsPlan(GenerateClusterDrsPlanCmd cmd);
@@ -79,22 +80,30 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
     /**
      * Executes a DRS plan for a cluster.
      *
-     * @param cmd the ExecuteClusterDrsPlanCmd object containing the ID of the cluster and the map of virtual
-     *            machines to hosts
+     * @param cmd
+     *         the ExecuteClusterDrsPlanCmd object containing the ID of the cluster and the map of virtual
+     *         machines to hosts
+     *
      * @return ClusterDrsPlanResponse response object
-     * @throws InvalidParameterValueException if there is already a plan in READY or IN_PROGRESS state for the
-     *                                        cluster or if the
-     *                                        cluster cannot be found by ID
+     *
+     * @throws InvalidParameterValueException
+     *         if there is already a plan in READY or IN_PROGRESS state for the
+     *         cluster or if the
+     *         cluster cannot be found by ID
      */
     ClusterDrsPlanResponse executeDrsPlan(ExecuteClusterDrsPlanCmd cmd);
 
     /**
      * Lists DRS plans for a cluster or a specific plan.
      *
-     * @param cmd the ListClusterDrsPlanCmd object containing the ID of the cluster or the ID of the plan
+     * @param cmd
+     *         the ListClusterDrsPlanCmd object containing the ID of the cluster or the ID of the plan
+     *
      * @return a ListResponse object containing a list of ClusterDrsPlanResponse objects and the total number of plans
-     * @throws InvalidParameterValueException if both clusterId and planId are specified or if the cluster cannot be
-     *                                        found by ID
+     *
+     * @throws InvalidParameterValueException
+     *         if both clusterId and planId are specified or if the cluster cannot be
+     *         found by ID
      */
     ListResponse<ClusterDrsPlanResponse> listDrsPlan(ListClusterDrsPlanCmd cmd);
 }

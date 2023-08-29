@@ -31,7 +31,7 @@ import org.apache.cloudstack.cluster.ClusterDrsService;
 
 import javax.inject.Inject;
 
-import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsVmMigrations;
+import static org.apache.cloudstack.cluster.ClusterDrsService.ClusterDrsMaxMigrations;
 
 @APICommand(name = "generateClusterDrsPlan", description = "Generate DRS plan for a cluster",
             responseObject = ClusterDrsPlanResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
@@ -51,7 +51,7 @@ public class GenerateClusterDrsPlanCmd extends BaseCmd {
 
     public Integer getMaxMigrations() {
         if (migrations == null) {
-            return ClusterDrsVmMigrations.valueIn(getId());
+            return ClusterDrsMaxMigrations.valueIn(getId());
         }
         return migrations;
     }
