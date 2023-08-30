@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.acl.RoleType;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
@@ -57,8 +58,10 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "Map of (key/value pairs)")
     private Map details;
 
+    @Parameter(name="forDisplay", type=CommandType.BOOLEAN, description="whether this guest OS is available for end users", authorized = {RoleType.Admin})
+    private Boolean display;
 
-/////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
@@ -71,7 +74,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     }
 
     public Map getDetails() {
-        Map<String, String> detailsMap = new HashMap<String, String>();;
+        Map<String, String> detailsMap = new HashMap<>();;
         if (MapUtils.isNotEmpty(detailsMap)) {
             Collection<?> servicesCollection = details.values();
             Iterator<?> iter = servicesCollection.iterator();
@@ -83,6 +86,10 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
             }
         }
         return detailsMap;
+    }
+
+    public Boolean getForDisplay() {
+        return display;
     }
 
     /////////////////////////////////////////////////////
