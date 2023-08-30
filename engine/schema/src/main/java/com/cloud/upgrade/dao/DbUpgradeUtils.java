@@ -21,7 +21,7 @@ import java.util.List;
 
 public class DbUpgradeUtils {
 
-    private static final DatabaseAccessObject dao = new DatabaseAccessObject();
+    private static DatabaseAccessObject dao = new DatabaseAccessObject();
 
     public static void addIndexIfNeeded(Connection conn, String tableName, String columnName) {
         String indexName = dao.generateIndexName(tableName, columnName);
