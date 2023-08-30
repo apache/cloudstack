@@ -1134,23 +1134,23 @@ public class TransactionLegacy implements Closeable {
         }
     }
 
-    private static String getConnectionUri(Properties dbProps, String loadBalanceStrategy, String driver, boolean useSSL, String schema) {
+    private static String getConnectionUri(Properties dbProps, String loadBalanceStrategy, String driver, boolean useSSL, String databaseName) {
         String connectionUri;
-        String uri = dbProps.getProperty(String.format("db.%s.uri", schema));
+        String uri = dbProps.getProperty(String.format("db.%s.uri", databaseName));
 
         if (StringUtils.isEmpty(uri)) {
-            String host = dbProps.getProperty(String.format("db.%s.host", schema));
-            int port = Integer.parseInt(dbProps.getProperty(String.format("db.%s.port", schema)));
-            String dbName = dbProps.getProperty(String.format("db.%s.name", schema));
-            boolean autoReconnect = Boolean.parseBoolean(dbProps.getProperty(String.format("db.%s.autoReconnect", schema)));
-            String url = dbProps.getProperty(String.format("db.%s.url.params", schema));
+            String host = dbProps.getProperty(String.format("db.%s.host", databaseName));
+            int port = Integer.parseInt(dbProps.getProperty(String.format("db.%s.port", databaseName)));
+            String dbName = dbProps.getProperty(String.format("db.%s.name", databaseName));
+            boolean autoReconnect = Boolean.parseBoolean(dbProps.getProperty(String.format("db.%s.autoReconnect", databaseName)));
+            String url = dbProps.getProperty(String.format("db.%s.url.params", databaseName));
 
             String replicas = null;
             String dbHaParams = null;
             if (s_dbHAEnabled) {
-                dbHaParams = getDBHAParams(schema, dbProps);
-                replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
-                s_logger.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
+                dbHaParams = getDBHAParams(databaseName, dbProps);
+                replicas = dbProps.getProperty(String.format("db.%s.replicas", databaseName));
+                s_logger.info(String.format("The replicas configured for %s data base are %s.", databaseName, replicas));
             }
 
             connectionUri = driver + "://" + host + (s_dbHAEnabled ? "," + replicas : "") + ":" + port + "/" + dbName +
@@ -1158,10 +1158,10 @@ public class TransactionLegacy implements Closeable {
                     (s_dbHAEnabled ? "&" + dbHaParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
         } else {
             s_logger.warn(String.format("db.%s.uri was set, only using the following properties of db.properties: [maxActive, maxIdle, maxWait, username, password, driver, "
-                    + "validationQuery, isolation.level].", schema));
+                    + "validationQuery, isolation.level].", databaseName));
             connectionUri = uri;
         }
-        s_logger.info(String.format("Using the following URl to connect to %s database [%s].", schema, connectionUri));
+        s_logger.info(String.format("Using the following URl to connect to %s database [%s].", databaseName, connectionUri));
         return connectionUri;
     }
 
