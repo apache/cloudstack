@@ -151,6 +151,19 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
         String pathPrefix = String.format("template/tmpl/%s/%s", accountId, templateId);
         String relativePath = removeMountPointFromDiskPath(installPath, pathPrefix);
 
+        String fileContent = createTemplatePropertiesFileContent(templateId, templateUniqueName, templateDescription,
+                relativePath, physicalSize, virtualSize);
+
+        try(FileOutputStream templFo = new FileOutputStream(templateProp)){
+            templFo.write(fileContent.getBytes());
+            templFo.flush();
+        } catch (final IOException e) {
+            String err = String.format("Cannot create template.properties file for template %s", templateId);
+            s_logger.error(err, e);
+        }
+    }
+
+    private String createTemplatePropertiesFileContent(long templateId, String templateUniqueName, String templateDescription, String relativePath, long physicalSize, long virtualSize) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(String.format("%s=%s%s", "uniquename", templateUniqueName, System.getProperty("line.separator")));
         stringBuilder.append(String.format("%s=%s%s", "id", templateId, System.getProperty("line.separator")));
@@ -162,15 +175,7 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
         stringBuilder.append(String.format("%s=%s%s", "virtualsize", virtualSize, System.getProperty("line.separator")));
         stringBuilder.append(String.format("%s=%s%s", "qcow2.virtualsize", virtualSize, System.getProperty("line.separator")));
         stringBuilder.append(String.format("%s=%s%s", "qcow2", "true", System.getProperty("line.separator")));
-        String fileContent = stringBuilder.toString();
-
-        try(FileOutputStream templFo = new FileOutputStream(templateProp)){
-            templFo.write(fileContent.getBytes());
-            templFo.flush();
-        } catch (final IOException e) {
-            String err = String.format("Cannot create template.properties file for template %s", templateId);
-            s_logger.error(err, e);
-        }
+        return stringBuilder.toString();
     }
 
     /**

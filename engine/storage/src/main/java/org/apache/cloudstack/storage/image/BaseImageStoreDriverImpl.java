@@ -148,6 +148,11 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     HypervisorGuruManager hypervisorGuruManager;
 
+    private static final List<String> templateFromVmwareToKVMDetails = Arrays.asList(VmDetailConstants.VMWARE_VCENTER_HOST,
+            VmDetailConstants.VMWARE_DATACENTER_NAME, VmDetailConstants.VMWARE_VCENTER_USERNAME,
+            VmDetailConstants.VMWARE_VCENTER_PASSWORD, VmDetailConstants.VMWARE_HOST_NAME,
+            VmDetailConstants.VMWARE_VM_NAME);
+
     protected String _proxy = null;
 
     protected Proxy getHttpProxy() {
@@ -235,7 +240,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
-            } else if (template.isMigratedFromVmwareVM() && answer != null && answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            } else if (template.isMigratedFromVmwareVMToKVM() && answer != null && answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                 OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
                 if (ovfInformationTO != null) {
                     List<DatadiskTO> disks = ovfInformationTO.getDisks();
@@ -247,7 +252,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 if (CollectionUtils.isNotEmpty(details)) {
                     Map<String, String> params = createRemoveDetails(details);
                     HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
-                    vmwareGuru.removeHypervisorVMOutOfBand(params.get(VmDetailConstants.VMWARE_HOST), params.get(VmDetailConstants.VMWARE_VM_NAME), params);
+                    vmwareGuru.removeHypervisorVMOutOfBand(params.get(VmDetailConstants.VMWARE_HOST_NAME), params.get(VmDetailConstants.VMWARE_VM_NAME), params);
                 }
             }
             LOGGER.info("Updating store ref entry for template " + template.getName());
@@ -294,11 +299,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private Map<String, String> createRemoveDetails(List<VMTemplateDetailVO> details) {
         Map<String, String> params = new HashMap<>();
-        List<String> keys = Arrays.asList(VmDetailConstants.VMWARE_VCENTER, VmDetailConstants.VMWARE_DATACENTER,
-                VmDetailConstants.VMWARE_VCENTER_USERNAME, VmDetailConstants.VMWARE_VCENTER_PASSWORD,
-                VmDetailConstants.VMWARE_HOST, VmDetailConstants.VMWARE_VM_NAME);
         for (VMTemplateDetailVO detail : details) {
-            if (keys.contains(detail.getName())) {
+            if (templateFromVmwareToKVMDetails.contains(detail.getName())) {
                 params.put(detail.getName(), detail.getValue());
             }
         }

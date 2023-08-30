@@ -414,11 +414,11 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public boolean isMigratedFromVmwareVM() {
+    public boolean isMigratedFromVmwareVMToKVM() {
         if (this.imageVO == null) {
             return false;
         }
-        return this.imageVO.isMigratedFromVmwareVM();
+        return this.imageVO.isMigratedFromVmwareVMToKVM();
     }
 
     public void setInstallPath(String installPath) {

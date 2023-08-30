@@ -651,7 +651,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public boolean isMigratedFromVmwareVM() {
+    public boolean isMigratedFromVmwareVMToKVM() {
         return hypervisorType == HypervisorType.KVM && StringUtils.isNotBlank(url) && url.startsWith("vpx://");
     }
 

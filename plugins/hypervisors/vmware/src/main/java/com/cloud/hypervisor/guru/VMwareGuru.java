@@ -1270,8 +1270,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
         s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
-        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER);
-        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER);
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
 
@@ -1298,14 +1298,20 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     public boolean removeHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
         s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
-        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER);
-        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER);
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
             DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
             VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
+            if (vmMo == null) {
+                String err = String.format("Cannot find VM %s on datacenter %s, not possible to remove VM out of band",
+                        vmName, datacenter);
+                s_logger.error(err);
+                return false;
+            }
             return vmMo.destroy();
         } catch (Exception e) {
             String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());

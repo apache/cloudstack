@@ -329,12 +329,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         }
     }
 
-    protected void validateParameters() {
-        if (StringUtils.isBlank(url)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    String.format("Missing parameter: %s", ApiConstants.URL));
-        }
-
+    protected void baseParametersValidation() {
         if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Both zoneid and zoneids cannot be specified at the same time");
@@ -357,5 +352,13 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         if (!isDeployAsIs() && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
+    }
+
+    protected void validateParameters() {
+        if (StringUtils.isBlank(url)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    String.format("Missing parameter: %s", ApiConstants.URL));
+        }
+        baseParametersValidation();
     }
 }

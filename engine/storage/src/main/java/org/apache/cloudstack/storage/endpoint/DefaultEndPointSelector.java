@@ -86,7 +86,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
 
     private String findOneHypervisorHostInScopeByHypervisorType = "select h.id from " +
-            "host h where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and h.hypervisor_type = ? ";
+            "host h where h.status = 'Up' and h.type = 'Routing' and h.hypervisor_type = ? ";
     private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
@@ -188,8 +188,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @DB
     protected EndPoint findEndPointInScope(Scope scope, String sqlBase, Long poolId, String hypervisor, boolean volumeEncryptionSupportRequired) {
-        StringBuilder sbuilder = new StringBuilder();
-        sbuilder.append(sqlBase);
+        StringBuilder sbuilder = new StringBuilder(sqlBase);
 
         List<Long> dedicatedHosts = getDedicatedHostsAndAppendStringFromPoolScope(scope, sbuilder);
 
@@ -423,7 +422,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private EndPoint selectInternal(DataObject object, StorageAction action) {
         DataStore store = object.getDataStore();
         if (action == StorageAction.DELETETEMPLATE && object instanceof TemplateInfo &&
-                ((TemplateInfo) object).isMigratedFromVmwareVM()) {
+                ((TemplateInfo) object).isMigratedFromVmwareVMToKVM()) {
             return findEndpointForVmwareVmMigration(object);
         }
         EndPoint ep = select(store);

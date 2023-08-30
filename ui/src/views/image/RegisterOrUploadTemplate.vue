@@ -1087,7 +1087,7 @@ export default {
           }
           params.hostip = this.stoppedVM.host
           params.virtualmachinename = this.stoppedVM.vmname
-          api('registerTemplateFromVmware', params).then(json => {
+          api('registerTemplateFromVmwareVm', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }

@@ -185,7 +185,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('registerTemplateFromVmware')
+    this.apiParams = this.$getApiParams('registerTemplateFromVmwareVm')
   },
   created () {
     this.initForm()

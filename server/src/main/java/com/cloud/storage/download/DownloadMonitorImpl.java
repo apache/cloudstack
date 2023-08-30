@@ -156,12 +156,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     }
 
     protected void sendMigrateVmwareVmCommandToKvmHost(DataObject template, DataStore imageStore, AsyncCompletionCallback<DownloadAnswer> callback) {
-        String vcenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER);
-        String datacenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_DATACENTER);
-        String cluster = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_CLUSTER);
+        String vcenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_DATACENTER_NAME);
+        String cluster = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_CLUSTER_NAME);
         String username = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VCENTER_PASSWORD);
-        String hostName = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_HOST);
+        String hostName = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_HOST_NAME);
         String vmName = getValueFromTemplateDetail(template.getId(), VmDetailConstants.VMWARE_VM_NAME);
 
         // Migrate the clone of the stopped VM

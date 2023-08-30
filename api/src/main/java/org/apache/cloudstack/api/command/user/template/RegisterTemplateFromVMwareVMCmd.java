@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
-@APICommand(name = "registerTemplateFromVmware",
+@APICommand(name = "registerTemplateFromVmwareVm",
         description = "Registers a template from a stopped VM in an existing VMware vCenter.",
         responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -43,17 +43,20 @@ public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
+            required = true,
             description = "VMware ESXi host IP/Name.")
     private String host;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_NAME,
             type = BaseCmd.CommandType.STRING,
+            required = true,
             description = "VMware VM Name.")
     private String vmName;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
+            required = true,
             description = "KVM zone where the end result template is registered")
     private Long zoneId;
 
@@ -73,6 +76,7 @@ public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
+            required = true,
             description = "Name of VMware cluster.")
     private String clusterName;
 
@@ -130,6 +134,7 @@ public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
+        super.baseParametersValidation();
     }
 
     @Override

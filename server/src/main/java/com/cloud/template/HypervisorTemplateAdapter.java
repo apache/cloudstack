@@ -227,8 +227,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                                                               Map<String, String> params, HypervisorOutOfBandVMClone clone) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
 
-        String url = String.format("vpx://%s/%s/%s?no_verify=1 %s", params.get(VmDetailConstants.VMWARE_VCENTER),
-                params.get(VmDetailConstants.VMWARE_DATACENTER), params.get(VmDetailConstants.VMWARE_HOST),
+        String url = String.format("vpx://%s/%s/%s?no_verify=1 %s", params.get(VmDetailConstants.VMWARE_VCENTER_HOST),
+                params.get(VmDetailConstants.VMWARE_DATACENTER_NAME), params.get(VmDetailConstants.VMWARE_HOST_NAME),
                 params.get(VmDetailConstants.VMWARE_VM_NAME));
         profile.setUrl(url);
 

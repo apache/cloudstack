@@ -899,7 +899,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            if (template.isDeployAsIs() || template.isMigratedFromVmwareVM()) {
+            if (template.isDeployAsIs() || template.isMigratedFromVmwareVMToKVM()) {
                 // Volume size specified from template deploy-as-is and VMware-migrated VMs
                 size = rootDisksize;
             } else {
@@ -1003,7 +1003,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 volumesNumber = templateAsIsDisks.size();
                 deployVmAsIs = true;
             }
-        } else if (template.isMigratedFromVmwareVM()) {
+        } else if (template.isMigratedFromVmwareVMToKVM()) {
             templateAsIsDisks = getMigratedVmToTemplateDisks(template, rootDisksize);
             volumesNumber = templateAsIsDisks.size();
             migratedFromVmwareVm = true;

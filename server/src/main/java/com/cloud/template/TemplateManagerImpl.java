@@ -418,7 +418,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(Long existingVcenterId,
-                                                                               String vcenter, String datacenterName,
+                                                                               String vcenterHost, String datacenterName,
                                                                                String username, String password,
                                                                                String clusterName, String sourceHostName,
                                                                                String sourceVMName) {
@@ -432,12 +432,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new CloudRuntimeException(err);
             }
         }
-        params.put(VmDetailConstants.VMWARE_VCENTER, existingDC != null ? existingDC.getVcenterHost() : vcenter);
-        params.put(VmDetailConstants.VMWARE_DATACENTER, existingDC != null ? existingDC.getVmwareDatacenterName() : datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, existingDC != null ? existingDC.getVcenterHost() : vcenterHost);
+        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, existingDC != null ? existingDC.getVmwareDatacenterName() : datacenterName);
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, existingDC != null ? existingDC.getUser() : username);
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, existingDC != null ? existingDC.getPassword() : password);
-        params.put(VmDetailConstants.VMWARE_CLUSTER, clusterName);
-        params.put(VmDetailConstants.VMWARE_HOST, sourceHostName);
+        params.put(VmDetailConstants.VMWARE_CLUSTER_NAME, clusterName);
+        params.put(VmDetailConstants.VMWARE_HOST_NAME, sourceHostName);
         params.put(VmDetailConstants.VMWARE_VM_NAME, sourceVMName);
         return params;
     }
