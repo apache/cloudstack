@@ -26,13 +26,18 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.GetRemoteVmsAnswer;
+import com.cloud.agent.api.GetRemoteVmsCommand;
+import com.cloud.dc.DataCenterVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NicResponse;
@@ -1238,6 +1243,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmdList.add(ListUnmanagedInstancesCmd.class);
         cmdList.add(ImportUnmanagedInstanceCmd.class);
         cmdList.add(UnmanageVMInstanceCmd.class);
+        cmdList.add(ListVmsForImportCmd.class);
+        cmdList.add(ImportVmCmd.class);
         return cmdList;
     }
 
@@ -1346,6 +1353,217 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         return answer.getResult();
     }
+
+    @Override
+    public UserVmResponse importVm(ImportVmCmd cmd) {
+        final Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() != Account.Type.ADMIN) {
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
+        }
+        final Long zoneId = cmd.getZoneId();
+        final DataCenterVO zone = dataCenterDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        final String hypervisorType = cmd.getHypervisor();
+        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
+            if (StringUtils.isBlank(cmd.getUsername())) {
+                throw new InvalidParameterValueException("Username need to be provided.");
+            }
+        } else {
+            throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor: %s", hypervisorType));
+        }
+        final String instanceName = cmd.getName();
+        if (StringUtils.isEmpty(instanceName)) {
+            throw new InvalidParameterValueException(String.format("Instance name cannot be empty"));
+        }
+        if (cmd.getDomainId() != null && StringUtils.isEmpty(cmd.getAccountName())) {
+            throw new InvalidParameterValueException("domainid parameter must be specified with account parameter");
+        }
+        final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
+        long userId = CallContext.current().getCallingUserId();
+        List<UserVO> userVOs = userDao.listByAccount(owner.getAccountId());
+        if (CollectionUtils.isNotEmpty(userVOs)) {
+            userId = userVOs.get(0).getId();
+        }
+        VMTemplateVO template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+        if (template == null) {
+            template = createDefaultDummyVmImportTemplate();
+            if (template == null) {
+                throw new InvalidParameterValueException("Error while creating default Import Vm Template");
+            }
+        }
+
+        final Long serviceOfferingId = cmd.getServiceOfferingId();
+        if (serviceOfferingId == null) {
+            throw new InvalidParameterValueException(String.format("Service offering ID cannot be null"));
+        }
+        final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException(String.format("Service offering ID: %d cannot be found", serviceOfferingId));
+        }
+        accountService.checkAccess(owner, serviceOffering, zone);
+        try {
+            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
+        } catch (ResourceAllocationException e) {
+            LOGGER.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
+        }
+        String displayName = cmd.getDisplayName();
+        if (StringUtils.isEmpty(displayName)) {
+            displayName = instanceName;
+        }
+        String hostName = cmd.getHostName();
+        if (StringUtils.isEmpty(hostName)) {
+            if (!NetUtils.verifyDomainNameLabel(instanceName, true)) {
+                throw new InvalidParameterValueException(String.format("Please provide hostname for the VM. VM name contains unsupported characters for it to be used as hostname"));
+            }
+            hostName = instanceName;
+        }
+        if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
+            throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
+        }
+
+        final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
+        final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
+        final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
+        final Map<String, String> details = cmd.getDetails();
+
+        UserVm userVm = importKvmVirtualMachineInternal(instanceName, zone,
+                template, displayName, hostName, caller, owner, userId,
+                serviceOffering, dataDiskOfferingMap,
+                nicNetworkMap, nicIpAddressMap,
+                details);;
+
+        if (userVm == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import Vm with name: %s ", instanceName));
+        }
+        return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
+
+    }
+
+    private UserVm importKvmVirtualMachineInternal(final String instanceName, final DataCenter zone,
+                                                final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
+                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
+                                                final Map<String, String> details) {
+        UserVm userVm = null;
+
+        Map<String, String> allDetails = new HashMap<>(details);
+        if (serviceOffering.isDynamic()) {
+            allDetails.put(VmDetailConstants.CPU_NUMBER, String.valueOf(serviceOffering.getCpu()));
+            allDetails.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
+            allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
+        }
+/*
+
+        try {
+            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
+                    null, caller, true, null, owner.getAccountId(), userId,
+                    validatedServiceOffering, null, hostName,
+                    cluster.getHypervisorType(), allDetails, powerState);
+        } catch (InsufficientCapacityException ice) {
+            LOGGER.error(String.format("Failed to import vm name: %s", instanceName), ice);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
+        }
+        if (userVm == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+        }
+        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+        try {
+            if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
+                throw new InvalidParameterValueException(String.format("Root disk ID: %s size is invalid", rootDisk.getDiskId()));
+            }
+            Long minIops = null;
+            if (details.containsKey("minIops")) {
+                minIops = Long.parseLong(details.get("minIops"));
+            }
+            Long maxIops = null;
+            if (details.containsKey("maxIops")) {
+                maxIops = Long.parseLong(details.get("maxIops"));
+            }
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
+                    (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
+                    template, owner, null));
+            long deviceId = 1L;
+            for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                if (disk.getCapacity() == null || disk.getCapacity() == 0) {
+                    throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
+                }
+                DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+                diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
+                        (disk.getCapacity() / Resource.ResourceType.bytesToGiB), offering.getMinIops(), offering.getMaxIops(),
+                        template, owner, deviceId));
+                deviceId++;
+            }
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
+            cleanupFailedImportVM(userVm);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+        }
+        try {
+            int nicIndex = 0;
+            for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
+                Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
+                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
+                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, forced);
+                nicIndex++;
+            }
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
+            cleanupFailedImportVM(userVm);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+        }
+        if (migrateAllowed) {
+            userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
+        }
+        publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering); */
+        return userVm;
+    }
+
+    public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
+        final Account caller = CallContext.current().getCallingAccount();
+        if (caller.getType() != Account.Type.ADMIN) {
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
+        }
+        final Long zoneId = cmd.getZoneId();
+        final DataCenterVO zone = dataCenterDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+        final String hypervisorType = cmd.getHypervisor();
+        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
+            if (StringUtils.isBlank(cmd.getUsername())) {
+                throw new InvalidParameterValueException("Username need to be provided.");
+            }
+        } else {
+            throw new InvalidParameterValueException(String.format("VM Import is currently not supported for hypervisor: %s", hypervisorType));
+        }
+
+        String keyword = cmd.getKeyword();
+        if (StringUtils.isNotEmpty(keyword)) {
+            keyword = keyword.toLowerCase();
+        }
+
+        List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+        if(hosts.size() < 1) {
+            throw new CloudRuntimeException("No hosts available for Vm Import");
+        }
+        HostVO host = hosts.get(0);
+        GetRemoteVmsCommand getRemoteVmsCommand = new GetRemoteVmsCommand(cmd.getUrl(), cmd.getUsername(), cmd.getPassword());
+        Answer answer = agentManager.easySend(host.getId(), getRemoteVmsCommand);
+        if (!(answer instanceof GetRemoteVmsAnswer)) {
+            throw new CloudRuntimeException("Error while listing remote Vms");
+        }
+        GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
+        List<UnmanagedInstanceResponse> responses = new ArrayList<>();
+        ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
+        listResponses.setResponses(responses, responses.size());
+        return listResponses;
+    }
+
 
     @Override
     public String getConfigComponentName() {

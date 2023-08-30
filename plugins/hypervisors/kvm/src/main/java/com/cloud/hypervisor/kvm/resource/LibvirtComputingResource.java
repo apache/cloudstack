@@ -5258,4 +5258,59 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
     }
+
+    public List<String> getStoppedVms(final Connect conn) {
+        final List<String> stoppedVms = new ArrayList<>();
+
+        String[] vms = null;
+        int[] ids = null;
+
+        try {
+            ids = conn.listDomains();
+        } catch (final LibvirtException e) {
+            s_logger.warn("Unable to listDomains", e);
+            return null;
+        }
+
+        Domain dm = null;
+        for (int i = 0; i < ids.length; i++) {
+            try {
+                dm = conn.domainLookupByID(ids[i]);
+
+                final DomainState ps = dm.getInfo().state;
+
+                final PowerState state = convertToPowerState(ps);
+
+                s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+                final String vmName = dm.getName();
+
+                if (state == PowerState.PowerOff) {
+                    stoppedVms.add(vmName);
+                    }
+            } catch (final LibvirtException e) {
+                s_logger.warn("Unable to get vms", e);
+            } finally {
+                try {
+                    if (dm != null) {
+                        dm.free();
+                    }
+                } catch (final LibvirtException e) {
+                    s_logger.trace("Ignoring libvirt error.", e);
+                }
+            }
+        }
+
+        return stoppedVms;
+    }
+
+    /*
+    Scp volume from remote host to local directory
+     */
+    public void copyVolume(String srcIp, String username, String password, String localDir, String remoteFile) {
+        try {
+            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, remoteFile);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

@@ -259,7 +259,9 @@ known_categories = {
     'listQuarantinedIp': 'IP Quarantine',
     'updateQuarantinedIp': 'IP Quarantine',
     'removeQuarantinedIp': 'IP Quarantine',
-    'Shutdown': 'Shutdown'
+    'Shutdown': 'Shutdown',
+    'listVmsForImport': 'Virtual Machine',
+    'importVm': 'Virtual Machine'
 }
 
 
