@@ -36,7 +36,6 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
@@ -171,9 +170,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
         ResourceType[] resourceTypes = Resource.ResourceType.values();
         for (ResourceType resourceType : resourceTypes) {
-            if (!resourceType.supportsOwner(ownerType)) {
-                continue;
-            }
             ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, ownerId, ownerType);
             persist(resourceCountVO);
         }
@@ -215,17 +211,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         } else {
             return new ArrayList<ResourceCountVO>();
         }
-    }
-
-    @Override
-    public ResourceCountVO persist(ResourceCountVO resourceCountVO) {
-        ResourceOwnerType ownerType = resourceCountVO.getResourceOwnerType();
-        ResourceType resourceType = resourceCountVO.getType();
-        if (!resourceType.supportsOwner(ownerType)) {
-            throw new UnsupportedServiceException("Resource type " + resourceType + " is not supported for owner of type " + ownerType.getName());
-        }
-
-        return super.persist(resourceCountVO);
     }
 
     @Override
