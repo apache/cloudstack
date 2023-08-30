@@ -124,7 +124,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
-            instance.setVncPasswd(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
+            instance.setVncPassword(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
 
             return instance;
         } catch (Exception e) {

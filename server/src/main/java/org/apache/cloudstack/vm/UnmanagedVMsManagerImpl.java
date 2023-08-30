@@ -975,8 +975,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
 
-        if (StringUtils.isNotEmpty(unmanagedInstance.getVncPasswd())) {
-            allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPasswd());
+        if (StringUtils.isNotEmpty(unmanagedInstance.getVncPassword())) {
+            allDetails.put(VmDetailConstants.KVM_VNC_PASSWORD, unmanagedInstance.getVncPassword());
         }
 
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;

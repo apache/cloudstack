@@ -48,7 +48,7 @@ public class UnmanagedInstanceTO {
     private List<Disk> disks;
 
     private List<Nic> nics;
-    private String vncPasswd;
+    private String vncPassword;
 
     public String getName() {
         return name;
@@ -137,9 +137,14 @@ public class UnmanagedInstanceTO {
     public void setNics(List<Nic> nics) {
         this.nics = nics;
     }
-    public String getVncPasswd(){ return vncPasswd; }
-    public void setVncPasswd(String vncPasswd) { this.vncPasswd = vncPasswd; }
 
+    public String getVncPassword() {
+        return vncPassword;
+    }
+
+    public void setVncPassword(String vncPassword) {
+        this.vncPassword = vncPassword;
+    }
 
 
     public static class Disk {
