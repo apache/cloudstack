@@ -16,22 +16,14 @@
 // under the License.
 package com.cloud.servlet;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import com.cloud.utils.crypt.AeadBase64Encryptor;
+import com.cloud.utils.crypt.Base64Encryptor;
 
 // To maintain independency of console proxy project, we duplicate this class from console proxy project
 public class ConsoleProxyPasswordBasedEncryptor {
@@ -51,65 +43,16 @@ public class ConsoleProxyPasswordBasedEncryptor {
         if (text == null || text.isEmpty())
             return text;
 
-        try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            SecretKeySpec keySpec = new SecretKeySpec(keyIvPair.getKeyBytes(), "AES");
-
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(keyIvPair.getIvBytes()));
-
-            byte[] encryptedBytes = cipher.doFinal(text.getBytes());
-            return Base64.encodeBase64URLSafeString(encryptedBytes);
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (NoSuchPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (IllegalBlockSizeException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (BadPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (InvalidKeyException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (InvalidAlgorithmParameterException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        }
+        Base64Encryptor encryptor = new AeadBase64Encryptor(keyIvPair.getKeyBytes(), keyIvPair.getIvBytes());
+        return encryptor.encrypt(text);
     }
 
     public String decryptText(String encryptedText) {
         if (encryptedText == null || encryptedText.isEmpty())
             return encryptedText;
 
-        try {
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            SecretKeySpec keySpec = new SecretKeySpec(keyIvPair.getKeyBytes(), "AES");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, new IvParameterSpec(keyIvPair.getIvBytes()));
-
-            byte[] encryptedBytes = Base64.decodeBase64(encryptedText);
-            return new String(cipher.doFinal(encryptedBytes));
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (NoSuchPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (IllegalBlockSizeException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (BadPaddingException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (InvalidKeyException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        } catch (InvalidAlgorithmParameterException e) {
-            s_logger.error("Unexpected exception ", e);
-            return null;
-        }
+        Base64Encryptor encryptor = new AeadBase64Encryptor(keyIvPair.getKeyBytes(), keyIvPair.getIvBytes());
+        return encryptor.decrypt(encryptedText);
     }
 
     public <T> String encryptObject(Class<?> clz, T obj) {

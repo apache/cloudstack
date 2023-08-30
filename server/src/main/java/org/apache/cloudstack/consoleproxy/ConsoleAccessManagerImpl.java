@@ -385,7 +385,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
         int vncPort = consoleProxyManager.getVncPort();
 
-        String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm);
+        String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, details);
 
         s_logger.debug("Adding allowed session: " + sessionUuid);
         persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
@@ -413,7 +413,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
-                                            VirtualMachine vm) {
+                                            VirtualMachine vm, HostVO hostVo, UserVmDetailVO details) {
         StringBuilder sb = new StringBuilder(rootUrl);
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + token);
@@ -422,6 +422,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                     .append("?autoconnect=true")
                     .append("&port=" + vncPort)
                     .append("&token=" + token);
+            if (requiresVncOverWebSocketConnection(vm, hostVo) && details != null && details.getValue() != null) {
+                sb.append("&language=" + details.getValue());
+            }
         }
 
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {

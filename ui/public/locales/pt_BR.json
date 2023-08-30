@@ -1468,6 +1468,8 @@
 "label.shared": "Compatilhado",
 "label.sharedexecutable": "Compatilhado",
 "label.sharedmountpoint": "SharedMountPoint",
+"label.sharedrouterip": "Endere\u00e7os IPv4 para o roteador dentro da rede compartilhada",
+"label.sharedrouteripv6": "Endere\u00e7os IPv6 para o roteador dentro da rede compartilhada",
 "label.sharewith": "Compartilhar com",
 "label.showing": "Exibindo",
 "label.shrinkok": "Encolhimento OK",

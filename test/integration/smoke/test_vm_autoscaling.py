@@ -38,6 +38,7 @@ from marvin.lib.base import (Account,
                              Domain,
                              Project,
                              ServiceOffering,
+                             Template,
                              VirtualMachine,
                              Volume,
                              Zone,
@@ -47,6 +48,7 @@ from marvin.lib.base import (Account,
                              LoadBalancerRule,
                              VPC,
                              VpcOffering,
+                             UserData,
                              SSHKeyPair)
 
 from marvin.lib.common import (get_domain,
@@ -198,6 +200,37 @@ class TestVmAutoScaling(cloudstackTestCase):
             name="keypair2"
         )
 
+        # 8-2. Register userdata
+        cls.apiUserdata = UserData.register(
+            cls.apiclient,
+            name="ApiUserdata",
+            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            account=cls.regular_user.name,
+            domainid=cls.regular_user.domainid
+        )
+
+        # 8-3. Register userdata for template
+        cls.templateUserdata = UserData.register(
+            cls.apiclient,
+            name="TemplateUserdata",
+            userdata="IyMgdGVtcGxhdGU6IGppbmphCiNjbG91ZC1jb25maWcKcnVuY21kOgogICAgLSBlY2hvICdrZXkge3sgZHMubWV0YV9kYXRhLmtleTEgfX0nID4+IC9yb290L2luc3RhbmNlX21ldGFkYXRhCgo=",
+            #    ## template: jinja
+            #    #cloud-config
+            #    runcmd:
+            #        - echo 'key {{ ds.meta_data.key1 }}' >> /root/instance_metadata
+            #
+            account=cls.regular_user.name,
+            domainid=cls.regular_user.domainid
+        )
+
+        # 8-3. Link userdata to template
+        cls.template = Template.linkUserDataToTemplate(
+            cls.apiclient,
+            templateid=cls.template.id,
+            userdataid=cls.templateUserdata.userdata.id,
+            userdatapolicy="append"
+        )
+
         # 9. Get counters for cpu and memory
         counters = Autoscale.listCounters(
             cls.regular_user_apiclient,
@@ -294,6 +327,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             zoneid=cls.zone.id,
             templateid=cls.template.id,
+            userdata="VGVzdFVzZXJEYXRh", #TestUserData
             expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD,
             otherdeployparams=cls.otherdeployparams
         )
@@ -349,6 +383,10 @@ class TestVmAutoScaling(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.template = Template.linkUserDataToTemplate(
+            cls.apiclient,
+            templateid=cls.template.id
+        )
         Configurations.update(cls.apiclient,
                               CONFIG_NAME_DISK_CONTROLLER,
                               cls.initial_vmware_root_disk_controller)
@@ -390,6 +428,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             self.regular_user_apiclient,
             autoscalevmgroupid=autoscalevmgroupid,
             projectid=projectid,
+            userdata=True,
             listall=True
         )
         self.assertEqual(
@@ -505,6 +544,31 @@ class TestVmAutoScaling(cloudstackTestCase):
         else:
             self.assertEquals(affinitygroupids, '')
 
+        userdata = None
+        userdatadetails = None
+        userdataid = None
+        if vm.userdata:
+            userdata = vm.userdata
+        if vm.userdatadetails:
+            userdatadetails = vm.userdatadetails
+        if vm.userdataid:
+            userdataid = vm.userdataid
+
+        if vmprofile.userdataid:
+            self.assertEquals(userdataid, vmprofile.userdataid)
+        else:
+            self.assertIsNone(userdataid)
+
+        if vmprofile.userdatadetails:
+            self.assertEquals(userdatadetails, vmprofile.userdatadetails)
+        else:
+            self.assertIsNone(userdatadetails)
+
+        if vmprofile.userdata:
+            self.assertEquals(userdata, vmprofile.userdata)
+        else:
+            self.assertIsNone(userdata)
+
     def wait_for_vm_start(self, vm=None, project_id=None):
         """ Wait until vm is Running """
         def check_user_vm_state():
@@ -512,6 +576,7 @@ class TestVmAutoScaling(cloudstackTestCase):
                 self.apiclient,
                 id=vm.id,
                 projectid=project_id,
+                userdata=True,
                 listall=True
             )
             if isinstance(vms, list):
@@ -576,6 +641,8 @@ class TestVmAutoScaling(cloudstackTestCase):
             Autoscale.updateAutoscaleVMProfile(
                 self.regular_user_apiclient,
                 id = self.autoscaling_vmprofile.id,
+                userdataid=self.apiUserdata.userdata.id,
+                userdatadetails=[{"key1": "value2"}],
                 serviceofferingid = self.service_offering_new.id,
                 expungevmgraceperiod = DEFAULT_EXPUNGE_VM_GRACE_PERIOD + 1,
                 otherdeployparams = otherdeployparams_new
@@ -712,6 +779,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         vms = VirtualMachine.list(
             self.regular_user_apiclient,
             autoscalevmgroupid=self.autoscaling_vmgroup.id,
+            userdata=True,
             listall=True
         )
         self.assertEqual(
@@ -889,6 +957,7 @@ class TestVmAutoScaling(cloudstackTestCase):
             self.regular_user_apiclient,
             autoscalevmgroupid=autoscaling_vmgroup_project.id,
             projectid=project.id,
+            userdata=True,
             listall=True
         )
         self.assertEqual(

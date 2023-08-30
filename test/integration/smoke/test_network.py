@@ -72,9 +72,6 @@ logger.addHandler(stream_handler)
 
 class TestPublicIP(cloudstackTestCase):
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-
     @classmethod
     def setUpClass(cls):
         testClient = super(TestPublicIP, cls).getClsTestClient()
@@ -85,6 +82,7 @@ class TestPublicIP(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
         # Create Accounts & networks
         cls.account = Account.create(
             cls.apiclient,
@@ -92,18 +90,21 @@ class TestPublicIP(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.user = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.user)
         cls.services["network"]["zoneid"] = cls.zone.id
 
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
         )
+        cls._cleanup.append(cls.network_offering)
         # Enable Network offering
         cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -114,17 +115,20 @@ class TestPublicIP(cloudstackTestCase):
             cls.account.name,
             cls.account.domainid
         )
+        cls._cleanup.append(cls.account_network)
         cls.user_network = Network.create(
             cls.apiclient,
             cls.services["network"],
             cls.user.name,
             cls.user.domainid
         )
+        cls._cleanup.append(cls.user_network)
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"],
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.template = get_test_template(
@@ -146,6 +150,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.account_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.account_vm)
 
         cls.user_vm = VirtualMachine.create(
             cls.apiclient,
@@ -156,6 +161,7 @@ class TestPublicIP(cloudstackTestCase):
             networkids=cls.user_network.id,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.user_vm)
 
         # Create Source NAT IP addresses
         PublicIPAddress.create(
@@ -170,25 +176,11 @@ class TestPublicIP(cloudstackTestCase):
             cls.zone.id,
             cls.user.domainid
         )
-        cls._cleanup = [
-            cls.account_vm,
-            cls.user_vm,
-            cls.account_network,
-            cls.user_network,
-            cls.account,
-            cls.user,
-            cls.network_offering
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPublicIP, cls).tearDownClass()
 
     @attr(tags=["advanced", "advancedns", "smoke", "dvs"], required_hardware="false")
     def test_public_ip_admin_account(self):

@@ -113,25 +113,34 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
                             if (client.isVncOverWebSocketConnectionOpen()) {
                                 updateFrontEndActivityTime();
                             }
-                            connectionAlive = client.isVncOverWebSocketConnectionAlive();
+                            connectionAlive = session.isOpen();
+                            try {
+                                Thread.sleep(1);
+                            } catch (InterruptedException e) {
+                                s_logger.error("Error on sleep for vnc over websocket", e);
+                            }
                         } else if (client.isVncOverNioSocket()) {
                             byte[] bytesArr;
                             int nextBytes = client.getNextBytes();
                             bytesArr = new byte[nextBytes];
                             client.readBytes(bytesArr, nextBytes);
+                            s_logger.trace(String.format("Read [%s] bytes from client [%s]", nextBytes, clientId));
                             if (nextBytes > 0) {
                                 session.getRemote().sendBytes(ByteBuffer.wrap(bytesArr));
                                 updateFrontEndActivityTime();
+                            } else {
+                                connectionAlive = session.isOpen();
                             }
                         } else {
                             b = new byte[100];
                             readBytes = client.read(b);
+                            s_logger.trace(String.format("Read [%s] bytes from client [%s]", readBytes, clientId));
                             if (readBytes == -1 || (readBytes > 0 && !sendReadBytesToNoVNC(b, readBytes))) {
                                 connectionAlive = false;
                             }
                         }
                     }
-                    connectionAlive = false;
+                    s_logger.info(String.format("Connection with client [%s] is dead.", clientId));
                 } catch (IOException e) {
                     s_logger.error("Error on VNC client", e);
                 }

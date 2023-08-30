@@ -34,9 +34,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -98,6 +102,8 @@ public class ResourceManagerImplTest {
     private VMInstanceDao vmInstanceDao;
     @Mock
     private ConfigurationDao configurationDao;
+    @Mock
+    private VolumeDao volumeDao;
 
     @Spy
     @InjectMocks
@@ -120,6 +126,13 @@ public class ResourceManagerImplTest {
     private GetVncPortCommand getVncPortCommandVm2;
 
     @Mock
+    private VolumeVO rootDisk1;
+    @Mock
+    private VolumeVO rootDisk2;
+    @Mock
+    private VolumeVO dataDisk;
+
+    @Mock
     private Connection sshConnection;
 
     private static long hostId = 1L;
@@ -137,6 +150,10 @@ public class ResourceManagerImplTest {
     private static int vm1VncPort = 5900;
     private static String vm2VncAddress = "10.2.2.2";
     private static int vm2VncPort = 5901;
+
+    private static long poolId = 1L;
+    private List<VolumeVO> rootDisks;
+    private List<VolumeVO> dataDisks;
 
     @Before
     public void setup() throws Exception {
@@ -179,6 +196,11 @@ public class ResourceManagerImplTest {
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
         when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
+
+        rootDisks = Arrays.asList(rootDisk1, rootDisk2);
+        dataDisks = Collections.singletonList(dataDisk);
+        when(volumeDao.findByPoolId(poolId)).thenReturn(rootDisks);
+        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
     @Test
@@ -526,5 +548,34 @@ public class ResourceManagerImplTest {
     private HostVO createDummyHost(Status hostStatus) {
         return new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null, UUID.randomUUID().toString(),
                 hostStatus, "1.0", null, null, 1L, null, 0, 0, null, 0, null);
+    }
+
+    @Test
+    public void testDestroyLocalStoragePoolVolumesBothRootDisksAndDataDisks() {
+        resourceManager.destroyLocalStoragePoolVolumes(poolId);
+        verify(volumeDao, times(rootDisks.size() + dataDisks.size()))
+                .updateAndRemoveVolume(any(VolumeVO.class));
+    }
+
+    @Test
+    public void testDestroyLocalStoragePoolVolumesOnlyRootDisks() {
+        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        resourceManager.destroyLocalStoragePoolVolumes(poolId);
+        verify(volumeDao, times(rootDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
+    }
+
+    @Test
+    public void testDestroyLocalStoragePoolVolumesOnlyDataDisks() {
+        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        resourceManager.destroyLocalStoragePoolVolumes(poolId);
+        verify(volumeDao, times(dataDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
+    }
+
+    @Test
+    public void testDestroyLocalStoragePoolVolumesNoDisks() {
+        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        resourceManager.destroyLocalStoragePoolVolumes(poolId);
+        verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
     }
 }

@@ -81,7 +81,9 @@ export default {
       label: 'label.action.secure.host',
       message: 'message.action.secure.host',
       dataView: true,
-      show: (record) => { return record.hypervisor === 'KVM' },
+      show: (record) => {
+        return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
+      },
       args: ['hostid'],
       mapping: {
         hostid: {

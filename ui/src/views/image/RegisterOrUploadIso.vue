@@ -35,8 +35,10 @@
         <a-form-item
           v-if="currentForm === 'Create'"
           ref="url"
-          name="url"
-          :label="$t('label.url')">
+          name="url">
+          <template #label>
+            <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+          </template>
           <a-input
             v-focus="currentForm === 'Create'"
             v-model:value="form.url"
@@ -61,23 +63,35 @@
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item ref="name" name="name" :label="$t('label.name')">
+        <a-form-item ref="name" name="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             v-focus="currentForm !== 'Create'" />
         </a-form-item>
-        <a-form-item ref="displaytext" name="displaytext" :label="$t('label.displaytext')">
+        <a-form-item ref="displaytext" name="displaytext">
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description" />
         </a-form-item>
 
-        <a-form-item ref="directdownload" name="directdownload" v-if="allowed && currentForm !== 'Upload'" :label="$t('label.directdownload')">
+        <a-form-item ref="directdownload" name="directdownload" v-if="allowed && currentForm !== 'Upload'">
+          <template #label>
+            <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
+          </template>
           <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
-        <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
+        <a-form-item ref="zoneid" name="zoneid">
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
             v-model:value="form.zoneid"
             showSearch
@@ -97,11 +111,59 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item ref="bootable" name="bootable" :label="$t('label.bootable')">
+        <a-form-item name="domainid" ref="domainid" v-if="'listDomains' in $store.getters.apis">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
+          <a-select
+            v-model:value="form.domainid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domainLoading"
+            :placeholder="apiParams.domainid.description"
+            @change="val => { handleDomainChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description" :value="opt.id">
+              <span>
+                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <block-outlined v-else style="margin-right: 5px" />
+                {{ opt.path || opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item name="account" ref="account" v-if="domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
+          <a-select
+            v-model:value="form.account"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="apiParams.account.description"
+            @change="val => { handleAccountChange(val) }">
+            <a-select-option v-for="(acc, index) in accounts" :value="acc.name" :key="index">
+              {{ acc.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item ref="bootable" name="bootable">
+          <template #label>
+            <tooltip-label :title="$t('label.bootable')" :tooltip="apiParams.bootable.description"/>
+          </template>
           <a-switch v-model:checked="form.bootable" />
         </a-form-item>
 
-        <a-form-item ref="ostypeid" name="ostypeid" v-if="form.bootable" :label="$t('label.ostypeid')">
+        <a-form-item ref="ostypeid" name="ostypeid" v-if="form.bootable">
+          <template #label>
+            <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+          </template>
           <a-select
             v-model:value="form.ostypeid"
             showSearch
@@ -111,11 +173,11 @@
             }"
             :loading="osTypeLoading"
             :placeholder="apiParams.ostypeid.description">
-            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name || opt.description">
+            <a-select-option :value="opt.id" v-for="(opt, optIndex) in osTypes" :key="optIndex" :label="opt.name">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
-                {{ opt.name || opt.description }}
+                {{ opt.name }}
               </span>
             </a-select-option>
           </a-select>
@@ -125,8 +187,10 @@
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
-              ref="userdataid"
-              :label="$t('label.userdata')">
+              ref="userdataid">
+              <template #label>
+                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+              </template>
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -145,7 +209,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 showSearch
@@ -163,19 +227,27 @@
           </a-col>
         </a-row>
 
-        <a-form-item ref="isextractable" name="isextractable" :label="$t('label.isextractable')">
+        <a-form-item ref="isextractable" name="isextractable">
+          <template #label>
+            <tooltip-label :title="$t('label.isextractable')" :tooltip="apiParams.isextractable.description"/>
+          </template>
           <a-switch v-model:checked="form.isextractable" />
         </a-form-item>
 
         <a-form-item
           ref="ispublic"
           name="ispublic"
-          :label="$t('label.ispublic')"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+          </template>
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
 
-        <a-form-item ref="isfeatured" name="isfeatured" :label="$t('label.isfeatured')" v-if="$store.getters.userInfo.roletype === 'Admin'">
+        <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <template #label>
+            <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
+          </template>
           <a-switch v-model:checked="form.isfeatured" />
         </a-form-item>
 
@@ -229,7 +301,12 @@ export default {
       allowed: false,
       uploadParams: null,
       uploadPercentage: 0,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
+      domains: [],
+      accounts: [],
+      domainLoading: false,
+      domainid: null,
+      account: null
     }
   },
   beforeCreate () {
@@ -270,13 +347,16 @@ export default {
       this.fetchOsType()
       this.fetchUserData()
       this.fetchUserdataPolicy()
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
     },
     fetchZoneData () {
       const params = {}
       params.showicon = true
 
       this.zoneLoading = true
-      if (store.getters.userInfo.roletype === this.rootAdmin) {
+      if (store.getters.userInfo.roletype === 'Admin') {
         this.allowed = true
       }
       api('listZones', params).then(json => {
@@ -478,6 +558,43 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    fetchDomains () {
+      const params = {}
+      params.listAll = true
+      params.showicon = true
+      params.details = 'min'
+      this.domainLoading = true
+      api('listDomains', params).then(json => {
+        this.domains = json.listdomainsresponse.domain
+      }).finally(() => {
+        this.domainLoading = false
+        this.handleDomainChange(null)
+      })
+    },
+    handleDomainChange (domain) {
+      this.domainid = domain
+      this.form.account = null
+      this.account = null
+      if ('listAccounts' in this.$store.getters.apis) {
+        this.fetchAccounts()
+      }
+    },
+    fetchAccounts () {
+      api('listAccounts', {
+        domainid: this.domainid
+      }).then(response => {
+        this.accounts = response.listaccountsresponse.account || []
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    handleAccountChange (acc) {
+      if (acc) {
+        this.account = acc.name
+      } else {
+        this.account = acc
+      }
     }
   }
 }

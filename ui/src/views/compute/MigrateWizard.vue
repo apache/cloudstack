@@ -188,7 +188,8 @@ export default {
         }
       ],
       migrateWithStorage: false,
-      volumeToPoolSelection: []
+      volumeToPoolSelection: [],
+      volumes: []
     }
   },
   created () {
@@ -248,6 +249,7 @@ export default {
     handleSelectedHostChange (host) {
       if (host.id === -1) {
         this.migrateWithStorage = false
+        this.fetchVolumes()
       }
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
@@ -258,6 +260,31 @@ export default {
     },
     handleVolumeToPoolChange (volumeToPool) {
       this.volumeToPoolSelection = volumeToPool
+    },
+    fetchVolumes () {
+      this.loading = true
+      this.volumes = []
+      api('listVolumes', {
+        listAll: true,
+        virtualmachineid: this.resource.id
+      }).then(response => {
+        this.volumes = response.listvolumesresponse.volume
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    requiresStorageMigration () {
+      if (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) {
+        return true
+      }
+      if (this.selectedHost.id === -1 && this.volumes && this.volumes.length > 0) {
+        for (var volume of this.volumes) {
+          if (volume.storagetype === 'local') {
+            return true
+          }
+        }
+      }
+      return false
     },
     handleKeyboardSubmit () {
       if (this.selectedHost.id) {
@@ -271,7 +298,7 @@ export default {
       if (this.loading) return
       this.loading = true
       const migrateApi = this.isUserVm
-        ? (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0)
+        ? this.requiresStorageMigration()
           ? 'migrateVirtualMachineWithVolume'
           : 'migrateVirtualMachine'
         : 'migrateSystemVm'

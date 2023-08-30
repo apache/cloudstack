@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.Status;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -571,6 +573,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         HostVO hostVO = _hostDao.findById(hostId);
         if (hostVO == null) {
             LOG.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
+            return false;
+        }
+        if (!Arrays.asList(Status.Up, Status.Connecting).contains(hostVO.getStatus())) {
+            LOG.warn(String.format("Host status %s is not Up or Connecting, skipping deletion of config-drive ISO on host cache", hostId));
             return false;
         }
 

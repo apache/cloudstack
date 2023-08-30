@@ -315,7 +315,7 @@ export default {
       api('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
-          if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true) {
+          if (zone.networktype === 'Advanced') {
             this.zones.push(zone)
           }
         }
