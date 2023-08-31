@@ -49,6 +49,7 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
         try {
             Connect conn = LibvirtConnection.getConnection(hypervisorURI);
             List<String> vmNames = libvirtComputingResource.getStoppedVms(conn);
+            s_logger.debug("Vm Names: "+ vmNames.toString());
             return  new GetRemoteVmsAnswer(command, "", vmNames);
         } catch (final LibvirtException e) {
             s_logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());

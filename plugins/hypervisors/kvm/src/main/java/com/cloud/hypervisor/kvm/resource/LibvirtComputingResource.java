@@ -68,6 +68,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -5262,31 +5263,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public List<String> getStoppedVms(final Connect conn) {
         final List<String> stoppedVms = new ArrayList<>();
 
-        String[] vms = null;
-        int[] ids = null;
+        String[] vms;
 
         try {
-            ids = conn.listDomains();
+            vms = conn.listDefinedDomains();
         } catch (final LibvirtException e) {
             s_logger.warn("Unable to listDomains", e);
             return null;
         }
-
+        
         Domain dm = null;
-        for (int i = 0; i < ids.length; i++) {
+        for (String vm : vms) {
             try {
-                dm = conn.domainLookupByID(ids[i]);
+                dm = conn.domainLookupByName(vm);
+                UnmanagedInstanceTO unmanagedInstanceTO = new UnmanagedInstanceTO();
 
                 final DomainState ps = dm.getInfo().state;
 
                 final PowerState state = convertToPowerState(ps);
 
-                s_logger.trace("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+                s_logger.debug("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
                 final String vmName = dm.getName();
 
                 if (state == PowerState.PowerOff) {
                     stoppedVms.add(vmName);
-                    }
+                }
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
             } finally {

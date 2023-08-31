@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.CopyRemoteVolumeAnswer;
+import com.cloud.agent.api.CopyRemoteVolumeCommand;
 import com.cloud.agent.api.GetRemoteVmsAnswer;
 import com.cloud.agent.api.GetRemoteVmsCommand;
 import com.cloud.dc.DataCenterVO;
@@ -40,8 +42,8 @@ import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
+//import org.apache.cloudstack.api.response.NicResponse;
+//import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -240,6 +242,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host) {
         UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
         response.setName(instance.getName());
+        /*
         if (cluster != null) {
             response.setClusterId(cluster.getUuid());
         }
@@ -294,6 +297,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 response.addNic(nicResponse);
             }
         }
+
+         */
         return response;
     }
 
@@ -675,6 +680,40 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             nicNetworkMap.put(nic.getNicId(), network.getId());
         }
         return nicNetworkMap;
+    }
+
+    private Pair<DiskProfile, StoragePool> importKvmDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
+                                                      Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
+                                                      Account owner, Long deviceId, String remoteUrl) {
+        final DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
+        final String path = StringUtils.isEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
+        String chainInfo = disk.getChainInfo();
+        if (StringUtils.isEmpty(chainInfo)) {
+            VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
+            diskInfo.setDiskDeviceBusName(String.format("%s%d:%d", disk.getController(), disk.getControllerUnit(), disk.getPosition()));
+            diskInfo.setDiskChain(new String[]{disk.getImagePath()});
+            chainInfo = gson.toJson(diskInfo);
+        }
+        StoragePool storagePool = getStoragePool(disk, zone, cluster);
+        CopyRemoteVolumeCommand copyRemoteVolumeCommand = new CopyRemoteVolumeCommand();
+        copyRemoteVolumeCommand.setRemoteIp(remoteUrl);
+        copyRemoteVolumeCommand.setUsername("root");
+        copyRemoteVolumeCommand.setPassword("P@ssword123");
+        copyRemoteVolumeCommand.setSrcFile(disk.getFileBaseName());
+        copyRemoteVolumeCommand.setDstPath(storagePool.getPath());
+        Long hostId = vm.getHostId();
+        Answer answer = agentManager.easySend(hostId, copyRemoteVolumeCommand);
+        if (!(answer instanceof CopyRemoteVolumeAnswer)) {
+            throw new CloudRuntimeException("Error while copying volume");
+        }
+        CopyRemoteVolumeAnswer copyRemoteVolumeAnswer = (CopyRemoteVolumeAnswer) answer;
+        if(!copyRemoteVolumeAnswer.getResult()) {
+            throw new CloudRuntimeException("Error while copying volume");
+        }
+        DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
+                minIops, maxIops, vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
+
+        return new Pair<>(profile, storagePool);
     }
 
     private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
@@ -1429,11 +1468,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
+        UnmanagedInstanceTO unmanagedInstanceTO = new UnmanagedInstanceTO();
+        String remoteUrl = cmd.getUrl();
 
-        UserVm userVm = importKvmVirtualMachineInternal(instanceName, zone,
+        UserVm userVm = importKvmVirtualMachineInternal(unmanagedInstanceTO, instanceName, zone,
                 template, displayName, hostName, caller, owner, userId,
                 serviceOffering, dataDiskOfferingMap,
-                nicNetworkMap, nicIpAddressMap,
+                nicNetworkMap, nicIpAddressMap, remoteUrl,
                 details);;
 
         if (userVm == null) {
@@ -1443,12 +1484,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     }
 
-    private UserVm importKvmVirtualMachineInternal(final String instanceName, final DataCenter zone,
+    private UserVm importKvmVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
-                                                final Map<String, String> details) {
+                                                final String remoteUrl, final Map<String, String> details) {
         UserVm userVm = null;
+
+        long hostId = 6;
+        HostVO host = hostDao.findById(hostId);
+        Cluster cluster = clusterDao.findById(host.getClusterId());
 
         Map<String, String> allDetails = new HashMap<>(details);
         if (serviceOffering.isDynamic()) {
@@ -1456,13 +1501,33 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
             allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
         }
-/*
+
+        // Check disks and supplied disk offerings
+        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = unmanagedInstance.getDisks();
+        if (CollectionUtils.isEmpty(unmanagedInstanceDisks)) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", instanceName));
+        }
+        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
+        final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
+        final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
+        if (rootDisk == null || StringUtils.isEmpty(rootDisk.getController())) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
+        }
+        allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
+
+        // Check NICs and supplied networks
+        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
+        if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+            allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
+        }
+        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
 
         try {
-            userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
+            userVm = userVmManager.importVM(zone, host, template, "internalCSName", displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    validatedServiceOffering, null, hostName,
-                    cluster.getHypervisorType(), allDetails, powerState);
+                    serviceOffering, null, hostName,
+                    Hypervisor.HypervisorType.KVM, allDetails, powerState);
         } catch (InsufficientCapacityException ice) {
             LOGGER.error(String.format("Failed to import vm name: %s", instanceName), ice);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
@@ -1470,6 +1535,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
         }
+
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {
             if (rootDisk.getCapacity() == null || rootDisk.getCapacity() == 0) {
@@ -1484,18 +1550,18 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 maxIops = Long.parseLong(details.get("maxIops"));
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-            diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
+            diskProfileStoragePoolList.add(importKvmDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
                     (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
-                    template, owner, null));
+                    template, owner, null, remoteUrl));
             long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                     throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
                 }
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-                diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
+                diskProfileStoragePoolList.add(importKvmDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
                         (disk.getCapacity() / Resource.ResourceType.bytesToGiB), offering.getMinIops(), offering.getMaxIops(),
-                        template, owner, deviceId));
+                        template, owner, deviceId, remoteUrl));
                 deviceId++;
             }
         } catch (Exception e) {
@@ -1508,7 +1574,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                 Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, forced);
+                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
                 nicIndex++;
             }
         } catch (Exception e) {
@@ -1516,10 +1582,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
-        if (migrateAllowed) {
-            userVm = migrateImportedVM(host, template, validatedServiceOffering, userVm, owner, diskProfileStoragePoolList);
-        }
-        publishVMUsageUpdateResourceCount(userVm, validatedServiceOffering); */
+        publishVMUsageUpdateResourceCount(userVm, serviceOffering);
         return userVm;
     }
 
@@ -1559,6 +1622,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
+        for (String vmName : getRemoteVmsAnswer.getVmNames()) {
+            UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
+            instance.setName(vmName);
+            if (StringUtils.isNotEmpty(keyword) &&
+                    !instance.getName().toLowerCase().contains(keyword)) {
+                continue;
+            }
+            responses.add(createUnmanagedInstanceResponse(instance, null, null));
+        }
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;
