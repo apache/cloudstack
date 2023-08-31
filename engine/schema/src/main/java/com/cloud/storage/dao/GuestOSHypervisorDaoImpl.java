@@ -20,13 +20,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.utils.db.QueryBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -82,11 +81,10 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
     }
 
     @Override
-    public HypervisorType findHypervisorTypeByGuestOsId(long guestOsId) {
+    public List<GuestOSHypervisorVO> listByGuestOsId(long guestOsId) {
         SearchCriteria<GuestOSHypervisorVO> sc = guestOsSearch.create();
         sc.setParameters("guest_os_id", guestOsId);
-        GuestOSHypervisorVO goh = findOneBy(sc);
-        return HypervisorType.getType(goh.getHypervisorType());
+        return listBy(sc);
     }
 
     @Override

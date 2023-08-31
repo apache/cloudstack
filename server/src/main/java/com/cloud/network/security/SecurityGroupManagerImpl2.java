@@ -188,7 +188,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                     return;
                 }
                 SecurityGroupRulesCmd cmd =
-                    generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
+                    generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
                         ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (s_logger.isDebugEnabled()) {

@@ -63,6 +63,12 @@ public interface QuotaConfig {
     ConfigKey<Boolean> QuotaAccountEnabled = new ConfigKey<>("Advanced", Boolean.class, "quota.account.enabled", "true", "Indicates whether Quota plugin is enabled or not for " +
             "the account.", true, ConfigKey.Scope.Account);
 
+    ConfigKey<String> QuotaEmailHeader = new ConfigKey<>("Advanced", String.class, "quota.email.header", "",
+            "Text to be added as a header for quota emails. Line breaks are not automatically inserted between this section and the body.", true, ConfigKey.Scope.Domain);
+
+    ConfigKey<String> QuotaEmailFooter = new ConfigKey<>("Advanced", String.class, "quota.email.footer", "",
+            "Text to be added as a footer for quota emails. Line breaks are not automatically inserted between this section and the body.", true, ConfigKey.Scope.Domain);
+
     enum QuotaEmailTemplateTypes {
         QUOTA_LOW, QUOTA_EMPTY, QUOTA_UNLOCK_ACCOUNT, QUOTA_STATEMENT
     }
