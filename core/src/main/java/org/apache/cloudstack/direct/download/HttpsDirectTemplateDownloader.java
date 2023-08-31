@@ -176,7 +176,8 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
 
     @Override
     public Long getRemoteFileSize(String url, String format) {
-        if ("qcow2".equalsIgnoreCase(format)) {
+        if ("qcow2".equalsIgnoreCase(format) && url.endsWith(".qcow2")) {
+            //Avoid compressed qcow2 files
             try {
                 URL urlObj = new URL(url);
                 HttpsURLConnection urlConnection = (HttpsURLConnection)urlObj.openConnection();
