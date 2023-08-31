@@ -77,7 +77,7 @@
               :filterOption="(input, option) => {
                 return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="domainLoading"
+              :loading="domain.loading"
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
@@ -345,7 +345,7 @@ export default {
     return {
       actionLoading: false,
       domains: [],
-      domainLoading: false,
+      domain: { loading: false },
       selectedDomain: {},
       accountVisible: isAdminOrDomainAdmin(),
       accounts: [],
@@ -459,25 +459,25 @@ export default {
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
-      this.domainLoading = true
-      this.loadMoreDomains(1)
+      this.domain.loading = true
+      this.loadMore('listDomains', 1, this.domain)
     },
-    loadMoreDomains (page) {
+    loadMore (apiToCall, page, sema) {
       const params = {}
       params.listAll = true
       params.details = 'min'
       params.pagesize = 100
       params.page = page
-      var domainCount
-      api('listDomains', params).then(json => {
+      var count
+      api(apiToCall, params).then(json => {
         const listDomains = json.listdomainsresponse.domain
-        domainCount = json.listdomainsresponse.count
+        count = json.listdomainsresponse.count
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
-        if (domainCount <= this.domains.length) {
-          this.domainLoading = false
+        if (count <= this.domains.length) {
+          sema.loading = false
         } else {
-          this.loadMoreDomains(page + 1)
+          this.loadMore(apiToCall, page + 1, sema)
         }
         this.form.domainid = 0
         this.handleDomainChange(this.domains[0])
