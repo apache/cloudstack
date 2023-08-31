@@ -459,15 +459,26 @@ export default {
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
+      this.domainLoading = true
+      this.loadMoreDomains(1)
+    },
+    loadMoreDomains (page) {
       const params = {}
       params.listAll = true
       params.details = 'min'
-      this.domainLoading = true
+      params.pagesize = 100
+      params.page = page
+      var domainCount
       api('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
+        domainCount = json.listdomainsresponse.count
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
-        this.domainLoading = false
+        if (domainCount <= this.domains.length) {
+          this.domainLoading = false
+        } else {
+          this.loadMoreDomains(page + 1)
+        }
         this.form.domainid = 0
         this.handleDomainChange(this.domains[0])
       })
