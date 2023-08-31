@@ -579,7 +579,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void checkUnmanagedNicAndNetworkForImport(String instanceName, UnmanagedInstanceTO.Nic nic, Network network, final DataCenter zone, final Account owner, final boolean autoAssign) throws ServerApiException {
+    private void checkUnmanagedNicAndNetworkForImport(String instanceName, UnmanagedInstanceTO.Nic nic, Network network, final DataCenter zone, final Account owner, final boolean autoAssign, final Hypervisor.HypervisorType hypervisorType) throws ServerApiException {
         basicNetworkChecks(instanceName, nic, network);
         if (network.getDataCenterId() != zone.getId()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) for nic(ID: %s) belongs to a different zone than VM to be imported", network.getUuid(), nic.getNicId()));
@@ -589,16 +589,19 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return;
         }
 
-        String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
-        if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
-                (StringUtils.isEmpty(networkBroadcastUri) ||
-                        !networkBroadcastUri.equals(String.format("vlan://%d", nic.getVlan())))) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan()));
-        }
-        String pvLanType = nic.getPvlanType() == null ? "" : nic.getPvlanType().toLowerCase().substring(0, 1);
-        if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
-                (StringUtils.isEmpty(networkBroadcastUri) || !String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan()).equals(networkBroadcastUri))) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-%s%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan(), pvLanType, nic.getPvlan()));
+        if (hypervisorType == Hypervisor.HypervisorType.VMware) {
+
+            String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
+            if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
+                    (StringUtils.isEmpty(networkBroadcastUri) ||
+                            !networkBroadcastUri.equals(String.format("vlan://%d", nic.getVlan())))) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) vlan://%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan()));
+            }
+            String pvLanType = nic.getPvlanType() == null ? "" : nic.getPvlanType().toLowerCase().substring(0, 1);
+            if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
+                    (StringUtils.isEmpty(networkBroadcastUri) || !String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan()).equals(networkBroadcastUri))) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-%s%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan(), pvLanType, nic.getPvlan()));
+            }
         }
     }
 
@@ -635,7 +638,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private Map<String, Long> getUnmanagedNicNetworkMap(String instanceName, List<UnmanagedInstanceTO.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
+    private Map<String, Long> getUnmanagedNicNetworkMap(String instanceName, List<UnmanagedInstanceTO.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner, final Hypervisor.HypervisorType hypervisorType) throws ServerApiException {
         Map<String, Long> nicNetworkMap = new HashMap<>();
         String nicAdapter = null;
         for (UnmanagedInstanceTO.Nic nic : nics) {
@@ -660,7 +663,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             continue;
                         }
                         try {
-                            checkUnmanagedNicAndNetworkForImport(instanceName, nic, networkVO, zone, owner, true);
+                            checkUnmanagedNicAndNetworkForImport(instanceName, nic, networkVO, zone, owner, true, hypervisorType);
                             network = networkVO;
                         } catch (Exception e) {
                             LOGGER.error(String.format("Error when checking NIC [%s] of unmanaged instance to import due to [%s]." , nic.getNicId(), e.getMessage()), e);
@@ -674,7 +677,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 }
             } else {
                 network = networkDao.findById(callerNicNetworkMap.get(nic.getNicId()));
-                checkUnmanagedNicAndNetworkForImport(instanceName, nic, network, zone, owner, false);
+                checkUnmanagedNicAndNetworkForImport(instanceName, nic, network, zone, owner, false, hypervisorType);
                 checkUnmanagedNicAndNetworkHostnameForImport(instanceName, nic, network, hostName);
                 checkUnmanagedNicIpAndNetworkForImport(instanceName, nic, network, ipAddresses);
             }
@@ -970,7 +973,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, host.getHypervisorType());
         if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
