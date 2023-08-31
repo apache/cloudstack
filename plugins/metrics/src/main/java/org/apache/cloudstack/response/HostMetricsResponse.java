@@ -36,6 +36,10 @@ public class HostMetricsResponse extends HostResponse {
     @Param(description = "instances on the host")
     private String instances;
 
+    @SerializedName("systeminstances")
+    @Param(description = "system vm instances on the host")
+    private String systemInstances;
+
     @SerializedName("cputotalghz")
     @Param(description = "the total cpu capacity in Ghz")
     private String cpuTotal;
@@ -108,10 +112,12 @@ public class HostMetricsResponse extends HostResponse {
         this.powerState = powerState;
     }
 
-    public void setInstances(final Long running, final Long total) {
-        if (running != null && total != null) {
-            this.instances = String.format("%d / %d", running, total);
-        }
+    public void setSystemInstances(final long running, final long total) {
+        this.systemInstances = String.format("%d / %d", running, total);
+    }
+
+    public void setInstances(final long running, final long total) {
+        this.instances = String.format("%d / %d", running, total);
     }
 
     public void setCpuTotal(final Integer cpuNumber, final Long cpuSpeed) {

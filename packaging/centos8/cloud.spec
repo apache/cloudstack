@@ -53,7 +53,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
-Requires: tzdata-java
+Requires: (tzdata-java or timezone-java)
 Requires: python3
 Requires: bash
 Requires: gawk
