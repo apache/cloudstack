@@ -19,6 +19,7 @@ package com.cloud.upgrade.dao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOSHypervisorMapping;
 import com.cloud.upgrade.GuestOsMapper;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
@@ -26,10 +27,13 @@ import org.apache.log4j.Logger;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate {
     final static Logger LOG = Logger.getLogger(Upgrade41800to41810.class);
+    private GuestOsMapper guestOsMapper = new GuestOsMapper();
+
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
@@ -64,6 +68,14 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         updateGuestOsMappings(conn);
         copyGuestOsMappingsToVMware80u1();
         addForeignKeyToAutoscaleVmprofiles(conn);
+        mergeDuplicateGuestOSes();
+    }
+
+    private void mergeDuplicateGuestOSes() {
+        guestOsMapper.mergeDuplicates();
+        List<GuestOSVO> nines = guestOsMapper.listByDisplayName("Red Hat Enterprise Linux 9");
+        GuestOSVO nineDotZero = guestOsMapper.listByDisplayName("Red Hat Enterprise Linux 9.0").get(0);
+        guestOsMapper.makeNormative(nineDotZero, new HashSet<>(nines));
     }
 
     @Override

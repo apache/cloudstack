@@ -949,6 +949,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, VmwareResource.getDatastoreName(iScsiName));
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
 
+                if (path.startsWith("[-iqn.")) {
+                    // Rescan 1:1 LUN that VMware may not know the LUN was recently resized
+                    _storageProcessor.rescanAllHosts(context, lstHosts, true, true);
+                }
+
                 _storageProcessor.expandDatastore(hostDatastoreSystem, dsMo);
             }
 
