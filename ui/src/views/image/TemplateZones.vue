@@ -75,6 +75,23 @@
           :rowKey="record => record.zoneid">
         </a-table>
       </template>
+      <template #action="{ record }">
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy-outlined"
+          :loading="copyLoading"
+          @onClick="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
+          :title="$t('label.action.delete.template')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
+      </template>
     </a-table>
     <a-pagination
       class="row-element"

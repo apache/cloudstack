@@ -62,7 +62,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Path of the domain that the user belongs to. Example: domain=/com/cloud/internal. If no domain is passed in, the ROOT (/) domain is assumed.")
     private String domain;
 
-    @Parameter(name = ApiConstants.DOMAIN__ID, type = CommandType.LONG, description = "The id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precendence")
+    @Parameter(name = ApiConstants.DOMAIN__ID, type = CommandType.LONG, description = "The id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precedence.")
     private Long domainId;
 
     @Inject
