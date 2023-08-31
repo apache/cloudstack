@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,6 +86,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.VirtualMachine;
 import com.google.common.base.Preconditions;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
@@ -111,6 +114,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject private VMTemplatePoolDao vmTemplatePoolDao;
+    @Inject private VMInstanceDao vmDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VolumeDataFactory volumeFactory;
@@ -187,10 +191,30 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
+    private boolean isRevokeAccessNotNeeded(DataObject dataObject) {
+        // Workaround: don't unplug iscsi lun when volume is attached to a VM
+        // This is regression workaround from upper layers which are calling
+        // a releaseVmResources() method that calls the revoke on an attached disk
+        if (dataObject.getType() == DataObjectType.VOLUME) {
+            Volume volume = volumeDao.findById(dataObject.getId());
+            if (volume.getInstanceId() != null) {
+                VirtualMachine vm = vmDao.findById(volume.getInstanceId());
+                if (vm != null && !Arrays.asList(VirtualMachine.State.Destroyed, VirtualMachine.State.Expunging, VirtualMachine.State.Error).contains(vm.getState())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore)
-    {
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
         if (dataObject == null || host == null || dataStore == null) {
+            return;
+        }
+
+        if (isRevokeAccessNotNeeded(dataObject)) {
+            LOGGER.debug("Skipping revoke access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
             return;
         }
 
@@ -209,6 +233,8 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             throw new CloudRuntimeException(errMsg);
         }
+
+        LOGGER.debug("Revoking access for Solidfire data object type:" + dataObject.getType() + " id:" + dataObject.getId());
 
         try {
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);

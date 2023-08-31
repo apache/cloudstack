@@ -192,8 +192,12 @@ const sourceToken = {
   },
   cancel: () => {
     if (!source) sourceToken.init()
-    source.cancel()
-    source = null
+    if (source) {
+      source.cancel()
+      source = null
+    } else {
+      console.log('Source token failed to be cancelled')
+    }
   }
 }
 

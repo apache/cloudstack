@@ -116,4 +116,15 @@ public class VmwareStorageManagerImplTest {
     public void testSetVolumeToPathAndSizeDatastoreClusterDifferentChildStore() {
         testCommon(Storage.StoragePoolType.PreSetup, Storage.StoragePoolType.DatastoreCluster, true);
     }
+
+    @Test
+    public void testIsManagedStorageDatastorePath() {
+        Assert.assertTrue("Test if [-iqn... is a managed storage", storageManager.isManagedStorageDatastorePath("[-iqn.2010-01.com.solidfire:3p53.data-9999.97-0] i-2-9999-VM.vmdk"));
+        Assert.assertFalse("Test if [SomeDS] is not a managed storage", storageManager.isManagedStorageDatastorePath("[SomeDS] i-2-9999-VM/disk.vmdk"));
+    }
+
+    @Test
+    public void testGetManagedDatastoreName() {
+        Assert.assertEquals("[-iqn.2010-01.com.solidfire:3p53.data-9999.97-0]", storageManager.getManagedDatastoreName("[-iqn.2010-01.com.solidfire:3p53.data-9999.97-0] i-2-9999-VM.vmdk"));
+    }
 }

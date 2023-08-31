@@ -1315,22 +1315,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         List<ResourceCountVO> domainResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Domain);
         List<ResourceCountVO> accountResourceCount = _resourceCountDao.listResourceCountByOwnerType(ResourceOwnerType.Account);
 
-        final List<ResourceType> accountSupportedResourceTypes = new ArrayList<ResourceType>();
-        final List<ResourceType> domainSupportedResourceTypes = new ArrayList<ResourceType>();
+        final int expectedCount = resourceTypes.length;
 
-        for (ResourceType resourceType : resourceTypes) {
-            if (resourceType.supportsOwner(ResourceOwnerType.Account)) {
-                accountSupportedResourceTypes.add(resourceType);
-            }
-            if (resourceType.supportsOwner(ResourceOwnerType.Domain)) {
-                domainSupportedResourceTypes.add(resourceType);
-            }
-        }
-
-        final int accountExpectedCount = accountSupportedResourceTypes.size();
-        final int domainExpectedCount = domainSupportedResourceTypes.size();
-
-        if ((domainResourceCount.size() < domainExpectedCount * domains.size())) {
+        if ((domainResourceCount.size() < expectedCount * domains.size())) {
             s_logger.debug("resource_count table has records missing for some domains...going to insert them");
             for (final DomainVO domain : domains) {
                 // Lock domain
@@ -1344,8 +1331,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             domainCountStr.add(domainCount.getType().toString());
                         }
 
-                        if (domainCountStr.size() < domainExpectedCount) {
-                            for (ResourceType resourceType : domainSupportedResourceTypes) {
+                        if (domainCountStr.size() < expectedCount) {
+                            for (ResourceType resourceType : resourceTypes) {
                                 if (!domainCountStr.contains(resourceType.toString())) {
                                     ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, domain.getId(), ResourceOwnerType.Domain);
                                     s_logger.debug("Inserting resource count of type " + resourceType + " for domain id=" + domain.getId());
@@ -1359,7 +1346,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             }
         }
 
-        if ((accountResourceCount.size() < accountExpectedCount * accounts.size())) {
+        if ((accountResourceCount.size() < expectedCount * accounts.size())) {
             s_logger.debug("resource_count table has records missing for some accounts...going to insert them");
             for (final AccountVO account : accounts) {
                 // lock account
@@ -1373,8 +1360,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             accountCountStr.add(accountCount.getType().toString());
                         }
 
-                        if (accountCountStr.size() < accountExpectedCount) {
-                            for (ResourceType resourceType : accountSupportedResourceTypes) {
+                        if (accountCountStr.size() < expectedCount) {
+                            for (ResourceType resourceType : resourceTypes) {
                                 if (!accountCountStr.contains(resourceType.toString())) {
                                     ResourceCountVO resourceCountVO = new ResourceCountVO(resourceType, 0, account.getId(), ResourceOwnerType.Account);
                                     s_logger.debug("Inserting resource count of type " + resourceType + " for account id=" + account.getId());

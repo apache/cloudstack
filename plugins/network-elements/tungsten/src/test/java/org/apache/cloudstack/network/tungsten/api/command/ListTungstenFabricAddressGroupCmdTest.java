@@ -53,6 +53,7 @@ public class ListTungstenFabricAddressGroupCmdTest {
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "addressGroupUuid", "test");
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "page", 1);
         ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "pageSize", 10);
+        ReflectionTestUtils.setField(listTungstenFabricAddressGroupCmd, "s_maxPageSize", -1L);
     }
 
     @After

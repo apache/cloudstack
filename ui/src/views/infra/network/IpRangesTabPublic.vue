@@ -48,21 +48,21 @@
           {{ record.endip || record.endipv6 }}
         </template>
         <template v-if="column.key === 'account' && !basicGuestNetwork">
-          <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
+          <a-button @click="() => handleOpenAccountModal(record)">{{ record.domain === undefined ? `${$t('label.system.ip.pool')}` : `[ ${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
         </template>
         <template v-if="column.key === 'actions'">
           <div
             class="actions"
             style="text-align: right" >
             <tooltip-button
-              v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
+              v-if="!record.domain && !basicGuestNetwork && record.gateway && !record.ip6gateway"
               tooltipPlacement="bottom"
               :tooltip="$t('label.add.account')"
               icon="user-add-outlined"
               @onClick="() => handleOpenAddAccountModal(record)"
               :disabled="!('dedicatePublicIpRange' in $store.getters.apis)" />
             <tooltip-button
-              v-if="record.account !== 'system' && !basicGuestNetwork"
+              v-if="record.domain && !basicGuestNetwork"
               tooltipPlacement="bottom"
               :tooltip="$t('label.release.account')"
               icon="user-delete-outlined"

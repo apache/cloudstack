@@ -1942,6 +1942,7 @@
 "label.suspend.project": "Suspend project",
 "label.switch.type": "Switch type",
 "label.sync.storage": "Sync storage pool",
+"label.system.ip.pool": "System Pool",
 "label.system.offering": "System offering",
 "label.system.offerings": "System offerings",
 "label.system.service.offering": "System service offering",

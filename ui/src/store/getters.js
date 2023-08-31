@@ -49,6 +49,7 @@ const getters = {
   twoFaProvider: state => state.user.twoFaProvider,
   twoFaIssuer: state => state.user.twoFaIssuer,
   loginFlag: state => state.user.loginFlag,
+  allProjects: (state) => state.app.allProjects,
   customHypervisorName: state => state.user.customHypervisorName
 }
 

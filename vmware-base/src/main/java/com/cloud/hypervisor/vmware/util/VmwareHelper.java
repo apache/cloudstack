@@ -98,6 +98,7 @@ public class VmwareHelper {
     public static final int MAX_SUPPORTED_DEVICES_SCSI_CONTROLLER = MAX_ALLOWED_DEVICES_SCSI_CONTROLLER - 1; // One device node is unavailable for hard disks or SCSI devices
     public static final int MAX_USABLE_SCSI_CONTROLLERS = 2;
     public static final String MIN_VERSION_UEFI_LEGACY = "5.5";
+    public static final String MIN_VERSION_VMFS6 = "6.5";
 
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         // The SCSI controller is assigned to virtual device node (z:7), so that device node is unavailable for hard disks or SCSI devices.

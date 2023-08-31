@@ -128,9 +128,8 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
                                             id=self.public_ip_range.vlan.id
                                         )
         public_ip_response = list_public_ip_range_response[0]
-        self.assertEqual(
+        self.assertIsNone(
                             public_ip_response.account,
-                            "system",
                             "Check account name is system account in listVlanIpRanges"
                         )
         return
