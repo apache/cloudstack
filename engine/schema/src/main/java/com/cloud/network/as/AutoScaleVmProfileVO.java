@@ -88,6 +88,12 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
+    @Column(name = "user_data_id", nullable = true)
+    private Long userDataId = null;
+
+    @Column(name = "user_data_details", updatable = true, length = 4096)
+    private String userDataDetails;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
 
@@ -226,6 +232,24 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Override
     public String getUserData() {
         return userData;
+    }
+
+    @Override
+    public Long getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(Long userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    @Override
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
     }
 
     @Override
