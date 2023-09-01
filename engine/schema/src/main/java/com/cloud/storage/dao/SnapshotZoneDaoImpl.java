@@ -34,7 +34,7 @@ public class SnapshotZoneDaoImpl extends GenericDaoBase<SnapshotZoneVO, Long> im
 
         ZoneSnapshotSearch = createSearchBuilder();
         ZoneSnapshotSearch.and("zone_id", ZoneSnapshotSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        ZoneSnapshotSearch.and("template_id", ZoneSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        ZoneSnapshotSearch.and("snapshot_id", ZoneSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         ZoneSnapshotSearch.done();
     }
 

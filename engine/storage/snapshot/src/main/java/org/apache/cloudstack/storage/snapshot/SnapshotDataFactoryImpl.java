@@ -125,12 +125,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
 
     @Override
     public SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId) {
-        return null;
-    }
-
-    @Override
-    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
-        return getSnapshot(snapshotId, role, 1L, true);
+        return getSnapshot(snapshotId, role, zoneId, true);
     }
 
     @Override

@@ -595,13 +595,13 @@ public class ViewResponseHelper {
         return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 
-    public static List<SnapshotResponse> createSnapshotResponse(ResponseView view, SnapshotJoinVO... snapshots) {
+    public static List<SnapshotResponse> createSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO... snapshots) {
         LinkedHashMap<String, SnapshotResponse> vrDataList = new LinkedHashMap<>();
         for (SnapshotJoinVO vr : snapshots) {
             SnapshotResponse vrData = vrDataList.get(vr.getSnapshotStorePair());
             if (vrData == null) {
                 // first time encountering this snapshot
-                vrData = ApiDBUtils.newSnapshotResponse(view, vr);
+                vrData = ApiDBUtils.newSnapshotResponse(view, isShowUnique, vr);
             }
             else{
                 // update tags

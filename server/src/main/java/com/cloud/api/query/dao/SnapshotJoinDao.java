@@ -30,7 +30,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
 
-    SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, SnapshotJoinVO snapshotJoinVO);
+    SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, boolean isShowUnique, SnapshotJoinVO snapshotJoinVO);
 
     SnapshotResponse setSnapshotResponse(ResponseObject.ResponseView view, SnapshotResponse snapshotResponse, SnapshotJoinVO snapshot);
 

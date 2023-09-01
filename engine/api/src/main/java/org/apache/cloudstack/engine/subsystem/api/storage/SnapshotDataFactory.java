@@ -31,8 +31,6 @@ public interface SnapshotDataFactory {
 
     SnapshotInfo getSnapshotWithRoleAndZone(long snapshotId, DataStoreRole role, long zoneId);
 
-    SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role);
-
     SnapshotInfo getSnapshotOnPrimaryStore(long snapshotId);
 
     SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, long zoneId, boolean retrieveAnySnapshotFromVolume);

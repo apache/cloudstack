@@ -537,7 +537,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
         PrimaryDataStore store = null;
-        SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), DataStoreRole.Primary, snapshot.getDataCenterId());
+        SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshotOnPrimaryStore(snapshot.getId());
         if (snapshotOnPrimaryStore == null) {
             s_logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
             VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);

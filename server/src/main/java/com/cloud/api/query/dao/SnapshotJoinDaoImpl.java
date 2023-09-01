@@ -27,6 +27,8 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.log4j.Logger;
@@ -50,6 +52,8 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
     private AnnotationDao annotationDao;
     @Inject
     private ConfigurationDao configDao;
+    @Inject
+    SnapshotDataFactory snapshotDataFactory;
 
     private final SearchBuilder<SnapshotJoinVO> snapshotStorePairSearch;
 
@@ -67,8 +71,24 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotIdsSearch.done();
     }
 
+    private void setSnapshotInfoDetailsInResponse(SnapshotJoinVO snapshot, SnapshotResponse snapshotResponse, boolean isShowUnique) {
+        if (!isShowUnique) {
+            return;
+        }
+        SnapshotInfo snapshotInfo = null;
+        snapshotInfo = snapshotDataFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshot.getStoreRole(), snapshot.getDataCenterId());
+
+        if (snapshotInfo == null) {
+            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            snapshotResponse.setRevertable(false);
+        } else {
+            snapshotResponse.setRevertable(snapshotInfo.isRevertable());
+            snapshotResponse.setPhysicaSize(snapshotInfo.getPhysicalSize());
+        }
+    }
+
     @Override
-    public SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, SnapshotJoinVO snapshot) {
+    public SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, boolean isShowUnique, SnapshotJoinVO snapshot) {
         SnapshotResponse snapshotResponse = new SnapshotResponse();
         snapshotResponse.setId(snapshot.getUuid());
         // populate owner.
@@ -90,11 +110,12 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotResponse.setIntervalType(intervalType);
         snapshotResponse.setState(snapshot.getStatus());
         snapshotResponse.setLocationType(snapshot.getLocationType() != null ? snapshot.getLocationType().name() : null);
-        snapshotResponse.setDatastoreType(snapshot.getStoreRole() != null ? snapshot.getStoreRole().name() : null);
+        if (!isShowUnique) {
+            snapshotResponse.setDatastoreType(snapshot.getStoreRole() != null ? snapshot.getStoreRole().name() : null);
+        }
 
-//        SnapshotInfo snapshotInfo = null;
 
-        snapshotResponse.setPhysicaSize(snapshot.getStoreSize());
+        setSnapshotInfoDetailsInResponse(snapshot, snapshotResponse, isShowUnique);
 
         snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
                 accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));

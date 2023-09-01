@@ -2089,8 +2089,8 @@ public class ApiDBUtils {
         return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
-    public static SnapshotResponse newSnapshotResponse(ResponseView view, SnapshotJoinVO vr) {
-        return s_snapshotJoinDao.newSnapshotResponse(view, vr);
+    public static SnapshotResponse newSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO vr) {
+        return s_snapshotJoinDao.newSnapshotResponse(view, isShowUnique, vr);
     }
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
