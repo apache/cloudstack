@@ -37,6 +37,7 @@ public class ListDataStoreObjectsCommand extends StorageCommand {
     }
 
     public ListDataStoreObjectsCommand(DataStoreTO store, String path) {
+        super();
         this.store = store;
         this.path = path;
     }

@@ -131,6 +131,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    resourceType: {
+      type: String,
+      required: true
     }
   },
   data () {
@@ -181,9 +185,24 @@ export default {
         this.loading = false
       })
     },
+    fetchPrimaryStoreObjects () {
+      this.loading = true
+      api('listStoragePoolObjects', {
+        path: this.path,
+        id: this.resource.id
+      }).then(json => {
+        this.dataSource = json.listimagestoreobjectsresponse.datastoreobject
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     fetchData () {
       this.dataSource = []
-      this.fetchImageStoreObjects()
+      if (this.resourceType === 'ImageStore') {
+        this.fetchImageStoreObjects()
+      } else if (this.resourceType === 'PrimaryStorage') {
+        this.fetchSecondaryStorage()
+      }
     },
     getRoutes () {
       let path = ''

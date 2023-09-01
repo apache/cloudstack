@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
-import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -154,7 +153,7 @@ public abstract class ServerResourceBase implements ServerResource {
         return true;
     }
 
-    protected Answer listFilesAtPath(String nfsMountPoint, String relativePath) {
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath) {
         File file = new File(nfsMountPoint, relativePath);
         if (file.isFile()) {
             return new ListDataStoreObjectsAnswer(file.exists(), List.of(file.getName()),
@@ -163,8 +162,8 @@ public abstract class ServerResourceBase implements ServerResource {
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files == null) {
-                return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList()
-                        , Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "files == null");
+                return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+                        Collections.emptyList(), Collections.emptyList(), "files == null");
             } else {
                 List<String> names = Arrays.stream(files).map(File::getName).collect(Collectors.toList());
                 List<String> paths = Arrays.stream(files).map(f -> f.getPath().replace(nfsMountPoint, "")).collect(Collectors.toList());

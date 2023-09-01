@@ -50,6 +50,7 @@ export default {
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
     name: 'browser',
+    resourceType: 'ImageStore',
     component: shallowRef(defineAsyncComponent(() => import('@/views/infra/StorageBrowser.vue')))
   }, {
     name: 'events',

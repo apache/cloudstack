@@ -20,10 +20,7 @@
 package com.cloud.storage.resource;
 
 import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
-import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
-import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.log4j.Logger;
@@ -50,12 +47,6 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 import com.google.gson.Gson;
 
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
     private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
