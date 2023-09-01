@@ -355,9 +355,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo) {
         DataStore dataStore = snapshotInfo.getDataStore();
         String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", dataStore.getRole().name(), dataStore.getUuid(), dataStore.getName());
+        List<SnapshotInfo> allSnapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), null);
+        boolean isLastSnapshotInfo = CollectionUtils.isEmpty(allSnapshotInfos) || allSnapshotInfos.size() == 1;
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
-            if (DataStoreRole.Primary.equals(dataStore.getRole())) {
+            if (isLastSnapshotInfo) {
                 snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
             }
             if (!DataStoreRole.Primary.equals(dataStore.getRole())) {
@@ -368,14 +370,15 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
                 }
+                if (isLastSnapshotInfo) {
+                    snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+                }
                 return true;
             } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject)) {
                 return true;
             }
             s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
-            if (DataStoreRole.Primary.equals(dataStore.getRole())) {
-                snapshotObject.processEvent(Snapshot.Event.OperationFailed);
-            }
+            snapshotObject.processEvent(Snapshot.Event.OperationFailed);
         } catch (NoTransitionException ex) {
             s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }

@@ -24,6 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +77,9 @@ public class DefaultSnapshotStrategyTest {
     @Mock
     SnapshotZoneDao snapshotZoneDaoMock;
 
+    @Mock
+    SnapshotDataStoreDao snapshotDataStoreDao;
+
     List<SnapshotInfo> mockSnapshotInfos = new ArrayList<>();
 
     @Before
@@ -126,6 +130,8 @@ public class DefaultSnapshotStrategyTest {
     public void validateDeleteSnapshotInfosDeletesSuccessfullyReturnsTrue() {
         Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
+        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
+        Mockito.doReturn(dataStoreMock).when(snapshotInfo2Mock).getDataStore();
         Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock, null));
     }
 
