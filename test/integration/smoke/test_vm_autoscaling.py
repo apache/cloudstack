@@ -204,7 +204,10 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls.apiUserdata = UserData.register(
             cls.apiclient,
             name="ApiUserdata",
-            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            userdata="IyEvYmluL2Jhc2gKCmVjaG8gIkFQSVVzZXJkYXRhIgoK",
+            #   #!/bin/bash
+            #
+            #   echo "APIUserData"
             account=cls.regular_user.name,
             domainid=cls.regular_user.domainid
         )
@@ -327,7 +330,10 @@ class TestVmAutoScaling(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             zoneid=cls.zone.id,
             templateid=cls.template.id,
-            userdata="VGVzdFVzZXJEYXRh", #TestUserData
+            userdata="IyEvYmluL2Jhc2gKCmVjaG8gIlRlc3RVc2VyRGF0YSIKCg==",
+            #   #!/bin/bash
+            #
+            #   echo "TestUserData"
             expungevmgraceperiod=DEFAULT_EXPUNGE_VM_GRACE_PERIOD,
             otherdeployparams=cls.otherdeployparams
         )
