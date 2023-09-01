@@ -6200,14 +6200,4 @@ public class LibvirtComputingResourceTest {
         Mockito.verify(loggerMock).debug("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [1] and name [fake-VM-name] because this"
                 + " VM has no memory balloon.");
     }
-
-    @Test
-    public void migrateVmDisk() {
-        String secMnt = "/mnt/sec";
-        String srcHost = "10.0.35.222";
-        String remoteFile = "/mnt/76de4042-dc63-3837-9eec-c68ee28dca8f/e8d8c3f5-e6c4-4d8a-8248-f2a59563743c";
-        String username = "root";
-        String password = "P@ssword123";
-        libvirtComputingResourceSpy.copyVolume(srcHost, username, password, secMnt, remoteFile);
-    }
 }

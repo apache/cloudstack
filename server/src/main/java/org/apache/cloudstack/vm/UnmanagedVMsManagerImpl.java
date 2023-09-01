@@ -42,8 +42,8 @@ import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-//import org.apache.cloudstack.api.response.NicResponse;
-//import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -242,7 +242,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host) {
         UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
         response.setName(instance.getName());
-        /*
+
         if (cluster != null) {
             response.setClusterId(cluster.getUuid());
         }
@@ -298,7 +298,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
 
-         */
         return response;
     }
 
@@ -1622,6 +1621,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
+        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVmsAnswer.getUnmanagedInstances();
+        for (String key : vmMap.keySet()) {
+            UnmanagedInstanceTO instance = vmMap.get(key);
+            if (StringUtils.isNotEmpty(keyword) &&
+                    !instance.getName().toLowerCase().contains(keyword)) {
+                continue;
+            }
+            responses.add(createUnmanagedInstanceResponse(instance, null, null));
+        }
+
+        /*
         for (String vmName : getRemoteVmsAnswer.getVmNames()) {
             UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
             instance.setName(vmName);
@@ -1630,7 +1640,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             responses.add(createUnmanagedInstanceResponse(instance, null, null));
-        }
+        } */
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;

@@ -21,13 +21,15 @@ package com.cloud.agent.api;
 public class CopyRemoteVolumeAnswer extends Answer {
 
     private String remoteIp;
+    private String filename;
 
     CopyRemoteVolumeAnswer() {
     }
 
-    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, String details) {
+    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, String details, String filename) {
         super(cmd, true, details);
         this.remoteIp = cmd.getRemoteIp();
+        this.filename = filename;
     }
 
     public String getRemoteIp() {
@@ -36,6 +38,14 @@ public class CopyRemoteVolumeAnswer extends Answer {
 
     public void setRemoteIp(String remoteIp) {
         this.remoteIp = remoteIp;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public String getFilename() {
+        return filename;
     }
 
     public String getString() {

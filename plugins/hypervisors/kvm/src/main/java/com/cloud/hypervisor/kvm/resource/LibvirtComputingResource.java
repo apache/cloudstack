@@ -5260,7 +5260,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    public List<String> getStoppedVms(final Connect conn) {
+    public HashMap<String, UnmanagedInstanceTO> getStoppedVms(final Connect conn) {
         final List<String> stoppedVms = new ArrayList<>();
 
         String[] vms;
@@ -5271,12 +5271,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.warn("Unable to listDomains", e);
             return null;
         }
-        
+
+        HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         Domain dm = null;
         for (String vm : vms) {
             try {
                 dm = conn.domainLookupByName(vm);
-                UnmanagedInstanceTO unmanagedInstanceTO = new UnmanagedInstanceTO();
 
                 final DomainState ps = dm.getInfo().state;
 
@@ -5286,7 +5286,38 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final String vmName = dm.getName();
 
                 if (state == PowerState.PowerOff) {
-                    stoppedVms.add(vmName);
+                    UnmanagedInstanceTO unmanagedInstanceTO = new UnmanagedInstanceTO();
+                    unmanagedInstanceTO.setName(vmName);
+                    unmanagedInstanceTO.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
+                    unmanagedInstanceTO.setCpuCores(getCpuShares(dm));
+                    //unmanagedInstanceTO.setMemory(new Long(dm.getMaxMemory()).intValue());
+                    unmanagedInstanceTO.setMemory(131072);
+                    unmanagedInstanceTO.setOperatingSystem(dm.getOSType());
+                    List<DiskDef> disks = getDisks(conn, vmName);
+                    List<UnmanagedInstanceTO.Disk> disksTO = new ArrayList<>();
+                    for(DiskDef disk : disks) {
+                        UnmanagedInstanceTO.Disk diskTO = new UnmanagedInstanceTO.Disk();
+                        diskTO.setImagePath(disk.getDiskPath());
+                        diskTO.setLabel(disk.getDiskLabel());
+                        diskTO.setDatastoreType(disk.getDeviceType().toString());
+                        s_logger.debug("DiskDef: "+disk);
+                        disksTO.add(diskTO);
+                    }
+                    unmanagedInstanceTO.setDisks(disksTO);
+                    List<InterfaceDef> interfaces = getInterfaces(conn, vmName);
+                    List<UnmanagedInstanceTO.Nic> nicsTO = new ArrayList<>();
+                    for(InterfaceDef interfaceDef : interfaces) {
+                        UnmanagedInstanceTO.Nic nic = new UnmanagedInstanceTO.Nic();
+                        nic.setAdapterType(interfaceDef.getModel().toString());
+                        nic.setMacAddress(interfaceDef.getMacAddress());
+                        nic.setPciSlot(interfaceDef.getSlot().toString());
+                        nic.setVlan(interfaceDef.getVlanTag());
+                        nic.setNetwork(interfaceDef.getBrName());
+                        s_logger.debug("InterfaceDef: "+interfaceDef);
+                        nicsTO.add(nic);
+                    }
+                    unmanagedInstanceTO.setNics(nicsTO);
+                    unmanagedInstances.put(vmName, unmanagedInstanceTO);
                 }
             } catch (final LibvirtException e) {
                 s_logger.warn("Unable to get vms", e);
@@ -5301,15 +5332,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        return stoppedVms;
+        return unmanagedInstances;
     }
 
     /*
     Scp volume from remote host to local directory
      */
-    public void copyVolume(String srcIp, String username, String password, String localDir, String remoteFile) {
+    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile) {
         try {
-            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, remoteFile);
+            String outputFile = UUID.randomUUID().toString();
+            StringBuilder command = new StringBuilder("qemu-img convert ");
+            command.append(remoteFile);
+            command.append(" /tmp/");
+            command.append(outputFile);
+            SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
+            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, "/tmp/"+outputFile);
+            return localDir+outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -41,9 +41,9 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         String srcFile = command.getSrcFile();
         String dstPath = command.getDstPath();
         try {
-            libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile);
+            String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile);
             s_logger.debug("Volume Copy Successful ");
-            return  new CopyRemoteVolumeAnswer(command, "");
+            return  new CopyRemoteVolumeAnswer(command, "", filename);
         } catch (final Exception e) {
             s_logger.error("Error while copying file from remote host: "+ e.getMessage());
             return new Answer(command, false, result);

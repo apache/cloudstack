@@ -26,11 +26,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
-import java.util.List;
+import java.util.HashMap;
 
 @ResourceWrapper(handles = GetRemoteVmsCommand.class)
 public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetRemoteVmsCommand, Answer, LibvirtComputingResource> {
@@ -48,9 +49,9 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
         String hypervisorURI = sb.toString();
         try {
             Connect conn = LibvirtConnection.getConnection(hypervisorURI);
-            List<String> vmNames = libvirtComputingResource.getStoppedVms(conn);
-            s_logger.debug("Vm Names: "+ vmNames.toString());
-            return  new GetRemoteVmsAnswer(command, "", vmNames);
+            HashMap<String, UnmanagedInstanceTO> vmMap = libvirtComputingResource.getStoppedVms(conn);
+            s_logger.debug("Found Vms: "+ vmMap.size());
+            return  new GetRemoteVmsAnswer(command, "", vmMap);
         } catch (final LibvirtException e) {
             s_logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());
             return new Answer(command, false, result);
