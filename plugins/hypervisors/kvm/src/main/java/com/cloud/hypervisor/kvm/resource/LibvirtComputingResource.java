@@ -3698,7 +3698,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected List<String> getAllVmNames(final Connect conn) {
+    /**
+     * Given a disk path on KVM host, attempts to find source host and path using mount command
+     * @param diskPath KVM host path for virtual disk
+     * @return Pair with IP of host and path
+     */
+    public Pair<String, String> getSourceHostPath(String diskPath) {
+        String sourceHostIp = null, sourcePath = null;
+        try {
+            String mountResult = Script.runSimpleBashScript("mount | grep \"" + diskPath + "\"");
+            s_logger.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
+            if (StringUtils.isNotEmpty(mountResult)) {
+                String[] res = mountResult.strip().split(" ");
+                res = res[0].split(":");
+                sourceHostIp = res[0].strip();
+                sourcePath = res[1].strip();
+            }
+            if (StringUtils.isNotEmpty(sourceHostIp) && StringUtils.isNotEmpty(sourcePath)) {
+                return new Pair<>(sourceHostIp, sourcePath);
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Failed to list source host and IP for " + diskPath + ex.toString());
+        }
+        return null;
+    }
+
+    public List<String> getAllVmNames(final Connect conn) {
         final ArrayList<String> la = new ArrayList<String>();
         try {
             final String names[] = conn.listDefinedDomains();
@@ -5345,9 +5370,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             command.append(remoteFile);
             command.append(" /tmp/");
             command.append(outputFile);
+            s_logger.debug("Converting remoteFile: "+remoteFile);
             SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
+            s_logger.debug("Copying remoteFile to: "+localDir);
             SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, "/tmp/"+outputFile);
-            return localDir+outputFile;
+            s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
+            return localDir+"/"+outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

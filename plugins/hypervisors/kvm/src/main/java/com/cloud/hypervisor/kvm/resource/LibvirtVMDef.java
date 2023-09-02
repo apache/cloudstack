@@ -609,7 +609,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum DiskType {
+        public enum DiskType {
             FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
             String _diskType;
 
@@ -1071,6 +1071,18 @@ public class LibvirtVMDef {
         public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
 
         public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+
+        public String getSourceHost() {
+            return _sourceHost;
+        }
+
+        public int getSourceHostPort() {
+            return _sourcePort;
+        }
+
+        public String getSourcePath() {
+            return _sourcePath;
+        }
 
         @Override
         public String toString() {
@@ -1736,6 +1748,10 @@ public class LibvirtVMDef {
             // close cpu def
             modeBuilder.append("</cpu>");
             return modeBuilder.toString();
+        }
+
+        public int getCoresPerSocket() {
+            return _coresPerSocket;
         }
     }
 

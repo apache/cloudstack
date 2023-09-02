@@ -4489,7 +4489,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (isImport) {
             vm.setDataCenterId(zone.getId());
-            vm.setHostId(host.getId());
+            if(host != null) {
+                vm.setHostId(host.getId());
+            }
             if (lastHost != null) {
                 vm.setLastHostId(lastHost.getId());
             }
@@ -8204,9 +8206,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
         }
-        if (host == null) {
-            throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
-        }
+       // if (host == null) {
+       //      throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
+       // }
 
         final long id = _vmDao.getNextInSequence(Long.class, "id");
 
