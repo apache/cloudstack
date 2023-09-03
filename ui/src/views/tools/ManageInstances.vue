@@ -232,6 +232,7 @@
                   </a-pagination>
                   <div :span="24" class="action-button-right">
                     <a-button
+
                       :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
                       @click="onUnmanageInstanceAction">
@@ -265,6 +266,7 @@
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
+            @track-import-jobid="trackImportJobId"
           />
         </a-modal>
       </div>
@@ -719,6 +721,9 @@ export default {
     },
     updateManageInstanceActionLoading (value) {
       this.importUnmanagedInstanceLoading = value
+      if (!value) {
+        this.fetchInstances()
+      }
     },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
@@ -752,6 +757,21 @@ export default {
         cancelText: this.$t('label.cancel'),
         onOk () {
           self.unmanageInstances()
+        }
+      })
+    },
+    trackImportJobId (details) {
+      const jobId = details[0]
+      const name = details[1]
+      this.$pollJob({
+        jobId,
+        title: this.$t('label.import.instance'),
+        description: this.$t('label.import.instance'),
+        loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
+        successMessage: this.$t('message.success.import.instance') + ' ' + name,
+        successMethod: (result) => {
+          this.fetchInstances()
         }
       })
     },

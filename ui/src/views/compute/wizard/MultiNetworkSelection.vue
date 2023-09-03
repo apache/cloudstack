@@ -49,24 +49,23 @@
               v-for="network in validNetworks[record.id]"
               :key="network.id"
               :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
-              <div v-if="hypervisor==='KVM'">{{ network.displaytext }}</div>
+              <div v-if="hypervisor==='KVM'">{{ network.displaytext  + ' - ' + (network.id.slice(0,8)) }}</div>
               <div v-else>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
             </a-select-option>
           </a-select>
           <span v-else>
             {{ $t('label.no.matching.network') }}
           </span>
-        </template>
-        <template v-if="column.key === 'ipaddress'">
-          <check-box-input-pair
-            layout="vertical"
-            :resourceKey="record.id"
-            :checkBoxLabel="$t('label.auto.assign.random.ip')"
-            :defaultCheckBoxValue="true"
-            :reversed="true"
-            :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
-            @handle-checkinputpair-change="setIpAddress" />
-        </template>
+      </template>
+      <template #ipaddress="{record}" v-if="column.key === 'ipaddress'">
+        <check-box-input-pair
+          layout="vertical"
+          :resourceKey="record.id"
+          :checkBoxLabel="$t('label.auto.assign.random.ip')"
+          :defaultCheckBoxValue="true"
+          :reversed="true"
+          :visible="(ipAddressesEnabled[record.id])"
+          @handle-checkinputpair-change="setIpAddress" />
       </template>
     </a-table>
   </div>
@@ -130,7 +129,6 @@ export default {
       values: {},
       ipAddressesEnabled: {},
       ipAddresses: {},
-      indexNum: 1,
       sendValuesTimer: null
     }
   },
@@ -210,7 +208,10 @@ export default {
     },
     setIpAddressEnabled (nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
-      this.indexNum = (this.indexNum % 2) + 1
+      this.values[nic.id] = network ? network.id : ''
+      if (!this.ipAddresses[nic.id] && this.ipAddressesEnabled[nic.id]) {
+        this.ipAddresses[nic.id] = 'auto'
+      }
     },
     setIpAddress (nicId, autoAssign, ipAddress) {
       this.ipAddresses[nicId] = autoAssign ? 'auto' : ipAddress

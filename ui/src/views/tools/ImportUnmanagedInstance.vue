@@ -114,10 +114,8 @@
                   :value="templateType"
                   @change="changeTemplateType">
                   <a-row :gutter="12">
-                    <a-col :md="24" :lg="12">
-                      <a-radio
-                      value="auto"
-                      :disabled="this.cluster.hypervisortype === 'KVM'">
+                    <a-col :md="24" :lg="12" v-if="this.cluster.hypervisortype === 'VMWare'">
+                      <a-radio value="auto">
                         {{ $t('label.template.temporary.import') }}
                       </a-radio>
                     </a-col>
@@ -317,7 +315,7 @@ export default {
       selectedDomainId: null,
       templates: [],
       templateLoading: false,
-      templateType: 'auto',
+      templateType: this.defaultTemplateType(),
       totalComputeOfferings: 0,
       computeOfferings: [],
       computeOfferingLoading: false,
@@ -628,6 +626,12 @@ export default {
     updateMultiNetworkOffering (data) {
       this.nicsNetworksMapping = data
     },
+    defaultTemplateType () {
+      if (this.cluster.hypervisortype === 'VMWare') {
+        return 'auto'
+      }
+      return 'custom'
+    },
     changeTemplateType (e) {
       this.templateType = e.target.value
       if (this.templateType === 'auto') {
@@ -774,17 +778,7 @@ export default {
         const name = this.resource.name
         api('importUnmanagedInstance', params).then(json => {
           const jobId = json.importunmanagedinstanceresponse.jobid
-          this.$pollJob({
-            jobId,
-            title: this.$t('label.import.instance'),
-            description: name,
-            loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.import.instance') + ' ' + name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
-          })
+          this.$emit('track-import-jobid', [jobId, name])
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
@@ -804,7 +798,7 @@ export default {
       for (var field of fields) {
         this.updateFieldValue(field, undefined)
       }
-      this.templateType = 'auto'
+      this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
     },
