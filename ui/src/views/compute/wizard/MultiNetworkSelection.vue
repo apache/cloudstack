@@ -56,16 +56,17 @@
           <span v-else>
             {{ $t('label.no.matching.network') }}
           </span>
-      </template>
-      <template #ipaddress="{record}" v-if="column.key === 'ipaddress'">
-        <check-box-input-pair
-          layout="vertical"
-          :resourceKey="record.id"
-          :checkBoxLabel="$t('label.auto.assign.random.ip')"
-          :defaultCheckBoxValue="true"
-          :reversed="true"
-          :visible="(ipAddressesEnabled[record.id])"
-          @handle-checkinputpair-change="setIpAddress" />
+        </template>
+        <template v-if="column.key === 'ipaddress'">
+          <check-box-input-pair
+            layout="vertical"
+            :resourceKey="record.id"
+            :checkBoxLabel="$t('label.auto.assign.random.ip')"
+            :defaultCheckBoxValue="true"
+            :reversed="true"
+            :visible="(ipAddressesEnabled[record.id])"
+            @handle-checkinputpair-change="setIpAddress" />
+        </template>
       </template>
     </a-table>
   </div>
