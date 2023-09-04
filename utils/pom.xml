@@ -264,6 +264,8 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
+                                    <include>org.apache.logging.log4j:log4j-core</include>
+                                    <include>org.apache.logging.log4j:log4j-api</include>
                                     <include>com.google.crypto.tink:tink</include>
                                     <include>com.google.protobuf:protobuf-java</include>
                                     <include>commons-cli:commons-cli</include>
