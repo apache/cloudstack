@@ -308,8 +308,8 @@ const user = {
             const config = json.listconfigurationsresponse.configuration[0]
             commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
           }
-        }).catch(error => {
-          reject(error)
+        }).catch(_ => {
+          commit('SET_CUSTOM_HYPERVISOR_NAME', 'Custom')
         })
       })
     },
