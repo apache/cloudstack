@@ -417,7 +417,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     protected Void copySnapshotZoneAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, CreateCmdResult> callback, CopySnapshotContext<CommandResult> context) {
-        s_logger.info("----------------------executing copySnapshotZoneAsyncCallback");
         CreateCmdResult result = callback.getResult();
         SnapshotInfo destSnapshot = context.destSnapshot;
         AsyncCallFuture<SnapshotResult> future = context.future;
@@ -442,7 +441,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     }
 
     protected Void prepareCopySnapshotZoneAsyncCallback(AsyncCallbackDispatcher<SnapshotServiceImpl, QuerySnapshotZoneCopyAnswer> callback, PrepareCopySnapshotContext<CommandResult> context) {
-        s_logger.info("----------------------executing prepareCopySnapshotZoneAsyncCallback");
         QuerySnapshotZoneCopyAnswer answer = callback.getResult();
         if (answer == null || !answer.getResult()) {
             CreateCmdResult result = new CreateCmdResult(null, answer);

@@ -276,7 +276,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(Command cmd) {
-        s_logger.info("-----------------------------------------" + cmd.getClass().getSimpleName());
         if (cmd instanceof DownloadProgressCommand) {
             return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {

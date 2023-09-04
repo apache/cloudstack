@@ -442,7 +442,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 final String downloadedFile = entry.getValue();
                 final String name = url.substring(url.lastIndexOf("/"));
                 if (StringUtils.isEmpty(installDir)) {
-                    installDir = url.substring(0, url.lastIndexOf("/") - 1);
+                    installDir = url.substring(0, url.lastIndexOf("/"));
                     installDir = installDir.substring(installDir.lastIndexOf("/"));
                     job.setTmpltPath(job.getTmpltPath() + installDir);
                     installDir = job.getInstallPathPrefix() + installDir;
@@ -451,6 +451,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     Files.createDirectories(installPath);
                 }
                 final String filePath = installDir + name;
+                if (name.endsWith(".ovf")) {
+                    job.setTmpltPath(job.getTmpltPath() + name.replace(".ovf", ""));
+                }
                 Path srcPath = Paths.get(downloadedFile);
                 Path destPath = Paths.get(filePath);
                 LOGGER.debug(String.format("Trying to move downloaded snapshot file [%s] to [%s].", srcPath, destPath));
@@ -728,7 +731,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     TemplateDownloader td;
                     if (ResourceType.SNAPSHOT.equals(resourceType) && url.contains("\n") &&
                             ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))) {
-                        LOGGER.info("~~~~~~using-HttpMultiFileDownloader");
                         String[] urls = url.split("\n");
                         td = new SimpleHttpMultiFileDownloader(_storage, urls, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, resourceType);
                     } else {
