@@ -340,7 +340,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         boolean result = false;
         for (var snapshotInfo : snapshotInfos) {
             if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(snapshotInfo, snapshotVo), false)) {
-                snapshotStoreDao.markDestroyedBySnapshotStore(snapshotInfo.getId(), snapshotInfo.getDataStore().getId(), snapshotInfo.getDataStore().getRole());
+                snapshotStoreDao.removeBySnapshotStore(snapshotInfo.getId(), snapshotInfo.getDataStore().getId(), snapshotInfo.getDataStore().getRole());
                 result = true;
             }
         }
@@ -355,11 +355,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo) {
         DataStore dataStore = snapshotInfo.getDataStore();
         String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", dataStore.getRole().name(), dataStore.getUuid(), dataStore.getName());
-        List<SnapshotInfo> allSnapshotInfos = retrieveSnapshotEntries(snapshotVo.getId(), null);
-        boolean isLastSnapshotInfo = CollectionUtils.isEmpty(allSnapshotInfos) || allSnapshotInfos.size() == 1;
+        List<SnapshotDataStoreVO> snapshotStoreRefs = snapshotStoreDao.findBySnapshotId(snapshotVo.getId());
+        boolean isLastSnapshotRef = CollectionUtils.isEmpty(snapshotStoreRefs) || snapshotStoreRefs.size() == 1;
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
-            if (isLastSnapshotInfo) {
+            if (isLastSnapshotRef) {
                 snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
             }
             if (!DataStoreRole.Primary.equals(dataStore.getRole())) {
@@ -370,7 +370,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
                 }
-                if (isLastSnapshotInfo) {
+                if (isLastSnapshotRef) {
                     snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 }
                 return true;

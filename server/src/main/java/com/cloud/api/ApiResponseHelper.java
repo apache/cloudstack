@@ -678,7 +678,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setRevertable(false);
         } else {
         snapshotResponse.setRevertable(snapshotInfo.isRevertable());
-        snapshotResponse.setPhysicaSize(snapshotInfo.getPhysicalSize());
+        snapshotResponse.setPhysicalSize(snapshotInfo.getPhysicalSize());
         }
 
         // set tag information

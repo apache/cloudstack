@@ -263,7 +263,7 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
         return projectName;
     }
 
-    public long getDataCenterId() {
+    public Long getDataCenterId() {
         return dataCenterId;
     }
 

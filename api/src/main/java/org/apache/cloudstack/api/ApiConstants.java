@@ -78,6 +78,7 @@ public class ApiConstants {
     public static final String DATASTORE_HOST = "datastorehost";
     public static final String DATASTORE_NAME = "datastorename";
     public static final String DATASTORE_PATH = "datastorepath";
+    public static final String DATASTORE_STATE = "datastorestate";
     public static final String DATASTORE_TYPE = "datastoretype";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";

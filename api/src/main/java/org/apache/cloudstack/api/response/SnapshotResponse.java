@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -90,6 +91,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.State state;
 
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "the status of the template")
+    private String status;
+
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
     @Param(description = "physical size of backedup snapshot on image store")
     private long physicalSize;
@@ -118,9 +123,17 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "virtual size of backedup snapshot on image store")
     private long virtualSize;
 
+    @SerializedName(ApiConstants.DATASTORE_STATE)
+    @Param(description = "state of the snapshot on the datastore")
+    private String datastoreState;
+
     @SerializedName(ApiConstants.DATASTORE_TYPE)
     @Param(description = "type of the datastore for the snapshot entry")
     private String datastoreType;
+
+    @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
+    @Param(description = "Lists the download progress of a snapshot")
+    private Map<String, String> downloadDetails;
 
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -198,7 +211,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.state = state;
     }
 
-    public void setPhysicaSize(long physicalSize) {
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
     }
 
@@ -244,7 +261,15 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.virtualSize = virtualSize;
     }
 
+    public void setDatastoreState(String datastoreState) {
+        this.datastoreState = datastoreState;
+    }
+
     public void setDatastoreType(String datastoreType) {
         this.datastoreType = datastoreType;
+    }
+
+    public void setDownloadDetails(Map<String, String> downloadDetails) {
+        this.downloadDetails = downloadDetails;
     }
 }

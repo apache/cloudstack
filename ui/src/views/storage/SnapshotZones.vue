@@ -43,6 +43,10 @@
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
         </template>
+        <template v-if="column.key === 'isready'">
+          <span v-if="record.datastorestate==='Ready'">{{ $t('label.yes') }}</span>
+          <span v-else>{{ $t('label.no') }}</span>
+        </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
             v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
@@ -254,12 +258,13 @@ export default {
         dataIndex: 'zonename'
       },
       {
-        title: this.$t('label.storagetype'),
-        dataIndex: 'datastoretype'
+        title: this.$t('label.status'),
+        dataIndex: 'status'
       },
       {
-        title: this.$t('label.status'),
-        dataIndex: 'state'
+        key: 'isready',
+        title: this.$t('label.isready'),
+        dataIndex: 'isready'
       }
     ]
     if (this.isActionPermitted()) {

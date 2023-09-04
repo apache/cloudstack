@@ -42,8 +42,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     void removeBySnapshotStore(long snapshotId, long storeId, DataStoreRole role);
 
-    void markDestroyedBySnapshotStore(long snapshotId, long storeId, DataStoreRole role);
-
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
     List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role);

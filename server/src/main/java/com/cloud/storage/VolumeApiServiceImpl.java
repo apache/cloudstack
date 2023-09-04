@@ -872,7 +872,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (vm == null || vm.getType() != VirtualMachine.Type.User) {
                     throw new InvalidParameterValueException("Please specify a valid User VM.");
                 }
-
+                if (vm.getDataCenterId() != zoneId) {
+                    throw new InvalidParameterValueException("The specified zone is different than zone of the VM");
+                }
                 // Check that the VM is in the correct state
                 if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
                     throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
@@ -3426,7 +3428,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
-        if (policyId != null) {
+        if (policyId != null && policyId > 0) {
             if (CollectionUtils.isNotEmpty(zoneIds)) {
                 throw new InvalidParameterValueException(String.format("%s can not be specified for snapshots linked with snapshot policy", ApiConstants.ZONE_ID_LIST));
             }

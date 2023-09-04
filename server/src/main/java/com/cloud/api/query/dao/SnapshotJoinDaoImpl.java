@@ -18,7 +18,9 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -36,6 +38,8 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
@@ -75,20 +79,38 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         if (!isShowUnique) {
             return;
         }
+        if (snapshot.getDataCenterId() == null) {
+            return;
+        }
         SnapshotInfo snapshotInfo = null;
         snapshotInfo = snapshotDataFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshot.getStoreRole(), snapshot.getDataCenterId());
-
         if (snapshotInfo == null) {
             s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
-            snapshotResponse.setPhysicaSize(snapshotInfo.getPhysicalSize());
+            snapshotResponse.setPhysicalSize(snapshotInfo.getPhysicalSize());
         }
+    }
+
+    private String getSnapshotStatus(SnapshotJoinVO snapshot) {
+        String status = snapshot.getStatus().toString();
+        if (snapshot.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            status = "Processing";
+            if (snapshot.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {
+                status = snapshot.getDownloadPercent() + "% Downloaded";
+            } else if (snapshot.getErrorString() == null) {
+                status = snapshot.getStoreState().toString();
+            } else {
+                status = snapshot.getErrorString();
+            }
+        }
+        return status;
     }
 
     @Override
     public SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, boolean isShowUnique, SnapshotJoinVO snapshot) {
+        final Account caller = CallContext.current().getCallingAccount();
         SnapshotResponse snapshotResponse = new SnapshotResponse();
         snapshotResponse.setId(snapshot.getUuid());
         // populate owner.
@@ -111,14 +133,27 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotResponse.setState(snapshot.getStatus());
         snapshotResponse.setLocationType(snapshot.getLocationType() != null ? snapshot.getLocationType().name() : null);
         if (!isShowUnique) {
-            snapshotResponse.setDatastoreType(snapshot.getStoreRole() != null ? snapshot.getStoreRole().name() : null);
+            snapshotResponse.setDatastoreState(snapshot.getStoreState() != null ? snapshot.getStoreState().name() : null);
+            if (view.equals(ResponseObject.ResponseView.Full)) {
+                snapshotResponse.setDatastoreType(snapshot.getStoreRole() != null ? snapshot.getStoreRole().name() : null);
+            }
+            // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
+            if (view == ResponseObject.ResponseView.Full ||
+                    snapshot.getAccountId() == caller.getId() ||
+                    snapshot.getAccountType() == Account.Type.PROJECT) {
+                String status = getSnapshotStatus(snapshot);
+                if (status != null) {
+                    snapshotResponse.setStatus(status);
+                }
+            }
+            Map<String, String> downloadDetails = new HashMap<>();
+            downloadDetails.put("downloadPercent", Integer.toString(snapshot.getDownloadPercent()));
+            downloadDetails.put("downloadState", (snapshot.getDownloadState() != null ? snapshot.getDownloadState().toString() : ""));
+            snapshotResponse.setDownloadDetails(downloadDetails);
         }
-
-
         setSnapshotInfoDetailsInResponse(snapshot, snapshotResponse, isShowUnique);
-
         snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
-                accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                accountService.isRootAdmin(caller.getId())));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
