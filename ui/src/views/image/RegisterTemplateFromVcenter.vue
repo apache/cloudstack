@@ -26,15 +26,15 @@
 
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item :label="'Select source vCenter:'" name="vmwareopt" ref="vmwareopt" v-if="zoneid != ''">
+            <a-form-item :label="$t('label.register.template.from.vmware.vm.select.vcenter')" name="vmwareopt" ref="vmwareopt" v-if="zoneid != ''">
               <a-radio-group
                 v-model:value="vcenterSelectedOption"
                 buttonStyle="solid">
                 <a-radio-button value="existing">
-                  Linked vCenter
+                  {{ $t('label.register.template.from.vmware.vm.linked.vcenter') }}
                 </a-radio-button>
                 <a-radio-button value="new">
-                  New vCenter
+                  {{ $t('label.register.template.from.vmware.vm.new.vcenter') }}
                 </a-radio-button>
               </a-radio-group>
             </a-form-item>
@@ -58,7 +58,7 @@
                 </a-form-item>
               </div>
               <div v-else>
-                No vCenter is linked to the zone, please select New vCenter
+                {{ $t('message.register.template.from.vmware.vm.select.new.vcenter') }}
               </div>
             </div>
             <div v-else-if="vcenterSelectedOption === 'new'">
@@ -106,23 +106,34 @@
                   (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '')"
                 :loading="loading"
                 type="primary"
-                @click="listVmwareStoppedVms">List Stopped VMs</a-button>
+                @click="listVmwareDatacenterVms">{{ $t('label.register.template.from.vmware.vm.list.vcenter.vms') }}</a-button>
             </div>
           </a-col>
 
           <a-col :md="24" :lg="12">
-            <p>Select a Stopped VM:</p>
+            <p>{{ $t('message.register.template.from.vmware.vm.select.vm') }}</p>
+            <a-alert
+              v-if="selectedPoweredOnVm"
+              :message="$t('label.register.template.from.vmware.vm.running.vm.alert')"
+              type="warning"
+              show-icon
+            />
             <a-table
+              sticky
               class="instances-card-table"
               :loading="loading"
-              :rowSelection="stoppedVmsSelection"
+              :rowSelection="vmwareDcVmsSelection"
               :rowKey="(record, index) => record"
-              :columns="stoppedVmsColumns"
-              :data-source="stoppedVms"
-              :pagination="{ pageSizeOptions: ['10', '15'], showSizeChanger: true}"
+              :columns="vmwareDcVmsColumns"
+              :data-source="vmwareDcVms"
+              :pagination="{ pageSizeOptions: ['5', '10', '15'], defaultPageSize: 5, showSizeChanger: true}"
               size="middle"
-              :rowClassName="getRowClassName"
-            >
+              :rowClassName="getRowClassName">
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'powerstate'">
+                  <status class="status" :text="record.powerstate" displayText />
+                </template>
+              </template>
             </a-table>
           </a-col>
         </a-row>
@@ -134,6 +145,7 @@
 import { api } from '@/api'
 import { ref, reactive } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'RegisterTemplateFromVcenter',
@@ -144,7 +156,8 @@ export default {
     }
   },
   components: {
-    TooltipLabel
+    TooltipLabel,
+    Status
   },
   data () {
     return {
@@ -157,9 +170,10 @@ export default {
       vcenterSelectedOption: '',
       existingvcenter: [],
       selectedExistingVcenterId: '',
-      stoppedVms: [],
-      stoppedVmSelectedRows: [],
-      stoppedVmsColumns: [
+      selectedPoweredOnVm: false,
+      vmwareDcVms: [],
+      vmwareDcVmSelectedRows: [],
+      vmwareDcVmsColumns: [
         {
           title: this.$t('label.hostname'),
           dataIndex: 'hostname'
@@ -171,16 +185,21 @@ export default {
         {
           title: this.$t('label.virtualmachinename'),
           dataIndex: 'virtualmachinename'
+        },
+        {
+          title: this.$t('label.powerstate'),
+          key: 'powerstate',
+          dataIndex: 'powerstate'
         }
       ]
     }
   },
   computed: {
-    stoppedVmsSelection () {
+    vmwareDcVmsSelection () {
       return {
         type: 'radio',
-        selectedRowKeys: this.stoppedVmSelectedRows || [],
-        onChange: this.onStoppedVmSelectRow
+        selectedRowKeys: this.vmwareDcVmSelectedRows || [],
+        onChange: this.onVmwareDcVmSelectRow
       }
     }
   },
@@ -212,8 +231,8 @@ export default {
         }
       })
     },
-    onStoppedVmSelectRow (value) {
-      this.stoppedVmSelectedRows = value
+    onVmwareDcVmSelectRow (value) {
+      this.vmwareDcVmSelectedRows = value
       const obj = {}
       if (this.vcenterSelectedOption === 'existing') {
         obj.vcenterid = this.selectedExistingVcenterId
@@ -226,9 +245,11 @@ export default {
       obj.host = value[0].hostname
       obj.vmname = value[0].virtualmachinename
       obj.clustername = value[0].clustername
-      this.$emit('select-stopped-vm', obj)
+      obj.powerstate = value[0].powerstate
+      this.selectedPoweredOnVm = (value[0].powerstate === 'PowerOn')
+      this.$emit('select-vmware-dc-vm', obj)
     },
-    listVmwareStoppedVms () {
+    listVmwareDatacenterVms () {
       this.loading = true
       const params = {}
       if (this.vcenterSelectedOption === 'new') {
@@ -239,8 +260,8 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
-      api('listVmwareDcStoppedVms', params).then(json => {
-        this.stoppedVms = json.listvmwaredcstoppedvmsresponse.vmwarestoppedvm
+      api('listVmwareDcVms', params).then(json => {
+        this.vmwareDcVms = json.listvmwaredcvmsresponse.vmwarevm
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {

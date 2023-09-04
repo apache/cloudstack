@@ -108,7 +108,8 @@ public interface HypervisorGuru extends Adapter {
     /**
      * Will perform a clone of a VM on an external host (if the guru can handle)
      */
-    HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
+    HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+                                                          boolean forced, Map<String, String> params);
 
     boolean removeHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
 }

@@ -36,6 +36,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.OVFInformationTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
@@ -247,6 +248,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                     if (CollectionUtils.isNotEmpty(disks)) {
                         persistTemplateDisksAsChildrenFromMigratedVmwareVm(template.getId(), disks, store.getId());
                     }
+                    List<OVFNetworkTO> networks = ovfInformationTO.getNetworks();
+                    if (CollectionUtils.isNotEmpty(networks)) {
+                        persistTemplatePresetMacAddresses(template.getId(), networks);
+                    }
                 }
                 List<VMTemplateDetailVO> details = templateDetailsDao.listDetails(template.getId());
                 if (CollectionUtils.isNotEmpty(details)) {
@@ -295,6 +300,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             caller.complete(result);
         }
         return null;
+    }
+
+    private void persistTemplatePresetMacAddresses(long templateId, List<OVFNetworkTO> networks) {
+        List<String> macAddresses = networks.stream().map(OVFNetworkTO::getNicDescription).collect(Collectors.toList());
+        String value = GsonHelper.getGson().toJson(macAddresses);
+        String key = VmDetailConstants.VMWARE_MAC_ADDRESSES;
+        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
+        templateDetailsDao.persist(detailVO);
     }
 
     private Map<String, String> createRemoveDetails(List<VMTemplateDetailVO> details) {

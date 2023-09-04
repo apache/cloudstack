@@ -22,7 +22,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.mo.VmwareStoppedVmInDatacenter;
+import com.cloud.hypervisor.vmware.mo.VmwareVmOnDatacenter;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
-import org.apache.cloudstack.api.response.VmwareStoppedVmResponse;
+import org.apache.cloudstack.api.response.VmwareVmResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,10 +41,10 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcStoppedVms", responseObject = VmwareStoppedVmResponse.class,
-        description = "Retrieves VMware Stopped VMs to register as a template into a KVM zone.",
+@APICommand(name = "listVmwareDcVms", responseObject = VmwareVmResponse.class,
+        description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcStoppedVmsCmd extends BaseListCmd {
+public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -93,16 +93,17 @@ public class ListVmwareDcStoppedVmsCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            List<VmwareStoppedVmInDatacenter> vms = _vmwareDatacenterService.listStoppedVMsInDatacenter(this);
-            ListResponse<VmwareStoppedVmResponse> response = new ListResponse<>();
-            List<VmwareStoppedVmResponse> responses = new ArrayList<>();
+            List<VmwareVmOnDatacenter> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
+            ListResponse<VmwareVmResponse> response = new ListResponse<>();
+            List<VmwareVmResponse> responses = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(vms)) {
-                for (VmwareStoppedVmInDatacenter stoppedVm : vms) {
-                    String host = stoppedVm.getHostName();
-                    String vmName = stoppedVm.getVmName();
-                    String clusterName = stoppedVm.getClusterName();
-                    VmwareStoppedVmResponse resp = new VmwareStoppedVmResponse(host, vmName, clusterName);
-                    resp.setObjectName("vmwarestoppedvm");
+                for (VmwareVmOnDatacenter vmwareVm : vms) {
+                    String host = vmwareVm.getHostName();
+                    String vmName = vmwareVm.getVmName();
+                    String clusterName = vmwareVm.getClusterName();
+                    String powerState = vmwareVm.getPowerState().name();
+                    VmwareVmResponse resp = new VmwareVmResponse(host, vmName, clusterName, powerState);
+                    resp.setObjectName("vmwarevm");
                     responses.add(resp);
                 }
             }
@@ -110,7 +111,7 @@ public class ListVmwareDcStoppedVmsCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {
-            String errorMsg = String.format("Error retrieving stopped VMs from VMware VC: %s", e.getMessage());
+            String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
     }
@@ -133,6 +134,6 @@ public class ListVmwareDcStoppedVmsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return "listvmwaredcstoppedvmsresponse";
+        return "listvmwaredcvmsresponse";
     }
 }

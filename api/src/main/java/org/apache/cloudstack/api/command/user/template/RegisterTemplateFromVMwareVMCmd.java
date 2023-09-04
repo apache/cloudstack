@@ -31,12 +31,13 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
 @APICommand(name = "registerTemplateFromVmwareVm",
-        description = "Registers a template from a stopped VM in an existing VMware vCenter.",
+        description = "Registers a template from a VM in an existing VMware vCenter.",
         responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
@@ -88,6 +89,10 @@ public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
             description = "The password for the specified username.")
     private String password;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
+            description = "Force stop the VM on vCenter if the VM is running, before attemping the Vmware to KVM migration")
+    private Boolean forced;
+
     public String getVcenter() {
         return vcenter;
     }
@@ -122,6 +127,10 @@ public class RegisterTemplateFromVMwareVMCmd extends RegisterTemplateCmd {
 
     public Long getExistingVcenterId() {
         return existingVcenterId;
+    }
+
+    public boolean isForced() {
+        return BooleanUtils.toBooleanDefaultIfNull(forced, false);
     }
 
     @Override

@@ -16,16 +16,20 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-public class VmwareStoppedVmInDatacenter {
+import com.cloud.vm.VirtualMachine;
+
+public class VmwareVmOnDatacenter {
 
     private String clusterName;
     private String hostName;
     private String vmName;
+    private VirtualMachine.PowerState powerState;
 
-    public VmwareStoppedVmInDatacenter(String clusterName, String hostName, String vmName) {
+    public VmwareVmOnDatacenter(String clusterName, String hostName, String vmName, VirtualMachine.PowerState powerState) {
         this.clusterName = clusterName;
         this.hostName = hostName;
         this.vmName = vmName;
+        this.powerState = powerState;
     }
 
     public String getClusterName() {
@@ -38,5 +42,9 @@ public class VmwareStoppedVmInDatacenter {
 
     public String getVmName() {
         return vmName;
+    }
+
+    public VirtualMachine.PowerState getPowerState() {
+        return powerState;
     }
 }

@@ -23,6 +23,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.VmwareVmForMigrationTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
@@ -109,7 +110,8 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
             s_logger.info(String.format("Execution result: %s", result));
 
             s_logger.info("Finished downloading template from Vmware migration, checking for template sizes");
-            List<LibvirtVMDef.DiskDef> disks = getConvertedVmDisks(installBasePath);
+            LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(installBasePath);
+            List<LibvirtVMDef.DiskDef> disks = xmlParser.getDisks();
             if (disks.size() < 1) {
                 String err = String.format("Cannot find any disk for the migrated VM %s on path: %s", vmName, installBasePath);
                 s_logger.error(err);
@@ -123,12 +125,15 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
             long virtualSize = rootDisk.getVirtualSize();
             long physicalSize = rootDisk.getFileSize();
 
+            List<LibvirtVMDef.InterfaceDef> interfaces = xmlParser.getInterfaces();
+            List<OVFNetworkTO> networks = getNetworksFromInterfaces(interfaces);
+
             createTemplatePropertiesFileAfterMigration(templateInstallFolder, templateId, accountId,
                     templateDescription, installPath, virtualSize, physicalSize, templateUniqueName);
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
                     null, installPath, virtualSize, physicalSize, null);
-            answer.setOvfInformationTO(new OVFInformationTO(dataDisks));
+            answer.setOvfInformationTO(new OVFInformationTO(dataDisks, networks));
             return answer;
         } catch (Exception e) {
             String error = String.format("Error migrating VM from vcenter %s, %s", vcenter, e.getMessage());
@@ -137,6 +142,19 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
         } finally {
             Script.runSimpleBashScript(String.format("rm -rf %s", passwordFile));
         }
+    }
+
+    private List<OVFNetworkTO> getNetworksFromInterfaces(List<LibvirtVMDef.InterfaceDef> interfaces) {
+        int index = 0;
+        List<OVFNetworkTO> networks = new ArrayList<>();
+        for (LibvirtVMDef.InterfaceDef interfaceDef : interfaces) {
+            OVFNetworkTO networkTO = new OVFNetworkTO();
+            networkTO.setInstanceID(index);
+            networkTO.setNicDescription(interfaceDef.getMacAddress());
+            networks.add(networkTO);
+            index++;
+        }
+        return networks;
     }
 
     private void createTemplatePropertiesFileAfterMigration(String templateInstallFolder, long templateId,
@@ -216,17 +234,13 @@ public class LibvirtDownloadCommandWrapper extends CommandWrapper<DownloadComman
         return diskPath.substring(mountPoint.length() + 1);
     }
 
-    protected List<LibvirtVMDef.DiskDef> getConvertedVmDisks(String installPath) throws IOException {
+    protected LibvirtDomainXMLParser parseMigratedVMXmlDomain(String installPath) throws IOException {
         String xmlPath = String.format("%s.xml", installPath);
         InputStream is = new BufferedInputStream(new FileInputStream(xmlPath));
         String xml = IOUtils.toString(is, Charset.defaultCharset());
-        return getDisksFromXml(xml);
-    }
-
-    protected List<LibvirtVMDef.DiskDef> getDisksFromXml(String xml) {
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
         parser.parseDomainXML(xml);
-        return parser.getDisks();
+        return parser;
     }
 
     protected String encodeUsername(String username) {

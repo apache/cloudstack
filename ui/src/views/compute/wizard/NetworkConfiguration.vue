@@ -129,6 +129,7 @@ export default {
     this.dataItems = []
   },
   created () {
+    console.log(this.preFillContent)
     this.dataItems = this.items
     this.initForm()
     if (this.dataItems.length > 0) {
@@ -175,6 +176,8 @@ export default {
       const form = {}
       const rules = {}
 
+      let presetMacAddressIndex = 0
+
       this.dataItems.forEach(record => {
         const ipAddressKey = 'ipAddress' + record.id
         const macAddressKey = 'macAddress' + record.id
@@ -189,6 +192,9 @@ export default {
         rules[macAddressKey] = [{ validator: this.validatorMacAddress }]
         if (record.macAddress) {
           form[macAddressKey] = record.macAddress
+        } else if (this.preFillContent.macAddressArray && this.preFillContent.macAddressArray[presetMacAddressIndex]) {
+          form[macAddressKey] = this.preFillContent.macAddressArray[presetMacAddressIndex]
+          presetMacAddressIndex++
         }
       })
       this.form = reactive(form)

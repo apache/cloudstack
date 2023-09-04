@@ -421,7 +421,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     private EndPoint selectInternal(DataObject object, StorageAction action) {
         DataStore store = object.getDataStore();
-        if (action == StorageAction.DELETETEMPLATE && object instanceof TemplateInfo &&
+        if (action != StorageAction.DELETETEMPLATE && object instanceof TemplateInfo &&
                 ((TemplateInfo) object).isMigratedFromVmwareVMToKVM()) {
             return findEndpointForVmwareVmMigration(object);
         }

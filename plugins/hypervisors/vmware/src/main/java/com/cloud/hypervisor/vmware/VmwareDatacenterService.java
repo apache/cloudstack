@@ -22,13 +22,13 @@ import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.hypervisor.vmware.mo.VmwareStoppedVmInDatacenter;
+import com.cloud.hypervisor.vmware.mo.VmwareVmOnDatacenter;
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcStoppedVmsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -53,5 +53,5 @@ public interface VmwareDatacenterService extends PluggableService {
 
     List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd);
 
-    List<VmwareStoppedVmInDatacenter> listStoppedVMsInDatacenter(ListVmwareDcStoppedVmsCmd cmd);
+    List<VmwareVmOnDatacenter> listVMsInDatacenter(ListVmwareDcVmsCmd cmd);
 }

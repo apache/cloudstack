@@ -62,7 +62,7 @@
         <div v-else-if="currentForm === 'MigrateFromVMware'">
           <RegisterTemplateFromVcenter
             :zoneid="zone"
-            @select-stopped-vm="($event) => selectStoppedVM($event)"
+            @select-vmware-dc-vm="($event) => selectVmwareDcVM($event)"
           />
         </div>
         <a-form-item ref="name" name="name">
@@ -422,7 +422,18 @@
           </a-col>
         </a-row>
 
-        <div :span="24" class="action-button">
+        <div :span="24" class="action-button" v-if="vmwareDcVM && vmwareDcVM.powerstate === 'PowerOn'">
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-popconfirm
+            :title="$t('message.confirm.register.template.from.vmware.vm.running.vm')"
+            @confirm="handleSubmit"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')"
+          >
+            <a-button :loading="loading" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
+          </a-popconfirm>
+        </div>
+        <div :span="24" class="action-button" v-else>
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
@@ -492,7 +503,7 @@ export default {
       uploadParams: null,
       currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create'
         : this.action.currentAction.label.includes('vmware') ? 'MigrateFromVMware' : 'Upload',
-      stoppedVM: null,
+      vmwareDcVM: null,
       domains: [],
       accounts: [],
       domainLoading: false,
@@ -1076,17 +1087,20 @@ export default {
           })
         } else if (this.currentForm === 'MigrateFromVMware') {
           this.loading = true
-          if (this.stoppedVM.vcenterid) {
-            params.existingvcenterid = this.stoppedVM.vcenterid
+          if (this.vmwareDcVM.vcenterid) {
+            params.existingvcenterid = this.vmwareDcVM.vcenterid
           } else {
-            params.vcenter = this.stoppedVM.vcenter
-            params.datacentername = this.stoppedVM.datacentername
-            params.clustername = this.stoppedVM.clustername
-            params.username = this.stoppedVM.username
-            params.password = this.stoppedVM.password
+            params.vcenter = this.vmwareDcVM.vcenter
+            params.datacentername = this.vmwareDcVM.datacentername
+            params.clustername = this.vmwareDcVM.clustername
+            params.username = this.vmwareDcVM.username
+            params.password = this.vmwareDcVM.password
           }
-          params.hostip = this.stoppedVM.host
-          params.virtualmachinename = this.stoppedVM.vmname
+          params.hostip = this.vmwareDcVM.host
+          params.virtualmachinename = this.vmwareDcVM.vmname
+          if (this.vmwareDcVM.powerstate === 'PowerOn') {
+            params.forced = true
+          }
           api('registerTemplateFromVmwareVm', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
@@ -1146,8 +1160,8 @@ export default {
         this.form[name] = undefined
       })
     },
-    selectStoppedVM (vm) {
-      this.stoppedVM = vm
+    selectVmwareDcVM (vm) {
+      this.vmwareDcVM = vm
     },
     fetchDomains () {
       const params = {}

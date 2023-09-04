@@ -367,7 +367,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, boolean forced, Map<String, String> params) {
         s_logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }

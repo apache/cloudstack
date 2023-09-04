@@ -21,12 +21,13 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-public class VmwareStoppedVmResponse extends BaseResponse {
+public class VmwareVmResponse extends BaseResponse {
 
-    public VmwareStoppedVmResponse(String host, String name, String cluster) {
+    public VmwareVmResponse(String host, String name, String cluster, String powerState) {
         this.host = host;
         this.vmName = name;
         this.cluster = cluster;
+        this.powerState = powerState;
     }
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
@@ -40,6 +41,10 @@ public class VmwareStoppedVmResponse extends BaseResponse {
     @SerializedName(ApiConstants.CLUSTER_NAME)
     @Param(description = "The VMware cluster")
     private String cluster;
+
+    @SerializedName(ApiConstants.POWER_STATE)
+    @Param(description = "The VMware VM power state")
+    private String powerState;
 
     public String getVmName() {
         return vmName;
@@ -63,5 +68,13 @@ public class VmwareStoppedVmResponse extends BaseResponse {
 
     public void setCluster(String cluster) {
         this.cluster = cluster;
+    }
+
+    public String getPowerState() {
+        return powerState;
+    }
+
+    public void setPowerState(String powerState) {
+        this.powerState = powerState;
     }
 }

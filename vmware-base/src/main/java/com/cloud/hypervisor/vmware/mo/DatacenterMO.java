@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.vm.VirtualMachine;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -160,41 +161,41 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<VmwareStoppedVmInDatacenter> getAllStoppedVMsOnDatacenter() throws Exception {
-        List<VmwareStoppedVmInDatacenter> stoppedVms = new ArrayList<>();
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", "runtime"});
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                String vmName = oc.getPropSet().get(0).getVal().toString();
-                ManagedObjectReference vmMor = oc.getObj();
-                VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
-                VirtualMachinePowerState powerState = vmMo.getPowerState();
-                if (powerState == VirtualMachinePowerState.POWERED_OFF && !vmMo.isTemplate()) {
-                    HostMO host = vmMo.getRunningHost();
-                    ManagedObjectReference hyperHostCluster = host.getHyperHostCluster();
-                    ClusterMO cluster = new ClusterMO(_context, hyperHostCluster);
-                    String clusterName = cluster.getName();
-                    String hostName = host.getHostName();
-                    VmwareStoppedVmInDatacenter stoppedVm = new VmwareStoppedVmInDatacenter(clusterName, hostName, vmName);
-                    stoppedVms.add(stoppedVm);
-                }
-            }
-        }
-        return stoppedVms;
-    }
-
-    public List<Pair<ManagedObjectReference, String>> getAllVmsOnDatacenter() throws Exception {
-        List<Pair<ManagedObjectReference, String>> vms = new ArrayList<Pair<ManagedObjectReference, String>>();
-
+    public List<VmwareVmOnDatacenter> getAllVmsOnDatacenter() throws Exception {
+        List<VmwareVmOnDatacenter> vms = new ArrayList<>();
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
-                String vmName = oc.getPropSet().get(0).getVal().toString();
-                vms.add(new Pair<ManagedObjectReference, String>(oc.getObj(), vmName));
+                ManagedObjectReference vmMor = oc.getObj();
+                if (vmMor != null) {
+                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
+                    if (!vmMo.isTemplate()) {
+                        VmwareVmOnDatacenter vmOnDatacenter = getVmOnDatacenterInformation(vmMo);
+                        vms.add(vmOnDatacenter);
+                    }
+                }
             }
         }
 
         return vms;
+    }
+
+    private VmwareVmOnDatacenter getVmOnDatacenterInformation(VirtualMachineMO vmMo) throws Exception {
+        HostMO host = vmMo.getRunningHost();
+        ManagedObjectReference hyperHostCluster = host.getHyperHostCluster();
+        ClusterMO cluster = new ClusterMO(_context, hyperHostCluster);
+        String clusterName = cluster.getName();
+        String hostName = host.getHostName();
+        VirtualMachine.PowerState powerState = getPowerState(vmMo.getPowerState());
+        return new VmwareVmOnDatacenter(clusterName, hostName, vmMo.getVmName(), powerState);
+    }
+
+    private VirtualMachine.PowerState getPowerState(VirtualMachinePowerState powerState) {
+        if (powerState != VirtualMachinePowerState.POWERED_ON && powerState != VirtualMachinePowerState.POWERED_OFF) {
+            return VirtualMachine.PowerState.PowerUnknown;
+        }
+        return powerState == VirtualMachinePowerState.POWERED_ON ?
+                VirtualMachine.PowerState.PowerOn : VirtualMachine.PowerState.PowerOff;
     }
 
     public List<HostMO> getAllHostsOnDatacenter() throws Exception {

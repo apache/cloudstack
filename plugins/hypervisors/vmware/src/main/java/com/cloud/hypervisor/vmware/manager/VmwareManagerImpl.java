@@ -43,11 +43,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.hypervisor.vmware.mo.VmwareStoppedVmInDatacenter;
+import com.cloud.hypervisor.vmware.mo.VmwareVmOnDatacenter;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcStoppedVmsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -1116,7 +1116,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ImportVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
-        cmdList.add(ListVmwareDcStoppedVmsCmd.class);
+        cmdList.add(ListVmwareDcVmsCmd.class);
         return cmdList;
     }
 
@@ -1591,7 +1591,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public List<VmwareStoppedVmInDatacenter> listStoppedVMsInDatacenter(ListVmwareDcStoppedVmsCmd cmd) {
+    public List<VmwareVmOnDatacenter> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
@@ -1619,9 +1619,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
 
         try {
-            s_logger.debug(String.format("Connecting to the VMware datacenter %s to retrieve stopped VMs", vcenter));
-//            VmwareContext context = VmwareContextFactory.create(vcenter, username, password);
-            String serviceUrl = "https://" + vcenter + "/sdk/vimService";
+            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+                    datacenterName, vcenter));
+            String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
             VmwareClient vimClient = new VmwareClient(vcenter);
             vimClient.connect(serviceUrl, username, password);
             VmwareContext context = new VmwareContext(vimClient, vcenter);
@@ -1634,7 +1634,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
-            return dcMo.getAllStoppedVMsOnDatacenter();
+            return dcMo.getAllVmsOnDatacenter();
         } catch (Exception e) {
             String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());

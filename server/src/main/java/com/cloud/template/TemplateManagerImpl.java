@@ -383,6 +383,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String clusterName = cmd.getClusterName();
         String sourceVM = cmd.getVmName();
         String sourceHostName = cmd.getHost();
+        boolean forced = cmd.isForced();
 
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
@@ -401,7 +402,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(existingVcenterId,
                 vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
 
-        HypervisorOutOfBandVMClone cloneResult = vmwareGuru.cloneHypervisorVMOutOfBand(cmd.getHost(), cmd.getVmName(), params);
+        HypervisorOutOfBandVMClone cloneResult = vmwareGuru.cloneHypervisorVMOutOfBand(cmd.getHost(),
+                cmd.getVmName(), forced, params);
         String cloneName = cloneResult.getCloneName();
         params.put(VmDetailConstants.VMWARE_VM_NAME, cloneName);
 

@@ -48,8 +48,9 @@ public class OVFInformationTO {
     public OVFInformationTO() {
     }
 
-    public OVFInformationTO(List<DatadiskTO> disks) {
+    public OVFInformationTO(List<DatadiskTO> disks, List<OVFNetworkTO> networks) {
         this.disks = disks;
+        this.networks = networks;
     }
 
     public List<OVFPropertyTO> getProperties() {

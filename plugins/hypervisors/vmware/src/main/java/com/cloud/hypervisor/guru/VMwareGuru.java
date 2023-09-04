@@ -1268,7 +1268,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+                                                                 boolean forced, Map<String, String> params) {
         s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1284,6 +1285,17 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
+
+            if (forced) {
+                s_logger.debug(String.format("Forced parameter set, attempting to stop the VM %s on %s/%s",
+                        vmName, vcenter, datacenter));
+                if (!vmMo.powerOff()) {
+                    String err = String.format("Could not stop VM %s on %s/%s", vmName, vcenter, datacenter);
+                    s_logger.error(err);
+                    throw new CloudRuntimeException(err);
+                }
+            }
+
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
             HypervisorOutOfBandVMClone clone = generateResponseFromClone(clonedVM);
             s_logger.debug(String.format("VM cloned successfully"));
