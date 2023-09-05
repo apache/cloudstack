@@ -97,7 +97,8 @@ public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
             minioClient.listBuckets();
             s_logger.debug("Successfully connected to MinIO EndPoint: "+url);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            s_logger.debug("Error while initializing MinIO Object Store: "+e.getMessage());
+            throw new RuntimeException("Error while initializing MinIO Object Store. Invalid credentials or URL");
         }
 
         ObjectStoreVO objectStore = objectStoreHelper.createObjectStore(objectStoreParameters, details);
