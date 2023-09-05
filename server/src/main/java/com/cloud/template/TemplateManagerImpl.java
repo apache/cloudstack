@@ -1626,8 +1626,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             long zoneId = 0;
             if (snapshotId != null) {
                 snapshot = _snapshotDao.findById(snapshotId);
-                VolumeVO snapshotVolume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
-                zoneId = snapshotVolume.getDataCenterId();
+                if (command.getZoneId() == null) {
+                    VolumeVO snapshotVolume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
+                    zoneId = snapshotVolume.getDataCenterId();
+                } else {
+                    zoneId = command.getZoneId();
+                }
             } else if (volumeId != null) {
                 volume = _volumeDao.findById(volumeId);
                 zoneId = volume.getDataCenterId();
@@ -1778,12 +1782,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         boolean isDynamicScalingEnabled = cmd.isDynamicallyScalable();
         // check whether template owner can create public templates
         boolean allowPublicUserTemplates = AllowPublicUserTemplates.valueIn(templateOwner.getId());
+        final Long zoneId = cmd.getZoneId();
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
             throw new PermissionDeniedException("Failed to create template " + name + ", only private templates can be created.");
         }
 
         Long volumeId = cmd.getVolumeId();
         Long snapshotId = cmd.getSnapshotId();
+        if (zoneId != null && snapshotId == null) {
+            throw new InvalidParameterValueException("Failed to create private template record, zone ID can only be specified together with snapshot ID.");
+        }
         if ((volumeId == null) && (snapshotId == null)) {
             throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
         }
@@ -1855,6 +1863,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
              */
 
             hyperType = snapshot.getHypervisorType();
+        }
+
+        if (zoneId != null) {
+            DataCenterVO zone = _dcDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, invalid zone specified");
+            }
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                throw new InvalidParameterValueException("Failed to create private template record, Edge zones do not support template creation from snapshots");
+            }
         }
 
         _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);

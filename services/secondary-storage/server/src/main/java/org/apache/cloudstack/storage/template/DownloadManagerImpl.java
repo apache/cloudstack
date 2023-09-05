@@ -429,6 +429,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             installedPath = installedPath.substring(0, installedPath.lastIndexOf(File.separator));
         }
         job.setTmpltPath(installedPath);
+        job.setTemplatePhysicalSize(td.getDownloadedBytes());
         return null;
     }
 
@@ -459,6 +460,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 LOGGER.debug(String.format("Trying to move downloaded snapshot file [%s] to [%s].", srcPath, destPath));
                 Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
             }
+            job.setTemplatePhysicalSize(td.getDownloadedBytes());
         } catch (IOException e) {
             LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", job.getTmpltPath()), e);
             return "Unable process post snapshot download due to " + e.getMessage();

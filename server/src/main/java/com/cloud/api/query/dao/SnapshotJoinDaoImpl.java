@@ -95,6 +95,9 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
 
     private String getSnapshotStatus(SnapshotJoinVO snapshot) {
         String status = snapshot.getStatus().toString();
+        if (snapshot.getDownloadState() == null) {
+            return status;
+        }
         if (snapshot.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             status = "Processing";
             if (snapshot.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS) {

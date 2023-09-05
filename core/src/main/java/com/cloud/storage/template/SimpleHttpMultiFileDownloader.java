@@ -378,7 +378,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
 
     @Override
     public long getDownloadedBytes() {
-        return currentTotalBytes;
+        return totalBytes;
     }
 
     @Override

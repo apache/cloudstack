@@ -3393,6 +3393,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account account = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
         String networkType = cmd.getNetworkType();
@@ -3417,6 +3418,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkType != null) {
             sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        }
+
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.addAnd("id", SearchCriteria.Op.IN, ids.toArray());
         }
 
         if (id != null) {

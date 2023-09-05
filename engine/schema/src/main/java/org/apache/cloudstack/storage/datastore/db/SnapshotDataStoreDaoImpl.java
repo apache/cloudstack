@@ -119,7 +119,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
 
         idStateNeqSearch = createSearchBuilder();
-        idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
         idStateNeqSearch.done();
 

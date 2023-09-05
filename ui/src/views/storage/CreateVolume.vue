@@ -35,7 +35,7 @@
           v-model:value="form.name"
           :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromVM && !createVolumeFromSnapshot">
+      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromVM">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -143,6 +143,7 @@ export default {
   },
   data () {
     return {
+      snapshotZoneIds: [],
       zones: [],
       offerings: [],
       customDiskOffering: false,
@@ -195,10 +196,20 @@ export default {
       }
     },
     fetchData () {
+      if (this.createVolumeFromVM) {
+        this.fetchZones(this.resource.zoneid)
+      }
+      if (this.createVolumeFromSnapshot) {
+        this.fetchSnapshotZones()
+      }
+    },
+    fetchZones (id) {
       this.loading = true
       const params = { showicon: true }
-      if (this.createVolumeFromVM) {
-        params.id = this.resource.zoneid
+      if (Array.isArray(id)) {
+        params.ids = id.join()
+      } else {
+        params.id = id
       }
       api('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
@@ -206,6 +217,27 @@ export default {
         this.fetchDiskOfferings(this.form.zoneid)
       }).finally(() => {
         this.loading = false
+      })
+    },
+    fetchSnapshotZones () {
+      this.loading = true
+      this.snapshotZoneIds = []
+      const params = {
+        showunique: false,
+        id: this.resource.id
+      }
+      api('listSnapshots', params).then(json => {
+        const snapshots = json.listsnapshotsresponse.snapshot || []
+        console.log(snapshots)
+        for (const snapshot of snapshots) {
+          if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
+            this.snapshotZoneIds.push(snapshot.zoneid)
+          }
+        }
+      }).finally(() => {
+        if (this.snapshotZoneIds && this.snapshotZoneIds.length > 0) {
+          this.fetchZones(this.snapshotZoneIds)
+        }
       })
     },
     fetchDiskOfferings (zoneId) {
