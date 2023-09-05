@@ -192,14 +192,13 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         return snapshotSvr.backupSnapshot(snapshot);
     }
 
-    private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
-
     protected boolean deleteSnapshotChain(SnapshotInfo snapshot, String storageToString) {
         DataTO snapshotTo = snapshot.getTO();
         s_logger.debug(String.format("Deleting %s chain of snapshots.", snapshotTo));
 
         boolean result = false;
         boolean resultIsSet = false;
+        final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.BackedUp, Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error);
         try {
             while (snapshot != null && snapshotStatesAbleToDeleteSnapshot.contains(snapshot.getState())) {
                 SnapshotInfo child = snapshot.getChild();
@@ -218,8 +217,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                         //NOTE: if both snapshots share the same path, it's for xenserver's empty delta snapshot. We can't delete the snapshot on the backend, as parent snapshot still reference to it
                         //Instead, mark it as destroyed in the db.
                         s_logger.debug(String.format("Snapshot [%s] is an empty delta snapshot; therefore, we will only mark it as destroyed in the database.", snapshotTo));
-                        snapshot.processEvent(Event.DestroyRequested);
-                        snapshot.processEvent(Event.OperationSuccessed);
                         deleted = true;
                         if (!resultIsSet) {
                             result = true;
@@ -287,7 +284,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 }
             }
             if (deletedRefs.size() == storeRefs.size()) {
-                snapshotStoreDao.remove(snapshotId);
+                snapshotDao.remove(snapshotId);
             }
             return true;
         }
