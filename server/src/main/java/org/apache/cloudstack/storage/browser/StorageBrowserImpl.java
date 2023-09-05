@@ -95,11 +95,8 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             throw new CloudRuntimeException("No secondary storage VM for image store " + dataStore.getUuid());
         }
 
-
         ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path);
-
         Answer answer = ep.sendMessage(listDSCmd);
-
         if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
             throw new CloudRuntimeException("Failed to list image store objects");
         }

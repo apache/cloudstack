@@ -31,7 +31,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 
@@ -161,19 +160,22 @@ public abstract class ServerResourceBase implements ServerResource {
                     List.of(file.lastModified()), "file.isFile()");
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
-            if (files == null) {
-                return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
-                        Collections.emptyList(), Collections.emptyList(), "files == null");
-            } else {
-                List<String> names = Arrays.stream(files).map(File::getName).collect(Collectors.toList());
-                List<String> paths = Arrays.stream(files).map(f -> f.getPath().replace(nfsMountPoint, "")).collect(Collectors.toList());
-                List<Boolean> isDirs = Arrays.stream(files).map(File::isDirectory).collect(Collectors.toList());
-                List<Long> sizes = Arrays.stream(files).map(File::length).collect(Collectors.toList());
-                List<Long> modifiedList = Arrays.stream(files).map(File::lastModified).collect(Collectors.toList());
 
-                return new ListDataStoreObjectsAnswer(file.exists(), names, paths, isDirs, sizes, modifiedList,
-                        "files == null else");
+            List<String> names = new ArrayList<>();
+            List<String> paths = new ArrayList<>();
+            List<Boolean> isDirs = new ArrayList<>();
+            List<Long> sizes = new ArrayList<>();
+            List<Long> modifiedList = new ArrayList<>();
+            for (File f : files) {
+                names.add(f.getName());
+                paths.add(f.getPath().replace(nfsMountPoint, ""));
+                isDirs.add(f.isDirectory());
+                sizes.add(f.length());
+                modifiedList.add(f.lastModified());
             }
+
+            return new ListDataStoreObjectsAnswer(file.exists(), names, paths, isDirs, sizes, modifiedList,
+                    "files == null else");
         }
         return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList(),
                 Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "");
