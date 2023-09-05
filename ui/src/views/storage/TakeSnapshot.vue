@@ -128,13 +128,15 @@ import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'TakeSnapshot',
   mixins: [mixinForm],
   components: {
     TooltipButton,
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     loading: {
@@ -227,7 +229,6 @@ export default {
         this.actionLoading = true
         const title = this.$t('label.action.take.snapshot')
         const description = this.$t('label.volume') + ' ' + this.resource.id
-        console.log('--------------------', params)
         api('createSnapshot', params).then(json => {
           const jobId = json.createsnapshotresponse.jobid
           if (jobId) {

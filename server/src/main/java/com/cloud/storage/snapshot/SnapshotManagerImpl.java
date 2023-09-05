@@ -616,6 +616,33 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
+    private Pair<List<SnapshotDataStoreVO>, List<Long>> getStoreRefsAndZonesForSnapshotDelete(long snapshotId, Long zoneId) {
+        List<SnapshotDataStoreVO> snapshotStoreRefs = new ArrayList<>();
+        List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        if (zoneId != null) {
+            DataCenterVO zone = dataCenterDao.findById(zoneId);
+            if (zone == null) {
+                throw new InvalidParameterValueException("Unable to find a zone with the specified id");
+            }
+            for (SnapshotDataStoreVO snapshotStore : allSnapshotStoreRefs) {
+                Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+                if (zoneId.equals(entryZoneId)) {
+                    snapshotStoreRefs.add(snapshotStore);
+                }
+            }
+        } else {
+            snapshotStoreRefs = allSnapshotStoreRefs;
+        }
+        List<Long> zoneIds = new ArrayList<>();
+        for (SnapshotDataStoreVO snapshotStore : snapshotStoreRefs) {
+            Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+            if (!zoneIds.contains(entryZoneId)) {
+                zoneIds.add(entryZoneId);
+            }
+        }
+        return new Pair<>(snapshotStoreRefs, zoneIds);
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async = true)
@@ -623,7 +650,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
-        SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
+        final SnapshotVO snapshotCheck = _snapshotDao.findById(snapshotId);
 
         if (snapshotCheck == null) {
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
@@ -646,47 +673,29 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             return false;
         }
-
-        List<SnapshotDataStoreVO> snapshotStoreRefs;
-        if (zoneId != null) {
-            DataCenterVO zone = dataCenterDao.findById(zoneId);
-            if (zone == null) {
-                throw new InvalidParameterValueException("unable to find a zone with the specified id");
-            }
-            snapshotStoreRefs = new ArrayList<>();
-            List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
-            for (SnapshotDataStoreVO snapshotStore : allSnapshotStoreRefs) {
-                Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
-                if (zoneId.equals(entryZoneId)) {
-                    snapshotStoreRefs.add(snapshotStore);
-                }
-            }
-        } else {
-
-            DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshotCheck);
-            snapshotStoreRefs = _snapshotStoreDao.listBySnapshot(snapshotId, dataStoreRole);
-        }
+        Pair<List<SnapshotDataStoreVO>, List<Long>> storeRefAndZones = getStoreRefsAndZonesForSnapshotDelete(snapshotId, zoneId);
+        List<SnapshotDataStoreVO> snapshotStoreRefs = storeRefAndZones.first();
+        List<Long> zoneIds = storeRefAndZones.second();
 
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId, zoneId);
-
             if (result) {
-                List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
-                if (CollectionUtils.isEmpty(allSnapshotStoreRefs)) {
-                    annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
-
-                    if (snapshotCheck.getState() == Snapshot.State.BackedUp) { // ToDo: When and for which zone event should be published?
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
+                for (Long zId : zoneIds) {
+                    if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), zId, snapshotId,
                                 snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
                     }
+                }
+                final SnapshotVO postDeleteSnapshotEntry = _snapshotDao.findById(snapshotId);
+                if (postDeleteSnapshotEntry == null || Snapshot.State.Destroyed.equals(postDeleteSnapshotEntry.getState())) {
+                    annotationDao.removeByEntityType(AnnotationService.EntityType.SNAPSHOT.name(), snapshotCheck.getUuid());
 
                     if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed) {
                         _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
                     }
                 }
-
-                if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                    for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
+                for (SnapshotDataStoreVO snapshotStoreRef : snapshotStoreRefs) {
+                    if (ObjectInDataStoreStateMachine.State.Ready.equals(snapshotStoreRef.getState()) && !DataStoreRole.Primary.equals(snapshotStoreRef.getRole())) {
                         _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
                     }
                 }

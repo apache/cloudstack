@@ -228,7 +228,6 @@ export default {
       }
       api('listSnapshots', params).then(json => {
         const snapshots = json.listsnapshotsresponse.snapshot || []
-        console.log(snapshots)
         for (const snapshot of snapshots) {
           if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
             this.snapshotZoneIds.push(snapshot.zoneid)

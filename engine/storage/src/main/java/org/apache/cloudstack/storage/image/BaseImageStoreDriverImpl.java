@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -76,18 +77,14 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -109,8 +106,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     TemplateDataStoreDao _templateStoreDao;
     @Inject
-    SnapshotDao snapshotDao;
-    @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
     @Inject
     EndPointSelector _epSelector;
@@ -123,21 +118,17 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     DefaultEndPointSelector _defaultEpSelector;
     @Inject
-    AccountDao _accountDao;
-    @Inject
-    ResourceLimitService _resourceLimitMgr;
-    @Inject
     DeployAsIsHelper deployAsIsHelper;
     @Inject
     HostDao hostDao;
     @Inject
     CommandExecLogDao _cmdExecLogDao;
     @Inject
-    StorageManager storageMgr;
-    @Inject
     protected SecondaryStorageVmDao _secStorageVmDao;
     @Inject
     AgentManager agentMgr;
+    @Inject
+    DataStoreManager dataStoreManager;
 
     protected String _proxy = null;
 
@@ -332,7 +323,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         SnapshotDataStoreVO snapshotStoreVO = snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), obj.getId());
         if (snapshotStoreVO != null) {
-            if (snapshotStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+            if (VMTemplateStorageResourceAssoc.Status.DOWNLOADED.equals(snapshotStoreVO.getDownloadState())) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Snapshot is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
@@ -353,15 +344,17 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
-        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
-                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+        if (List.of(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
+                VMTemplateStorageResourceAssoc.Status.ABANDONED,
+                VMTemplateStorageResourceAssoc.Status.UNKNOWN).contains(answer.getDownloadStatus())) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
             caller.complete(result);
             String msg = "Failed to copy snapshot: " + obj.getUuid() + " with error: " + answer.getErrorString();
+            Long zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
-                    (snapshotStoreVO == null ? -1L : 1L), null, msg, msg); // ToDo
+                    zoneId, null, msg, msg);
             LOGGER.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
@@ -388,7 +381,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception ex) {
-            LOGGER.debug("Unable to destoy " + data.getType().toString() + ": " + data.getId(), ex);
+            LOGGER.debug("Unable to destroy " + data.getType().toString() + ": " + data.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
