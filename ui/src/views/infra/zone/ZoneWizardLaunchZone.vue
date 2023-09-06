@@ -480,6 +480,11 @@ export default {
                 this.stepData.isTungstenZone = true
                 this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
               }
+              if (physicalNetwork.isolationMethod === 'NSX' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
+                this.stepData.isNsxZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
             } else {
               this.stepData.physicalNetworkReturned = this.stepData.physicalNetworkItem['createPhysicalNetwork' + index]
             }
@@ -965,6 +970,8 @@ export default {
 
         if (this.stepData.isTungstenZone) {
           await this.stepCreateTungstenFabricPublicNetwork()
+        } else if (this.stepData.isNsxZone) {
+          await this.stepAddNsxController()
         } else {
           await this.stepConfigureStorageTraffic()
         }
@@ -1029,6 +1036,28 @@ export default {
         }
         this.stepData.stepMove.push('tungsten')
         await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
+    async stepAddNsxController () {
+      try {
+        if (!this.stepData.stepMove.includes('addNsxController')) {
+          const providerParams = {}
+          providerParams.name = this.prefillContent?.name || ''
+          providerParams.nsxproviderhostname = this.prefillContent?.nsxHostname || ''
+          providerParams.nsxproviderport = this.prefillContent?.nsxPort || ''
+          providerParams.username = this.prefillContent?.username || ''
+          providerParams.password = this.prefillContent?.password || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tier0gateway = this.prefillContent?.tier0Gateway || ''
+          providerParams.edgecluster = this.prefillContent?.edgeCluster || ''
+
+          await this.addNsxController(providerParams)
+          this.stepData.stepMove.push('addNsxController')
+        }
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
@@ -2170,6 +2199,16 @@ export default {
     createTungstenFabricProvider (args) {
       return new Promise((resolve, reject) => {
         api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    addNsxController (args) {
+      return new Promise((resolve, reject) => {
+        api('addNsxController', {}, 'POST', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']

@@ -40,9 +40,24 @@ public class NsxApiClientUtils {
         LB_XLARGE
     }
 
+    public enum TYPE {
+        ROUTED,
+        NATTED
+    }
+
     public enum HAMode {
         ACTIVE_STANDBY,
         ACTIVE_ACTIVE
+    }
+
+    public enum FailoverMode {
+        PREEMPTIVE,
+        NON_PREEMPTIVE
+    }
+
+    public enum AdminState {
+        UP,
+        DOWN
     }
     public static ApiClient createApiClient(String hostname, String port, String username, char[] password) {
         String controllerUrl = String.format("https://%s:%s", hostname, port);

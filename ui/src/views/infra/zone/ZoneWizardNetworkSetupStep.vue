@@ -75,6 +75,18 @@
     />
 
     <static-inputs-form
+      v-if="steps && steps[currentStep].formKey === 'nsx'"
+      @nextPressed="nextPressed"
+      @backPressed="handleBack"
+      @fieldsChanged="fieldsChanged"
+      @submitLaunchZone="submitLaunchZone"
+      :fields="nsxFields"
+      :prefillContent="prefillContent"
+      :description="nsxSetupDescription"
+      :isFixError="isFixError"
+    />
+
+    <static-inputs-form
       v-if="steps && steps[currentStep].formKey === 'pod'"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
@@ -189,6 +201,16 @@ export default {
       }
       return isTungsten
     },
+    isNsxZone () {
+      let isNsx = false
+      if (!this.prefillContent.physicalNetworks) {
+        isNsx = false
+      } else {
+        const nsxIdx = this.prefillContent.physicalNetworks.findIndex(network => network.isolationMethod === 'NSX')
+        isNsx = nsxIdx > -1
+      }
+      return isNsx
+    },
     allSteps () {
       const steps = []
       steps.push({
@@ -199,6 +221,12 @@ export default {
         steps.push({
           title: 'label.tungsten.provider',
           formKey: 'tungsten'
+        })
+      }
+      if (this.isNsxZone) {
+        steps.push({
+          title: 'label.nsx.provider',
+          formKey: 'nsx'
         })
       }
       if (this.havingNetscaler) {
@@ -347,6 +375,53 @@ export default {
         }
       ]
     },
+    nsxFields () {
+      const fields = [
+        {
+          title: 'label.nsx.provider.name',
+          key: 'name',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.name',
+          required: true
+        },
+        {
+          title: 'label.nsx.provider.hostname',
+          key: 'nsxHostname',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.hostname',
+          required: true
+        },
+        {
+          title: 'label.nsx.provider.port',
+          key: 'nsxPort',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.port',
+          required: false
+        },
+        {
+          title: 'label.nsx.provider.username',
+          key: 'username',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.username',
+          required: true
+        },
+        {
+          title: 'label.nsx.provider.password',
+          key: 'password',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.password',
+          required: true
+        },
+        {
+          title: 'label.nsx.provider.edgecluster',
+          key: 'edgeCluster',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.edgecluster',
+          required: true
+        },
+        {
+          title: 'label.nsx.provider.tier0gateway',
+          key: 'tier0Gateway',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.tier0gateway',
+          required: true
+        }
+      ]
+      return fields
+    },
     guestTrafficFields () {
       const fields = [
         {
@@ -416,6 +491,7 @@ export default {
       },
       podSetupDescription: 'message.add.pod.during.zone.creation',
       tungstenSetupDescription: 'message.infra.setup.tungsten.description',
+      nsxSetupDescription: 'message.infra.setup.nsx.description',
       netscalerSetupDescription: 'label.please.specify.netscaler.info',
       storageTrafficDescription: 'label.zonewizard.traffictype.storage',
       podFields: [
@@ -459,6 +535,7 @@ export default {
   created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
+    console.log(this.isNsxZone)
     this.currentStep = this.prefillContent?.networkStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.formKey === this.stepChild)
