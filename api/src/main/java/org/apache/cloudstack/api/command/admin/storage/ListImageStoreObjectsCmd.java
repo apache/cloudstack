@@ -27,6 +27,7 @@ import org.apache.cloudstack.storage.browser.StorageBrowser;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.nio.file.Path;
 
 @APICommand(name = "listImageStoreObjects", description = "Lists objects at specified path on image stores.",
             responseObject = DataStoreObjectResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
@@ -61,7 +62,8 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
         if (path == null) {
             path = "/";
         }
-        return path;
+        // We prepend "/" to path and normalize to prevent path traversal attacks
+        return Path.of(String.format("/%s", path)).normalize().toString();
     }
 
     /////////////////////////////////////////////////////
