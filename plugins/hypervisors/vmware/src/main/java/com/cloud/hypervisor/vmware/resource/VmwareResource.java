@@ -48,9 +48,17 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
+import com.vmware.vim25.FolderFileInfo;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -615,6 +623,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((CheckGuestOsMappingCommand) cmd);
             } else if (clz == GetHypervisorGuestOsNamesCommand.class) {
                 answer = execute((GetHypervisorGuestOsNamesCommand) cmd);
+            } else if (clz == ListDataStoreObjectsCommand.class) {
+                answer = execute((ListDataStoreObjectsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7781,6 +7791,82 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
         }
+    }
+
+    protected ListDataStoreObjectsAnswer execute(ListDataStoreObjectsCommand cmd) {
+        String relativePath = cmd.getPath();
+        PrimaryDataStoreTO dataStore = (PrimaryDataStoreTO) cmd.getStore();
+
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        ManagedObjectReference morDatastore = null;
+
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
+
+        try {
+            morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, dataStore.getUuid());
+
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
+            FileQueryFlags fqf = new FileQueryFlags();
+            fqf.setFileSize(true);
+            fqf.setFileType(true);
+            fqf.setModification(true);
+            fqf.setFileOwner(false);
+
+            HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
+            spec.setSearchCaseInsensitive(true);
+            spec.setDetails(fqf);
+
+            String dsPath = String.format("[%s]%s", dsMo.getName(), relativePath);
+
+            if (!relativePath.isEmpty() && !relativePath.equals("/") && dsMo.fileExists(dsPath)) {
+                String[] pathSplit = relativePath.split("/");
+                if (pathSplit.length > 1) {
+                    spec.getMatchPattern().add(pathSplit[pathSplit.length - 1]);
+                    relativePath = relativePath.substring(0, relativePath.lastIndexOf("/"));
+                } else {
+                    // File at root of datastore
+                    spec.getMatchPattern().add(relativePath);
+                    relativePath = "";
+                }
+                dsPath = String.format("[%s]%s", dsMo.getName(), relativePath);
+            }
+
+            HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
+            List<FileInfo> fileInfoList = results.getFile();
+
+
+            for (FileInfo file : fileInfoList) {
+                if (relativePath.endsWith("/")) {
+                    paths.add(relativePath + file.getPath());
+                } else {
+                    paths.add(relativePath + "/" + file.getPath());
+                }
+                names.add(file.getPath());
+                isDirs.add(file instanceof FolderFileInfo);
+                sizes.add(file.getFileSize());
+                modifiedList.add(file.getModification().toGregorianCalendar().getTimeInMillis());
+            }
+
+
+            return new ListDataStoreObjectsAnswer(true, names, paths, isDirs, sizes, modifiedList,
+                    "vmware return");
+        } catch (Exception e) {
+            if (e.getMessage().contains("was not found")) {
+                return new ListDataStoreObjectsAnswer(false, names, paths, isDirs, sizes, modifiedList,
+                        "vmware return");
+            }
+            String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", relativePath, e.getMessage());
+            s_logger.error(errorMsg, e);
+        }
+
+        return null;
     }
 
     protected GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
