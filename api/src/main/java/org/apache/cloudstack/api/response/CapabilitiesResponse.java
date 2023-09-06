@@ -101,7 +101,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private boolean kubernetesClusterExperimentalFeaturesEnabled;
 
     @SerializedName("customhypervisordisplayname")
-    @Param(description = "Display name for custom hypervisor")
+    @Param(description = "Display name for custom hypervisor", since = "4.19.0")
     private String customHypervisorDisplayName;
 
     @SerializedName("defaultuipagesize")
