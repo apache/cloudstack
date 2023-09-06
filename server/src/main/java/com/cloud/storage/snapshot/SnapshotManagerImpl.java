@@ -1696,7 +1696,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         // find the size of the template to be copied
         SnapshotDataStoreVO snapshotDataStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcSecStore.getId(), snapshotId);
 
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.template);
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
 
         // Copy will just find one eligible image store for the destination zone
