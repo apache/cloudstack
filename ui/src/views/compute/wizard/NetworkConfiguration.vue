@@ -129,7 +129,6 @@ export default {
     this.dataItems = []
   },
   created () {
-    console.log(this.preFillContent)
     this.dataItems = this.items
     this.initForm()
     if (this.dataItems.length > 0) {
