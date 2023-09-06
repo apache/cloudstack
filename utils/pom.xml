@@ -261,7 +261,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>${project.artifactId}-${project.version}-SHADED-2</finalName>
+                            <finalName>${project.artifactId}-${project.version}-bundled</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
