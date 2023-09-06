@@ -86,7 +86,7 @@ public interface VmDetailConstants {
     String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
 
     // VMware to KVM VM migrations specific
-    String VMWARE_TO_KVM_PREFIX = "vmwware-to-kvm";
+    String VMWARE_TO_KVM_PREFIX = "vmware-to-kvm";
     String VMWARE_VCENTER_HOST = String.format("%s-vcenter", VMWARE_TO_KVM_PREFIX);
     String VMWARE_DATACENTER_NAME = String.format("%s-datacenter", VMWARE_TO_KVM_PREFIX);
     String VMWARE_CLUSTER_NAME = String.format("%s-cluster", VMWARE_TO_KVM_PREFIX);
