@@ -152,7 +152,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listBySnapshot(snapshotId, role);
         SnapshotDataStoreVO snapshotStore = null;
         for (SnapshotDataStoreVO ref : snapshotStores) {
-            if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())); {
+            if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
                 snapshotStore = ref;
                 break;
             }
