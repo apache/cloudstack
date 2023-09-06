@@ -36,8 +36,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -84,11 +87,15 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Inject
     DataCenterDao dataCenterDao;
     @Inject
+    NetworkDao networkDao;
+    @Inject
     AgentManager agentManager;
     @Inject
     ResourceManager resourceManager;
     @Inject
     PhysicalNetworkDao physicalNetworkDao;
+    @Inject
+    NetworkModel networkModel;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -97,12 +104,21 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     private static Map<Network.Service, Map<Network.Capability, String>> initCapabilities() {
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
+
         Map<Network.Capability, String> dhcpCapabilities = Map.of(Network.Capability.DhcpAccrossMultipleSubnets, "true");
         capabilities.put(Network.Service.Dhcp, dhcpCapabilities);
+
         Map<Network.Capability, String> dnsCapabilities = new HashMap<>();
         dnsCapabilities.put(Network.Capability.AllowDnsSuffixModification, "true");
         capabilities.put(Network.Service.Dns, dnsCapabilities);
-        capabilities.put(Network.Service.Connectivity, null);
+
+//        capabilities.put(Network.Service.Connectivity, null);
+        capabilities.put(Network.Service.StaticNat, null);
+
+        Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
+        sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
+        sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
+        capabilities.put(Network.Service.SourceNat, sourceNatCapabilities);
         return capabilities;
     }
     @Override
@@ -172,12 +188,14 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
-        return false;
+        return canHandle(network, Network.Service.Connectivity);
     }
 
     @Override
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        return false;
+        Account account = accountMgr.getAccount(network.getAccountId());
+        NetworkVO networkVO = networkDao.findById(network.getId());
+        return nsxService.deleteNetwork(account.getAccountName(), networkVO);
     }
 
     @Override
@@ -192,7 +210,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     @Override
@@ -355,6 +373,18 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
+    }
+
+    protected boolean canHandle(Network network, Network.Service service) {
+        LOGGER.debug("Checking if Nsx Element can handle service " + service.getName() + " on network "
+                + network.getDisplayText());
+
+        if (!networkModel.isProviderForNetwork(getProvider(), network.getId())) {
+            LOGGER.debug("Nsx Element is not a provider for network " + network.getDisplayText());
+            return false;
+        }
+
+        return true;
     }
 
     private final Function<Long, DataCenterVO> zoneFunction = zoneId -> { return dataCenterDao.findById(zoneId); };

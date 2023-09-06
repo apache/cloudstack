@@ -66,7 +66,7 @@
             <a-select-option value="VSP"> VSP </a-select-option>
             <a-select-option value="VCS"> VCS </a-select-option>
             <a-select-option value="TF"> TF </a-select-option>
-            <a-select-option value="NSX"> NSX </a-select-option>
+            <a-select-option v-if="hypervisor === 'VMware'" value="NSX"> NSX </a-select-option>
 
             <template #suffixIcon>
               <a-tooltip

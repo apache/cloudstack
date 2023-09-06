@@ -16,47 +16,60 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
-import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.createApiClient;
-
 import com.cloud.agent.IAgentControl;
-import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.ReadyAnswer;
+import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.nsx.EdgeClusters;
+import com.vmware.nsx.model.EdgeCluster;
+import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Tier1s;
+import com.vmware.nsx_policy.infra.segments.ServiceSegments;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.ChildLocaleServices;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.Segment;
+import com.vmware.nsx_policy.model.SegmentSubnet;
+import com.vmware.nsx_policy.model.ServiceSegmentListResult;
 import com.vmware.nsx_policy.model.Tier1;
 import com.vmware.vapi.bindings.Service;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApi;
+import org.apache.cloudstack.utils.NsxApiClientUtils;
 import org.apache.log4j.Logger;
-
 
 import javax.naming.ConfigurationException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static java.util.Objects.isNull;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.FailoverMode.PREEMPTIVE;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.createApiClient;
+
 public class NsxResource implements ServerResource {
     private static final Logger LOGGER = Logger.getLogger(NsxResource.class);
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
+    private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
-//    private static final String ROUTING = "ROUTING";
+    private static final String SEGMENT_RESOURCE_TYPE = "Segment";
+
     private String name;
     protected String hostname;
     protected String username;
@@ -98,7 +111,11 @@ public class NsxResource implements ServerResource {
             return executeRequest((ReadyCommand) cmd);
         } else if (cmd instanceof DeleteNsxTier1GatewayCommand) {
             return executeRequest((DeleteNsxTier1GatewayCommand) cmd);
-        } else if (cmd instanceof CreateNsxTier1GatewayCommand) {
+        } else if (cmd instanceof DeleteNsxSegmentCommand) {
+            return executeRequest((DeleteNsxSegmentCommand) cmd);
+        } else if (cmd instanceof CreateNsxSegmentCommand) {
+            return executeRequest((CreateNsxSegmentCommand) cmd);
+        }  else if (cmd instanceof CreateNsxTier1GatewayCommand) {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -206,15 +223,13 @@ public class NsxResource implements ServerResource {
     }
 
     private Function<Class, Service> nsxService = svcClass -> { return nsxApi.getApiClient().createStub(svcClass); };
-    private Service getService(Class svcClass) {
-        return nsxApi.getApiClient().createStub(svcClass);
-    }
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
         String name = getTier1GatewayName(cmd);
         Tier1 tier1 = getTier1Gateway(name);
         if (tier1 != null) {
             throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone: %s and account %s", name, cmd.getZoneName(), cmd.getAccountName()));
         }
+
         List<com.vmware.nsx_policy.model.LocaleServices> localeServices = getTier0LocalServices(tier0Gateway);
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
 
@@ -224,6 +239,7 @@ public class NsxResource implements ServerResource {
                 .setResourceType(TIER_1_RESOURCE_TYPE)
                 .setPoolAllocation(ROUTING.name())
                 .setHaMode(ACTIVE_STANDBY.name())
+                .setFailoverMode(PREEMPTIVE.name())
                 .setId(name)
                 .setDisplayName(name)
                 .setChildren(
@@ -231,7 +247,7 @@ public class NsxResource implements ServerResource {
                                         .setLocaleServices(
                                                 new com.vmware.nsx_policy.model.LocaleServices.Builder()
                                                         .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath())
-                                                        .setId(localeServices.get(0).getId())
+                                                        .setParentPath(TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
                                                         .setResourceType("LocaleServices")
                                                         .build()
                                         ).build())).build();
@@ -254,13 +270,66 @@ public class NsxResource implements ServerResource {
         return new NsxAnswer(cmd, true, null);
     }
 
+    private Answer executeRequest(CreateNsxSegmentCommand cmd) {
+        try {
+            String segmentName = getSegmentName(cmd);
+            Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            SegmentSubnet subnet = new SegmentSubnet.Builder()
+                    .setGatewayAddress(cmd.getTierNetwork().getGateway() + "/" + cmd.getTierNetwork().getCidr().split("/")[1]).build();
+            Segment segment = new Segment.Builder()
+                    .setResourceType(SEGMENT_RESOURCE_TYPE)
+                    .setId(segmentName)
+                    .setDisplayName(segmentName)
+                    .setConnectivityPath(isNull(cmd.getVpcName()) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
+                            : TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
+                    .setAdminState(NsxApiClientUtils.AdminState.UP.name())
+                    .setSubnets(List.of(subnet))
+                    .build();
+            segmentService.patch(segmentName, segment);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to create network: %s", cmd.getTierNetwork().getName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
+        try {
+            String segmentName = getSegmentName(cmd);
+            Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            segmentService.delete(segmentName);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to delete NSX segment: %s", getSegmentName(cmd)) );
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
     private List<com.vmware.nsx_policy.model.LocaleServices> getTier0LocalServices(String tier0Gateway) {
         try {
             LocaleServices tier0LocaleServices = (LocaleServices) nsxService.apply(LocaleServices.class);
-            LocaleServicesListResult result =tier0LocaleServices.list(tier0Gateway, null, false, null, null, null, null);
+            LocaleServicesListResult result = tier0LocaleServices.list(tier0Gateway, null, false, null, null, null, null);
             return result.getResults();
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch locale services for tier gateway %s due to %s", tier0Gateway, e.getMessage()));
+        }
+    }
+
+    private EdgeCluster getEdgeClusterDetails(String edgeClusterName) {
+        try {
+            EdgeClusters edgeClusterService = (EdgeClusters) nsxService.apply(EdgeClusters.class);
+            return edgeClusterService.get(edgeClusterName);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch details of edge cluster: %s, due to: %s", edgeClusterName, e.getMessage()));
+        }
+    }
+
+    private ServiceSegmentListResult listServiceSegments() {
+        try {
+            ServiceSegments serviceSegmentSvc = (ServiceSegments) nsxService.apply(ServiceSegments.class);
+            return serviceSegmentSvc.list(null, null, null, true, null);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }
     }
 
@@ -276,6 +345,10 @@ public class NsxResource implements ServerResource {
 
     private String getTier1GatewayName(CreateNsxTier1GatewayCommand cmd) {
         return cmd.getZoneName() + "-" + cmd.getAccountName() + "-" + cmd.getVpcName();
+    }
+
+    private String getSegmentName(CreateNsxSegmentCommand cmd) {
+        return cmd.getAccountName() + "-" + cmd.getTierNetwork().getName();
     }
 
     @Override

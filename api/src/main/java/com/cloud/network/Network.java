@@ -430,6 +430,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     long getDataCenterId();
 
+    long getAccountId();
+
     long getNetworkOfferingId();
 
     @Override
