@@ -102,8 +102,18 @@ public class NsxProviderServiceImpl implements NsxProviderService {
             final Host host = resourceManager.addHost(zoneId, nsxResource, nsxResource.getType(), params);
             if (host != null) {
                  nsxProvider = Transaction.execute((TransactionCallback<NsxProviderVO>) status -> {
-                    NsxProviderVO nsxProviderVO = new NsxProviderVO(zoneId, host.getId(), name, hostname,
-                            username, password, tier0Gateway, edgeCluster);
+                    NsxProviderVO nsxProviderVO = new NsxProviderVO.Builder()
+                            .setZoneId(zoneId)
+                            .setHostId(host.getId())
+                            .setProviderName(name)
+                            .setHostname(hostname)
+                            .setPort(port)
+                            .setUsername(username)
+                            .setPassword(password)
+                            .setTier0Gateway(tier0Gateway)
+                            .setEdgeCluster(edgeCluster)
+                            .build();
+
                     nsxProviderDao.persist(nsxProviderVO);
 
                     DetailVO detail = new DetailVO(host.getId(), "nsxcontrollerid",
@@ -170,14 +180,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         for (PhysicalNetworkVO physicalNetwork : physicalNetworks) {
             List<NetworkVO> networkList = networkDao.listByPhysicalNetwork(physicalNetwork.getId());
             if (!CollectionUtils.isNullOrEmpty(networkList)) {
-                // Networks with broadcast type vcs are ours
-                for (NetworkVO network : networkList) {
-                    if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
-                        if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
-                            throw new CloudRuntimeException("This NSX Controller cannot be deleted as there are one or more logical networks provisioned by CloudStack on it.");
-                        }
-                    }
-                }
+                validateNetworkState(networkList);
             }
         }
         nsxProviderDao.remove(nsxControllerId);
@@ -191,5 +194,15 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         cmdList.add(ListNsxControllersCmd.class);
         cmdList.add(DeleteNsxControllerCmd.class);
         return cmdList;
+    }
+
+    private void validateNetworkState(List<NetworkVO> networkList) {
+        for (NetworkVO network : networkList) {
+            if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.NSX) {
+                if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
+                    throw new CloudRuntimeException("This NSX Controller cannot be deleted as there are one or more logical networks provisioned by CloudStack on it.");
+                }
+            }
+        }
     }
 }

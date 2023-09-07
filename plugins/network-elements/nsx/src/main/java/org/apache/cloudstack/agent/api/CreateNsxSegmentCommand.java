@@ -18,6 +18,8 @@ package org.apache.cloudstack.agent.api;
 
 import com.cloud.network.dao.NetworkVO;
 
+import java.util.Objects;
+
 public class CreateNsxSegmentCommand extends CreateNsxTier1GatewayCommand {
     private NetworkVO tierNetwork;
     public CreateNsxSegmentCommand(String zoneName, Long zoneId, String accountName, Long accountId, String vpcName, NetworkVO tierNetwork) {
@@ -31,5 +33,19 @@ public class CreateNsxSegmentCommand extends CreateNsxTier1GatewayCommand {
 
     public void setTierNetwork(NetworkVO tierNetwork) {
         this.tierNetwork = tierNetwork;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateNsxSegmentCommand command = (CreateNsxSegmentCommand) o;
+        return Objects.equals(tierNetwork, command.tierNetwork);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), tierNetwork);
     }
 }

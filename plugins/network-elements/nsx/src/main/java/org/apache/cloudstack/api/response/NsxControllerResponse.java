@@ -48,8 +48,6 @@ public class NsxControllerResponse extends BaseResponse {
     @Param(description = "NSX controller port")
     private String port;
 
-    // TODO: Should Password be returned?
-
     @SerializedName(ApiConstants.TIER0_GATEWAY)
     @Param(description = "The tier-0 gateway network. Tier-0 gateway is responsible for handling" +
             " traffic between logical and physical networks"

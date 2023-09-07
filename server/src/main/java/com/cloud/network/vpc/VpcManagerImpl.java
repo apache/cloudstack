@@ -368,8 +368,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
 
                 // configure default vpc offering with NSX as network service provider
-                if (_vpcOffDao.findByUniqueName(VpcOffering.defaultVPCNSXSOfferingName) == null) {
-                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.defaultVPCNSXSOfferingName);
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME) == null) {
+                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME);
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
@@ -380,7 +380,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCNSXSOfferingName, VpcOffering.defaultVPCNSXSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME, svcProviderMap, false, State.Enabled, null, false, false, false);
 
                 }
             }

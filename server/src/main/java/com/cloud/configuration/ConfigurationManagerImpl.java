@@ -47,6 +47,8 @@ import javax.naming.ConfigurationException;
 
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -451,6 +453,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    NsxProviderDao nsxProviderDao;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -2527,6 +2531,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 // we should actually find the mapping and remove if it exists
                 // but we don't know about vmware/plugin/hypervisors at this point
+                NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+                nsxProviderDao.remove(nsxProvider.getId());
 
                 final boolean success = _zoneDao.remove(zoneId);
 
