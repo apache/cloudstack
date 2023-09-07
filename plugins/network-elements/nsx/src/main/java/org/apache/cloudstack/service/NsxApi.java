@@ -17,7 +17,6 @@
 package org.apache.cloudstack.service;
 
 import com.vmware.vapi.client.ApiClient;
-import org.apache.log4j.Logger;
 
 public class NsxApi {
 
