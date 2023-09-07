@@ -71,18 +71,6 @@ public class NsxProviderVO implements NsxProvider {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NsxProviderVO( long zoneId, long hostId, String providerName, String hostname, String username, String password, String tier0Gateway, String edgeCluster) {
-        this.zoneId = zoneId;
-        this.hostId = hostId;
-        this.uuid = UUID.randomUUID().toString();
-        this.providerName = providerName;
-        this.hostname = hostname;
-        this.username = username;
-        this.password = password;
-        this.tier0Gateway = tier0Gateway;
-        this.edgeCluster = edgeCluster;
-    }
-
     @Override
     public long getId() {
         return id;
@@ -176,5 +164,79 @@ public class NsxProviderVO implements NsxProvider {
 
     public void setEdgeCluster(String edgeCluster) {
         this.edgeCluster = edgeCluster;
+    }
+
+    public static final class Builder {
+        private long zoneId;
+        private long hostId;
+        private String providerName;
+        private String hostname;
+        private String port;
+        private String username;
+        private String password;
+        private String tier0Gateway;
+        private String edgeCluster;
+
+        public Builder() {
+        }
+
+        public Builder setZoneId(long zoneId) {
+            this.zoneId = zoneId;
+            return this;
+        }
+
+        public Builder setHostId(long hostId) {
+            this.hostId = hostId;
+            return this;
+        }
+
+        public Builder setProviderName(String providerName) {
+            this.providerName = providerName;
+            return this;
+        }
+
+        public Builder setHostname(String hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
+        public Builder setPort(String port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder setUsername(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder setPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder setTier0Gateway(String tier0Gateway) {
+            this.tier0Gateway = tier0Gateway;
+            return this;
+        }
+
+        public Builder setEdgeCluster(String edgeCluster) {
+            this.edgeCluster = edgeCluster;
+            return this;
+        }
+        public NsxProviderVO build() {
+            NsxProviderVO provider = new NsxProviderVO();
+            provider.setZoneId(this.zoneId);
+            provider.setHostId(this.hostId);
+            provider.setUuid(UUID.randomUUID().toString());
+            provider.setProviderName(this.providerName);
+            provider.setHostname(this.hostname);
+            provider.setPort(this.port);
+            provider.setUsername(this.username);
+            provider.setPassword(this.password);
+            provider.setTier0Gateway(this.tier0Gateway);
+            provider.setEdgeCluster(this.edgeCluster);
+            return provider;
+        }
     }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
+import java.util.Objects;
+
 public class CreateNsxTier1GatewayCommand extends NsxCommand {
     private String vpcName;
 
@@ -30,5 +32,19 @@ public class CreateNsxTier1GatewayCommand extends NsxCommand {
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        CreateNsxTier1GatewayCommand that = (CreateNsxTier1GatewayCommand) o;
+        return Objects.equals(vpcName, that.vpcName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), vpcName);
     }
 }

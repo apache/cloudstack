@@ -62,8 +62,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Inject
     AccountDao accountDao;
 
-    private static final Networks.TrafficType[] TrafficTypes = {Networks.TrafficType.Guest};
-
     public NsxGuestNetworkGuru() {
         super();
         _isolationMethods = new PhysicalNetwork.IsolationMethod[] {new PhysicalNetwork.IsolationMethod("NSX")};
@@ -112,7 +110,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Override
     @DB
     public void deallocate(Network config, NicProfile nic, VirtualMachineProfile vm) {
-
+        // Do nothing
     }
 
     @Override
@@ -156,7 +154,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     public void reserve(final NicProfile nic, final Network network, final VirtualMachineProfile vm,
                         final DeployDestination dest, final ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
-
+        // Do nothing
     }
 
     @Override
@@ -166,7 +164,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void shutdown(final NetworkProfile profile, final NetworkOffering offering) {
-
+        // Do nothing
     }
 
     @Override
@@ -181,12 +179,12 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     @Override
     public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
-
+        // Do nothing
     }
 
     @Override
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
-
+        // Do nothing
     }
 
     private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {

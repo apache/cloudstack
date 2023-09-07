@@ -53,7 +53,6 @@ public class AddNsxControllerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NSX_PROVIDER_HOSTNAME, type = CommandType.STRING, required = true, description = "NSX controller hostname / IP address")
     private String hostname;
 
-    // TODO: May not be required
     @Parameter(name = ApiConstants.NSX_PROVIDER_PORT, type = CommandType.STRING, description = "NSX controller port")
     private String port;
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username to log into NSX controller")

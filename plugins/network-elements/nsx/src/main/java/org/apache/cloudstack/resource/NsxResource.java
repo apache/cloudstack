@@ -53,6 +53,7 @@ import org.apache.cloudstack.utils.NsxApiClientUtils;
 import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -124,7 +125,7 @@ public class NsxResource implements ServerResource {
 
     @Override
     public void disconnected() {
-
+        // Do nothing
     }
 
     @Override
@@ -134,6 +135,7 @@ public class NsxResource implements ServerResource {
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
+        // Do nothing
     }
 
     @Override
@@ -148,12 +150,12 @@ public class NsxResource implements ServerResource {
 
     @Override
     public void setConfigParams(Map<String, Object> params) {
-
+        // Do nothing
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
@@ -163,7 +165,7 @@ public class NsxResource implements ServerResource {
 
     @Override
     public void setRunLevel(int level) {
-
+        // Do nothing
     }
 
     @Override
@@ -222,7 +224,7 @@ public class NsxResource implements ServerResource {
         return new ReadyAnswer(cmd);
     }
 
-    private Function<Class, Service> nsxService = svcClass -> { return nsxApi.getApiClient().createStub(svcClass); };
+    private Function<Class<? extends Service>, Service> nsxService = svcClass -> nsxApi.getApiClient().createStub(svcClass);
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
         String name = getTier1GatewayName(cmd);
         Tier1 tier1 = getTier1Gateway(name);
@@ -312,24 +314,6 @@ public class NsxResource implements ServerResource {
             return result.getResults();
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch locale services for tier gateway %s due to %s", tier0Gateway, e.getMessage()));
-        }
-    }
-
-    private EdgeCluster getEdgeClusterDetails(String edgeClusterName) {
-        try {
-            EdgeClusters edgeClusterService = (EdgeClusters) nsxService.apply(EdgeClusters.class);
-            return edgeClusterService.get(edgeClusterName);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch details of edge cluster: %s, due to: %s", edgeClusterName, e.getMessage()));
-        }
-    }
-
-    private ServiceSegmentListResult listServiceSegments() {
-        try {
-            ServiceSegments serviceSegmentSvc = (ServiceSegments) nsxService.apply(ServiceSegments.class);
-            return serviceSegmentSvc.list(null, null, null, true, null);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }
     }
 

@@ -21,8 +21,6 @@ import org.apache.log4j.Logger;
 
 public class NsxApi {
 
-    private static final Logger S_LOGGER = Logger.getLogger(NsxApi.class);
-
     ApiClient apiClient;
 
     public ApiClient getApiClient() {

@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
@@ -258,10 +259,10 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
         Pair<Boolean, Account> isNsxAndAccount = validateVpcConfigurationAndGetAccount(zone, vpc);
-        if (!isNsxAndAccount.first()) {
+        if (Boolean.FALSE.equals(isNsxAndAccount.first())) {
             return true;
         }
-        if (isNsxAndAccount.first() && Objects.isNull(isNsxAndAccount.second())) {
+        if (Boolean.TRUE.equals(isNsxAndAccount.first()) && Objects.isNull(isNsxAndAccount.second())) {
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
@@ -272,10 +273,10 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean shutdownVpc(Vpc vpc, ReservationContext context) throws ConcurrentOperationException {
         DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
         Pair<Boolean, Account> isNsxAndAccount = validateVpcConfigurationAndGetAccount(zone, vpc);
-        if (!isNsxAndAccount.first()) {
+        if (Boolean.FALSE.equals(isNsxAndAccount.first())) {
             return true;
         }
-        if (isNsxAndAccount.first() && Objects.isNull(isNsxAndAccount.second())) {
+        if (Boolean.TRUE.equals(isNsxAndAccount.first()) && Objects.isNull(isNsxAndAccount.second())) {
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
@@ -337,12 +338,12 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public void processHostAdded(long hostId) {
-
+        // Do nothing
     }
 
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-
+        // Do nothing
     }
 
     @Override
@@ -352,12 +353,12 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public void processHostAboutToBeRemoved(long hostId) {
-
+        // Do nothing
     }
 
     @Override
     public void processHostRemoved(long hostId, long clusterId) {
-
+        // Do nothing
     }
 
     @Override
@@ -387,5 +388,5 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         return true;
     }
 
-    private final Function<Long, DataCenterVO> zoneFunction = zoneId -> { return dataCenterDao.findById(zoneId); };
+    private final LongFunction<DataCenterVO> zoneFunction = zoneId -> dataCenterDao.findById(zoneId);
 }
