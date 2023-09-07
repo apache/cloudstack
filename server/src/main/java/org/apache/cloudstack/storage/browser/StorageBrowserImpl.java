@@ -22,14 +22,19 @@ package org.apache.cloudstack.storage.browser;
 import com.cloud.agent.api.Answer;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
-import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoreObjectsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd;
@@ -40,7 +45,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.springframework.stereotype.Component;
@@ -60,9 +64,6 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     ImageStoreJoinDao imageStoreJoinDao;
 
     @Inject
-    ImageStoreDao imageStoreDao;
-
-    @Inject
     DataStoreManager dataStoreMgr;
 
     @Inject
@@ -78,7 +79,13 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     EndPointSelector endPointSelector;
 
     @Inject
-    StoragePoolJoinDao storagePoolJoinDao;
+    VMTemplatePoolDao templatePoolDao;
+
+    @Inject
+    VMTemplateDao templateDao;
+
+    @Inject
+    VolumeDao volumeDao;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -133,11 +140,38 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             }
         }
 
-        List<TemplateJoinVO> templateJoinList = templateJoinDao.listByStoreAndInstallPath(dataStore.getId(),
-                installPathList);
+        List<TemplateJoinVO> templateJoinList = templateJoinDao.listByStoreAndInstallPath(dataStore.getId(), installPathList);
         HashMap<String, TemplateJoinVO> templateJoinMap = new HashMap<>();
         for (TemplateJoinVO templateJoin : templateJoinList) {
             templateJoinMap.put(templateJoin.getInstallPath(), templateJoin);
+        }
+
+        List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStore.getId(), installPathList);
+        HashMap<String, VMTemplateVO> templatePathMap = new HashMap<>();
+
+        if (templateStoragePoolList != null && !templateStoragePoolList.isEmpty()) {
+
+            List<VMTemplateVO> templateList = templateDao.listByIds
+                (templateStoragePoolList.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList()));
+
+            HashMap<Long, VMTemplateVO> templateIdMap = new HashMap<>();
+
+            for (VMTemplateVO template : templateList) {
+                templateIdMap.put(template.getId(), template);
+            }
+
+            for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
+                templatePathMap.put(templatePool.getInstallPath(), templateIdMap.get(templatePool.getTemplateId()));
+            }
+        }
+
+        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPath(dataStore.getId(), installPathList);
+
+        HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
+        if (volumeList != null && !volumeList.isEmpty()) {
+            for (VolumeVO volume : volumeList) {
+                volumePathMap.put(volume.getPath(), volume);
+            }
         }
 
         for (int i = 0; i < paths.size(); i++) {
@@ -146,29 +180,37 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
                     dsAnswer.getIsDirs().get(i),
                     dsAnswer.getSizes().get(i),
                     new Date(dsAnswer.getLastModified().get(i)));
-            if (dsAnswer.getIsDirs().get(i) != null) {
-                String filePath = dsAnswer.getPaths().get(i);
-                if (templateJoinMap.get(filePath) != null) {
-                    response.setTemplateId(templateJoinMap.get(filePath).getUuid());
-                    response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
-                }
-                if (snapshotPathUuidMap.get(filePath) != null) {
-                    response.setSnapshotId(snapshotPathUuidMap.get(filePath));
-                }
-
-                if (filePath.startsWith("/")) {
-                    filePath = filePath.substring(1);
-                } else {
-                    filePath = "/".concat(filePath);
-                }
-                if (templateJoinMap.get(filePath) != null) {
-                    response.setTemplateId(templateJoinMap.get(filePath).getUuid());
-                    response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
-                }
-                if (snapshotPathUuidMap.get(filePath) != null) {
-                    response.setSnapshotId(snapshotPathUuidMap.get(filePath));
-                }
+            String filePath = dsAnswer.getPaths().get(i);
+            if (templateJoinMap.get(filePath) != null) {
+                response.setTemplateId(templateJoinMap.get(filePath).getUuid());
+                response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
             }
+            if (snapshotPathUuidMap.get(filePath) != null) {
+                response.setSnapshotId(snapshotPathUuidMap.get(filePath));
+            }
+
+            if (filePath.startsWith("/")) {
+                filePath = filePath.substring(1);
+            }
+
+            if (templateJoinMap.get(filePath) != null) {
+                response.setTemplateId(templateJoinMap.get(filePath).getUuid());
+                response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
+            }
+
+            if (templatePathMap.get(filePath) != null) {
+                response.setTemplateId(templatePathMap.get(filePath).getUuid());
+                response.setFormat(templatePathMap.get(filePath).getFormat().toString());
+            }
+
+            if (snapshotPathUuidMap.get(filePath) != null) {
+                response.setSnapshotId(snapshotPathUuidMap.get(filePath));
+            }
+
+            if (volumePathMap.get(filePath) != null) {
+                response.setVolumeId(volumePathMap.get(filePath).getUuid());
+            }
+
             responses.add(response);
         }
 
@@ -177,7 +219,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             listResponse.setResponses(responses);
             return listResponse;
         } else {
-            throw new IllegalArgumentException("Path " + path + " doesn't exist in image store " + dataStore.getUuid());
+            throw new IllegalArgumentException("Path " + path + " doesn't exist in store" + dataStore.getUuid());
         }
     }
 
@@ -187,9 +229,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         String path = cmd.getPath();
 
         ImageStoreJoinVO imageStore = imageStoreJoinDao.findById(imageStoreId);
-
         DataStore dataStore = dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole());
-
         return listObjectsInStore(dataStore, path);
     }
 
@@ -199,7 +239,6 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         String path = cmd.getPath();
 
         DataStore dataStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary);
-
         return listObjectsInStore(dataStore, path);
     }
 }

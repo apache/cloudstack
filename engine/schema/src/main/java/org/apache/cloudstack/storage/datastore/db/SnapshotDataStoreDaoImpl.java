@@ -474,7 +474,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, List<String> pathList) {
-        if (pathList == null || pathList.isEmpty()) {
+        if (CollectionUtils.isEmpty(pathList)) {
             return new ArrayList<>();
         }
 

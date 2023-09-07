@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -63,6 +64,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     protected final SearchBuilder<VolumeVO> diskOfferingSearch;
     protected final SearchBuilder<VolumeVO> RootDiskStateSearch;
+    private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
@@ -474,6 +476,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         secondaryStorageSearch.and("states", secondaryStorageSearch.entity().getState(), Op.NIN);
         secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
         secondaryStorageSearch.done();
+
+        storeAndInstallPathSearch = createSearchBuilder();
+        storeAndInstallPathSearch.and("poolId", storeAndInstallPathSearch.entity().getPoolId(), Op.EQ);
+        storeAndInstallPathSearch.and("pathIN", storeAndInstallPathSearch.entity().getPath(), Op.IN);
+        storeAndInstallPathSearch.done();
+
     }
 
     @Override
@@ -776,5 +784,17 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             update(volume.getId(), volume);
             remove(volume.getId());
         }
+    }
+
+    @Override
+    public List<VolumeVO> listByPoolIdAndPath(long id, List<String> pathList) {
+        if (CollectionUtils.isEmpty(pathList)) {
+            return new ArrayList<>();
+        }
+
+        SearchCriteria<VolumeVO> sc = storeAndInstallPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("pathIN", pathList.toArray());
+        return listBy(sc);
     }
 }

@@ -49,6 +49,10 @@ public class DataStoreObjectResponse extends BaseResponse {
     @Param(description = "Template response for the image store object.")
     private String snapshotId;
 
+    @SerializedName(ApiConstants.VOLUME_ID)
+    @Param(description = "Template response for the image store object.")
+    private String volumeId;
+
     @SerializedName(ApiConstants.LAST_UPDATED)
     @Param(description = "Template response for the image store object.")
     private Date lastUpdated;
@@ -76,5 +80,9 @@ public class DataStoreObjectResponse extends BaseResponse {
 
     public void setSnapshotId(String snapshotId) {
         this.snapshotId = snapshotId;
+    }
+
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
     }
 }

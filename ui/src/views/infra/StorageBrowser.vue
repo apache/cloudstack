@@ -30,14 +30,16 @@
         <a-col :span="24" style="padding-left: 12px">
           <a-breadcrumb :routes="getRoutes()">
             <template #itemRender="{ route }">
-              <router-link :to="{query: {...$route.query, path: route.path}}" >
-                <span v-if="['/', ''].includes(route.path) && route.breadcrumbName === 'root'">
-                <home-outlined/>
+              <span v-if="['/', ''].includes(route.path) && route.breadcrumbName === 'root'">
+                <a @click="openDir('')">
+                  <home-outlined/>
+                </a>
               </span>
               <span v-else>
+                <a @click="openDir(route.path)">
                 {{  route.breadcrumbName }}
+                </a>
               </span>
-              </router-link>
             </template>
           </a-breadcrumb>
           </a-col>
@@ -68,7 +70,7 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.key == 'name'">
             <template v-if="record.isdirectory">
-              <a @click="openDir(record.name)">
+              <a @click="openDir(`${this.path}${record.name}/`)">
                 <folder-outlined /> {{ record.name }}
               </a>
             </template>
@@ -99,6 +101,11 @@
             <template v-if="record.snapshotid">
               <router-link :to="{ path: '/snapshot/' + record.snapshotid }" target='_blank' >
                 {{  $t('label.snapshot') }}
+              </router-link>
+            </template>
+            <template v-if="record.volumeid">
+              <router-link :to="{ path: '/volume/' + record.volumeid }" target='_blank' >
+                {{  $t('label.volume') }}
               </router-link>
             </template>
             <template v-else-if="record.templateid">
@@ -191,7 +198,7 @@ export default {
         path: this.path,
         id: this.resource.id
       }).then(json => {
-        this.dataSource = json.listimagestoreobjectsresponse.datastoreobject
+        this.dataSource = json.liststoragepoolobjectsresponse.datastoreobject
       }).finally(() => {
         this.loading = false
       })
@@ -201,7 +208,7 @@ export default {
       if (this.resourceType === 'ImageStore') {
         this.fetchImageStoreObjects()
       } else if (this.resourceType === 'PrimaryStorage') {
-        this.fetchSecondaryStorage()
+        this.fetchPrimaryStoreObjects()
       }
     },
     getRoutes () {
@@ -229,8 +236,8 @@ export default {
       return val
     },
     openDir (name) {
-      this.path = `${this.path}${name}/`
-      this.$router.push({ query: { ...this.$route.query, path: this.path } })
+      this.path = name
+      // this.$router.replace({ query: { ...this.$route.query, path: this.path } })
       this.fetchData()
     },
     openDrawer (record) {
