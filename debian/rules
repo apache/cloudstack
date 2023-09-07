@@ -135,7 +135,7 @@ override_dh_auto_install:
 	install -D systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.3.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
-	install -D utils/target/cloud-utils-$(VERSION)-SHADED.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib/$(PACKAGE)-utils.jar
+	install -D utils/target/cloud-utils-$(VERSION)-bundled.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib/$(PACKAGE)-utils.jar
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/share/pyshared
