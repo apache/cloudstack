@@ -37,7 +37,7 @@
               </span>
               <span v-else>
                 <a @click="openDir(route.path)">
-                {{  route.breadcrumbName }}
+                {{ route.breadcrumbName }}
                 </a>
               </span>
             </template>
@@ -70,13 +70,19 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.key == 'name'">
             <template v-if="record.isdirectory">
-              <a @click="openDir(`${this.path}${record.name}/`)">
+              <a @click="openDir(`${this.browserPath}${record.name}/`)">
                 <folder-outlined /> {{ record.name }}
               </a>
             </template>
             <template v-else-if="record.snapshotid">
               <a @click="openDrawer(record)">
                 <build-outlined/>
+                {{ record.name }}
+              </a>
+            </template>
+            <template v-else-if="record.volumeid">
+              <a @click="openDrawer(record)">
+                <hdd-outlined/>
                 {{ record.name }}
               </a>
             </template>
@@ -148,7 +154,7 @@ export default {
     return {
       loading: false,
       dataSource: [],
-      path: this.$route.query.path || '',
+      browserPath: this.$route.query.browserPath || '',
       columns: [
         {
           key: 'name',
@@ -184,7 +190,7 @@ export default {
     fetchImageStoreObjects () {
       this.loading = true
       api('listImageStoreObjects', {
-        path: this.path,
+        path: this.browserPath,
         id: this.resource.id
       }).then(json => {
         this.dataSource = json.listimagestoreobjectsresponse.datastoreobject
@@ -195,7 +201,7 @@ export default {
     fetchPrimaryStoreObjects () {
       this.loading = true
       api('listStoragePoolObjects', {
-        path: this.path,
+        path: this.browserPath,
         id: this.resource.id
       }).then(json => {
         this.dataSource = json.liststoragepoolobjectsresponse.datastoreobject
@@ -217,7 +223,7 @@ export default {
         path: path,
         breadcrumbName: 'root'
       }]
-      for (const route of this.path.split('/')) {
+      for (const route of this.browserPath.split('/')) {
         if (route) {
           path = `${path}${route}/`
           routeList.push({
@@ -236,8 +242,8 @@ export default {
       return val
     },
     openDir (name) {
-      this.path = name
-      // this.$router.replace({ query: { ...this.$route.query, path: this.path } })
+      this.browserPath = name
+      this.$router.replace({ query: { ...this.$route.query, browserPath: this.browserPath } })
       this.fetchData()
     },
     openDrawer (record) {

@@ -262,6 +262,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     private HashMap<String, VolumeVO> getPathVolumeMap(DataStore dataStore, List<String> paths) {
         HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
+        if (dataStore.getRole() != DataStoreRole.Primary) {
+            return volumePathMap;
+        }
         List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPath(dataStore.getId(), paths);
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
