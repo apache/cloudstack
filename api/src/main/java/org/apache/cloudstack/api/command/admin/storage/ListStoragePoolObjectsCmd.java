@@ -47,7 +47,7 @@ public class ListStoragePoolObjectsCmd extends BaseListCmd {
                description = "id of the storage pool")
     private Long storeId;
 
-    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "path to list on image store")
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "path to list on storage pool")
     private String path;
 
     /////////////////////////////////////////////////////

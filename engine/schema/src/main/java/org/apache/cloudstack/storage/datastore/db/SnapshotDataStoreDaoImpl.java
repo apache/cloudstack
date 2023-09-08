@@ -127,7 +127,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotCreatedSearch.done();
 
         imageStoreAndInstallPathSearch = createSearchBuilder();
-        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and(STORE_ID, imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and(STORE_ROLE, imageStoreAndInstallPathSearch.entity().getRole(), SearchCriteria.Op.EQ);
         imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
         imageStoreAndInstallPathSearch.done();
 
@@ -473,13 +474,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, List<String> pathList) {
+    public List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, DataStoreRole role, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
             return new ArrayList<>();
         }
 
         SearchCriteria<SnapshotDataStoreVO> sc = imageStoreAndInstallPathSearch.create();
-        sc.setParameters("store_id", storeId);
+        sc.setParameters(STORE_ID, storeId);
+        sc.setParameters(STORE_ROLE, role);
         sc.setParameters("install_pathIN", pathList.toArray());
         return listBy(sc);
     }

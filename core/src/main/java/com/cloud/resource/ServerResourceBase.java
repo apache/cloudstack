@@ -154,31 +154,31 @@ public abstract class ServerResourceBase implements ServerResource {
 
      protected Answer listFilesAtPath(String nfsMountPoint, String relativePath) {
         File file = new File(nfsMountPoint, relativePath);
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
         if (file.isFile()) {
-            return new ListDataStoreObjectsAnswer(file.exists(), List.of(file.getName()),
-                    List.of(file.getPath().replace(nfsMountPoint, "")), List.of(false), List.of(file.length()),
-                    List.of(file.lastModified()), "file.isFile()");
+            names.add(file.getName());
+            paths.add(file.getPath().replace(nfsMountPoint, ""));
+            absPaths.add(file.getPath());
+            isDirs.add(file.isDirectory());
+            sizes.add(file.length());
+            modifiedList.add(file.lastModified());
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
-
-            List<String> names = new ArrayList<>();
-            List<String> paths = new ArrayList<>();
-            List<Boolean> isDirs = new ArrayList<>();
-            List<Long> sizes = new ArrayList<>();
-            List<Long> modifiedList = new ArrayList<>();
             for (File f : files) {
                 names.add(f.getName());
                 paths.add(f.getPath().replace(nfsMountPoint, ""));
+                absPaths.add(f.getPath());
                 isDirs.add(f.isDirectory());
                 sizes.add(f.length());
                 modifiedList.add(f.lastModified());
             }
-
-            return new ListDataStoreObjectsAnswer(file.exists(), names, paths, isDirs, sizes, modifiedList,
-                    "files == null else");
         }
-        return new ListDataStoreObjectsAnswer(file.exists(), Collections.emptyList(), Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "");
+         return new ListDataStoreObjectsAnswer(file.exists(), names, paths, absPaths, isDirs, sizes, modifiedList);
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {

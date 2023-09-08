@@ -26,35 +26,35 @@ import java.util.Date;
 public class DataStoreObjectResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the image store object.")
+    @Param(description = "Name of the data store object.")
     private String name;
 
     @SerializedName("isdirectory")
-    @Param(description = "Name of the image store object.")
+    @Param(description = "Is it a directory.")
     private boolean isDirectory;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "Name of the image store object.")
+    @Param(description = "Size is in Bytes.")
     private long size;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "Template response for the image store object.")
+    @Param(description = "Template ID associated with the data store object.")
     private String templateId;
 
     @SerializedName(ApiConstants.FORMAT)
-    @Param(description = "Template response for the image store object.")
+    @Param(description = "Format of template associated with the data store object.")
     private String format;
 
     @SerializedName(ApiConstants.SNAPSHOT_ID)
-    @Param(description = "Template response for the image store object.")
+    @Param(description = "Snapshot ID associated with the data store object.")
     private String snapshotId;
 
     @SerializedName(ApiConstants.VOLUME_ID)
-    @Param(description = "Template response for the image store object.")
+    @Param(description = "Volume ID associated with the data store object.")
     private String volumeId;
 
     @SerializedName(ApiConstants.LAST_UPDATED)
-    @Param(description = "Template response for the image store object.")
+    @Param(description = "Last modified date of the file/directory.")
     private Date lastUpdated;
 
     public DataStoreObjectResponse(String name, boolean isDirectory, long size, Date lastUpdated) {

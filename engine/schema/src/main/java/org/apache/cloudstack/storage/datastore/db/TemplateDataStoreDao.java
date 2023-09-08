@@ -93,4 +93,6 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     boolean isTemplateMarkedForDirectDownload(long templateId);
 
     List<TemplateDataStoreVO> listTemplateDownloadUrlsByStoreId(long storeId);
+
+    List<TemplateDataStoreVO> listByStoreIdAndInstallPath(long storeId, List<String> installPaths);
 }

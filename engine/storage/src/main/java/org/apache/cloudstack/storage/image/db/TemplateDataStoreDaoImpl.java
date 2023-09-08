@@ -558,6 +558,11 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
+    public List<TemplateDataStoreVO> listByStoreIdAndInstallPath(long storeId, List<String> installPaths) {
+        return null;
+    }
+
+    @Override
     public void expireDnldUrlsForZone(Long dcId){
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;

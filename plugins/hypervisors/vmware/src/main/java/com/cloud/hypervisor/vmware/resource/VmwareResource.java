@@ -7794,9 +7794,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected ListDataStoreObjectsAnswer execute(ListDataStoreObjectsCommand cmd) {
-        String relativePath = cmd.getPath();
+        String path = cmd.getPath();
         PrimaryDataStoreTO dataStore = (PrimaryDataStoreTO) cmd.getStore();
 
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
 
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -7804,6 +7807,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         List<String> names = new ArrayList<>();
         List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
         List<Boolean> isDirs = new ArrayList<>();
         List<Long> sizes = new ArrayList<>();
         List<Long> modifiedList = new ArrayList<>();
@@ -7823,19 +7827,19 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             spec.setSearchCaseInsensitive(true);
             spec.setDetails(fqf);
 
-            String dsPath = String.format("[%s]%s", dsMo.getName(), relativePath);
+            String dsPath = String.format("[%s] %s", dsMo.getName(), path);
 
-            if (!relativePath.isEmpty() && !relativePath.equals("/") && dsMo.fileExists(dsPath)) {
-                String[] pathSplit = relativePath.split("/");
+            if (!path.isEmpty() && dsMo.fileExists(dsPath)) {
+                String[] pathSplit = path.split("/");
                 if (pathSplit.length > 1) {
                     spec.getMatchPattern().add(pathSplit[pathSplit.length - 1]);
-                    relativePath = relativePath.substring(0, relativePath.lastIndexOf("/"));
+                    path = path.substring(0, path.lastIndexOf("/"));
                 } else {
                     // File at root of datastore
-                    spec.getMatchPattern().add(relativePath);
-                    relativePath = "";
+                    spec.getMatchPattern().add(path);
+                    path = "";
                 }
-                dsPath = String.format("[%s]%s", dsMo.getName(), relativePath);
+                dsPath = String.format("[%s] %s", dsMo.getName(), path);
             }
 
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
@@ -7843,26 +7847,29 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
 
             for (FileInfo file : fileInfoList) {
-                if (relativePath.endsWith("/")) {
-                    paths.add(relativePath + file.getPath());
+                if (path.endsWith("/")) {
+                    paths.add(path + file.getPath());
                 } else {
-                    paths.add(relativePath + "/" + file.getPath());
+                    paths.add(path + "/" + file.getPath());
                 }
+                if (dsPath.endsWith("/")) {
+                    absPaths.add(dsPath + file.getPath());
+                } else {
+                    absPaths.add(dsPath + "/" + file.getPath());
+                }
+
                 names.add(file.getPath());
                 isDirs.add(file instanceof FolderFileInfo);
                 sizes.add(file.getFileSize());
                 modifiedList.add(file.getModification().toGregorianCalendar().getTimeInMillis());
             }
 
-
-            return new ListDataStoreObjectsAnswer(true, names, paths, isDirs, sizes, modifiedList,
-                    "vmware return");
+            return new ListDataStoreObjectsAnswer(true, names, paths, absPaths, isDirs, sizes, modifiedList);
         } catch (Exception e) {
             if (e.getMessage().contains("was not found")) {
-                return new ListDataStoreObjectsAnswer(false, names, paths, isDirs, sizes, modifiedList,
-                        "vmware return");
+                return new ListDataStoreObjectsAnswer(false, names, paths, absPaths, isDirs, sizes, modifiedList);
             }
-            String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", relativePath, e.getMessage());
+            String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", path, e.getMessage());
             s_logger.error(errorMsg, e);
         }
 

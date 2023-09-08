@@ -32,30 +32,30 @@ public class ListDataStoreObjectsAnswer extends Answer {
 
     private List<String> paths;
 
+    private List<String> absPaths;
+
     private List<Boolean> isDirs;
 
     private List<Long> sizes;
 
     private List<Long> lastModified;
 
-    private String log;
-
 
     public ListDataStoreObjectsAnswer() {
         super();
     }
 
-    public ListDataStoreObjectsAnswer(boolean pathExists, List<String> names, List<String> paths, List<Boolean> isDirs,
+    public ListDataStoreObjectsAnswer(boolean pathExists, List<String> names, List<String> paths, List<String> absPaths, List<Boolean> isDirs,
                                       List<Long> sizes,
-                                      List<Long> lastModified, String log) {
+                                      List<Long> lastModified) {
         super();
         this.names = names;
         this.pathExists = pathExists;
         this.paths = paths;
+        this.absPaths = absPaths;
         this.isDirs = isDirs;
         this.sizes = sizes;
         this.lastModified = lastModified;
-        this.log = log;
     }
 
     public boolean isPathExists() {
@@ -74,6 +74,13 @@ public class ListDataStoreObjectsAnswer extends Answer {
             return Collections.emptyList();
         }
         return paths;
+    }
+
+    public List<String> getAbsPaths() {
+        if (absPaths == null) {
+            return Collections.emptyList();
+        }
+        return absPaths;
     }
 
     public List<Boolean> getIsDirs() {
@@ -95,9 +102,5 @@ public class ListDataStoreObjectsAnswer extends Answer {
             return Collections.emptyList();
         }
         return lastModified;
-    }
-
-    public String getLog() {
-        return log;
     }
 }

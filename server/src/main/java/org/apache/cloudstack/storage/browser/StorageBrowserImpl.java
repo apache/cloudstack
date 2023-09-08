@@ -22,9 +22,7 @@ package org.apache.cloudstack.storage.browser;
 import com.cloud.agent.api.Answer;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
-import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
-import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -47,9 +45,13 @@ import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,7 +69,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     DataStoreManager dataStoreMgr;
 
     @Inject
-    TemplateJoinDao templateJoinDao;
+    TemplateDataStoreDao templateDataStoreDao;
 
     @Inject
     SnapshotDataStoreDao snapshotDataStoreDao;
@@ -95,134 +97,6 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return cmdList;
     }
 
-    private ListResponse<DataStoreObjectResponse> listObjectsInStore(DataStore dataStore, String path) {
-        EndPoint ep = endPointSelector.select(dataStore);
-
-        if (ep == null) {
-            throw new CloudRuntimeException("No secondary storage VM for image store " + dataStore.getUuid());
-        }
-
-        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path);
-        Answer answer = ep.sendMessage(listDSCmd);
-        if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
-            throw new CloudRuntimeException("Failed to list image store objects");
-        }
-        ListDataStoreObjectsAnswer dsAnswer = (ListDataStoreObjectsAnswer) answer;
-
-        List<DataStoreObjectResponse> responses = new ArrayList<>();
-
-        List<String> paths = dsAnswer.getPaths();
-
-        ArrayList<String> installPathList = new ArrayList<>();
-        for (String filePath : paths) {
-            installPathList.add(filePath);
-            if (filePath.startsWith("/")) {
-                installPathList.add(filePath.substring(1));
-            } else {
-                installPathList.add("/" + filePath);
-            }
-        }
-
-        HashMap<String, String> snapshotPathUuidMap = new HashMap<>();
-        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPath(
-                dataStore.getId(), installPathList);
-        if (snapshotDataStoreList != null && !snapshotDataStoreList.isEmpty()) {
-            List<SnapshotVO> snapshots = snapshotDao.listByIds(
-                    snapshotDataStoreList.stream().map(SnapshotDataStoreVO::getSnapshotId).toArray());
-
-            Map<Long, SnapshotVO> snapshotMap = snapshots.stream().collect(
-                    Collectors.toMap(Snapshot::getId, snapshot -> snapshot));
-
-
-            for (SnapshotDataStoreVO snapshotDataStore : snapshotDataStoreList) {
-                snapshotPathUuidMap.put(snapshotDataStore.getInstallPath(),
-                        snapshotMap.get(snapshotDataStore.getSnapshotId()).getUuid());
-            }
-        }
-
-        List<TemplateJoinVO> templateJoinList = templateJoinDao.listByStoreAndInstallPath(dataStore.getId(), installPathList);
-        HashMap<String, TemplateJoinVO> templateJoinMap = new HashMap<>();
-        for (TemplateJoinVO templateJoin : templateJoinList) {
-            templateJoinMap.put(templateJoin.getInstallPath(), templateJoin);
-        }
-
-        List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStore.getId(), installPathList);
-        HashMap<String, VMTemplateVO> templatePathMap = new HashMap<>();
-
-        if (templateStoragePoolList != null && !templateStoragePoolList.isEmpty()) {
-
-            List<VMTemplateVO> templateList = templateDao.listByIds
-                (templateStoragePoolList.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList()));
-
-            HashMap<Long, VMTemplateVO> templateIdMap = new HashMap<>();
-
-            for (VMTemplateVO template : templateList) {
-                templateIdMap.put(template.getId(), template);
-            }
-
-            for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
-                templatePathMap.put(templatePool.getInstallPath(), templateIdMap.get(templatePool.getTemplateId()));
-            }
-        }
-
-        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPath(dataStore.getId(), installPathList);
-
-        HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
-        if (volumeList != null && !volumeList.isEmpty()) {
-            for (VolumeVO volume : volumeList) {
-                volumePathMap.put(volume.getPath(), volume);
-            }
-        }
-
-        for (int i = 0; i < paths.size(); i++) {
-            DataStoreObjectResponse response = new DataStoreObjectResponse(
-                    dsAnswer.getNames().get(i),
-                    dsAnswer.getIsDirs().get(i),
-                    dsAnswer.getSizes().get(i),
-                    new Date(dsAnswer.getLastModified().get(i)));
-            String filePath = dsAnswer.getPaths().get(i);
-            if (templateJoinMap.get(filePath) != null) {
-                response.setTemplateId(templateJoinMap.get(filePath).getUuid());
-                response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
-            }
-            if (snapshotPathUuidMap.get(filePath) != null) {
-                response.setSnapshotId(snapshotPathUuidMap.get(filePath));
-            }
-
-            if (filePath.startsWith("/")) {
-                filePath = filePath.substring(1);
-            }
-
-            if (templateJoinMap.get(filePath) != null) {
-                response.setTemplateId(templateJoinMap.get(filePath).getUuid());
-                response.setFormat(templateJoinMap.get(filePath).getFormat().toString());
-            }
-
-            if (templatePathMap.get(filePath) != null) {
-                response.setTemplateId(templatePathMap.get(filePath).getUuid());
-                response.setFormat(templatePathMap.get(filePath).getFormat().toString());
-            }
-
-            if (snapshotPathUuidMap.get(filePath) != null) {
-                response.setSnapshotId(snapshotPathUuidMap.get(filePath));
-            }
-
-            if (volumePathMap.get(filePath) != null) {
-                response.setVolumeId(volumePathMap.get(filePath).getUuid());
-            }
-
-            responses.add(response);
-        }
-
-        ListResponse<DataStoreObjectResponse> listResponse = new ListResponse<>();
-        if (dsAnswer.isPathExists()) {
-            listResponse.setResponses(responses);
-            return listResponse;
-        } else {
-            throw new IllegalArgumentException("Path " + path + " doesn't exist in store" + dataStore.getUuid());
-        }
-    }
-
     @Override
     public ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd) {
         Long imageStoreId = cmd.getStoreId();
@@ -230,7 +104,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
         ImageStoreJoinVO imageStore = imageStoreJoinDao.findById(imageStoreId);
         DataStore dataStore = dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole());
-        return listObjectsInStore(dataStore, path);
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path);
+
+        return getResponse(dataStore, answer);
     }
 
     @Override
@@ -239,6 +115,159 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         String path = cmd.getPath();
 
         DataStore dataStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary);
-        return listObjectsInStore(dataStore, path);
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path);
+
+        return getResponse(dataStore, answer);
+    }
+
+    private ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path) {
+        EndPoint ep = endPointSelector.select(dataStore);
+
+        if (ep == null) {
+            throw new CloudRuntimeException("No remote endpoint to send command");
+        }
+
+        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path);
+        Answer answer = ep.sendMessage(listDSCmd);
+        if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
+            throw new CloudRuntimeException("Failed to list datastore objects");
+        }
+
+        ListDataStoreObjectsAnswer dsAnswer = (ListDataStoreObjectsAnswer) answer;
+        if (!dsAnswer.isPathExists()) {
+            throw new IllegalArgumentException("Path " + path + " doesn't exist in store" + dataStore.getUuid());
+        }
+        return dsAnswer;
+    }
+
+    private ListResponse<DataStoreObjectResponse> getResponse(DataStore dataStore, ListDataStoreObjectsAnswer answer) {
+        List<DataStoreObjectResponse> responses = new ArrayList<>();
+
+        List<String> paths = getFormattedPaths(answer.getPaths());
+        List<String> absPaths = answer.getAbsPaths();
+
+        Map<String, SnapshotVO> pathSnapshotMap = getPathSnapshotMap(dataStore, paths, absPaths);
+
+        Map<String, VMTemplateVO> pathTemplateMap = getPathTemplateMap(dataStore, paths);
+
+        Map<String, VolumeVO> pathVolumeMap = getPathVolumeMap(dataStore, paths);
+
+        for (int i = 0; i < paths.size(); i++) {
+            DataStoreObjectResponse response = new DataStoreObjectResponse(
+                    answer.getNames().get(i),
+                    answer.getIsDirs().get(i),
+                    answer.getSizes().get(i),
+                    new Date(answer.getLastModified().get(i)));
+            String filePath = paths.get(i);
+            if (pathTemplateMap.get(filePath) != null) {
+                response.setTemplateId(pathTemplateMap.get(filePath).getUuid());
+                response.setFormat(pathTemplateMap.get(filePath).getFormat().toString());
+            }
+            if (pathSnapshotMap.get(filePath) != null) {
+                response.setSnapshotId(pathSnapshotMap.get(filePath).getUuid());
+            }
+            if (pathVolumeMap.get(filePath) != null) {
+                response.setVolumeId(pathVolumeMap.get(filePath).getUuid());
+            }
+            responses.add(response);
+        }
+
+        ListResponse<DataStoreObjectResponse> listResponse = new ListResponse<>();
+        listResponse.setResponses(responses);
+        return listResponse;
+    }
+
+    private List<String> getFormattedPaths(List<String> paths) {
+        List<String> formattedPaths = new ArrayList<>();
+        for (String path : paths) {
+            String normalizedPath = Path.of(path).normalize().toString();
+            if (path.startsWith("/")) {
+                formattedPaths.add(normalizedPath.substring(1));
+            } else {
+                formattedPaths.add(normalizedPath);
+            }
+        }
+        return formattedPaths;
+    }
+
+    private Map<String, SnapshotVO> getPathSnapshotMap(DataStore dataStore, List<String> paths, List<String> absolutePaths) {
+        HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
+        // If dataStore is primary, we query using absolutePaths else we query using paths.
+        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPath(dataStore.getId(), dataStore.getRole(),
+                dataStore.getRole() == DataStoreRole.Primary ? absolutePaths : paths);
+        if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
+            List<SnapshotVO> snapshots = snapshotDao.listByIds(
+                    snapshotDataStoreList.stream().map(SnapshotDataStoreVO::getSnapshotId).toArray());
+
+            Map<Long, SnapshotVO> snapshotMap = snapshots.stream().collect(
+                    Collectors.toMap(Snapshot::getId, snapshot -> snapshot));
+
+            // In case of primary data store, absolute path is stored in database.
+            // We use this map to create a mapping between relative path and absolute path
+            // which is used to create a mapping between relative path and snapshot.
+            Map<String, String> absolutePathPathMap = new HashMap<>();
+            if (dataStore.getRole() == DataStoreRole.Primary) {
+                for (int i = 0; i < paths.size(); i++) {
+                    absolutePathPathMap.put(absolutePaths.get(i), paths.get(i));
+                }
+            }
+
+            for (SnapshotDataStoreVO snapshotDataStore : snapshotDataStoreList) {
+                if (dataStore.getRole() == DataStoreRole.Primary) {
+                    snapshotPathMap.put(absolutePathPathMap.get(snapshotDataStore.getInstallPath()),
+                            snapshotMap.get(snapshotDataStore.getSnapshotId()));
+                } else {
+                    snapshotPathMap.put(snapshotDataStore.getInstallPath(),
+                            snapshotMap.get(snapshotDataStore.getSnapshotId()));
+                }
+            }
+        }
+
+        return snapshotPathMap;
+    }
+
+    private Map<String, VMTemplateVO> getPathTemplateMap(DataStore dataStore, List<String> paths) {
+        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        if (dataStore.getRole() != DataStoreRole.Primary) {
+            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreId(dataStore.getId());
+            if (!CollectionUtils.isEmpty(templateList)) {
+                List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
+
+                Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
+                        Collectors.toMap(VMTemplateVO::getId, template -> template));
+
+                for (TemplateDataStoreVO templateDataStore : templateList) {
+                    pathTemplateMap.put(templateDataStore.getInstallPath(),
+                            templateMap.get(templateDataStore.getTemplateId()));
+                }
+            }
+
+        } else {
+            List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStore.getId(), paths);
+            if (!CollectionUtils.isEmpty(templateStoragePoolList)) {
+                List<VMTemplateVO> templates = templateDao.listByIds
+                        (templateStoragePoolList.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList()));
+
+                Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
+                        Collectors.toMap(VMTemplateVO::getId, template -> template));
+
+                for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
+                    pathTemplateMap.put(templatePool.getInstallPath(),
+                            templateMap.get(templatePool.getTemplateId()));
+                }
+            }
+        }
+        return pathTemplateMap;
+    }
+
+    private HashMap<String, VolumeVO> getPathVolumeMap(DataStore dataStore, List<String> paths) {
+        HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
+        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPath(dataStore.getId(), paths);
+        if (!CollectionUtils.isEmpty(volumeList)) {
+            for (VolumeVO volume : volumeList) {
+                volumePathMap.put(volume.getPath(), volume);
+            }
+        }
+        return volumePathMap;
     }
 }

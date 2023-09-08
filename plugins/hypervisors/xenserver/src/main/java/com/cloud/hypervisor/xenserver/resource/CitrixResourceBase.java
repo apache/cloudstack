@@ -5748,19 +5748,17 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             SFTPv3FileAttributes fileAttr = null;
             List<String> names = new ArrayList<>();
             List<String> paths = new ArrayList<>();
+            List<String> absPaths = new ArrayList<>();
             List<Boolean> isDirs = new ArrayList<>();
             List<Long> sizes = new ArrayList<>();
             List<Long> modifiedList = new ArrayList<>();
             SFTPv3Client client = new SFTPv3Client(sshConnection);
             try {
-                // TODO: Add check for no such file or directory
-
                 fileAttr = client._stat(mountPoint + "/" + relativePath);
 
                 // Path doesn't exist
                 if (fileAttr == null) {
-                    return new ListDataStoreObjectsAnswer(false, Collections.emptyList(), Collections.emptyList(),
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), "");
+                    return new ListDataStoreObjectsAnswer(false, names, paths, absPaths, isDirs, sizes, modifiedList);
                 }
 
                 try {
@@ -5790,8 +5788,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             } finally {
                 client.close();
             }
-            return new ListDataStoreObjectsAnswer(pathExists, names, paths, isDirs, sizes, modifiedList,
-                    "xen return");
+            return new ListDataStoreObjectsAnswer(pathExists, names, paths, absPaths, isDirs, sizes, modifiedList);
         } finally {
             sshConnection.close();
         }
