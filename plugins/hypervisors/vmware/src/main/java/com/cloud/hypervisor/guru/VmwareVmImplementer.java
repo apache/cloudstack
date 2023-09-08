@@ -129,9 +129,8 @@ class VmwareVmImplementer {
                 }
             }
         } else {
-            // for user-VM, use E1000 as default
             if (nicDeviceType == null) {
-                details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
+                details.put(VmDetailConstants.NIC_ADAPTER, vmwareMgr.VmwareUserVmNicDeviceType.value());
             } else {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
