@@ -749,7 +749,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
         } catch (Exception ex) {
             if (ex instanceof ServerApiException && ex.getMessage().contains("Could not find the volume")) {
-                LOG.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
+                logger.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
                 return true;
             }
             throw ex;
