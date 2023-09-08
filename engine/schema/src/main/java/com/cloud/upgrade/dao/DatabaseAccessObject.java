@@ -18,6 +18,7 @@ package com.cloud.upgrade.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.logging.log4j.Logger;
@@ -85,6 +86,33 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
+    public String generateIndexName(String tableName, String columnName) {
+        return String.format("i_%s__%s", tableName, columnName);
+    }
+
+    public boolean indexExists(Connection conn, String tableName, String indexName) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("SHOW INDEXES FROM %s where Key_name = \"%s\"", tableName, indexName))) {
+            ResultSet result = pstmt.executeQuery();
+            if (result.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName, e.getMessage()));
+        }
+        return false;
+    }
+
+    public void createIndex(Connection conn, String tableName, String columnName, String indexName) {
+        String stmt = String.format("CREATE INDEX %s on %s (%s)", indexName, tableName, columnName);
+        logger.debug("Statement: " + stmt);
+        try (PreparedStatement pstmt = conn.prepareStatement(stmt)) {
+            pstmt.execute();
+            logger.debug(String.format("Created index %s", indexName));
+        } catch (SQLException e) {
+            logger.warn(String.format("Unable to create index %s", indexName), e);
+        }
+    }
+
     protected void closePreparedStatement(PreparedStatement pstmt, String errorMessage) {
         try {
             if (pstmt != null) {
@@ -94,5 +122,4 @@ public class DatabaseAccessObject {
             logger.warn(errorMessage, e);
         }
     }
-
 }
