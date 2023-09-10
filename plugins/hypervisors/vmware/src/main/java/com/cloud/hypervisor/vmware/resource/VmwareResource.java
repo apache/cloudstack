@@ -7795,6 +7795,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected ListDataStoreObjectsAnswer execute(ListDataStoreObjectsCommand cmd) {
         String path = cmd.getPath();
+        int page = cmd.getPage();
+        int pageSize = cmd.getPageSize();
         PrimaryDataStoreTO dataStore = (PrimaryDataStoreTO) cmd.getStore();
 
         if (path.startsWith("/")) {
@@ -7805,6 +7807,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         ManagedObjectReference morDatastore = null;
 
+        int count = 0;
         List<String> names = new ArrayList<>();
         List<String> paths = new ArrayList<>();
         List<String> absPaths = new ArrayList<>();
@@ -7844,19 +7847,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
             List<FileInfo> fileInfoList = results.getFile();
-
-
-            for (FileInfo file : fileInfoList) {
-                if (path.endsWith("/")) {
-                    paths.add(path + file.getPath());
-                } else {
-                    paths.add(path + "/" + file.getPath());
-                }
-                if (dsPath.endsWith("/")) {
-                    absPaths.add(dsPath + file.getPath());
-                } else {
-                    absPaths.add(dsPath + "/" + file.getPath());
-                }
+            count = fileInfoList.size();
+            for (int i = (page - 1) * pageSize; i < page * pageSize && i < count; i++) {
+                FileInfo file = fileInfoList.get(i);
+                paths.add(path + "/" + file.getPath());
+                absPaths.add(dsPath + "/" + file.getPath());
 
                 names.add(file.getPath());
                 isDirs.add(file instanceof FolderFileInfo);
@@ -7864,10 +7859,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 modifiedList.add(file.getModification().toGregorianCalendar().getTimeInMillis());
             }
 
-            return new ListDataStoreObjectsAnswer(true, names, paths, absPaths, isDirs, sizes, modifiedList);
+            return new ListDataStoreObjectsAnswer(true, count, names, paths, absPaths, isDirs, sizes, modifiedList);
         } catch (Exception e) {
             if (e.getMessage().contains("was not found")) {
-                return new ListDataStoreObjectsAnswer(false, names, paths, absPaths, isDirs, sizes, modifiedList);
+                return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
             }
             String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", path, e.getMessage());
             s_logger.error(errorMsg, e);

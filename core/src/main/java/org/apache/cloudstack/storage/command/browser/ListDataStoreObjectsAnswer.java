@@ -28,6 +28,8 @@ public class ListDataStoreObjectsAnswer extends Answer {
 
     private boolean pathExists;
 
+    private int count;
+
     private List<String> names;
 
     private List<String> paths;
@@ -40,17 +42,18 @@ public class ListDataStoreObjectsAnswer extends Answer {
 
     private List<Long> lastModified;
 
-
     public ListDataStoreObjectsAnswer() {
         super();
     }
 
-    public ListDataStoreObjectsAnswer(boolean pathExists, List<String> names, List<String> paths, List<String> absPaths, List<Boolean> isDirs,
-                                      List<Long> sizes,
-                                      List<Long> lastModified) {
+    public ListDataStoreObjectsAnswer(boolean pathExists, int count, List<String> names, List<String> paths,
+            List<String> absPaths, List<Boolean> isDirs,
+            List<Long> sizes,
+            List<Long> lastModified) {
         super();
-        this.names = names;
         this.pathExists = pathExists;
+        this.count = count;
+        this.names = names;
         this.paths = paths;
         this.absPaths = absPaths;
         this.isDirs = isDirs;
@@ -60,6 +63,10 @@ public class ListDataStoreObjectsAnswer extends Answer {
 
     public boolean isPathExists() {
         return pathExists;
+    }
+
+    public int getCount() {
+        return count;
     }
 
     public List<String> getNames() {

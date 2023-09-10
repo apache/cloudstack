@@ -32,7 +32,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -5731,8 +5730,13 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     }
 
     public Answer listFilesAtPath(ListDataStoreObjectsCommand command) throws IOException, XmlRpcException {
-        String relativePath = command.getPath();
         DataStoreTO store = command.getStore();
+        int page = command.getPage();
+        int pageSize = command.getPageSize();
+        String relativePath = command.getPath();
+        if (relativePath.endsWith("/")) {
+            relativePath = relativePath.substring(0, relativePath.length() - 1);
+        }
 
         final Connection conn = getConnection();
 
@@ -5746,6 +5750,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             String mountPoint = "/var/run/sr-mount/" + sr.getUuid(conn);
             boolean pathExists = true;
             SFTPv3FileAttributes fileAttr = null;
+            int count = 0;
             List<String> names = new ArrayList<>();
             List<String> paths = new ArrayList<>();
             List<String> absPaths = new ArrayList<>();
@@ -5758,27 +5763,23 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
                 // Path doesn't exist
                 if (fileAttr == null) {
-                    return new ListDataStoreObjectsAnswer(false, names, paths, absPaths, isDirs, sizes, modifiedList);
+                    return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
                 }
 
                 try {
                     Vector fileList = client.ls(mountPoint + "/" + relativePath);
-                    for (Object o : Collections.unmodifiableList(fileList)) {
-                        SFTPv3DirectoryEntry entry = (SFTPv3DirectoryEntry) o;
-                        if (entry.filename.equals(".") || entry.filename.equals("..")) {
-                            continue;
-                        }
+                    count = fileList.size() - 2; // -2 for . and ..
+                    for (int i = ((page - 1) * pageSize) + 2; i < (page * pageSize) + 2 && i < fileList.size(); i++) {
+                        SFTPv3DirectoryEntry entry = (SFTPv3DirectoryEntry) fileList.get(i);
                         names.add(entry.filename);
-                        if (relativePath.endsWith("/")) {
-                            paths.add(relativePath + entry.filename);
-                        } else {
-                            paths.add(relativePath + "/" + entry.filename);
-                        }
+                        paths.add(relativePath + "/" + entry.filename);
                         isDirs.add(entry.attributes.isDirectory());
                         sizes.add(entry.attributes.size);
                         modifiedList.add(entry.attributes.mtime * 1000L);
                     }
                 } catch (SFTPException e) {
+                    // Path is a file
+                    count = 1;
                     names.add(relativePath.substring(relativePath.lastIndexOf("/") + 1));
                     paths.add(relativePath);
                     isDirs.add(false);
@@ -5788,7 +5789,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             } finally {
                 client.close();
             }
-            return new ListDataStoreObjectsAnswer(pathExists, names, paths, absPaths, isDirs, sizes, modifiedList);
+            return new ListDataStoreObjectsAnswer(pathExists, count, names, paths, absPaths, isDirs, sizes, modifiedList);
         } finally {
             sshConnection.close();
         }

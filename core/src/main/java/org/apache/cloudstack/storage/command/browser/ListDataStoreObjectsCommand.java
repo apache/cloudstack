@@ -28,18 +28,19 @@ public class ListDataStoreObjectsCommand extends StorageCommand {
 
     private String path;
 
+    private int page;
+
+    private int pageSize;
+
     public ListDataStoreObjectsCommand() {
     }
 
-    public ListDataStoreObjectsCommand(String path) {
-        super();
-        this.path = path;
-    }
-
-    public ListDataStoreObjectsCommand(DataStoreTO store, String path) {
+    public ListDataStoreObjectsCommand(DataStoreTO store, String path, Integer page, Integer pageSize) {
         super();
         this.store = store;
         this.path = path;
+        this.page = page;
+        this.pageSize = pageSize;
     }
 
     @Override
@@ -55,4 +56,11 @@ public class ListDataStoreObjectsCommand extends StorageCommand {
         return store;
     }
 
+    public int getPage() {
+        return page;
+    }
+
+    public Integer getPageSize() {
+        return pageSize;
+    }
 }

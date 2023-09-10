@@ -101,10 +101,16 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd) {
         Long imageStoreId = cmd.getStoreId();
         String path = cmd.getPath();
+        int page;
+        if (cmd.getPage() == null) {
+            page = 1;
+        } else {
+            page = cmd.getPage();
+        }
 
         ImageStoreJoinVO imageStore = imageStoreJoinDao.findById(imageStoreId);
         DataStore dataStore = dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole());
-        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path);
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, page, cmd.getPageSize());
 
         return getResponse(dataStore, answer);
     }
@@ -113,21 +119,27 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd) {
         Long storeId = cmd.getStoreId();
         String path = cmd.getPath();
+        int page;
+        if (cmd.getPage() == null) {
+            page = 1;
+        } else {
+            page = cmd.getPage();
+        }
 
         DataStore dataStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary);
-        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path);
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, page, cmd.getPageSize());
 
         return getResponse(dataStore, answer);
     }
 
-    private ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path) {
+    private ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int page, int pageSize) {
         EndPoint ep = endPointSelector.select(dataStore);
 
         if (ep == null) {
             throw new CloudRuntimeException("No remote endpoint to send command");
         }
 
-        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path);
+        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, page, pageSize);
         Answer answer = ep.sendMessage(listDSCmd);
         if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
             throw new CloudRuntimeException("Failed to list datastore objects");
@@ -173,7 +185,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         }
 
         ListResponse<DataStoreObjectResponse> listResponse = new ListResponse<>();
-        listResponse.setResponses(responses);
+        listResponse.setResponses(responses, answer.getCount());
         return listResponse;
     }
 
@@ -181,7 +193,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         List<String> formattedPaths = new ArrayList<>();
         for (String path : paths) {
             String normalizedPath = Path.of(path).normalize().toString();
-            if (path.startsWith("/")) {
+            if (normalizedPath.startsWith("/")) {
                 formattedPaths.add(normalizedPath.substring(1));
             } else {
                 formattedPaths.add(normalizedPath);
@@ -190,7 +202,8 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return formattedPaths;
     }
 
-    private Map<String, SnapshotVO> getPathSnapshotMap(DataStore dataStore, List<String> paths, List<String> absolutePaths) {
+    private Map<String, SnapshotVO> getPathSnapshotMap(DataStore dataStore, List<String> paths,
+            List<String> absolutePaths) {
         HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
         // If dataStore is primary, we query using absolutePaths else we query using paths.
         List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPath(dataStore.getId(), dataStore.getRole(),

@@ -152,7 +152,8 @@ public abstract class ServerResourceBase implements ServerResource {
         return true;
     }
 
-     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath) {
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int page, int pageSize) {
+        int count = 0;
         File file = new File(nfsMountPoint, relativePath);
         List<String> names = new ArrayList<>();
         List<String> paths = new ArrayList<>();
@@ -161,6 +162,7 @@ public abstract class ServerResourceBase implements ServerResource {
         List<Long> sizes = new ArrayList<>();
         List<Long> modifiedList = new ArrayList<>();
         if (file.isFile()) {
+            count = 1;
             names.add(file.getName());
             paths.add(file.getPath().replace(nfsMountPoint, ""));
             absPaths.add(file.getPath());
@@ -169,7 +171,9 @@ public abstract class ServerResourceBase implements ServerResource {
             modifiedList.add(file.lastModified());
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
-            for (File f : files) {
+            count = files.length;
+            for (int i = (page - 1) * pageSize; i < page * pageSize && i < count; i++) {
+                File f = files[i];
                 names.add(f.getName());
                 paths.add(f.getPath().replace(nfsMountPoint, ""));
                 absPaths.add(f.getPath());
@@ -178,7 +182,7 @@ public abstract class ServerResourceBase implements ServerResource {
                 modifiedList.add(f.lastModified());
             }
         }
-         return new ListDataStoreObjectsAnswer(file.exists(), names, paths, absPaths, isDirs, sizes, modifiedList);
+         return new ListDataStoreObjectsAnswer(file.exists(), count, names, paths, absPaths, isDirs, sizes, modifiedList);
     }
 
     protected void fillNetworkInformation(final StartupCommand cmd) {
