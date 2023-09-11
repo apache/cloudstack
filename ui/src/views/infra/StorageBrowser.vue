@@ -61,12 +61,21 @@
       </a-row>
     </a-card>
 
+    <!-- <a-button shape="circle" @click="deleteSelected">
+      <link-outlined/>
+    </a-button>
+
+    <a-button shape="circle" @click="migrateSelected">
+      <link-outlined/>
+    </a-button> -->
+
     <div>
       <a-table
         :columns="columns"
         :row-key="record => record.name"
         :data-source="dataSource"
-        :pagination="true"
+        :pagination="{ current: page, pageSize: pageSize, total: total }"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key == 'name'">
@@ -158,6 +167,7 @@ export default {
       browserPath: this.$route.query.browserPath || '',
       page: this.$route.query.browserPage || 1,
       pageSize: this.$route.query.browserPageSize || 10,
+      selectedRowKeys: [],
       total: 0,
       columns: [
         {
@@ -191,8 +201,12 @@ export default {
     this.fetchData()
   },
   methods: {
+    onSelectChange (changableRowKeys) {
+      console.log('selectedRowKeys changed: ', changableRowKeys)
+      this.selectedRowKeys = changableRowKeys
+    },
     handleTableChange (pagination, filters, sorter) {
-      this.page = pagination.page
+      this.page = pagination.current
       this.pageSize = pagination.pageSize
       this.fetchData()
     },
@@ -208,6 +222,7 @@ export default {
         this.total = json.listimagestoreobjectsresponse.count
       }).finally(() => {
         this.loading = false
+        this.onSelectChange([])
       })
     },
     fetchPrimaryStoreObjects () {
@@ -222,6 +237,7 @@ export default {
         this.total = json.liststoragepoolobjectsresponse.count
       }).finally(() => {
         this.loading = false
+        this.onSelectChange([])
       })
     },
     fetchData () {
