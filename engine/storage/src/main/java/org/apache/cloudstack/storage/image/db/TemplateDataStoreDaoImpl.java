@@ -570,7 +570,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
-    public List<TemplateDataStoreVO> listByStoreIdAndInstallPath(long storeId, List<String> installPaths) {
+    public List<TemplateDataStoreVO> listByStoreIdAndInstallPaths(long storeId, List<String> installPaths) {
         if (CollectionUtils.isEmpty(installPaths)) {
             return new ArrayList<>();
         }
@@ -582,7 +582,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
-    public List<TemplateDataStoreVO> listByStoreIdAndIds(long storeId, List<Long> templateIds) {
+    public List<TemplateDataStoreVO> listByStoreIdAndTemplateIds(long storeId, List<Long> templateIds) {
         if (CollectionUtils.isEmpty(templateIds)) {
             return new ArrayList<>();
         }

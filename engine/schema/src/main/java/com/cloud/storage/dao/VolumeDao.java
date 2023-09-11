@@ -150,5 +150,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     void updateAndRemoveVolume(VolumeVO volume);
 
-    List<VolumeVO> listByPoolIdAndPath(long id, List<String> pathList);
+    List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList);
 }

@@ -47,7 +47,6 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 import com.google.gson.Gson;
 
-
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
     private static final Logger s_logger = Logger.getLogger(StorageSubsystemCommandHandlerBase.class);
     protected static final Gson s_gogger = GsonHelper.getGsonLogger();

@@ -143,6 +143,11 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                     "be due to invalid store ID(s) or store(s) are read-only. Terminating Migration of data");
         }
 
+        if (isMigrateJobRunning()){
+            message = "A migrate job is in progress, please try again later...";
+            return new MigrationResponse(message, null, false);
+        }
+
         CallContext.current().setEventDetails("Migrating files/data objects from : " + imagestores.get(0) + " to: " + imagestores.subList(1, imagestores.size()));
         return  stgService.migrateData(srcImgStoreId, destDatastores, policy);
     }
@@ -151,8 +156,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
     @ActionEvent(eventType = EventTypes.EVENT_IMAGE_STORE_RESOURCES_MIGRATE, eventDescription = "migrating Image store resources to another image store", async = true)
     public MigrationResponse migrateResources(MigrateResourcesToAnotherSecondaryStorageCmd cmd) {
         if (isMigrateJobRunning()){
-            String message = "A migrate job is in progress, please try again later...";
-            return new MigrationResponse(message, null, false);
+            return new MigrationResponse("A migrate job is in progress, please try again later.", null, false);
         }
 
         Long srcImgStoreId = cmd.getId();

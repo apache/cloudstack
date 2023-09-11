@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -41,9 +40,6 @@ import java.util.List;
             since = "4.19.0",
             authorized = {RoleType.Admin})
 public class MigrateResourcesToAnotherSecondaryStorageCmd extends BaseAsyncCmd {
-
-
-    public static final Logger LOGGER = Logger.getLogger(MigrateResourcesToAnotherSecondaryStorageCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

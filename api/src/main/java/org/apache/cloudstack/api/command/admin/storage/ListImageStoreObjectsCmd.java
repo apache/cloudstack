@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.storage.browser.DataStoreObjectResponse;
 import org.apache.cloudstack.storage.browser.StorageBrowser;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
@@ -33,7 +32,6 @@ import java.nio.file.Path;
             responseObject = DataStoreObjectResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListImageStoreObjectsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListImageStoreObjectsCmd.class.getName());
 
     @Inject
     StorageBrowser storageBrowser;
@@ -58,7 +56,6 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
     }
 
     public String getPath() {
-        // TODO: Check if path is valid and add security checks as well
         if (path == null) {
             path = "/";
         }

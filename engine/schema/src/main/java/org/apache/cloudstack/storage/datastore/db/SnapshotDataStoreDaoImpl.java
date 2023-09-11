@@ -480,7 +480,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, DataStoreRole role, List<String> pathList) {
+    public List<SnapshotDataStoreVO> listByStoreAndInstallPaths(long storeId, DataStoreRole role, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
             return new ArrayList<>();
         }
@@ -493,7 +493,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> listByStoreAndIds(long storeId, DataStoreRole role, List<Long> snapshotIds) {
+    public List<SnapshotDataStoreVO> listByStoreAndSnapshotIds(long storeId, DataStoreRole role, List<Long> snapshotIds) {
         if (CollectionUtils.isEmpty(snapshotIds)) {
             return new ArrayList<>();
         }

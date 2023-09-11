@@ -230,12 +230,12 @@ public class BasicTemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataSt
     }
 
     @Override
-    public List<TemplateDataStoreVO> listByStoreIdAndInstallPath(long storeId, List<String> installPaths) {
+    public List<TemplateDataStoreVO> listByStoreIdAndInstallPaths(long storeId, List<String> installPaths) {
        return null;
     }
 
     @Override
-    public List<TemplateDataStoreVO> listByStoreIdAndIds(long storeId, List<Long> templateIds) {
+    public List<TemplateDataStoreVO> listByStoreIdAndTemplateIds(long storeId, List<Long> templateIds) {
         return null;
     }
 

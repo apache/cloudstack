@@ -431,7 +431,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 
         templateIdSearch = createSearchBuilder();
-        templateIdSearch.and("id_in", templateIdSearch.entity().getId(), SearchCriteria.Op.IN);
+        templateIdSearch.and("idIN", templateIdSearch.entity().getId(), SearchCriteria.Op.IN);
         templateIdSearch.done();
 
         return result;
@@ -661,7 +661,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             return new ArrayList<>();
         }
         SearchCriteria<VMTemplateVO> sc = templateIdSearch.create();
-        sc.setParameters("id_in", ids.toArray());
+        sc.setParameters("idIN", ids.toArray());
         return listBy(sc, null);
     }
 

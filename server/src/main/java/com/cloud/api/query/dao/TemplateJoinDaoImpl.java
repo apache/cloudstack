@@ -35,7 +35,6 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -105,8 +104,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
 
-    private final SearchBuilder<TemplateJoinVO> storeAndInstallPathSearch;
-
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
@@ -139,11 +136,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.cp();
         activeTmpltSearch.cp();
         activeTmpltSearch.done();
-
-        storeAndInstallPathSearch = createSearchBuilder();
-        storeAndInstallPathSearch.and("store_id", storeAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
-        storeAndInstallPathSearch.and("install_pathIN", storeAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
-        storeAndInstallPathSearch.done();
 
         // select distinct pair (template_id, zone_id)
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
@@ -599,17 +591,5 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
         sc.setParameters("idsIN", ids);
         return searchIncludingRemoved(sc, searchFilter, null, false);
-    }
-
-    @Override
-    public List<TemplateJoinVO> listByStoreAndInstallPath(long storeId, List<String> pathList) {
-        if (CollectionUtils.isEmpty(pathList)) {
-            return new ArrayList<>();
-        }
-
-        SearchCriteria<TemplateJoinVO> sc = storeAndInstallPathSearch.create();
-        sc.setParameters("store_id", storeId);
-        sc.setParameters("install_pathIN", pathList.toArray());
-        return listBy(sc);
     }
 }

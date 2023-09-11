@@ -787,7 +787,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> listByPoolIdAndPath(long id, List<String> pathList) {
+    public List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
             return new ArrayList<>();
         }

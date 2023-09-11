@@ -7803,6 +7803,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             path = path.substring(1);
         }
 
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         ManagedObjectReference morDatastore = null;
@@ -7850,10 +7854,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             count = fileInfoList.size();
             for (int i = (page - 1) * pageSize; i < page * pageSize && i < count; i++) {
                 FileInfo file = fileInfoList.get(i);
-                paths.add(path + "/" + file.getPath());
-                absPaths.add(dsPath + "/" + file.getPath());
 
                 names.add(file.getPath());
+                paths.add(path + "/" + file.getPath());
+                absPaths.add(dsPath + "/" + file.getPath());
                 isDirs.add(file instanceof FolderFileInfo);
                 sizes.add(file.getFileSize());
                 modifiedList.add(file.getModification().toGregorianCalendar().getTimeInMillis());

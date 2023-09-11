@@ -224,7 +224,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     @Override
     public MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList,
             List<Long> snapshotIdList) {
-        List<DataObject> files = new LinkedList<>();
+        List<DataObject> files;
         boolean success = true;
         String message = null;
 
@@ -232,8 +232,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
         Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates = new HashMap<>();
 
-        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndIds(srcImgStoreId, templateIdList);
-        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndIds(srcImgStoreId, DataStoreRole.Image, snapshotIdList);
+        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndTemplateIds(srcImgStoreId, templateIdList);
+        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndSnapshotIds(srcImgStoreId, DataStoreRole.Image, snapshotIdList);
 
         if (!migrationHelper.filesReadyToMigrate(srcImgStoreId, templates, snapshots, Collections.emptyList())) {
             throw new CloudRuntimeException("Migration failed as there are data objects which are not Ready - i.e, they may be in Migrating, creating, copying, etc. states");
@@ -241,12 +241,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates, templates, snapshots);
 
         if (files.isEmpty()) {
-            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getId()), null, true);
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getUuid()), null, true);
         }
 
         Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
         storageCapacities.put(srcImgStoreId, new Pair<>(null, null));
         storageCapacities.put(destImgStoreId, new Pair<>(null, null));
+        storageCapacities = getStorageCapacities(storageCapacities, srcImgStoreId);
+        storageCapacities = getStorageCapacities(storageCapacities, destImgStoreId);
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM, 30,
                 TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
@@ -254,7 +256,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
         while (true) {
             DataObject chosenFileForMigration = null;
-            if (files.size() > 0) {
+            if (!files.isEmpty()) {
                 chosenFileForMigration = files.remove(0);
             }
 
@@ -263,9 +265,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 break;
             }
 
-
-            storageCapacities = getStorageCapacities(storageCapacities, srcImgStoreId);
-            storageCapacities = getStorageCapacities(storageCapacities, destImgStoreId);
 
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
                 s_logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));

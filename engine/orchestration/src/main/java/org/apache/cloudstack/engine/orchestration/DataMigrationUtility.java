@@ -164,8 +164,6 @@ public class DataMigrationUtility {
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
             Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots) {
         List<DataObject> files = new ArrayList<>();
-//        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndIds(srcDataStore.getId(), templateIds);
-//        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndIds(srcDataStore.getId(), DataStoreRole.Image, snapshotIds);
 
         files.addAll(getAllReadyTemplates(srcDataStore, childTemplates, templates));
         files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots));

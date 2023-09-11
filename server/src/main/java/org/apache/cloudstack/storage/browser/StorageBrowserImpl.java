@@ -57,6 +57,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -101,12 +102,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd) {
         Long imageStoreId = cmd.getStoreId();
         String path = cmd.getPath();
-        int page;
-        if (cmd.getPage() == null) {
-            page = 1;
-        } else {
-            page = cmd.getPage();
-        }
+        int page = Objects.requireNonNullElse(cmd.getPage(), 1);
 
         ImageStoreJoinVO imageStore = imageStoreJoinDao.findById(imageStoreId);
         DataStore dataStore = dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole());
@@ -119,12 +115,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd) {
         Long storeId = cmd.getStoreId();
         String path = cmd.getPath();
-        int page;
-        if (cmd.getPage() == null) {
-            page = 1;
-        } else {
-            page = cmd.getPage();
-        }
+        int page = Objects.requireNonNullElse(cmd.getPage(), 1);
 
         DataStore dataStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary);
         ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, page, cmd.getPageSize());
@@ -206,7 +197,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             List<String> absolutePaths) {
         HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
         // If dataStore is primary, we query using absolutePaths else we query using paths.
-        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPath(dataStore.getId(), dataStore.getRole(),
+        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStore.getId(), dataStore.getRole(),
                 dataStore.getRole() == DataStoreRole.Primary ? absolutePaths : paths);
         if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
             List<SnapshotVO> snapshots = snapshotDao.listByIds(
@@ -242,7 +233,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     private Map<String, VMTemplateVO> getPathTemplateMap(DataStore dataStore, List<String> paths) {
         HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
         if (dataStore.getRole() != DataStoreRole.Primary) {
-            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPath(dataStore.getId(), paths);
+            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPaths(dataStore.getId(), paths);
             if (!CollectionUtils.isEmpty(templateList)) {
                 List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
 
@@ -278,7 +269,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         if (dataStore.getRole() != DataStoreRole.Primary) {
             return volumePathMap;
         }
-        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPath(dataStore.getId(), paths);
+        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPaths(dataStore.getId(), paths);
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
                 volumePathMap.put(volume.getPath(), volume);
