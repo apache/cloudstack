@@ -66,7 +66,8 @@
         :columns="columns"
         :row-key="record => record.name"
         :data-source="dataSource"
-        :pagination="true">
+        :pagination="true"
+        @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key == 'name'">
             <template v-if="record.isdirectory">
@@ -155,6 +156,9 @@ export default {
       loading: false,
       dataSource: [],
       browserPath: this.$route.query.browserPath || '',
+      page: this.$route.query.browserPage || 1,
+      pageSize: this.$route.query.browserPageSize || 10,
+      total: 0,
       columns: [
         {
           key: 'name',
@@ -187,13 +191,21 @@ export default {
     this.fetchData()
   },
   methods: {
+    handleTableChange (pagination, filters, sorter) {
+      this.page = pagination.page
+      this.pageSize = pagination.pageSize
+      this.fetchData()
+    },
     fetchImageStoreObjects () {
       this.loading = true
       api('listImageStoreObjects', {
         path: this.browserPath,
-        id: this.resource.id
+        id: this.resource.id,
+        page: this.page,
+        pagesize: this.pageSize
       }).then(json => {
         this.dataSource = json.listimagestoreobjectsresponse.datastoreobject
+        this.total = json.listimagestoreobjectsresponse.count
       }).finally(() => {
         this.loading = false
       })
@@ -202,15 +214,28 @@ export default {
       this.loading = true
       api('listStoragePoolObjects', {
         path: this.browserPath,
-        id: this.resource.id
+        id: this.resource.id,
+        page: this.page,
+        pagesize: this.pageSize
       }).then(json => {
         this.dataSource = json.liststoragepoolobjectsresponse.datastoreobject
+        this.total = json.liststoragepoolobjectsresponse.count
       }).finally(() => {
         this.loading = false
       })
     },
     fetchData () {
       this.dataSource = []
+      this.$router.replace(
+        {
+          query: {
+            ...this.$route.query,
+            browserPath: this.browserPath,
+            browserPage: this.page,
+            browserPageSize: this.browserPageSize
+          }
+        }
+      )
       if (this.resourceType === 'ImageStore') {
         this.fetchImageStoreObjects()
       } else if (this.resourceType === 'PrimaryStorage') {
@@ -243,7 +268,8 @@ export default {
     },
     openDir (name) {
       this.browserPath = name
-      this.$router.replace({ query: { ...this.$route.query, browserPath: this.browserPath } })
+      this.page = 1
+      this.pageSize = 10
       this.fetchData()
     },
     openDrawer (record) {

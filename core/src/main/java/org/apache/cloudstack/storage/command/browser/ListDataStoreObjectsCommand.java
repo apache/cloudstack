@@ -60,7 +60,7 @@ public class ListDataStoreObjectsCommand extends StorageCommand {
         return startIndex;
     }
 
-    public Integer getPageSize() {
+    public int getPageSize() {
         return pageSize;
     }
 }
