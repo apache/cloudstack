@@ -325,7 +325,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private Answer execute(ListDataStoreObjectsCommand cmd) {
-        return listFilesAtPath(getRootDir(cmd.getStore().getUrl(), _nfsVersion), cmd.getPath(), cmd.getPage(), cmd.getPageSize());
+        return listFilesAtPath(getRootDir(cmd.getStore().getUrl(), _nfsVersion), cmd.getPath(), cmd.getStartIndex(), cmd.getPageSize());
     }
 
     private Answer execute(HandleConfigDriveIsoCommand cmd) {

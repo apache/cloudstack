@@ -7795,7 +7795,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     protected ListDataStoreObjectsAnswer execute(ListDataStoreObjectsCommand cmd) {
         String path = cmd.getPath();
-        int page = cmd.getPage();
+        int startIndex = cmd.getStartIndex();
         int pageSize = cmd.getPageSize();
         PrimaryDataStoreTO dataStore = (PrimaryDataStoreTO) cmd.getStore();
 
@@ -7852,7 +7852,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
             List<FileInfo> fileInfoList = results.getFile();
             count = fileInfoList.size();
-            for (int i = (page - 1) * pageSize; i < page * pageSize && i < count; i++) {
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
                 FileInfo file = fileInfoList.get(i);
 
                 names.add(file.getPath());

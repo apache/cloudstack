@@ -220,6 +220,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
+import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
@@ -3853,6 +3854,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
         cmdList.add(MigrateSecondaryStorageDataCmd.class);
+        cmdList.add(MigrateResourcesToAnotherSecondaryStorageCmd.class);
         cmdList.add(UploadResourceIconCmd.class);
         cmdList.add(DeleteResourceIconCmd.class);
         cmdList.add(ListResourceIconCmd.class);

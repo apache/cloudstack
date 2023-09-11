@@ -57,7 +57,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -102,11 +101,10 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd) {
         Long imageStoreId = cmd.getStoreId();
         String path = cmd.getPath();
-        int page = Objects.requireNonNullElse(cmd.getPage(), 1);
 
         ImageStoreJoinVO imageStore = imageStoreJoinDao.findById(imageStoreId);
         DataStore dataStore = dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole());
-        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, page, cmd.getPageSize());
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, cmd.getStartIndex().intValue(), cmd.getPageSizeVal().intValue());
 
         return getResponse(dataStore, answer);
     }
@@ -115,10 +113,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     public ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd) {
         Long storeId = cmd.getStoreId();
         String path = cmd.getPath();
-        int page = Objects.requireNonNullElse(cmd.getPage(), 1);
 
         DataStore dataStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary);
-        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, page, cmd.getPageSize());
+        ListDataStoreObjectsAnswer answer = listObjectsInStore(dataStore, path, cmd.getStartIndex().intValue(), cmd.getPageSizeVal().intValue());
 
         return getResponse(dataStore, answer);
     }

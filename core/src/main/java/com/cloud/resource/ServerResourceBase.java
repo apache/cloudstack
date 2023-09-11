@@ -152,7 +152,7 @@ public abstract class ServerResourceBase implements ServerResource {
         return true;
     }
 
-     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int page, int pageSize) {
+     protected Answer listFilesAtPath(String nfsMountPoint, String relativePath, int startIndex, int pageSize) {
         int count = 0;
         File file = new File(nfsMountPoint, relativePath);
         List<String> names = new ArrayList<>();
@@ -172,7 +172,7 @@ public abstract class ServerResourceBase implements ServerResource {
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
             count = files.length;
-            for (int i = (page - 1) * pageSize; i < page * pageSize && i < count; i++) {
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
                 File f = files[i];
                 names.add(f.getName());
                 paths.add(f.getPath().replace(nfsMountPoint, ""));

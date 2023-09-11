@@ -358,7 +358,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         }
         message += ". successful migrations: "+successCount;
-        return new MigrationResponse(message, migrationPolicy.toString(), success);
+        String policy = migrationPolicy != null ? migrationPolicy.toString() : null;
+        return new MigrationResponse(message, policy, success);
     }
 
     private void handleSnapshotMigration(Long srcDataStoreId, Date start, Date end, MigrationPolicy policy,

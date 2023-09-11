@@ -5731,7 +5731,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public Answer listFilesAtPath(ListDataStoreObjectsCommand command) throws IOException, XmlRpcException {
         DataStoreTO store = command.getStore();
-        int page = command.getPage();
+        int startIndex = command.getStartIndex();
         int pageSize = command.getPageSize();
         String relativePath = command.getPath();
         if (relativePath.endsWith("/")) {
@@ -5769,7 +5769,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 try {
                     Vector fileList = client.ls(mountPoint + "/" + relativePath);
                     count = fileList.size() - 2; // -2 for . and ..
-                    for (int i = ((page - 1) * pageSize) + 2; i < (page * pageSize) + 2 && i < fileList.size(); i++) {
+                    for (int i = startIndex + 2; i < startIndex + pageSize + 2 && i < fileList.size(); i++) {
                         SFTPv3DirectoryEntry entry = (SFTPv3DirectoryEntry) fileList.get(i);
                         names.add(entry.filename);
                         paths.add(relativePath + "/" + entry.filename);

@@ -4611,7 +4611,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public Answer listFilesAtPath(ListDataStoreObjectsCommand command) {
         DataStoreTO store = command.getStore();
         KVMStoragePool storagePool = _storagePoolMgr.getStoragePool(StoragePoolType.NetworkFilesystem, store.getUuid());
-        return listFilesAtPath(storagePool.getLocalPath(), command.getPath(), command.getPage(), command.getPageSize());
+        return listFilesAtPath(storagePool.getLocalPath(), command.getPath(), command.getStartIndex(), command.getPageSize());
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
