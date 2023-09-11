@@ -44,7 +44,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
 @APICommand(name = "copySnapshot", description = "Copies a snapshot from one zone to another.", responseObject = SnapshotResponse.class, responseView = ResponseObject.ResponseView.Restricted,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CopySnapshotCmd.class.getName());
 
@@ -75,7 +75,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
             required = false,
-            description = "A list of IDs of the zones that the snapshot needs to be copied to." +
+            description = "A comma-separated list of IDs of the zones that the snapshot needs to be copied to." +
                     "Specify this list if the snapshot needs to copied to multiple zones in one go. " +
                     "Do not specify destzoneid and destzoneids together, however one of them is required.")
     protected List<Long> destZoneIds;
