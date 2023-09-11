@@ -17,7 +17,6 @@
 package org.apache.cloudstack.storage.image.db;
 
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -75,11 +74,5 @@ public class TemplateDataStoreDaoImplTest {
         ref1.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         TemplateDataStoreVO ref = dao.getValidGreaterSizeBypassedTemplate(List.of(ref1), templateId);
         Assert.assertNull(ref);
-    }
-
-    @Test
-    public void test123() {
-        Calendar _jobExecTime = Calendar.getInstance();
-        System.out.println(_jobExecTime.getTimeInMillis());
     }
 }

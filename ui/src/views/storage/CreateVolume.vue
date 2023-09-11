@@ -196,19 +196,22 @@ export default {
       }
     },
     fetchData () {
-      if (this.createVolumeFromVM) {
-        this.fetchZones(this.resource.zoneid)
-      }
       if (this.createVolumeFromSnapshot) {
         this.fetchSnapshotZones()
+        return
       }
+      let zoneId = null
+      if (this.createVolumeFromVM) {
+        zoneId = this.resource.zoneid
+      }
+      this.fetchZones(zoneId)
     },
     fetchZones (id) {
       this.loading = true
       const params = { showicon: true }
       if (Array.isArray(id)) {
         params.ids = id.join()
-      } else {
+      } else if (id !== null) {
         params.id = id
       }
       api('listZones', params).then(json => {

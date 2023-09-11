@@ -28,48 +28,50 @@ import java.util.Map;
 import org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.host.Host;
+import com.cloud.storage.Snapshot;
 
 
 @RunWith(MockitoJUnitRunner.class)
 public class StrategyPriorityTest {
 
-//    @Test
-//    public void testSortSnapshotStrategies() {
-//        SnapshotStrategy cantHandleStrategy = mock(SnapshotStrategy.class);
-//        SnapshotStrategy defaultStrategy = mock(SnapshotStrategy.class);
-//        SnapshotStrategy hyperStrategy = mock(SnapshotStrategy.class);
-//        SnapshotStrategy highestStrategy = mock(SnapshotStrategy.class);
-//
-//        doReturn(StrategyPriority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Snapshot.class), any(Long.class), any(SnapshotOperation.class));
-//        doReturn(StrategyPriority.DEFAULT).when(defaultStrategy).canHandle(any(Snapshot.class), Mockito.anyLong(), any(SnapshotOperation.class));
-//        doReturn(StrategyPriority.HYPERVISOR).when(hyperStrategy).canHandle(any(Snapshot.class), Mockito.anyLong(), any(SnapshotOperation.class));
-//        doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class), Mockito.anyLong(), any(SnapshotOperation.class));
-//
-//        List<SnapshotStrategy> strategies = new ArrayList<SnapshotStrategy>(5);
-//        SnapshotStrategy strategy = null;
-//
-//        StorageStrategyFactoryImpl factory = new StorageStrategyFactoryImpl();
-//        factory.setSnapshotStrategies(strategies);
-//
-//        strategies.add(cantHandleStrategy);
-//        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
-//        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
-//
-//        strategies.add(defaultStrategy);
-//        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
-//        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
-//
-//        strategies.add(hyperStrategy);
-//        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
-//        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
-//
-//        strategies.add(highestStrategy);
-//        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
-//        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
-//    }
+    @Test
+    public void testSortSnapshotStrategies() {
+        SnapshotStrategy cantHandleStrategy = mock(SnapshotStrategy.class);
+        SnapshotStrategy defaultStrategy = mock(SnapshotStrategy.class);
+        SnapshotStrategy hyperStrategy = mock(SnapshotStrategy.class);
+        SnapshotStrategy highestStrategy = mock(SnapshotStrategy.class);
+
+        doReturn(StrategyPriority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Snapshot.class), Mockito.nullable(Long.class), any(SnapshotStrategy.SnapshotOperation.class));
+        doReturn(StrategyPriority.DEFAULT).when(defaultStrategy).canHandle(any(Snapshot.class), Mockito.nullable(Long.class), any(SnapshotStrategy.SnapshotOperation.class));
+        doReturn(StrategyPriority.HYPERVISOR).when(hyperStrategy).canHandle(any(Snapshot.class), Mockito.nullable(Long.class), any(SnapshotStrategy.SnapshotOperation.class));
+        doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class), Mockito.nullable(Long.class), any(SnapshotStrategy.SnapshotOperation.class));
+
+        List<SnapshotStrategy> strategies = new ArrayList<>(5);
+        SnapshotStrategy strategy = null;
+
+        StorageStrategyFactoryImpl factory = new StorageStrategyFactoryImpl();
+        factory.setSnapshotStrategies(strategies);
+
+        strategies.add(cantHandleStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotStrategy.SnapshotOperation.TAKE);
+        assertEquals("A strategy was found when it shouldn't have been.", null, strategy);
+
+        strategies.add(defaultStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotStrategy.SnapshotOperation.TAKE);
+        assertEquals("Default strategy was not picked.", defaultStrategy, strategy);
+
+        strategies.add(hyperStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotStrategy.SnapshotOperation.TAKE);
+        assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
+
+        strategies.add(highestStrategy);
+        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotStrategy.SnapshotOperation.TAKE);
+        assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
+    }
 
     @Test
     public void testSortDataMotionStrategies() {

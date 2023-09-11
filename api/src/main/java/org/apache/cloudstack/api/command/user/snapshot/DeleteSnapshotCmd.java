@@ -50,7 +50,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
             required=true, description="The ID of the snapshot")
     private Long id;
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="The ID of the zone for the snapshot")
+            description="The ID of the zone for the snapshot", since = "4.19.0")
     private Long zoneId;
 
 

@@ -44,7 +44,7 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")
     private Long id;
 
-    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ZoneResponse.class, description = "the IDs of the zones, mutually exclusive with id", since = "4.19")
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ZoneResponse.class, description = "the IDs of the zones, mutually exclusive with id", since = "4.19.0")
     private List<Long> ids;
 
     @Parameter(name = ApiConstants.AVAILABLE,

@@ -218,12 +218,7 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
         String parentPath = storageResource.getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
         String path = snapshot.getPath();
         int index = path.lastIndexOf(File.separator);
-//        String name = path.substring(index + 1);
         String snapDir = path.substring(0, index);
-//        int timeout = NumbersUtil.parseInt(cmd.getContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key()),
-//                Integer.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.defaultValue()) * VmwareManager.s_vmwareOVAPackageTimeout.multiplier());
-//        storageManager.createOva(parentPath + File.separator + snapDir, name, timeout);
-//        snapshot.setPath(snapDir + File.separator + name + ".ova");
         List<String> files = new ArrayList<>();
         try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
             List<String> fileNames = stream

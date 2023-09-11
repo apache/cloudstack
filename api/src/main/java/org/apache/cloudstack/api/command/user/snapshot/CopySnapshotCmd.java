@@ -160,12 +160,6 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             Snapshot snapshot = _snapshotService.copySnapshot(this);
 
             if (snapshot != null) {
-//                List<SnapshotResponse> listResponse = new ArrayList<>();_responseGenerator.createSnapshotResponse(getResponseView(),
-//                        snapshot, getDestinationZoneIds(), false);
-//                SnapshotResponse response = new SnapshotResponse();
-//                if (CollectionUtils.isNotEmpty(listResponse)) {
-//                    response = listResponse.get(0);
-//                }
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);

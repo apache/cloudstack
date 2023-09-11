@@ -97,7 +97,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
             description = "A list of IDs of the zones in which the snapshot will be made available." +
-                    "The snapshot will always be made available in the zone in which the volume is present.")
+                    "The snapshot will always be made available in the zone in which the volume is present.",
+            since = "4.19.0")
     protected List<Long> zoneIds;
 
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
