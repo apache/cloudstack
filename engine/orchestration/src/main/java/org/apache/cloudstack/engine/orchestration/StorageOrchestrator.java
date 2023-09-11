@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -56,6 +57,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
@@ -253,6 +255,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM, 30,
                 TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
         List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
+        Date start = new Date();
 
         while (true) {
             DataObject chosenFileForMigration = null;
@@ -279,6 +282,21 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 break;
             }
         }
+        Date end = new Date();
+
+        // Migrate any new child snapshots if created during migration
+        List<Long> migratedSnapshotIdList = snapshotChains.keySet().stream().map(DataObject::getId).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(migratedSnapshotIdList)) {
+            List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.findSnapshots(srcImgStoreId, start, end);
+            snaps.forEach(snap -> {
+                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snap.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo parentSnapshot = snapshotInfo.getParent();
+                if (snapshotInfo.getDataStore().getId() == srcImgStoreId && parentSnapshot != null && migratedSnapshotIdList.contains(parentSnapshot.getSnapshotId())) {
+                    futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, dataStoreManager.getDataStore(destImgStoreId, DataStoreRole.Image))));
+                }
+            });
+        }
+
         return handleResponse(futures, null, message, success);
     }
 
