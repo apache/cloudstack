@@ -235,6 +235,11 @@ public class BasicTemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataSt
     }
 
     @Override
+    public List<TemplateDataStoreVO> listByStoreIdAndIds(long storeId, List<Long> templateIds) {
+        return null;
+    }
+
+    @Override
     public boolean updateState(ObjectInDataStoreStateMachine.State currentState, ObjectInDataStoreStateMachine.Event event, ObjectInDataStoreStateMachine.State nextState, DataObjectInStore vo, Object data) {
         return false;
     }

@@ -19,6 +19,7 @@ package org.apache.cloudstack.engine.orchestration;
 
 import com.cloud.capacity.CapacityManager;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -53,6 +54,7 @@ import org.apache.cloudstack.storage.ImageStoreService.MigrationPolicy;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
@@ -217,6 +219,68 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         Date end = new Date();
         handleSnapshotMigration(srcDataStoreId, start, end, migrationPolicy, futures, storageCapacities, executor);
         return handleResponse(futures, migrationPolicy, message, success);
+    }
+
+    @Override
+    public MigrationResponse migrateResources(Long srcImgStoreId, Long destImgStoreId, List<Long> templateIdList,
+            List<Long> snapshotIdList) {
+        List<DataObject> files = new LinkedList<>();
+        boolean success = true;
+        String message = null;
+
+        DataStore srcDatastore = dataStoreManager.getDataStore(srcImgStoreId, DataStoreRole.Image);
+        Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
+        Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates = new HashMap<>();
+
+        List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreIdAndIds(srcImgStoreId, templateIdList);
+        List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreAndIds(srcImgStoreId, DataStoreRole.Image, snapshotIdList);
+
+        if (!migrationHelper.filesReadyToMigrate(srcImgStoreId, templates, snapshots, Collections.emptyList())) {
+            throw new CloudRuntimeException("Migration failed as there are data objects which are not Ready - i.e, they may be in Migrating, creating, copying, etc. states");
+        }
+        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates, templates, snapshots);
+
+        if (files.isEmpty()) {
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getId()), null, true);
+        }
+
+        Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
+        storageCapacities.put(srcImgStoreId, new Pair<>(null, null));
+        storageCapacities.put(destImgStoreId, new Pair<>(null, null));
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(numConcurrentCopyTasksPerSSVM, numConcurrentCopyTasksPerSSVM, 30,
+                TimeUnit.MINUTES, new MigrateBlockingQueue<>(numConcurrentCopyTasksPerSSVM));
+        List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
+
+        while (true) {
+            DataObject chosenFileForMigration = null;
+            if (files.size() > 0) {
+                chosenFileForMigration = files.remove(0);
+            }
+
+            if (chosenFileForMigration == null) {
+                message = "Migration completed";
+                break;
+            }
+
+
+            storageCapacities = getStorageCapacities(storageCapacities, srcImgStoreId);
+            storageCapacities = getStorageCapacities(storageCapacities, destImgStoreId);
+
+            if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
+                s_logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
+                continue;
+            }
+
+            if (storageCapacityBelowThreshold(storageCapacities, destImgStoreId)) {
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, srcDatastore, destImgStoreId, executor, futures);
+            } else {
+                message = "Migration failed. Destination store doesn't have enough capacity for migration";
+                success = false;
+                break;
+            }
+        }
+        return handleResponse(futures, null, message, success);
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {

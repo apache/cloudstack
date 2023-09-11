@@ -242,7 +242,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     private Map<String, VMTemplateVO> getPathTemplateMap(DataStore dataStore, List<String> paths) {
         HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
         if (dataStore.getRole() != DataStoreRole.Primary) {
-            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreId(dataStore.getId());
+            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPath(dataStore.getId(), paths);
             if (!CollectionUtils.isEmpty(templateList)) {
                 List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
 

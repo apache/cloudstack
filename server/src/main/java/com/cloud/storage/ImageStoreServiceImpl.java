@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -142,13 +143,58 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
                     "be due to invalid store ID(s) or store(s) are read-only. Terminating Migration of data");
         }
 
+        CallContext.current().setEventDetails("Migrating files/data objects from : " + imagestores.get(0) + " to: " + imagestores.subList(1, imagestores.size()));
+        return  stgService.migrateData(srcImgStoreId, destDatastores, policy);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_IMAGE_STORE_RESOURCES_MIGRATE, eventDescription = "migrating Image store resources to another image store", async = true)
+    public MigrationResponse migrateResources(MigrateResourcesToAnotherSecondaryStorageCmd cmd) {
         if (isMigrateJobRunning()){
-            message = "A migrate job is in progress, please try again later...";
-            return new MigrationResponse(message, policy.toString(), false);
+            String message = "A migrate job is in progress, please try again later...";
+            return new MigrationResponse(message, null, false);
         }
 
-        CallContext.current().setEventDetails("Migrating files/data objects " + "from : " + imagestores.get(0) + " to: " + imagestores.subList(1, imagestores.size()));
-        return  stgService.migrateData(srcImgStoreId, destDatastores, policy);
+        Long srcImgStoreId = cmd.getId();
+        Long destImgStoreId = cmd.getDestStoreId();
+
+        if (srcImgStoreId.equals(destImgStoreId)) {
+            throw new InvalidParameterValueException("Source and destination image stores cannot be same");
+        }
+
+        ImageStoreVO srcImageStore = imageStoreDao.findById(srcImgStoreId);
+        ImageStoreVO destImageStore = imageStoreDao.findById(destImgStoreId);
+
+        if (srcImageStore == null) {
+            throw new CloudRuntimeException("Cannot find secondary storage with id: " + srcImgStoreId);
+        }
+        if (destImageStore == null) {
+            throw new CloudRuntimeException("Cannot find secondary storage with id: " + srcImgStoreId);
+        }
+
+        if (srcImageStore.getRole() != DataStoreRole.Image) {
+            throw new CloudRuntimeException("Source Secondary storage is not of Image Role");
+        }
+
+        if (destImageStore.getRole() != DataStoreRole.Image) {
+            throw new CloudRuntimeException("Destination Secondary storage is not of Image Role");
+        }
+
+        if (!srcImageStore.getProviderName().equals(DataStoreProvider.NFS_IMAGE) || !destImageStore.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+            throw new InvalidParameterValueException("Migration of datastore objects is supported only for NFS based image stores");
+        }
+
+        if (destImageStore.isReadonly()) {
+            throw new InvalidParameterValueException("Destination image store is read-only. Cannot migrate resources to it");
+        }
+
+        if (srcImageStore.getDataCenterId() != null && destImageStore.getDataCenterId() != null && !srcImageStore.getDataCenterId().equals(destImageStore.getDataCenterId())) {
+            throw new InvalidParameterValueException("Source and destination stores are not in the same zone.");
+        }
+
+        CallContext.current().setEventDetails("Migrating templates and snapshots from : " + srcImageStore.getName() + " to: " + destImageStore.getName());
+
+        return stgService.migrateResources(srcImgStoreId, destImgStoreId, cmd.getTemplateIdList(), cmd.getSnapshotIdList());
     }
 
 

@@ -95,4 +95,6 @@ public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Lo
     List<TemplateDataStoreVO> listTemplateDownloadUrlsByStoreId(long storeId);
 
     List<TemplateDataStoreVO> listByStoreIdAndInstallPath(long storeId, List<String> installPaths);
+
+    List<TemplateDataStoreVO> listByStoreIdAndIds(long storeId, List<Long> templateIds);
 }

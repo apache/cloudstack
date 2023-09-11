@@ -394,6 +394,7 @@ public class EventTypes {
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
 
     public static final String EVENT_IMAGE_STORE_DATA_MIGRATE = "IMAGE.STORE.MIGRATE.DATA";
+    public static final String EVENT_IMAGE_STORE_RESOURCES_MIGRATE = "IMAGE.STORE.MIGRATE.RESOURCES";
 
     // Configuration Table
     public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";

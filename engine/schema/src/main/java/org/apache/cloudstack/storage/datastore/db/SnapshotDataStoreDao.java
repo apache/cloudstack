@@ -93,4 +93,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
 
     List<SnapshotDataStoreVO> listByStoreAndInstallPath(long storeId, DataStoreRole role, List<String> pathList);
+
+    List<SnapshotDataStoreVO> listByStoreAndIds(long storeId, DataStoreRole role, List<Long> snapshotIds);
 }

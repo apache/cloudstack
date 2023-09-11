@@ -301,7 +301,6 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         }
         SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
         sc.setParameters("pool_id", poolId);
-        sc.setParameters("local_path", pathList.toArray());
         sc.setParameters("install_path", pathList.toArray());
         return listBy(sc);
     }
