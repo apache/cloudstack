@@ -416,7 +416,7 @@ class TestVPCOffering(cloudstackTestCase):
         )
         self.cleanup.append(nat_rule)
 
-        self.logger.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.logger.debug("Adding NetworkACl rules to make PF and LB accessible")
         networkacl_1 = NetworkACL.create(
             self.apiclient,
             networkid=network.id,

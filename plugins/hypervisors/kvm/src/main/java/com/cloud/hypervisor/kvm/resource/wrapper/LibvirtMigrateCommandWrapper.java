@@ -575,6 +575,16 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     diskNode.appendChild(newChildSourceNode);
                                 } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
+                                } else if ("backingStore".equals(diskChildNode.getNodeName()) && migrateDiskInfo.getBackingStoreText() != null) {
+                                    for (int b = 0; b < diskChildNode.getChildNodes().getLength(); b++) {
+                                        Node backingChild = diskChildNode.getChildNodes().item(b);
+                                        if ("source".equals(backingChild.getNodeName())) {
+                                            diskChildNode.removeChild(backingChild);
+                                            Element newChildBackingElement = doc.createElement("source");
+                                            newChildBackingElement.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getBackingStoreText());
+                                            diskChildNode.appendChild(newChildBackingElement);
+                                        }
+                                    }
                                 } else if ("encryption".equals(diskChildNode.getNodeName())) {
                                     for (int s = 0; s < diskChildNode.getChildNodes().getLength(); s++) {
                                         Node encryptionChild = diskChildNode.getChildNodes().item(s);

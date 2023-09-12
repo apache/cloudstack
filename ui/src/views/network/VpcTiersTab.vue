@@ -692,6 +692,7 @@ export default {
 
         api('createLoadBalancer', {
           name: values.name,
+          sourceipaddress: values.sourceIP,
           sourceport: values.sourcePort,
           instanceport: values.instancePort,
           algorithm: values.algorithm,

@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -78,21 +79,29 @@ public class LogUtils {
         return fileNames;
     }
 
+    /**
+     * Tries to convert message parameters to JSON format and use them in the message.
+     * @param formatMessage message to format.
+     * @param objects objects to convert to JSON. A null object will be defaulted to the String "null";
+     * if it is not possible to convert an object to JSON, the object's 'toString' will be used instead.
+     * @return the formatted message.
+     */
     public static String logGsonWithoutException(String formatMessage, Object ... objects) {
         List<String> gsons = new ArrayList<>();
         for (Object object : objects) {
             try {
                 gsons.add(GSON.toJson(object));
             } catch (Exception e) {
-                LOGGER.debug(String.format("Failed to log object [%s] using GSON.", object != null ? object.getClass().getSimpleName() : "null"));
-                gsons.add("error to decode");
+                Object errObj = ObjectUtils.defaultIfNull(object, "null");
+                LOGGER.trace(String.format("Failed to log object [%s] using GSON.", errObj.getClass().getSimpleName()));
+                gsons.add("error decoding " + errObj);
             }
         }
         try {
             return String.format(formatMessage, gsons.toArray());
         } catch (Exception e) {
             String errorMsg = String.format("Failed to log objects using GSON due to: [%s].", e.getMessage());
-            LOGGER.error(errorMsg, e);
+            LOGGER.trace(errorMsg, e);
             return errorMsg;
         }
     }

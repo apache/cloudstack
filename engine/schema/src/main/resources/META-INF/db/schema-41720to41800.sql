@@ -224,17 +224,6 @@ CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
 BEGIN
     DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
-
--- Add foreign key procedure to link volumes to passphrase table
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`;
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY` (
-    IN in_table_name VARCHAR(200),
-    IN in_foreign_table_name VARCHAR(200),
-    IN in_foreign_column_name VARCHAR(200)
-)
-BEGIN
-    DECLARE CONTINUE HANDLER FOR 1005,1826 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' ADD CONSTRAINT '); SET @ddl = CONCAT(@ddl, 'fk_', in_foreign_table_name, '_', in_foreign_column_name); SET @ddl = CONCAT(@ddl, ' FOREIGN KEY (', in_foreign_table_name, '_', in_foreign_column_name, ')'); SET @ddl = CONCAT(@ddl, ' REFERENCES ', in_foreign_table_name, '(', in_foreign_column_name, ')'); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
 -- Add passphrase table
 CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
     `id` bigint unsigned NOT NULL auto_increment,
@@ -244,7 +233,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`passphrase` (
 
 -- Add passphrase column to volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'passphrase_id', 'bigint unsigned DEFAULT NULL COMMENT "encryption passphrase id" ');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.volumes', 'passphrase', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'encrypt_format', 'varchar(64) DEFAULT NULL COMMENT "encryption format" ');
 
 -- Add encrypt column to disk_offering
@@ -653,11 +641,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`user_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data" AFTER `user_data`');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.user_vm', 'user_data', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_vm', 'user_data_details', 'mediumtext DEFAULT NULL COMMENT "value of the comma-separated list of parameters" AFTER `user_data_id`');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the user data"');
-CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.vm_template', 'user_data', 'id');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'user_data_link_policy', 'varchar(255) DEFAULT NULL COMMENT "user data link policy with template"');
 
 -- Added userdata details to template
@@ -1583,3 +1569,5 @@ SET
   usage_type = 22
 WHERE
   usage_type = 24 AND usage_display like '% io write';
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os', 'display', 'tinyint(1) DEFAULT ''1'' COMMENT ''should this guest_os be shown to the end user'' ');

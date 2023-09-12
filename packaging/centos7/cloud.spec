@@ -61,6 +61,7 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: python
 Requires: python3
 Requires: bash
@@ -107,6 +108,7 @@ The Apache CloudStack files shared between agent and management server
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
 Requires: java-11-openjdk
+Requires: tzdata-java
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -142,6 +144,7 @@ The CloudStack baremetal agent
 %package usage
 Summary: CloudStack Usage calculation server
 Requires: java-11-openjdk
+Requires: tzdata-java
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -299,7 +302,7 @@ ln -sf log4j-cloud.xml  ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/log4j
 
 install python/bindir/cloud-external-ipallocator.py ${RPM_BUILD_ROOT}%{_bindir}/%{name}-external-ipallocator.py
 install -D client/target/pythonlibs/jasypt-1.9.3.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/jasypt-1.9.3.jar
-install -D utils/target/cloud-utils-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
+install -D utils/target/cloud-utils-%{_maventag}-bundled.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/lib/%{name}-utils.jar
 
 install -D packaging/centos7/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/centos7/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
@@ -711,4 +714,3 @@ pip3 install --upgrade urllib3
 
 * Fri Oct 5 2012 Hugo Trippaers <hugo@apache.org> 4.1.0
 - new style spec file
-

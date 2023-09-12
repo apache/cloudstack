@@ -18,6 +18,8 @@ package com.cloud.storage.secondary;
 
 import java.util.List;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
@@ -27,6 +29,12 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 
 public interface SecondaryStorageVmManager extends Manager {
+
+    static final ConfigKey<Long> SecondaryStorageCapacityScanInterval = new ConfigKey<>("Advanced", Long.class,
+            "secstorage.capacityscan.interval",
+            "30000",
+            "The time interval(in millisecond) to scan whether or not system needs more SSVM to ensure minimal standby capacity",
+            false);
 
     public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz

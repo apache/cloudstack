@@ -38,7 +38,7 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+            <resource-icon :image="zoneIcon" size="2x" style="margin-right: 5px"/>
           </span>
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
@@ -74,6 +74,23 @@
           :bordered="true"
           :rowKey="record => record.zoneid">
         </a-table>
+      </template>
+      <template #action="{ record }">
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy-outlined"
+          :loading="copyLoading"
+          @onClick="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
+          :title="$t('label.action.delete.template')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -126,7 +143,7 @@
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
-                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                    <resource-icon :image="zone.icon.base64image" size="2x" style="margin-right: 5px"/>
                   </span>
                   <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}

@@ -17,9 +17,37 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
@@ -36,7 +64,10 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.projects.ProjectService;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage;
@@ -64,37 +95,15 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 
 public class KubernetesClusterActionWorker {
 
     public static final String CLUSTER_NODE_VM_USER = "cloud";
     public static final int CLUSTER_API_PORT = 6443;
+    public static final int DEFAULT_SSH_PORT = 22;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
-    public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = 22;
+    public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = DEFAULT_SSH_PORT;
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
 
@@ -113,11 +122,15 @@ public class KubernetesClusterActionWorker {
     @Inject
     protected IpAddressManager ipAddressManager;
     @Inject
+    protected IPAddressDao ipAddressDao;
+    @Inject
     protected NetworkOrchestrationService networkMgr;
     @Inject
     protected NetworkDao networkDao;
     @Inject
     protected NetworkModel networkModel;
+    @Inject
+    protected NetworkService networkService;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -140,6 +153,8 @@ public class KubernetesClusterActionWorker {
     protected LaunchPermissionDao launchPermissionDao;
     @Inject
     public ProjectService projectService;
+    @Inject
+    public VpcService vpcService;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -329,7 +344,79 @@ public class KubernetesClusterActionWorker {
         return ip;
     }
 
-    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
+    protected IpAddress getNetworkSourceNatIp(Network network) {
+        List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
+        if (CollectionUtils.isNotEmpty(addresses)) {
+            return addresses.get(0);
+        }
+        LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+        return null;
+    }
+
+    protected IpAddress getVpcTierKubernetesPublicIp(Network network) {
+        KubernetesClusterDetailsVO detailsVO = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID);
+        if (detailsVO == null || StringUtils.isEmpty(detailsVO.getValue())) {
+            return null;
+        }
+        IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
+        if (address == null || network.getVpcId() != address.getVpcId()) {
+            LOGGER.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
+            return null;
+        }
+        return address;
+    }
+
+    protected IpAddress acquireVpcTierKubernetesPublicIp(Network network) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        IpAddress ip = networkService.allocateIP(owner, kubernetesCluster.getZoneId(), network.getId(), null, null);
+        if (ip == null) {
+            return null;
+        }
+        ip = vpcService.associateIPToVpc(ip.getId(), network.getVpcId());
+        ip = ipAddressManager.associateIPToGuestNetwork(ip.getId(), network.getId(), false);
+        kubernetesClusterDetailsDao.addDetail(kubernetesCluster.getId(), ApiConstants.PUBLIC_IP_ID, ip.getUuid(), false);
+        return ip;
+    }
+
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForIsolatedNetwork(Network network) {
+        String ip = null;
+        IpAddress address = getNetworkSourceNatIp(network);
+        if (address != null) {
+            ip = address.getAddress().addr();
+        }
+        return new Pair<>(ip, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
+    }
+
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForSharedNetwork(UserVm controlVm) {
+        int port = DEFAULT_SSH_PORT;
+        controlVm = fetchControlVmIfMissing(controlVm);
+        if (controlVm == null) {
+            LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
+            return new Pair<>(null, port);
+        }
+        return new Pair<>(controlVm.getPrivateIpAddress(), port);
+    }
+
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPortForVpcTier(Network network,
+                                                                                  boolean acquireNewPublicIpForVpcTierIfNeeded) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
+        IpAddress address = getVpcTierKubernetesPublicIp(network);
+        if (address != null) {
+            return new Pair<>(address.getAddress().addr(), port);
+        }
+        if (acquireNewPublicIpForVpcTierIfNeeded) {
+            address = acquireVpcTierKubernetesPublicIp(network);
+            if (address != null) {
+                return new Pair<>(address.getAddress().addr(), port);
+            }
+        }
+        LOGGER.warn(String.format("No public IP found for the the VPC tier: %s, Kubernetes cluster : %s", network, kubernetesCluster.getName()));
+        return new Pair<>(null, port);
+    }
+
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm, boolean acquireNewPublicIpForVpcTierIfNeeded) throws
+            InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
         if (detail != null && StringUtils.isNotEmpty(detail.getValue())) {
@@ -340,30 +427,25 @@ public class KubernetesClusterActionWorker {
             LOGGER.warn(String.format("Network for Kubernetes cluster : %s cannot be found", kubernetesCluster.getName()));
             return new Pair<>(null, port);
         }
+        if (network.getVpcId() != null) {
+            return getKubernetesClusterServerIpSshPortForVpcTier(network, acquireNewPublicIpForVpcTierIfNeeded);
+        }
         if (Network.GuestType.Isolated.equals(network.getGuestType())) {
-            List<? extends IpAddress> addresses = networkModel.listPublicIpsAssignedToGuestNtwk(network.getId(), true);
-            if (CollectionUtils.isEmpty(addresses)) {
-                LOGGER.warn(String.format("No public IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
-                return new Pair<>(null, port);
-            }
-            for (IpAddress address : addresses) {
-                if (address.isSourceNat()) {
-                    return new Pair<>(address.getAddress().addr(), port);
-                }
-            }
-            LOGGER.warn(String.format("No source NAT IP addresses found for network : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
-            return new Pair<>(null, port);
+            return getKubernetesClusterServerIpSshPortForIsolatedNetwork(network);
         } else if (Network.GuestType.Shared.equals(network.getGuestType())) {
-            port = 22;
-            controlVm = fetchControlVmIfMissing(controlVm);
-            if (controlVm == null) {
-                LOGGER.warn(String.format("Unable to retrieve control VM for Kubernetes cluster : %s", kubernetesCluster.getName()));
-                return new Pair<>(null, port);
-            }
-            return new Pair<>(controlVm.getPrivateIpAddress(), port);
+            return getKubernetesClusterServerIpSshPortForSharedNetwork(controlVm);
         }
         LOGGER.warn(String.format("Unable to retrieve server IP address for Kubernetes cluster : %s", kubernetesCluster.getName()));
         return  new Pair<>(null, port);
+    }
+
+    protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
+        try {
+            return getKubernetesClusterServerIpSshPort(controlVm, false);
+        } catch (InsufficientAddressCapacityException | ResourceAllocationException | ResourceUnavailableException e) {
+            LOGGER.debug("This exception should not have occurred", e);
+        }
+        return new Pair<>(null, CLUSTER_NODES_DEFAULT_START_SSH_PORT);
     }
 
     protected void attachIsoKubernetesVMs(List<UserVm> clusterVMs, final KubernetesSupportedVersion kubernetesSupportedVersion) throws CloudRuntimeException {

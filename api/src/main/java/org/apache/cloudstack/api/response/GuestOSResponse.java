@@ -35,13 +35,29 @@ public class GuestOSResponse extends BaseResponse {
     @Param(description = "the ID of the OS category")
     private String osCategoryId;
 
+    @SerializedName(ApiConstants.OS_CATEGORY_NAME)
+    @Param(description = "the name of the OS category")
+    private String osCategoryName;
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the OS type")
+    private String name;
+
+    /**
+     * @deprecated description, as name is the correct interpretation and is needed for UI forms
+     */
+    @Deprecated(since = "4.19")
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "the name/description of the OS type")
     private String description;
 
     @SerializedName(ApiConstants.IS_USER_DEFINED)
     @Param(description = "is the guest OS user defined")
-    private Boolean isUserDefined;
+    private String isUserDefined;
+
+    @SerializedName(ApiConstants.FOR_DISPLAY)
+    @Param(description = "is the guest OS visible for the users")
+    private Boolean forDisplay;
 
     public String getId() {
         return id;
@@ -59,6 +75,22 @@ public class GuestOSResponse extends BaseResponse {
         this.osCategoryId = osCategoryId;
     }
 
+    public String getOsCategoryName() {
+        return osCategoryName;
+    }
+
+    public void setOsCategoryName(String osCategoryName) {
+        this.osCategoryName = osCategoryName;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -67,12 +99,20 @@ public class GuestOSResponse extends BaseResponse {
         this.description = description;
     }
 
-    public Boolean getIsUserDefined() {
+    public String getIsUserDefined() {
         return isUserDefined;
     }
 
-    public void setIsUserDefined(Boolean isUserDefined) {
+    public void setIsUserDefined(String isUserDefined) {
         this.isUserDefined = isUserDefined;
+    }
+
+    public Boolean getForDisplay() {
+        return this.forDisplay;
+    }
+
+    public void setForDisplay(final Boolean forDisplay) {
+        this.forDisplay = forDisplay;
     }
 
 }

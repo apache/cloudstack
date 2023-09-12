@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -24,7 +23,12 @@ import java.util.List;
 
 public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Long> {
 
-    HypervisorType findHypervisorTypeByGuestOsId(long guestOsId);
+    /**
+     * list all the mappings for a guesos id
+     * @param guestOsId the guestos to look for
+     * @return a list of mappings
+     */
+    List<GuestOSHypervisorVO> listByGuestOsId(long guestOsId);
 
     GuestOSHypervisorVO findByOsIdAndHypervisor(long guestOsId, String hypervisorType, String hypervisorVersion);
 
@@ -40,4 +44,6 @@ public interface GuestOSHypervisorDao extends GenericDao<GuestOSHypervisorVO, Lo
                                                                       String minHypervisorVersion);
 
     List<String> listHypervisorSupportedVersionsFromMinimumVersion(String hypervisorType, String hypervisorVersion);
+
+    List<GuestOSHypervisorVO> listByHypervisorTypeAndVersion(String hypervisorType, String hypervisorVersion);
 }

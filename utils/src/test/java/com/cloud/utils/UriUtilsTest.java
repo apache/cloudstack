@@ -103,10 +103,14 @@ public class UriUtilsTest {
     }
 
     private void testGetUriInfoInternal(String url, String host) {
+        testGetUriInfoInternal(url, host, url);
+    }
+
+    private void testGetUriInfoInternal(String url, String host, String newUrl) {
         UriUtils.UriInfo uriInfo = UriUtils.getUriInfo(url);
 
         Assert.assertEquals(host, uriInfo.getStorageHost());
-        Assert.assertEquals(url, uriInfo.toString());
+        Assert.assertEquals(newUrl, uriInfo.toString());
     }
 
     @Test
@@ -122,6 +126,10 @@ public class UriUtilsTest {
         String url6 = String.format("rbd://%s:3300", host);
         String url7 = String.format("rbd://%s", host);
         String url8 = String.format("rbd://user@%s", host);
+        String url9 = String.format("rbd://cloudstack:AQD+hJxklW1RGRAAA56oHGN6d+WPDLss2b05Cw==@%s:3300/cloudstack", host);
+        String url10 = String.format("rbd://cloudstack:AQDlhZxkgdmiKRAA8uHt/O9jqoBp2Iwdk2MjjQ==@%s:3300/cloudstack", host);
+        String url11 = String.format("rbd://cloudstack:AQD-hJxklW1RGRAAA56oHGN6d-WPDLss2b05Cw==@%s:3300/cloudstack", host);
+        String url12 = String.format("rbd://cloudstack:AQDlhZxkgdmiKRAA8uHt_O9jqoBp2Iwdk2MjjQ==@%s:3300/cloudstack", host);
 
         testGetUriInfoInternal(url0, host);
         testGetUriInfoInternal(url1, host);
@@ -132,6 +140,10 @@ public class UriUtilsTest {
         testGetUriInfoInternal(url6, host);
         testGetUriInfoInternal(url7, host);
         testGetUriInfoInternal(url8, host);
+        testGetUriInfoInternal(url9, host, url11);
+        testGetUriInfoInternal(url10, host, url12);
+        testGetUriInfoInternal(url11, host);
+        testGetUriInfoInternal(url12, host);
     }
 
     @Test

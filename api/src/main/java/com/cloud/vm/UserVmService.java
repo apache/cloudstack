@@ -429,6 +429,14 @@ public interface UserVmService {
     UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
         StorageUnavailableException, ResourceAllocationException;
 
+    /**
+     * This API is mostly to trigger VM.CREATE event for deployVirtualMachine with startvm=false, because there is no code in "execute" part of VM creation.
+     * However, it can be used for additional VM customization in the future.
+     * @param vmId - Virtual Machine Id
+     * @return - Virtual Machine
+     */
+    UserVm finalizeCreateVirtualMachine(long vmId);
+
     UserVm getUserVm(long vmId);
 
     VirtualMachine getVm(long vmId);

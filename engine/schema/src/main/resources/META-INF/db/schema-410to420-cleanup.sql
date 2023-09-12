@@ -24,5 +24,3 @@ ALTER TABLE `cloud`.`remote_access_vpn` DROP foreign key `fk_remote_access_vpn__
 ALTER TABLE `cloud`.`remote_access_vpn` DROP primary key;
 ALTER TABLE `cloud`.`remote_access_vpn` ADD primary key (`id`);
 ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__vpn_server_addr_id` FOREIGN KEY (`vpn_server_addr_id`) REFERENCES `user_ip_address` (`id`);
-
-

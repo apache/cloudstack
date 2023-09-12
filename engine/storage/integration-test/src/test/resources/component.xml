@@ -121,6 +121,11 @@
     <property name="name" value="KVM Agent"/>
   </bean>
 
+  <bean id="CustomServerDiscoverer"
+        class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer">
+    <property name="name" value="CustomHW Agent" />
+  </bean>
+
   <bean id="BareMetalDiscoverer" class="com.cloud.baremetal.BareMetalDiscoverer">
     <property name="name" value="Bare Metal Agent"/>
   </bean>

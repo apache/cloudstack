@@ -85,7 +85,7 @@ class CsRedundant(object):
 
         # No redundancy if there is no guest network
         if guest is None:
-            self.set_backup()
+            self.set_backup(restart_conntrackd=False)
             self._redundant_off()
             return
 
@@ -111,9 +111,9 @@ class CsRedundant(object):
             CsHelper.service("keepalived", "stop")
             return
 
-        CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
+        CsHelper.mkdir(self.CS_RAMDISK_DIR, 0o755, False)
         CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
-        CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
+        CsHelper.mkdir(self.CS_ROUTER_DIR, 0o755, False)
         for s in self.CS_TEMPLATES:
             d = s
             if s.endswith(".templ"):
@@ -222,10 +222,9 @@ class CsRedundant(object):
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 s.bind('/tmp/primary_lock')
                 return s
-            except socket.error, e:
+            except socket.error as e:
                 error_code = e.args[0]
                 error_string = e.args[1]
-                print "Process already running (%d:%s). Exiting" % (error_code, error_string)
                 logging.info("Primary is already running, waiting")
                 sleep(time_between)
 
@@ -261,7 +260,7 @@ class CsRedundant(object):
         interfaces = [interface for interface in self.address.get_interfaces() if interface.is_public()]
         CsHelper.reconfigure_interfaces(self.cl, interfaces)
 
-    def set_backup(self):
+    def set_backup(self, restart_conntrackd=True):
         """ Set the current router to backup """
         if not self.cl.is_redundant():
             logging.error("Set backup called on non-redundant router")
@@ -282,7 +281,10 @@ class CsRedundant(object):
 
         self._remove_ipv6_guest_gateway()
 
-        CsHelper.service("conntrackd", "restart")
+        if restart_conntrackd:
+            CsHelper.service("conntrackd", "restart")
+        else:
+            CsHelper.service("conntrackd", "stop")
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
 

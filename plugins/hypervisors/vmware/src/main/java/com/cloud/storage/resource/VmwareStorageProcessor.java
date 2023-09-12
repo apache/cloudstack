@@ -2823,7 +2823,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
         }
 
-        morDs = firstHostDatastoreSystemMO.createVmfsDatastore(datastoreName, hostScsiDisk);
+        morDs = firstHostDatastoreSystemMO.findDatastoreByName(datastoreName);
+        if (morDs == null) {
+            final String hostVersion = firstHostMO.getProductVersion();
+            if (hostVersion.compareTo(VmwareHelper.MIN_VERSION_VMFS6) >= 0) {
+                morDs = firstHostDatastoreSystemMO.createVmfs6Datastore(datastoreName, hostScsiDisk);
+            } else {
+                morDs = firstHostDatastoreSystemMO.createVmfs5Datastore(datastoreName, hostScsiDisk);
+            }
+        } else {
+            // in case of iSCSI/solidfire 1:1 VMFS datastore could be inaccessible
+            mountVmfsDatastore(new DatastoreMO(context, morDs), lstHosts);
+        }
 
         if (morDs != null) {
             waitForAllHostsToMountDatastore(lstHosts, new DatastoreMO(context, morDs));
@@ -3361,7 +3372,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
+    public void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
         List<HostMO> hosts = new ArrayList<>(lstHostPairs.size());
 
         for (Pair<ManagedObjectReference, String> hostPair : lstHostPairs) {

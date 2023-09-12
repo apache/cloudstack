@@ -68,6 +68,7 @@ export default {
       api: 'registerUserKeys',
       icon: 'file-protect-outlined',
       label: 'label.action.generate.keys',
+      hoverLabel: 'label.action.generate.api.secret.keys',
       message: 'message.generate.keys',
       dataView: true
     },

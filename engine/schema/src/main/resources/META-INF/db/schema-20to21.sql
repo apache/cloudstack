@@ -198,4 +198,3 @@ CREATE TABLE `cloud`.`disk_offering_21` (
   `created` datetime COMMENT 'date the disk offering was created',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

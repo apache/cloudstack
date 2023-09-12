@@ -1997,6 +1997,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    protected String getSnapshotFilepathForDelete(String path, String snapshotName) {
+        if (!path.endsWith(snapshotName)) {
+            return path + "/*" + snapshotName + "*";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, path));
+        }
+        return path;
+    }
+
     protected Answer deleteSnapshot(final DeleteCommand cmd) {
         DataTO obj = cmd.getData();
         DataStoreTO dstore = obj.getDataStore();
@@ -2033,7 +2043,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, true, details);
             }
             // delete snapshot in the directory if exists
-            String lPath = absoluteSnapshotPath + "/*" + snapshotName + "*";
+            String lPath = getSnapshotFilepathForDelete(absoluteSnapshotPath, snapshotName);
             String result = deleteLocalFile(lPath);
             if (result != null) {
                 details = "failed to delete snapshot " + lPath + " , err=" + result;

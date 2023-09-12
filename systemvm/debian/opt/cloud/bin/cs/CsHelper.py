@@ -86,7 +86,7 @@ def mkdir(name, mode, fatal):
         os.makedirs(name, mode)
     except OSError as e:
         if e.errno != 17:
-            print "failed to make directories " + name + " due to :" + e.strerror
+            print("failed to make directories " + name + " due to :" + e.strerror)
             if(fatal):
                 sys.exit(1)
 

@@ -1004,7 +1004,7 @@ class TestVPC(cloudstackTestCase):
             vpcid=vpc.id
         )
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
+        self.debug("Adding NetworkACl rules to make NAT rule accessible")
         NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
@@ -1090,7 +1090,7 @@ class TestVPC(cloudstackTestCase):
             vm_3.name, vm_4.name))
         lb_rule.assign(self.apiclient, [vm_3, vm_4])
 
-        self.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.debug("Adding NetworkACl rules to make PF and LB accessible")
         NetworkACL.create(
             self.apiclient,
             networkid=network_2.id,
@@ -1350,7 +1350,7 @@ class TestVPC(cloudstackTestCase):
             vpcid=vpc.id
         )
 
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
+        self.debug("Adding NetworkACl rules to make NAT rule accessible")
         NetworkACL.create(
             self.apiclient,
             networkid=network_1.id,
@@ -1436,7 +1436,7 @@ class TestVPC(cloudstackTestCase):
             vm_3.name, vm_4.name))
         lb_rule.assign(self.apiclient, [vm_3, vm_4])
 
-        self.debug("Adding NetwrokACl rules to make PF and LB accessible")
+        self.debug("Adding NetworkACl rules to make PF and LB accessible")
         NetworkACL.create(
             self.apiclient,
             networkid=network_2.id,

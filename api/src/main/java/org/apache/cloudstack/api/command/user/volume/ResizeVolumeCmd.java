@@ -184,7 +184,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public void execute() throws ResourceAllocationException {
+    public void execute() {
         Volume volume = null;
         try {
             if (size != null) {
@@ -194,6 +194,9 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
             }
 
             volume = _volumeService.resizeVolume(this);
+        } catch (ResourceAllocationException ex) {
+            s_logger.error(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (InvalidParameterValueException ex) {
             s_logger.info(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());

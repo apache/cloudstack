@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,20 +36,16 @@ import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.StorageVol;
 import org.mockito.InOrder;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -65,9 +60,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {LibvirtConnection.class, LibvirtMigrateCommandWrapper.class, MemStat.class})
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
 "<domain type='kvm' id='4'>\n" +
@@ -454,11 +447,6 @@ public class LibvirtMigrateCommandWrapperTest {
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
 
-    @Before
-    public void setup() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
-    }
 
     private static final String sourcePoolUuid = "07eb495b-5590-3877-9fb7-23c6e9a40d40";
     private static final String destPoolUuid = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -572,7 +560,7 @@ public class LibvirtMigrateCommandWrapperTest {
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, targetfile, result);
     }
 
     @Test
@@ -596,7 +584,7 @@ public class LibvirtMigrateCommandWrapperTest {
         final String targetIp = "10.10.10.10";
         final String password = "12345678";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, expectedXmlDesc, result);
     }
 
     @Test
@@ -620,7 +608,7 @@ public class LibvirtMigrateCommandWrapperTest {
         final String targetIp = "localhost.localdomain";
         final String password = "12345678";
         final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
-        assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
+        assertEquals("transformation does not live up to expectation:\n" + result, expectedXmlDesc, result);
     }
 
     @Test
@@ -641,21 +629,21 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void deleteLocalVolumeTest() throws Exception {
-        PowerMockito.mockStatic(LibvirtConnection.class);
-        Connect conn = Mockito.mock(Connect.class);
-
-        PowerMockito.doReturn(conn).when(LibvirtConnection.class, "getConnection");
-
         StorageVol storageVolLookupByPath = Mockito.mock(StorageVol.class);
-        Mockito.when(conn.storageVolLookupByPath("localPath")).thenReturn(storageVolLookupByPath);
+        try (MockedStatic<LibvirtConnection> libvirtConnectionMockedStatic = Mockito.mockStatic(LibvirtConnection.class)) {
+            Connect conn = Mockito.mock(Connect.class);
 
-        libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
+            Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
 
-        PowerMockito.verifyStatic(LibvirtConnection.class, Mockito.times(1));
-        LibvirtConnection.getConnection();
-        InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
-        inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");
-        inOrder.verify(storageVolLookupByPath, Mockito.times(1)).delete(0);
+            Mockito.when(conn.storageVolLookupByPath("localPath")).thenReturn(storageVolLookupByPath);
+
+            libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
+
+            libvirtConnectionMockedStatic.verify(LibvirtConnection::getConnection, Mockito.times(1));
+            InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
+            inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");
+            inOrder.verify(storageVolLookupByPath, Mockito.times(1)).delete(0);
+        }
     }
 
     @Test
@@ -679,14 +667,14 @@ public class LibvirtMigrateCommandWrapperTest {
         MigrateDiskInfo returnedMigrateDiskInfo = libvirtMigrateCmdWrapper.searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
 
         if (isExpectedDiskInfoNull)
-            Assert.assertEquals(null, returnedMigrateDiskInfo);
+            Assert.assertNull(returnedMigrateDiskInfo);
         else
             Assert.assertEquals(migrateDiskInfo, returnedMigrateDiskInfo);
     }
 
     @Test
     public void deleteOrDisconnectDisksOnSourcePoolTest() {
-        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = PowerMockito.spy(libvirtMigrateCmdWrapper);
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = Mockito.spy(libvirtMigrateCmdWrapper);
         Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
 
         List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
@@ -750,7 +738,7 @@ public class LibvirtMigrateCommandWrapperTest {
         mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
         final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage, true);
 
-        InputStream in = IOUtils.toInputStream(result);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
@@ -787,13 +775,59 @@ public class LibvirtMigrateCommandWrapperTest {
         final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
         final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
 
-        InputStream in = IOUtils.toInputStream(result);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
         assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
     }
 
+    @Test
+    public void testReplaceBackingStore() throws Exception {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+        final String xmlDesc =
+                "<domain type='kvm' id='3'>" +
+                        "  <devices>" +
+                        "    <disk type='file' device='disk'>\n" +
+                        "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+                        "      <source file='/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048'/>\n" +
+                        "      <target dev='vdb' bus='virtio'/>\n" +
+                        "      <serial>bf8621b3027c497d963b</serial>\n" +
+                        "      <alias name='virtio-disk1'/>\n" +
+                        "      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>\n" +
+                        "      <backingStore type='file' index='1'>\n" +
+                        "        <format type='raw'/>\n" +
+                        "        <source file='/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bb4d4df4-c004-11e5-94ed-5254001daa61'/>\n" +
+                        "        <backingStore/>\n" +
+                        "      </backingStore>\n" +
+                        "      <encryption format='luks'>\n" +
+                        "        <secret type='passphrase' uuid='5644d664-a238-3a9b-811c-961f609d29f4'/>\n" +
+                        "      </encryption>\n" +
+                        "    </disk>\n" +
+                        "  </devices>" +
+                        "</domain>";
+
+        final String volumeFile = "3530f749-82fd-458e-9485-a357e6e541db";
+        final String backingFile = "0bc745b6-f3d7-44a9-ad8e-68904b77e2ab";
+        String newDiskPath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + volumeFile;
+        String newBackingStorePath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + backingFile;
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, newDiskPath, newBackingStorePath);
+        mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
+
+        final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
+        InputStream in = IOUtils.toInputStream(result, "UTF-8");
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+        assertXpath(doc, "/domain/devices/disk/backingStore/source/@file", newBackingStorePath);
+        assertXpath(doc, "/domain/devices/disk/source/@file", newDiskPath);
+        assertXpath(doc, "/domain/devices/disk/serial", "bf8621b3027c497d963b");
+
+        final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
+        assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
+    }
+
+    @Test
     public void testReplaceStorageXmlDiskNotManagedStorage() throws ParserConfigurationException, TransformerException, SAXException, IOException {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         String destDisk1FileName = "XXXXXXXXXXXXXX";

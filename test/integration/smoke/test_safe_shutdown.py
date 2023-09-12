@@ -33,6 +33,7 @@ class TestSafeShutdown(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
+        self.startServer()
         super(TestSafeShutdown, self).tearDown()
 
     def isServerShutdown(self):

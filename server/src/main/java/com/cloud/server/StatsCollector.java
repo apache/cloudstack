@@ -974,8 +974,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         private double getSystemCpuCyclesTotal() {
             String cpucaps = Script.runSimpleBashScript("cat /proc/cpuinfo | grep \"cpu MHz\" | grep \"cpu MHz\" | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
             double totalcpucap = 0;
-            for (String cpucap : cpucaps.split(" ")) {
-                totalcpucap += Double.parseDouble(cpucap);
+            if (StringUtils.isEmpty(cpucaps)) {
+                String totalCpus = Script.runSimpleBashScript("nproc --all| tr '\\n' \" \"");
+                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | egrep 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+                if (StringUtils.isNotEmpty(totalCpus) && StringUtils.isNotEmpty(maxCpuSpeed)) {
+                    totalcpucap = Double.parseDouble(totalCpus) * Double.parseDouble(maxCpuSpeed);
+                }
+            } else {
+                for (String cpucap : cpucaps.split(" ")) {
+                    totalcpucap += Double.parseDouble(cpucap);
+                }
             }
             return totalcpucap;
         }

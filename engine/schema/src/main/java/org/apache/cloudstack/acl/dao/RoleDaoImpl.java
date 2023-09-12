@@ -35,32 +35,41 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;
     private final SearchBuilder<RoleVO> RoleByNameAndTypeSearch;
+    private final SearchBuilder<RoleVO> RoleByIsPublicSearch;
 
     public RoleDaoImpl() {
         super();
 
         RoleByNameSearch = createSearchBuilder();
         RoleByNameSearch.and("roleName", RoleByNameSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        RoleByNameSearch.and("isPublicRole", RoleByNameSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
         RoleByNameSearch.done();
 
         RoleByTypeSearch = createSearchBuilder();
         RoleByTypeSearch.and("roleType", RoleByTypeSearch.entity().getRoleType(), SearchCriteria.Op.EQ);
+        RoleByTypeSearch.and("isPublicRole", RoleByTypeSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
         RoleByTypeSearch.done();
 
         RoleByNameAndTypeSearch = createSearchBuilder();
         RoleByNameAndTypeSearch.and("roleName", RoleByNameAndTypeSearch.entity().getName(), SearchCriteria.Op.EQ);
         RoleByNameAndTypeSearch.and("roleType", RoleByNameAndTypeSearch.entity().getRoleType(), SearchCriteria.Op.EQ);
+        RoleByNameAndTypeSearch.and("isPublicRole", RoleByNameAndTypeSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
         RoleByNameAndTypeSearch.done();
+
+        RoleByIsPublicSearch = createSearchBuilder();
+        RoleByIsPublicSearch.and("isPublicRole", RoleByIsPublicSearch.entity().isPublicRole(), SearchCriteria.Op.EQ);
+        RoleByIsPublicSearch.done();
     }
 
     @Override
-    public List<RoleVO> findAllByName(final String roleName) {
-        return findAllByName(roleName, null, null, null).first();
+    public List<RoleVO> findAllByName(final String roleName, boolean showPrivateRole) {
+        return findAllByName(roleName, null, null, null, showPrivateRole).first();
     }
 
     @Override
-    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit) {
+    public Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
+        filterPrivateRolesIfNeeded(sc, showPrivateRole);
         if (StringUtils.isNotEmpty(roleName)) {
             sc.setParameters("roleName", roleName);
         }
@@ -72,28 +81,44 @@ public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao
     }
 
     @Override
-    public List<RoleVO> findAllByRoleType(final RoleType type) {
-        return findAllByRoleType(type, null, null).first();
+    public List<RoleVO> findAllByRoleType(final RoleType type, boolean showPrivateRole) {
+        return findAllByRoleType(type, null, null, showPrivateRole).first();
     }
 
-    public Pair<List<RoleVO>, Integer> findAllByRoleType(final RoleType type, Long offset, Long limit) {
+    public Pair<List<RoleVO>, Integer> findAllByRoleType(final RoleType type, Long offset, Long limit, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByTypeSearch.create();
+        filterPrivateRolesIfNeeded(sc, showPrivateRole);
         sc.setParameters("roleType", type);
         return searchAndCount(sc, new Filter(RoleVO.class, "id", true, offset, limit));
     }
 
     @Override
-    public List<RoleVO> findByName(String roleName) {
+    public List<RoleVO> findByName(String roleName, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByNameSearch.create();
+        filterPrivateRolesIfNeeded(sc, showPrivateRole);
         sc.setParameters("roleName", roleName);
         return listBy(sc);
     }
 
     @Override
-    public RoleVO findByNameAndType(String roleName, RoleType type) {
+    public RoleVO findByNameAndType(String roleName, RoleType type, boolean showPrivateRole) {
         SearchCriteria<RoleVO> sc = RoleByNameAndTypeSearch.create();
+        filterPrivateRolesIfNeeded(sc, showPrivateRole);
         sc.setParameters("roleName", roleName);
         sc.setParameters("roleType", type);
         return findOneBy(sc);
+    }
+
+    @Override
+    public Pair<List<RoleVO>, Integer> listAllRoles(Long startIndex, Long limit, boolean showPrivateRole) {
+        SearchCriteria<RoleVO> sc = RoleByIsPublicSearch.create();
+        filterPrivateRolesIfNeeded(sc, showPrivateRole);
+        return searchAndCount(sc, new Filter(RoleVO.class, "id", true, startIndex, limit));
+    }
+
+    public void filterPrivateRolesIfNeeded(SearchCriteria<RoleVO> sc, boolean showPrivateRole) {
+        if (!showPrivateRole) {
+            sc.setParameters("isPublicRole", true);
+        }
     }
 }

@@ -130,6 +130,6 @@ public class ScriptTest {
     public void testFindScript() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         String script = Script.findScript("/bin", "pwd");
-        Assert.assertNotNull("/bin/pwd shoud be there on linux", script);
+        Assert.assertNotNull("/bin/pwd should be there on linux", script);
     }
 }

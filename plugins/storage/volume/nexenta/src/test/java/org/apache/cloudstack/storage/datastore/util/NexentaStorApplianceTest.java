@@ -119,7 +119,6 @@ public class NexentaStorApplianceTest {
         when(client.execute(ListOfStringsNmsResponse.class, "stmf", "list_targetgroups")).thenReturn(null);
         assertFalse(appliance.isIscsiTargetGroupExists(targetGroup));
 
-        when(client.execute(ListOfIscsiTargetsNmsResponse.class, "stmf", "list_targetgroups")).thenReturn(new ListOfIscsiTargetsNmsResponse());
         assertFalse(appliance.isIscsiTargetGroupExists(targetGroup));
 
         LinkedList<String> result = new LinkedList<String>();

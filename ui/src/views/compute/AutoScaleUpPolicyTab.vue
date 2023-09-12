@@ -546,7 +546,7 @@ export default {
         api('deleteCondition', { id: conditionId }).then(response => {
           const jobId = response.deleteconditionresponse.jobid
           this.$pollJob({
-            title: this.$t('label.action.delete.condition'),
+            title: this.$t('label.delete.condition'),
             description: conditionId,
             jobId: jobId,
             successMethod: () => {
@@ -593,6 +593,8 @@ export default {
         threshold: this.updateConditionDetails.threshold
       }).then(response => {
         this.$pollJob({
+          title: this.$t('label.update.condition'),
+          description: this.selectedCondition.id,
           jobId: response.updateconditionresponse.jobid,
           successMessage: this.$t('message.success.update.condition'),
           successMethod: () => {

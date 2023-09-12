@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     runs-on: ubuntu-22.04
 
     strategy:
@@ -79,7 +80,8 @@ jobs:
                   smoke/test_metrics_api
                   smoke/test_migration
                   smoke/test_multipleips_per_nic
-                  smoke/test_nested_virtualization",
+                  smoke/test_nested_virtualization
+                  smoke/test_set_sourcenat",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -123,6 +125,7 @@ jobs:
                   smoke/test_usage
                   smoke/test_usage_events
                   smoke/test_vm_deployment_planner
+                  smoke/test_vm_schedule
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
@@ -190,6 +193,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -214,6 +219,11 @@ jobs:
         run: |
           python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
 
+      - name: Install jacoco dependencies
+        run: |
+          wget https://github.com/jacoco/jacoco/releases/download/v0.8.10/jacoco-0.8.10.zip
+          unzip jacoco-0.8.10.zip -d jacoco
+
       - name: Env details
         run: |
           uname -a
@@ -237,7 +247,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true
+          mvn -B -P developer,systemvm -Dsimulator clean install -DskipTests=true -T$(nproc)
 
       - name: Setup Simulator Prerequisites
         run: |
@@ -246,9 +256,16 @@ jobs:
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 
+      - name: Generate jacoco-coverage.sh
+        run: |
+          echo "java -jar jacoco/lib/jacococli.jar report jacoco-it.exec \\" > jacoco-report.sh
+          find . | grep "target/classes" | sed 's/\/classes\//\/classes /g' | awk '{print "--classfiles", $1, "\\"}' | sort |uniq >> jacoco-report.sh
+          find . | grep "src/main/java" | sed 's/\/java\//\/java /g' | awk '{print "--sourcefiles", $1, "\\"}' | sort | uniq >> jacoco-report.sh
+          echo "--xml jacoco-coverage.xml" >> jacoco-report.sh
+
       - name: Start CloudStack Management Server with Simulator
         run: |
-          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom"
+          export MAVEN_OPTS="-Xmx4096m -XX:MaxPermSize=800m -Djava.security.egd=file:/dev/urandom  -javaagent:jacoco/lib/jacocoagent.jar=address=*,port=36320,output=tcpserver"
           echo -e "\nStarting simulator"
           set +e
           mvn -Dsimulator -Dorg.eclipse.jetty.annotations.maxWait=120 -pl :cloud-client-ui jetty:run 2>&1 > /tmp/jetty-log || true &
@@ -272,6 +289,8 @@ jobs:
           done
 
           echo -e "Stopping Simulator, integration tests run completed\n"
+          java -jar jacoco/lib/jacococli.jar dump --address localhost --port 36320 --destfile jacoco-it.exec
+          bash jacoco-report.sh
           mvn -Dsimulator -pl client jetty:stop 2>&1
           find /tmp//MarvinLogs -type f -exec echo -e "Printing marvin logs {} :\n" \; -exec cat {} \;
 
@@ -279,3 +298,11 @@ jobs:
         run: |
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
+
+      - uses: codecov/codecov-action@v3
+        with:
+          files: jacoco-coverage.xml
+          fail_ci_if_error: true
+          flags: simulator-marvin-tests
+          verbose: true
+          name: codecov

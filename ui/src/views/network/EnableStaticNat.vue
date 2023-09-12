@@ -191,8 +191,6 @@ export default {
         pageSize: this.pageSize,
         listAll: true,
         networkid: this.resource.associatednetworkid,
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         keyword: this.searchQuery
       }).then(response => {
         this.vmCount = response.listvirtualmachinesresponse.count
@@ -210,8 +208,6 @@ export default {
         pageSize: this.pageSize,
         listAll: true,
         networkid: e,
-        account: this.resource.account,
-        domainid: this.resource.domainid,
         vpcid: this.resource.vpcid,
         keyword: this.searchQuery
       }).then(response => {
@@ -250,8 +246,7 @@ export default {
       this.loading = true
       api('listNetworks', {
         vpcid: this.resource.vpcid,
-        domainid: this.resource.domainid,
-        account: this.resource.account,
+        isrecursive: true,
         supportedservices: 'StaticNat'
       }).then(response => {
         this.networksList = response.listnetworksresponse.network
