@@ -14,26 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-package org.apache.cloudstack.storage.command;
+package com.cloud.vm;
 
 import java.util.List;
 
-import com.cloud.agent.api.Answer;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class QuerySnapshotZoneCopyAnswer extends Answer {
-    private List<String> files;
+public class VmWorkTakeVolumeSnapshotTest {
 
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, List<String> files) {
-        super(cmd);
-        this.files = files;
+    @Test
+    public void testVmWorkTakeVolumeSnapshotZoneIds() {
+        List<Long> zoneIds = List.of(10L, 20L);
+        VmWorkTakeVolumeSnapshot work = new VmWorkTakeVolumeSnapshot(1L, 1L, 1L, "handler",
+                1L, 1L, 1L, false, null, false, zoneIds);
+        Assert.assertNotNull(work.getZoneIds());
+        Assert.assertEquals(zoneIds.size(), work.getZoneIds().size());
+        Assert.assertEquals(zoneIds.get(0), work.getZoneIds().get(0));
+        Assert.assertEquals(zoneIds.get(1), work.getZoneIds().get(1));
     }
 
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, String errMsg) {
-        super(null, false, errMsg);
-    }
-
-    public List<String> getFiles() {
-        return files;
-    }
 }

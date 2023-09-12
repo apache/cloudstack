@@ -14,26 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package org.apache.cloudstack.storage.command;
 
-import java.util.List;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-import com.cloud.agent.api.Answer;
+public class DownloadCommandTest {
 
-public class QuerySnapshotZoneCopyAnswer extends Answer {
-    private List<String> files;
-
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, List<String> files) {
-        super(cmd);
-        this.files = files;
-    }
-
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, String errMsg) {
-        super(null, false, errMsg);
-    }
-
-    public List<String> getFiles() {
-        return files;
+    @Test
+    public void testDownloadCOmmandSnapshot() {
+        SnapshotObjectTO snapshotObjectTO = Mockito.mock(SnapshotObjectTO.class);
+        Long maxDownloadSizeInBytes = 1000L;
+        String url = "SOMEURL";
+        DownloadCommand cmd = new DownloadCommand(snapshotObjectTO, maxDownloadSizeInBytes, url);
+        Assert.assertEquals(DownloadCommand.ResourceType.SNAPSHOT, cmd.getResourceType());
+        Assert.assertEquals(maxDownloadSizeInBytes, cmd.getMaxDownloadSizeInBytes());
+        Assert.assertEquals(url, cmd.getUrl());
     }
 }

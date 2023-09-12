@@ -138,10 +138,6 @@ public class SnapshotVO implements Snapshot {
         return dataCenterId;
     }
 
-    public void setDataCenterId(long dataCenterId) {
-        this.dataCenterId = dataCenterId;
-    }
-
     @Override
     public long getAccountId() {
         return accountId;

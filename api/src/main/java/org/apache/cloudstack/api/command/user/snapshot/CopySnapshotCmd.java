@@ -116,14 +116,14 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
         if (getDestinationZoneIds() != null) {
             for (Long destId : getDestinationZoneIds()) {
                 descBuilder.append(", ");
-                descBuilder.append(this._uuidMgr.getUuid(DataCenter.class, destId));
+                descBuilder.append(_uuidMgr.getUuid(DataCenter.class, destId));
             }
             if (descBuilder.length() > 0) {
                 descBuilder.deleteCharAt(0);
             }
         }
 
-        return  "copying snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId()) + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
+        return  "copying snapshot: " + _uuidMgr.getUuid(Snapshot.class, getId()) + ((descBuilder.length() > 0) ? " to zones: " + descBuilder.toString() : "");
     }
 
     @Override

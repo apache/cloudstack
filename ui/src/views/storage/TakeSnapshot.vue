@@ -43,7 +43,7 @@
           </template>
           <a-alert type="info" style="margin-bottom: 2%">
             <template #message>
-              <div v-html="'Additional zones can be selected for the snapshot. By default, it will be taken on the zone of the volume - ' + resource.zonename" />
+              <div v-html="formattedAdditionalZoneMessage"/>
             </template>
           </a-alert>
           <a-select
@@ -170,6 +170,11 @@ export default {
     this.quiescevm = this.resource.quiescevm
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
     this.fetchZoneData()
+  },
+  computed: {
+    formattedAdditionalZoneMessage () {
+      return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    }
   },
   methods: {
     initForm () {

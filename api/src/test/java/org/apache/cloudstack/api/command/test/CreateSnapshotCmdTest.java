@@ -160,4 +160,14 @@ public class CreateSnapshotCmdTest extends TestCase {
         ReflectionTestUtils.setField(createSnapshotCmd, "tags", tagsParams);
         Assert.assertEquals(createSnapshotCmd.getTags(), expectedTags);
     }
+
+    @Test
+    public void testGetZoneIds() {
+        final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+        List<Long> ids = List.of(400L, 500L);
+        ReflectionTestUtils.setField(cmd, "zoneIds", ids);
+        Assert.assertEquals(ids.size(), cmd.getZoneIds().size());
+        Assert.assertEquals(ids.get(0), cmd.getZoneIds().get(0));
+        Assert.assertEquals(ids.get(1), cmd.getZoneIds().get(1));
+    }
 }

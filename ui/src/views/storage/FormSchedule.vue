@@ -145,7 +145,7 @@
                 </template>
                 <a-alert type="info" style="margin-bottom: 2%">
                   <template #message>
-                    <div v-html="'Additional zones can be selected for the snapshost. By default, they will be taken on the zone of the volume - ' + resource.zonename" />
+                    <div v-html="formattedAdditionalZoneMessage"/>
                   </template>
                 </a-alert>
                 <a-select
@@ -279,6 +279,11 @@ export default {
     this.initForm()
     this.volumeId = this.resource.id
     this.fetchTimeZone()
+  },
+  computed: {
+    formattedAdditionalZoneMessage () {
+      return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    }
   },
   methods: {
     initForm () {

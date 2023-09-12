@@ -1791,8 +1791,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (sourceZone == null) {
             throw new InvalidParameterValueException("Please specify a valid source zone.");
         }
-        // Temporarily set snapshot's zone ID
-        snapshot.setDataCenterId(sourceZone.getId());
         return snapshot;
     }
 

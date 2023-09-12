@@ -14,26 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.api.command.user.template;
 
-package org.apache.cloudstack.storage.command;
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.List;
+public class CreateTemplateCmdTest {
 
-import com.cloud.agent.api.Answer;
-
-public class QuerySnapshotZoneCopyAnswer extends Answer {
-    private List<String> files;
-
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, List<String> files) {
-        super(cmd);
-        this.files = files;
-    }
-
-    public QuerySnapshotZoneCopyAnswer(QuerySnapshotZoneCopyCommand cmd, String errMsg) {
-        super(null, false, errMsg);
-    }
-
-    public List<String> getFiles() {
-        return files;
+    @Test
+    public void testGetZoneId() {
+        final CreateTemplateCmd cmd = new CreateTemplateCmd();
+        Long id = 400L;
+        ReflectionTestUtils.setField(cmd, "zoneId", id);
+        Assert.assertEquals(id, cmd.getZoneId());
     }
 }
