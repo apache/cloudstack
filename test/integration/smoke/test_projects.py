@@ -205,20 +205,20 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project_1.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project_1.id,
             listall=True
         )
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -240,21 +240,21 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         self.debug("Created project with domain user with ID: %s" %
                    project_2.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project_2.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -288,7 +288,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -320,7 +320,7 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -439,21 +439,21 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -570,21 +570,21 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -696,21 +696,21 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -742,13 +742,13 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         time.sleep(int(interval[0].value))
 
         # Project should be deleted as part of domain cleanup
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
         self.assertEqual(
-            list_projects_reponse,
+            list_projects_response,
             None,
             "Project should be deleted as part of domain cleanup"
         )
@@ -853,21 +853,21 @@ class TestProjectOwners(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -888,24 +888,24 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.new_admin.name,
         )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -920,24 +920,24 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is new admin of the project
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.new_admin.name,
         )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -946,24 +946,24 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify old user becomes a regular user
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.admin.name,
         )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1011,21 +1011,21 @@ class TestProjectOwners(cloudstackTestCase):
         self.debug("Created account with ID: %s" %
                    self.user.name)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -1046,24 +1046,24 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.new_admin.name,
         )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1079,23 +1079,23 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is new admin of the project
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.new_admin.name,
         )
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1114,23 +1114,23 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.user.name,
         )
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1148,24 +1148,24 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is new admin of the project
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.user.name,
         )
-        self.debug(accounts_reponse)
+        self.debug(accounts_response)
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1174,23 +1174,23 @@ class TestProjectOwners(cloudstackTestCase):
         )
 
        # listProjectAccount to verify old user becomes a regular user
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.new_admin.name,
         )
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1302,21 +1302,21 @@ class TestProjectResources(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -1349,7 +1349,7 @@ class TestProjectResources(cloudstackTestCase):
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -1424,21 +1424,21 @@ class TestProjectResources(cloudstackTestCase):
         self.debug("Created project with domain admin with ID: %s" %
                    project.id)
 
-        list_projects_reponse = Project.list(
+        list_projects_response = Project.list(
             self.apiclient,
             id=project.id,
             listall=True
         )
 
         self.assertEqual(
-            isinstance(list_projects_reponse, list),
+            isinstance(list_projects_response, list),
             True,
             "Check for a valid list projects response"
         )
-        list_project = list_projects_reponse[0]
+        list_project = list_projects_response[0]
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
@@ -1466,23 +1466,23 @@ class TestProjectResources(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=project.id,
             account=self.user.name,
         )
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(list_projects_reponse),
+            len(list_projects_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1646,23 +1646,23 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         )
 
         # listProjectAccount to verify the user is added to project or not
-        accounts_reponse = Project.listAccounts(
+        accounts_response = Project.listAccounts(
             self.apiclient,
             projectid=self.project.id,
             account=self.user.name,
         )
         self.assertEqual(
-            isinstance(accounts_reponse, list),
+            isinstance(accounts_response, list),
             True,
             "Check for a valid list accounts response"
         )
 
         self.assertNotEqual(
-            len(accounts_reponse),
+            len(accounts_response),
             0,
             "Check list project response returns a valid project"
         )
-        account = accounts_reponse[0]
+        account = accounts_response[0]
 
         self.assertEqual(
             account.role,
@@ -1819,4 +1819,117 @@ class TestProjectSuspendActivate(cloudstackTestCase):
                 'Running',
                 "VM should be in Running state after project activation"
             )
+        return
+
+class TestProjectWithNameDisplayTextAction(cloudstackTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(
+            TestProjectWithNameDisplayTextAction,
+            cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.services = Services().services
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.domain = get_domain(cls.api_client)
+        cls.services['mode'] = cls.zone.networktype
+        cls._cleanup = []
+
+        cls.account = Account.create(
+            cls.api_client,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestProjectWithNameDisplayTextAction, cls).tearDownClass()
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        super(TestProjectWithNameDisplayTextAction, self).tearDown()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
+    def test_11_create_project_with_empty_displayText(self):
+        """ create Project with Empty DisplayText
+        """
+        # Validate the following
+        # 1. Create a project while giving empty displayText
+        # 2. Verify displayText takes content of Project name.
+
+        self.services["project"]["displaytext"] = ""
+
+        project = Project.create(
+            self.apiclient,
+            self.services["project"],
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(project)
+
+        self.assertEqual(
+            project.displaytext,
+            project.name,
+            "displayText does not matches project name"
+        )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "sg",
+            "eip",
+            "advancedns",
+            "simulator"],
+        required_hardware="false")
+    def test_12_update_project_name_display_text(self):
+        """ Create Project and update its name
+        """
+        # Validate the following
+        # 1. Create a project
+        # 2. Update project name and display text
+        # 2. Verify name and display text for the project are updated
+
+        project = Project.create(
+            self.apiclient,
+            self.services["project"],
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(project)
+
+        new_name = "NewName"
+        new_display_text = "NewDisplayText"
+        project.update(self.apiclient, name=new_name, displaytext=new_display_text)
+        updated_project = Project.list(
+            self.apiclient,
+            id=project.id,
+            listall=True
+        )[0]
+        self.assertEqual(
+            updated_project.name,
+            new_name,
+            "Project name not updated"
+        )
+        self.assertEqual(
+            updated_project.displaytext,
+            new_display_text,
+            "Project displaytext not updated"
+        )
         return

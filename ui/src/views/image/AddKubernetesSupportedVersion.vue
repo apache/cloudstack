@@ -141,7 +141,10 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        mincpunumber: 2,
+        minmemory: 2048
+      })
       this.rules = reactive({
         semanticversion: [{ required: true, message: this.$t('message.error.kuberversion') }],
         zoneid: [{
@@ -195,6 +198,7 @@ export default {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
+          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
         }
       }).finally(() => {
         this.zoneLoading = false

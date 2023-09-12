@@ -20,14 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.agent.api.VmDiskStatsEntry;
-import com.cloud.agent.api.VmNetworkStatsEntry;
-import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,8 +30,10 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
@@ -85,17 +82,6 @@ public interface UserVmManager extends UserVmService {
      */
     boolean stopVirtualMachine(long userId, long vmId);
 
-    /**
-     * Obtains statistics for a list of host or VMs; CPU and network utilization
-     * @param host ID
-     * @param host name
-     * @param list of VM IDs or host id
-     * @return GetVmStatsAnswer
-     */
-    HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
-
-    HashMap<Long, List<VmDiskStatsEntry>> getVmDiskStatistics(long hostId, String hostName, List<Long> vmIds);
-
     HashMap<String, VolumeStatsEntry> getVolumeStatistics(long clusterId, String poolUuid, StoragePoolType poolType, int timeout);
 
     boolean deleteVmGroup(long groupId);
@@ -105,6 +91,10 @@ public interface UserVmManager extends UserVmService {
     InstanceGroupVO getGroupForVm(long vmId);
 
     void removeInstanceFromInstanceGroup(long vmId);
+
+    String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template);
+
+    String validateUserData(String userData, HTTPMethod httpmethod);
 
     boolean isVMUsingLocalStorage(VMInstanceVO vm);
 
@@ -135,8 +125,6 @@ public interface UserVmManager extends UserVmService {
     void generateUsageEvent(VirtualMachine vm, boolean isDisplay, String eventType);
 
     void persistDeviceBusInfo(UserVmVO paramUserVmVO, String paramString);
-
-    HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds);
 
     boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
 

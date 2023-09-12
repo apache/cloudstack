@@ -65,9 +65,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
+                <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex" :label="opt">
                   {{ opt }}
                 </a-select-option>
               </a-select>
@@ -79,11 +79,14 @@
                 :loading="field.loading"
                 :placeholder="field.description"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
                 v-focus="fieldIndex === firstIndex"
               >
-                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                <a-select-option
+                  v-for="(opt, optIndex) in field.opts"
+                  :key="optIndex"
+                  :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                 </a-select-option>
               </a-select>
@@ -97,9 +100,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
+                <a-select-option
+                  v-for="(opt, optIndex) in field.opts"
+                  :key="optIndex"
+                  :label="opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                 </a-select-option>
               </a-select>

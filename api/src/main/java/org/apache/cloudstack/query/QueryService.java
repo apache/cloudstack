@@ -94,13 +94,13 @@ public interface QueryService {
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
 
-    static final ConfigKey<String> UserVMDeniedDetails = new ConfigKey<String>("Advanced", String.class,
-            "user.vm.denied.details", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
-            "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true);
+    static final ConfigKey<String> UserVMDeniedDetails = new ConfigKey<>(String.class,
+    "user.vm.denied.details", "Advanced", "rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag",
+            "Determines whether users can view certain VM settings. When set to empty, default value used is: rootdisksize, cpuOvercommitRatio, memoryOvercommitRatio, Message.ReservedCapacityFreed.Flag.", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
-    static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<String>("Advanced", String.class,
-            "user.vm.readonly.details", "dataDiskController, rootDiskController",
-            "List of read-only VM settings/details as comma separated string", true);
+    static final ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<>(String.class,
+    "user.vm.readonly.details", "Advanced", "dataDiskController, rootDiskController",
+            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
     ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +

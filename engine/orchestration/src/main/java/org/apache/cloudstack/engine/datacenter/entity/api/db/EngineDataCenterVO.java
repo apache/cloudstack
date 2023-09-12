@@ -37,6 +37,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
@@ -155,6 +156,10 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Column(name = "lastUpdated", updatable = true)
     @Temporal(value = TemporalType.TIMESTAMP)
     protected Date lastUpdated;
+
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
+    private DataCenter.Type type;
 
     /**
      * Note that state is intentionally missing the setter.  Any updates to
@@ -512,5 +517,10 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Zone;
+    }
+
+    @Override
+    public DataCenter.Type getType() {
+        return type;
     }
 }

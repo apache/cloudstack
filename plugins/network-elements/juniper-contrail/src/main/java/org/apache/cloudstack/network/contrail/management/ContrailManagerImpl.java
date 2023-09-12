@@ -219,7 +219,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager) _configService;
         NetworkOfferingVO voffer = configMgr.createNetworkOffering(offeringName, offeringDisplayText,
                 TrafficType.Public, null, true, Availability.Optional, null, serviceProviderMap, true,
-                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false, false, null, null, true, null);
+                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false, false, false, null, null, true, null);
         long id = voffer.getId();
         _networkOfferingDao.update(id, voffer);
         return _networkOfferingDao.findById(id);
@@ -254,7 +254,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager)_configService;
         NetworkOfferingVO voffer =
                 configMgr.createNetworkOffering(offeringName, offeringDisplayText, TrafficType.Guest, null, false, Availability.Optional, null, serviceProviderMap, true,
-                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false, offeringName.equals(vpcRouterOfferingName), null, null, true, null);
+                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false, offeringName.equals(vpcRouterOfferingName), false, null, null, true, null);
         if (offeringName.equals(vpcRouterOfferingName)) {
             voffer.setInternalLb(true);
         }

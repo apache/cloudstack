@@ -51,6 +51,7 @@ const factory = (opts = {}) => {
 describe('Components > View > ActionButton.vue', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
   describe('Template', () => {

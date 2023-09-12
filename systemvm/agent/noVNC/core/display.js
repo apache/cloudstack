@@ -8,7 +8,6 @@
 
 import * as Log from './util/logging.js';
 import Base64 from "./base64.js";
-import { supportsImageMetadata } from './util/browser.js';
 import { toSigned32bit } from './util/int.js';
 
 export default class Display {
@@ -55,11 +54,6 @@ export default class Display {
                                bottom: this._backbuffer.height };
 
         Log.Debug("User Agent: " + navigator.userAgent);
-
-        // Check canvas features
-        if (!('createImageData' in this._drawCtx)) {
-            throw new Error("Canvas does not support createImageData");
-        }
 
         Log.Debug("<< Display.constructor");
 
@@ -230,6 +224,18 @@ export default class Display {
         this.viewportChangePos(0, 0);
     }
 
+    getImageData() {
+        return this._drawCtx.getImageData(0, 0, this.width, this.height);
+    }
+
+    toDataURL(type, encoderOptions) {
+        return this._backbuffer.toDataURL(type, encoderOptions);
+    }
+
+    toBlob(callback, type, quality) {
+        return this._backbuffer.toBlob(callback, type, quality);
+    }
+
     // Track what parts of the visible canvas that need updating
     _damage(x, y, w, h) {
         if (x < this._damageBounds.left) {
@@ -393,13 +399,7 @@ export default class Display {
             let data = new Uint8ClampedArray(arr.buffer,
                                              arr.byteOffset + offset,
                                              width * height * 4);
-            let img;
-            if (supportsImageMetadata) {
-                img = new ImageData(data, width, height);
-            } else {
-                img = this._drawCtx.createImageData(width, height);
-                img.data.set(data);
-            }
+            let img = new ImageData(data, width, height);
             this._drawCtx.putImageData(img, x, y);
             this._damage(x, y, width, height);
         }
@@ -494,8 +494,7 @@ export default class Display {
                     this.blitImage(a.x, a.y, a.width, a.height, a.data, 0, true);
                     break;
                 case 'img':
-                    /* IE tends to set "complete" prematurely, so check dimensions */
-                    if (a.img.complete && (a.img.width !== 0) && (a.img.height !== 0)) {
+                    if (a.img.complete) {
                         if (a.img.width !== a.width || a.img.height !== a.height) {
                             Log.Error("Decoded image has incorrect dimensions. Got " +
                                       a.img.width + "x" + a.img.height + ". Expected " +

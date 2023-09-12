@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.vpc;
 
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import junit.framework.TestCase;
@@ -72,7 +74,7 @@ public class UpdateVPCCmdTest extends TestCase {
         Assert.assertEquals(cmd.getPublicMtu(), publicMtu);
     }
 
-    public void testExecute() {
+    public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
         ReflectionTestUtils.setField(cmd, "id", 1L);
         ReflectionTestUtils.setField(cmd, "vpcName", "updatedVpcName");
         ReflectionTestUtils.setField(cmd, "displayText", "Updated VPC Name");
@@ -85,10 +87,10 @@ public class UpdateVPCCmdTest extends TestCase {
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         cmd._responseGenerator = responseGenerator;
         Mockito.when(_vpcService.updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt())).thenReturn(vpc);
+                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString())).thenReturn(vpc);
         Mockito.when(responseGenerator.createVpcResponse(ResponseObject.ResponseView.Full, vpc)).thenReturn(response);
         Mockito.verify(_vpcService, Mockito.times(0)).updateVpc(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt());
+                Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyInt(), Mockito.anyString());
 
     }
 }

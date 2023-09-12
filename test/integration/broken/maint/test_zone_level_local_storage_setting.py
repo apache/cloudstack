@@ -576,7 +576,7 @@ class TestSystemVmLocalStorage(cloudstackTestCase):
             ispersistent='true'
         )
 
-        # 3-list netwrok offerings
+        # 3-list network offerings
         list_nw_of = NetworkOffering.list(self.apiclient,
                                           id=self.network_offering.id)
         self.assertEqual(

@@ -147,13 +147,7 @@ public class DeployDestination implements Serializable {
         destination.append("Storage(");
         if (displayStorage && _storage != null) {
             StringBuffer storageBuf = new StringBuffer();
-            //String storageStr = "";
             for (Volume vol : _storage.keySet()) {
-                if (!storageBuf.toString().equals("")) {
-                    storageBuf.append(storageBuf.toString());
-                    storageBuf.append(", ");
-                }
-                storageBuf.append(storageBuf);
                 storageBuf.append("Volume(");
                 storageBuf.append(vol.getId());
                 storageBuf.append("|");
@@ -162,7 +156,7 @@ public class DeployDestination implements Serializable {
                 storageBuf.append(_storage.get(vol).getId());
                 storageBuf.append(")");
             }
-            destination.append(storageBuf.toString());
+            destination.append(storageBuf);
         }
         return destination.append(")]").toString();
     }

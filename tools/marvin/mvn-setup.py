@@ -48,7 +48,7 @@ def runSetupScript(args):
 
 
 if __name__ == "__main__":
-    version = sys.argv[1]
+    version = sys.argv[1].replace("-SNAPSHOT", "")
     remainingArgs = sys.argv[2:]
     replaceVersion(setupScript, version)
     runSetupScript(remainingArgs)

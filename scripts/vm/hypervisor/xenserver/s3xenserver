@@ -167,9 +167,9 @@ class S3Client(object):
     DEFAULT_SOCKET_TIMEOUT = 50000
     DEFAULT_MAX_ERROR_RETRY = 3
 
-    HEADER_CONTENT_MD5 = 'Content-MD5'
-    HEADER_CONTENT_TYPE = 'Content-Type'
-    HEADER_CONTENT_LENGTH = 'Content-Length'
+    HEADER_CONTENT_MD5 = 'content-md5'
+    HEADER_CONTENT_TYPE = 'content-type'
+    HEADER_CONTENT_LENGTH = 'content-length'
 
     def __init__(self, access_key, secret_key, end_point=None,
                  https_flag=None, connection_timeout=None, socket_timeout=None,

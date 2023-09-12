@@ -195,7 +195,7 @@ export default {
       this.options.img = ''
     },
     beforeUpload (file) {
-      if (!/\.(svg|jpg|jpeg|png|bmp|SVG|JPG|PNG)$/.test(file.name)) {
+      if (!/\.(bmp|jpeg|jpg|png|svg)$/i.test(file.name)) {
         this.showAlert = true
       }
       const reader = new FileReader()

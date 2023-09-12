@@ -50,10 +50,10 @@ import org.apache.commons.lang3.StringUtils;
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
     public static final Logger LOG = Logger.getLogger(IndirectAgentLBServiceImpl.class);
 
-    public static final ConfigKey<String> IndirectAgentLBAlgorithm = new ConfigKey<>("Advanced", String.class,
-            "indirect.agent.lb.algorithm", "static",
+    public static final ConfigKey<String> IndirectAgentLBAlgorithm = new ConfigKey<>(String.class,
+    "indirect.agent.lb.algorithm", "Advanced", "static",
             "The algorithm to be applied on the provided 'host' management server list that is sent to indirect agents. Allowed values are: static, roundrobin and shuffle.",
-            true, ConfigKey.Scope.Global);
+            true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "static,roundrobin,shuffle");
 
     public static final ConfigKey<Long> IndirectAgentLBCheckInterval = new ConfigKey<>("Advanced", Long.class,
             "indirect.agent.lb.check.interval", "0",

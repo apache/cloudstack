@@ -96,7 +96,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final PortForwardingRuleTO firstRule = fwRules.get(0);
         final String publicIP = firstRule.getSrcIp();
         final int publicPort = firstRule.getSrcPortRange()[0];
-        // FIXEME: String algorithm = firstRule.getAlgorithm();
+        // FIXME: String algorithm = firstRule.getAlgorithm();
 
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"

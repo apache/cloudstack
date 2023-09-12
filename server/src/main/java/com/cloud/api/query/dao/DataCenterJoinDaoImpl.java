@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -69,6 +70,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         zoneResponse.setName(dataCenter.getName());
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
         zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
+        zoneResponse.setType(ObjectUtils.defaultIfNull(dataCenter.getType(), DataCenter.Type.Core).toString());
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());

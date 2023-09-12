@@ -133,8 +133,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
         }
 
         // Headers
-        Header contentLengthHeader = getMethod.getResponseHeader("Content-Length");
-        Header contentTypeHeader = getMethod.getResponseHeader("Content-Type");
+        Header contentLengthHeader = getMethod.getResponseHeader("content-length");
+        Header contentTypeHeader = getMethod.getResponseHeader("content-type");
 
         // Check the contentLengthHeader and transferEncodingHeader.
         if (contentLengthHeader == null) {

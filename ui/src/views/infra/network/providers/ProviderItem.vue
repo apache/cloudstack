@@ -154,25 +154,25 @@ export default {
       params.pageSize = this.pageSize
 
       let length = args.columns.length
-      if (args.columns.includes('action')) {
+      if (args.columns.includes('actions')) {
         length--
       }
       const columns = args.columns.map(col => {
-        if (col === 'action') {
+        if (col === 'actions') {
           return {
+            key: col,
             title: this.$t('label.' + col),
             dataIndex: col,
             width: 80,
-            fixed: 'right',
-            slots: { customRender: col }
+            fixed: 'right'
           }
         }
         const width = 100 / (length) + '%'
         return {
+          key: col,
           title: this.$t('label.' + col),
           width: width,
-          dataIndex: col,
-          slots: { customRender: col }
+          dataIndex: col
         }
       })
 

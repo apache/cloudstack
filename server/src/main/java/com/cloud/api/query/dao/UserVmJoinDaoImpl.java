@@ -27,9 +27,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -53,7 +50,10 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -128,7 +128,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
-            userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+            userVmResponse.setHypervisor(userVm.getHypervisorType().getHypervisorDisplayName());
         }
         userVmResponse.setId(userVm.getUuid());
         userVmResponse.setName(userVm.getName());

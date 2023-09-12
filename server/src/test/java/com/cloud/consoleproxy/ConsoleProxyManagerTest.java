@@ -24,7 +24,10 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -274,5 +277,25 @@ public class ConsoleProxyManagerTest {
         ConsoleProxyStatus expectedResult = null;
         ConsoleProxyStatus result = new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus(null);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    private void verifyScannablePoolsZoneIds(List<Long> expected, Long[] result) {
+        Assert.assertNotNull(result);
+        Assert.assertEquals(expected.size(), result.length);
+        for (int i = 0; i < expected.size(); ++i) {
+            Assert.assertEquals(expected.get(i), result[i]);
+        }
+    }
+
+    @Test
+    public void testGetScannablePools() {
+        List<Long> dbZoneIds = new ArrayList<>();
+        Mockito.when(dataCenterDaoMock.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        ConsoleProxyManagerImpl consoleProxyManager = new ConsoleProxyManagerImpl();
+        ReflectionTestUtils.setField(consoleProxyManager, "dataCenterDao", dataCenterDaoMock);
+        verifyScannablePoolsZoneIds(dbZoneIds, consoleProxyManager.getScannablePools());
+        dbZoneIds = Arrays.asList(2L, 3L);
+        Mockito.when(dataCenterDaoMock.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+        verifyScannablePoolsZoneIds(dbZoneIds, consoleProxyManager.getScannablePools());
     }
 }

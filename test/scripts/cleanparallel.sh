@@ -110,6 +110,3 @@ do
   echo "Starting cleanup on secondary storage $i";
   cleanup_storage $i $SECONDARY_STORAGE_DIR
 done
-
-
-

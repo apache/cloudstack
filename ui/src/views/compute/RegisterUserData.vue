@@ -51,9 +51,9 @@
             mode="tags"
             v-model:value="form.params"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="apiParams.params.description">
             <a-select-option v-for="opt in params" :key="opt">
@@ -71,12 +71,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
               :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
             @change="val => { handleDomainChanged(domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+            <a-select-option
+              v-for="(opt, optIndex) in domains"
+              :key="optIndex"
+              :label="opt.path || opt.name || opt.description || ''">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -184,14 +187,6 @@ export default {
     handleDomainChanged (domain) {
       this.selectedDomain = domain
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -209,7 +204,7 @@ export default {
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
         }
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
 
         if (values.params != null && values.params.length > 0) {
           var userdataparams = values.params.join(',')

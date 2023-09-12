@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="SHA256SaltedUserAuthenticator" class="com.cloud.server.auth.SHA256SaltedUserAuthenticator">
+    <bean id="SHA256SaltedUserAuthenticator" class="org.apache.cloudstack.auth.SHA256SaltedUserAuthenticator">
         <property name="name" value="SHA256SALT"/>
     </bean>
     

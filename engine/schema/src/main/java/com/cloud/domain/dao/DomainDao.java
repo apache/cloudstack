@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.domain.DomainVO;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 public interface DomainDao extends GenericDao<DomainVO, Long> {
@@ -40,4 +41,6 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
     Set<Long> getDomainParentIds(long domainId);
 
     List<Long> getDomainChildrenIds(String path);
+
+    boolean domainIdListContainsAccessibleDomain(String domainIdList, Account caller, Long domainId);
 }

@@ -1871,7 +1871,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                             MigrateCommand.MigrateDiskInfo.Source.FILE,
                             connectHostToVolume(destHost, destVolumeInfo.getPoolId(), volumeIdentifier));
                 } else {
-                    migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath);
+                    String backingPath = generateBackingPath(destStoragePool, destVolumeInfo);
+                    migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath, backingPath);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
                     prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
@@ -1994,14 +1995,18 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return connectHostToVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.get_iScsiName());
     }
 
+    protected String generateBackingPath(StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        return null;
+    }
+
     /**
      * Configures a {@link MigrateDiskInfo} object with disk type of BLOCK, Driver type RAW and Source DEV
      */
-    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath) {
+    protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath, String backingPath) {
         return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                 MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
                 MigrateCommand.MigrateDiskInfo.DriverType.RAW,
-                MigrateCommand.MigrateDiskInfo.Source.DEV, destPath);
+                MigrateCommand.MigrateDiskInfo.Source.DEV, destPath, backingPath);
     }
 
     /**
@@ -2023,7 +2028,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     /*
      * Return backing file for volume (if any), only for KVM volumes
      */
-    private String getVolumeBackingFile(VolumeInfo srcVolumeInfo) {
+    String getVolumeBackingFile(VolumeInfo srcVolumeInfo) {
         if (srcVolumeInfo.getHypervisorType() == HypervisorType.KVM &&
                 srcVolumeInfo.getTemplateId() != null && srcVolumeInfo.getPoolId() != null) {
             VMTemplateVO template = _vmTemplateDao.findById(srcVolumeInfo.getTemplateId());

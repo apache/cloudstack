@@ -77,6 +77,13 @@ class TestStoragePool(cloudstackTestCase):
 
     @classmethod
     def setUpCloudStack(cls):
+        config = cls.getClsConfig()
+        StorPoolHelper.logger = cls
+
+        zone = config.zones[0]
+        assert zone is not None
+
+        cls.spapi = spapi.Api(host=zone.spEndpoint, port=zone.spEndpointPort, auth=zone.spAuthToken, multiCluster=True)
         testClient = super(TestStoragePool, cls).getClsTestClient()
 
         cls._cleanup = []
@@ -94,20 +101,16 @@ class TestStoragePool(cloudstackTestCase):
 
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
-        cls.zone = None
-        zones = list_zones(cls.apiclient)
-
-        for z in zones:
-            if z.name == cls.getClsConfig().mgtSvr[0].zone:
-                cls.zone = z
-
+        cls.zone = list_zones(cls.apiclient, name=zone.name)[0]
+        cls.debug(cls.zone)
+        cls.debug(list_zones(cls.apiclient, name=zone.name))
         assert cls.zone is not None
 
         cls.sp_template_1 = "ssd"
         storpool_primary_storage = {
             "name" : cls.sp_template_1,
             "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=10.2.23.248:81;SP_AUTH_TOKEN=6549874687;SP_TEMPLATE=%s" % cls.sp_template_1,
+            "url": "SP_API_HTTP=%s:%s;SP_AUTH_TOKEN=%s;SP_TEMPLATE=%s" % (zone.spEndpoint, zone.spEndpointPort, zone.spAuthToken, cls.sp_template_1),
             "scope": "zone",
             "capacitybytes": 564325555333,
             "capacityiops": 155466,
@@ -117,8 +120,6 @@ class TestStoragePool(cloudstackTestCase):
             }
 
         cls.storpool_primary_storage = storpool_primary_storage
-        host, port, auth = cls.getCfgFromUrl(url = storpool_primary_storage["url"])
-        cls.spapi = spapi.Api(host=host, port=port, auth=auth, multiCluster=True)
 
         storage_pool = list_storage_pools(
             cls.apiclient,
@@ -166,7 +167,7 @@ class TestStoragePool(cloudstackTestCase):
         storpool_primary_storage2 = {
             "name" : cls.sp_template_2,
             "zoneid": cls.zone.id,
-            "url": "SP_API_HTTP=10.2.23.248:81;SP_AUTH_TOKEN=6549874687;SP_TEMPLATE=%s" % cls.sp_template_2,
+            "url": "SP_API_HTTP=%s:%s;SP_AUTH_TOKEN=%s;SP_TEMPLATE=%s" % (zone.spEndpoint, zone.spEndpointPort, zone.spAuthToken, cls.sp_template_2),
             "scope": "zone",
             "capacitybytes": 564325555333,
             "capacityiops": 1554,

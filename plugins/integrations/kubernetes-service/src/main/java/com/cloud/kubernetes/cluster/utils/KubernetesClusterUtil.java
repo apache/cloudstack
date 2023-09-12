@@ -45,13 +45,14 @@ public class KubernetesClusterUtil {
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
 
-    public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl version --short";
+    public static final String CLUSTER_NODE_READY_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'";
+    public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\") print $5}'";
 
     public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, String ipAddress, int port,
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
         Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port,
                 user, sshKeyFile, null,
-                String.format("sudo /opt/bin/kubectl get nodes | awk '{if ($1 == \"%s\" && $2 == \"Ready\") print $1}'", nodeName.toLowerCase()),
+                String.format(CLUSTER_NODE_READY_COMMAND, nodeName.toLowerCase()),
                 10000, 10000, 20000);
         if (result.first() && nodeName.equals(result.second().trim())) {
             return true;
@@ -327,37 +328,44 @@ public class KubernetesClusterUtil {
         return token.toString().substring(0, 64);
     }
 
-    public static boolean clusterNodeVersionMatches(final String version, boolean isControlNode,
+    public static boolean clusterNodeVersionMatches(final String version,
                                                     final String ipAddress, final int port,
                                                     final String user, final File sshKeyFile,
-                                                    final String hostName) {
-        Pair<Boolean, String> result = null;
-        try {
-            result = SshHelper.sshExecute(
-                    ipAddress, port,
-                    user, sshKeyFile, null,
-                    CLUSTER_NODE_VERSION_COMMAND,
-                    10000, 10000, 20000);
-        } catch (Exception e) {
+                                                    final String hostName,
+                                                    final long timeoutTime, final long waitDuration) {
+        int retry = 10;
+        while (System.currentTimeMillis() < timeoutTime && retry-- > 0) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Failed to retrieve Kubernetes version from cluster node : %s due to exception", hostName), e);
+                LOGGER.debug(String.format("Checking if the Kubernetes version of cluster node %s is %s", hostName, version));
             }
-            return false;
+            try {
+                Pair<Boolean, String> result = SshHelper.sshExecute(
+                        ipAddress, port,
+                        user, sshKeyFile, null,
+                        String.format(CLUSTER_NODE_VERSION_COMMAND, hostName.toLowerCase()),
+                        10000, 10000, 20000);
+                if (clusterNodeVersionMatches(result, version)) {
+                    return true;
+                }
+            } catch (Exception e) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(String.format("Failed to retrieve Kubernetes version from cluster node : %s due to exception", hostName), e);
+                }
+            }
+            try {
+                Thread.sleep(waitDuration);
+            } catch (InterruptedException ex) {
+                LOGGER.warn(String.format("Error while waiting during Kubernetes version check of cluster node : %s", hostName), ex);
+            }
         }
-        if (Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
+        return false;
+    }
+
+    protected static boolean clusterNodeVersionMatches(final Pair<Boolean, String> result, final String version) {
+        if (result == null || Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
             return false;
         }
         String response = result.second();
-        boolean clientVersionPresent = false;
-        boolean serverVersionPresent = false;
-        for (String line : response.split("\n")) {
-            if (line.contains("Client Version") && line.contains(String.format("v%s", version))) {
-                clientVersionPresent = true;
-            }
-            if (isControlNode && line.contains("Server Version") && line.contains(String.format("v%s", version))) {
-                serverVersionPresent = true;
-            }
-        }
-        return clientVersionPresent && (!isControlNode || serverVersionPresent);
+        return response.contains(String.format("v%s", version));
     }
 }

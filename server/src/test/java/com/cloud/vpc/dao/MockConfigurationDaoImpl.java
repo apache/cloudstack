@@ -19,7 +19,6 @@ package com.cloud.vpc.dao;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 

@@ -16,15 +16,75 @@
 // under the License.
 package com.cloud.network.as;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
 import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
-import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
+import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
 import com.cloud.agent.api.to.LoadBalancerTO.ConditionTO;
 import com.cloud.agent.api.to.LoadBalancerTO.CounterTO;
 import com.cloud.api.dispatch.DispatchChain;
@@ -99,67 +159,12 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.affinity.AffinityGroupVO;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.management.*")
@@ -251,6 +256,9 @@ public class AutoScaleManagerImplTest {
     @Mock
     VMInstanceDao vmInstanceDao;
 
+    @Mock
+    VirtualMachineManager virtualMachineManager;
+
     AccountVO account;
     UserVO user;
 
@@ -333,6 +341,10 @@ public class AutoScaleManagerImplTest {
     private static final Long scaleDownCounterId = 38L;
     private static final Long nextVmSeq = 39L;
     private static final Long networkOfferingId = 40L;
+    private static final String userData = "VGVzdFVzZXJEYXRh";  //TestUserData
+    private static final Long userDataId = 41L;
+    private static final Map<String, HashMap<String, String>> userDataDetails = new HashMap<>();
+    private static final String userDataFinal = "VGVzdFVzZXJEYXRhRmluYWw=";  //TestUserDataFinal
 
     @Mock
     DataCenterVO zoneMock;
@@ -397,6 +409,10 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
 
         when(asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asScaleUpPolicyMock);
+
+        userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
+        Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.doReturn(userDataFinal).when(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @After
@@ -741,10 +757,48 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "otherDeployParams", otherDeployParams);
         ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
 
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+        ReflectionTestUtils.setField(cmd, "userDataDetails", userDataDetails);
+
         AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.createAutoScaleVmProfile(cmd);
 
         Assert.assertEquals(asVmProfileMock, vmProfile);
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
+
+        Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    @PrepareForTest(ComponentContext.class)
+    public void testCreateAutoScaleVmProfileFail() {
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findByIdIncludingRemoved(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOfferingMock);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        Mockito.doThrow(InvalidParameterValueException.class).when(userVmMgr).finalizeUserData(any(), any(), any());
+
+        DispatchChain dispatchChainMock = Mockito.mock(DispatchChain.class);
+        when(dispatchChainFactory.getStandardDispatchChain()).thenReturn(dispatchChainMock);
+        Mockito.doNothing().when(dispatchChainMock).dispatch(any());
+        PowerMockito.mockStatic(ComponentContext.class);
+        when(ComponentContext.inject(DeployVMCmd.class)).thenReturn(Mockito.mock(DeployVMCmd.class));
+
+        CreateAutoScaleVmProfileCmd cmd = new CreateAutoScaleVmProfileCmd();
+
+        ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
+        ReflectionTestUtils.setField(cmd, "templateId", templateId);
+        ReflectionTestUtils.setField(cmd, "expungeVmGracePeriod", expungeVmGracePeriod);
+        ReflectionTestUtils.setField(cmd, "otherDeployParams", otherDeployParams);
+        ReflectionTestUtils.setField(cmd, "counterParamList", counterParamList);
+
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+
+        AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.createAutoScaleVmProfile(cmd);
     }
 
     @Test
@@ -767,10 +821,17 @@ public class AutoScaleManagerImplTest {
         ReflectionTestUtils.setField(cmd, "serviceOfferingId", serviceOfferingId);
         ReflectionTestUtils.setField(cmd, "templateId", templateId);
 
+        ReflectionTestUtils.setField(cmd, "userData", userData);
+        ReflectionTestUtils.setField(cmd, "userDataId", userDataId);
+        ReflectionTestUtils.setField(cmd, "userDataDetails", userDataDetails);
+
         AutoScaleVmProfile vmProfile = autoScaleManagerImplSpy.updateAutoScaleVmProfile(cmd);
 
         Assert.assertEquals(asVmProfileMock, vmProfile);
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
+
+        Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
+        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test
@@ -1201,6 +1262,9 @@ public class AutoScaleManagerImplTest {
         when(asVmProfileMock.getAccountId()).thenReturn(accountId);
         when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
         when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+        when(asVmProfileMock.getUserData()).thenReturn(userData);
+        when(asVmProfileMock.getUserDataId()).thenReturn(userDataId);
+        when(asVmProfileMock.getUserDataDetails()).thenReturn(userDataDetails.toString());
 
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
@@ -1217,7 +1281,7 @@ public class AutoScaleManagerImplTest {
         when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1228,7 +1292,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 1);
     }
@@ -1246,6 +1310,9 @@ public class AutoScaleManagerImplTest {
         when(asVmProfileMock.getAccountId()).thenReturn(accountId);
         when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
         when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+        when(asVmProfileMock.getUserData()).thenReturn(userData);
+        when(asVmProfileMock.getUserDataId()).thenReturn(userDataId);
+        when(asVmProfileMock.getUserDataDetails()).thenReturn(userDataDetails.toString());
 
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
@@ -1263,7 +1330,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(zoneMock.isSecurityGroupEnabled()).thenReturn(true);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1274,7 +1341,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 2);
     }
@@ -1292,6 +1359,9 @@ public class AutoScaleManagerImplTest {
         when(asVmProfileMock.getAccountId()).thenReturn(accountId);
         when(asVmProfileMock.getZoneId()).thenReturn(zoneId);
         when(asVmProfileMock.getOtherDeployParams()).thenReturn("");
+        when(asVmProfileMock.getUserData()).thenReturn(userData);
+        when(asVmProfileMock.getUserDataId()).thenReturn(userDataId);
+        when(asVmProfileMock.getUserDataDetails()).thenReturn(userDataDetails.toString());
 
         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zoneMock);
@@ -1309,7 +1379,7 @@ public class AutoScaleManagerImplTest {
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         when(zoneMock.isSecurityGroupEnabled()).thenReturn(false);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
 
         long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
@@ -1320,7 +1390,7 @@ public class AutoScaleManagerImplTest {
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
         Mockito.verify(userVmService).createAdvancedVirtualMachine(any(), any(), any(), any(), any(),
                 matches(vmHostNamePattern), matches(vmHostNamePattern),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true), any(), any(), any(),
+                any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any());
         Mockito.verify(asVmGroupMock).setNextVmSeq(nextVmSeq + 3);
     }
@@ -2204,14 +2274,14 @@ public class AutoScaleManagerImplTest {
     @Test
     public void getVmStatsByIdFromHost() {
         List<Long> vmIds = Mockito.mock(ArrayList.class);
-        HashMap<Long, VmStatsEntry> vmStatsById = Mockito.mock(HashMap.class);
-        when(userVmMgr.getVirtualMachineStatistics(anyLong(), anyString(), any())).thenReturn(vmStatsById);
+        Map<Long, VmStatsEntry> vmStatsById = Mockito.mock(HashMap.class);
+        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
 
-        Map<Long, VmStatsEntry> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(-1L, vmIds);
+        Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(-1L, vmIds);
 
         Assert.assertEquals(0, result.size());
 
-        Mockito.verify(userVmMgr, never()).getVirtualMachineStatistics(anyLong(), anyString(), any());
+        Mockito.verify(virtualMachineManager, never()).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
     }
 
     @Test
@@ -2223,13 +2293,13 @@ public class AutoScaleManagerImplTest {
         when(hostDao.findById(hostId)).thenReturn(hostMock);
         when(hostMock.getId()).thenReturn(hostId);
         when(hostMock.getName()).thenReturn(hostName);
-        when(userVmMgr.getVirtualMachineStatistics(anyLong(), anyString(), any())).thenReturn(vmStatsById);
+        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
 
-        Map<Long, VmStatsEntry> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(hostId, vmIds);
+        Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(hostId, vmIds);
 
         Assert.assertEquals(vmStatsById, result);
 
-        Mockito.verify(userVmMgr).getVirtualMachineStatistics(anyLong(), anyString(), any());
+        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
     }
 
     @Test

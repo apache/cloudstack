@@ -187,6 +187,7 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         loginCmdResponse.setFirstName("firstName");
         loginCmdResponse.setLastName("lastName");
         loginCmdResponse.setSessionKey("newSessionKeyString");
+        loginCmdResponse.set2FAenabled("false");
         Mockito.when(apiServer.loginUser(nullable(HttpSession.class), nullable(String.class), nullable(String.class),
                 nullable(Long.class), nullable(String.class), nullable(InetAddress.class), nullable(Map.class))).thenReturn(loginCmdResponse);
         Mockito.doNothing().when(resp).sendRedirect(nullable(String.class));

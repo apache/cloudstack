@@ -276,11 +276,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
@@ -373,7 +373,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
@@ -419,11 +419,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
 
@@ -468,11 +468,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         #files={'file':('rajani-thin-volume.vhd',open(uploadfile,'rb'),'application/octet-stream')}
 
-        #headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        #headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         files={'file':(uploadfile,open(uploadfile,'rb'),'application/octet-stream')}
 
-        headers={'X-signature':signt,'X-metadata':metadata,'X-expires':expiredata}
+        headers={'x-signature':signt,'x-metadata':metadata,'x-expires':expiredata}
 
         results = requests.post(posturl,files=files,headers=headers,verify=False)
         time.sleep(60)

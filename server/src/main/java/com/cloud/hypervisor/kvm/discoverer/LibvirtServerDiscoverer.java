@@ -260,10 +260,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             final String privateKey = _configDao.getValue("ssh.privatekey");
             if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
-                s_logger.error("Failed to authenticate with ssh key");
                 if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
+                    s_logger.error("Failed to authenticate with ssh key");
                     throw new DiscoveredWithErrorException("Authentication error with ssh private key");
                 }
+                s_logger.info("Failed to authenticate with ssh key, retrying with password");
                 if (!sshConnection.authenticateWithPassword(username, password)) {
                     s_logger.error("Failed to authenticate with password");
                     throw new DiscoveredWithErrorException("Authentication error with host password");
@@ -470,8 +471,12 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostOsInCluster = oneHost.getDetail("Host.OS");
             String hostOs = ssCmd.getHostDetails().get("Host.OS");
             if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
-                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," +
-                        "in which there are " + hostOsInCluster + " hosts added");
+                String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
+                if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {
+                    s_logger.warn(String.format("Adding %s. This may or may not be ok!", msg));
+                } else {
+                    throw new IllegalArgumentException(String.format("Can't add %s.", msg));
+                }
             }
         }
 

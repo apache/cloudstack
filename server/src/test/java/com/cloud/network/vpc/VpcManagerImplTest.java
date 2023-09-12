@@ -41,8 +41,11 @@ import java.util.UUID;
 
 
 import com.cloud.alert.AlertManager;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.FirewallRulesDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.After;
@@ -146,6 +149,10 @@ public class VpcManagerImplTest {
     NicDao nicDao;
     @Mock
     AlertManager alertManager;
+    @Mock
+    NetworkService networkServiceMock;
+    @Mock
+    FirewallRulesDao firewallDao;
 
     public static final long ACCOUNT_ID = 1;
     private AccountVO account;
@@ -196,6 +203,8 @@ public class VpcManagerImplTest {
         manager._resourceLimitMgr = resourceLimitService;
         manager._vpcOffDao = vpcOfferingDao;
         manager._dcDao = dataCenterDao;
+        manager._ntwkSvc = networkServiceMock;
+        manager._firewallDao = firewallDao;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
     }
@@ -350,9 +359,10 @@ public class VpcManagerImplTest {
     }
 
     @Test
-    public void testUpdateVpcNetwork() throws ResourceUnavailableException {
+    public void testUpdateVpcNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
         long vpcId = 1L;
         Integer publicMtu = 1450;
+        String sourceNatIp = "1.2.3.4";
         Account accountMock = Mockito.mock(Account.class);
         VpcVO vpcVO = new VpcVO();
 
@@ -394,9 +404,31 @@ public class VpcManagerImplTest {
         Mockito.when(networkDao.update(anyLong(), any())).thenReturn(true);
         Mockito.when(vpcDao.update(vpcId, vpcVO)).thenReturn(true);
 
-        manager.updateVpc(vpcId, null, null, null, true, publicMtu);
-        Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
+        UpdateVPCCmd cmd = Mockito.mock(UpdateVPCCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(vpcId);
+        Mockito.when(cmd.getVpcName()).thenReturn(null);
+        Mockito.when(cmd.getDisplayText()).thenReturn(null);
+        Mockito.when(cmd.getCustomId()).thenReturn(null);
+        Mockito.when(cmd.isDisplayVpc()).thenReturn(true);
+        Mockito.when(cmd.getPublicMtu()).thenReturn(publicMtu);
+        Mockito.when(cmd.getSourceNatIP()).thenReturn(sourceNatIp);
 
+        manager.updateVpc(cmd);
+        Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
+    }
+
+    @Test
+    public void verifySourceNatIp() {
+        String sourceNatIp = "1.2.3.4";
+        VpcVO vpcVO = Mockito.mock(VpcVO.class); //new VpcVO(1l, "vpc", null, 10l, 1l, 1l, "10.1.0.0/16", null, false, false, false, null, null, null, null);
+        Mockito.when(vpcVO.getId()).thenReturn(1l);
+        IPAddressVO requestedIp = Mockito.mock(IPAddressVO.class);//new IPAddressVO(new Ip(sourceNatIp), 1l, 1l, 1l, true);
+        Mockito.when(ipAddressDao.findByIp(sourceNatIp)).thenReturn(requestedIp);
+        Mockito.when(requestedIp.getVpcId()).thenReturn(1l);
+        Mockito.when(requestedIp.getVpcId()).thenReturn(1l);
+        Mockito.when(firewallDao.countRulesByIpId(1l)).thenReturn(0l);
+        Assert.assertNull(manager.validateSourceNatip(vpcVO, null));
+        Assert.assertEquals(requestedIp, manager.validateSourceNatip(vpcVO, sourceNatIp));
     }
 
     @Test
@@ -418,6 +450,7 @@ public class VpcManagerImplTest {
     public void testDisabledConfigCreateIpv6VpcOffering() {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        Mockito.doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
         manager.createVpcOffering(cmd);
     }
 

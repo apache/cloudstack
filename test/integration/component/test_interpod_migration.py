@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT tests for Virtual Machine Life Cycle
+""" BVT tests for Virtual Machine migration across pods
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase

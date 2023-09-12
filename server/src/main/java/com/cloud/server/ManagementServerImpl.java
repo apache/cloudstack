@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -45,28 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.UserData;
-import com.cloud.user.UserDataVO;
-import com.cloud.user.dao.UserDataDao;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PatchSystemVmAnswer;
-import com.cloud.agent.api.PatchSystemVmCommand;
-import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.DomainVlanMapVO;
-import com.cloud.dc.dao.DomainVlanMapDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.network.Networks;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -75,7 +52,6 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -95,6 +71,7 @@ import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
+import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
@@ -113,6 +90,7 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
@@ -182,6 +160,7 @@ import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.ChangeOutOfBandManagementPasswordCmd;
@@ -549,6 +528,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -597,8 +577,11 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
+import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -606,6 +589,10 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -619,6 +606,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
@@ -627,8 +615,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.Alert;
 import com.cloud.alert.AlertManager;
@@ -649,6 +648,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -658,6 +658,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -672,6 +673,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -690,7 +692,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
@@ -702,6 +703,7 @@ import com.cloud.network.IpAddressManager;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -720,7 +722,6 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -736,6 +737,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
@@ -743,6 +745,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.tags.ResourceTagVO;
@@ -754,10 +757,13 @@ import com.cloud.user.AccountService;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -776,13 +782,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
@@ -794,14 +804,13 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
-import static com.cloud.vm.UserVmManager.MAX_USER_DATA_LENGTH_BYTES;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -812,10 +821,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
-
-    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final int NUM_OF_2K_BLOCKS = 512;
-    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
+    private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
+            HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
 
     @Inject
     public AccountManager _accountMgr;
@@ -830,7 +837,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private ClusterDao _clusterDao;
     @Inject
-    private UserVmDetailsDao _UserVmDetailsDao;
+    protected UserVmDetailsDao _UserVmDetailsDao;
     @Inject
     private SecondaryStorageVmDao _secStorageVmDao;
     @Inject
@@ -846,13 +853,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostDao _hostDao;
     @Inject
-    private HostDetailsDao _detailsDao;
+    protected HostDetailsDao _detailsDao;
     @Inject
     private UserDao _userDao;
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private ConfigurationGroupDao _configGroupDao;
+    @Inject
+    private ConfigurationSubGroupDao _configSubGroupDao;
     @Inject
     private ConsoleProxyManager _consoleProxyMgr;
     @Inject
@@ -961,6 +972,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected VMTemplateDao templateDao;
     @Inject
     protected AnnotationDao annotationDao;
+    @Inject
+    UserDataManager userDataManager;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -972,12 +985,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private Map<String, Boolean> _availableIdsMap;
 
     private List<UserAuthenticator> _userAuthenticators;
+    private List<UserTwoFactorAuthenticator> _userTwoFactorAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
     protected boolean _executeInSequence;
 
     protected List<DeploymentPlanner> _planners;
 
-    private final List<HypervisorType> supportedHypervisors = new ArrayList<Hypervisor.HypervisorType>();
+    private final List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
 
     public List<DeploymentPlanner> getPlanners() {
         return _planners;
@@ -1014,6 +1028,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public void setUserAuthenticators(final List<UserAuthenticator> authenticators) {
         _userAuthenticators = authenticators;
+    }
+
+    public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticators() {
+        return _userTwoFactorAuthenticators;
+    }
+
+    public void setUserTwoFactorAuthenticators(final List<UserTwoFactorAuthenticator> userTwoFactorAuthenticators) {
+        _userTwoFactorAuthenticators = userTwoFactorAuthenticators;
     }
 
     public List<UserAuthenticator> getUserPasswordEncoders() {
@@ -1242,7 +1264,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            String hypervisorStr = (String) hypervisorType;
+            String hypervisorSearch = HypervisorType.getType(hypervisorStr).toString();
+            sc.setParameters("hypervisorType", hypervisorSearch);
         }
 
         if (clusterType != null) {
@@ -1304,6 +1328,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
+    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
+        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
+        if (userVmDetailVO != null &&
+                (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(userVmDetailVO.getValue()) ||
+                        ApiConstants.BootMode.SECURE.toString().equalsIgnoreCase(userVmDetailVO.getValue()))) {
+            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
+            if (CollectionUtils.isEmpty(filteredHosts)) {
+                filteredHosts = new ArrayList<>(allHosts);
+            }
+            List<DetailVO> details = _detailsDao.findByName(Host.HOST_UEFI_ENABLE);
+            List<Long> uefiEnabledHosts = details.stream().filter(x -> Boolean.TRUE.toString().equalsIgnoreCase(x.getValue())).map(DetailVO::getHostId).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(uefiEnabledHosts)) {
+                return new Pair<>(false, null);
+            }
+            filteredHosts.removeIf(host -> !uefiEnabledHosts.contains(host.getId()));
+            return new Pair<>(!filteredHosts.isEmpty(), filteredHosts);
+        }
+        return new Pair<>(true, filteredHosts);
+    }
+
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
             final String keyword) {
@@ -1330,33 +1374,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
-        if (userVmDetailVO != null) {
-            s_logger.info(" Live Migration of UEFI enabled VM : " + vm.getInstanceName() + " is not supported");
-            if ("legacy".equalsIgnoreCase(userVmDetailVO.getValue()) || "secure".equalsIgnoreCase(userVmDetailVO.getValue())) {
-                // Return empty list.
-                return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List<? extends Host>,
-                        Integer>(new ArrayList<HostVO>(), new Integer(0)), new ArrayList<Host>(), new HashMap<Host, Boolean>());
-            }
-        }
-
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
             // Return empty list.
-            return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(new Pair<List<? extends Host>, Integer>(new ArrayList<HostVO>(), new Integer(0)),
-                    new ArrayList<Host>(), new HashMap<Host, Boolean>());
+            return new Ternary<>(new Pair<>(new ArrayList<HostVO>(), new Integer(0)),
+                    new ArrayList<>(), new HashMap<>());
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv) && !vm.getHypervisorType().equals(HypervisorType.LXC)
-                && !vm.getHypervisorType().equals(HypervisorType.Simulator) && !vm.getHypervisorType().equals(HypervisorType.Ovm3)) {
+        if (!LIVE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv/Ovm3, cannot migrate this VM.");
             }
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " + "XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
-        if (vm.getType().equals(VirtualMachine.Type.User) && vm.getHypervisorType().equals(HypervisorType.LXC)) {
+        if (VirtualMachine.Type.User.equals(vm.getType()) && HypervisorType.LXC.equals(vm.getHypervisorType())) {
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
 
@@ -1379,7 +1411,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Check if the vm can be migrated with storage.
         boolean canMigrateWithStorage = false;
 
-        if (VirtualMachine.Type.User.equals(vm.getType()) || HypervisorType.VMware.equals(vm.getHypervisorType())) {
+        List<HypervisorType> hypervisorTypes = Arrays.asList(new HypervisorType[]{HypervisorType.VMware, HypervisorType.KVM});
+        if (VirtualMachine.Type.User.equals(vm.getType()) || hypervisorTypes.contains(vm.getHypervisorType())) {
             canMigrateWithStorage = _hypervisorCapabilitiesDao.isStorageMotionSupported(srcHost.getHypervisorType(), srcHostVersion);
         }
 
@@ -1403,21 +1436,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Type hostType = srcHost.getType();
         Pair<List<HostVO>, Integer> allHostsPair = null;
         List<HostVO> allHosts = null;
-        List<HostVO> hostsForMigrationWithStorage = null;
-        final Map<Host, Boolean> requiresStorageMotion = new HashMap<Host, Boolean>();
+        List<HostVO> filteredHosts = null;
+        final Map<Host, Boolean> requiresStorageMotion = new HashMap<>();
         DataCenterDeployment plan = null;
         if (canMigrateWithStorage) {
             Long podId = !VirtualMachine.Type.User.equals(vm.getType()) ? srcHost.getPodId() : null;
             allHostsPair = searchForServers(startIndex, pageSize, null, hostType, null, srcHost.getDataCenterId(), podId, null, null, keyword,
                 null, null, srcHost.getHypervisorType(), null, srcHost.getId());
             allHosts = allHostsPair.first();
-            hostsForMigrationWithStorage = new ArrayList<>(allHosts);
+            filteredHosts = new ArrayList<>(allHosts);
 
             for (final VolumeVO volume : volumes) {
                 StoragePool storagePool = _poolDao.findById(volume.getPoolId());
                 Long volClusterId = storagePool.getClusterId();
 
-                for (Iterator<HostVO> iterator = hostsForMigrationWithStorage.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = filteredHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
                     String hostVersion = host.getHypervisorVersion();
                     if (HypervisorType.KVM.equals(host.getHypervisorType()) && hostVersion == null) {
@@ -1461,6 +1494,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 }
             }
 
+            if (CollectionUtils.isEmpty(filteredHosts)) {
+                return new Ternary<>(new Pair<>(allHosts, allHostsPair.second()), new ArrayList<>(), new HashMap<>());
+            }
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), podId, null, null, null, null);
         } else {
             final Long cluster = srcHost.getClusterId();
@@ -1473,8 +1509,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             plan = new DataCenterDeployment(srcHost.getDataCenterId(), srcHost.getPodId(), srcHost.getClusterId(), null, null, null);
         }
 
-        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<List<? extends Host>, Integer>(allHosts, allHostsPair.second());
-        List<Host> suitableHosts = new ArrayList<Host>();
+        final Pair<List<? extends Host>, Integer> otherHosts = new Pair<>(allHosts, allHostsPair.second());
+        Pair<Boolean, List<HostVO>> uefiFilteredResult = filterUefiHostsForMigration(allHosts, filteredHosts, vm);
+        if (!uefiFilteredResult.first()) {
+            return new Ternary<>(otherHosts, new ArrayList<>(), new HashMap<>());
+        }
+        filteredHosts = uefiFilteredResult.second();
+
+        List<Host> suitableHosts = new ArrayList<>();
         final ExcludeList excludes = new ExcludeList();
         excludes.addHost(srcHostId);
 
@@ -1497,8 +1539,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         for (final HostAllocator allocator : hostAllocators) {
-            if (canMigrateWithStorage) {
-                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, hostsForMigrationWithStorage, HostAllocator.RETURN_UPTO_ALL, false);
+            if (CollectionUtils.isNotEmpty(filteredHosts)) {
+                suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, filteredHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, HostAllocator.RETURN_UPTO_ALL, false);
             }
@@ -1519,7 +1561,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        return new Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>(otherHosts, suitableHosts, requiresStorageMotion);
+        return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
     /**
@@ -2096,6 +2138,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long imageStoreId = cmd.getImageStoreId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
+        final String groupName = cmd.getGroupName();
+        final String subGroupName = cmd.getSubGroupName();
+        final String parentName = cmd.getParentName();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -2165,6 +2210,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
+        if (groupName != null) {
+            ConfigurationGroupVO configGroupVO = _configGroupDao.findByName(groupName);
+            if (configGroupVO == null) {
+                throw new InvalidParameterValueException("Invalid configuration group: " + groupName);
+            }
+            Long groupId = configGroupVO.getId();
+            sc.addAnd("groupId", SearchCriteria.Op.EQ, groupId);
+        }
+
+        if (subGroupName != null) {
+            ConfigurationSubGroupVO configSubGroupVO = _configSubGroupDao.findByName(subGroupName);
+            if (configSubGroupVO == null) {
+                throw new InvalidParameterValueException("Invalid configuration subgroup: " + subGroupName);
+            }
+
+            Long subGroupId = configSubGroupVO.getId();
+            sc.addAnd("subGroupId", SearchCriteria.Op.EQ, subGroupId);
+        }
+
+        if (parentName != null) {
+            sc.addAnd("parent", SearchCriteria.Op.EQ, parentName);
+        }
+
         if (category != null) {
             sc.addAnd("category", SearchCriteria.Op.EQ, category);
         }
@@ -2215,6 +2283,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public Pair<List<? extends ConfigurationGroup>, Integer> listConfigurationGroups(ListCfgGroupsByCmd cmd) {
+        final Filter searchFilter = new Filter(ConfigurationGroupVO.class, "precedence", true, null, null);
+        final SearchCriteria<ConfigurationGroupVO> sc = _configGroupDao.createSearchCriteria();
+
+        final String groupName = cmd.getGroupName();
+        if (StringUtils.isNotBlank(groupName)) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, groupName);
+        }
+
+        final Pair<List<ConfigurationGroupVO>, Integer> result = _configGroupDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends ConfigurationGroup>, Integer>(result.first(), result.second());
+    }
+
+    @Override
     public Pair<List<? extends IpAddress>, Integer> searchForIPAddresses(final ListPublicIpAddressesCmd cmd) {
         final Long associatedNetworkId = cmd.getAssociatedNetworkId();
         final Long zone = cmd.getZoneId();
@@ -2241,6 +2323,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 isAllocated = Boolean.TRUE;
             }
         }
+        boolean isAllocatedTemp = isAllocated;
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
@@ -2251,6 +2334,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Account caller = getCaller();
         List<IPAddressVO> addrs = new ArrayList<>();
+        NetworkVO network = null;   // shared network
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
             if (caller.getType() != Account.Type.ADMIN) {
@@ -2259,7 +2343,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else if (vlanType == VlanType.DirectAttached) {
             // list public ip address on shared network
             // access control. admin: all Ips, domain admin/user: all Ips in shared network in the domain/sub-domain/user
-            NetworkVO network = null;
             if (networkId == null) {
                 IPAddressVO ip = _publicIpAddressDao.findById(ipId);
                 if (ip == null) {
@@ -2393,7 +2476,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             for (IPAddressVO addr: freeAddrs) {
                 freeAddrIds.add(addr.getId());
             }
+        } else if (vlanType == VlanType.DirectAttached && network != null && !isAllocatedTemp && isAllocated) {
+            if (caller.getType() != Account.Type.ADMIN && !IpAddressManager.AllowUserListAvailableIpsOnSharedNetwork.value()) {
+                s_logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
+            } else {
+                final SearchBuilder<IPAddressVO> searchBuilder = _publicIpAddressDao.createSearchBuilder();
+                buildParameters(searchBuilder, cmd, false);
+
+                SearchCriteria<IPAddressVO> searchCriteria = searchBuilder.create();
+                setParameters(searchCriteria, cmd, vlanType, false);
+                searchCriteria.setParameters("state", IpAddress.State.Free.name());
+                addrs.addAll(_publicIpAddressDao.search(searchCriteria, searchFilter)); // Free IPs on shared network
+            }
         }
+
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
@@ -2543,32 +2639,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final Long id = cmd.getId();
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
+        final Long startIndex = cmd.getStartIndex();
+        final Long pageSize = cmd.getPageSizeVal();
+        Boolean forDisplay = cmd.getDisplay();
 
-        final SearchCriteria<GuestOSVO> sc = _guestOSDao.createSearchCriteria();
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (osCategoryId != null) {
-            sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
-        }
-
-        if (description != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
-        }
-
-        if (keyword != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-        }
-
-        final Pair<List<GuestOSVO>, Integer> result = _guestOSDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends GuestOS>, Integer>(result.first(), result.second());
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override
@@ -2598,9 +2677,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(final ListGuestOsMappingCmd cmd) {
+        final String guestOsId = "guestOsId";
         final Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "hypervisorVersion", false);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, guestOsId, true);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false);
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
+        final String osDisplayName = cmd.getOsDisplayName();
+        final String osNameForHypervisor = cmd.getOsNameForHypervisor();
         final String hypervisor = cmd.getHypervisor();
         final String hypervisorVersion = cmd.getHypervisorVersion();
 
@@ -2616,15 +2701,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (osTypeId != null) {
-            sc.addAnd("guestOsId", SearchCriteria.Op.EQ, osTypeId);
+            sc.addAnd(guestOsId, SearchCriteria.Op.EQ, osTypeId);
+        }
+
+        if (osNameForHypervisor != null) {
+            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osNameForHypervisor + "%");
         }
 
         if (hypervisor != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisor);
+            sc.addAnd("hypervisorType", SearchCriteria.Op.LIKE, "%" + hypervisor + "%");
         }
 
         if (hypervisorVersion != null) {
-            sc.addAnd("hypervisorVersion", SearchCriteria.Op.EQ, hypervisorVersion);
+            sc.addAnd("hypervisorVersion", SearchCriteria.Op.LIKE, "%" + hypervisorVersion + "%");
+        }
+
+        if (osDisplayName != null) {
+            List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
+            if (CollectionUtils.isNotEmpty(guestOSVOS)) {
+                List<Long> guestOSids = guestOSVOS.stream().map(mo -> mo.getId()).collect(Collectors.toList());
+                sc.addAnd(guestOsId, SearchCriteria.Op.IN, guestOSids.toArray());
+            }
         }
 
         final Pair<List<GuestOSHypervisorVO>, Integer> result = _guestOSHypervisorDao.searchAndCount(sc, searchFilter);
@@ -2642,7 +2739,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String osNameForHypervisor = cmd.getOsNameForHypervisor();
         GuestOS guestOs = null;
 
-        if (osTypeId == null && (osStdName == null || osStdName.isEmpty())) {
+        if (osTypeId == null && StringUtils.isEmpty(osStdName)) {
             throw new InvalidParameterValueException("Please specify either a guest OS name or UUID");
         }
 
@@ -2671,9 +2768,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisorAndUserDefined(guestOs.getId(), hypervisorType.toString(), hypervisorVersion, true);
 
         if (duplicate != null) {
-            throw new InvalidParameterValueException(
-                    "Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : " + guestOs.getDisplayName() + " already exists!");
+            if (!cmd.isForced()) {
+                throw new InvalidParameterValueException(
+                        "Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : " + guestOs.getDisplayName() + " already exists!");
+            }
+
+            if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
+                checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
+            }
+
+            final long guestOsId = duplicate.getId();
+            final GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(guestOsId);
+            guestOsHypervisor.setGuestOsName(osNameForHypervisor);
+            if (_guestOSHypervisorDao.update(guestOsId, guestOsHypervisor)) {
+                return _guestOSHypervisorDao.findById(guestOsId);
+            }
+            return null;
         }
+
+        if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
+            checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
+        }
+
         final GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
         guestOsMapping.setGuestOsId(guestOs.getId());
         guestOsMapping.setGuestOsName(osNameForHypervisor);
@@ -2681,13 +2797,49 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsMapping.setHypervisorVersion(hypervisorVersion);
         guestOsMapping.setIsUserDefined(true);
         return _guestOSHypervisorDao.persist(guestOsMapping);
+    }
 
+    private void checkGuestOSHypervisorMapping(HypervisorType hypervisorType, String hypervisorVersion, String guestOsName, String guestOsNameForHypervisor) {
+        if (!canCheckGuestOsNameInHypervisor(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Guest OS mapping check is not supported for hypervisor: %s, please specify a valid hypervisor : VMware, XenServer", hypervisorType.toString()));
+        }
+        final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("No %s hypervisor with version: %s exists, please specify available hypervisor and version", hypervisorType.toString(), hypervisorVersion));
+        }
+        CheckGuestOsMappingAnswer answer = (CheckGuestOsMappingAnswer) _agentMgr.easySend(host.getId(), new CheckGuestOsMappingCommand(guestOsName, guestOsNameForHypervisor, hypervisorVersion));
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Invalid hypervisor os mapping: %s for guest os: %s, hypervisor: %s and version: %s", guestOsNameForHypervisor, guestOsName, hypervisorType.toString(), hypervisorVersion));
+        }
+    }
+
+    private boolean canCheckGuestOsNameInHypervisor(HypervisorType hypervisorType) {
+        return (hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.XenServer);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_ADD, eventDescription = "Adding a new guest OS to hypervisor name mapping", async = true)
     public GuestOSHypervisor getAddedGuestOsMapping(final Long guestOsMappingId) {
         return getGuestOsHypervisor(guestOsMappingId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_HYPERVISOR_NAME_FETCH, eventDescription = "Getting guest OS names from hypervisor", async = true)
+    public List<Pair<String, String>> getHypervisorGuestOsNames(GetHypervisorGuestOsNamesCmd getHypervisorGuestOsNamesCmd) {
+        final HypervisorType hypervisorType = HypervisorType.getType(getHypervisorGuestOsNamesCmd.getHypervisor());
+        if (!canCheckGuestOsNameInHypervisor(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Guest OS names cannot be fetched for hypervisor: %s, please specify a valid hypervisor : VMware, XenServer", hypervisorType.toString()));
+        }
+
+        final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, getHypervisorGuestOsNamesCmd.getHypervisorVersion());
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("No %s hypervisor with version: %s exists, please specify available hypervisor and version", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+        }
+        GetHypervisorGuestOsNamesAnswer answer = (GetHypervisorGuestOsNamesAnswer) _agentMgr.easySend(host.getId(), new GetHypervisorGuestOsNamesCommand(getHypervisorGuestOsNamesCmd.getKeyword()));
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Unable to get guest os names for hypervisor: %s, version: %s", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+        }
+        return answer.getHypervisorGuestOsNames();
     }
 
     @Override
@@ -2714,16 +2866,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
+        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(), (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), guestOsPersisted.getId());
 
         return guestOsPersisted;
+    }
+
+    private void persistGuestOsDetails(Map<String, String> details, long guestOsPersistedId) {
+        for (Object key : details.keySet()) {
+            _guestOsDetailsDao.addDetail(guestOsPersistedId, (String)key, details.get(key), false);
+        }
     }
 
     @Override
@@ -2749,12 +2903,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(id, (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), id);
 
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
@@ -2768,6 +2917,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
+        if (cmd.getForDisplay() != null) {
+            guestOs.setDisplay(cmd.getForDisplay());
+        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {
@@ -2809,6 +2961,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (!guestOsHypervisorHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined Guest OS mapping");
+        }
+
+        if (Boolean.TRUE.equals(cmd.getOsMappingCheckEnabled())) {
+            GuestOS guestOs = ApiDBUtils.findGuestOSById(guestOsHypervisorHandle.getGuestOsId());
+            if (guestOs == null) {
+                throw new InvalidParameterValueException("Unable to find the guest OS for the mapping");
+            }
+            checkGuestOSHypervisorMapping(HypervisorType.getType(guestOsHypervisorHandle.getHypervisorType()), guestOsHypervisorHandle.getHypervisorVersion(), guestOs.getDisplayName(), osNameForHypervisor);
         }
 
         final GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(id);
@@ -3200,6 +3360,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListClustersCmd.class);
         cmdList.add(UpdateClusterCmd.class);
         cmdList.add(ListCfgsByCmd.class);
+        cmdList.add(ListCfgGroupsByCmd.class);
         cmdList.add(ListHypervisorCapabilitiesCmd.class);
         cmdList.add(UpdateCfgCmd.class);
         cmdList.add(UpdateHypervisorCapabilitiesCmd.class);
@@ -3249,6 +3410,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
         cmdList.add(DeleteServiceOfferingCmd.class);
+        cmdList.add(IsAccountAllowedToCreateOfferingsWithTagsCmd.class);
         cmdList.add(UpdateDiskOfferingCmd.class);
         cmdList.add(UpdateServiceOfferingCmd.class);
         cmdList.add(CreatePodCmd.class);
@@ -3385,6 +3547,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateGuestOsMappingCmd.class);
         cmdList.add(RemoveGuestOsCmd.class);
         cmdList.add(RemoveGuestOsMappingCmd.class);
+        cmdList.add(GetHypervisorGuestOsNamesCmd.class);
         cmdList.add(AttachIsoCmd.class);
         cmdList.add(CopyIsoCmd.class);
         cmdList.add(DeleteIsoCmd.class);
@@ -3695,6 +3858,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListResourceIconCmd.class);
         cmdList.add(PatchSystemVMCmd.class);
         cmdList.add(ListGuestVlansCmd.class);
+        cmdList.add(AssignVolumeCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -4163,7 +4327,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
         capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
+        capabilities.put("customHypervisorDisplayName", HypervisorGuru.HypervisorCustomDisplayName.value());
         capabilities.put(ApiServiceConfiguration.DefaultUIPageSize.key(), ApiServiceConfiguration.DefaultUIPageSize.value());
+        capabilities.put(ApiConstants.INSTANCES_STATS_RETENTION_TIME, StatsCollector.vmStatsMaxRetentionTime.value());
+        capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
+        capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED, StatsCollector.vmDiskStatsRetentionEnabled.value());
+        capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME, StatsCollector.vmDiskStatsMaxRetentionTime.value());
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -4290,7 +4459,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 final List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (final ClusterVO cluster : clustersForZone) {
-                    result.add(cluster.getHypervisorType().toString());
+                    result.add(cluster.getHypervisorType().getHypervisorDisplayName());
                 }
             }
 
@@ -4492,7 +4661,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -4523,56 +4692,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String userdata = cmd.getUserData();
         final String params = cmd.getParams();
 
-        userdata = validateUserData(userdata, cmd.getHttpMethod());
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
         return createAndSaveUserData(name, userdata, params, owner);
-    }
-
-    private String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        byte[] decodedUserData = null;
-        if (userData != null) {
-
-            if (userData.contains("%")) {
-                try {
-                    userData = URLDecoder.decode(userData, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
-                }
-            }
-
-            if (!Base64.isBase64(userData)) {
-                throw new InvalidParameterValueException("User data is not base64 encoded");
-            }
-            // If GET, use 4K. If POST, support up to 1M.
-            if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
-            } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
-                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
-            }
-
-            if (decodedUserData == null || decodedUserData.length < 1) {
-                throw new InvalidParameterValueException("User data is too short");
-            }
-            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
-            return Base64.encodeBase64String(decodedUserData);
-        }
-        return null;
-    }
-
-    private byte[] validateAndDecodeByHTTPmethod(String userData, int maxHTTPlength, BaseCmd.HTTPMethod httpMethod) {
-        byte[] decodedUserData = null;
-
-        if (userData.length() >= maxHTTPlength) {
-            throw new InvalidParameterValueException(String.format("User data is too long for an http %s request", httpMethod.toString()));
-        }
-        if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
-            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
-        }
-        decodedUserData = Base64.decodeBase64(userData.getBytes());
-        if (decodedUserData.length > maxHTTPlength) {
-            throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
-        }
-        return decodedUserData;
     }
 
     /**

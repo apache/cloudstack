@@ -47,9 +47,4 @@ public class SetIpv6FirewallRulesCommand extends NetworkElementCommand {
     public String getGuestIp6Cidr() {
         return guestIp6Cidr;
     }
-
-    @Override
-    public int getAnswersCount() {
-        return rules.length;
-    }
 }

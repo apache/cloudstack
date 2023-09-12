@@ -136,7 +136,7 @@ runner = xmlrunner.XMLTestRunner(output='test-reports')
 
 #header is required for displaying the website
 #Comment following line for XML and uncomment for HTML
-#print "Content-Type: text/html\n"
+#print "content-type: text/html\n"
 
 # Leave following as is for either XML or HTML
 runner.run(suite)

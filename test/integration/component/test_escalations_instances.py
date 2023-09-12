@@ -4194,7 +4194,7 @@ class TestInstances(cloudstackTestCase):
             "Isolated Network Offerings with sourceNat enabled are not found"
         )
         """
-        Create Isolated netwrok with ip range
+        Create Isolated network with ip range
         """
         self.services["network"]["startip"] = "10.1.1.2"
         self.services["network"]["endip"] = "10.1.1.254"
@@ -4312,7 +4312,7 @@ class TestInstances(cloudstackTestCase):
             "Isolated Network Offerings with sourceNat enabled are not found"
         )
         """
-        Create Isolated netwrok with ip range
+        Create Isolated network with ip range
         """
         self.services["network"]["startip"] = "10.1.1.2"
         self.services["network"]["endip"] = "10.1.1.254"

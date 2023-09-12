@@ -158,7 +158,7 @@ under the License.
                                      pbcast.GMS(join_timeout=5000;join_retry_timeout=2000;shun=false;print_local_addr=false)"
                                      propertySeparator="::"
             />
-     The only property necessay is the connect String used by jgroups to configure itself. Refer to the Jgroups documentation for explanation
+     The only property necessary is the connect String used by jgroups to configure itself. Refer to the Jgroups documentation for explanation
      of all the protocols. The example above uses UDP multicast. If the connect property is not specified the default JGroups connection will be
      used.
 
@@ -272,7 +272,7 @@ under the License.
     * bootstrapCacheLoaderFactory - Specifies a BootstrapCacheLoader, which is called by a
       cache on initialisation to prepopulate itself.
 
-    * cacheExtensionFactory - Specifies a CacheExtension, a generic mechansim to tie a class
+    * cacheExtensionFactory - Specifies a CacheExtension, a generic mechanism to tie a class
       which holds a reference to a cache to the cache lifecycle.
 
     * cacheExceptionHandlerFactory - Specifies a CacheExceptionHandler, which is called when

@@ -46,6 +46,7 @@
 <script>
 import RouteView from '@/layouts/RouteView'
 import { mixinDevice } from '@/utils/mixin.js'
+import notification from 'ant-design-vue/es/notification'
 
 export default {
   name: 'UserLayout',
@@ -90,7 +91,7 @@ export default {
   },
   methods: {
     onClearNotification () {
-      this.$notification.destroy()
+      notification.destroy()
       this.$store.commit('SET_COUNT_NOTIFY', 0)
     }
   }

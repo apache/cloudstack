@@ -85,12 +85,12 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException {
+    public Project updateProject(long id, String name, String displayText, String newOwnerName) throws ResourceAllocationException {
         return null;
     }
 
     @Override
-    public Project updateProject(long id, String displayText, String newOwnerName, Long userId, Role newRole) throws ResourceAllocationException {
+    public Project updateProject(long id, String name, String displayText, String newOwnerName, Long userId, Role newRole) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }

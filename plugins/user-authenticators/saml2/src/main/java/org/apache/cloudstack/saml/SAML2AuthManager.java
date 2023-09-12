@@ -61,8 +61,8 @@ public interface SAML2AuthManager extends PluggableAPIAuthenticator, PluggableSe
     public static final ConfigKey<String> SAMLDefaultIdentityProviderId = new ConfigKey<String>("Advanced", String.class, "saml2.default.idpid", "https://openidp.feide.no",
             "The default IdP entity ID to use only in case of multiple IdPs", true);
 
-    public static final ConfigKey<String> SAMLSignatureAlgorithm = new ConfigKey<String>("Advanced", String.class, "saml2.sigalg", "SHA1",
-            "The algorithm to use to when signing a SAML request. Default is SHA1, allowed algorithms: SHA1, SHA256, SHA384, SHA512", true);
+    public static final ConfigKey<String> SAMLSignatureAlgorithm = new ConfigKey<>(String.class, "saml2.sigalg", "Advanced", "SHA1",
+            "The algorithm to use to when signing a SAML request. Default is SHA1, allowed algorithms: SHA1, SHA256, SHA384, SHA512", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "SHA1,SHA256,SHA384,SHA512");
 
     public static final ConfigKey<Boolean> SAMLAppendDomainSuffix = new ConfigKey<Boolean>("Advanced", Boolean.class, "saml2.append.idpdomain", "false",
             "If enabled, create account/user dialog with SAML SSO enabled will append the IdP domain to the user or account name in the UI dialog", true);

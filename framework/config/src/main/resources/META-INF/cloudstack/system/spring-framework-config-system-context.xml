@@ -45,6 +45,12 @@
         </property>
     </bean>
 
+    <bean id="configurationGroupDaoImpl"
+          class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
+
+    <bean id="configurationSubGroupDaoImpl"
+          class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
+
     <bean id="scopedConfigStorageRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry" />
 

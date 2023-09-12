@@ -80,6 +80,9 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             for (final NicTO nic : nics) {
                 LibvirtVMDef.InterfaceDef interfaceDef = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", vm.getExtraConfig());
+                if (vm.getDetails() != null) {
+                    libvirtComputingResource.setInterfaceDefQueueSettings(vm.getDetails(), vm.getCpus(), interfaceDef);
+                }
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);

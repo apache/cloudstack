@@ -58,8 +58,14 @@ const user = {
     darkMode: false,
     defaultListViewPageSize: 20,
     countNotify: 0,
+    loginFlag: false,
     logoutFlag: false,
-    customColumns: {}
+    customColumns: {},
+    shutdownTriggered: false,
+    twoFaEnabled: false,
+    twoFaProvider: '',
+    twoFaIssuer: '',
+    customHypervisorName: 'Custom'
   },
 
   mutations: {
@@ -129,8 +135,26 @@ const user = {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
     },
+    SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
+      state.shutdownTriggered = shutdownTriggered
+    },
     SET_LOGOUT_FLAG: (state, flag) => {
       state.logoutFlag = flag
+    },
+    SET_2FA_ENABLED: (state, flag) => {
+      state.twoFaEnabled = flag
+    },
+    SET_2FA_PROVIDER: (state, flag) => {
+      state.twoFaProvider = flag
+    },
+    SET_2FA_ISSUER: (state, flag) => {
+      state.twoFaIssuer = flag
+    },
+    SET_LOGIN_FLAG: (state, flag) => {
+      state.loginFlag = flag
+    },
+    SET_CUSTOM_HYPERVISOR_NAME (state, name) {
+      state.customHypervisorName = name
     }
   },
 
@@ -172,7 +196,10 @@ const user = {
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
           commit('SET_LOGOUT_FLAG', false)
-
+          commit('SET_2FA_ENABLED', (result.is2faenabled === 'true'))
+          commit('SET_2FA_PROVIDER', result.providerfor2fa)
+          commit('SET_2FA_ISSUER', result.issuerfor2fa)
+          commit('SET_LOGIN_FLAG', false)
           notification.destroy()
 
           resolve()
@@ -212,7 +239,7 @@ const user = {
           }).catch(error => {
             reject(error)
           })
-        } else {
+        } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
           api('listZones').then(json => {
             const zones = json.listzonesresponse.zone || []
@@ -259,6 +286,9 @@ const user = {
           if (result && result.defaultuipagesize) {
             commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
           }
+          if (result && result.customhypervisordisplayname) {
+            commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+          }
         }).catch(error => {
           reject(error)
         })
@@ -300,6 +330,10 @@ const user = {
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
         commit('SET_LOGOUT_FLAG', true)
+        commit('SET_2FA_ENABLED', false)
+        commit('SET_2FA_PROVIDER', '')
+        commit('SET_2FA_ISSUER', '')
+        commit('SET_LOGIN_FLAG', false)
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
@@ -325,9 +359,13 @@ const user = {
       if (noticeIdx === -1) {
         noticeArray.push(noticeJson)
       } else {
+        const existingNotice = noticeArray[noticeIdx]
+        noticeJson.timestamp = existingNotice.timestamp
         noticeArray[noticeIdx] = noticeJson
       }
-
+      noticeArray.sort(function (a, b) {
+        return new Date(b.timestamp) - new Date(a.timestamp)
+      })
       commit('SET_HEADER_NOTICES', noticeArray)
     },
     ProjectView ({ commit }, projectid) {
@@ -364,6 +402,15 @@ const user = {
         }).catch(error => {
           reject(error)
         })
+
+        api('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+          if (json.listconfigurationsresponse.configuration !== null) {
+            const config = json.listconfigurationsresponse.configuration[0]
+            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+          }
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
     UpdateConfiguration ({ commit }) {
@@ -381,6 +428,12 @@ const user = {
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
+    },
+    SetLoginFlag ({ commit }, loggedIn) {
+      commit('SET_LOGIN_FLAG', loggedIn)
+    },
+    SetCustomHypervisorName ({ commit }, name) {
+      commit('SET_CUSTOM_HYPERVISOR_NAME', name)
     }
   }
 }

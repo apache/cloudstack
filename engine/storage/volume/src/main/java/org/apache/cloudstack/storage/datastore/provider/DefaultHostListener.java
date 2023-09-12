@@ -152,6 +152,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         updateStoragePoolHostVOAndDetails(poolVO, hostId, mspAnswer);
 
         if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+            storageManager.validateChildDatastoresToBeAddedInUpState(poolVO, mspAnswer.getDatastoreClusterChildren());
             storageManager.syncDatastoreClusterStoragePool(poolId, ((ModifyStoragePoolAnswer) answer).getDatastoreClusterChildren(), hostId);
         }
 

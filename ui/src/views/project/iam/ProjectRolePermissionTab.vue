@@ -61,7 +61,6 @@
         handle=".drag-handle"
         animation="200"
         ghostClass="drag-ghost"
-        tag="transition-group"
         :component-data="{type: 'transition'}"
         item-key="id">
         <template #item="{element}">

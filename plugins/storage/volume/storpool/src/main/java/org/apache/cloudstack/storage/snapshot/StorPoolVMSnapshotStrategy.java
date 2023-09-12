@@ -335,7 +335,7 @@ public class StorPoolVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
                 VolumeInfo vinfo = volFactory.getVolume(volumeObjectTO.getId());
                 if (vinfo.getMaxIops() != null) {
-                    resp = StorPoolUtil.volumeUpadateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
+                    resp = StorPoolUtil.volumeUpdateTags(volumeName, null, vinfo.getMaxIops(), conn, null);
 
                     if (resp.getError() != null) {
                         StorPoolUtil.spLog("Volume was reverted successfully but max iops could not be set due to %s",

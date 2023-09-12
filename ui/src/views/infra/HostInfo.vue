@@ -104,7 +104,14 @@
           </div>
         </div>
       </a-list-item>
-
+      <a-list-item>
+        <div>
+          <strong>{{ $t('label.uefi.supported') }}</strong>
+          <div>
+            {{ host.ueficapability }}
+          </div>
+        </div>
+      </a-list-item>
     </a-list>
   </a-spin>
 </template>

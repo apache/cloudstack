@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -67,4 +68,21 @@ public interface UserAccount extends InternalIdentity {
     public String getExternalEntity();
 
     public void setExternalEntity(String entity);
+
+    public boolean isUser2faEnabled();
+
+    public void setUser2faEnabled(boolean user2faEnabled);
+
+    public String getKeyFor2fa();
+
+    public void setKeyFor2fa(String keyFor2fa);
+
+    public String getUser2faProvider();
+
+    public void setUser2faProvider(String user2faProvider);
+
+    public Map<String, String> getDetails();
+
+    public void setDetails(Map<String, String> details);
+
 }

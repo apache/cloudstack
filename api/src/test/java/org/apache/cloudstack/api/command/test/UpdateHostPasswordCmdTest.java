@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.resource.ResourceService;
@@ -93,5 +94,16 @@ public class UpdateHostPasswordCmdTest extends TestCase {
 
         assertFalse("The attribute updatePasswdOnHost should be false, but it isn't.", updateHostPasswordCmd.getUpdatePasswdOnHost());
         verify(managementServer, times(1)).updateHostPassword(updateHostPasswordCmd);
+    }
+
+    @Test
+    public void testGetUpdatePasswdOnHostValues() {
+        assertFalse(updateHostPasswordCmd.getUpdatePasswdOnHost());
+
+        ReflectionTestUtils.setField(updateHostPasswordCmd, "updatePasswdOnHost", false);
+        assertFalse(updateHostPasswordCmd.getUpdatePasswdOnHost());
+
+        ReflectionTestUtils.setField(updateHostPasswordCmd, "updatePasswdOnHost", true);
+        assertTrue(updateHostPasswordCmd.getUpdatePasswdOnHost());
     }
 }

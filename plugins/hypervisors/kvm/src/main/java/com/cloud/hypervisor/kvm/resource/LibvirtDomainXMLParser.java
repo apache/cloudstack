@@ -249,6 +249,15 @@ public class LibvirtDomainXMLParser {
                     def.setDpdkOvsPath(ovsPath);
                     def.setInterfaceMode(mode);
                 }
+                String multiQueueNumber = getAttrValue("driver", "queues", nic);
+                if (StringUtils.isNotBlank(multiQueueNumber)) {
+                    def.setMultiQueueNumber(Integer.valueOf(multiQueueNumber));
+                }
+
+                String packedOn = getAttrValue("driver", "packed", nic);
+                if (StringUtils.isNotBlank(packedOn)) {
+                    def.setPackedVirtQueues("on".equalsIgnoreCase(packedOn));
+                }
 
                 if (StringUtils.isNotBlank(slot)) {
                     def.setSlot(Integer.parseInt(slot, 16));

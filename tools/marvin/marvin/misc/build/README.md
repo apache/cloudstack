@@ -64,4 +64,3 @@ OR
 
 ### 5. wait for templates and system VMs to be ready
 `$ nosetests -v --with-marvin --marvin-config=deployment.cfg --result-log=result.log testSetupSuccess.py`
-

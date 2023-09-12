@@ -41,6 +41,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -62,6 +63,8 @@ public interface NetworkService {
 
     public static final Integer DEFAULT_MTU = 1500;
     public static final Integer MINIMUM_MTU = 68;
+    public static final String MESSAGE_ASSIGN_NIC_SECONDARY_IP_EVENT = "Message.AssignNicSecondaryIp.Event";
+    public static final String MESSAGE_RELEASE_NIC_SECONDARY_IP_EVENT = "Message.ReleaseNicSecondaryIp.Event";
 
     public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.public.interface.max.mtu", "1500", "The maximum value the MTU can have on the VR's public interfaces",
@@ -241,4 +244,6 @@ public interface NetworkService {
     boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd);
 
     boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
+
+    void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) throws InvalidParameterValueException;
 }

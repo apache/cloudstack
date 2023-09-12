@@ -44,6 +44,13 @@ public class ByteScaleUtilsTest {
     }
 
     @Test
+    public void validateBytesToGib(){
+        long gib = 3000L;
+        long b = 1024L * 1024L * 1024L * gib;
+        Assert.assertEquals(gib, ByteScaleUtils.bytesToGibibytes(b));
+    }
+
+    @Test
     public void validateMebibytesToBytesIfIntTimesIntThenMustExtrapolateIntMaxValue() {
         int mib = 3000;
         long bytes = 1024L * 1024L * mib;

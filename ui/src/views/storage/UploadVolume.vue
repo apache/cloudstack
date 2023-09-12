@@ -41,7 +41,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="$t('label.volumename')"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="zoneId" ref="zoneId">
           <template #label>
@@ -70,9 +70,9 @@
           <a-select
             v-model:value="form.format"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
@@ -90,12 +90,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="(offering, index) in offerings"
               :value="offering.id"
-              :key="index">
+              :key="index"
+              :label="offering.displaytext || offering.name">
               {{ offering.displaytext || offering.name }}
             </a-select-option>
           </a-select>
@@ -118,12 +119,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="$t('label.domainid')"
             @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -135,9 +136,9 @@
           <a-select
             v-model:value="form.account"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.account')"
             @change="val => { handleAccountChange(val) }">
@@ -210,8 +211,9 @@ export default {
       this.loading = true
       api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
-        this.selectedZoneId = this.zones[0].id || ''
-        this.fetchDiskOfferings(this.selectedZoneId)
+        this.zones = this.zones.filter(zone => zone.type !== 'Edge')
+        this.form.zoneId = this.zones[0].id || ''
+        this.fetchDiskOfferings(this.form.zoneId)
       }).finally(() => {
         this.loading = false
       })

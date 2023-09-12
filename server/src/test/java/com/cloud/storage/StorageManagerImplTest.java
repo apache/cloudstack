@@ -16,20 +16,35 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.Host;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
 
+    @Mock
+    VolumeDao _volumeDao;
+
+    @Mock
+    VMInstanceDao vmInstanceDao;
+
     @Spy
+    @InjectMocks
     private StorageManagerImpl storageManagerImpl;
 
     @Test
@@ -58,4 +73,59 @@ public class StorageManagerImplTest {
         String localStoragePoolName = storageManagerImpl.createLocalStoragePoolName(hostMock, storagePoolInfoMock);
         Assert.assertEquals(expectedLocalStorageName, localStoragePoolName);
     }
+
+    private VolumeVO mockVolumeForIsVolumeSuspectedDestroyDuplicateTest() {
+        VolumeVO volumeVO = new VolumeVO("data", 1L, 1L, 1L, 1L, 1L, "data", "data", Storage.ProvisioningType.THIN, 1, null, null, "data", Volume.Type.DATADISK);
+        volumeVO.setPoolId(1L);
+        return volumeVO;
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateNoPool() {
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        volume.setPoolId(null);
+        Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateNoPath() {
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateNoVmId() {
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        volume.setInstanceId(null);
+        Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateNoVm() {
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateNoVmVolumes() {
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(Mockito.mock(VMInstanceVO.class));
+        Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(new ArrayList<>());
+        Assert.assertFalse(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void testIsVolumeSuspectedDestroyDuplicateTrue() {
+        Long poolId = 1L;
+        String path = "data";
+        VolumeVO volume = mockVolumeForIsVolumeSuspectedDestroyDuplicateTest();
+        volume.setPoolId(poolId);
+        Mockito.when(vmInstanceDao.findById(1L)).thenReturn(Mockito.mock(VMInstanceVO.class));
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(poolId);
+        Mockito.when(volumeVO.getPath()).thenReturn(path);
+        Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(volumeVO, Mockito.mock(VolumeVO.class)));
+        Assert.assertTrue(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
 }

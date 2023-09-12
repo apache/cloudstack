@@ -138,6 +138,10 @@ public class DataCenterVO implements DataCenter {
     @Column(name = "sort_key")
     int sortKey;
 
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
+    private DataCenter.Type type;
+
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -470,6 +474,15 @@ public class DataCenterVO implements DataCenter {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Zone;
+    }
+
+    @Override
+    public DataCenter.Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

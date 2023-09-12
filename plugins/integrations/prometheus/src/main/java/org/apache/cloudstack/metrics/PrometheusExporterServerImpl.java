@@ -57,7 +57,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                 response = prometheusExporter.getMetrics();
                 responseCode = 200;
             }
-            httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
+            httpExchange.getResponseHeaders().set("content-type", "text/plain");
             httpExchange.sendResponseHeaders(responseCode, response.length());
             final OutputStream os = httpExchange.getResponseBody();
             os.write(response.getBytes());

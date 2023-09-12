@@ -22,10 +22,12 @@ import java.util.Map;
 
 import com.cloud.user.UserData;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
+import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
@@ -63,6 +65,7 @@ import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
@@ -101,6 +104,13 @@ public interface ManagementService {
      * @return map of configuration name/values
      */
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
+
+    /**
+     * returns the the configuration groups
+     *
+     * @return list of configuration groups
+     */
+    Pair<List<? extends ConfigurationGroup>, Integer> listConfigurationGroups(ListCfgGroupsByCmd cmd);
 
     /**
      * Searches for Clusters by the specified search criteria
@@ -179,6 +189,12 @@ public interface ManagementService {
      */
     GuestOSHypervisor getAddedGuestOsMapping(Long guestOsHypervisorId);
 
+    /**
+     * Get hypervisor guest OS names
+     *
+     * @return the hypervisor guest OS name that can be used for mapping, with guest OS name, and the name of guest OS specific to hypervisor
+     */
+    List<Pair<String, String>> getHypervisorGuestOsNames(GetHypervisorGuestOsNamesCmd getHypervisorGuestOsNamesCmd);
     /**
      * Adds a new guest OS
      *

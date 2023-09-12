@@ -50,16 +50,16 @@ public class CreatePodCmd extends BaseCmd {
                description = "the Zone ID in which the Pod will be created")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the starting IP address for the Pod")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the starting IP address for the Pod")
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask for the Pod")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask for the Pod")
     private String netmask;
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for the Pod")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway for the Pod")
     private String gateway;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Pod for allocation of new resources")

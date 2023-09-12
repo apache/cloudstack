@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.crypto.PBEParametersGenerator;
@@ -32,7 +33,6 @@ import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Base64;
 
-import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.ConstantTimeComparator;

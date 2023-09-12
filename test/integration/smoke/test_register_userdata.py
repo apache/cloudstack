@@ -31,6 +31,8 @@ from marvin.lib.common import get_test_template, get_zone, list_virtual_machines
 from marvin.lib.utils import (validateList, cleanup_resources)
 from nose.plugins.attrib import attr
 from marvin.codes import PASS,FAIL
+import base64
+import email
 
 
 from marvin.lib.common import (get_domain, get_template)
@@ -589,21 +591,23 @@ class TestRegisteredUserdata(cloudstackTestCase):
             2. Link a userdata to template with override policy is append
             3. Deploy a VM with that template and also by passing another userdata id
             4. Since the override policy is append, userdata passed during VM deployment will be appended to template's
-            userdata and configured to VM. Verify the same by SSH into VM.
+            userdata and configured to VM as a multipart MIME userdata. Verify the same by SSH into VM.
         """
 
+        shellscript_userdata = str("#!/bin/bash\ndate > /provisioned")
         self.apiUserdata = UserData.register(
             self.apiclient,
             name="ApiUserdata",
-            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            userdata=base64.encodebytes(shellscript_userdata.encode()).decode(),
             account=self.account.name,
             domainid=self.account.domainid
         )
 
+        cloudconfig_userdata = str("#cloud-config\npassword: atomic\nchpasswd: { expire: False }\nssh_pwauth: True")
         self.templateUserdata = UserData.register(
             self.apiclient,
             name="TemplateUserdata",
-            userdata="VGVtcGxhdGVVc2VyRGF0YQ==", #TemplateUserData
+            userdata=base64.encodebytes(cloudconfig_userdata.encode()).decode(),
             account=self.account.name,
             domainid=self.account.domainid
         )
@@ -700,10 +704,32 @@ class TestRegisteredUserdata(cloudstackTestCase):
         cmd = "curl http://%s/latest/user-data" % vr_ip
         res = ssh.execute(cmd)
         self.debug("Verifying userdata in the VR")
-        self.assertEqual(
-            str(res[0]),
-            "TemplateUserDataAPIuserdata",
-            "Failed to match userdata"
+        self.assertTrue(
+            res is not None and len(res) > 0,
+            "Resultant userdata is not valid"
+        )
+        msg = email.message_from_string('\n'.join(res))
+        self.assertTrue(
+            msg.is_multipart(),
+            "Failed to match multipart userdata"
+        )
+        shellscript_userdata_found = False
+        cloudconfig_userdata_found = False
+        for part in msg.get_payload():
+            content_type = part.get_content_type()
+            payload = part.get_payload(decode=True).decode()
+            if "shellscript" in content_type:
+                shellscript_userdata_found = shellscript_userdata == payload
+            elif "cloud-config" in content_type:
+                cloudconfig_userdata_found = cloudconfig_userdata == payload
+
+        self.assertTrue(
+            shellscript_userdata_found,
+            "Failed to find shellscript userdata in append result"
+        )
+        self.assertTrue(
+            cloudconfig_userdata_found,
+            "Failed to find cloud-config userdata in append result"
         )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)
@@ -762,3 +788,69 @@ class TestRegisteredUserdata(cloudstackTestCase):
             self.apiclient,
             templateid=self.template.id
         )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)
+    def test_user_userdata_crud(self):
+        """Test following operations as a normal user:
+            1. Register userdata
+            2. List userdata
+            3. Link userdata to a template, unlink
+            4. Delete userdata.
+        """
+        self.user = self.account.user[0]
+        self.userapiclient = self.testClient.getUserApiClient(
+            self.user.username,
+            self.domain.name)
+
+        self.userdata = UserData.register(
+            self.userapiclient,
+            name="UserdataName",
+            userdata="VGVzdFVzZXJEYXRh",
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+        self.cleanup.append(self.userdata)
+
+        list_userdata = UserData.list(self.apiclient, id=self.userdata.userdata.id, listall=True)
+        self.assertNotEqual(
+            len(list_userdata),
+            0,
+            "List userdata was empty"
+        )
+        userdata = list_userdata[0]
+        self.assertEqual(
+            userdata.id,
+            self.userdata.userdata.id,
+            "userdata ids do not match"
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.userdata.userdata.id
+        )
+        self.assertEqual(
+            self.userdata.userdata.id,
+            self.template.userdataid,
+            "Match userdata id in template response"
+        )
+        self.assertEqual(
+            self.template.userdatapolicy,
+            "ALLOWOVERRIDE",
+            "Match default userdata override policy in template response"
+        )
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+        self.assertEqual(
+            self.template.userdataid,
+            None,
+            "Check userdata id in template response is None"
+        )
+
+        UserData.delete(
+            self.userapiclient,
+            id=self.userdata.userdata.id
+        )
+        self.cleanup.remove(self.userdata)

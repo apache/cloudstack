@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationGroupResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
@@ -133,6 +135,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.config.ConfigurationGroup;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
@@ -243,6 +246,8 @@ public interface ResponseGenerator {
     ServiceOfferingResponse createServiceOfferingResponse(ServiceOffering offering);
 
     ConfigurationResponse createConfigurationResponse(Configuration cfg);
+
+    ConfigurationGroupResponse createConfigurationGroupResponse(ConfigurationGroup cfgGroup);
 
     SnapshotResponse createSnapshotResponse(Snapshot snapshot);
 
@@ -458,6 +463,8 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
+
+    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 

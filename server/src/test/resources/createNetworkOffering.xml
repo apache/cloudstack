@@ -70,4 +70,6 @@
     <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
     <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
     <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
+    <bean id="configurationGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl" />
+    <bean id="configurationSubGroupDaoImpl" class="org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl" />
 </beans>

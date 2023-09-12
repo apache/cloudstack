@@ -77,7 +77,7 @@ public class VeeamClientTest {
     public void testVeeamJobs() {
         wireMockRule.stubFor(get(urlMatching(".*/jobs"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/xml")
+                        .withHeader("content-type", "application/xml")
                         .withStatus(200)
                         .withBody("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                                 "<EntityReferences xmlns=\"http://www.veeam.com/ent/v1.0\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +

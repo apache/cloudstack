@@ -159,7 +159,7 @@ public interface CapacityManager {
     boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed);
 
     /**
-     * Check if cluster will cross threshold if the cpu/memory requested are accomodated
+     * Check if cluster will cross threshold if the cpu/memory requested are accommodated
      * @param clusterId the clusterId to check
      * @param cpuRequested cpu requested
      * @param ramRequested cpu requested

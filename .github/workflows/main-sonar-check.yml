@@ -22,8 +22,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+  pull-requests: write # for sonar to comment on pull-request
+
 jobs:
   build:
+    if: github.repository == 'apache/cloudstack'
     name: Main Sonar JaCoCo Build
     runs-on: ubuntu-22.04
     steps:
@@ -60,4 +65,4 @@ jobs:
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
-          mvn -P quality -Dsimulator -Dnoredist clean install org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack
+          mvn -T$(nproc) -P quality -Dsimulator -Dnoredist clean install org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack

@@ -33,7 +33,7 @@ public class DownloadAnswerTest {
     Gson gson = GsonHelper.getGson();
 
     VMTemplateStorageResourceAssoc.Status status = VMTemplateStorageResourceAssoc.Status.DOWNLOADED;
-    DownloadAnswer answer = new DownloadAnswer("nothin wrong", status);
+    DownloadAnswer answer = new DownloadAnswer("nothing wrong", status);
 
     @Test
     public void redeserialise ()

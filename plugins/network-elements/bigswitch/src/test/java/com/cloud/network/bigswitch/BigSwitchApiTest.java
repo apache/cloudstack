@@ -270,7 +270,7 @@ public class BigSwitchApiTest {
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
         when(header.getValue()).thenReturn("text/html");
-        when(_method.getResponseHeader("Content-type")).thenReturn(header);
+        when(_method.getResponseHeader("content-type")).thenReturn(header);
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         when(_method.isRequestSent()).thenReturn(true);
         try {
@@ -288,7 +288,7 @@ public class BigSwitchApiTest {
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
         when(header.getValue()).thenReturn("text/html");
-        when(_method.getResponseHeader("Content-type")).thenReturn(header);
+        when(_method.getResponseHeader("content-type")).thenReturn(header);
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         try {
             _api.executeCreateObject(network, "/", Collections.<String, String> emptyMap());
@@ -335,7 +335,7 @@ public class BigSwitchApiTest {
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
         when(header.getValue()).thenReturn("text/html");
-        when(_method.getResponseHeader("Content-type")).thenReturn(header);
+        when(_method.getResponseHeader("content-type")).thenReturn(header);
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         when(_method.isRequestSent()).thenReturn(true);
         try {
@@ -373,7 +373,7 @@ public class BigSwitchApiTest {
         when(_method.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         Header header = mock(Header.class);
         when(header.getValue()).thenReturn("text/html");
-        when(_method.getResponseHeader("Content-type")).thenReturn(header);
+        when(_method.getResponseHeader("content-type")).thenReturn(header);
         when(_method.getResponseBodyAsString()).thenReturn("Off to timbuktu, won't be back later.");
         when(_method.isRequestSent()).thenReturn(true);
         try {

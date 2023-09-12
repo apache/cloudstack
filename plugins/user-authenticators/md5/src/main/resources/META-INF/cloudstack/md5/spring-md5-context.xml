@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="MD5UserAuthenticator" class="com.cloud.server.auth.MD5UserAuthenticator">
+    <bean id="MD5UserAuthenticator" class="org.apache.cloudstack.auth.MD5UserAuthenticator">
         <property name="name" value="MD5"/>
     </bean>
     

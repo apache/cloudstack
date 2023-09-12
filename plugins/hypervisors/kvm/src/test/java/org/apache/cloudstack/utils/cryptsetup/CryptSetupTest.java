@@ -23,6 +23,8 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -32,6 +34,8 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
+
+@RunWith(MockitoJUnitRunner.class)
 public class CryptSetupTest {
     CryptSetup cryptSetup = new CryptSetup();
 
@@ -51,7 +55,7 @@ public class CryptSetupTest {
         file.close();
 
         String filePath = path.toAbsolutePath().toString();
-        PassphraseVO passphrase = new PassphraseVO();
+        PassphraseVO passphrase = new PassphraseVO(true);
 
         cryptSetup.luksFormat(passphrase.getPassphrase(), CryptSetup.LuksType.LUKS, filePath);
 

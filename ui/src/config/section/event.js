@@ -29,6 +29,9 @@ export default {
     title: 'label.event.timeline',
     param: 'startid'
   }],
+  filters: () => {
+    return ['active', 'archived']
+  },
   actions: [
     {
       api: 'archiveEvents',
@@ -45,6 +48,12 @@ export default {
         ids: {
           value: (record) => { return record.id }
         }
+      },
+      show: (record) => {
+        return !(record.archived)
+      },
+      groupShow: (selectedItems) => {
+        return selectedItems.filter(x => { return !(x.archived) }).length > 0
       }
     },
     {

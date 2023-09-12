@@ -1465,7 +1465,7 @@ class TestUserLogin(cloudstackTestCase):
                                       "secondarystoragetotal", "secondarystorageavailable"
                                       ]
 
-        self.debug("Creating a domain for testing list domain reponse")
+        self.debug("Creating a domain for testing list domain response")
         domain = Domain.create(
             self.apiclient,
             self.services["domain"],

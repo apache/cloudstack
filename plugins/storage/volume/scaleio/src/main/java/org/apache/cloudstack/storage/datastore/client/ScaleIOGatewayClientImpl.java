@@ -317,7 +317,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
             final HttpPost request = new HttpPost(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
-            request.setHeader("Content-type", "application/json");
+            request.setHeader("content-type", "application/json");
             if (obj != null) {
                 if (obj instanceof String) {
                     request.setEntity(new StringEntity((String) obj));
@@ -738,11 +738,20 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         try {
             unmapVolumeFromAllSdcs(volumeId);
         } catch (Exception ignored) {}
-        Boolean removeVolumeStatus = post(
-                "/instances/Volume::" + volumeId + "/action/removeVolume",
-                "{\"removeMode\":\"ONLY_ME\"}", Boolean.class);
-        if (removeVolumeStatus != null) {
-            return removeVolumeStatus;
+
+        try {
+            Boolean removeVolumeStatus = post(
+                    "/instances/Volume::" + volumeId + "/action/removeVolume",
+                    "{\"removeMode\":\"ONLY_ME\"}", Boolean.class);
+            if (removeVolumeStatus != null) {
+                return removeVolumeStatus;
+            }
+        } catch (Exception ex) {
+            if (ex instanceof ServerApiException && ex.getMessage().contains("Could not find the volume")) {
+                LOG.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
+                return true;
+            }
+            throw ex;
         }
         return false;
     }
@@ -761,7 +770,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             }
 
             String srcPoolId = volume.getStoragePoolId();
-            LOG.debug("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
+            LOG.info("Migrating the volume: " + srcVolumeId + " on the src pool: " + srcPoolId + " to the dest pool: " + destPoolId +
                     " in the same PowerFlex cluster");
 
             post("/instances/Volume::" + srcVolumeId + "/action/migrateVTree",

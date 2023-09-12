@@ -25,19 +25,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import java.util.Scanner;
 
-import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -45,10 +39,9 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.Networks;
 import com.cloud.utils.ExecutionResult;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtNetworkElementCommandWrapperTest {
     private static final String fullfile = "<domain type='kvm' id='143'>\n"
             + "  <name>r-3-VM</name>\n"
@@ -229,8 +222,6 @@ public class LibvirtNetworkElementCommandWrapperTest {
             "Inactive:         949392 kB\n";
     @Before
     public void setUp() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource() {
             {

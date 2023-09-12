@@ -50,6 +50,11 @@ import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.shutdown.ShutdownManager;
+import org.apache.cloudstack.shutdown.command.CancelShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.PrepareForShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.BaseShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
@@ -129,6 +134,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     private HAConfigDao haConfigDao;
     @Inject
     private CAManager caService;
+    @Inject
+    private ShutdownManager shutdownManager;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -136,7 +143,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     protected final ConfigKey<Boolean> EnableLB = new ConfigKey<Boolean>(Boolean.class, "agent.lb.enabled", "Advanced", "false", "Enable agent load balancing between management server nodes", true);
     protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<Double>(Double.class, "agent.load.threshold", "Advanced", "0.7",
-            "What percentage of the agents can be held by one management server before load balancing happens", true);
+            "What percentage of the agents can be held by one management server before load balancing happens", true, EnableLB.key());
     protected final ConfigKey<Integer> LoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16", "How many agents to connect to in each round", true);
     protected final ConfigKey<Integer> ScanInterval = new ConfigKey<Integer>(Integer.class, "direct.agent.scan.interval", "Advanced", "90", "Interval between scans to load agents", false,
             ConfigKey.Scope.Global, 1000);
@@ -716,11 +723,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
             } catch (final ClassNotFoundException e) {
-                final String message = String.format("ClassNotFoundException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("ClassNotFoundException occurred when executing tasks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } catch (final UnsupportedVersionException e) {
-                final String message = String.format("UnsupportedVersionException occurred when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("UnsupportedVersionException occurred when executing tasks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } finally {
@@ -1275,7 +1282,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 cmds = _gson.fromJson(pdu.getJsonPackage(), Command[].class);
             } catch (final Throwable e) {
                 assert false;
-                s_logger.error("Excection in gson decoding : ", e);
+                s_logger.error("Exception in gson decoding : ", e);
             }
 
             if (cmds.length == 1 && cmds[0] instanceof ChangeAgentCommand) { // intercepted
@@ -1341,8 +1348,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 return _gson.toJson(answers);
             } else if (cmds.length == 1 && cmds[0] instanceof ScheduleHostScanTaskCommand) {
                 final ScheduleHostScanTaskCommand cmd = (ScheduleHostScanTaskCommand)cmds[0];
-                final String response = handleScheduleHostScanTaskCommand(cmd);
-                return response;
+                return handleScheduleHostScanTaskCommand(cmd);
+            } else if (cmds.length == 1 && cmds[0] instanceof BaseShutdownManagementServerHostCommand) {
+                final BaseShutdownManagementServerHostCommand cmd = (BaseShutdownManagementServerHostCommand)cmds[0];
+                return handleShutdownManagementServerHostCommand(cmd);
             }
 
             try {
@@ -1376,6 +1385,36 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             return null;
         }
 
+        private String handleShutdownManagementServerHostCommand(BaseShutdownManagementServerHostCommand cmd) {
+            if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
+                s_logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
+                try {
+                    shutdownManager.prepareForShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof TriggerShutdownManagementServerHostCommand) {
+                s_logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
+                try {
+                    shutdownManager.triggerShutdown();
+                    return "Successfully triggered shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof CancelShutdownManagementServerHostCommand) {
+                s_logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
+                try {
+                    shutdownManager.cancelShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            throw new CloudRuntimeException("Unknown BaseShutdownManagementServerHostCommand command received : " + cmd);
+        }
     }
 
     public boolean executeAgentUserRequest(final long agentId, final Event event) throws AgentUnavailableException {

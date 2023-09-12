@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -61,7 +62,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the project")
     private String name;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "display text of the project")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING,  description = "The display text of the project, defaults to the 'name´.")
     private String displayText;
 
     // ///////////////////////////////////////////////////
@@ -98,7 +99,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     }
 
     public String getDisplayText() {
-        return displayText;
+        return StringUtils.isEmpty(displayText) ? name : displayText;
     }
 
     @Override

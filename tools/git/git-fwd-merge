@@ -28,6 +28,9 @@ if [ -z ${branch} ]; then
   exit 1
 fi
 
+# save old commit
+oldhead=$(git show | grep commit |  cut -d ' ' -f 2)
+
 # Construct merge message
 currentBranch=$(git branch | grep "^*" | sed -e "s/^[*] //")
 echo "Merge release branch ${branch} to ${currentBranch}" > ${tmpMessageFile}
@@ -53,9 +56,9 @@ fi
 rm -fr ${tmpMessageFile}
 
 apache_remote=$(git remote -v | grep -E "git-wip-us\.apache\.org" | head -n 1 | cut -f1)
-echo "INFO: Actual diff in commits is: (running git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch})"
+echo "INFO: Actual diff in commits is: (running git log --pretty=oneline --abbrev-commit ${oldhead}..${currentBranch})"
 echo
-git log --pretty=oneline --abbrev-commit ${apache_remote}/${currentBranch}..${currentBranch}
+git log --pretty=oneline --abbrev-commit ${oldhead}..${currentBranch}
 
 # What's next
 echo "We're done! Please double check using 'git log -p' and 'git push' when you're sure."

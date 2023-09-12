@@ -34,6 +34,7 @@ import account from '@/config/section/account'
 import domain from '@/config/section/domain'
 import role from '@/config/section/role'
 import infra from '@/config/section/infra'
+import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
 import tools from '@/config/section/tools'
@@ -44,7 +45,7 @@ function generateRouterMap (section) {
   var map = {
     name: section.name,
     path: '/' + section.name,
-    hidden: section.hidden,
+    hidden: 'show' in section ? !section.show() : section.hidden,
     meta: {
       title: section.title,
       icon: section.icon,
@@ -235,6 +236,7 @@ export function asyncRouterMap () {
       generateRouterMap(account),
       generateRouterMap(domain),
       generateRouterMap(infra),
+      generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
       generateRouterMap(tools),
@@ -308,6 +310,24 @@ export const constantRouterMap = [
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/Login')
       }
     ]
+  },
+  {
+    path: '/verify2FA',
+    name: 'VerifyTwoFa',
+    meta: {
+      title: 'label.two.factor.authentication',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/VerifyTwoFa')
+  },
+  {
+    path: '/setup2FA',
+    name: 'SetupTwoFaAtLogin',
+    meta: {
+      title: 'label.two.factor.authentication',
+      hidden: true
+    },
+    component: () => import('@/views/dashboard/SetupTwoFaAtLogin')
   },
   {
     path: '/403',

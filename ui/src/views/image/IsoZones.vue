@@ -35,43 +35,45 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <template #zonename="{record}">
-        <span v-if="fetchZoneIcon(record.zoneid)">
-          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
-        </span>
-        <global-outlined v-else style="margin-right: 5px" />
-        <span> {{ record.zonename }} </span>
-      </template>
-      <template #isready="{ record }">
-        <span v-if="record.isready">{{ $t('label.yes') }}</span>
-        <span v-else>{{ $t('label.no') }}</span>
-      </template>
-      <template #action="{ record }">
-        <span style="margin-right: 5px">
-          <tooltip-button
-            :tooltip="$t('label.action.copy.iso')"
-            :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-            icon="copy-outlined"
-            :loading="copyLoading"
-            @click="showCopyIso(record)" />
-        </span>
-        <span style="margin-right: 5px">
-          <a-popconfirm
-            v-if="'deleteIso' in $store.getters.apis"
-            placement="topRight"
-            :title="$t('message.action.delete.iso')"
-            :ok-text="$t('label.yes')"
-            :cancel-text="$t('label.no')"
-            :loading="deleteLoading"
-            @confirm="deleteIso(record)"
-          >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'zonename'">
+          <span v-if="fetchZoneIcon(record.zoneid)">
+            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          </span>
+          <global-outlined v-else style="margin-right: 5px" />
+          <span> {{ record.zonename }} </span>
+        </template>
+        <template v-if="column.key === 'isready'">
+          <span v-if="record.isready">{{ $t('label.yes') }}</span>
+          <span v-else>{{ $t('label.no') }}</span>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <span style="margin-right: 5px">
             <tooltip-button
-              :tooltip="$t('label.action.delete.iso')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
-        </span>
+              :tooltip="$t('label.action.copy.iso')"
+              :disabled="!('copyIso' in $store.getters.apis && record.isready)"
+              icon="copy-outlined"
+              :loading="copyLoading"
+              @click="showCopyIso(record)" />
+          </span>
+          <span style="margin-right: 5px">
+            <a-popconfirm
+              v-if="'deleteIso' in $store.getters.apis"
+              placement="topRight"
+              :title="$t('message.action.delete.iso')"
+              :ok-text="$t('label.yes')"
+              :cancel-text="$t('label.no')"
+              :loading="deleteLoading"
+              @confirm="deleteIso(record)"
+            >
+              <tooltip-button
+                :tooltip="$t('label.action.delete.iso')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </span>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -221,27 +223,27 @@ export default {
     this.initForm()
     this.columns = [
       {
+        key: 'zonename',
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename',
-        slots: { customRender: 'zonename' }
+        dataIndex: 'zonename'
       },
       {
         title: this.$t('label.status'),
         dataIndex: 'status'
       },
       {
+        key: 'isready',
         title: this.$t('label.isready'),
-        dataIndex: 'isready',
-        slots: { customRender: 'isready' }
+        dataIndex: 'isready'
       }
     ]
     if (this.isActionPermitted()) {
       this.columns.push({
+        key: 'actions',
         title: '',
-        dataIndex: 'action',
+        dataIndex: 'actions',
         fixed: 'right',
-        width: 100,
-        slots: { customRender: 'action' }
+        width: 100
       })
     }
 
@@ -355,9 +357,9 @@ export default {
     deleteIsos (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

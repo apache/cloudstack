@@ -289,7 +289,7 @@ usageServerStatus NOTIFICATION-TYPE
         "No usage server process running"
     ::= { csAlertTraps 14 }
 
-managmentNode NOTIFICATION-TYPE
+managementNode NOTIFICATION-TYPE
     OBJECTS {
             dataCenterId,
             podId,
@@ -512,7 +512,7 @@ csAlertNotificationsGroup NOTIFICATION-GROUP
                     routingConnection,
                     storageIssueSystemVms,
                     usageServerStatus,
-                    managmentNode,
+                    managementNode,
                     domainRouterMigrate,
                     consoleProxyMigrate,
                     userVmMigrate,

@@ -35,11 +35,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="autoscaleuserid">
-            <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+            <a-select-option
+              v-for="(user, index) in usersList"
+              :value="user.id"
+              :key="index"
+              :label="user.username">
               {{ user.username }}
             </a-select-option>
           </a-select>
@@ -69,11 +73,58 @@
           {{ getServiceOfferingName(serviceofferingid) }}
         </div>
       </div>
+      <div class="form" v-if="userdataid">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdataid')"/>
+          </div>
+          {{ userdataid }}
+        </div>
+      </div>
+      <div class="form" v-if="userdataname">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdataname')"/>
+          </div>
+          {{ userdataname }}
+        </div>
+      </div>
+      <div class="form" v-if="userdatadetails">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdatadetails')"/>
+          </div>
+          {{ userdatadetails }}
+        </div>
+      </div>
+      <div class="form" v-if="userdatapolicy">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdatapolicy')"/>
+          </div>
+          {{ userdatapolicy }}
+        </div>
+      </div>
+      <div class="form">
+        <div class="form__item">
+          <div class="form__label">
+            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
+          </div>
+          <a-textarea v-model:value="userdata" rows="5" :disabled="true">
+          </a-textarea>
+        </div>
+      </div>
       <div class="form">
         <div class="form__item">
           <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="editProfileModalVisible = true">
             <template #icon><edit-outlined /></template>
             {{ $t('label.edit.autoscale.vmprofile') }}
+          </a-button>
+        </div>
+        <div class="form__item">
+          <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'DISABLED'" type="primary" @click="showUpdateUserDataForm = true">
+            <template #icon><solution-outlined /></template>
+            {{ $t('label.reset.userdata.on.autoscale.vm.group') }}
           </a-button>
         </div>
       </div>
@@ -90,9 +141,9 @@
           <a-select
             style="width: 100%"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="newParam.name">
@@ -126,13 +177,8 @@
       :dataSource="allParams"
       :pagination="false"
       :rowKey="record => record.name">
-      <template #name="{ record }">
-        {{ record.name }}
-      </template>
-      <template #threshold="{ record }">
-        {{ record.threshold }}
-      </template>
-      <template #actions="{ record }">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'actions'">
         <a-popconfirm
           :title="$t('label.delete') + '?'"
           @confirm="deleteParam(record.name)"
@@ -146,6 +192,7 @@
             :danger="true"
             icon="delete-outlined" />
         </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -166,11 +213,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
             v-focus="true"
             v-model:value="autoscaleuserid">
-            <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+            <a-select-option
+              v-for="(user, index) in usersList"
+              :value="user.id"
+              :key="index"
+              :label="user.username">
               {{ user.username }}
             </a-select-option>
           </a-select>
@@ -194,11 +245,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
             v-focus="true"
             v-model:value="templateid">
-            <a-select-option v-for="(template, index) in templatesList" :value="template.id" :key="index">
+            <a-select-option
+              v-for="(template, index) in templatesList"
+              :value="template.id"
+              :key="index"
+              :label="template.name">
               {{ template.name }}
             </a-select-option>
           </a-select>
@@ -214,23 +269,18 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
             v-focus="true"
             v-model:value="serviceofferingid">
-            <a-select-option v-for="(offering, index) in serviceOfferingsList" :value="offering.id" :key="index">
+            <a-select-option
+              v-for="(offering, index) in serviceOfferingsList"
+              :value="offering.id"
+              :key="index"
+              :label="offering.name">
               {{ offering.name }}
             </a-select-option>
           </a-select>
-        </div>
-      </div>
-      <div class="form">
-        <div class="form__item">
-          <div class="form__label">
-            <tooltip-label :title="$t('label.userdata')" :tooltip="createAutoScaleVmProfileApiParams.userdata.description"/>
-          </div>
-          <a-textarea v-model:value="userdata">
-          </a-textarea>
         </div>
       </div>
       <div :span="24" class="action-button">
@@ -238,18 +288,36 @@
         <a-button :loading="loading" ref="submit" type="primary" @click="updateAutoScaleVmProfile">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
+
+    <a-modal
+      :visible="showUpdateUserDataForm"
+      :title="$t('label.reset.userdata.on.autoscale.vm.group')"
+      :closable="true"
+      :maskClosable="false"
+      :footer="null"
+      @cancel="showUpdateUserDataForm = false"
+      centered
+      width="auto">
+      <reset-user-data
+        :resource="{ ...resource, ...{ resetUserDataApiName: 'updateAutoScaleVmProfile', resetUserDataResourceId: this.resource.vmprofileid, templateid: this.templateid}}"
+        @close-action="showUpdateUserDataForm = false"
+      />
+    </a-modal>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import ResetUserData from '@views/compute/ResetUserData'
 
 export default {
   name: 'conditionsTab',
   components: {
+    ResetUserData,
     Status,
     TooltipButton,
     TooltipLabel
@@ -262,15 +330,20 @@ export default {
   },
   data () {
     return {
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       loading: true,
       editProfileModalVisible: false,
+      showUpdateUserDataForm: false,
       profileid: null,
       autoscaleuserid: null,
       expungevmgraceperiod: null,
       templateid: null,
       serviceofferingid: null,
       userdata: null,
+      userdataid: null,
+      userdataname: null,
+      userdatadetails: null,
+      userdatapolicy: null,
       usersList: [],
       templatesList: [],
       serviceOfferingsList: [],
@@ -291,8 +364,8 @@ export default {
           dataIndex: 'value'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          title: this.$t('label.actions'),
+          key: 'actions'
         }
       ]
     }
@@ -344,21 +417,29 @@ export default {
       })
     },
     fetchTemplateData () {
-      api('listTemplates', {
-        templatefilter: 'all',
+      const params = {
         listall: 'true',
         domainid: this.resource.domainid,
         account: this.resource.account
-      }).then(json => {
+      }
+      if (isAdmin()) {
+        params.templatefilter = 'all'
+      } else {
+        params.templatefilter = 'executable'
+      }
+      api('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
     },
     fetchServiceOfferingData () {
-      api('listServiceOfferings', {
+      const params = {
         listall: 'true',
-        isrecursive: 'true',
         issystem: 'false'
-      }).then(json => {
+      }
+      if (isAdminOrDomainAdmin()) {
+        params.isrecursive = 'true'
+      }
+      api('listServiceOfferings', params).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
@@ -375,6 +456,11 @@ export default {
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
         this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
+        this.userdataid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataid
+        this.userdataname = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdataname
+        this.userdatadetails = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdatadetails
+        this.userdatapolicy = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdatapolicy
+
         const counterparam = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.counterparam || {}
         const otherdeployparams = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.otherdeployparams || {}
         this.finalizeParams(counterparam, otherdeployparams)
@@ -509,13 +595,10 @@ export default {
       if (this.autoscaleuserid) {
         params.autoscaleuserid = this.autoscaleuserid
       }
-      if (this.userdata && this.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
-      }
 
-      const httpMethod = params.userdata ? 'POST' : 'GET'
-      const args = httpMethod === 'POST' ? {} : params
-      const data = httpMethod === 'POST' ? params : {}
+      const httpMethod = 'GET'
+      const args = params
+      const data = {}
 
       api('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
         this.$pollJob({
@@ -529,14 +612,6 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-    },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
     },
     decodeUserData (userdata) {
       const decodedData = Buffer.from(userdata, 'base64')

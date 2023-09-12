@@ -21,39 +21,31 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.gpu.GPU;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -79,22 +71,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -105,26 +89,46 @@ import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
 import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceManager;
 import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.host.dao.HostDetailsDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -190,6 +194,9 @@ public class DeploymentPlanningManagerImplTest {
 
     @Inject
     ClusterDetailsDao clusterDetailsDao;
+
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
 
     @Mock
     Host host;
@@ -1074,5 +1081,85 @@ public class DeploymentPlanningManagerImplTest {
         Assert.assertEquals(7, hosts.get(5).getId());
         Assert.assertEquals(6, hosts.get(6).getId());
         Assert.assertEquals(2, hosts.get(7).getId());
+    }
+
+    private List<Long> prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(boolean configValue, boolean mockVolumes, boolean mockClusterStoreVolume) {
+        try {
+            Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+            f.setAccessible(true);
+            f.set(ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS, String.valueOf(configValue));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        List<Long> allClusters = List.of(101L, 102L, 103L, 104L);
+        Mockito.when(_clusterDao.listAllClusters(Mockito.anyLong())).thenReturn(allClusters);
+        if (mockVolumes) {
+            VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+            Mockito.when(vol1.getPoolId()).thenReturn(1L);
+            VolumeVO vol2 = Mockito.mock(VolumeVO.class);
+            Mockito.when(vol2.getPoolId()).thenReturn(2L);
+            StoragePoolVO pool1 = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(pool1.getScope()).thenReturn(ScopeType.ZONE);
+            Mockito.when(primaryDataStoreDao.findById(1L)).thenReturn(pool1);
+            StoragePoolVO pool2 = Mockito.mock(StoragePoolVO.class);
+            Mockito.when(pool2.getScope()).thenReturn(mockClusterStoreVolume ? ScopeType.CLUSTER : ScopeType.GLOBAL);
+            Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(pool2);
+            Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(vol1, vol2));
+        } else {
+            Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(new ArrayList<>());
+        }
+        return allClusters;
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledNonValidHost() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false, false, false);
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        ExcludeList excludeList = new ExcludeList();
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, null, excludeList);
+        Assert.assertTrue(CollectionUtils.isEmpty(excludeList.getClustersToAvoid()));
+
+        Host lastHost = Mockito.mock(Host.class);
+        Mockito.when(lastHost.getClusterId()).thenReturn(null);
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, excludeList);
+        Assert.assertTrue(CollectionUtils.isEmpty(excludeList.getClustersToAvoid()));
+    }
+
+    private Set<Long> runAvoidOtherClustersForDeploymentIfMigrationDisabledTest() {
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        ExcludeList excludeList = new ExcludeList();
+        Host lastHost = Mockito.mock(Host.class);
+        Long sourceClusterId = 101L;
+        Mockito.when(lastHost.getClusterId()).thenReturn(sourceClusterId);
+        _dpm.avoidOtherClustersForDeploymentIfMigrationDisabled(vm, lastHost, excludeList);
+        return excludeList.getClustersToAvoid();
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledConfigAllows() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(true,false, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledNoVmVolumes() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,false, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledVmVolumesNonValidScope() {
+        prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,true, false);
+        Assert.assertTrue(CollectionUtils.isEmpty(runAvoidOtherClustersForDeploymentIfMigrationDisabledTest()));
+    }
+
+    @Test
+    public void avoidOtherClustersForDeploymentIfMigrationDisabledValid() {
+        List<Long> allClusters = prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(false,true, true);
+        Set<Long> avoidedClusters = runAvoidOtherClustersForDeploymentIfMigrationDisabledTest();
+        Assert.assertTrue(CollectionUtils.isNotEmpty(avoidedClusters));
+        Assert.assertEquals(allClusters.size()-1, avoidedClusters.size());
+        Assert.assertFalse(avoidedClusters.contains(allClusters.get(0)));
     }
 }

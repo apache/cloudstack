@@ -31,6 +31,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -68,6 +69,7 @@ public class ConsoleProxy {
     public static Method ensureRouteMethod;
 
     static Hashtable<String, ConsoleProxyClient> connectionMap = new Hashtable<String, ConsoleProxyClient>();
+    static Set<String> removedSessionsSet = ConcurrentHashMap.newKeySet();
     static int httpListenPort = 80;
     static int httpCmdListenPort = 8001;
     static int reconnectMaxRetry = 5;
@@ -372,7 +374,7 @@ public class ConsoleProxy {
             s_logger.info("HTTP command port is disabled");
         }
 
-        ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap);
+        ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap, removedSessionsSet);
         cthread.setName("Console Proxy GC Thread");
         cthread.start();
     }
@@ -540,6 +542,7 @@ public class ConsoleProxy {
             for (Map.Entry<String, ConsoleProxyClient> entry : connectionMap.entrySet()) {
                 if (entry.getValue() == viewer) {
                     connectionMap.remove(entry.getKey());
+                    removedSessionsSet.add(viewer.getSessionUuid());
                     return;
                 }
             }

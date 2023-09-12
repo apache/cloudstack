@@ -35,13 +35,17 @@ import store from '@/store'
 import CapacityDashboard from './CapacityDashboard'
 import UsageDashboard from './UsageDashboard'
 import OnboardingDashboard from './OnboardingDashboard'
+import VerifyTwoFa from './VerifyTwoFa'
+import SetupTwoFaAtLogin from './SetupTwoFaAtLogin'
 
 export default {
   name: 'Dashboard',
   components: {
     CapacityDashboard,
     UsageDashboard,
-    OnboardingDashboard
+    OnboardingDashboard,
+    VerifyTwoFa,
+    SetupTwoFaAtLogin
   },
   provide: function () {
     return {

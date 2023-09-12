@@ -154,6 +154,9 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "for_vpc")
     private boolean forVpc;
 
+    @Column(name = "for_tungsten")
+    boolean forTungsten;
+
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
 
@@ -337,6 +340,11 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
 
     public boolean isForVpc() {
         return forVpc;
+    }
+
+    @Override
+    public boolean isForTungsten() {
+        return forTungsten;
     }
 
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }

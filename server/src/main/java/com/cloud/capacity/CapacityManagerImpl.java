@@ -978,16 +978,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         allocateVmCapacity(vm, fromLastHost);
       }
 
-      if (newState == State.Stopped) {
-        if (vm.getType() == VirtualMachine.Type.User) {
-
+      if (newState == State.Stopped && event != Event.RestoringFailed && event != Event.RestoringSuccess && vm.getType() == VirtualMachine.Type.User) {
           UserVmVO userVM = _userVMDao.findById(vm.getId());
           _userVMDao.loadDetails(userVM);
           // free the message sent flag if it exists
           userVM.setDetail(VmDetailConstants.MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
           _userVMDao.saveDetails(userVM);
-
-        }
       }
 
       return true;

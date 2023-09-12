@@ -28,6 +28,14 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "the category of the configuration")
     private String category;
 
+    @SerializedName(ApiConstants.GROUP)
+    @Param(description = "the group of the configuration", since = "4.18.0")
+    private String group;
+
+    @SerializedName(ApiConstants.SUBGROUP)
+    @Param(description = "the subgroup of the configuration", since = "4.18.0")
+    private String subGroup;
+
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the configuration")
     private String name;
@@ -35,6 +43,10 @@ public class ConfigurationResponse extends BaseResponse {
     @SerializedName(ApiConstants.VALUE)
     @Param(description = "the value of the configuration")
     private String value;
+
+    @SerializedName(ApiConstants.DEFAULT_VALUE)
+    @Param(description = "the default value of the configuration", since = "4.18.0")
+    private String defaultValue;
 
     @SerializedName(ApiConstants.SCOPE)
     @Param(description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
@@ -52,12 +64,48 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "true if the configuration is dynamic")
     private boolean isDynamic;
 
+    @SerializedName(ApiConstants.COMPONENT)
+    @Param(description = "the component of the configuration", since = "4.18.0")
+    private String component;
+
+    @SerializedName(ApiConstants.PARENT)
+    @Param(description = "the name of the parent configuration", since = "4.18.0")
+    private String parent;
+
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @Param(description = "the display text of the configuration", since = "4.18.0")
+    private String displayText;
+
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the type of the configuration value", since = "4.18.0")
+    private String type;
+
+    @SerializedName(ApiConstants.OPTIONS)
+    @Param(description = "the possible options of the configuration value", since = "4.18.0")
+    private String options;
+
     public String getCategory() {
         return category;
     }
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getSubGroup() {
+        return subGroup;
+    }
+
+    public void setSubGroup(String subGroup) {
+        this.subGroup = subGroup;
     }
 
     public String getName() {
@@ -74,6 +122,14 @@ public class ConfigurationResponse extends BaseResponse {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public String getDescription() {
@@ -98,6 +154,46 @@ public class ConfigurationResponse extends BaseResponse {
 
     public void setIsDynamic(boolean isDynamic) {
         this.isDynamic = isDynamic;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public void setComponent(String component) {
+        this.component = component;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getOptions() {
+        return options;
+    }
+
+    public void setOptions(String options) {
+        this.options = options;
     }
 
 }

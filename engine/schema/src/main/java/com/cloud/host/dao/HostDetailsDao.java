@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.host.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.host.DetailVO;
@@ -29,4 +30,6 @@ public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
     DetailVO findDetail(long hostId, String name);
 
     void deleteDetails(long hostId);
+
+    List<DetailVO> findByName(String name);
 }

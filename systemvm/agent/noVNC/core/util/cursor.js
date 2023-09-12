@@ -18,6 +18,10 @@ export default class Cursor {
             this._canvas.style.position = 'fixed';
             this._canvas.style.zIndex = '65535';
             this._canvas.style.pointerEvents = 'none';
+            // Safari on iOS can select the cursor image
+            // https://bugs.webkit.org/show_bug.cgi?id=249223
+            this._canvas.style.userSelect = 'none';
+            this._canvas.style.WebkitUserSelect = 'none';
             // Can't use "display" because of Firefox bug #1445997
             this._canvas.style.visibility = 'hidden';
         }
@@ -43,9 +47,6 @@ export default class Cursor {
         if (useFallback) {
             document.body.appendChild(this._canvas);
 
-            // FIXME: These don't fire properly except for mouse
-            ///       movement in IE. We want to also capture element
-            //        movement, size changes, visibility, etc.
             const options = { capture: true, passive: true };
             this._target.addEventListener('mouseover', this._eventHandlers.mouseover, options);
             this._target.addEventListener('mouseleave', this._eventHandlers.mouseleave, options);
@@ -90,14 +91,7 @@ export default class Cursor {
         this._canvas.width = w;
         this._canvas.height = h;
 
-        let img;
-        try {
-            // IE doesn't support this
-            img = new ImageData(new Uint8ClampedArray(rgba), w, h);
-        } catch (ex) {
-            img = ctx.createImageData(w, h);
-            img.data.set(new Uint8ClampedArray(rgba));
-        }
+        let img = new ImageData(new Uint8ClampedArray(rgba), w, h);
         ctx.clearRect(0, 0, w, h);
         ctx.putImageData(img, 0, 0);
 

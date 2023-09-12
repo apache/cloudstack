@@ -29,7 +29,7 @@ import com.cloud.user.Account;
 public interface FirewallManager extends FirewallService {
     /**
      * detectRulesConflict finds conflicts in networking rules. It checks for
-     * conflicts between the following types of netowrking rules;
+     * conflicts between the following types of networking rules;
      * 1. one to one nat ip forwarding
      * 2. port forwarding
      * 3. load balancing

@@ -36,7 +36,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -124,22 +123,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
         }
-        if (userSpecified == null) {
-            return config;
-        }
-        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
-                    (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
-            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
-        }
-        if (userSpecified.getIp6Cidr() != null) {
-            config.setIp6Cidr(userSpecified.getIp6Cidr());
-            config.setIp6Gateway(userSpecified.getIp6Gateway());
-        }
-        if (userSpecified.getRouterIpv6() != null) {
-            config.setRouterIpv6(userSpecified.getRouterIpv6());
-        }
-
-        return config;
+        return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }
 
     @Override
@@ -240,7 +224,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
         }
 
-        //Egress rules cidr is subset of guest nework cidr, we need to change
+        //Egress rules cidr is subset of guest network cidr, we need to change
         List <FirewallRuleVO> fwEgressRules = _fwRulesDao.listByNetworkPurposeTrafficType(config.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
 
         for (FirewallRuleVO rule: fwEgressRules) {

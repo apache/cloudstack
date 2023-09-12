@@ -202,6 +202,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider BigSwitchBcf = new Provider("BigSwitchBcf", false);
         //Add ConfigDrive provider
         public static final Provider ConfigDrive = new Provider("ConfigDrive", false);
+        //Add Tungsten Fabric provider
+        public static final Provider Tungsten = new Provider("Tungsten", false);
 
         private final String name;
         private final boolean isExternal;
@@ -254,7 +256,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public static class Capability {
 
-        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        private static List<Capability> supportedCapabilities = new ArrayList<>();
 
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");

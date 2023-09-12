@@ -192,12 +192,25 @@ public class StorageSystemDataMotionStrategyTest {
     public void configureMigrateDiskInfoTest() {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
         Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
-        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath");
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", null);
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
         Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
         Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
         Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+    }
+
+    @Test
+    public void configureMigrateDiskInfoWithBackingTest() {
+        VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+        Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
+        MigrateCommand.MigrateDiskInfo migrateDiskInfo = strategy.configureMigrateDiskInfo(srcVolumeInfo, "destPath", "backingPath");
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DiskType.BLOCK, migrateDiskInfo.getDiskType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.DriverType.RAW, migrateDiskInfo.getDriverType());
+        Assert.assertEquals(MigrateCommand.MigrateDiskInfo.Source.DEV, migrateDiskInfo.getSource());
+        Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
+        Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
+        Assert.assertEquals("backingPath", migrateDiskInfo.getBackingStoreText());
     }
 
     @Test

@@ -255,6 +255,8 @@ export default {
         if (jobId) {
           this.$pollJob({
             jobId,
+            title: this.$t('label.scale.vm'),
+            description: this.resource.name,
             successMethod: result => {
               this.$notification.success({
                 message: this.$t('message.success.change.offering')

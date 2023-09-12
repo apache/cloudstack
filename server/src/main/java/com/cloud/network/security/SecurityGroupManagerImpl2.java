@@ -33,6 +33,7 @@ import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.network.Networks;
 import com.cloud.network.security.SecurityGroupWork.Step;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.uservm.UserVm;
@@ -179,7 +180,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             if (agentId != null) {
                 NicVO nic = _nicDao.findFirstNicForVM(vm.getId());
                 List<String> nicSecIps = null;
-                if (nic != null) {
+                if (nic != null && !nic.getBroadcastUri().equals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"))) {
                     if (nic.getSecondaryIp()) {
                         nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                     }
@@ -187,7 +188,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                     return;
                 }
                 SecurityGroupRulesCmd cmd =
-                    generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), vm.getPrivateMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
+                    generateRulesetCmd(vm.getInstanceName(), nic.getIPv4Address(), nic.getIPv6Address(), nic.getMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
                         ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (s_logger.isDebugEnabled()) {

@@ -258,7 +258,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         _canBridgeFirewall = false;
 
-        s_logger.debug(_canBridgeFirewall ? "OVM host supports security groups." : "OVM host doesn't support security groups.");
+        s_logger.debug("OVM host doesn't support security groups.");
 
         return true;
     }
@@ -1100,7 +1100,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             OvmStoragePool.delete(_conn, cmd.getPool().getUuid());
         } catch (Exception e) {
-            s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell managment server it succeeded", e);
+            s_logger.debug("Delete storage pool on host " + _ip + " failed, however, we leave to user for cleanup and tell management server it succeeded", e);
         }
 
         return new Answer(cmd);

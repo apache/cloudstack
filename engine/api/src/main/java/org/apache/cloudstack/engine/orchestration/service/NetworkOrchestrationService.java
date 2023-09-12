@@ -100,6 +100,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
             "Whether to allow or deny rolling restart of network routers.", true);
 
+    static final ConfigKey<Boolean> TUNGSTEN_ENABLED = new ConfigKey<>(Boolean.class, "tungsten.plugin.enable", "Advanced", "false",
+            "Indicates whether to enable the Tungsten plugin", false, ConfigKey.Scope.Zone, null);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 

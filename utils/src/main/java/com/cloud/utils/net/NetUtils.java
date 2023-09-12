@@ -77,6 +77,7 @@ public class NetUtils {
     public final static String TCP_PROTO = "tcp";
     public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
+    public static final String ICMP6_PROTO = "icmp6";
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
     public final static String SSL_PROTO = "ssl";

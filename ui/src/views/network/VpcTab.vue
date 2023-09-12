@@ -48,10 +48,12 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }">
-            <router-link :to="{ path: '/acllist/' + record.id }">
-              {{ text }}
-            </router-link>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <router-link :to="{ path: '/acllist/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -75,7 +77,7 @@
           :footer="null"
           :maskClosable="false"
           :closable="true"
-          @cancel="modals.networkAcl = fetchAclList">
+          @cancel="modals.networkAcl = false">
           <a-form
             layout="vertical"
             :ref="formRef"
@@ -117,11 +119,13 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #ipaddress="{ text, record }">
-            <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
-          </template>
-          <template #state="{ record }">
-            <status :text="record.state" displayText></status>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'ipaddress'">
+              <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="record.state" displayText></status>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -163,9 +167,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -286,13 +290,15 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <template #publicip="{text, record}">
-            <router-link :to="{ path: '/s2svpnconn/' + record.id }">
-              {{ text }}
-            </router-link>
-          </template>
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText />
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'publicip'">
+              <router-link :to="{ path: '/s2svpnconn/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -332,9 +338,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -378,6 +384,7 @@ import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'VpcTab',
@@ -388,7 +395,8 @@ export default {
     RoutersTab,
     VpcTiersTab,
     EventsTab,
-    AnnotationsTab
+    AnnotationsTab,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   props: {
@@ -426,14 +434,14 @@ export default {
       vpncustomergateways: [],
       privateGatewaysColumns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -450,14 +458,14 @@ export default {
       ],
       vpnConnectionsColumns: [
         {
+          key: 'publicip',
           title: this.$t('label.ip'),
-          dataIndex: 'publicip',
-          slots: { customRender: 'publicip' }
+          dataIndex: 'publicip'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -470,9 +478,9 @@ export default {
       ],
       networkAclsColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.description'),

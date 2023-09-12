@@ -88,7 +88,7 @@ public class CloudianClientTest {
     public void testRequestTimeout() {
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withStatus(200)
                         .withFixedDelay(2 * timeout * 1000)
                         .withBody("")));
@@ -131,7 +131,7 @@ public class CloudianClientTest {
         Assert.assertTrue(result);
         verify(putRequestedFor(urlEqualTo("/user"))
                 .withRequestBody(containing("userId\":\"" + user.getUserId()))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
     }
 
     @Test
@@ -152,7 +152,7 @@ public class CloudianClientTest {
         final String groupId = "someGroup";
         wireMockRule.stubFor(get(urlPathMatching("/user?.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("{\"userId\":\"someUser\",\"userType\":\"User\",\"fullName\":\"John Doe (jdoe)\",\"emailAddr\":\"j@doe.com\",\"address1\":null,\"address2\":null,\"city\":null,\"state\":null,\"zip\":null,\"country\":null,\"phone\":null,\"groupId\":\"someGroup\",\"website\":null,\"active\":\"true\",\"canonicalUserId\":\"b3940886468689d375ebf8747b151c37\",\"ldapEnabled\":false}")));
 
         final CloudianUser user = client.listUser(userId, groupId);
@@ -166,7 +166,7 @@ public class CloudianClientTest {
     public void listUserAccountFail() {
         wireMockRule.stubFor(get(urlPathMatching("/user?.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("")));
 
         final CloudianUser user = client.listUser("abc", "xyz");
@@ -178,7 +178,7 @@ public class CloudianClientTest {
         final String groupId = "someGroup";
         wireMockRule.stubFor(get(urlPathMatching("/user/list?.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("[{\"userId\":\"someUser\",\"userType\":\"User\",\"fullName\":\"John Doe (jdoe)\",\"emailAddr\":\"j@doe.com\",\"address1\":null,\"address2\":null,\"city\":null,\"state\":null,\"zip\":null,\"country\":null,\"phone\":null,\"groupId\":\"someGroup\",\"website\":null,\"active\":\"true\",\"canonicalUserId\":\"b3940886468689d375ebf8747b151c37\",\"ldapEnabled\":false}]")));
 
         final List<CloudianUser> users = client.listUsers(groupId);
@@ -191,14 +191,14 @@ public class CloudianClientTest {
     public void testEmptyListUsersResponse() {
         wireMockRule.stubFor(get(urlPathMatching("/user/list"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withStatus(204)
                         .withBody("")));
         Assert.assertTrue(client.listUsers("someGroup").size() == 0);
 
         wireMockRule.stubFor(get(urlPathMatching("/user"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withStatus(204)
                         .withBody("")));
         Assert.assertNull(client.listUser("someUserId", "someGroupId"));
@@ -208,7 +208,7 @@ public class CloudianClientTest {
     public void listUserAccountsFail() {
         wireMockRule.stubFor(get(urlPathMatching("/user/list?.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("")));
 
         final List<CloudianUser> users = client.listUsers("xyz");
@@ -227,7 +227,7 @@ public class CloudianClientTest {
         Assert.assertTrue(result);
         verify(postRequestedFor(urlEqualTo("/user"))
                 .withRequestBody(containing("userId\":\"" + user.getUserId()))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
     }
 
     @Test
@@ -281,7 +281,7 @@ public class CloudianClientTest {
         Assert.assertTrue(result);
         verify(putRequestedFor(urlEqualTo("/group"))
                 .withRequestBody(containing("groupId\":\"someGroupId"))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
     }
 
     @Test
@@ -301,7 +301,7 @@ public class CloudianClientTest {
         final String groupId = "someGroup";
         wireMockRule.stubFor(get(urlPathMatching("/group.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("{\"groupId\":\"someGroup\",\"groupName\":\"/someDomain\",\"ldapGroup\":null,\"active\":\"true\",\"ldapEnabled\":false,\"ldapServerURL\":null,\"ldapUserDNTemplate\":null,\"ldapSearch\":null,\"ldapSearchUserBase\":null,\"ldapMatchAttribute\":null}")));
 
         final CloudianGroup group = client.listGroup(groupId);
@@ -313,7 +313,7 @@ public class CloudianClientTest {
     public void listGroupFail() {
         wireMockRule.stubFor(get(urlPathMatching("/group.*"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("")));
 
         final CloudianGroup group = client.listGroup("xyz");
@@ -325,7 +325,7 @@ public class CloudianClientTest {
         final String groupId = "someGroup";
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("[{\"groupId\":\"someGroup\",\"groupName\":\"/someDomain\",\"ldapGroup\":null,\"active\":\"true\",\"ldapEnabled\":false,\"ldapServerURL\":null,\"ldapUserDNTemplate\":null,\"ldapSearch\":null,\"ldapSearchUserBase\":null,\"ldapMatchAttribute\":null}]")));
 
         final List<CloudianGroup> groups = client.listGroups();
@@ -338,7 +338,7 @@ public class CloudianClientTest {
     public void listGroupsFail() {
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withBody("")));
 
         final List<CloudianGroup> groups = client.listGroups();
@@ -349,7 +349,7 @@ public class CloudianClientTest {
     public void testEmptyListGroupResponse() {
         wireMockRule.stubFor(get(urlEqualTo("/group/list"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withStatus(204)
                         .withBody("")));
 
@@ -358,7 +358,7 @@ public class CloudianClientTest {
 
         wireMockRule.stubFor(get(urlPathMatching("/group"))
                 .willReturn(aResponse()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader("content-type", "application/json")
                         .withStatus(204)
                         .withBody("")));
         Assert.assertNull(client.listGroup("someGroup"));
@@ -376,7 +376,7 @@ public class CloudianClientTest {
         Assert.assertTrue(result);
         verify(postRequestedFor(urlEqualTo("/group"))
                 .withRequestBody(containing("groupId\":\"" + group.getGroupId()))
-                .withHeader("Content-Type", equalTo("application/json")));
+                .withHeader("content-type", equalTo("application/json")));
     }
 
     @Test

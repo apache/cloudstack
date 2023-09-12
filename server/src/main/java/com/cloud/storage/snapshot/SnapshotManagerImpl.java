@@ -78,7 +78,10 @@ import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
@@ -216,12 +219,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+    @Inject
+    DataCenterDao dataCenterDao;
 
     private int _totalRetries;
     private int _pauseInterval;
     private int snapshotBackupRetries, snapshotBackupRetryInterval;
 
     private ScheduledExecutorService backupSnapshotExecutor;
+
+    protected boolean isBackupSnapshotToSecondaryForZone(long zoneId) {
+        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
+            return false;
+        }
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
+        return !DataCenter.Type.Edge.equals(zone.getType());
+    }
 
     @Override
     public String getConfigComponentName() {
@@ -1250,7 +1263,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupSnapToSecondary = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value() == null || SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
+            boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId());
 
             if (backupSnapToSecondary) {
                 backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
@@ -1262,7 +1275,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
+                DataStoreRole dataStoreRole = backupSnapToSecondary ? snapshotHelper.getDataStoreRole(snapshot) : DataStoreRole.Primary;
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {

@@ -29,10 +29,4 @@ public class IpAssocVpcCommand extends IpAssocCommand {
     public IpAssocVpcCommand(IpAddressTO[] ips) {
         super(ips);
     }
-
-    @Override
-    public int getAnswersCount() {
-        //Count private gateway to maximum value
-        return ipAddresses.length * 2;
-    }
 }

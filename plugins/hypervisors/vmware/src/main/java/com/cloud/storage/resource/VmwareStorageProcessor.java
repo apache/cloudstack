@@ -50,8 +50,8 @@ import org.apache.cloudstack.storage.command.ResignatureAnswer;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
-import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
+import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -97,6 +97,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.template.OVAProcessor;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -2128,7 +2129,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     diskController = vmMo.getRecommendedDiskController(null);
                 }
 
-                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId);
+                vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs, diskController, storagePolicyId, volumeTO.getIopsReadRate() + volumeTO.getIopsWriteRate());
                 VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);
@@ -2409,7 +2410,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer createVolume(CreateObjectCommand cmd) {
-
+        s_logger.debug(LogUtils.logGsonWithoutException("Executing CreateObjectCommand cmd: [%s].", cmd));
         VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
         DataStoreTO primaryStore = volume.getDataStore();
         String vSphereStoragePolicyId = volume.getvSphereStoragePolicyId();
@@ -2822,7 +2823,18 @@ public class VmwareStorageProcessor implements StorageProcessor {
             throw new Exception("A relevant SCSI disk could not be located to use to create a datastore.");
         }
 
-        morDs = firstHostDatastoreSystemMO.createVmfsDatastore(datastoreName, hostScsiDisk);
+        morDs = firstHostDatastoreSystemMO.findDatastoreByName(datastoreName);
+        if (morDs == null) {
+            final String hostVersion = firstHostMO.getProductVersion();
+            if (hostVersion.compareTo(VmwareHelper.MIN_VERSION_VMFS6) >= 0) {
+                morDs = firstHostDatastoreSystemMO.createVmfs6Datastore(datastoreName, hostScsiDisk);
+            } else {
+                morDs = firstHostDatastoreSystemMO.createVmfs5Datastore(datastoreName, hostScsiDisk);
+            }
+        } else {
+            // in case of iSCSI/solidfire 1:1 VMFS datastore could be inaccessible
+            mountVmfsDatastore(new DatastoreMO(context, morDs), lstHosts);
+        }
 
         if (morDs != null) {
             waitForAllHostsToMountDatastore(lstHosts, new DatastoreMO(context, morDs));
@@ -3360,7 +3372,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
+    public void rescanAllHosts(VmwareContext context, List<Pair<ManagedObjectReference, String>> lstHostPairs, boolean rescanHba, boolean rescanVmfs) throws Exception {
         List<HostMO> hosts = new ArrayList<>(lstHostPairs.size());
 
         for (Pair<ManagedObjectReference, String> hostPair : lstHostPairs) {
