@@ -51,7 +51,7 @@
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['MEMORY', 'CPU', 'CPU_CORE', 'GPU']" :key="ctype" >
-            <div v-if="statsMap[ctype]?.capacitytotal > -1">
+            <div>
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
               </div>
@@ -80,7 +80,7 @@
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
-            <div v-if="statsMap[ctype]?.capacitytotal > 0">
+            <div>
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
               </div>
@@ -109,7 +109,7 @@
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
-            <div v-if="statsMap[ctype]?.capacitytotal > 0">
+            <div v-if="statsMap[ctype]">
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
               </div>
