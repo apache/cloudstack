@@ -101,7 +101,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     @Inject
     SnapshotZoneDao snapshotZoneDao;
 
-    private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+    public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
             if (zoneId == dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {

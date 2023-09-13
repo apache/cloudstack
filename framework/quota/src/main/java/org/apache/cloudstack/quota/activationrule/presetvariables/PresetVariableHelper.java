@@ -560,7 +560,7 @@ public class PresetVariableHelper {
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
     }
 
-    private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
+    protected SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
             ImageStoreVO store = imageStoreDao.findById(ref.getDataStoreId());

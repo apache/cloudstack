@@ -110,7 +110,6 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref);
         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(100L);
-        Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(Mockito.mock(DataStore.class));
         Mockito.when(snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
         DataStore store = snapshotManager.getSnapshotZoneImageStore(snapshotId, zoneId);
         Assert.assertNull(store);
@@ -203,7 +202,6 @@ public class SnapshotManagerImplTest {
         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
         Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
-        Mockito.when(zone1.getType()).thenReturn(DataCenter.Type.Core);
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
         Mockito.when(accountManager.isRootAdmin(Mockito.any())).thenReturn(false);

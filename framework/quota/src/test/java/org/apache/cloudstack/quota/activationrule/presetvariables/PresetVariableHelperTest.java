@@ -32,6 +32,7 @@ import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -177,6 +178,12 @@ public class PresetVariableHelperTest {
 
     @Mock
     BackupOfferingDao backupOfferingDaoMock;
+
+    @Mock
+    SnapshotDataStoreDao snapshotDataStoreDao;
+
+    @Mock
+    DataStoreManager dataStoreManager;
 
     List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
     List<Integer> templateAndIsoUsageTypes = Arrays.asList(UsageTypes.TEMPLATE, UsageTypes.ISO);
@@ -1150,5 +1157,25 @@ public class PresetVariableHelperTest {
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getExternalId(), result.getExternalId());
         validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "externalId"), result);
+    }
+
+    @Test
+    public void testGetSnapshotImageStoreRefNull() {
+        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
+        Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
+        Mockito.when(snapshotDataStoreDao.listBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
+        Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(2L);
+        Assert.assertNull(presetVariableHelperSpy.getSnapshotImageStoreRef(1L, 1L));
+    }
+
+    @Test
+    public void testGetSnapshotImageStoreRefNotNull() {
+        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
+        Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
+        Mockito.when(snapshotDataStoreDao.listBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
+        Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(1L);
+        Assert.assertNotNull(presetVariableHelperSpy.getSnapshotImageStoreRef(1L, 1L));
     }
 }
