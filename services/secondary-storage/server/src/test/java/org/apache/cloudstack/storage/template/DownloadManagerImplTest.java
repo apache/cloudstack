@@ -14,34 +14,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.storage.image.manager;
+package org.apache.cloudstack.storage.template;
 
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import static org.junit.Assert.*;
+
+import java.util.UUID;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ImageStoreProviderManagerImplTest {
-
-    @Mock
-    ImageStoreDao imageStoreDao;
+public class DownloadManagerImplTest {
 
     @InjectMocks
-    ImageStoreProviderManagerImpl imageStoreProviderManager = new ImageStoreProviderManagerImpl();
+    DownloadManagerImpl downloadManager = new DownloadManagerImpl();
+
     @Test
-    public void testGetImageStoreZoneId() {
-        final long storeId = 1L;
-        final long zoneId = 1L;
-        ImageStoreVO imageStoreVO = Mockito.mock(ImageStoreVO.class);
-        Mockito.when(imageStoreVO.getDataCenterId()).thenReturn(zoneId);
-        Mockito.when(imageStoreDao.findById(storeId)).thenReturn(imageStoreVO);
-        long value = imageStoreProviderManager.getImageStoreZoneId(storeId);
-        Assert.assertEquals(zoneId, value);
+    public void testGetSnapshotInstallNameFromDownloadUrl() {
+        String filename = UUID.randomUUID().toString();
+        String url = "http://abc.com/xyz/somepath/" + filename;
+        String name = downloadManager.getSnapshotInstallNameFromDownloadUrl(url);
+        Assert.assertEquals(filename, name);
+        filename = UUID.randomUUID().toString().replace("-", "");
+        filename = filename + "/" + filename + ".ovf";
+        url = "http://abc.com/xyz/" + filename;
+        name = downloadManager.getSnapshotInstallNameFromDownloadUrl(url);
+        Assert.assertEquals(filename, name);
     }
 }

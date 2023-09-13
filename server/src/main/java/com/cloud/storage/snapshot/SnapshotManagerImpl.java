@@ -248,7 +248,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     private ScheduledExecutorService backupSnapshotExecutor;
 
-    private DataStore getSnapshotZoneImageStore(long snapshotId, long zoneId) {
+    protected DataStore getSnapshotZoneImageStore(long snapshotId, long zoneId) {
         List<SnapshotDataStoreVO> snapshotImageStoreList = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snapshotImageStoreList) {
             Long entryZoneId = dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole());
@@ -616,9 +616,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private Pair<List<SnapshotDataStoreVO>, List<Long>> getStoreRefsAndZonesForSnapshotDelete(long snapshotId, Long zoneId) {
+    protected Pair<List<SnapshotDataStoreVO>, List<Long>> getStoreRefsAndZonesForSnapshotDelete(long snapshotId, Long zoneId) {
         List<SnapshotDataStoreVO> snapshotStoreRefs = new ArrayList<>();
         List<SnapshotDataStoreVO> allSnapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        List<Long> zoneIds = new ArrayList<>();
         if (zoneId != null) {
             DataCenterVO zone = dataCenterDao.findById(zoneId);
             if (zone == null) {
@@ -630,14 +631,14 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                     snapshotStoreRefs.add(snapshotStore);
                 }
             }
+            zoneIds.add(zoneId);
         } else {
             snapshotStoreRefs = allSnapshotStoreRefs;
-        }
-        List<Long> zoneIds = new ArrayList<>();
-        for (SnapshotDataStoreVO snapshotStore : snapshotStoreRefs) {
-            Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
-            if (!zoneIds.contains(entryZoneId)) {
-                zoneIds.add(entryZoneId);
+            for (SnapshotDataStoreVO snapshotStore : snapshotStoreRefs) {
+                Long entryZoneId = dataStoreMgr.getStoreZoneId(snapshotStore.getDataStoreId(), snapshotStore.getRole());
+                if (!zoneIds.contains(entryZoneId)) {
+                    zoneIds.add(entryZoneId);
+                }
             }
         }
         return new Pair<>(snapshotStoreRefs, zoneIds);
@@ -899,6 +900,31 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return success;
     }
 
+    protected void validatePolicyZones(List<Long> zoneIds, VolumeVO volume, Account caller) {
+        if (CollectionUtils.isEmpty(zoneIds)) {
+            return;
+        }
+        if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
+            throw new InvalidParameterValueException("Backing up of snapshot has been disabled. Snapshot can not be taken for multiple zones");
+        }
+        final DataCenterVO zone = dataCenterDao.findById(volume.getDataCenterId());
+        if (DataCenter.Type.Edge.equals(zone.getType())) {
+            throw new InvalidParameterValueException("Backing up of snapshot is not supported by the zone of the volume. Snapshots can not be taken for multiple zones");
+        }
+        for (Long zoneId : zoneIds) {
+            DataCenter dataCenter = dataCenterDao.findById(zoneId);
+            if (dataCenter == null) {
+                throw new InvalidParameterValueException("Unable to find the specified zone");
+            }
+            if (Grouping.AllocationState.Disabled.equals(dataCenter.getAllocationState()) && !_accountMgr.isRootAdmin(caller.getId())) {
+                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dataCenter.getName());
+            }
+            if (DataCenter.Type.Edge.equals(dataCenter.getType())) {
+                throw new InvalidParameterValueException("Snapshot functionality is not supported on zone %s");
+            }
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_POLICY_CREATE, eventDescription = "creating snapshot policy")
@@ -1001,27 +1027,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         final List<Long> zoneIds = cmd.getZoneIds();
-        if (CollectionUtils.isNotEmpty(zoneIds)) {
-            if (Boolean.FALSE.equals(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value())) {
-                throw new InvalidParameterValueException("Backing up of snapshot has been disabled. Snapshot can not be taken for multiple zones");
-            }
-            final DataCenterVO zone = dataCenterDao.findById(volume.getDataCenterId());
-            if (DataCenter.Type.Edge.equals(zone.getType())) {
-                throw new InvalidParameterValueException("Backing up of snapshot is not supported by the zone of the volume. Snapshots can not be taken for multiple zones");
-            }
-            for (Long zoneId : zoneIds) {
-                DataCenter dataCenter = dataCenterDao.findById(zoneId);
-                if (dataCenter == null) {
-                    throw new InvalidParameterValueException("Unable to find the specified zone");
-                }
-                if (Grouping.AllocationState.Disabled.equals(dataCenter.getAllocationState()) && !_accountMgr.isRootAdmin(caller.getId())) {
-                    throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dataCenter.getName());
-                }
-                if (DataCenter.Type.Edge.equals(dataCenter.getType())) {
-                    throw new InvalidParameterValueException("Snapshot functionality is not supported on zone %s");
-                }
-            }
-        }
+        validatePolicyZones(zoneIds, volume, caller);
 
         Map<String, String> tags = cmd.getTags();
         boolean active = true;
@@ -1834,6 +1840,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         DataStore dataStore = getSnapshotZoneImageStore(snapshotId, zoneId);
         if (dataStore == null) {
             s_logger.error(String.format("Unable to find an image store for zone ID: %d where snapshot %s is in Ready state", zoneId, snapshotVO));
+            return;
         }
         List<DataCenterVO> dataCenterVOs = new ArrayList<>();
         for (Long destZoneId: destZoneIds) {

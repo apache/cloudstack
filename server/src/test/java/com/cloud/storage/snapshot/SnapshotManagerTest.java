@@ -217,6 +217,7 @@ public class SnapshotManagerTest {
         _snapshotMgr.taggedResourceService = taggedResourceServiceMock;
         _snapshotMgr.dataCenterDao = dataCenterDao;
 
+
         when(_snapshotDao.findById(anyLong())).thenReturn(snapshotMock);
         when(snapshotMock.getVolumeId()).thenReturn(TEST_VOLUME_ID);
         when(snapshotMock.isRecursive()).thenReturn(false);

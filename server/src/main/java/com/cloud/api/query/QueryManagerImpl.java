@@ -4471,7 +4471,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsInternal(cmd);
         ListResponse<SnapshotResponse> response = new ListResponse<>();
 
-        ResponseView respView = ResponseView.Full;
+
+        ResponseView respView = ResponseView.Restricted;
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            respView = ResponseView.Full;
+        }
 
         List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, cmd.isShowUnique(), result.first().toArray(new SnapshotJoinVO[result.first().size()]));
         response.setResponses(templateResponses, result.second());

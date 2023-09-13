@@ -33,5 +33,4 @@ public class VmWorkTakeVolumeSnapshotTest {
         Assert.assertEquals(zoneIds.get(0), work.getZoneIds().get(0));
         Assert.assertEquals(zoneIds.get(1), work.getZoneIds().get(1));
     }
-
 }

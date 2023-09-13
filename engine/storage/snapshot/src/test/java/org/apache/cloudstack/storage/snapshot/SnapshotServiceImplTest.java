@@ -95,5 +95,4 @@ public class SnapshotServiceImplTest {
 
         Assert.assertEquals(true, snapshotService.revertSnapshot(snapshot));
     }
-
 }

@@ -65,7 +65,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages", since = "4.19.0")
     private Boolean showUnique;
 
-    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "list snapshots by location type. Used only when showunique=false." +
+    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "list snapshots by location type. Used only when showunique=false. " +
             "Valid location types: 'primary', 'secondary'. Default is empty", since = "4.19.0")
     private String locationType;
 

@@ -384,7 +384,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return result;
     }
 
-    private String getSnapshotInstallNameFromDownloadUrl(String url) {
+    protected String getSnapshotInstallNameFromDownloadUrl(String url) {
         URI uri;
         try {
             uri = new URI(url);
