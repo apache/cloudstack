@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,8 +44,10 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@APICommand(name = "copySnapshot", description = "Copies a snapshot from one zone to another.", responseObject = SnapshotResponse.class, responseView = ResponseObject.ResponseView.Restricted,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
+@APICommand(name = "copySnapshot", description = "Copies a snapshot from one zone to another.",
+        responseObject = SnapshotResponse.class, responseView = ResponseObject.ResponseView.Restricted,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
+        authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CopySnapshotCmd.class.getName());
 

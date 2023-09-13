@@ -911,17 +911,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (DataCenter.Type.Edge.equals(zone.getType())) {
             throw new InvalidParameterValueException("Backing up of snapshot is not supported by the zone of the volume. Snapshots can not be taken for multiple zones");
         }
+        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
         for (Long zoneId : zoneIds) {
-            DataCenter dataCenter = dataCenterDao.findById(zoneId);
-            if (dataCenter == null) {
-                throw new InvalidParameterValueException("Unable to find the specified zone");
-            }
-            if (Grouping.AllocationState.Disabled.equals(dataCenter.getAllocationState()) && !_accountMgr.isRootAdmin(caller.getId())) {
-                throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dataCenter.getName());
-            }
-            if (DataCenter.Type.Edge.equals(dataCenter.getType())) {
-                throw new InvalidParameterValueException("Snapshot functionality is not supported on zone %s");
-            }
+            getCheckedDestinationZoneForSnapshotCopy(zoneId, isRootAdminCaller);
         }
     }
 
@@ -1771,7 +1763,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return failedZones;
     }
 
-    private SnapshotVO getCheckedSnapshotForCopy(final long snapshotId, final List<Long> destZoneIds, Long sourceZoneId) {
+    protected Pair<SnapshotVO, Long> getCheckedSnapshotForCopy(final long snapshotId, final List<Long> destZoneIds, Long sourceZoneId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             throw new InvalidParameterValueException("Unable to find snapshot with id");
@@ -1780,7 +1772,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (!Snapshot.State.BackedUp.equals(snapshot.getState())) {
             throw new InvalidParameterValueException("Snapshot is not backed up");
         }
-        if (Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType())) {
+        if (snapshot.getLocationType() != null && !Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType())) {
             throw new InvalidParameterValueException("Snapshot is not backed up");
         }
         if (CollectionUtils.isEmpty(destZoneIds)) {
@@ -1797,7 +1789,22 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (sourceZone == null) {
             throw new InvalidParameterValueException("Please specify a valid source zone.");
         }
-        return snapshot;
+        return new Pair<>(snapshot, sourceZoneId);
+    }
+
+    protected DataCenterVO getCheckedDestinationZoneForSnapshotCopy(long zoneId, boolean isRootAdmin) {
+        DataCenterVO dstZone = dataCenterDao.findById(zoneId);
+        if (dstZone == null) {
+            throw new InvalidParameterValueException("Please specify a valid destination zone.");
+        }
+        if (Grouping.AllocationState.Disabled.equals(dstZone.getAllocationState()) && !isRootAdmin) {
+            throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dstZone.getName());
+        }
+        if (DataCenter.Type.Edge.equals(dstZone.getType())) {
+            s_logger.error(String.format("Edge zone %s specified for snapshot copy", dstZone));
+            throw new InvalidParameterValueException(String.format("Snapshot copy is not supported by zone %s", dstZone.getName()));
+        }
+        return dstZone;
     }
 
     @Override
@@ -1806,13 +1813,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long sourceZoneId = cmd.getSourceZoneId();
         List<Long> destZoneIds = cmd.getDestinationZoneIds();
         Account caller = CallContext.current().getCallingAccount();
-        SnapshotVO snapshot = getCheckedSnapshotForCopy(snapshotId, destZoneIds, sourceZoneId);
+        Pair<SnapshotVO, Long> snapshotZonePair = getCheckedSnapshotForCopy(snapshotId, destZoneIds, sourceZoneId);
+        SnapshotVO snapshot = snapshotZonePair.first();
+        sourceZoneId = snapshotZonePair.second();
         Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
+        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
         for (Long destZoneId: destZoneIds) {
-            DataCenterVO dstZone = dataCenterDao.findById(destZoneId);
-            if (dstZone == null) {
-                throw new InvalidParameterValueException("Please specify a valid destination zone.");
-            }
+            DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId, isRootAdminCaller);
             dataCenterVOs.put(destZoneId, dstZone);
         }
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, snapshot);
