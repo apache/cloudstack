@@ -96,7 +96,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             type=CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "A comma-separated list of IDs of the zones in which the snapshot will be made available." +
+            description = "A comma-separated list of IDs of the zones in which the snapshot will be made available. " +
                     "The snapshot will always be made available in the zone in which the volume is present.",
             since = "4.19.0")
     protected List<Long> zoneIds;
