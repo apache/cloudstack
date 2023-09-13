@@ -100,7 +100,7 @@ public class MigrateResourcesToAnotherSecondaryStorageCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate files/data objects ";
+        return "Attempting to migrate files/data objects to another image store";
     }
 
     @Override

@@ -3013,6 +3013,7 @@
 "message.success.import.instance": "Successfully imported instance",
 "message.success.migrate.volume": "Successfully migrated volume",
 "message.success.migrating": "Migration completed successfully for",
+"message.success.migration": "Migration completed successfully",
 "message.success.move.acl.order": "Successfully moved ACL rule",
 "message.success.recurring.snapshot": "Successfully recurring snapshots",
 "message.success.register.iso": "Successfully registered ISO",

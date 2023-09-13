@@ -20,7 +20,7 @@
     <a-drawer
       :visible="showDrawer"
       :closable="true"
-      @close="onClose"
+      @close="onDrawerClose"
       size='small'
       placement='right'>
         <info-card :resource="drawerResource" :loading="drawerLoading" />
@@ -64,10 +64,39 @@
     <!-- <a-button shape="circle" @click="deleteSelected">
       <link-outlined/>
     </a-button>
+ -->
+    <a-button shape="circle" @click="openMigrationModal">
+      <arrows-alt-outlined/>
+    </a-button>
 
-    <a-button shape="circle" @click="migrateSelected">
-      <link-outlined/>
-    </a-button> -->
+    <!-- <a-modal
+      :visible="showDeleteModal"
+      :confirmLoading="deleteModalLoading"
+      @ok="deleteSelected"
+      @cancel="showDeleteModal = false"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')">
+      <span v-html="$t('message.delete.confirm', { name: selectedRowKeys.length })" />
+    </a-modal> -->
+
+    <a-modal
+      :visible="showMigrateModal"
+      :confirmLoading="migrateModalLoading"
+      @close-action="showMigrateModal = false"
+      :footer="null"
+      width="50%"
+      :okText="$t('label.ok')"
+      :cancelText="$t('label.cancel')">
+      <div>
+        <span v-html="$t('message.migrate.confirm', { name: selectedRowKeys.length })" />
+        <migrate-image-store-resource
+          :sourceImageStore="resource"
+          :templateIdsToMigrate="templateIdsToMigrate"
+          :snapshotIdsToMigrate="snapshotIdsToMigrate"
+          @close-action="showMigrateModal = false"
+        />
+    </div>
+    </a-modal>
 
     <div>
       <a-table
@@ -144,11 +173,13 @@
 import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import InfoCard from '@/components/view/InfoCard'
+import MigrateImageStoreResource from '@/views/storage/MigrateImageStoreResource'
 
 export default {
   name: 'StorageBrowser',
   components: {
-    InfoCard
+    InfoCard,
+    MigrateImageStoreResource
   },
   props: {
     resource: {
@@ -165,8 +196,8 @@ export default {
       loading: false,
       dataSource: [],
       browserPath: this.$route.query.browserPath || '',
-      page: this.$route.query.browserPage || 1,
-      pageSize: this.$route.query.browserPageSize || 10,
+      page: parseInt(this.$route.query.browserPage) || 1,
+      pageSize: parseInt(this.$route.query.browserPageSize) || 10,
       selectedRowKeys: [],
       total: 0,
       columns: [
@@ -194,13 +225,29 @@ export default {
       showDrawer: false,
       drawerLoading: false,
       drawerResource: {},
-      drawerShowMoreDetailsRoute: {}
+      drawerShowMoreDetailsRoute: {},
+      migrateModalLoading: false,
+      showMigrateModal: false,
+      templateIdsToMigrate: [],
+      snapshotIdsToMigrate: []
     }
   },
   created () {
     this.fetchData()
   },
   methods: {
+    openMigrationModal () {
+      for (const record of this.dataSource) {
+        if (this.selectedRowKeys.includes(record.name)) {
+          if (record.snapshotid) {
+            this.snapshotIdsToMigrate.push(record.snapshotid)
+          } else if (record.templateid) {
+            this.templateIdsToMigrate.push(record.templateid)
+          }
+        }
+      }
+      this.showMigrateModal = true
+    },
     onSelectChange (changableRowKeys) {
       console.log('selectedRowKeys changed: ', changableRowKeys)
       this.selectedRowKeys = changableRowKeys
@@ -343,7 +390,7 @@ export default {
       })
       return null
     },
-    onClose () {
+    onDrawerClose () {
       this.showDrawer = false
     }
   }

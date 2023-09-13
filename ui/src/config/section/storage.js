@@ -360,6 +360,17 @@ export default {
           show: (record) => { return record.state === 'BackedUp' && record.revertable }
         },
         {
+          api: 'migrateResourceToAnotherSecondaryStorage',
+          icon: 'arrows-alt-outlined',
+          label: 'label.action.migrate.snapshot',
+          message: 'message.action.migrate.snapshot',
+          dataView: true,
+          args: ['srcpool', 'destpool', 'snapshots'],
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateImageStoreResource.vue'))),
+          show: (record) => { return record.state === 'BackedUp' }
+        },
+        {
           api: 'deleteSnapshot',
           icon: 'delete-outlined',
           label: 'label.action.delete.snapshot',
