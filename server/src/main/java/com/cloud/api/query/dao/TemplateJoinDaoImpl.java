@@ -178,6 +178,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
             if (datastore != null) {
                 downloadDetailInImageStores.put("datastore", datastore.getName());
+                if (view.equals(ResponseView.Full)) {
+                    downloadDetailInImageStores.put("datastoreId", datastore.getUuid());
+                }
                 downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
                 downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
                 downloadProgressDetails.add(downloadDetailInImageStores);
@@ -392,7 +395,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     }
 
     @Override
-    public TemplateResponse newIsoResponse(TemplateJoinVO iso) {
+    public TemplateResponse newIsoResponse(TemplateJoinVO iso, ResponseView view) {
 
         TemplateResponse isoResponse = new TemplateResponse();
         isoResponse.setId(iso.getUuid());
@@ -455,6 +458,23 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.setStatus("Successfully Installed");
             }
             isoResponse.setUrl(iso.getUrl());
+            List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
+            List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
+            HashMap<String, String> downloadDetailInImageStores = null;
+            for (TemplateDataStoreVO templateInStore : templatesInStore) {
+                downloadDetailInImageStores = new HashMap<>();
+                ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
+                if (datastore != null) {
+                    downloadDetailInImageStores.put("datastore", datastore.getName());
+                    if (view.equals(ResponseView.Full)) {
+                        downloadDetailInImageStores.put("datastoreId", datastore.getUuid());
+                    }
+                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
+                    downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                    downloadProgressDetails.add(downloadDetailInImageStores);
+                }
+            }
+            isoResponse.setDownloadProgress(downloadProgressDetails);
         }
 
         if (iso.getDataCenterId() > 0) {

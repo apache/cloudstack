@@ -134,6 +134,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return showUnique != null && showUnique;
     }
 
+    public Long getDataStoreId() {
+        return null;
+    }
+
     public Boolean getShowIcon () {
         return  showIcon != null ? showIcon : false;
     }

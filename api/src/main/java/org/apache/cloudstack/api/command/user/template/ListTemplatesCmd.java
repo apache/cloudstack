@@ -24,6 +24,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import org.apache.cloudstack.api.APICommand;
@@ -207,6 +208,13 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     public List<Long> getIds() {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
         return ids;
+    }
+
+    public Long getDataStoreId() {
+        return null;
     }
 }

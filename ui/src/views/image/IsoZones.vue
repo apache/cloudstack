@@ -75,6 +75,23 @@
           </span>
         </template>
       </template>
+      <template #expandedRowRender="{ record }">
+        <a-table
+          style="margin: 10px 0;"
+          :columns="innerColumns"
+          :data-source="record.downloaddetails"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.zoneid">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+      </template>
     </a-table>
     <a-pagination
       class="row-element"
@@ -235,6 +252,20 @@ export default {
         key: 'isready',
         title: this.$t('label.isready'),
         dataIndex: 'isready'
+      }
+    ]
+    this.innerColumns = [
+      {
+        title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
       }
     ]
     if (this.isActionPermitted()) {

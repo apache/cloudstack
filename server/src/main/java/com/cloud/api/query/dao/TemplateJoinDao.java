@@ -34,7 +34,7 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     TemplateResponse newTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO tmpl);
 
-    TemplateResponse newIsoResponse(TemplateJoinVO tmpl);
+    TemplateResponse newIsoResponse(TemplateJoinVO tmpl, ResponseView view);
 
     TemplateResponse newUpdateResponse(TemplateJoinVO tmpl);
 

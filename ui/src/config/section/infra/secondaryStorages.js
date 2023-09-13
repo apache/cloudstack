@@ -42,6 +42,21 @@ export default {
     return fields
   },
   resourceType: 'SecondaryStorage',
+  related: [{
+    name: 'template',
+    title: 'label.templates',
+    param: 'datastoreid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'datastoreid'
+  },
+  {
+    name: 'snapshot',
+    title: 'label.snapshots',
+    param: 'imagestoreid'
+  }],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
