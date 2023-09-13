@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import static org.junit.Assert.*;
-
 import java.util.UUID;
 
 import org.junit.Assert;
