@@ -69,6 +69,7 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
         copyGuestOsMappingsToVMware80u1();
         addForeignKeyToAutoscaleVmprofiles(conn);
         mergeDuplicateGuestOSes();
+        addIndexes(conn);
     }
 
     private void mergeDuplicateGuestOSes() {
@@ -241,5 +242,9 @@ public class Upgrade41800to41810 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     private void addForeignKeyToAutoscaleVmprofiles(Connection conn) {
         DbUpgradeUtils.addForeignKey(conn, "autoscale_vmprofiles", "user_data_id", "user_data", "id");
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "cluster_details", "name");
     }
 }

@@ -51,3 +51,12 @@ jobs:
           npm run build
           npm run lint
           npm run test:unit
+
+      - uses: codecov/codecov-action@v3
+        with:
+          working-directory: ui
+          files: ./coverage/lcov.info
+          fail_ci_if_error: true
+          flags: uitests
+          verbose: true
+          name: codecov

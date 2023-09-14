@@ -347,7 +347,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             // and as such can be easily read.
 
             try (InputStream inputStream = td.getS3ObjectInputStream();) {
-                dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream));
+                dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream, false));
             }
             catch (IOException e) {
                 result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();

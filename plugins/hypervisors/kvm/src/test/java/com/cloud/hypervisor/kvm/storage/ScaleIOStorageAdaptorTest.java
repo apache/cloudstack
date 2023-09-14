@@ -26,9 +26,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class ScaleIOStorageAdaptorTest {
     @Test
     public void getUsableBytesFromRawBytesTest() {
-        Assert.assertEquals("Overhead calculated for 8Gi size", 8554774528L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(8L << 30));
-        Assert.assertEquals("Overhead calculated for 4Ti size", 4294130925568L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(4000L << 30));
-        Assert.assertEquals("Overhead calculated for 500Gi size", 536737005568L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(500L << 30));
+        Assert.assertEquals("Overhead calculated for 8Gi size", 8454111232L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(8L << 30));
+        Assert.assertEquals("Overhead calculated for 4Ti size", 4294030262272L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(4000L << 30));
+        Assert.assertEquals("Overhead calculated for 500Gi size", 536636342272L, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(500L << 30));
         Assert.assertEquals("Unsupported small size", 0, ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(1L));
     }
 }

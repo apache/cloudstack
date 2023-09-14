@@ -69,19 +69,16 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-
         NetworkVO network = (NetworkVO)super.design(offering, plan, userSpecified, owner);
         if (network == null) {
             return null;
         }
-
         if (offering.getGuestType() == GuestType.L2 && network.getBroadcastUri() != null) {
             String vxlan = BroadcastDomainType.getValue(network.getBroadcastUri());
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
         network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
-
-        return network;
+        return updateNetworkDesignForIPv6IfNeeded(network, userSpecified);
     }
 
     @Override

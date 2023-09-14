@@ -109,7 +109,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
       columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
-      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
+      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus-outlined',
@@ -126,7 +126,7 @@ export default {
         dataView: true,
         params: { issystem: 'true' },
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete-outlined',

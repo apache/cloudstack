@@ -545,4 +545,22 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{UseSystemGuestVlans};
     }
+
+    public Network updateNetworkDesignForIPv6IfNeeded(NetworkVO network, Network userSpecified) {
+        if (userSpecified == null) {
+            return network;
+        }
+        if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+            throw new InvalidParameterValueException("ip6gateway and ip6cidr must be specified together.");
+        }
+        if (userSpecified.getIp6Cidr() != null) {
+            network.setIp6Cidr(userSpecified.getIp6Cidr());
+            network.setIp6Gateway(userSpecified.getIp6Gateway());
+        }
+        if (userSpecified.getRouterIpv6() != null) {
+            network.setRouterIpv6(userSpecified.getRouterIpv6());
+        }
+        return network;
+    }
 }

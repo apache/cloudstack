@@ -100,6 +100,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if experimental features for Kubernetes cluster such as Docker private registry are enabled, false otherwise")
     private boolean kubernetesClusterExperimentalFeaturesEnabled;
 
+    @SerializedName("customhypervisordisplayname")
+    @Param(description = "Display name for custom hypervisor", since = "4.19.0")
+    private String customHypervisorDisplayName;
+
     @SerializedName("defaultuipagesize")
     @Param(description = "default page size in the UI for various views, value set in the configurations", since = "4.15.2")
     private Long defaultUiPageSize;
@@ -214,5 +218,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setInstancesDisksStatsRetentionTime(Integer instancesDisksStatsRetentionTime) {
         this.instancesDisksStatsRetentionTime = instancesDisksStatsRetentionTime;
+    }
+
+    public void setCustomHypervisorDisplayName(String customHypervisorDisplayName) {
+        this.customHypervisorDisplayName = customHypervisorDisplayName;
     }
 }
