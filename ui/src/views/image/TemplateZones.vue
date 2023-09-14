@@ -72,7 +72,7 @@
           :data-source="record.downloaddetails"
           :pagination="false"
           :bordered="true"
-          :rowKey="record => record.zoneid">
+          :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
                 <router-link :to="{ path: '/imagestore/' + record.datastoreId }">

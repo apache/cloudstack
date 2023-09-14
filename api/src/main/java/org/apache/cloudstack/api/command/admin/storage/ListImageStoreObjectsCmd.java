@@ -60,7 +60,7 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
             path = "/";
         }
         // We prepend "/" to path and normalize to prevent path traversal attacks
-        return Path.of(String.format("/%s", path)).normalize().toString();
+        return Path.of(String.format("/%s", path)).normalize().toString().substring(1);
     }
 
     /////////////////////////////////////////////////////

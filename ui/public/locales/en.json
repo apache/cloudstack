@@ -2811,6 +2811,7 @@
 "message.migrate.instance.host.auto.assign": "Host for the instance will be automatically chosen based on the suitability within the same cluster",
 "message.migrate.instance.to.host": "Please confirm that you want to migrate this instance to another host. When migration is between hosts of different clusters volume(s) of the instance may get migrated to suitable storage pools.",
 "message.migrate.instance.to.ps": "Please confirm that you want to migrate this instance to another primary storage.",
+"message.migrate.resource.to.ss": "Please confirm that you want to migrate this resource to another secondary storage.",
 "message.migrate.router.confirm": "Please confirm the host you wish to migrate the router to:",
 "message.migrate.systemvm.confirm": "Please confirm the host you wish to migrate the system VM to:",
 "message.migrate.volume": "Please confirm that you want to migrate this volume to another primary storage.",

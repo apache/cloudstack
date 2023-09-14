@@ -17,9 +17,9 @@
 
 <template>
   <div v-ctrl-enter="submitForm">
-    <a-alert type="warning">
+    <a-alert type="error">
       <template #message>
-        <span v-html="$t('message.migrate.instance.to.ps')" />
+        <span v-html="$t('message.migrate.resource.to.ss')" />
       </template>
     </a-alert>
     <image-store-selector
@@ -47,25 +47,19 @@ export default {
     ImageStoreSelector
   },
   props: {
-    resource: {
-      type: Object,
-      required: false
-    },
-    resourceType: {
-      type: String,
-      required: false
-    },
     snapshotIdsToMigrate: {
       type: Array,
+      default: () => [],
       required: false
     },
     templateIdsToMigrate: {
       type: Array,
+      default: () => [],
       required: false
     },
     sourceImageStore: {
       type: Object,
-      required: false
+      required: true
     }
   },
   data () {
@@ -75,15 +69,8 @@ export default {
     }
   },
   beforeCreate () {
-    if (this.resource) {
-      this.zoneid = this.resource.zoneid
-      // TODO: verify this assignment. This may change depending on the resource type
-      this.srcImageStoreId = this.resource.datastoreid
-    } else if (this.sourceImageStore) {
-      this.zoneid = this.sourceImageStore.zoneid
-      this.srcImageStoreId = this.sourceImageStore.id
-      console.log(this.srcImageStoreId)
-    }
+    this.zoneid = this.sourceImageStore.zoneid
+    this.srcImageStoreId = this.sourceImageStore.id
   },
   computed: {},
   methods: {
@@ -122,14 +109,8 @@ export default {
         srcpool: this.sourceImageStore.id,
         destpool: this.selectedStore.id
       }
-      if (this.resourceType === 'template') {
-        params.templates = [this.resource.id]
-      } else if (this.resourceType === 'snapshot') {
-        params.snapshots = [this.resource.id]
-      } else {
-        params.templates = this.templateIdsToMigrate.join(',')
-        params.snapshots = this.snapshotIdsToMigrate.join(',')
-      }
+      params.templates = this.templateIdsToMigrate.join(',')
+      params.snapshots = this.snapshotIdsToMigrate.join(',')
 
       api('migrateResourceToAnotherSecondaryStorage', params).then(response => {
         const jobId = response.migrateresourcetoanothersecondarystorageresponse.jobid

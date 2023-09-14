@@ -146,11 +146,20 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         List<String> paths = getFormattedPaths(answer.getPaths());
         List<String> absPaths = answer.getAbsPaths();
 
-        Map<String, SnapshotVO> pathSnapshotMap = getPathSnapshotMap(dataStore, paths, absPaths);
+        Map<String, SnapshotVO> pathSnapshotMap;
 
-        Map<String, VMTemplateVO> pathTemplateMap = getPathTemplateMap(dataStore, paths);
+        Map<String, VMTemplateVO> pathTemplateMap;
 
-        Map<String, VolumeVO> pathVolumeMap = getPathVolumeMap(dataStore, paths);
+        Map<String, VolumeVO> pathVolumeMap = new HashMap<>();
+
+        if (dataStore.getRole() != DataStoreRole.Primary) {
+            pathTemplateMap = getPathTemplateMapForSecondaryDS(dataStore.getId(), paths);
+            pathSnapshotMap = getPathSnapshotMapForSecondaryDS(dataStore.getId(), paths);
+        } else {
+            pathTemplateMap = getPathTemplateMapForPrimaryDS(dataStore.getId(), paths);
+            pathSnapshotMap = getPathSnapshotMapForPrimaryDS(dataStore.getId(), paths, absPaths);
+            pathVolumeMap = getPathVolumeMapForPrimaryDS(dataStore.getId(), paths);
+        }
 
         for (int i = 0; i < paths.size(); i++) {
             DataStoreObjectResponse response = new DataStoreObjectResponse(
@@ -177,7 +186,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return listResponse;
     }
 
-    private List<String> getFormattedPaths(List<String> paths) {
+    List<String> getFormattedPaths(List<String> paths) {
         List<String> formattedPaths = new ArrayList<>();
         for (String path : paths) {
             String normalizedPath = Path.of(path).normalize().toString();
@@ -190,15 +199,65 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return formattedPaths;
     }
 
-    private Map<String, SnapshotVO> getPathSnapshotMap(DataStore dataStore, List<String> paths,
-            List<String> absolutePaths) {
+    Map<String, VMTemplateVO> getPathTemplateMapForSecondaryDS(Long dataStoreId, List<String> paths) {
+        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPaths(dataStoreId, paths);
+        if (!CollectionUtils.isEmpty(templateList)) {
+            List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
+
+            Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
+                    Collectors.toMap(VMTemplateVO::getId, template -> template));
+
+            for (TemplateDataStoreVO templateDataStore : templateList) {
+                pathTemplateMap.put(templateDataStore.getInstallPath(),
+                        templateMap.get(templateDataStore.getTemplateId()));
+            }
+        }
+        return pathTemplateMap;
+    }
+
+    Map<String, SnapshotVO> getPathSnapshotMapForSecondaryDS(Long dataStoreId, List<String> paths) {
         HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
-        // If dataStore is primary, we query using absolutePaths else we query using paths.
-        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStore.getId(), dataStore.getRole(),
-                dataStore.getRole() == DataStoreRole.Primary ? absolutePaths : paths);
+        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStoreId, DataStoreRole.Image, paths);
         if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
             List<SnapshotVO> snapshots = snapshotDao.listByIds(
                     snapshotDataStoreList.stream().map(SnapshotDataStoreVO::getSnapshotId).toArray());
+
+            Map<Long, SnapshotVO> snapshotMap = snapshots.stream().collect(
+                    Collectors.toMap(Snapshot::getId, snapshot -> snapshot));
+
+            for (SnapshotDataStoreVO snapshotDataStore : snapshotDataStoreList) {
+                snapshotPathMap.put(snapshotDataStore.getInstallPath(), snapshotMap.get(snapshotDataStore.getSnapshotId()));
+            }
+        }
+
+        return snapshotPathMap;
+    }
+
+    Map<String, VMTemplateVO> getPathTemplateMapForPrimaryDS(Long dataStoreId, List<String> paths) {
+        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStoreId, paths);
+        if (!CollectionUtils.isEmpty(templateStoragePoolList)) {
+            List<VMTemplateVO> templates = templateDao.listByIds
+                    (templateStoragePoolList.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList()));
+
+            Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
+                    Collectors.toMap(VMTemplateVO::getId, template -> template));
+
+            for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
+                pathTemplateMap.put(templatePool.getInstallPath(), templateMap.get(templatePool.getTemplateId()));
+            }
+        }
+        return pathTemplateMap;
+    }
+
+    Map<String, SnapshotVO> getPathSnapshotMapForPrimaryDS(Long dataStoreId, List<String> paths,
+            List<String> absPaths) {
+        HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
+        // For primary dataStore, we query using absolutePaths
+        List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStoreId, DataStoreRole.Primary, absPaths);
+        if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
+            List<SnapshotVO> snapshots = snapshotDao.listByIds(snapshotDataStoreList.stream().map(SnapshotDataStoreVO::getSnapshotId).toArray());
 
             Map<Long, SnapshotVO> snapshotMap = snapshots.stream().collect(
                     Collectors.toMap(Snapshot::getId, snapshot -> snapshot));
@@ -207,66 +266,22 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             // We use this map to create a mapping between relative path and absolute path
             // which is used to create a mapping between relative path and snapshot.
             Map<String, String> absolutePathPathMap = new HashMap<>();
-            if (dataStore.getRole() == DataStoreRole.Primary) {
-                for (int i = 0; i < paths.size(); i++) {
-                    absolutePathPathMap.put(absolutePaths.get(i), paths.get(i));
-                }
+            for (int i = 0; i < paths.size(); i++) {
+                absolutePathPathMap.put(absPaths.get(i), paths.get(i));
             }
 
             for (SnapshotDataStoreVO snapshotDataStore : snapshotDataStoreList) {
-                if (dataStore.getRole() == DataStoreRole.Primary) {
-                    snapshotPathMap.put(absolutePathPathMap.get(snapshotDataStore.getInstallPath()),
-                            snapshotMap.get(snapshotDataStore.getSnapshotId()));
-                } else {
-                    snapshotPathMap.put(snapshotDataStore.getInstallPath(),
-                            snapshotMap.get(snapshotDataStore.getSnapshotId()));
-                }
+                snapshotPathMap.put(absolutePathPathMap.get(snapshotDataStore.getInstallPath()),
+                        snapshotMap.get(snapshotDataStore.getSnapshotId()));
             }
         }
 
         return snapshotPathMap;
     }
 
-    private Map<String, VMTemplateVO> getPathTemplateMap(DataStore dataStore, List<String> paths) {
-        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
-        if (dataStore.getRole() != DataStoreRole.Primary) {
-            List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPaths(dataStore.getId(), paths);
-            if (!CollectionUtils.isEmpty(templateList)) {
-                List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
-
-                Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
-                        Collectors.toMap(VMTemplateVO::getId, template -> template));
-
-                for (TemplateDataStoreVO templateDataStore : templateList) {
-                    pathTemplateMap.put(templateDataStore.getInstallPath(),
-                            templateMap.get(templateDataStore.getTemplateId()));
-                }
-            }
-
-        } else {
-            List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStore.getId(), paths);
-            if (!CollectionUtils.isEmpty(templateStoragePoolList)) {
-                List<VMTemplateVO> templates = templateDao.listByIds
-                        (templateStoragePoolList.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList()));
-
-                Map<Long, VMTemplateVO> templateMap = templates.stream().collect(
-                        Collectors.toMap(VMTemplateVO::getId, template -> template));
-
-                for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
-                    pathTemplateMap.put(templatePool.getInstallPath(),
-                            templateMap.get(templatePool.getTemplateId()));
-                }
-            }
-        }
-        return pathTemplateMap;
-    }
-
-    private HashMap<String, VolumeVO> getPathVolumeMap(DataStore dataStore, List<String> paths) {
+    HashMap<String, VolumeVO> getPathVolumeMapForPrimaryDS(Long dataStoreId, List<String> paths) {
         HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
-        if (dataStore.getRole() != DataStoreRole.Primary) {
-            return volumePathMap;
-        }
-        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPaths(dataStore.getId(), paths);
+        List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPaths(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
                 volumePathMap.put(volume.getPath(), volume);

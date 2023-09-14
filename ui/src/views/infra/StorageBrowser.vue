@@ -61,24 +61,6 @@
       </a-row>
     </a-card>
 
-    <!-- <a-button shape="circle" @click="deleteSelected">
-      <link-outlined/>
-    </a-button>
- -->
-    <a-button shape="circle" @click="openMigrationModal">
-      <arrows-alt-outlined/>
-    </a-button>
-
-    <!-- <a-modal
-      :visible="showDeleteModal"
-      :confirmLoading="deleteModalLoading"
-      @ok="deleteSelected"
-      @cancel="showDeleteModal = false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')">
-      <span v-html="$t('message.delete.confirm', { name: selectedRowKeys.length })" />
-    </a-modal> -->
-
     <a-modal
       :visible="showMigrateModal"
       :confirmLoading="migrateModalLoading"
@@ -88,14 +70,13 @@
       :okText="$t('label.ok')"
       :cancelText="$t('label.cancel')">
       <div>
-        <span v-html="$t('message.migrate.confirm', { name: selectedRowKeys.length })" />
         <migrate-image-store-resource
           :sourceImageStore="resource"
           :templateIdsToMigrate="templateIdsToMigrate"
           :snapshotIdsToMigrate="snapshotIdsToMigrate"
           @close-action="showMigrateModal = false"
         />
-    </div>
+      </div>
     </a-modal>
 
     <div>
@@ -104,7 +85,6 @@
         :row-key="record => record.name"
         :data-source="dataSource"
         :pagination="{ current: page, pageSize: pageSize, total: total }"
-        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
         @change="handleTableChange">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key == 'name'">
@@ -162,6 +142,14 @@
               </router-link>
             </template>
           </template>
+          <template v-else-if="column.key === 'actions' && (record.templateid || record.snapshotid)">
+              <tooltip-button
+              tooltipPlacement="top"
+              :tooltip="$t('label.migrate.data.from.image.store')"
+              icon="arrows-alt-outlined"
+              :copyResource="String(resource.id)"
+              @onClick="openMigrationModal(record)" />
+            </template>
         </template>
       </a-table>
     </div>
@@ -173,13 +161,15 @@
 import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import InfoCard from '@/components/view/InfoCard'
+import TooltipButton from '@/components/widgets/TooltipButton'
 import MigrateImageStoreResource from '@/views/storage/MigrateImageStoreResource'
 
 export default {
   name: 'StorageBrowser',
   components: {
     InfoCard,
-    MigrateImageStoreResource
+    MigrateImageStoreResource,
+    TooltipButton
   },
   props: {
     resource: {
@@ -192,36 +182,42 @@ export default {
     }
   },
   data () {
+    var columns = [
+      {
+        key: 'name',
+        title: this.$t('label.name'),
+        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+      },
+      {
+        key: 'size',
+        title: this.$t('label.size'),
+        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+      },
+      {
+        key: 'lastupdated',
+        title: this.$t('label.last.updated'),
+        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+      },
+      {
+        key: 'related',
+        title: this.$t('label.related'),
+        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+      }
+    ]
+    if (this.resourceType === 'ImageStore') {
+      columns.push({
+        key: 'actions',
+        title: this.$t('label.actions')
+      })
+    }
     return {
       loading: false,
       dataSource: [],
       browserPath: this.$route.query.browserPath || '',
       page: parseInt(this.$route.query.browserPage) || 1,
       pageSize: parseInt(this.$route.query.browserPageSize) || 10,
-      selectedRowKeys: [],
       total: 0,
-      columns: [
-        {
-          key: 'name',
-          title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
-        },
-        {
-          key: 'size',
-          title: this.$t('label.size'),
-          sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
-        },
-        {
-          key: 'lastupdated',
-          title: this.$t('label.last.updated'),
-          sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
-        },
-        {
-          key: 'related',
-          title: this.$t('label.related'),
-          sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
-        }
-      ],
+      columns: columns,
       showDrawer: false,
       drawerLoading: false,
       drawerResource: {},
@@ -236,21 +232,13 @@ export default {
     this.fetchData()
   },
   methods: {
-    openMigrationModal () {
-      for (const record of this.dataSource) {
-        if (this.selectedRowKeys.includes(record.name)) {
-          if (record.snapshotid) {
-            this.snapshotIdsToMigrate.push(record.snapshotid)
-          } else if (record.templateid) {
-            this.templateIdsToMigrate.push(record.templateid)
-          }
-        }
+    openMigrationModal (record) {
+      if (record.snapshotid) {
+        this.snapshotIdsToMigrate.push(record.snapshotid)
+      } else if (record.templateid) {
+        this.templateIdsToMigrate.push(record.templateid)
       }
       this.showMigrateModal = true
-    },
-    onSelectChange (changableRowKeys) {
-      console.log('selectedRowKeys changed: ', changableRowKeys)
-      this.selectedRowKeys = changableRowKeys
     },
     handleTableChange (pagination, filters, sorter) {
       this.page = pagination.current
@@ -269,7 +257,6 @@ export default {
         this.total = json.listimagestoreobjectsresponse.count
       }).finally(() => {
         this.loading = false
-        this.onSelectChange([])
       })
     },
     fetchPrimaryStoreObjects () {
@@ -284,7 +271,6 @@ export default {
         this.total = json.liststoragepoolobjectsresponse.count
       }).finally(() => {
         this.loading = false
-        this.onSelectChange([])
       })
     },
     fetchData () {

@@ -45,7 +45,7 @@
         <template v-if="column.key === 'disksizefree'">
           <span v-if="record.disksizetotal && record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizetotal * 1 - record.disksizeused * 1) }}</span>
         </template>
-        <template v-if="column.key === 'select'">
+        <template v-if="column.key === 'select' && record.id !== srcImageStoreId">
           <a-tooltip placement="top" :title="record.readonly ? $t('message.secondary.storage.invalid.state') : ''">
             <a-radio
               :disabled="record.id === srcImageStoreId"
@@ -53,7 +53,6 @@
               :checked="selectedImageStore != null && record.id === selectedImageStore.id">
             </a-radio>
           </a-tooltip>
-          {{ srcImageStoreId }}
         </template>
       </template>
     </a-table>
@@ -91,7 +90,6 @@ export default {
     }
   },
   data () {
-    console.log(this.srcImageStoreId)
     return {
       loading: false,
       imageStores: [],
