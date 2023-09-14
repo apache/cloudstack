@@ -135,7 +135,12 @@
 "label.action.health.monitor": "Health monitor",
 "label.action.image.store.read.only": "Make image store read-only",
 "label.action.image.store.read.write": "Make image store read-write",
+<<<<<<< HEAD
 "label.action.import.export.instances": "Import-Export Instances",
+=======
+"label.action.import.export.instances": "Import-Export instances",
+"label.action.ingest.instances": "Ingest instances",
+>>>>>>> f4a3c46a25 (UI changes to include multiple KVM migration options)
 "label.action.iso.permission": "Update ISO permissions",
 "label.action.iso.share": "Update ISO sharing",
 "label.action.lock.account": "Lock Account",
@@ -667,7 +672,12 @@
 "label.deployasis": "Read Instance settings from OVA",
 "label.deploymentplanner": "Deployment planner",
 "label.desc.db.stats": "Database Statistics",
+<<<<<<< HEAD
 "label.desc.importexportinstancewizard": "Import and export Instances to/from an existing VMware cluster.",
+=======
+"label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware cluster.",
+"label.desc.ingesttinstancewizard": "Ingest instances from an external KVM host",
+>>>>>>> f4a3c46a25 (UI changes to include multiple KVM migration options)
 "label.desc.usage.stats": "Usage Server Statistics",
 "label.description": "Description",
 "label.destaddressgroupuuid": "Destination Address Group",
@@ -706,6 +716,7 @@
 "label.disconnected": "Last disconnected",
 "label.disk": "Disk",
 "label.disk.offerings": "Disk offerings",
+"label.disk.path": "Disk Path",
 "label.disk.selection": "Disk selection",
 "label.disk.size": "Disk size",
 "label.disk.usage.info": "Disk usage information",
@@ -863,6 +874,7 @@
 "label.f5.ip.loadbalancer": "F5 BIG-IP load balancer.",
 "label.failed": "Failed",
 "label.featured": "Featured",
+"label.fetch.instances": "Fetch Instances",
 "label.fetch.latest": "Fetch latest",
 "label.files": "Alternate files to retrieve",
 "label.filter": "Filter",
@@ -1000,6 +1012,7 @@
 "label.info": "Info",
 "label.info.upper": "INFO",
 "label.infrastructure": "Infrastructure",
+"label.ingest.instance": "Ingest Instance",
 "label.ingress": "Ingress",
 "label.ingress.rule": "Ingress Rule",
 "label.initial": "Inital",
@@ -1643,6 +1656,7 @@
 "label.release.dedicated.pod": "Release dedicated pod",
 "label.release.dedicated.zone": "Release dedicated zone",
 "label.releasing.ip": "Releasing IP",
+"label.remote.instances": "Remote Instances",
 "label.remove": "Remove",
 "label.remove.annotation": "Remove comment",
 "label.remove.egress.rule": "Remove egress rule",
@@ -1859,6 +1873,7 @@
 "label.snapshottype": "Snapshot Type",
 "label.sockettimeout": "Socket timeout",
 "label.softwareversion": "Software version",
+"label.source": "Source",
 "label.source.based": "SourceBased",
 "label.sourcecidr": "Source CIDR",
 "label.sourcehost": "Source host",
@@ -2628,6 +2643,7 @@
 "message.desc.created.ssh.key.pair": "Created a SSH key pair.",
 "message.desc.host": "Each cluster must contain at least one host (computer) for guest Instances to run on. We will add the first host now. For a host to function in CloudStack, you must install hypervisor software on the host, assign an IP address to the host, and ensure the host is connected to the CloudStack management server.<br/><br/>Give the host's DNS or IP address, the user name (usually root) and password, and any labels you use to categorize hosts.",
 "message.desc.importexportinstancewizard": "This feature only applies Cloudstack VMware clusters. By choosing to manage an Instance, CloudStack takes over the orchestration of that Instance. The Instance is left running and not physically moved. Unmanaging Instances, removes CloudStack ability to manage them (but they are left running and not destroyed).",
+"message.desc.importingestinstancewizard": "This feature only applies to libvirt based KVM instances. Only Stopped instances can be ingested",
 "message.desc.primary.storage": "Each cluster must contain one or more primary storage servers. We will add the first one now. Primary storage contains the disk volumes for all the Instances running on hosts in the cluster. Use any standards-compliant protocol that is supported by the underlying hypervisor.",
 "message.desc.reset.ssh.key.pair": "Please specify a ssh key pair that you would like to add to this Instance.",
 "message.desc.secondary.storage": "Each zone must have at least one NFS or secondary storage server. We will add the first one now. Secondary storage stores Instance Templates, ISO images, and Instance disk volume Snapshots. This server must be available to all hosts in the zone.<br/><br/>Provide the IP address and exported path.",

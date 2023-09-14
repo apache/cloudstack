@@ -678,8 +678,13 @@ export default {
         const params = {
           name: this.resource.name,
           clusterid: this.cluster.id,
-          displayname: values.displayname
+          displayname: values.displayname,
+          zoneid: 1
         }
+        params.url = '10.0.34.170'
+        params.username = 'root'
+        params.password = 'P@ssword123'
+        params.hypervisor = 'KVM'
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -772,7 +777,7 @@ export default {
         }
         this.updateLoading(true)
         const name = this.resource.name
-        api('importUnmanagedInstance', params).then(json => {
+        api('importVm', params).then(json => {
           const jobId = json.importunmanagedinstanceresponse.jobid
           this.$pollJob({
             jobId,
