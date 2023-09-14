@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
@@ -126,6 +127,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -601,6 +603,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected static long ROOT_DEVICE_ID = 0;
 
+    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
+    private static final int NUM_OF_2K_BLOCKS = 512;
+    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
+
     @Inject
     private OrchestrationService _orchSrvc;
 
@@ -649,6 +655,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.XenServer,
             HypervisorType.Simulator
     ));
+
+    protected static final List<HypervisorType> ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS = Arrays.asList(
+            HypervisorType.KVM,
+            HypervisorType.XenServer,
+            HypervisorType.VMware,
+            HypervisorType.Simulator,
+            HypervisorType.Custom
+    );
 
     private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
 
@@ -2758,13 +2772,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
+        List<UserVmDetailVO> existingDetails = userVmDetailsDao.listDetails(id);
         if (cleanupDetails){
             if (caller != null && caller.getType() == Account.Type.ADMIN) {
-                userVmDetailsDao.removeDetails(id);
+                for (final UserVmDetailVO detail : existingDetails) {
+                    if (detail != null && detail.isDisplay()) {
+                        userVmDetailsDao.removeDetail(id, detail.getName());
+                    }
+                }
             } else {
-                for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                for (final UserVmDetailVO detail : existingDetails) {
                     if (detail != null && !userDenyListedSettings.contains(detail.getName())
-                            && !userReadOnlySettings.contains(detail.getName())) {
+                            && !userReadOnlySettings.contains(detail.getName()) && detail.isDisplay()) {
                         userVmDetailsDao.removeDetail(id, detail.getName());
                     }
                 }
@@ -2784,12 +2803,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (userReadOnlySettings.contains(detailName)) {
                             throw new InvalidParameterValueException("You're not allowed to add or edit the read-only setting: " + detailName);
                         }
+                        if (existingDetails.stream().anyMatch(d -> Objects.equals(d.getName(), detailName) && !d.isDisplay())){
+                            throw new InvalidParameterValueException("You're not allowed to add or edit the non-displayable setting: " + detailName);
+                        }
                     }
-                    // Add any hidden/denied or read-only detail
-                    for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
+                    // Add any existing user denied or read-only details. We do it here because admins would already provide these (or can delete them).
+                    for (final UserVmDetailVO detail : existingDetails) {
                         if (userDenyListedSettings.contains(detail.getName()) || userReadOnlySettings.contains(detail.getName())) {
                             details.put(detail.getName(), detail.getValue());
                         }
+                    }
+                }
+
+                // ensure details marked as non-displayable are maintained, regardless of admin or not
+                for (final UserVmDetailVO existingDetail : existingDetails) {
+                    if (!existingDetail.isDisplay()) {
+                        details.put(existingDetail.getName(), existingDetail.getValue());
                     }
                 }
 
@@ -3274,9 +3303,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         autoScaleManager.removeVmFromVmGroup(vmId);
 
-        vmScheduleManager.removeScheduleByVmId(vmId, expunge);
-
-        deleteVolumesFromVm(volumesToBeDeleted, expunge);
+        deleteVolumesFromVm(vm, volumesToBeDeleted, expunge);
 
         if (getDestroyRootVolumeOnVmDestruction(vm.getDomainId())) {
             VolumeVO rootVolume = _volsDao.getInstanceRootVolume(vm.getId());
@@ -3720,6 +3747,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 dataDiskTemplateToDiskOfferingMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, overrideDiskOfferingId);
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm")
+    public UserVm finalizeCreateVirtualMachine(long vmId) {
+        s_logger.info("Loading UserVm " + vmId + " from DB");
+        UserVm userVm = getUserVm(vmId);
+        if (userVm == null) {
+            s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
+        } else {
+            s_logger.warn("UserVm " + vmId + " does not exist in DB");
+        }
+        return userVm;
+    }
+
     private NetworkVO getNetworkToAddToNetworkList(VirtualMachineTemplate template, Account owner, HypervisorType hypervisor,
             List<HypervisorType> vpcSupportedHTypes, Long networkId) {
         NetworkVO network = _networkDao.findById(networkId);
@@ -3909,7 +3949,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 rootDiskOfferingId = diskOfferingId;
                 diskOfferingId = null;
             }
-            if (!customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            if (!customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE) && diskSize != null) {
                 customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(diskSize));
             }
         }
@@ -4296,7 +4336,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected long configureCustomRootDiskSize(Map<String, String> customParameters, VMTemplateVO template, HypervisorType hypervisorType, DiskOfferingVO rootDiskOffering) {
         verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorType);
-        long rootDiskSizeInBytes = verifyAndGetDiskSize(rootDiskOffering, NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1));
+        Long rootDiskSizeCustomParam = null;
+        if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            rootDiskSizeCustomParam = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
+            if (rootDiskSizeCustomParam <= 0) {
+                throw new InvalidParameterValueException("Root disk size should be a positive number.");
+            }
+        }
+        long rootDiskSizeInBytes = verifyAndGetDiskSize(rootDiskOffering, rootDiskSizeCustomParam);
         if (rootDiskSizeInBytes > 0) { //if the size at DiskOffering is not zero then the Service Offering had it configured, it holds priority over the User custom size
             _volumeService.validateVolumeSizeInBytes(rootDiskSizeInBytes);
             long rootDiskSizeInGiB = rootDiskSizeInBytes / GiB_TO_BYTES;
@@ -4305,11 +4352,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
-            Long rootDiskSize = NumbersUtil.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE), -1);
-            if (rootDiskSize <= 0) {
-                throw new InvalidParameterValueException("Root disk size should be a positive number.");
-            }
-            rootDiskSize *= GiB_TO_BYTES;
+            Long rootDiskSize = rootDiskSizeCustomParam * GiB_TO_BYTES;
             _volumeService.validateVolumeSizeInBytes(rootDiskSize);
             return rootDiskSize;
         } else {
@@ -4327,7 +4370,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!(hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.XenServer || hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.Simulator)) {
+        if (!ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorType)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -4761,6 +4804,56 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    public String validateUserData(String userData, HTTPMethod httpmethod) {
+        byte[] decodedUserData = null;
+        if (userData != null) {
+
+            if (userData.contains("%")) {
+                try {
+                    userData = URLDecoder.decode(userData, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
+                }
+            }
+
+            if (!Base64.isBase64(userData)) {
+                throw new InvalidParameterValueException("User data is not base64 encoded");
+            }
+            // If GET, use 4K. If POST, support up to 1M.
+            if (httpmethod.equals(HTTPMethod.GET)) {
+                if (userData.length() >= MAX_HTTP_GET_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for an http GET request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+                }
+                decodedUserData = Base64.decodeBase64(userData.getBytes());
+                if (decodedUserData.length > MAX_HTTP_GET_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for GET request");
+                }
+            } else if (httpmethod.equals(HTTPMethod.POST)) {
+                if (userData.length() >= MAX_HTTP_POST_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for an http POST request");
+                }
+                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+                }
+                decodedUserData = Base64.decodeBase64(userData.getBytes());
+                if (decodedUserData.length > MAX_HTTP_POST_LENGTH) {
+                    throw new InvalidParameterValueException("User data is too long for POST request");
+                }
+            }
+
+            if (decodedUserData == null || decodedUserData.length < 1) {
+                throw new InvalidParameterValueException("User data is too short");
+            }
+            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
+            return Base64.encodeBase64String(decodedUserData);
+        }
+        return null;
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
@@ -4993,6 +5086,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Answer startAnswer = cmds.getAnswer(StartAnswer.class);
         String returnedIp = null;
         String originalIp = null;
+        String originalVncPassword = profile.getVirtualMachine().getVncPassword();
+        String returnedVncPassword = null;
         if (startAnswer != null) {
             StartAnswer startAns = (StartAnswer)startAnswer;
             VirtualMachineTO vmTO = startAns.getVirtualMachine();
@@ -5001,6 +5096,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     returnedIp = nicTO.getIp();
                 }
             }
+            returnedVncPassword = vmTO.getVncPassword();
         }
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
@@ -5052,6 +5148,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        updateVncPasswordIfItHasChanged(originalVncPassword, returnedVncPassword, profile);
+
         // get system ip and create static nat rule for the vm
         try {
             _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
@@ -5084,6 +5182,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         });
 
         return true;
+    }
+
+    protected void updateVncPasswordIfItHasChanged(String originalVncPassword, String returnedVncPassword, VirtualMachineProfile profile) {
+        if (returnedVncPassword != null && !originalVncPassword.equals(returnedVncPassword)) {
+            UserVmVO userVm = _vmDao.findById(profile.getId());
+            userVm.setVncPassword(returnedVncPassword);
+            _vmDao.update(userVm.getId(), userVm);
+        }
     }
 
     @Override
@@ -5645,7 +5751,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm.getHypervisorType();
     }
 
-    protected String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
+    @Override
+    public String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
         if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }
@@ -7974,7 +8081,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Create new context and inject correct event resource type, id and details,
             // otherwise VOLUME.DETACH event will be associated with VirtualMachine and contain VM id and other information.
             CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
-            volumeContext.setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
+            volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, volume.getInstanceId()));
             volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
             volumeContext.setEventResourceId(volume.getId());
 
@@ -7992,15 +8099,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void deleteVolumesFromVm(List<VolumeVO> volumes, boolean expunge) {
+    private void deleteVolumesFromVm(UserVmVO vm, List<VolumeVO> volumes, boolean expunge) {
 
         for (VolumeVO volume : volumes) {
+            destroyVolumeInContext(vm, expunge, volume);
+        }
+    }
 
+    private void destroyVolumeInContext(UserVmVO vm, boolean expunge, VolumeVO volume) {
+        // Create new context and inject correct event resource type, id and details,
+        // otherwise VOLUME.DESTROY event will be associated with VirtualMachine and contain VM id and other information.
+        CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
+        volumeContext.setEventDetails("Volume Type: " + volume.getVolumeType() + " Volume Id: " + this._uuidMgr.getUuid(Volume.class, volume.getId()) + " Vm Id: " + vm.getUuid());
+        volumeContext.setEventResourceType(ApiCommandResourceType.Volume);
+        volumeContext.setEventResourceId(volume.getId());
+        try {
             Volume result = _volumeService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), expunge, false);
 
             if (result == null) {
-                s_logger.error("DestroyVM remove volume - failed to delete volume " + volume.getInstanceId() + " from instance " + volume.getId());
+                s_logger.error(String.format("DestroyVM remove volume - failed to delete volume %s from instance %s", volume.getId(), volume.getInstanceId()));
             }
+        } finally {
+            // Remove volumeContext and pop vmContext back
+            CallContext.unregister();
         }
     }
 

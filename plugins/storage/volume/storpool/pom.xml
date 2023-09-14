@@ -61,9 +61,39 @@
             <artifactId>mockito-inline</artifactId>
             <version>4.7.0</version>
         </dependency>
+        <dependency>
+            <groupId>pl.project13.maven</groupId>
+            <artifactId>git-commit-id-plugin</artifactId>
+            <version>4.9.10</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmaven</groupId>
+                <artifactId>gmaven-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>set-properties</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <providerSelection>1.7</providerSelection>
+                            <source>
+                                File git = new File("./.git")
+                                if (!git.exists()) {
+                                    pom.properties['storpool.skip.git.properties'] = 'true'
+                                } else {
+                                    pom.properties['storpool.skip.git.properties'] = 'false'
+                                }
+                            </source>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <executions>
@@ -74,6 +104,36 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skip>${storpool.skip.git.properties}</skip>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <prefix>git</prefix>
+                    <verbose>false</verbose>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                    <format>json</format>
+                    <excludeProperties>
+                        <excludeProperty>git.*.email</excludeProperty>
+                    </excludeProperties>
+                    <gitDescribe>
+                        <skip>false</skip>
+                        <always>false</always>
+                        <dirty>-dirty</dirty>
+                    </gitDescribe>
+                </configuration>
             </plugin>
         </plugins>
     </build>

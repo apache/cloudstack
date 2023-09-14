@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -332,6 +333,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected SnapshotHelper snapshotHelper;
 
     @Inject
+    protected DomainDao domainDao;
+
+    @Inject
     protected ProjectManager projectManager;
     @Inject
     protected StoragePoolDetailsDao storagePoolDetailsDao;
@@ -486,13 +490,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 //using the existing max upload size configuration
                 command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
                 command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
-                command.setAccountId(vol.getAccountId());
-                Account account = _accountDao.findById(vol.getAccountId());
-                if (account.getType().equals(Account.Type.PROJECT)) {
-                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
-                } else {
-                    command.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
-                }
+
+                long accountId = vol.getAccountId();
+                Account account = _accountDao.findById(accountId);
+                Domain domain = domainDao.findById(account.getDomainId());
+
+                command.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage));
+                command.setAccountId(accountId);
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
                 response.setMetadata(metadata);
@@ -1726,6 +1730,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
+    public void destroyVolume(long volumeId) {
+        volService.destroyVolume(volumeId);
     }
 
     @Override
@@ -2999,6 +3009,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
+        StoragePoolVO srcStoragePoolVO = _storagePoolDao.findById(vol.getPoolId());
+
         // OfflineVmwareMigration: extract this block as method and check if it is subject to regression
         if (vm != null && State.Running.equals(vm.getState())) {
             // Check if the VM is GPU enabled.
@@ -3020,16 +3032,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     liveMigrateVolume = capabilities.isStorageMotionSupported();
                 }
 
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(vol.getPoolId());
-                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !storagePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
+                if (liveMigrateVolume && HypervisorType.KVM.equals(host.getHypervisorType()) && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
                     StoragePoolVO destinationStoragePoolVo = _storagePoolDao.findById(storagePoolId);
 
-                    if (isSourceOrDestNotOnStorPool(storagePoolVO, destinationStoragePoolVo)) {
+                    if (isSourceOrDestNotOnStorPool(srcStoragePoolVO, destinationStoragePoolVo)) {
                         throw new InvalidParameterValueException("KVM does not support volume live migration due to the limited possibility to refresh VM XML domain. " +
                                 "Therefore, to live migrate a volume between storage pools, one must migrate the VM to a different host as well to force the VM XML domain update. " +
                                 "Use 'migrateVirtualMachineWithVolumes' instead.");
                     }
-                    srcAndDestOnStorPool = isSourceAndDestOnStorPool(storagePoolVO, destinationStoragePoolVo);
+                    srcAndDestOnStorPool = isSourceAndDestOnStorPool(srcStoragePoolVO, destinationStoragePoolVo);
                 }
             }
 
@@ -3043,7 +3054,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool) {
+        if (vol.getPassphraseId() != null && !srcAndDestOnStorPool && !srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex)) {
             throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
         }
 

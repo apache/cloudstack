@@ -157,5 +157,3 @@ else
 echo "Skipping verification for account $i (the account either a) misses root volume $volume_name b) volume wasn't deleted 3) Delete volume failed "
 fi
 done
-
-

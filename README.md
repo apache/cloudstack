@@ -1,6 +1,6 @@
 # Apache CloudStack [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml) [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg)](https://github.com/apache/cloudstack/actions/workflows/ui.yml) [![License Check](https://github.com/apache/cloudstack/actions/workflows/rat.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/rat.yml) [![Simulator CI](https://github.com/apache/cloudstack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ci.yml) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=apache_cloudstack&metric=alert_status)](https://sonarcloud.io/dashboard?id=apache_cloudstack) [![codecov](https://codecov.io/gh/apache/cloudstack/branch/main/graph/badge.svg)](https://codecov.io/gh/apache/cloudstack)
 
-![Apache CloudStack](tools/logo/apache_cloudstack.png)
+[![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
@@ -62,7 +62,7 @@ via GitHub pull requests.
 ## Documentation
 
 * [Project Documentation](https://docs.cloudstack.apache.org)
-* [Release notes](https://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
+* [Release notes](https://docs.cloudstack.apache.org/en/latest/releasenotes/index.html)
 * Developer [wiki](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Home)
 * Design [documents](https://cwiki.apache.org/confluence/display/CLOUDSTACK/Design)
 * API [documentation](https://cloudstack.apache.org/api.html)
