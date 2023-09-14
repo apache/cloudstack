@@ -240,6 +240,8 @@ CREATE VIEW `cloud`.`snapshot_view` AS
          `data_center`.`uuid` AS `data_center_uuid`,
          `data_center`.`name` AS `data_center_name`,
          `snapshot_store_ref`.`store_id` AS `store_id`,
+         IFNULL(`image_store`.`uuid`, `storage_pool`.`uuid`) AS `store_uuid`,
+         IFNULL(`image_store`.`name`, `storage_pool`.`name`) AS `store_name`,
          `snapshot_store_ref`.`store_role` AS `store_role`,
          `snapshot_store_ref`.`state` AS `store_state`,
          `snapshot_store_ref`.`download_state` AS `download_state`,

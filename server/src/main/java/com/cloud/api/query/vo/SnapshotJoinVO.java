@@ -136,6 +136,12 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "store_id")
     private Long storeId;
 
+    @Column(name = "store_uuid")
+    private String storeUuid;
+
+    @Column(name = "store_name")
+    private String storeName;
+
     @Column(name = "store_role")
     @Enumerated(EnumType.STRING)
     private DataStoreRole storeRole;
@@ -297,6 +303,14 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public Long getStoreId() {
         return storeId;
+    }
+
+    public String getStoreUuid() {
+        return storeUuid;
+    }
+
+    public String getStoreName() {
+        return storeName;
     }
 
     public DataStoreRole getStoreRole() {

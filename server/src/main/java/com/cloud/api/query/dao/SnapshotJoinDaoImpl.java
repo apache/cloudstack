@@ -138,6 +138,8 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         if (!isShowUnique) {
             snapshotResponse.setDatastoreState(snapshot.getStoreState() != null ? snapshot.getStoreState().name() : null);
             if (view.equals(ResponseObject.ResponseView.Full)) {
+                snapshotResponse.setDatastoreId(snapshot.getStoreUuid());
+                snapshotResponse.setDatastoreName(snapshot.getStoreName());
                 snapshotResponse.setDatastoreType(snapshot.getStoreRole() != null ? snapshot.getStoreRole().name() : null);
             }
             // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
