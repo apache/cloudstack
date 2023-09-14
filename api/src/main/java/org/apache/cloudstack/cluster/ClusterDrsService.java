@@ -51,7 +51,7 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "Maximum number of migrations for DRS", null, null, null);
 
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm",
-            ConfigKey.CATEGORY_ADVANCED, "condensed", "DRS algorithm to execute on the cluster.",
+            ConfigKey.CATEGORY_ADVANCED, "condensed", "DRS algorithm to execute on the cluster. Possible values are condensed, balanced.",
             true, ConfigKey.Scope.Cluster, null, "DRS algorithm", null, null,
             null, ConfigKey.Kind.Select, "condensed,balanced");
 

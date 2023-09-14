@@ -101,6 +101,7 @@
   </a-table>
 
   <a-modal
+    width="50%"
     :visible="showModal"
     :title="$t('label.drs.plan')"
     :maskClosable="false"
@@ -272,9 +273,9 @@ export default {
     fetchDrsConfig () {
       this.loading = true
       api('listConfigurations', { clusterid: this.resource.id, name: 'drs.algorithm' }).then(json => {
-        this.algorithm = reactive(json.listconfigurationsresponse.configuration[0].value)
+        this.algorithm = json.listconfigurationsresponse.configuration[0].value
         api('listConfigurations', { clusterid: this.resource.id, name: 'drs.max.migrations' }).then(json => {
-          this.maxMigrations = reactive(json.listconfigurationsresponse.configuration[0].value)
+          this.maxMigrations = json.listconfigurationsresponse.configuration[0].value
           this.loading = false
         }).catch((err) => {
           console.error(err)

@@ -753,7 +753,7 @@
 "label.drs": "DRS",
 "label.drs.plan": "DRS Plan",
 "label.drs.generate.plan": "Generate DRS plan",
-"label.drs.no.plan.generated": "No DRS plan generated",
+"label.drs.no.plan.generated": "No Drs plan generated as Cluster as cluster is not imbalanced.",
 "label.duration": "Duration (in sec)",
 "label.duration.custom": "Custom",
 "label.duration.1hour": "1 hour",
