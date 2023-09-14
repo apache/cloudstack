@@ -738,11 +738,20 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         try {
             unmapVolumeFromAllSdcs(volumeId);
         } catch (Exception ignored) {}
-        Boolean removeVolumeStatus = post(
-                "/instances/Volume::" + volumeId + "/action/removeVolume",
-                "{\"removeMode\":\"ONLY_ME\"}", Boolean.class);
-        if (removeVolumeStatus != null) {
-            return removeVolumeStatus;
+
+        try {
+            Boolean removeVolumeStatus = post(
+                    "/instances/Volume::" + volumeId + "/action/removeVolume",
+                    "{\"removeMode\":\"ONLY_ME\"}", Boolean.class);
+            if (removeVolumeStatus != null) {
+                return removeVolumeStatus;
+            }
+        } catch (Exception ex) {
+            if (ex instanceof ServerApiException && ex.getMessage().contains("Could not find the volume")) {
+                LOG.warn(String.format("API says deleting volume %s does not exist, handling gracefully", volumeId));
+                return true;
+            }
+            throw ex;
         }
         return false;
     }
