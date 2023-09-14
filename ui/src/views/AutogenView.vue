@@ -968,10 +968,6 @@ export default {
           console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
           return
         }
-        if (this.dataView && apiItemCount > 1) {
-          console.log('DEBUG - Discarding API response as got more than one item in data view', this.$route.params, this.items)
-          return
-        }
 
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
