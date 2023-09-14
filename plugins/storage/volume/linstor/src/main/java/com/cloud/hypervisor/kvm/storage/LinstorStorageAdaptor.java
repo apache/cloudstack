@@ -28,6 +28,7 @@ import java.util.StringJoiner;
 
 import javax.annotation.Nonnull;
 
+import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
@@ -65,8 +66,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return new DevelopersApi(client);
     }
 
-    private String getLinstorRscName(String name) {
-        return "cs-" + name;
+    private static String getLinstorRscName(String name) {
+        return LinstorUtil.RSC_PREFIX + name;
     }
 
     private String getHostname() {
