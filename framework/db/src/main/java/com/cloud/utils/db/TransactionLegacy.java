@@ -1002,7 +1002,7 @@ public class TransactionLegacy implements Closeable {
     private static DataSource s_ds;
     private static DataSource s_usageDS;
     private static DataSource s_simulatorDS;
-    private static boolean s_dbHAEnabled;
+    protected static boolean s_dbHAEnabled;
 
     static {
         // Initialize with assumed db.properties file
@@ -1033,7 +1033,6 @@ public class TransactionLegacy implements Closeable {
             final long cloudMaxWait = Long.parseLong(dbProps.getProperty("db.cloud.maxWait"));
             final String cloudUsername = dbProps.getProperty("db.cloud.username");
             final String cloudPassword = dbProps.getProperty("db.cloud.password");
-            final String cloudDriver = dbProps.getProperty("db.cloud.driver");
             final String cloudValidationQuery = dbProps.getProperty("db.cloud.validationQuery");
             final String cloudIsolationLevel = dbProps.getProperty("db.cloud.isolation.level");
 
@@ -1065,12 +1064,12 @@ public class TransactionLegacy implements Closeable {
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
-            String cloudConnectionUri = getConnectionUri(dbProps, loadBalanceStrategy, cloudDriver, useSSL, "cloud");
+            Pair<String, String> cloudUriAndDriver = getConnectionUriAndDriver(dbProps, loadBalanceStrategy, useSSL, "cloud");
 
-            DriverLoader.loadDriver(cloudDriver);
+            DriverLoader.loadDriver(cloudUriAndDriver.second());
 
             // Default Data Source for CloudStack
-            s_ds = createDataSource(cloudConnectionUri, cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
+            s_ds = createDataSource(cloudUriAndDriver.first(), cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
                     cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow,
                     cloudValidationQuery, isolationLevel);
 
@@ -1080,14 +1079,13 @@ public class TransactionLegacy implements Closeable {
             final long usageMaxWait = Long.parseLong(dbProps.getProperty("db.usage.maxWait"));
             final String usageUsername = dbProps.getProperty("db.usage.username");
             final String usagePassword = dbProps.getProperty("db.usage.password");
-            final String usageDriver = dbProps.getProperty("db.usage.driver");
 
-            String usageConnectionUri = getConnectionUri(dbProps, loadBalanceStrategy, usageDriver, useSSL, "usage");
+            Pair<String, String> usageUriAndDriver = getConnectionUriAndDriver(dbProps, loadBalanceStrategy, useSSL, "usage");
 
-            DriverLoader.loadDriver(usageDriver);
+            DriverLoader.loadDriver(usageUriAndDriver.second());
 
             // Data Source for usage server
-            s_usageDS = createDataSource(usageConnectionUri, usageUsername, usagePassword,
+            s_usageDS = createDataSource(usageUriAndDriver.first(), usageUsername, usagePassword,
                     usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null,
                     null, isolationLevel);
 
@@ -1098,12 +1096,13 @@ public class TransactionLegacy implements Closeable {
                 final long simulatorMaxWait = Long.parseLong(dbProps.getProperty("db.simulator.maxWait"));
                 final String simulatorUsername = dbProps.getProperty("db.simulator.username");
                 final String simulatorPassword = dbProps.getProperty("db.simulator.password");
-                final String simulatorDriver = dbProps.getProperty("db.simulator.driver");
 
+                String simulatorDriver;
                 String simulatorConnectionUri;
                 String simulatorUri = dbProps.getProperty("db.simulator.uri");
 
                 if (StringUtils.isEmpty(simulatorUri)) {
+                     simulatorDriver = dbProps.getProperty("db.simulator.driver");
                     final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
                     final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                     final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
@@ -1114,6 +1113,8 @@ public class TransactionLegacy implements Closeable {
                 } else {
                     s_logger.warn("db.simulator.uri was set, ignoring the following properties on db.properties: [db.simulator.host, db.simulator.port, db.simulator.name, "
                             + "db.simulator.autoReconnect].");
+                    String[] splitUri = simulatorUri.split(":");
+                    simulatorDriver = String.format("%s:%s", splitUri[0], splitUri[1]);
                     simulatorConnectionUri = simulatorUri;
                 }
 
@@ -1134,37 +1135,83 @@ public class TransactionLegacy implements Closeable {
         }
     }
 
-    private static String getConnectionUri(Properties dbProps, String loadBalanceStrategy, String driver, boolean useSSL, String databaseName) {
+    protected static Pair<String, String> getConnectionUriAndDriver(Properties dbProps, String loadBalanceStrategy, boolean useSSL, String schema) {
         String connectionUri;
-        String uri = dbProps.getProperty(String.format("db.%s.uri", databaseName));
+        String driver;
+        String propertyUri = dbProps.getProperty(String.format("db.%s.uri", schema));
 
-        if (StringUtils.isEmpty(uri)) {
-            String host = dbProps.getProperty(String.format("db.%s.host", databaseName));
-            int port = Integer.parseInt(dbProps.getProperty(String.format("db.%s.port", databaseName)));
-            String dbName = dbProps.getProperty(String.format("db.%s.name", databaseName));
-            boolean autoReconnect = Boolean.parseBoolean(dbProps.getProperty(String.format("db.%s.autoReconnect", databaseName)));
-            String url = dbProps.getProperty(String.format("db.%s.url.params", databaseName));
-
-            String replicas = null;
-            String dbHaParams = null;
-            if (s_dbHAEnabled) {
-                dbHaParams = getDBHAParams(databaseName, dbProps);
-                replicas = dbProps.getProperty(String.format("db.%s.replicas", databaseName));
-                s_logger.info(String.format("The replicas configured for %s data base are %s.", databaseName, replicas));
-            }
-
-            connectionUri = driver + "://" + host + (s_dbHAEnabled ? "," + replicas : "") + ":" + port + "/" + dbName +
-                    "?autoReconnect=" + autoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
-                    (s_dbHAEnabled ? "&" + dbHaParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
+        if (StringUtils.isEmpty(propertyUri)) {
+            driver = dbProps.getProperty(String.format("db.%s.driver", schema));
+            connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
-            s_logger.warn(String.format("db.%s.uri was set, only using the following properties of db.properties: [maxActive, maxIdle, maxWait, username, password, driver, "
-                    + "validationQuery, isolation.level].", databaseName));
-            connectionUri = uri;
+            s_logger.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
+                    + " replicas, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, initialTimeout].", schema, schema));
+
+            String[] splitUri = propertyUri.split(":");
+            driver = String.format("%s:%s", splitUri[0], splitUri[1]);
+
+            connectionUri = propertyUri;
         }
-        s_logger.info(String.format("Using the following URl to connect to %s database [%s].", databaseName, connectionUri));
-        return connectionUri;
+        s_logger.info(String.format("Using the following URI to connect to %s database [%s].", schema, connectionUri));
+        return new Pair<>(connectionUri, driver);
     }
 
+    protected static String getPropertiesAndBuildConnectionUri(Properties dbProps, String loadBalanceStrategy, String driver, boolean useSSL, String schema) {
+        String host = dbProps.getProperty(String.format("db.%s.host", schema));
+        int port = Integer.parseInt(dbProps.getProperty(String.format("db.%s.port", schema)));
+        String dbName = dbProps.getProperty(String.format("db.%s.name", schema));
+        boolean autoReconnect = Boolean.parseBoolean(dbProps.getProperty(String.format("db.%s.autoReconnect", schema)));
+        String urlParams = dbProps.getProperty(String.format("db.%s.url.params", schema));
+
+        String replicas = null;
+        String dbHaParams = null;
+        if (s_dbHAEnabled) {
+            dbHaParams = getDBHAParams(schema, dbProps);
+            replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
+            s_logger.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
+        }
+
+        return buildConnectionUri(loadBalanceStrategy, driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);
+    }
+
+    protected static String buildConnectionUri(String loadBalanceStrategy, String driver, boolean useSSL, String host, String replicas, int port, String dbName, boolean autoReconnect,
+            String urlParams, String dbHaParams) {
+
+        StringBuilder connectionUri = new StringBuilder();
+        connectionUri.append(driver);
+        connectionUri.append("://");
+        connectionUri.append(host);
+
+        if (s_dbHAEnabled) {
+            connectionUri.append(",");
+            connectionUri.append(replicas);
+        }
+
+        connectionUri.append(":");
+        connectionUri.append(port);
+        connectionUri.append("/");
+        connectionUri.append(dbName);
+        connectionUri.append("?autoReconnect=");
+        connectionUri.append(autoReconnect);
+
+        if (urlParams != null) {
+            connectionUri.append("&");
+            connectionUri.append(urlParams);
+        }
+
+        if (useSSL) {
+            connectionUri.append("&useSSL=true");
+        }
+
+        if (s_dbHAEnabled) {
+            connectionUri.append("&");
+            connectionUri.append(dbHaParams);
+            connectionUri.append("&loadBalanceStrategy=");
+            connectionUri.append(loadBalanceStrategy);
+        }
+
+        return connectionUri.toString();
+    }
 
     /**
      * Creates a data source
