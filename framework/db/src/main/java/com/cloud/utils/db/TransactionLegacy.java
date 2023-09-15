@@ -1145,7 +1145,8 @@ public class TransactionLegacy implements Closeable {
             connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
             s_logger.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
-                    + " replicas, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, initialTimeout].", schema, schema));
+                    + " replicas, ha.loadBalanceStrategy, ha.enable, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, "
+                    + "initialTimeout].", schema, schema));
 
             String[] splitUri = propertyUri.split(":");
             driver = String.format("%s:%s", splitUri[0], splitUri[1]);
