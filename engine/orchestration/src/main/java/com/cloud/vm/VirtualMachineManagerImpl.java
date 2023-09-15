@@ -842,7 +842,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (final InsufficientCapacityException e) {
             final CallContext cctxt = CallContext.current();
             final Account account = cctxt.getCallingAccount();
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (account.getType() == Account.Type.ADMIN) {
                 throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity: " + e.getMessage(), e).add(VirtualMachine.class, vmUuid);
             }
             throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity", e).add(VirtualMachine.class, vmUuid);
@@ -1230,7 +1230,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         reuseVolume = false;
                         continue;
                     }
-                    if (account.getType() == Account.ACCOUNT_TYPE_ADMIN && adminError != null) {
+                    if (account.getType() == Account.Type.ADMIN && adminError != null) {
                         String message = String.format("Unable to create a deployment for %s. Previous error: %s", vmProfile, adminError);
                         throw new InsufficientServerCapacityException(message, DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
                     }
@@ -1470,7 +1470,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if (startedVm == null) {
-            if (account.getType() == Account.ACCOUNT_TYPE_ADMIN && adminError != null) {
+            if (account.getType() == Account.Type.ADMIN && adminError != null) {
                 throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "): " + adminError);
             }
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
