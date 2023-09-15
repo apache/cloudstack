@@ -92,6 +92,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -1162,6 +1163,22 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             } catch (Exception e) {
                 log.warn(String.format("Could not update Virtual machine tags due to %s", e.getMessage()));
             }
+        }
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return true;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
+        StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
+        if (poolVO != null) {
+            SpConnectionDesc conn = StorPoolUtil.getSpConnection(poolVO.getUuid(), poolVO.getId(), storagePoolDetailsDao, primaryStoreDao);
+            String volName = StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true);
+            SpApiResponse resp = StorPoolUtil.detachAllForced(volName, false, conn);
+            StorPoolUtil.spLog("The volume [%s] is detach from all clusters [%s]", volName, resp);
         }
     }
 }
