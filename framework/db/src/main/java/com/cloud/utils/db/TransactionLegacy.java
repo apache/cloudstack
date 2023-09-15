@@ -1102,7 +1102,7 @@ public class TransactionLegacy implements Closeable {
                 String simulatorUri = dbProps.getProperty("db.simulator.uri");
 
                 if (StringUtils.isEmpty(simulatorUri)) {
-                     simulatorDriver = dbProps.getProperty("db.simulator.driver");
+                    simulatorDriver = dbProps.getProperty("db.simulator.driver");
                     final int simulatorPort = Integer.parseInt(dbProps.getProperty("db.simulator.port"));
                     final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                     final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
@@ -1111,8 +1111,8 @@ public class TransactionLegacy implements Closeable {
                     simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
                             simulatorAutoReconnect;
                 } else {
-                    s_logger.warn("db.simulator.uri was set, ignoring the following properties on db.properties: [db.simulator.host, db.simulator.port, db.simulator.name, "
-                            + "db.simulator.autoReconnect].");
+                    s_logger.warn("db.simulator.uri was set, ignoring the following properties on db.properties: [db.simulator.driver, db.simulator.host, db.simulator.port, "
+                            + "db.simulator.name, db.simulator.autoReconnect].");
                     String[] splitUri = simulatorUri.split(":");
                     simulatorDriver = String.format("%s:%s", splitUri[0], splitUri[1]);
                     simulatorConnectionUri = simulatorUri;
