@@ -232,7 +232,7 @@ public class CommandSetupHelper {
             }
 
             String customCloudName = VirtualMachineManager.CloudInitMetadataCloudName.valueIn(vm.getDataCenterId());
-            if (!StringUtils.isBlank(customCloudName)) {
+            if (StringUtils.isNotBlank(customCloudName)) {
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_NAME_FILE, customCloudName);
             }
 
