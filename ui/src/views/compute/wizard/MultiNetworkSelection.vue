@@ -49,7 +49,7 @@
               v-for="network in validNetworks[record.id]"
               :key="network.id"
               :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
-              <div v-if="hypervisor==='KVM'">{{ network.displaytext  + ' - ' + (network.id.slice(0,8)) }}</div>
+              <div v-if="this.hypervisor === 'KVM'">{{ network.displaytext  + ' - ' + (network.id.slice(0,8)) }}</div>
               <div v-else>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
             </a-select-option>
           </a-select>
@@ -100,6 +100,10 @@ export default {
       default: false
     },
     filterMatchKey: {
+      type: String,
+      default: null
+    },
+    hypervisor: {
       type: String,
       default: null
     }
