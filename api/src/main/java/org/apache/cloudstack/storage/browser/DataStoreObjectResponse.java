@@ -85,4 +85,36 @@ public class DataStoreObjectResponse extends BaseResponse {
     public void setVolumeId(String volumeId) {
         this.volumeId = volumeId;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isDirectory() {
+        return isDirectory;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public String getSnapshotId() {
+        return snapshotId;
+    }
+
+    public String getVolumeId() {
+        return volumeId;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 }

@@ -120,7 +120,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return getResponse(dataStore, answer);
     }
 
-    private ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int page, int pageSize) {
+    ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int page, int pageSize) {
         EndPoint ep = endPointSelector.select(dataStore);
 
         if (ep == null) {
@@ -135,12 +135,12 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
         ListDataStoreObjectsAnswer dsAnswer = (ListDataStoreObjectsAnswer) answer;
         if (!dsAnswer.isPathExists()) {
-            throw new IllegalArgumentException("Path " + path + " doesn't exist in store" + dataStore.getUuid());
+            throw new IllegalArgumentException("Path " + path + " doesn't exist in store: " + dataStore.getUuid());
         }
         return dsAnswer;
     }
 
-    private ListResponse<DataStoreObjectResponse> getResponse(DataStore dataStore, ListDataStoreObjectsAnswer answer) {
+    ListResponse<DataStoreObjectResponse> getResponse(DataStore dataStore, ListDataStoreObjectsAnswer answer) {
         List<DataStoreObjectResponse> responses = new ArrayList<>();
 
         List<String> paths = getFormattedPaths(answer.getPaths());
@@ -200,7 +200,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     Map<String, VMTemplateVO> getPathTemplateMapForSecondaryDS(Long dataStoreId, List<String> paths) {
-        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        Map<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
         List<TemplateDataStoreVO> templateList = templateDataStoreDao.listByStoreIdAndInstallPaths(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(templateList)) {
             List<VMTemplateVO> templates = templateDao.listByIds(templateList.stream().map(TemplateDataStoreVO::getTemplateId).collect(Collectors.toList()));
@@ -217,7 +217,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     Map<String, SnapshotVO> getPathSnapshotMapForSecondaryDS(Long dataStoreId, List<String> paths) {
-        HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
+        Map<String, SnapshotVO> snapshotPathMap = new HashMap<>();
         List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStoreId, DataStoreRole.Image, paths);
         if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
             List<SnapshotVO> snapshots = snapshotDao.listByIds(
@@ -235,7 +235,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     Map<String, VMTemplateVO> getPathTemplateMapForPrimaryDS(Long dataStoreId, List<String> paths) {
-        HashMap<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        Map<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
         List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(templateStoragePoolList)) {
             List<VMTemplateVO> templates = templateDao.listByIds
@@ -253,7 +253,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     Map<String, SnapshotVO> getPathSnapshotMapForPrimaryDS(Long dataStoreId, List<String> paths,
             List<String> absPaths) {
-        HashMap<String, SnapshotVO> snapshotPathMap = new HashMap<>();
+        Map<String, SnapshotVO> snapshotPathMap = new HashMap<>();
         // For primary dataStore, we query using absolutePaths
         List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStoreId, DataStoreRole.Primary, absPaths);
         if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
@@ -279,8 +279,8 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return snapshotPathMap;
     }
 
-    HashMap<String, VolumeVO> getPathVolumeMapForPrimaryDS(Long dataStoreId, List<String> paths) {
-        HashMap<String, VolumeVO> volumePathMap = new HashMap<>();
+    Map<String, VolumeVO> getPathVolumeMapForPrimaryDS(Long dataStoreId, List<String> paths) {
+        Map<String, VolumeVO> volumePathMap = new HashMap<>();
         List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPaths(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
