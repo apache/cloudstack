@@ -46,7 +46,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.StorageLayer;
 
 public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    public static final Logger s_logger = Logger.getLogger(HttpTemplateDownloader.class.getName());
+    public static final Logger s_logger = Logger.getLogger(SimpleHttpMultiFileDownloader.class.getName());
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private static final int CHUNK_SIZE = 1024 * 1024; //1M
@@ -160,6 +160,8 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
 
     private long downloadFile(String downloadUrl) {
         s_logger.debug("Starting download for " + downloadUrl);
+        currentTotalBytes = 0;
+        currentRemoteSize = 0;
         File file = null;
         request = null;
         try {
