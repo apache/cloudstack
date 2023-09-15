@@ -83,7 +83,7 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> AllowExposeDomainInMetadata = new ConfigKey<>("Advanced", Boolean.class, "metadata.allow.expose.domain",
             "false", "If set to true, it allows the VM's domain to be seen in metadata.", true, ConfigKey.Scope.Domain);
 
-    ConfigKey<String> CloudInitMetadataCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
+    ConfigKey<String> MetadataCustomCloudName = new ConfigKey<>("Advanced", String.class, "metadata.custom.cloud.name", "",
             "If provided, a custom cloud-name in cloud-init metadata", true, ConfigKey.Scope.Zone);
 
     interface Topics {
