@@ -135,8 +135,9 @@ class VmwareVmImplementer {
                 try {
                     VirtualEthernetCardType.valueOf(nicDeviceType);
                 } catch (Exception e) {
-                    LOGGER.warn("Invalid NIC device type " + nicDeviceType + " is specified in VM details, switch to default E1000");
-                    details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
+                    LOGGER.warn(String.format("Invalid NIC device type [%s] specified in VM details, switching to value [%s] of configuration [%s].",
+                            nicDeviceType, vmwareMgr.VmwareUserVmNicDeviceType.value(), vmwareMgr.VmwareUserVmNicDeviceType.toString()));
+                    details.put(VmDetailConstants.NIC_ADAPTER, vmwareMgr.VmwareUserVmNicDeviceType.value());
                 }
             }
         }
