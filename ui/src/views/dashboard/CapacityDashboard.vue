@@ -568,7 +568,4 @@ export default {
   text-align: center;
 }
 
-@media (max-width: 1200) {
-}
-
 </style>

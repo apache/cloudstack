@@ -16,6 +16,210 @@
 // under the License.
 
 <template>
+  <a-row class="capacity-dashboard" :gutter="[12,12]">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
+      <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div
+            v-for="usageType in ['vm', 'cpu', 'memory']"
+            :key="usageType">
+            <div>
+              <div>
+                <strong>
+                  {{ $t('label.' + usageType + 'limit') }}
+                </strong>
+                {{ entity[usageType + 'total'] }} {{ $t('label.used') }}
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+              :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : entity[usageType + 'available'] }} {{ $t('label.available') }} |
+                {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : entity[usageType + 'limit'] }} {{ $t('label.limit') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+      <chart-card :loading="loading" style="margin-top: 12px">
+        <template #title>
+          <div class="center">
+            <h3>
+              <cloud-server-outlined />
+              {{ $t('label.instances') }}
+              <span style="float: right">
+                <router-link :to="{ path: '/vm', query: { projectid: '-1' } }">
+                  {{ instances.total }}
+                </router-link>
+              </span>
+            </h3>
+          </div>
+        </template>
+        <a-row>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { projectid: '-1', state: 'running' } }">
+              <a-statistic :title="$t('label.running')" :value="instances.running">
+                <template #prefix>
+                  <status class="status" text="Running"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { projectid: '-1', state: 'stopped' } }">
+              <a-statistic :title="$t('label.stopped')" :value="instances.stopped">
+                <template #prefix>
+                  <status class="status" text="Stopped"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
+      <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div
+            v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage']"
+            :key="usageType">
+            <div>
+              <div>
+                <strong>
+                  {{ $t('label.' + usageType + 'limit') }}
+                </strong>
+                ({{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : entity[usageType + 'available'] }} {{ $t('label.available') }})
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+              :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ entity[usageType + 'total'] }} {{ $t('label.used') }} | {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : entity[usageType + 'limit'] }} {{ $t('label.limit') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
+      <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div
+            v-for="usageType in ['ip', 'network', 'vpc']"
+            :key="usageType">
+            <div>
+              <div>
+                <strong>
+                  {{ $t('label.' + usageType + 'limit') }}
+                </strong>
+                ({{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : entity[usageType + 'available'] }} {{ $t('label.available') }})
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+              :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ entity[usageType + 'total'] }} {{ $t('label.used') }} | {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : entity[usageType + 'limit'] }} {{ $t('label.limit') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+      <chart-card :loading="loading" style="margin-top: 12px" v-if="!project.id">
+        <template #title>
+          <div class="center">
+            <h3><project-outlined /> {{ $t('label.projects') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div
+            v-for="usageType in ['project']"
+            :key="usageType">
+            <div>
+              <div>
+                <strong>
+                  {{ $t('label.' + usageType + 'limit') }}
+                </strong>
+                ({{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : entity[usageType + 'available'] }} {{ $t('label.available') }})
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+              :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ entity[usageType + 'total'] }} {{ $t('label.used') }} | {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : entity[usageType + 'limit'] }} {{ $t('label.limit') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card dashboard-event">
+      <a-card :loading="loading" :bordered="false" class="dashboard-event">
+        <div class="center" style="margin-top: -8px">
+          <h3>
+            <schedule-outlined />
+            {{ $t('label.events') }}
+          </h3>
+        </div>
+        <a-timeline>
+          <a-timeline-item
+            v-for="event in events"
+            :key="event.id"
+            :color="getEventColour(event)">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+            <span>
+              <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
+            </span>
+            <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/event' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.events') }}
+          </a-button>
+        </router-link>
+      </a-card>
+    </a-col>
+  </a-row>
   <a-row class="usage-dashboard" :gutter="12">
     <a-col :xl="16" style="padding-left: 0; padding-right: 0;">
       <a-row>
@@ -131,11 +335,18 @@ export default {
       showAddAccount: false,
       events: [],
       stats: [],
-      project: {}
+      project: {},
+      entity: {},
+      instances: {
+        total: 0,
+        running: 0,
+        stopped: 0
+      }
     }
   },
   created () {
     this.project = store.getters.project
+    this.listAccount()
     this.fetchData()
     this.$store.watch(
       (state, getters) => getters.project,
@@ -158,6 +369,11 @@ export default {
       deep: true,
       handler (newData, oldData) {
         this.project = newData
+        if (!this.project.id) {
+          this.listAccount()
+        } else {
+          this.entity = this.project
+        }
       }
     },
     '$i18n.global.locale' (to, from) {
@@ -219,6 +435,15 @@ export default {
       })
       this.listEvents()
     },
+    listAccount () {
+      this.loading = true
+      api('listAccounts', { id: this.$store.getters.userInfo.accountid }).then(json => {
+        this.loading = false
+        if (json && json.listaccountsresponse && json.listaccountsresponse.account) {
+          this.entity = json.listaccountsresponse.account[0]
+        }
+      })
+    },
     listEvents () {
       const params = {
         page: 1,
@@ -233,6 +458,9 @@ export default {
           this.events = json.listeventsresponse.event
         }
       })
+    },
+    getPercentUsed (total, limit) {
+      return (limit === 'Unlimited') ? 0 : (total / limit) * 100
     },
     getEventColour (event) {
       if (event.level === 'ERROR') {
@@ -274,6 +502,22 @@ export default {
        padding-left: 3px;
        white-space: normal;
     }
+  }
+
+  .dashboard-card {
+    width: 100%;
+  }
+
+  .dashboard-event {
+    width: 100%;
+    overflow-x:hidden;
+    overflow-y: scroll;
+    max-height: 345px;
+  }
+
+  .center {
+    display: block;
+    text-align: center;
   }
 
   @media (max-width: 1200px) {
