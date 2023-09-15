@@ -27,7 +27,7 @@ export default {
     {
       name: 'vm',
       title: 'label.instances',
-      icon: 'desktop-outlined',
+      icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',

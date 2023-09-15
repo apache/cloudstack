@@ -47,7 +47,7 @@
         </div>
       </div>
     </a-col>
-    <a-col :span="8" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['MEMORY', 'CPU', 'CPU_CORE', 'GPU']" :key="ctype" >
@@ -69,14 +69,15 @@
             </div>
           </div>
         </div>
-        <template #footer>
+        <template #title>
           <div class="center">
-            <h3>{{ $t('label.compute') }}</h3>
+            <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
           </div>
+          <a-divider style="margin: 12px 0;"/>
         </template>
       </chart-card>
     </a-col>
-    <a-col :span="8" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
@@ -98,14 +99,15 @@
             </div>
           </div>
         </div>
-        <template #footer>
+        <template #title>
           <div class="center">
-            <h3>{{ $t('label.storage') }}</h3>
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
           </div>
+          <a-divider style="margin: 12px 0;"/>
         </template>
       </chart-card>
     </a-col>
-    <a-col :span="8" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
         <div>
           <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
@@ -127,14 +129,15 @@
             </div>
           </div>
         </div>
-        <template #footer>
+        <template #title>
           <div class="center">
-            <h3>{{ $t('label.network') }}</h3>
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
           </div>
+          <a-divider style="margin: 12px 0;"/>
         </template>
       </chart-card>
     </a-col>
-    <a-col :span="8" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
         <a-row>
           <a-col :span="12">
@@ -178,14 +181,16 @@
         </a-row>
         <div>
         </div>
-        <template #footer>
+        <template #title>
           <div class="center">
             <h3>
-              {{ $t('label.hosts') }} |
-              <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
-                {{ hosts.total }}
-              </router-link>
-              {{ $t('label.total') }}
+              <desktop-outlined />
+              {{ $t('label.hosts') }}
+              <span style="float: right">
+                <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
+                  {{ hosts.total }}
+                </router-link>
+              </span>
             </h3>
           </div>
         </template>
@@ -211,21 +216,23 @@
             </router-link>
           </a-col>
         </a-row>
-        <template #footer>
+        <template #title>
           <div class="center">
             <h3>
-              {{ $t('label.instances') }} |
-              <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
-                {{ instances.total }}
-              </router-link>
-              {{ $t('label.total') }}
+              <cloud-server-outlined />
+              {{ $t('label.instances') }}
+              <span style="float: right">
+                <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
+                  {{ instances.total }}
+                </router-link>
+              </span>
             </h3>
           </div>
         </template>
       </chart-card>
     </a-col>
-    <a-col :xl="16" class="dashboard-event">
-      <a-card :loading="loading" :border="false">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 24 }" :xl="{ span: 16 }" :xxl="{ span: 12 }" class="dashboard-card dashboard-event">
+      <a-card :loading="loading" :border="false" class="dashboard-event">
         <a-tabs v-model:activeKey="tabKey">
           <a-tab-pane key="alerts" :tab="$t('label.alerts')">
             <a-timeline>
@@ -437,7 +444,7 @@ export default {
     listAlerts () {
       const params = {
         page: 1,
-        pagesize: 3,
+        pagesize: 5,
         listall: true
       }
       this.loading = true
@@ -452,7 +459,7 @@ export default {
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 3,
+        pagesize: 5,
         listall: true
       }
       this.loading = true
@@ -533,7 +540,7 @@ export default {
     padding: 2px;
   }
 
-  &-footer {
+  &-title {
     padding-top: 12px;
     padding-left: 3px;
     white-space: normal;
@@ -542,6 +549,15 @@ export default {
 
 .dashboard-card {
   width: 100%;
+  .ant-card {
+  }
+}
+
+.dashboard-event {
+  width: 100%;
+  overflow-x:hidden;
+  overflow-y: scroll;
+  max-height: 362px;
 }
 
 .center {
@@ -550,8 +566,6 @@ export default {
 }
 
 @media (max-width: 1200) {
-  .dashboard-event {
-    width: 100%;
-  }
 }
+
 </style>
