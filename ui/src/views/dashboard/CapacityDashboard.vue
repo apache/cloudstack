@@ -49,6 +49,11 @@
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
+          </div>
+        </template>
         <div>
           <div v-for="ctype in ['MEMORY', 'CPU', 'CPU_CORE', 'GPU']" :key="ctype" >
             <div>
@@ -69,16 +74,15 @@
             </div>
           </div>
         </div>
-        <template #title>
-          <div class="center">
-            <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
-          </div>
-          <a-divider style="margin: 12px 0;"/>
-        </template>
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
+          </div>
+        </template>
         <div>
           <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
             <div>
@@ -99,16 +103,15 @@
             </div>
           </div>
         </div>
-        <template #title>
-          <div class="center">
-            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
-          </div>
-          <a-divider style="margin: 12px 0;"/>
-        </template>
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
+          </div>
+        </template>
         <div>
           <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
             <div v-if="statsMap[ctype]">
@@ -129,16 +132,23 @@
             </div>
           </div>
         </div>
-        <template #title>
-          <div class="center">
-            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
-          </div>
-          <a-divider style="margin: 12px 0;"/>
-        </template>
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3>
+              <desktop-outlined />
+              {{ $t('label.hosts') }}
+              <span style="float: right">
+                <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
+                  {{ hosts.total }}
+                </router-link>
+              </span>
+            </h3>
+          </div>
+        </template>
         <a-row>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'up' } }">
@@ -179,23 +189,21 @@
             </router-link>
           </a-col>
         </a-row>
-        <div>
-        </div>
+      </chart-card>
+      <chart-card :loading="loading" style="margin-top: -6px">
         <template #title>
           <div class="center">
             <h3>
-              <desktop-outlined />
-              {{ $t('label.hosts') }}
+              <cloud-server-outlined />
+              {{ $t('label.instances') }}
               <span style="float: right">
-                <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
-                  {{ hosts.total }}
+                <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
+                  {{ instances.total }}
                 </router-link>
               </span>
             </h3>
           </div>
         </template>
-      </chart-card>
-      <chart-card :loading="loading" style="margin-top: 12px">
         <a-row>
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', state: 'running' } }">
@@ -216,62 +224,59 @@
             </router-link>
           </a-col>
         </a-row>
-        <template #title>
-          <div class="center">
-            <h3>
-              <cloud-server-outlined />
-              {{ $t('label.instances') }}
-              <span style="float: right">
-                <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
-                  {{ instances.total }}
-                </router-link>
-              </span>
-            </h3>
-          </div>
-        </template>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 24 }" :xl="{ span: 16 }" :xxl="{ span: 12 }" class="dashboard-card dashboard-event">
-      <a-card :loading="loading" :border="false" class="dashboard-event">
-        <a-tabs v-model:activeKey="tabKey">
-          <a-tab-pane key="alerts" :tab="$t('label.alerts')">
-            <a-timeline>
-              <a-timeline-item
-                v-for="alert in alerts"
-                :key="alert.id"
-                color="red">
-                <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(alert.sent) }}</small></span>&nbsp;
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/alert/' + alert.id }">{{ alert.name }}</router-link></small></span><br/>
-                <span :style="{ color: '#aaa' }">{{ alert.description }}</span>
-              </a-timeline-item>
-            </a-timeline>
-            <router-link :to="{ path: '/alert' }">
-              <a-button>
-                {{ $t('label.view') }} {{ $t('label.alerts') }}
-              </a-button>
-            </router-link>
-          </a-tab-pane>
-          <a-tab-pane key="event" :tab="$t('label.events')" force-render>
-            <a-timeline>
-              <a-timeline-item
-                v-for="event in events"
-                :key="event.id"
-                :color="getEventColour(event)">
-                <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span>&nbsp;
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
-                <span>
-                  <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
-                </span>
-                <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
-              </a-timeline-item>
-            </a-timeline>
-            <router-link :to="{ path: '/event' }">
-              <a-button>
-                {{ $t('label.view') }} {{ $t('label.events') }}
-              </a-button>
-            </router-link>
-          </a-tab-pane>
-        </a-tabs>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card dashboard-event">
+      <a-card :loading="loading" :bordered="false" class="dashboard-event">
+        <div class="center" style="margin-top: -8px">
+          <h3>
+            <flag-outlined />
+            {{ $t('label.alerts') }}
+          </h3>
+        </div>
+        <a-timeline>
+          <a-timeline-item
+            v-for="alert in alerts"
+            :key="alert.id"
+            color="red">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(alert.sent) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/alert/' + alert.id }">{{ alert.name }}</router-link></small></span><br/>
+            <span :style="{ color: '#aaa' }">{{ alert.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/alert' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.alerts') }}
+          </a-button>
+        </router-link>
+      </a-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card dashboard-event">
+      <a-card :loading="loading" :bordered="false" class="dashboard-event">
+        <div class="center" style="margin-top: -8px">
+          <h3>
+            <schedule-outlined />
+            {{ $t('label.events') }}
+          </h3>
+        </div>
+        <a-timeline>
+          <a-timeline-item
+            v-for="event in events"
+            :key="event.id"
+            :color="getEventColour(event)">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+            <span>
+              <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
+            </span>
+            <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/event' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.events') }}
+          </a-button>
+        </router-link>
       </a-card>
     </a-col>
   </a-row>
@@ -549,15 +554,13 @@ export default {
 
 .dashboard-card {
   width: 100%;
-  .ant-card {
-  }
 }
 
 .dashboard-event {
   width: 100%;
   overflow-x:hidden;
   overflow-y: scroll;
-  max-height: 362px;
+  max-height: 345px;
 }
 
 .center {
