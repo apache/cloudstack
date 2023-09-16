@@ -17,7 +17,7 @@
 
 <template>
   <a-row class="capacity-dashboard" :gutter="[12,12]">
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -77,11 +77,11 @@
         <div v-if="showProject">
           <a-divider style="margin: 12px 0px; border-width: 0px;"/>
           <router-link :to="{ path: '/project/' + project.id }">
-            <a-button>
-              {{ $t('label.view') }} {{  $t('label.project') }} {{ $t('label.details') }}
+            <a-button type="primary">
+              {{ $t('label.view') }} {{  $t('label.project') }}
             </a-button>
           </router-link>
-          &nbsp;&nbsp;
+          &nbsp;
           <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
             <a-button v-if="['Admin'].includes($store.getters.userInfo.roletype)">
               {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
@@ -90,7 +90,7 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -126,7 +126,7 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -162,7 +162,7 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
       <chart-card :loading="loading" class="dashboard-card dashboard-event">
         <template #title>
           <div class="center">
@@ -401,14 +401,14 @@ export default {
 
   .dashboard-card {
     width: 100%;
-    min-height: 420px;
+    min-height: 450px;
   }
 
   .dashboard-event {
     width: 100%;
     overflow-x:hidden;
     overflow-y: scroll;
-    max-height: 400px;
+    max-height: 450px;
   }
 
   .center {

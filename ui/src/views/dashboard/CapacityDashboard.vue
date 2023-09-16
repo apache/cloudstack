@@ -47,7 +47,7 @@
         </div>
       </div>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
       <chart-card :loading="loading">
         <template #title>
           <div class="center">
@@ -76,7 +76,65 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
+            <div>
+              <div>
+                <strong>{{ $t(ts[ctype]) }}</strong>
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(statsMap[ctype]?.percentused)"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading">
+        <template #title>
+          <div class="center">
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
+            <div v-if="statsMap[ctype]">
+              <div>
+                <strong>{{ $t(ts[ctype]) }}</strong>
+              </div>
+              <a-progress
+              status="active"
+              :percent="parseFloat(statsMap[ctype]?.percentused)"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
       <chart-card :loading="loading">
         <template #title>
           <div class="center">
@@ -168,65 +226,7 @@
         </a-row>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
-        <template #title>
-          <div class="center">
-            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
-          </div>
-        </template>
-        <div>
-          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
-            <div>
-              <div>
-                <strong>{{ $t(ts[ctype]) }}</strong>
-              </div>
-              <a-progress
-              status="active"
-              :percent="parseFloat(statsMap[ctype]?.percentused)"
-              stroke-color="#52c41a"
-              size="small"
-              style="width:95%; float: left"
-              />
-              <br/>
-              <div style="text-align: center">
-                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </chart-card>
-    </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
-        <template #title>
-          <div class="center">
-            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
-          </div>
-        </template>
-        <div>
-          <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
-            <div v-if="statsMap[ctype]">
-              <div>
-                <strong>{{ $t(ts[ctype]) }}</strong>
-              </div>
-              <a-progress
-              status="active"
-              :percent="parseFloat(statsMap[ctype]?.percentused)"
-              stroke-color="#52c41a"
-              size="small"
-              style="width:95%; float: left"
-              />
-              <br/>
-              <div style="text-align: center">
-                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </chart-card>
-    </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
       <a-card :loading="loading" :bordered="false" class="dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
@@ -251,7 +251,7 @@
         </router-link>
       </a-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 12 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
       <a-card :loading="loading" :bordered="false" class="dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
