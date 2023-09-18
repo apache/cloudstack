@@ -1134,7 +1134,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         // revoke all port forwarding rules
         success = success && applyPortForwardingRules(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
-        // revoke all all static nat rules
+        // revoke all static nat rules
         success = success && applyStaticNatRulesForIp(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
 
         // revoke static nat for the ip address
@@ -1190,7 +1190,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         success = success && applyPortForwardingRulesForNetwork(networkId, true, caller);
         success = success && applyPortForwardingRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
-        // revoke all all static nat rules for the network
+        // revoke all static nat rules for the network
         success = success && applyStaticNatRulesForNetwork(networkId, true, caller);
         success = success && applyStaticNatRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 

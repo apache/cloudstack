@@ -125,7 +125,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setCpuNumber(host.getCpus());
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-        hostResponse.setHypervisor(host.getHypervisorType());
+        if (host.getHypervisorType() != null) {
+            String hypervisorType = host.getHypervisorType().getHypervisorDisplayName();
+            hostResponse.setHypervisor(hypervisorType);
+        }
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         Long mshostId = host.getManagementServerId();
@@ -239,7 +242,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostResponse.setUefiCapabilty(new Boolean(false));
                 }
             }
-            if (details.contains(HostDetails.all) && host.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+            if (details.contains(HostDetails.all) && (host.getHypervisorType() == Hypervisor.HypervisorType.KVM ||
+                    host.getHypervisorType() == Hypervisor.HypervisorType.Custom)) {
                 //only kvm has the requirement to return host details
                 try {
                     hostResponse.setDetails(hostDetails);
@@ -303,7 +307,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setCpuNumber(host.getCpus());
         hostResponse.setZoneId(host.getZoneUuid());
         hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-        hostResponse.setHypervisor(host.getHypervisorType());
+        hostResponse.setHypervisor(host.getHypervisorType().getHypervisorDisplayName());
         hostResponse.setHostType(host.getType());
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         hostResponse.setManagementServerId(host.getManagementServerId());

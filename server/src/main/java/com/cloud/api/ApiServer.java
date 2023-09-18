@@ -373,7 +373,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         try {
             eventBus.publish(event);
         } catch (EventBusException evx) {
-            String errMsg = "Failed to publish async job event on the the event bus.";
+            String errMsg = "Failed to publish async job event on the event bus.";
             s_logger.warn(errMsg, evx);
         }
     }
@@ -740,6 +740,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("ctxStartEventId", String.valueOf(startEventId));
             params.put("cmdEventType", asyncCmd.getEventType().toString());
             params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
+            if (asyncCmd.getHttpMethod() != null) {
+                params.put(ApiConstants.HTTPMETHOD, asyncCmd.getHttpMethod().toString());
+            }
 
             Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
 

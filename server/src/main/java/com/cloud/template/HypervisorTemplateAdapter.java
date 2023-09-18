@@ -148,20 +148,21 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     /**
-     * Validate on random running KVM host that URL is reachable
+     * Validate on random running host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+    private Long performDirectDownloadUrlValidation(final String format, final Hypervisor.HypervisorType hypervisor,
+                                                    final String url, final List<Long> zoneIds) {
         HostVO host = null;
         if (zoneIds != null && !zoneIds.isEmpty()) {
             for (Long zoneId : zoneIds) {
-                host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+                host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, zoneId);
                 if (host != null) {
                     break;
                 }
             }
         } else {
-            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, null);
+            host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, null);
         }
 
         if (host == null) {
@@ -198,7 +199,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 zoneIds =  new ArrayList<>();
                 zoneIds.add(cmd.getZoneId());
             }
-            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(),
+                    Hypervisor.HypervisorType.KVM, url, zoneIds);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -221,9 +223,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(),
+                    hypervisor, url, cmd.getZoneIds());
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
