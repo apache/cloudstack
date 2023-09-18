@@ -5363,17 +5363,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /*
     Scp volume from remote host to local directory
      */
-    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile) {
+    public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath) {
         try {
             String outputFile = UUID.randomUUID().toString();
             StringBuilder command = new StringBuilder("qemu-img convert ");
             command.append(remoteFile);
-            command.append(" /tmp/");
+            command.append(" "+tmpPath);
             command.append(outputFile);
             s_logger.debug("Converting remoteFile: "+remoteFile);
             SshHelper.sshExecute(srcIp, 22, username, null, password, command.toString());
             s_logger.debug("Copying remoteFile to: "+localDir);
-            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, "/tmp/"+outputFile);
+            SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath+outputFile);
             s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
             return localDir+"/"+outputFile;
         } catch (Exception e) {

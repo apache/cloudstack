@@ -26,6 +26,16 @@ import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 public interface VmImportService {
+
+    public enum ImportSource {
+        UNMANAGED, VMWARE, EXTERNAL, SHARED, LOCAL;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
+    }
+
     ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd);
     UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd);
 

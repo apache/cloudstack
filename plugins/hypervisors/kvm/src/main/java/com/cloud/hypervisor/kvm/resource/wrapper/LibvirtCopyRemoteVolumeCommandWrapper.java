@@ -40,8 +40,9 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         String password = command.getPassword();
         String srcFile = command.getSrcFile();
         String dstPath = command.getDstPath();
+        String tmpPath = command.getTmpPath();
         try {
-            String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile);
+            String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
             s_logger.debug("Volume Copy Successful ");
             return  new CopyRemoteVolumeAnswer(command, "", filename);
         } catch (final Exception e) {

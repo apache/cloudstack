@@ -28,6 +28,8 @@ public class CopyRemoteVolumeCommand extends Command {
     String srcFile;
     String dstPath;
 
+    String tmpPath;
+
     public CopyRemoteVolumeCommand(String remoteIp, String username, String password) {
         this.remoteIp = remoteIp;
         this.username = username;
@@ -84,6 +86,14 @@ public class CopyRemoteVolumeCommand extends Command {
 
     public String getString() {
         return "CopyRemoteVolumeCommand [remoteIp=" + remoteIp + "]";
+    }
+
+    public void setTempPath(String tmpPath) {
+        this.tmpPath = tmpPath;
+    }
+
+    public String getTmpPath() {
+        return tmpPath;
     }
 }
 

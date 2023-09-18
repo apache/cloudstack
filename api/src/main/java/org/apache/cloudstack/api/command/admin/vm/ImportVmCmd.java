@@ -37,8 +37,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -131,6 +133,7 @@ public class ImportVmCmd extends BaseAsyncCmd {
             required = true,
             description = "hypervisor type of the host")
     private String hypervisor;
+
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
@@ -158,6 +161,27 @@ public class ImportVmCmd extends BaseAsyncCmd {
             description = "used to specify the custom parameters.")
     private Map<String, String> details;
 
+    @Parameter(name = ApiConstants.DISK_PATH,
+            type = CommandType.STRING,
+            description = "path of the disk image")
+    private String diskPath;
+
+    @Parameter(name = ApiConstants.IMPORT_SOURCE,
+            type = CommandType.STRING,
+            required = true,
+            description = "Source location for Import" )
+    private String importSource;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Host where local disk is located")
+    private Long hostId;
+
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "Shared storage pool where disk is located")
+    private Long storagePoolId;
+
+    @Parameter(name = ApiConstants.IMPORT_SOURCE,
+            type = CommandType.STRING,
+            description = "Temp Path on external host for disk image copy" )
+    private String tmpPath;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -211,6 +235,26 @@ public class ImportVmCmd extends BaseAsyncCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public String getDiskPath() {
+        return diskPath;
+    }
+
+    public String getImportSource() {
+        return importSource;
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getStoragePoolId() {
+        return storagePoolId;
+    }
+
+    public String getTmpPath() {
+        return tmpPath;
     }
 
     public Map<String, Long> getNicNetworkList() {
