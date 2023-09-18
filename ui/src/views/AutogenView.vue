@@ -1061,7 +1061,6 @@ export default {
 
       if ('action' in this.$route.query) {
         const actionName = this.$route.query.action
-        console.log(this.$route.query)
         for (const action of this.actions) {
           if (action.listView && action.api === actionName) {
             this.execAction(action, false)
