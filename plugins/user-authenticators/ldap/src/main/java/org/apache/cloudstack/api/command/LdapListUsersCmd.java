@@ -376,7 +376,7 @@ public class LdapListUsersCmd extends BaseListCmd {
     }
 
     /**
-     * @return true unless the the user is imported in the specified cloudstack domain from LDAP
+     * @return true unless the user is imported in the specified cloudstack domain from LDAP
      */
     private boolean isNotAlreadyImportedInTheCurrentDomain(LdapUserResponse user) {
         UserResponse cloudstackUser = getCloudstackUser(user);
