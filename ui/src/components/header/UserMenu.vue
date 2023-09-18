@@ -32,17 +32,16 @@
                     </a-avatar>
                   </a-col>
                   <a-col>
-                    <strong>
+                    <h3 style="margin-bottom: 0px;">
                       {{ $t('label.instance') }}
-                    </strong>
-                    <br/>
+                    </h3>
                     <small>{{ $t('label.create.instance') }}</small>
                   </a-col>
                 </a-row>
               </router-link>
             </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/action/createKubernetesCluster'}">
+            <a-menu-item style="width: 100%; padding: 12px" v-if="'listKubernetesClusters' in $store.getters.apis">
+              <router-link :to="{ path: '/kubernetes', query: { action: 'createKubernetesCluster' } }">
                 <a-row>
                   <a-col style="margin-right: 12px">
                     <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
@@ -52,17 +51,16 @@
                     </a-avatar>
                   </a-col>
                   <a-col>
-                    <strong>
+                    <h3 style="margin-bottom: 0px;">
                       {{ $t('label.kubernetes') }}
-                    </strong>
-                    <br/>
+                    </h3>
                     <small>{{ $t('label.kubernetes.cluster.create') }}</small>
                   </a-col>
                 </a-row>
               </router-link>
             </a-menu-item>
             <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/action/createVolume'}">
+              <router-link :to="{ path: '/volume', query: { action: 'createVolume' } }">
                 <a-row>
                   <a-col style="margin-right: 12px">
                     <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
@@ -72,11 +70,67 @@
                     </a-avatar>
                   </a-col>
                   <a-col>
-                    <strong>
+                    <h3 style="margin-bottom: 0px;">
                       {{ $t('label.volume') }}
-                    </strong>
-                    <br/>
+                    </h3>
                     <small>{{ $t('label.action.create.volume') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/guestnetwork', query: { action: 'createNetwork' } }">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <apartment-outlined />
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <h3 style="margin-bottom: 0px;">
+                      {{ $t('label.network') }}
+                    </h3>
+                    <small>{{ $t('label.add.network') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/vpc', query: { action: 'createVPC' } }">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <deployment-unit-outlined />
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <h3 style="margin-bottom: 0px;">
+                      {{ $t('label.vpc') }}
+                    </h3>
+                    <small>{{ $t('label.add.vpc') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/template', query: { action: 'registerTemplate' } }">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <picture-outlined />
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <h3 style="margin-bottom: 0px;">
+                      {{ $t('label.templatename') }}
+                    </h3>
+                    <small>{{ $t('label.action.register.template') }}</small>
                   </a-col>
                 </a-row>
               </router-link>
@@ -84,8 +138,8 @@
           </a-menu>
         </template>
         <a-button type="primary">
-        {{ $t('label.create') }}
-        <DownOutlined />
+          {{ $t('label.create') }}
+          <DownOutlined />
         </a-button>
       </a-dropdown>
     </span>

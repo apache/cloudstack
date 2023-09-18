@@ -64,7 +64,7 @@
       "title": "Documentation",
       "text": "Main documentation website",
       "link": "https://docs.cloudstack.apache.org/en/latest/",
-      "icon": "global-outlined"
+      "icon": "read-outlined"
     },
     {
       "title": "Usage Guide",

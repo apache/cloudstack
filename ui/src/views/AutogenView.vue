@@ -1058,6 +1058,20 @@ export default {
         this.loading = false
         this.searchParams = params
       })
+
+      if ('action' in this.$route.query) {
+        const actionName = this.$route.query.action
+        console.log(this.$route.query)
+        for (const action of this.actions) {
+          if (action.listView && action.api === actionName) {
+            this.execAction(action, false)
+            const query = Object.assign({}, this.$route.query)
+            delete query.action
+            this.$router.replace({ query })
+            break
+          }
+        }
+      }
     },
     closeAction () {
       this.actionLoading = false

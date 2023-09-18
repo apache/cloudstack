@@ -23,10 +23,46 @@
           <div class="center">
             <h3>
               <dashboard-outlined /> {{ $t('label.resources') }}
+              <span style="float: right">
+                <a-dropdown>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item v-if="showProject">
+                        <router-link :to="{ path: '/project/' + project.id }">
+                          <project-outlined/>
+                            {{ $t('label.view') }} {{  $t('label.project') }}
+                        </router-link>
+                      </a-menu-item>
+                      <a-menu-item v-if="showProject && ['Admin'].includes($store.getters.userInfo.roletype)">
+                        <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
+                          <setting-outlined/>
+                          {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
+                        </router-link>
+                      </a-menu-item>
+                      <a-menu-item v-if="!showProject">
+                        <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
+                          <user-outlined/>
+                          {{ $t('label.view') }} {{  $t('label.user') }}
+                        </router-link>
+                      </a-menu-item>
+                      <a-menu-item v-if="!showProject">
+                        <router-link :to="{ path: '/account/' + account.id }">
+                          <team-outlined/>
+                          {{ $t('label.view') }} {{  $t('label.account') }}
+                        </router-link>
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                  <a-button size="small">
+                    <more-outlined />
+                  </a-button>
+                </a-dropdown>
+              </span>
             </h3>
           </div>
         </template>
-        <a-row>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-row :gutter="[12, 12]">
           <a-col :span="12">
             <router-link :to="{ path: '/vm' }">
               <a-statistic :title="$t('label.instances')" :value="data.instances">
@@ -47,7 +83,7 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/autoscalevmgroup' }">
-              <a-statistic :title="$t('label.autoscalevmgroupname')" :value="data.autoscalegroups">
+              <a-statistic :title="$t('label.autoscale.vm.groups')" :value="data.autoscalegroups">
                 <template #prefix>
                   <fullscreen-outlined />
                 </template>
@@ -118,34 +154,6 @@
             </router-link>
           </a-col>
         </a-row>
-        <div v-if="showProject">
-          <a-divider style="margin: 12px 0px; border-width: 0px;"/>
-          <router-link :to="{ path: '/project/' + project.id }">
-            <a-button type="primary">
-              {{ $t('label.view') }} {{  $t('label.project') }}
-            </a-button>
-          </router-link>
-          &nbsp;
-          <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
-            <a-button v-if="['Admin'].includes($store.getters.userInfo.roletype)">
-              {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
-            </a-button>
-          </router-link>
-        </div>
-        <div v-else>
-          <a-divider style="margin: 12px 0px; border-width: 0px;"/>
-          <router-link :to="{ path: '/account/' + account.id }">
-            <a-button type="primary">
-              {{ $t('label.view') }} {{  $t('label.account') }}
-            </a-button>
-          </router-link>
-          &nbsp;
-          <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
-            <a-button>
-              {{ $t('label.view') }} {{  $t('label.user') }}
-            </a-button>
-          </router-link>
-        </div>
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
@@ -157,6 +165,7 @@
             </h3>
           </div>
         </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-row>
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { state: 'running', filter: 'running' } }">
@@ -214,6 +223,7 @@
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
           </div>
         </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <div
           v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage']"
           :key="usageType">
@@ -250,6 +260,7 @@
             <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
           </div>
         </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <div
           v-for="usageType in ['ip', 'network', 'vpc']"
           :key="usageType">
@@ -286,7 +297,7 @@
             <h3><question-circle-outlined /> {{ $t('label.help') }}</h3>
           </div>
         </template>
-        <br/>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-list item-layout="horizontal" :data-source="$config.userDoc">
           <template #renderItem="{ item }">
             <a-list-item>
@@ -314,7 +325,7 @@
             <h3><schedule-outlined /> {{ $t('label.events') }}</h3>
           </div>
         </template>
-        <br/>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-timeline>
           <a-timeline-item
             v-for="event in events"
@@ -534,7 +545,7 @@ export default {
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 5,
+        pagesize: 8,
         listall: true
       }
       this.loading = true
@@ -614,14 +625,14 @@ export default {
 
   .dashboard-card {
     width: 100%;
-    min-height: 450px;
+    min-height: 455px;
   }
 
   .dashboard-event {
     width: 100%;
     overflow-x:hidden;
     overflow-y: scroll;
-    max-height: 400px;
+    max-height: 455px;
   }
 
   .center {
