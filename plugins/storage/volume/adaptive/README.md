@@ -11,7 +11,7 @@ and implement the ProviderAdapter without needing to understand the internal
 logic of volume management, database structure, etc.
 
 ## Implement the Provider Interface
-To implement a provider, create another module -- or a standalone project -- 
+To implement a provider, create another module -- or a standalone project --
 and implement the following interfaces from the **org.apache.cloudstack.storage.datastore.adapter** package:
 
 1. **ProviderAdapter** - this is the primary interface used to communicate with the storage provider when volume management actions are required.
@@ -24,10 +24,10 @@ Once the provider interface is implemented, you will need to extend the **org.ap
 constructor that creates an instance of the ProviderAdapterFactory implementation created in #2 above.  Once created, you need to call the parent constructor and pass the factory object.
 
 ## Provide the Configuration for the Provider Plugin
-Lastly, you need to include a module file and Spring configuration for your Primary Datastore Provider Plugin class so Cloudstack will load it during startup.  
+Lastly, you need to include a module file and Spring configuration for your Primary Datastore Provider Plugin class so Cloudstack will load it during startup.
 
 ### Module Properties
-This provides the hint to Cloudstack to load this as a module during startup.  
+This provides the hint to Cloudstack to load this as a module during startup.
 ```
 #resources/META-INF/cloudstack/storage-volume-<providername>/module.properties
 name=storage-volume-<providername>
