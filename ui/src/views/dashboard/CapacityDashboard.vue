@@ -56,8 +56,8 @@
         </div>
       </div>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
@@ -85,8 +85,8 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
@@ -114,8 +114,8 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
             <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
@@ -143,77 +143,74 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
-      <chart-card :loading="loading">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
+      <chart-card :loading="loading" style="max-height: 200px;">
         <template #title>
           <div class="center">
             <h3>
               <desktop-outlined />
-              {{ $t('label.hosts') }}
-              <span style="float: right">
-                <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
-                  {{ hosts.total }}
-                </router-link>
-              </span>
+              {{ $t('label.hosts') }} ({{ hosts.total }})
             </h3>
           </div>
         </template>
-        <a-row>
+        <a-divider style="margin: 3px 0px; border-width: 0px"/>
+        <a-row :gutter="[0, 6]">
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'up' } }">
-              <a-statistic :title="$t('label.up')" :value="hosts.up">
-                <template #prefix>
+              <a-statistic :value="hosts.up">
+                <template #title>
                   <status class="status" text="Up"/>
+                  {{ $t('label.up') }}
                 </template>
               </a-statistic>
             </router-link>
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'down' } }">
-              <a-statistic :title="$t('label.down')" :value="hosts.alert">
-                <template #prefix>
+              <a-statistic :value="hosts.down">
+                <template #title>
                   <status class="status" text="Down"/>
+                  {{ $t('label.down') }}
                 </template>
               </a-statistic>
             </router-link>
           </a-col>
-        </a-row>
-        <a-row>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'alert' } }">
-              <a-statistic :title="$t('label.alert')" :value="hosts.alert">
-                <template #prefix>
+              <a-statistic :value="hosts.alert">
+                <template #title>
                   <status class="status" text="Alert"/>
+                  {{ $t('label.alert') }}
                 </template>
               </a-statistic>
             </router-link>
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, resourcestate: 'maintenance' } }">
-              <a-statistic :title="$t('label.maintenance')" :value="hosts.maintenance">
-                <template #prefix>
+              <a-statistic :value="hosts.maintenance">
+                <template #title>
                   <status class="status" text="Maintenance"/>
+                  {{ $t('label.maintenance') }}
                 </template>
               </a-statistic>
             </router-link>
           </a-col>
         </a-row>
       </chart-card>
-      <chart-card :loading="loading" style="margin-top: -6px">
+      </router-link>
+      <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
+      <chart-card :loading="loading" style="margin-top: 12px; max-height: 134px;">
         <template #title>
           <div class="center">
             <h3>
               <cloud-server-outlined />
-              {{ $t('label.instances') }}
-              <span style="float: right">
-                <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
-                  {{ instances.total }}
-                </router-link>
-              </span>
+              {{ $t('label.instances') }} ({{ instances.total }})
             </h3>
           </div>
         </template>
-        <a-row>
+        <a-divider style="margin: 3px 0px; border-width: 0px"/>
+        <a-row :gutter="[6,6]">
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', state: 'running' } }">
               <a-statistic :title="$t('label.running')" :value="instances.running">
@@ -234,16 +231,18 @@
           </a-col>
         </a-row>
       </chart-card>
+      </router-link>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <router-link :to="{ path: '/alert' }">
-      <a-card :loading="loading" :bordered="false" class="dashboard-event">
+      <a-card :loading="loading" :bordered="false" class="dashboard-card dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
             <flag-outlined />
             {{ $t('label.alerts') }}
           </h3>
         </div>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-timeline>
           <a-timeline-item
             v-for="alert in alerts"
@@ -262,15 +261,16 @@
       </a-card>
       </router-link>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <router-link :to="{ path: '/event' }">
-      <a-card :loading="loading" :bordered="false" class="dashboard-event">
+      <a-card :loading="loading" :bordered="false" class="dashboard-card dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
             <schedule-outlined />
             {{ $t('label.events') }}
           </h3>
         </div>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
         <a-timeline>
           <a-timeline-item
             v-for="event in events"
@@ -324,8 +324,8 @@ export default {
       hosts: {
         total: 0,
         up: 0,
-        alert: 0,
         down: 0,
+        alert: 0,
         maintenance: 0
       },
       instances: {
@@ -425,47 +425,83 @@ export default {
       })
     },
     listHosts (zone) {
+      this.hosts = {
+        total: 0,
+        up: 0,
+        down: 0,
+        alert: 0,
+        maintenance: 0
+      }
       this.loading = true
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.total = json?.listhostsresponse?.count
+        if (!this.hosts.total) {
+          this.hosts.total = 0
+        }
       })
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'up', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.up = json?.listhostsresponse?.count
-      })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.hosts.alert = json?.listhostsresponse?.count
+        if (!this.hosts.up) {
+          this.hosts.up = 0
+        }
       })
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'down', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.down = json?.listhostsresponse?.count
+        if (!this.hosts.down) {
+          this.hosts.down = 0
+        }
+      })
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.hosts.alert = json?.listhostsresponse?.count
+        if (!this.hosts.alert) {
+          this.hosts.alert = 0
+        }
       })
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', resourcestate: 'maintenance', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.maintenance = json?.listhostsresponse?.count
+        if (!this.hosts.maintenance) {
+          this.hosts.maintenance = 0
+        }
       })
     },
     listInstances (zone) {
+      this.instances = {
+        total: 0,
+        running: 0,
+        stopped: 0
+      }
       this.loading = true
       api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.total = json?.listvirtualmachinesresponse?.count
+        if (!this.instances.total) {
+          this.instances.total = 0
+        }
       })
       api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'running', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.running = json?.listvirtualmachinesresponse?.count
+        if (!this.instances.running) {
+          this.instances.running = 0
+        }
       })
       api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'stopped', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.stopped = json?.listvirtualmachinesresponse?.count
+        if (!this.instances.stopped) {
+          this.instances.stopped = 0
+        }
       })
     },
     listAlerts () {
       const params = {
         page: 1,
-        pagesize: 5,
+        pagesize: 8,
         listall: true
       }
       this.loading = true
@@ -480,7 +516,7 @@ export default {
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 5,
+        pagesize: 8,
         listall: true
       }
       this.loading = true
@@ -570,12 +606,13 @@ export default {
 
 .dashboard-card {
   width: 100%;
+  min-height: 345px;
 }
 
 .dashboard-event {
   width: 100%;
   overflow-x:hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   max-height: 345px;
 }
 
