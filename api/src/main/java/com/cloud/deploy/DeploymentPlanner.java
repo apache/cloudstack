@@ -108,17 +108,16 @@ public interface DeploymentPlanner extends Adapter {
         }
 
         private void logAvoid(Class<?> scope, CloudException e) {
-            try {
-                Long id = null;
-                if (e instanceof InsufficientCapacityException) {
-                    id = ((InsufficientCapacityException) e).getId();
-                } else {
-                    id = ((ResourceUnavailableException) e).getResourceId();
-                }
-                LOGGER.trace(String.format("Adding %s [%s] to the avoid set due to [%s].", scope.getSimpleName(), id, e.getMessage()));
-            } catch (Exception ex) {
-                LOGGER.trace(String.format("Failed to log avoided component due to [%s].", ex.getMessage()));
+            Long id = null;
+            if (e instanceof InsufficientCapacityException) {
+                id = ((InsufficientCapacityException) e).getId();
+            } else if (e instanceof ResourceUnavailableException) {
+                id = ((ResourceUnavailableException) e).getResourceId();
+            } else {
+                LOGGER.trace(String.format("Failed to log avoided component due to unexpected exception type [%s].", e.getMessage()));
+                return;
             }
+            LOGGER.trace(String.format("Adding %s [%s] to the avoid set due to [%s].", scope.getSimpleName(), id, e.getMessage()));
         }
 
         public boolean add(InsufficientCapacityException e) {
