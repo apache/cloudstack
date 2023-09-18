@@ -89,22 +89,22 @@ public class VMSchedulerImplTest {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onScheduledActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
+                       Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(),
+                       Mockito.anyLong()))
+               .thenReturn(1L);
         Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(),
                 Mockito.anyString(), Mockito.anyBoolean(),
                 Mockito.anyString(),
                 Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
     }
 
-    private void prepareMocksForProcessJob(VirtualMachine vm, VMScheduledJob vmScheduledJob, VirtualMachine.State vmState, VMSchedule.Action action, Long executeJobReturnValue) {
-        Mockito.when(vm.getState()).thenReturn(vmState);
-        Mockito.when(vmScheduledJob.getAction()).thenReturn(action);
-
-        if (executeJobReturnValue != null) {
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStartVMJob(Mockito.any(VirtualMachine.class), Mockito.anyLong());
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStopVMJob(Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
-            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeRebootVMJob(Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
-        }
+    @Test
+    public void testProcessJobRunning() {
+        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.STOP);
+        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.FORCE_STOP);
+        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.REBOOT);
+        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.FORCE_REBOOT);
+        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Stopped, VMSchedule.Action.START);
     }
 
     private void executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State state, VMSchedule.Action action) {
@@ -125,13 +125,20 @@ public class VMSchedulerImplTest {
         Assert.assertEquals(expectedValue, jobId);
     }
 
-    @Test
-    public void testProcessJobRunning() {
-        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.STOP);
-        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.FORCE_STOP);
-        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.REBOOT);
-        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Running, VMSchedule.Action.FORCE_REBOOT);
-        executeProcessJobWithVMStateAndActionNonSkipped(VirtualMachine.State.Stopped, VMSchedule.Action.START);
+    private void prepareMocksForProcessJob(VirtualMachine vm, VMScheduledJob vmScheduledJob,
+                                           VirtualMachine.State vmState, VMSchedule.Action action,
+                                           Long executeJobReturnValue) {
+        Mockito.when(vm.getState()).thenReturn(vmState);
+        Mockito.when(vmScheduledJob.getAction()).thenReturn(action);
+
+        if (executeJobReturnValue != null) {
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStartVMJob(
+                    Mockito.any(VirtualMachine.class), Mockito.anyLong());
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeStopVMJob(
+                    Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
+            Mockito.doReturn(executeJobReturnValue).when(vmScheduler).executeRebootVMJob(
+                    Mockito.any(VirtualMachine.class), Mockito.anyBoolean(), Mockito.anyLong());
+        }
     }
 
     @Test
@@ -172,7 +179,7 @@ public class VMSchedulerImplTest {
         Mockito.when(vmSchedule.getStartDate()).thenReturn(startDate);
         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
         Mockito.when(vmScheduledJobDao.persist(Mockito.any())).thenThrow(EntityExistsException.class);
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
@@ -190,7 +197,7 @@ public class VMSchedulerImplTest {
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(startDate);
         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
@@ -226,7 +233,7 @@ public class VMSchedulerImplTest {
             expectedScheduledTime = DateUtils.addDays(expectedScheduledTime, 1);
         }
 
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
 
@@ -242,7 +249,7 @@ public class VMSchedulerImplTest {
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
@@ -277,7 +284,7 @@ public class VMSchedulerImplTest {
             expectedScheduledTime = DateUtils.addDays(expectedScheduledTime, 1);
         }
 
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
 
@@ -286,7 +293,7 @@ public class VMSchedulerImplTest {
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEndDate()).thenReturn(DateUtils.addMinutes(new Date(), -5));
         Mockito.when(vmSchedule.getEnabled()).thenReturn(true);
-        Date actualDate = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualDate = vmScheduler.scheduleNextJob(vmSchedule, new Date());
         Assert.assertNull(actualDate);
     }
 
@@ -294,28 +301,10 @@ public class VMSchedulerImplTest {
     public void testScheduleNextJobScheduleDisabled() {
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
         Mockito.when(vmSchedule.getEnabled()).thenReturn(false);
-        Date actualDate = vmScheduler.scheduleNextJob(vmSchedule);
+        Date actualDate = vmScheduler.scheduleNextJob(vmSchedule, new Date());
         Assert.assertNull(actualDate);
     }
 
-    @Test
-    public void testScheduleNextJobScheduleIdNotExists() {
-        long vmScheduleId = 1;
-        Mockito.when(vmScheduleDao.findById(vmScheduleId)).thenReturn(null);
-        Date actualDate = vmScheduler.scheduleNextJob(vmScheduleId);
-        Assert.assertNull(actualDate);
-    }
-
-    @Test
-    public void testScheduleNextJobScheduleIdExists() {
-        long vmScheduleId = 1;
-        VMScheduleVO vmScheduleVO = Mockito.mock(VMScheduleVO.class);
-        Date date = Mockito.mock(Date.class);
-        Mockito.when(vmScheduleDao.findById(vmScheduleId)).thenReturn(vmScheduleVO);
-        Mockito.doReturn(date).when(vmScheduler).scheduleNextJob(vmScheduleVO);
-        Date actualDate = vmScheduler.scheduleNextJob(vmScheduleId);
-        Assert.assertEquals(date, actualDate);
-    }
 
     @Test
     public void testExecuteJobs() {
