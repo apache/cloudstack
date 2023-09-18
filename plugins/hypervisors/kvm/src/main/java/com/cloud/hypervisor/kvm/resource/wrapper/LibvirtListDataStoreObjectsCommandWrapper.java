@@ -24,12 +24,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
-import org.apache.log4j.Logger;
 
-@ResourceWrapper(handles =  ListDataStoreObjectsCommand.class)
+@ResourceWrapper(handles = ListDataStoreObjectsCommand.class)
 public final class LibvirtListDataStoreObjectsCommandWrapper extends CommandWrapper<ListDataStoreObjectsCommand, Answer, LibvirtComputingResource> {
     @Override
-    public Answer execute(final ListDataStoreObjectsCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    public Answer execute(final ListDataStoreObjectsCommand command,
+            final LibvirtComputingResource libvirtComputingResource) {
         return libvirtComputingResource.listFilesAtPath(command);
     }
 }
