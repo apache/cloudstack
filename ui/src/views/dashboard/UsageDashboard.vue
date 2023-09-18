@@ -17,7 +17,138 @@
 
 <template>
   <a-row class="capacity-dashboard" :gutter="[12,12]">
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3>
+              <dashboard-outlined /> {{ $t('label.resources') }}
+            </h3>
+          </div>
+        </template>
+        <a-row>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm' }">
+              <a-statistic :title="$t('label.instances')" :value="data.instances">
+                <template #prefix>
+                  <cloud-server-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/kubernetes' }">
+              <a-statistic :title="$t('label.kubernetes.cluster')" :value="data.kubernetes">
+                <template #prefix>
+                  <cluster-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/autoscalevmgroup' }">
+              <a-statistic :title="$t('label.autoscalevmgroupname')" :value="data.autoscalegroups">
+                <template #prefix>
+                  <fullscreen-outlined />
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/ssh' }">
+              <a-statistic :title="$t('label.keypairs')" :value="data.sshkeys">
+                <template #prefix>
+                  <key-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/volume' }">
+              <a-statistic :title="$t('label.volumes')" :value="data.volumes">
+                <template #prefix>
+                  <hdd-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/snapshot' }">
+              <a-statistic :title="$t('label.snapshots')" :value="data.snapshots">
+                <template #prefix>
+                  <build-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/guestnetwork' }">
+              <a-statistic :title="$t('label.guest.networks')" :value="data.networks">
+                <template #prefix>
+                  <apartment-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vpc' }">
+              <a-statistic :title="$t('label.vpcs')" :value="data.vpcs">
+                <template #prefix>
+                  <deployment-unit-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/publicip' }">
+              <a-statistic :title="$t('label.public.ips')" :value="data.ips">
+                <template #prefix>
+                  <environment-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
+              <a-statistic :title="$t('label.templates')" :value="data.templates">
+                <template #prefix>
+                  <picture-outlined/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
+        <div v-if="showProject">
+          <a-divider style="margin: 12px 0px; border-width: 0px;"/>
+          <router-link :to="{ path: '/project/' + project.id }">
+            <a-button type="primary">
+              {{ $t('label.view') }} {{  $t('label.project') }}
+            </a-button>
+          </router-link>
+          &nbsp;
+          <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
+            <a-button v-if="['Admin'].includes($store.getters.userInfo.roletype)">
+              {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
+            </a-button>
+          </router-link>
+        </div>
+        <div v-else>
+          <a-divider style="margin: 12px 0px; border-width: 0px;"/>
+          <router-link :to="{ path: '/account/' + account.id }">
+            <a-button type="primary">
+              {{ $t('label.view') }} {{  $t('label.account') }}
+            </a-button>
+          </router-link>
+          &nbsp;
+          <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
+            <a-button>
+              {{ $t('label.view') }} {{  $t('label.user') }}
+            </a-button>
+          </router-link>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -28,8 +159,8 @@
         </template>
         <a-row>
           <a-col :span="12">
-            <router-link :to="{ path: '/vm', query: { projectid: showProject ? '' : '-1', state: 'running' } }">
-              <a-statistic :title="$t('label.running') + ' ' + $t('label.instances')" :value="instances.running">
+            <router-link :to="{ path: '/vm', query: { state: 'running', filter: 'running' } }">
+              <a-statistic :title="$t('label.running') + ' ' + $t('label.instances')" :value="data.running">
                 <template #prefix>
                   <status class="status" text="Running"/>
                 </template>
@@ -37,8 +168,8 @@
             </router-link>
           </a-col>
           <a-col :span="12">
-            <router-link :to="{ path: '/vm', query: { projectid: showProject ? '' : '-1', state: 'stopped' } }">
-              <a-statistic :title="$t('label.stopped') + ' ' + $t('label.instances')" :value="instances.stopped">
+            <router-link :to="{ path: '/vm', query: { state: 'stopped', filter: 'stopped' } }">
+              <a-statistic :title="$t('label.stopped') + ' ' + $t('label.instances')" :value="data.stopped">
                 <template #prefix>
                   <status class="status" text="Stopped"/>
                 </template>
@@ -74,23 +205,9 @@
             </div>
           </div>
         </div>
-        <div v-if="showProject">
-          <a-divider style="margin: 12px 0px; border-width: 0px;"/>
-          <router-link :to="{ path: '/project/' + project.id }">
-            <a-button type="primary">
-              {{ $t('label.view') }} {{  $t('label.project') }}
-            </a-button>
-          </router-link>
-          &nbsp;
-          <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
-            <a-button v-if="['Admin'].includes($store.getters.userInfo.roletype)">
-              {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
-            </a-button>
-          </router-link>
-        </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -126,7 +243,7 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }" class="dashboard-card">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
@@ -162,7 +279,35 @@
         </div>
       </chart-card>
     </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 6 }">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><question-circle-outlined /> {{ $t('label.help') }}</h3>
+          </div>
+        </template>
+        <br/>
+        <a-list item-layout="horizontal" :data-source="$config.userDoc">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <a-list-item-meta :description="item.text">
+                <template #title>
+                  <a :href="item.link" target="_blank">{{ item.title }}</a>
+                </template>
+                <template #avatar>
+                  <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                    <template #icon>
+                      <render-icon :icon="item.icon" />
+                    </template>
+                  </a-avatar>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <chart-card :loading="loading" class="dashboard-card dashboard-event">
         <template #title>
           <div class="center">
@@ -230,9 +375,19 @@ export default {
       project: {},
       account: {},
       events: [],
-      instances: {
+      data: {
         running: 0,
-        stopped: 0
+        stopped: 0,
+        instances: 0,
+        kubernetes: 0,
+        autoscalegroups: 0,
+        sshkeys: 0,
+        volumes: 0,
+        snapshots: 0,
+        networks: 0,
+        vpcs: 0,
+        ips: 0,
+        templates: 0
       }
     }
   },
@@ -286,8 +441,7 @@ export default {
       } else {
         this.listAccount()
       }
-      this.listInstances()
-      this.listEvents()
+      this.updateData()
     },
     listAccount () {
       this.loading = true
@@ -307,15 +461,74 @@ export default {
         }
       })
     },
+    updateData () {
+      this.data = {
+        running: 0,
+        stopped: 0,
+        instances: 0,
+        kubernetes: 0,
+        autoscalegroups: 0,
+        sshkeys: 0,
+        volumes: 0,
+        snapshots: 0,
+        networks: 0,
+        vpcs: 0,
+        ips: 0,
+        templates: 0
+      }
+      this.listInstances()
+      this.listEvents()
+      this.loading = true
+      api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.kubernetes = json?.listkubernetesclustersresponse?.count
+      })
+      api('listAutoScaleVmGroups', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.autoscalegroups = json?.listautoscalevmgroupsresponse?.count
+      })
+      api('listSSHKeyPairs', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.sshkeys = json?.listsshkeypairsresponse?.count
+      })
+      api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.volumes = json?.listvolumesresponse?.count
+      })
+      api('listSnapshots', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.snapshots = json?.listsnapshotsresponse?.count
+      })
+      api('listNetworks', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.networks = json?.listnetworksresponse?.count
+      })
+      api('listVPCs', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.vpcs = json?.listvpcsresponse?.count
+      })
+      api('listPublicIpAddresses', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.ips = json?.listpublicipaddressesresponse?.count
+      })
+      api('listTemplates', { templatefilter: 'self', listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.templates = json?.listtemplatesresponse?.count
+      })
+    },
     listInstances (zone) {
       this.loading = true
-      api('listVirtualMachines', { listall: true, details: 'min', state: 'running' }).then(json => {
+      api('listVirtualMachines', { listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
-        this.instances.running = json?.listvirtualmachinesresponse?.count
+        this.data.instances = json?.listvirtualmachinesresponse?.count
       })
-      api('listVirtualMachines', { listall: true, details: 'min', state: 'stopped' }).then(json => {
+      api('listVirtualMachines', { listall: true, details: 'min', state: 'running', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
-        this.instances.stopped = json?.listvirtualmachinesresponse?.count
+        this.data.running = json?.listvirtualmachinesresponse?.count
+      })
+      api('listVirtualMachines', { listall: true, details: 'min', state: 'stopped', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.stopped = json?.listvirtualmachinesresponse?.count
       })
     },
     listEvents () {
@@ -408,7 +621,7 @@ export default {
     width: 100%;
     overflow-x:hidden;
     overflow-y: scroll;
-    max-height: 450px;
+    max-height: 400px;
   }
 
   .center {

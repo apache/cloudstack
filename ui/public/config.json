@@ -59,6 +59,32 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
+  "userDoc": [
+    {
+      "title": "Documentation",
+      "text": "Main documentation website",
+      "link": "https://docs.cloudstack.apache.org/en/latest/",
+      "icon": "global-outlined"
+    },
+    {
+      "title": "Usage Guide",
+      "text": "Refer to usage documentation",
+      "link": "https://docs.cloudstack.apache.org/en/latest/adminguide/index.html",
+      "icon": "compass-outlined"
+    },
+    {
+      "title": "API Documentation",
+      "text": "Refer to API documentation",
+      "link": "https://cloudstack.apache.org/api.html",
+      "icon": "api-outlined"
+    },
+    {
+      "title": "Report Issue",
+      "text": "Submit a bug or improvement request",
+      "link": "https://github.com/apache/cloudstack/issues/new",
+      "icon": "bug-outlined"
+    }
+  ],
   "plugins": [],
   "basicZoneEnabled": true,
   "multipleServer": false,

@@ -551,7 +551,7 @@ export default {
     {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
-      icon: 'ordered-list-outlined',
+      icon: 'fullscreen-outlined',
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],

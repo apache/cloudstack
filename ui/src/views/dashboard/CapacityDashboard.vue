@@ -42,8 +42,17 @@
           <a-button
             shape="round"
             @click="() => { listCapacity(zoneSelected, true); listHosts(zoneSelected); listInstances(zoneSelected); listAlerts(); listEvents(); }">
+            <reload-outlined/>
             {{ $t('label.fetch.latest') }}
           </a-button>
+        </div>
+        <div class="capacity-dashboard-button">
+          <router-link :to="{ path: '/zone/' + zoneSelected.id }">
+            <a-button shape="round">
+              <global-outlined/>
+              {{ $t('label.view') }} {{ $t('label.zone') }}
+            </a-button>
+          </router-link>
         </div>
       </div>
     </a-col>
@@ -227,6 +236,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+      <router-link :to="{ path: '/alert' }">
       <a-card :loading="loading" :bordered="false" class="dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
@@ -250,8 +260,10 @@
           </a-button>
         </router-link>
       </a-card>
+      </router-link>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card dashboard-event">
+      <router-link :to="{ path: '/event' }">
       <a-card :loading="loading" :bordered="false" class="dashboard-event">
         <div class="center" style="margin-top: -8px">
           <h3>
@@ -278,6 +290,7 @@
           </a-button>
         </router-link>
       </a-card>
+      </router-link>
     </a-col>
   </a-row>
 </template>
@@ -413,38 +426,38 @@ export default {
     },
     listHosts (zone) {
       this.loading = true
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing' }).then(json => {
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.total = json?.listhostsresponse?.count
       })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'up' }).then(json => {
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'up', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.up = json?.listhostsresponse?.count
       })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert' }).then(json => {
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.alert = json?.listhostsresponse?.count
       })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'down' }).then(json => {
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'down', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.down = json?.listhostsresponse?.count
       })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', resourcestate: 'maintenance' }).then(json => {
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', resourcestate: 'maintenance', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.hosts.maintenance = json?.listhostsresponse?.count
       })
     },
     listInstances (zone) {
       this.loading = true
-      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min' }).then(json => {
+      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.total = json?.listvirtualmachinesresponse?.count
       })
-      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'running' }).then(json => {
+      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'running', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.running = json?.listvirtualmachinesresponse?.count
       })
-      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'stopped' }).then(json => {
+      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'stopped', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.instances.stopped = json?.listvirtualmachinesresponse?.count
       })
@@ -540,7 +553,7 @@ export default {
 
   &-button {
     width: auto;
-    padding-left: 12px;
+    padding-left: 8px;
   }
 
   &-button-icon {
