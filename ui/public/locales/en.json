@@ -537,6 +537,7 @@
 "label.cpuused": "CPU utilized",
 "label.cpuusedghz": "CPU used",
 "label.create": "Create",
+"label.create.instance": "Create cloud server",
 "label.create.account": "Create account",
 "label.create.backup": "Start backup",
 "label.create.network": "Create new network",

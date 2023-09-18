@@ -17,6 +17,78 @@
 
 <template>
   <div class="user-menu">
+    <span class="action">
+      <a-dropdown>
+        <template #overlay>
+          <a-menu>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/action/deployVirtualMachine'}">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <cloud-server-outlined/>
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <strong>
+                      {{ $t('label.instance') }}
+                    </strong>
+                    <br/>
+                    <small>{{ $t('label.create.instance') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/action/createKubernetesCluster'}">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <cluster-outlined />
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <strong>
+                      {{ $t('label.kubernetes') }}
+                    </strong>
+                    <br/>
+                    <small>{{ $t('label.kubernetes.cluster.create') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+            <a-menu-item style="width: 100%; padding: 12px">
+              <router-link :to="{ path: '/action/createVolume'}">
+                <a-row>
+                  <a-col style="margin-right: 12px">
+                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                      <template #icon>
+                        <hdd-outlined />
+                      </template>
+                    </a-avatar>
+                  </a-col>
+                  <a-col>
+                    <strong>
+                      {{ $t('label.volume') }}
+                    </strong>
+                    <br/>
+                    <small>{{ $t('label.action.create.volume') }}</small>
+                  </a-col>
+                </a-row>
+              </router-link>
+            </a-menu-item>
+          </a-menu>
+        </template>
+        <a-button type="primary">
+        {{ $t('label.create') }}
+        <DownOutlined />
+        </a-button>
+      </a-dropdown>
+    </span>
     <external-link class="action"/>
     <translation-menu class="action"/>
     <header-notice class="action"/>

@@ -367,6 +367,9 @@ export default {
       return 'normal'
     },
     displayData (dataType, value) {
+      if (!value) {
+        value = 0
+      }
       switch (dataType) {
         case 'CPU':
           value = parseFloat(value / 1000.0, 10).toFixed(2) + ' GHz'
