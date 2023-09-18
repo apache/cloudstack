@@ -28,9 +28,6 @@ import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles =  ListDataStoreObjectsCommand.class)
 public final class LibvirtListDataStoreObjectsCommandWrapper extends CommandWrapper<ListDataStoreObjectsCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsVpcRoutingPolicyConfigCommandWrapper.class);
-
     @Override
     public Answer execute(final ListDataStoreObjectsCommand command, final LibvirtComputingResource libvirtComputingResource) {
         return libvirtComputingResource.listFilesAtPath(command);

@@ -268,7 +268,6 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 break;
             }
 
-
             if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destImgStoreId).first()) {
                 s_logger.debug(String.format("%s: %s too large to be migrated to %s", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid(), destImgStoreId));
                 continue;

@@ -31,19 +31,19 @@ import org.apache.xmlrpc.XmlRpcException;
 @ResourceWrapper(handles = ListDataStoreObjectsCommand.class)
 public final class CitrixListDataStoreObjectsCommandWrapper extends CommandWrapper<ListDataStoreObjectsCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixListDataStoreObjectsCommandWrapper.class);
+    private static final Logger LOGGER = Logger.getLogger(CitrixListDataStoreObjectsCommandWrapper.class);
 
     @Override
     public Answer execute(final ListDataStoreObjectsCommand command, final CitrixResourceBase citrixResourceBase) {
         try {
             return citrixResourceBase.listFilesAtPath(command);
         } catch (XenAPIException e) {
-            s_logger.warn("XenAPI exception", e);
+            LOGGER.warn("XenAPI exception", e);
 
         } catch (XmlRpcException e) {
-            s_logger.warn("Xml Rpc Exception", e);
+            LOGGER.warn("Xml Rpc Exception", e);
         } catch (Exception e) {
-            s_logger.warn("Caught exception", e);
+            LOGGER.warn("Caught exception", e);
         }
         return null;
     }
