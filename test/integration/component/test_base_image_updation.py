@@ -331,7 +331,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot the virtual machines, %s" % e)
 
-        # Check if the the root disk was destroyed and recreated for isVolatile=True
+        # Check if the root disk was destroyed and recreated for isVolatile=True
         self.debug("Checking root disk of VM with isVolatile=True")
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -358,7 +358,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                             %(vm_with_reset.nic[0].ipaddress, self.vm_with_reset.nic[0].ipaddress)
                         )
 
-        # Check if the the root disk was not destroyed for isVolatile=False
+        # Check if the root disk was not destroyed for isVolatile=False
         self.debug("Checking root disk of VM with isVolatile=False")
         vms = VirtualMachine.list(
                                   self.apiclient,
@@ -473,7 +473,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                     %(vm_with_reset.nic[0].ipaddress, self.vm_with_reset.nic[0].ipaddress)
                                 )
 
-                # Check if the the root disk was not destroyed for isVolatile=False
+                # Check if the root disk was not destroyed for isVolatile=False
                 self.debug("Checking template id of VM with isVolatile=False")
                 vms = VirtualMachine.list(
                                           self.apiclient,
@@ -606,7 +606,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to reboot the virtual machine. Error: %s" % e)
 
-        # Check if the the root disk was destroyed and recreated for isVolatile=True
+        # Check if the root disk was destroyed and recreated for isVolatile=True
         self.debug("Checking whether root disk of VM with isVolatile=True was destroyed")
         vms = VirtualMachine.list(
                                   self.apiclient,

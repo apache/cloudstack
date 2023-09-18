@@ -241,7 +241,7 @@ public class UsageEventUtils {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            LOGGER.warn("Failed to publish usage event on the the event bus.");
+            LOGGER.warn("Failed to publish usage event on the event bus.");
         }
     }
 

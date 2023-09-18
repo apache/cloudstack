@@ -1202,7 +1202,7 @@ public class Upgrade218to22 extends DbUpgradeAbstractImpl {
                                     selectnonRemovedVms.setLong(2, dataCenterId);
                                     try (ResultSet nonRemovedVms = selectnonRemovedVms.executeQuery();) {
                                         if (nonRemovedVms.next()) {
-                                            logger.warn("Failed to find domR for for account id=" + accountId + " in zone id=" + dataCenterId +
+                                            logger.warn("Failed to find domR for account id=" + accountId + " in zone id=" + dataCenterId +
                                                     "; will try to locate domR based on user_vm info");
                                             //try to get domR information from the user_vm belonging to the account
                                             try (PreparedStatement selectNetworkType =

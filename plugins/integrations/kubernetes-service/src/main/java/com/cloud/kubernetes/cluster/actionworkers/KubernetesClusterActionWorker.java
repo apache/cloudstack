@@ -412,7 +412,7 @@ public class KubernetesClusterActionWorker {
                 return new Pair<>(address.getAddress().addr(), port);
             }
         }
-        logger.warn(String.format("No public IP found for the the VPC tier: %s, Kubernetes cluster : %s", network, kubernetesCluster.getName()));
+        logger.warn(String.format("No public IP found for the VPC tier: %s, Kubernetes cluster : %s", network, kubernetesCluster.getName()));
         return new Pair<>(null, port);
     }
 
@@ -585,7 +585,7 @@ public class KubernetesClusterActionWorker {
             writer.write(data);
             writer.close();
         } catch (IOException e) {
-            logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to to fetch script %s",
+            logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to fetch script %s",
                 kubernetesCluster.getName(), filename), e);
         }
         return file;

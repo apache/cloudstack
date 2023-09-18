@@ -123,7 +123,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            logger.warn("Failed to state change event on the the event bus.");
+            logger.warn("Failed to state change event on the event bus.");
         }
     }
 

@@ -133,7 +133,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     /**
      * Allocates a public IPv6 address for the guest NIC. It will throw exceptions in the following cases:
      * <ul>
-     *    <li>the the requested IPv6 address is already in use in the network;</li>
+     *    <li>the requested IPv6 address is already in use in the network;</li>
      *    <li>IPv6 address is equals to the Gateway;</li>
      *    <li>the network offering is empty;</li>
      *    <li>the IPv6 address is not in the network.</li>
@@ -149,7 +149,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     /**
      * Performs some checks on the given IPv6 address. It will throw exceptions in the following cases:
      * <ul>
-     *    <li>the the requested IPv6 address is already in use in the network;</li>
+     *    <li>the requested IPv6 address is already in use in the network;</li>
      *    <li>IPv6 address is equals to the Gateway;</li>
      *    <li>the network offering is empty;</li>
      *    <li>the IPv6 address is not in the network.</li>

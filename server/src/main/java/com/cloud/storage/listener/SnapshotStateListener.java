@@ -107,7 +107,7 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            logger.warn("Failed to publish state change event on the the event bus.");
+            logger.warn("Failed to publish state change event on the event bus.");
         }
     }
 
