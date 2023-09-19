@@ -20,20 +20,15 @@
 package com.cloud.network.dao;
 
 import com.cloud.network.Networks;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 
 import java.util.List;
@@ -58,7 +53,7 @@ public class NetworkDaoImplTest {
             networkDaoImplSpy.AllFieldsSearch = searchBuilderNetworkVoMock;
             Mockito.doReturn(searchCriteriaNetworkVoMock).when(searchBuilderNetworkVoMock).create();
             Mockito.doNothing().when(searchCriteriaNetworkVoMock).setParameters(Mockito.anyString(), Mockito.any());
-            Mockito.when(ReflectionTestUtils.invokeMethod(networkDaoImplSpy, "listBy", Mockito.any(SearchCriteria.class))).thenReturn(listNetworkVoMock);
+            Mockito.doReturn(listNetworkVoMock).when(networkDaoImplSpy).listBy(Mockito.any(SearchCriteria.class));
 
             long expectedPhysicalNetwork = 2513l;
 
