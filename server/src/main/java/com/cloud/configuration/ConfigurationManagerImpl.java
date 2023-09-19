@@ -46,7 +46,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -884,6 +883,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Configuration updateConfiguration(final UpdateCfgCmd cmd) throws InvalidParameterValueException {
         final Long userId = CallContext.current().getCallingUserId();
         final String name = cmd.getCfgName();
+        String value = cmd.getValue();
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
@@ -893,6 +893,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
         String category = null;
+        String eventValue = encryptEventValueIfConfigIsEncrypted(config, value);
+        CallContext.current().setEventDetails(String.format(" Name: %s New Value: %s", name, eventValue));
 
         final Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isDomainAdmin(caller.getId())) {
@@ -915,15 +917,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             category = config.getCategory();
         }
-
-        String value = cmd.getValue();
-        boolean isConfigEncrypted = config != null && config.isEncrypted();
-        if (isConfigEncrypted) {
-            value = DBEncryptionUtil.encrypt(value);
-        }
-
-        String eventValue = isConfigEncrypted ? "*****" : Objects.requireNonNullElse(value, "");
-        CallContext.current().setEventDetails(String.format(" Name: %s New Value: %s", name, eventValue));
 
         validateIpAddressRelatedConfigValues(name, value);
 
@@ -985,6 +978,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    private String encryptEventValueIfConfigIsEncrypted(ConfigurationVO config, String value) {
+        if (config != null && config.isEncrypted()) {
+           return  "*****";
+        }
+        return Objects.requireNonNullElse(value, "");
     }
 
     private ParamCountPair getParamCount(Map<String, Long> scopeMap) {

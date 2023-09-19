@@ -169,7 +169,7 @@ public class UpdateCfgCmd extends BaseCmd {
         if (cfg.isEncrypted()) {
             response.setValue(DBEncryptionUtil.encrypt(getValue()));
         } else {
-            response.setValue(cfg.getValue());
+            response.setValue(getValue());
         }
         return response;
     }
