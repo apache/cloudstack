@@ -47,6 +47,7 @@ import javax.naming.ConfigurationException;
 
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -664,7 +665,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public String updateConfiguration(final long userId, final String name, final String category, final String value, final String scope, final Long resourceId) {
+    public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
@@ -677,6 +678,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
+            if (shouldEncryptValue(category)) {
+                value = DBEncryptionUtil.encrypt(value);
+            }
+
             switch (ConfigKey.Scope.valueOf(scope)) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
@@ -767,7 +772,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
-            return value;
+            return DBEncryptionUtil.decrypt(value);
         }
 
         // Execute all updates in a single transaction
@@ -862,6 +867,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         txn.commit();
         messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
         return _configDao.getValue(name);
+    }
+
+    private boolean shouldEncryptValue(String category) {
+        return StringUtils.equalsAny(category, "Hidden", "Secure");
     }
 
     /**
