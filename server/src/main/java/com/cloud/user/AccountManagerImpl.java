@@ -1832,11 +1832,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
-            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
+            logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
             return false;
         }
         if (account.getRemoved() != null) {
-            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            logger.info("The account:" + account.getAccountName() + " is already removed");
             return false;
         }
         // don't allow removing Project account

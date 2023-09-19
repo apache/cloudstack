@@ -361,12 +361,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private GlobalLock getGlobalLock() {
         GlobalLock lock = getGlobalLock("DomainCleanup");
         if (lock == null) {
-            s_logger.debug("Couldn't get the global lock");
+            logger.debug("Couldn't get the global lock");
             return null;
         }
 
         if (!lock.lock(30)) {
-            s_logger.debug("Couldn't lock the db");
+            logger.debug("Couldn't lock the db");
             return null;
         }
         return lock;

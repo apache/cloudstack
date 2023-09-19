@@ -150,7 +150,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
     private void removeTrustmap(LdapTrustMapVO ldapTrustMapVO) {
         String msg = String.format("Removing link between LDAP: %s - type: %s  and account: %s on domain: %s",
                 ldapTrustMapVO.getName(), ldapTrustMapVO.getType().name(), ldapTrustMapVO.getAccountId(), ldapTrustMapVO.getDomainId());
-        LOGGER.debug(msg);
+        logger.debug(msg);
         _ldapTrustMapDao.remove(ldapTrustMapVO.getId());
     }
 
