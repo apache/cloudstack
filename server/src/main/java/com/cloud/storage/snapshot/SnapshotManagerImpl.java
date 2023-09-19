@@ -1875,8 +1875,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             s_logger.error(String.format("Error while copying snapshot %s to zones: %s", snapshotVO, StringUtils.joinWith(",", destZoneIds.toArray())));
         }
         if (failedZones.size() < destZoneIds.size()) {
+            final List<String> failedZonesFinal = failedZones;
+            String zoneNames = StringUtils.joinWith(", ", dataCenterVOs.stream().filter(x -> !failedZonesFinal.contains(x.getUuid())).map(DataCenterVO::getName).collect(Collectors.toList()));
             completedEventLevel = EventVO.LEVEL_INFO;
-            completedEventMsg = String.format("Completed copying snapshot ID: %s", snapshotVO.getUuid());
+            completedEventMsg = String.format("Completed copying snapshot ID: %s to zone(s): %s", snapshotVO.getUuid(), zoneNames);
         }
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
                 CallContext.current().getCallingAccountId(), completedEventLevel, EventTypes.EVENT_SNAPSHOT_COPY,
