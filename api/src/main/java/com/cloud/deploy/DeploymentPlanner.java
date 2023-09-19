@@ -114,10 +114,10 @@ public interface DeploymentPlanner extends Adapter {
             } else if (e instanceof ResourceUnavailableException) {
                 id = ((ResourceUnavailableException) e).getResourceId();
             } else {
-                LOGGER.trace(String.format("Failed to log avoided component due to unexpected exception type [%s].", e.getMessage()));
+                LOGGER.debug(String.format("Failed to log avoided component due to unexpected exception type [%s].", e.getMessage()));
                 return;
             }
-            LOGGER.trace(String.format("Adding %s [%s] to the avoid set due to [%s].", scope.getSimpleName(), id, e.getMessage()));
+            LOGGER.debug(String.format("Adding %s [%s] to the avoid set due to [%s].", scope.getSimpleName(), id, e.getMessage()));
         }
 
         public boolean add(InsufficientCapacityException e) {
