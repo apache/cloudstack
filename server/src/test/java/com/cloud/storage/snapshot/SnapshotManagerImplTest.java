@@ -35,10 +35,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -63,7 +64,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
 public class SnapshotManagerImplTest {
     @Mock
     AccountDao accountDao;
@@ -248,6 +249,7 @@ public class SnapshotManagerImplTest {
     }
 
     @Test
+    @PrepareForTest(ActionEventUtils.class)
     public void testCopyNewSnapshotToZones() {
         final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
@@ -298,11 +300,10 @@ public class SnapshotManagerImplTest {
             addedZone.add(zoneId1);
             return null;
         }).when(snapshotZoneDao).addSnapshotToZone(Mockito.anyLong(), Mockito.anyLong());
-        try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
-            utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+        PowerMockito.mockStatic(ActionEventUtils.class);
+        PowerMockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
-            snapshotManager.copyNewSnapshotToZones(snapshotId, 1L, List.of(2L));
-        }
+        snapshotManager.copyNewSnapshotToZones(snapshotId, 1L, List.of(2L));
         Assert.assertEquals(1, addedZone.size());
     }
 
