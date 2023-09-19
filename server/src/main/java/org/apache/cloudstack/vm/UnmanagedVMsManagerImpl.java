@@ -1505,7 +1505,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, String> details = cmd.getDetails();
 
         String remoteUrl = cmd.getUrl();
-        String source = cmd.getImportSource();
+        String source = cmd.getImportSource().toUpperCase();
         String diskPath = cmd.getDiskPath();
         ImportSource importSource = Enum.valueOf(ImportSource.class, source);
         Long hostId = cmd.getHostId();
@@ -1563,12 +1563,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     nicNetworkMap, nicIpAddressMap, hostId, poolId, diskPath,
                     details);
         }
-
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import Vm with name: %s ", instanceName));
         }
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
-
     }
 
     private UserVm importExternalKvmVirtualMachine(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone,
@@ -1584,7 +1582,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             allDetails.put(VmDetailConstants.MEMORY, String.valueOf(serviceOffering.getRamSize()));
             allDetails.put(VmDetailConstants.CPU_SPEED, String.valueOf(serviceOffering.getSpeed()));
         }
-
         // Check disks and supplied disk offerings
         List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = unmanagedInstance.getDisks();
 
@@ -1594,7 +1591,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, dataDiskOfferingMap);
         final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
-        //rootDisk.setCapacity(1000l);
         final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
         if (rootDisk == null || StringUtils.isEmpty(rootDisk.getController())) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
@@ -1764,7 +1760,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         publishVMUsageUpdateResourceCount(userVm, serviceOffering);
         return userVm;
     }
-
 
     public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
