@@ -344,16 +344,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public boolean deleteDomain(DomainVO domain, Boolean cleanup) {
-        GlobalLock lock = getGlobalLock("AccountCleanup");
-        if (lock == null) {
-            s_logger.debug("Couldn't get the global lock");
-            return false;
-        }
-
-        if (!lock.lock(30)) {
-            s_logger.debug("Couldn't lock the db");
-            return false;
-        }
+        GlobalLock lock = getGlobalLock();
+        if (lock == null) return false;
 
         try {
             // mark domain as inactive
@@ -361,39 +353,57 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             domain.setState(Domain.State.Inactive);
             _domainDao.update(domain.getId(), domain);
 
-            try {
-                long ownerId = domain.getAccountId();
-                if (BooleanUtils.toBoolean(cleanup)) {
-                    tryCleanupDomain(domain, ownerId);
-                } else {
-                    removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
-                }
-
-                if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
-                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
-                    e.addProxyObject(domain.getUuid(), "domainId");
-                    throw e;
-                } else {
-                    s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
-                }
-
-                cleanupDomainDetails(domain.getId());
-                cleanupDomainOfferings(domain.getId());
-                annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
-                CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                return true;
-            } catch (Exception ex) {
-                s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
-                if (ex instanceof CloudRuntimeException) {
-                    rollbackDomainState(domain);
-                    throw (CloudRuntimeException)ex;
-                }
-                else
-                    return false;
-            }
+            return cleanDomain(domain, cleanup);
         }
         finally {
             lock.unlock();
+        }
+    }
+
+    private GlobalLock getGlobalLock() {
+        GlobalLock lock = getGlobalLock("DomainCleanup");
+        if (lock == null) {
+            s_logger.debug("Couldn't get the global lock");
+            return null;
+        }
+
+        if (!lock.lock(30)) {
+            s_logger.debug("Couldn't lock the db");
+            return null;
+        }
+        return lock;
+    }
+
+    private boolean cleanDomain(DomainVO domain, Boolean cleanup) {
+        try {
+            long ownerId = domain.getAccountId();
+            if (BooleanUtils.toBoolean(cleanup)) {
+                tryCleanupDomain(domain, ownerId);
+            } else {
+                removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+            }
+
+            if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
+                CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
+                e.addProxyObject(domain.getUuid(), "domainId");
+                throw e;
+            } else {
+                s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
+            }
+
+            cleanupDomainDetails(domain.getId());
+            cleanupDomainOfferings(domain.getId());
+            annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
+            CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+            return true;
+        } catch (Exception ex) {
+            s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
+            if (ex instanceof CloudRuntimeException) {
+                rollbackDomainState(domain);
+                throw (CloudRuntimeException)ex;
+            }
+            else
+                return false;
         }
     }
 
