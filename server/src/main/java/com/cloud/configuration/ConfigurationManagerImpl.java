@@ -678,7 +678,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
-            if (shouldEncryptValue(category)) {
+            boolean valueEncrypted = shouldEncryptValue(category);
+            if (valueEncrypted) {
                 value = DBEncryptionUtil.encrypt(value);
             }
 
@@ -772,7 +773,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
-            return DBEncryptionUtil.decrypt(value);
+
+            return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
         // Execute all updates in a single transaction
