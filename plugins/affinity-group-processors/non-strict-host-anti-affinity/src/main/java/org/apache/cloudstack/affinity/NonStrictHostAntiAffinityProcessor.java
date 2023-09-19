@@ -25,4 +25,9 @@ public class NonStrictHostAntiAffinityProcessor extends NonStrictHostAffinityPro
         plan.adjustHostPriority(hostId, DeploymentPlan.HostPriorityAdjustment.LOWER);
         return plan.getHostPriorities().get(hostId);
     }
+
+    @Override
+    public void processHostAdded(long hostId) {
+        // Not using super class implementation here.
+    }
 }
