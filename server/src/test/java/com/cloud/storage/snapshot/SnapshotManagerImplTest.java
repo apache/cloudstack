@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -42,6 +43,7 @@ import org.mockito.stubbing.Answer;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -296,7 +298,11 @@ public class SnapshotManagerImplTest {
             addedZone.add(zoneId1);
             return null;
         }).when(snapshotZoneDao).addSnapshotToZone(Mockito.anyLong(), Mockito.anyLong());
-        snapshotManager.copyNewSnapshotToZones(snapshotId, 1L, List.of(2L));
+        try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
+            utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
+            snapshotManager.copyNewSnapshotToZones(snapshotId, 1L, List.of(2L));
+        }
         Assert.assertEquals(1, addedZone.size());
     }
 

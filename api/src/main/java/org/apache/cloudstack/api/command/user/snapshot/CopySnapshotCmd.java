@@ -62,7 +62,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.SOURCE_ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "ID of the zone in which the snapshot is currently present. " +
+            description = "The ID of the zone in which the snapshot is currently present. " +
                     "If not specified then the zone of snapshot's volume will be used.")
     private Long sourceZoneId;
 
@@ -70,7 +70,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
             required = false,
-            description = "the ID of the zone the snapshot is being copied to.")
+            description = "The ID of the zone the snapshot is being copied to.")
     protected Long destZoneId;
 
     @Parameter(name = ApiConstants.DESTINATION_ZONE_ID_LIST,

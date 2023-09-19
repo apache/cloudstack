@@ -23,17 +23,26 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.test.TestAppender;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -103,5 +112,33 @@ public class NfsSecondaryStorageResourceTest {
         performGetSnapshotFilepathForDeleteTest("/snapshots/2/10/*somename*",
                 "/snapshots/2/10",
                 "somename");
+    }
+
+    @Test
+    public void testExecuteQuerySnapshotZoneCopyCommand() {
+        final String dir = "/snapshots/2/10/abc";
+        final String fileName = "abc";
+        DataStoreTO store = Mockito.mock(DataStoreTO.class);
+        SnapshotObjectTO object = Mockito.mock(SnapshotObjectTO.class);
+        Mockito.when(object.getDataStore()).thenReturn(store);
+        Mockito.when(object.getPath()).thenReturn(dir + File.separator + fileName);
+        QuerySnapshotZoneCopyCommand cmd = Mockito.mock(QuerySnapshotZoneCopyCommand.class);
+        Mockito.when(cmd.getSnapshot()).thenReturn(object);
+        Path p1 = Mockito.mock(Path.class);
+        Mockito.when(p1.getFileName()).thenReturn(p1);
+        Mockito.when(p1.toString()).thenReturn(fileName + ".vmdk");
+        Path p2 = Mockito.mock(Path.class);
+        Mockito.when(p2.getFileName()).thenReturn(p2);
+        Mockito.when(p2.toString()).thenReturn(fileName + ".ovf");
+        Stream<Path> paths = Stream.of(p1, p2);
+        try (MockedStatic<Files> files = Mockito.mockStatic(Files.class)) {
+            files.when(() -> Files.list(Mockito.any(Path.class))).thenReturn(paths);
+            files.when(() -> Files.isDirectory(Mockito.any(Path.class))).thenReturn(false);
+            QuerySnapshotZoneCopyAnswer answer = (QuerySnapshotZoneCopyAnswer)(resource.execute(cmd));
+            List<String> result = answer.getFiles();
+            Assert.assertEquals(2, result.size());
+            Assert.assertEquals(dir + File.separator + fileName + ".vmdk", result.get(0));
+            Assert.assertEquals(dir + File.separator + fileName + ".ovf", result.get(1));
+        }
     }
 }

@@ -1808,6 +1808,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_COPY, eventDescription = "copying snapshot", create = false)
     public Snapshot copySnapshot(CopySnapshotCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
         final Long snapshotId = cmd.getId();
         Long sourceZoneId = cmd.getSourceZoneId();
@@ -1843,10 +1844,20 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (CollectionUtils.isEmpty(destZoneIds)) {
             return;
         }
+        List<String> failedZones = new ArrayList<>();
         SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
+        long startEventId = ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(),
+                CallContext.current().getCallingAccountId(), EventTypes.EVENT_SNAPSHOT_COPY,
+                String.format("Copying snapshot ID: %s", snapshotVO.getUuid()), snapshotId,
+                ApiCommandResourceType.Snapshot.toString(), true, 0);
         DataStore dataStore = getSnapshotZoneImageStore(snapshotId, zoneId);
+        String completedEventLevel = EventVO.LEVEL_ERROR;
+        String completedEventMsg = String.format("Copying snapshot ID: %s failed", snapshotVO.getUuid());
         if (dataStore == null) {
             s_logger.error(String.format("Unable to find an image store for zone ID: %d where snapshot %s is in Ready state", zoneId, snapshotVO));
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                    CallContext.current().getCallingAccountId(), completedEventLevel, EventTypes.EVENT_SNAPSHOT_COPY,
+                    completedEventMsg, snapshotId, ApiCommandResourceType.Snapshot.toString(), startEventId);
             return;
         }
         List<DataCenterVO> dataCenterVOs = new ArrayList<>();
@@ -1855,7 +1866,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             dataCenterVOs.add(dstZone);
         }
         try {
-            List<String> failedZones = copySnapshotToZones(snapshotVO, dataStore, dataCenterVOs);
+            failedZones = copySnapshotToZones(snapshotVO, dataStore, dataCenterVOs);
             if (CollectionUtils.isNotEmpty(failedZones)) {
                 s_logger.error(String.format("There were failures while copying snapshot %s to zones: %s",
                         snapshotVO, StringUtils.joinWith(", ", failedZones.toArray())));
@@ -1863,5 +1874,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } catch (ResourceAllocationException | StorageUnavailableException | CloudRuntimeException e) {
             s_logger.error(String.format("Error while copying snapshot %s to zones: %s", snapshotVO, StringUtils.joinWith(",", destZoneIds.toArray())));
         }
+        if (failedZones.size() < destZoneIds.size()) {
+            completedEventLevel = EventVO.LEVEL_INFO;
+            completedEventMsg = String.format("Completed copying snapshot ID: %s", snapshotVO.getUuid());
+        }
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                CallContext.current().getCallingAccountId(), completedEventLevel, EventTypes.EVENT_SNAPSHOT_COPY,
+                completedEventMsg, snapshotId, ApiCommandResourceType.Snapshot.toString(), startEventId);
     }
 }
