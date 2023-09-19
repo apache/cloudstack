@@ -47,7 +47,7 @@
             layout="vertical"
            >
             <a-col :md="24" :lg="8">
-              <a-form-item name="hypervisor" ref="hypervisor" :label="$t('label.hypervisor')">
+              <a-form-item name="hypervisor" ref="hypervisor" :label="$t('label.destination.hypervisor')">
                 <a-select
                   v-model:value="form.hypervisor"
                   showSearch

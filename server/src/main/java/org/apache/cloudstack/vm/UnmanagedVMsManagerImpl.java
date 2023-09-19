@@ -1801,16 +1801,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             responses.add(createUnmanagedInstanceResponse(instance, null, null));
         }
 
-        /*
-        for (String vmName : getRemoteVmsAnswer.getVmNames()) {
-            UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
-            instance.setName(vmName);
-            if (StringUtils.isNotEmpty(keyword) &&
-                    !instance.getName().toLowerCase().contains(keyword)) {
-                continue;
-            }
-            responses.add(createUnmanagedInstanceResponse(instance, null, null));
-        } */
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;

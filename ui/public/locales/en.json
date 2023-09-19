@@ -135,12 +135,8 @@
 "label.action.health.monitor": "Health monitor",
 "label.action.image.store.read.only": "Make image store read-only",
 "label.action.image.store.read.write": "Make image store read-write",
-<<<<<<< HEAD
 "label.action.import.export.instances": "Import-Export Instances",
-=======
-"label.action.import.export.instances": "Import-Export instances",
 "label.action.ingest.instances": "Ingest instances",
->>>>>>> f4a3c46a25 (UI changes to include multiple KVM migration options)
 "label.action.iso.permission": "Update ISO permissions",
 "label.action.iso.share": "Update ISO sharing",
 "label.action.lock.account": "Lock Account",
@@ -685,7 +681,12 @@
 "label.destendport": "Destination End Port",
 "label.desthost": "Destination host",
 "label.destination": "Destination",
+<<<<<<< HEAD
 "label.destinationphysicalnetworkid": "Destination physical Network ID",
+=======
+"label.destination.hypervisor":  "Destination Hypervisor",
+"label.destinationphysicalnetworkid": "Destination physical network ID",
+>>>>>>> 8962b405d2 (Cleanup Import Remote Instance)
 "label.destinationtype": "Destination Type",
 "label.destipprefix": "Destination Network Address",
 "label.destipprefixlen": "Destination Prefix Length",

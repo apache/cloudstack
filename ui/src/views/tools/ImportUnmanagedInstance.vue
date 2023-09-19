@@ -681,10 +681,6 @@ export default {
           displayname: values.displayname,
           zoneid: 1
         }
-        params.url = '10.0.34.170'
-        params.username = 'root'
-        params.password = 'P@ssword123'
-        params.hypervisor = 'KVM'
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
             message: this.$t('message.request.failed'),

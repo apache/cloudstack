@@ -90,13 +90,11 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             final UnmanagedInstanceTO instance = new UnmanagedInstanceTO();
             instance.setName(domain.getName());
-            //instance.setCpuCores((int) LibvirtComputingResource.countDomainRunningVcpus(domain));
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
             instance.setCpuSpeed(parser.getCpuTuneDef().getShares());
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
-            //instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
             instance.setVncPassword(parser.getVncPasswd() + "aaaaaaaaaaaaaa"); // Suffix back extra characters for DB compatibility
@@ -145,8 +143,8 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             }
 
             final UnmanagedInstanceTO.Disk disk = new UnmanagedInstanceTO.Disk();
-            Long size = null;
-            String imagePath = null;
+            Long size;
+            String imagePath;
             try {
                 QemuImgFile file = new QemuImgFile(diskDef.getSourcePath());
                 QemuImg qemu = new QemuImg(0);
