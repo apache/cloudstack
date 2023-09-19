@@ -68,15 +68,6 @@ export default {
       resourceType: 'UserVm',
       permission: ['listInfrastructure', 'listUnmanagedInstances'],
       component: () => import('@/views/tools/ManageInstances.vue')
-    },
-    {
-      name: 'ingestinstances',
-      title: 'label.action.ingest.instances',
-      icon: 'interaction-outlined',
-      docHelp: 'adminguide/virtual_machines.html#ingest-virtual-machine',
-      resourceType: 'UserVm',
-      permission: ['listVmsForImport'],
-      component: () => import('@/views/tools/IngestInstances.vue')
     }
   ]
 }

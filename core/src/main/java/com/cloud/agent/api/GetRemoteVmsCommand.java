@@ -68,4 +68,3 @@ public class GetRemoteVmsCommand extends Command {
         return "GetRemoteVmsCommand [remoteIp=" + remoteIp + "]";
     }
 }
-
