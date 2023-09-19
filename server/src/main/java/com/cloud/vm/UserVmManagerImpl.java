@@ -6134,7 +6134,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected void validateKvmExtraConfig(String decodedUrl) {
         String[] allowedConfigOptionList = KvmAdditionalConfigAllowList.value().split(",");
-        // Skip allowed keys validation validation for DPDK
+        // Skip allowed keys validation for DPDK
         if (!decodedUrl.contains(":")) {
             try {
                 DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();

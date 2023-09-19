@@ -324,7 +324,7 @@ public class RdpClient extends PipelineImpl {
 
                 );
 
-        // Last element of handshake sequence will wake up queue and and socket
+        // Last element of handshake sequence will wake up queue and socket
         // output pull loop, which will switch links, between socket output and
         // queue, from push mode to pull mode.
         link(HANDSHAKE_END + " >queue", "queue", "OUT");
