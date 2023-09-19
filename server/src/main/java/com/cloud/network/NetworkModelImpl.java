@@ -2674,7 +2674,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         String customCloudName = VirtualMachineManager.CloudInitMetadataCloudName.valueIn(datacenterId);
-        if (StringUtils.isNotBlank(customCloudName)) {
+        if (!StringUtils.isBlank(customCloudName)) {
             vmData.add(new String[]{METATDATA_DIR, CLOUD_NAME_FILE, customCloudName});
         }
 
