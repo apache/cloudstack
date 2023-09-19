@@ -153,6 +153,36 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.description = param
         return self.apiclient.listOsTypes(cmd)[0].id
 
+    def wait_for_async_job(self, jobid):
+        """Query the status for Async Job"""
+        try:
+            # Wait for 10 minutes
+            asyncTimeout = 600
+            cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
+            cmd.jobid = jobid
+            timeout = asyncTimeout
+            async_response = FAILED
+            while timeout > 0:
+                async_response = self.apiClient.queryAsyncJobResult(cmd)
+                if async_response != FAILED:
+                    job_status = async_response.jobstatus
+                    if job_status in [JOB_CANCELLED,
+                                      JOB_SUCCEEDED]:
+                        break
+                    elif job_status == JOB_FAILED:
+                        raise Exception("Job failed: %s" \
+                                        % async_response)
+                time.sleep(5)
+                timeout -= 5
+                self.debug("=== JobId: %s is Still Processing, "
+                           "Will TimeOut in: %s ====" % (str(jobid),
+                                                         str(timeout)))
+            return async_response
+        except Exception as e:
+            self.debug("==== Exception Occurred for Job: %s ====" %
+                       str(e))
+            return FAILED
+
     def __verify_values(self, expected_vals, actual_vals):
 
         return_flag = True
@@ -1729,7 +1759,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
     # @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     @attr(tags = ["TODO"], required_hardware="false")
-    def test_browser_upload_template_incomplete(self):
+    def test_10_browser_upload_template_incomplete(self):
         """
         Test browser based incomplete template upload, followed by SSVM destroy. Template should go to UploadAbandoned state and get cleaned up.
         """
@@ -1761,11 +1791,101 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             #Verify that the template is cleaned up as part of sync-up during new SSVM start
             list_template_response=Template.list(
-                                        self.apiclient,
-                                        id=template_response.id,
-                                        templatefilter="all",
-                                        zoneid=self.zone.id)
+                self.apiclient,
+                id=template_response.id,
+                templatefilter="all",
+                zoneid=self.zone.id)
             self.assertEqual(list_template_response, None, "Template is not cleaned up, some issue with template sync-up")
+
+        except Exception as e:
+            self.fail("Exceptione occurred  : %s" % e)
+        return
+
+    @attr(tags = ["advanced", "smoke", "basic"], required_hardware="true")
+    def test_11_browser_migrate_template(self):
+        """
+        Test storage browser and template migration to another secondary storage
+        """
+        try:
+            self.debug("========================= Test browser based incomplete template upload ========================")
+
+            #Only register template, without uploading
+            cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+
+            if 'kvm' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-kvm.qcow2.bz2'
+            elif 'vmware' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-vmware.ova'
+            elif 'xenserver' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-xen.vhd.bz2'
+
+            cmd.zoneid = self.zone.id
+            cmd.format = self.test_template.format
+            cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+            cmd.account=self.account.name
+            cmd.domainid=self.domain.id
+            cmd.displaytext=cmd.name
+            cmd.hypervisor=self.test_template.hypervisor
+            cmd.ostypeid=self.test_template.ostypeid
+            template_response=self.apiclient.getUploadParamsForTemplate(cmd)
+
+            def checkTemplateIsReady():
+                list_template_response=Template.list(
+                    self.apiclient,
+                    id=template_response.id,
+                    templatefilter="all",
+                    zoneid=self.zone.id)
+                if (isinstance(list_template_response, list) and len(list_template_response) > 0):
+                    return list_template_response[0].isready, None
+                return False, None
+
+            # Wait up to 3 minutes for template to become ready
+            res, _ = wait_until(10, 18, checkTemplateIsReady)
+
+            list_template_response=Template.list(
+                self.apiclient,
+                id=template_response.id,
+                templatefilter="all",
+                zoneid=self.zone.id)
+
+            datastoreid = list_template_response[0].downloaddetails[0]["datastoreId"]
+
+            qresultset = self.dbclient.execute(
+                "select account_id, id from vm_template where uuid = '%s';"
+                % template_response.id
+            )
+
+            account_id = qresultset[0][0]
+            template_id = qresultset[0][1]
+
+            originalSecondaryStore = ImageStore(id=datastoreid)
+
+            storeObjects = originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
+
+            self.assertEqual(len(storeObjects), 2, "Check template is uploaded on secondary storage")
+
+            #Migrate template to another secondary storage
+            secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
+
+            if len(secondaryStores) < 2:
+                raise self.skipTest("Only one secondary storage available hence skipping")
+
+            for store in secondaryStores:
+                if store.id != datastoreid:
+                    destSecondaryStore = ImageStore(id=store.id)
+                    break
+
+            migrateJob = originalSecondaryStore.migrateResources(self.apiclient, destSecondaryStore.id, templateIdList=[template_response.id])
+
+            self.wait_for_async_job(self.apiclient, migrateJob.jobid)
+
+            storeObjects = originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
+
+            self.assertEqual(len(storeObjects), 0, "Check template is deleted from original secondary storage")
+
+            storeObjects = destSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
+
+            self.assertEqual(len(storeObjects), 2, "Check template is uploaded on destination secondary storage")
 
         except Exception as e:
             self.fail("Exceptione occurred  : %s" % e)

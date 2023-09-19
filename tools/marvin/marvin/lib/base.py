@@ -3473,6 +3473,13 @@ class StoragePool:
             timeout -= 60
         return returnValue
 
+    @classmethod
+    def listObjects(cls, apiclient, path="/"):
+        cmd = listStoragePoolObjects.listStoragePoolObjectsCmd()
+        cmd.id = cls.id
+        cmd.path = path
+        return apiclient.listStoragePoolObjects(cmd)
+
 
 class Network:
     """Manage Network pools"""
@@ -4182,6 +4189,22 @@ class ImageStore:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listImageStores(cmd))
+
+    @classmethod
+    def listObjects(cls, apiclient, path="/"):
+        cmd = listImageStoreObjects.listImageStoreObjectsCmd()
+        cmd.id = cls.id
+        cmd.path = path
+        return apiclient.listImageStoreObjects(cmd)
+
+    @classmethod
+    def migrateResources(cls, apiclient, destStoreId, templateIdList=[], snapshotIdList=[]):
+        cmd = migrateResourceToAnotherSecondaryStorage.migrateResourceToAnotherSecondaryStorageCmd()
+        cmd.srcpool = cls.id
+        cmd.destpool = destStoreId
+        cmd.templates = templateIdList
+        cmd.snapshots = snapshotIdList
+        return apiclient.migrateResourceToAnotherSecondaryStorage(cmd)
 
 
 class PhysicalNetwork:
