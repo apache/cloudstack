@@ -41,7 +41,7 @@
         <div class="capacity-dashboard-button">
           <a-button
             shape="round"
-            @click="() => { listCapacity(zoneSelected, true); listHosts(zoneSelected); listInstances(zoneSelected); listAlerts(); listEvents(); }">
+            @click="() => { listCapacity(zoneSelected, true); updateData(zoneSelected); listAlerts(); listEvents(); }">
             <reload-outlined/>
             {{ $t('label.fetch.latest') }}
           </a-button>
@@ -60,12 +60,100 @@
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
+            <h3>
+              <dashboard-outlined />
+              {{ $t('label.resources') }}
+            </h3>
+          </div>
+        </template>
+        <a-divider style="margin: 0px 0px; border-width: 0px"/>
+        <a-row :gutter="[12, 12]">
+          <a-col :span="12">
+            <router-link :to="{ path: '/pod', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.pods')" :value="data.pods">
+                <template #prefix>
+                  <appstore-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/cluster', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.clusters')" :value="data.clusters">
+                <template #prefix>
+                  <cluster-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.hosts')" :value="data.totalHosts">
+                <template #prefix>
+                  <database-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'alert' } }">
+              <a-statistic :title="$t('label.host.alerts')" :value="data.alertHosts">
+                <template #prefix>
+                  <database-outlined/>
+                  <status class="status" text="Alert" style="margin-left: -10px"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/storagepool', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.primary.storage')" :value="data.pools">
+                <template #prefix>
+                  <hdd-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/systemvm', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.system.vms')" :value="data.systemvms">
+                <template #prefix>
+                  <thunderbolt-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/router', query: { zoneid: zoneSelected.id } }">
+              <a-statistic :title="$t('label.virtual.routers')" :value="data.routers">
+                <template #prefix>
+                  <fork-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
+              <a-statistic :title="$t('label.instances')" :value="data.instances">
+                <template #prefix>
+                  <cloud-server-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
             <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
           </div>
         </template>
         <div>
           <div v-for="ctype in ['MEMORY', 'CPU', 'CPU_CORE', 'GPU']" :key="ctype" >
-            <div>
+            <div v-if="statsMap[ctype]">
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
               </div>
@@ -94,7 +182,7 @@
         </template>
         <div>
           <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
-            <div>
+            <div v-if="statsMap[ctype]">
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
               </div>
@@ -107,7 +195,7 @@
               />
               <br/>
               <div style="text-align: center">
-                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} <span v-if="ctype !== 'STORAGE'">{{ $t('label.allocated') }}</span><span v-else>{{ $t('label.used') }}</span> | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
               </div>
             </div>
           </div>
@@ -142,96 +230,6 @@
           </div>
         </div>
       </chart-card>
-    </a-col>
-    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
-      <chart-card :loading="loading" style="max-height: 200px;">
-        <template #title>
-          <div class="center">
-            <h3>
-              <desktop-outlined />
-              {{ $t('label.hosts') }} ({{ hosts.total }})
-            </h3>
-          </div>
-        </template>
-        <a-divider style="margin: 3px 0px; border-width: 0px"/>
-        <a-row :gutter="[0, 6]">
-          <a-col :span="12">
-            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'up' } }">
-              <a-statistic :value="hosts.up">
-                <template #title>
-                  <status class="status" text="Up"/>
-                  {{ $t('label.up') }}
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'down' } }">
-              <a-statistic :value="hosts.down">
-                <template #title>
-                  <status class="status" text="Down"/>
-                  {{ $t('label.down') }}
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'alert' } }">
-              <a-statistic :value="hosts.alert">
-                <template #title>
-                  <status class="status" text="Alert"/>
-                  {{ $t('label.alert') }}
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, resourcestate: 'maintenance' } }">
-              <a-statistic :value="hosts.maintenance">
-                <template #title>
-                  <status class="status" text="Maintenance"/>
-                  {{ $t('label.maintenance') }}
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-        </a-row>
-      </chart-card>
-      </router-link>
-      <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
-      <chart-card :loading="loading" style="margin-top: 12px; max-height: 134px;">
-        <template #title>
-          <div class="center">
-            <h3>
-              <cloud-server-outlined />
-              {{ $t('label.instances') }} ({{ instances.total }})
-            </h3>
-          </div>
-        </template>
-        <a-divider style="margin: 3px 0px; border-width: 0px"/>
-        <a-row :gutter="[6,6]">
-          <a-col :span="12">
-            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', state: 'running' } }">
-              <a-statistic :title="$t('label.running')" :value="instances.running">
-                <template #prefix>
-                  <status class="status" text="Running"/>
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', state: 'stopped' } }">
-              <a-statistic :title="$t('label.stopped')" :value="instances.stopped">
-                <template #prefix>
-                  <status class="status" text="Stopped"/>
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-        </a-row>
-      </chart-card>
-      </router-link>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
       <router-link :to="{ path: '/alert' }">
@@ -321,17 +319,15 @@ export default {
       zoneSelected: {},
       stats: [],
       statsMap: {},
-      hosts: {
-        total: 0,
-        up: 0,
-        down: 0,
-        alert: 0,
-        maintenance: 0
-      },
-      instances: {
-        total: 0,
-        running: 0,
-        stopped: 0
+      data: {
+        pods: 0,
+        clusters: 0,
+        totalHosts: 0,
+        alertHosts: 0,
+        pools: 0,
+        instances: 0,
+        systemvms: 0,
+        routers: 0
       },
       ts: {
         CPU: 'label.cpu',
@@ -342,8 +338,8 @@ export default {
         MEMORY: 'label.memory',
         PRIVATE_IP: 'label.management.ips',
         SECONDARY_STORAGE: 'label.secondary.storage',
-        STORAGE: 'label.storage',
-        STORAGE_ALLOCATED: 'label.primary.storage',
+        STORAGE: 'label.primary.storage.used',
+        STORAGE_ALLOCATED: 'label.primary.storage.allocated',
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
@@ -394,9 +390,9 @@ export default {
         case 'LOCAL_STORAGE':
           value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)
           if (value >= 1024.0) {
-            value = parseFloat(value / 1024.0).toFixed(2) + ' TB'
+            value = parseFloat(value / 1024.0).toFixed(2) + ' TiB'
           } else {
-            value = value + ' GB'
+            value = value + ' GiB'
           }
           break
       }
@@ -419,82 +415,78 @@ export default {
         if (json && json.listcapacityresponse && json.listcapacityresponse.capacity) {
           this.stats = json.listcapacityresponse.capacity
         }
+        this.statsMap = {}
         for (const stat of this.stats) {
           this.statsMap[stat.name] = stat
         }
       })
     },
-    listHosts (zone) {
-      this.hosts = {
-        total: 0,
-        up: 0,
-        down: 0,
-        alert: 0,
-        maintenance: 0
+    updateData (zone) {
+      this.data = {
+        pods: 0,
+        clusters: 0,
+        totalHosts: 0,
+        alertHosts: 0,
+        pools: 0,
+        instances: 0,
+        systemvms: 0,
+        routers: 0
       }
       this.loading = true
+      api('listPods', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.pods = json?.listpodsresponse?.count
+        if (!this.data.pods) {
+          this.data.pods = 0
+        }
+      })
+      api('listClusters', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.clusters = json?.listclustersresponse?.count
+        if (!this.data.clusters) {
+          this.data.clusters = 0
+        }
+      })
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
-        this.hosts.total = json?.listhostsresponse?.count
-        if (!this.hosts.total) {
-          this.hosts.total = 0
-        }
-      })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'up', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.hosts.up = json?.listhostsresponse?.count
-        if (!this.hosts.up) {
-          this.hosts.up = 0
-        }
-      })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'down', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.hosts.down = json?.listhostsresponse?.count
-        if (!this.hosts.down) {
-          this.hosts.down = 0
+        this.data.totalHosts = json?.listhostsresponse?.count
+        if (!this.data.totalHosts) {
+          this.data.totalHosts = 0
         }
       })
       api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
-        this.hosts.alert = json?.listhostsresponse?.count
-        if (!this.hosts.alert) {
-          this.hosts.alert = 0
+        this.data.alertHosts = json?.listhostsresponse?.count
+        if (!this.data.alertHosts) {
+          this.data.alertHosts = 0
         }
       })
-      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', resourcestate: 'maintenance', page: 1, pagesize: 1 }).then(json => {
+      api('listStoragePools', { zoneid: zone.id }).then(json => {
         this.loading = false
-        this.hosts.maintenance = json?.listhostsresponse?.count
-        if (!this.hosts.maintenance) {
-          this.hosts.maintenance = 0
+        this.data.pools = json?.liststoragepoolsresponse?.count
+        if (!this.data.pools) {
+          this.data.pools = 0
         }
       })
-    },
-    listInstances (zone) {
-      this.instances = {
-        total: 0,
-        running: 0,
-        stopped: 0
-      }
-      this.loading = true
+      api('listSystemVms', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.systemvms = json?.listsystemvmsresponse?.count
+        if (!this.data.systemvms) {
+          this.data.systemvms = 0
+        }
+      })
+      api('listRouters', { zoneid: zone.id, listall: true }).then(json => {
+        this.loading = false
+        this.data.routers = json?.listroutersresponse?.count
+        if (!this.data.routers) {
+          this.data.routers = 0
+        }
+      })
       api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
         this.loading = false
-        this.instances.total = json?.listvirtualmachinesresponse?.count
-        if (!this.instances.total) {
-          this.instances.total = 0
-        }
-      })
-      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'running', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.instances.running = json?.listvirtualmachinesresponse?.count
-        if (!this.instances.running) {
-          this.instances.running = 0
-        }
-      })
-      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', state: 'stopped', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.instances.stopped = json?.listvirtualmachinesresponse?.count
-        if (!this.instances.stopped) {
-          this.instances.stopped = 0
+        this.data.instances = json?.listvirtualmachinesresponse?.count
+        if (!this.data.instances) {
+          this.data.instances = 0
         }
       })
     },
@@ -544,8 +536,7 @@ export default {
           if (this.zones.length > 0) {
             this.zoneSelected = this.zones[0]
             this.listCapacity(this.zones[0])
-            this.listHosts(this.zones[0])
-            this.listInstances(this.zones[0])
+            this.updateData(this.zones[0])
           }
         }
       })
@@ -553,8 +544,7 @@ export default {
     changeZone (index) {
       this.zoneSelected = this.zones[index]
       this.listCapacity(this.zoneSelected)
-      this.listHosts(this.zoneSelected)
-      this.listInstances(this.zoneSelected)
+      this.updateData(this.zoneSelected)
     },
     filterZone (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -606,14 +596,14 @@ export default {
 
 .dashboard-card {
   width: 100%;
-  min-height: 345px;
+  min-height: 370px;
 }
 
 .dashboard-event {
   width: 100%;
   overflow-x:hidden;
   overflow-y: auto;
-  max-height: 345px;
+  max-height: 370px;
 }
 
 .center {
