@@ -49,6 +49,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -2322,33 +2323,37 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Boolean applied = cmd.isApplied();
 
         if (applied == null) {
+            s_logger.debug(String.format("The [%s] parameter was not passed. Using the default value [%s].", ApiConstants.APPLIED, Boolean.TRUE));
             applied = Boolean.TRUE;
         }
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
-            return null;
-        }
-
-        _accountMgr.checkAccess(caller, null, true, loadBalancer);
-
-        List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
-        List<String> serviceStates = new ArrayList<String>();
-        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
-        vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
-        if(vmLoadBalancerMappings == null) {
-            String msg = "no VM Loadbalancer Mapping found";
+            String msg = String.format("Unable to find the load balancer with ID [%s].", cmd.getId());
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        Map<Long, String> vmServiceState = new HashMap<Long, String>(vmLoadBalancerMappings.size());
-        List<Long> appliedInstanceIdList = new ArrayList<Long>();
 
-        if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
-            for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
-                appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
-                vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
-            }
+        String loadBalancerAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(loadBalancer, "uuid", "name");
+
+        _accountMgr.checkAccess(caller, null, true, loadBalancer);
+
+        List<UserVmVO> loadBalancerInstances = new ArrayList<>();
+        List<String> serviceStates = new ArrayList<>();
+        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
+
+        if (vmLoadBalancerMappings == null) {
+            String msg = String.format("Unable to find map of VMs related to load balancer [%s].", loadBalancerAsString);
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        Map<Long, String> vmServiceState = new HashMap<>(vmLoadBalancerMappings.size());
+        List<Long> appliedInstanceIdList = new ArrayList<>();
+
+        for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
+            appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
+            vmServiceState.put(vmLoadBalancerMapping.getInstanceId(), vmLoadBalancerMapping.getState());
         }
 
         List<UserVmVO> userVms = _vmDao.listByIds(appliedInstanceIdList);
@@ -2364,13 +2369,25 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 continue;
             }
 
+            String userVmAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(userVm, "uuid", "name");
+
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
-            if ((isApplied && applied) || (!isApplied && !applied)) {
-                loadBalancerInstances.add(userVm);
-                serviceStates.add(vmServiceState.get(userVm.getId()));
+            String isAppliedMsg = isApplied ? "is applied" : "is not applied";
+            s_logger.debug(String.format("The user VM [%s] %s to a rule of the load balancer [%s].", userVmAsString, isAppliedMsg, loadBalancerAsString));
+
+            if (isApplied != applied) {
+                s_logger.debug(String.format("Skipping adding service state from the user VM [%s] to the service state list. This happens because the VM %s to the load "
+                        + "balancer rule and the [%s] parameter was passed as [%s].", userVmAsString, isAppliedMsg, ApiConstants.APPLIED, applied));
+                continue;
             }
+
+            loadBalancerInstances.add(userVm);
+            String serviceState = vmServiceState.get(userVm.getId());
+            s_logger.debug(String.format("Adding the service state [%s] from the user VM [%s] to the service state list.", serviceState, userVmAsString));
+            serviceStates.add(serviceState);
         }
-        return new Pair<List<? extends UserVm>, List<String>>(loadBalancerInstances, serviceStates);
+
+        return new Pair<>(loadBalancerInstances, serviceStates);
     }
 
     @Override
