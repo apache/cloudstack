@@ -4190,17 +4190,15 @@ class ImageStore:
             cmd.listall = True
         return (apiclient.listImageStores(cmd))
 
-    @classmethod
-    def listObjects(cls, apiclient, path="/"):
+    def listObjects(self, apiclient, path="/"):
         cmd = listImageStoreObjects.listImageStoreObjectsCmd()
-        cmd.id = cls.id
+        cmd.id = self.id
         cmd.path = path
         return apiclient.listImageStoreObjects(cmd)
 
-    @classmethod
-    def migrateResources(cls, apiclient, destStoreId, templateIdList=[], snapshotIdList=[]):
+    def migrateResources(self, apiclient, destStoreId, templateIdList=[], snapshotIdList=[]):
         cmd = migrateResourceToAnotherSecondaryStorage.migrateResourceToAnotherSecondaryStorageCmd()
-        cmd.srcpool = cls.id
+        cmd.srcpool = self.id
         cmd.destpool = destStoreId
         cmd.templates = templateIdList
         cmd.snapshots = snapshotIdList
