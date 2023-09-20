@@ -209,8 +209,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'limit']) }} {{ $t('label.limit') }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
@@ -246,8 +246,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'limit']) }} {{ $t('label.limit') }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
@@ -283,8 +283,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === '-1' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'limit']) }} {{ $t('label.limit') }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
