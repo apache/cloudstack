@@ -1315,9 +1315,9 @@ export default {
                         size: 'small',
                         onClick: () => this.copyToClipboard(response.copytext)
                       },
-                      [this.$t(response.copybuttontext)]
+                      () => [this.$t(response.copybuttontext)]
                     ),
-                    duration: 15
+                    duration: 0
                   })
                 } else {
                   this.$notification.info({
@@ -1923,8 +1923,12 @@ export default {
       }
     },
     copyToClipboard (txt) {
-      navigator.clipboard.writeText(txt)
-      this.$message.success(this.$t('label.copied.clipboard'))
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }
