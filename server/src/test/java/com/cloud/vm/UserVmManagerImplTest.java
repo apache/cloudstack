@@ -56,7 +56,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.Resource;
@@ -304,7 +303,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTest() {
         Mockito.doNothing().when(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
 
@@ -779,7 +777,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataVMStateNotStopped() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -805,7 +802,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataDontAcceptBothUserdataAndUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -834,7 +830,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdata() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -874,7 +869,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();

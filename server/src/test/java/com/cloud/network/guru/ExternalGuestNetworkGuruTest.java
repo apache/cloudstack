@@ -25,8 +25,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -41,11 +39,10 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.NicProfile;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ExternalGuestNetworkGuruTest {
     @Mock
     NetworkModel networkModel;
@@ -71,7 +68,6 @@ public class ExternalGuestNetworkGuruTest {
         Mockito.when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
         Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
         PhysicalNetworkVO physicalNetwork = Mockito.mock(PhysicalNetworkVO.class);
-        Mockito.when(physicalNetwork.getId()).thenReturn(1L);
         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(physicalNetwork);
         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
         Network network = Mockito.mock(Network.class);

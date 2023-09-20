@@ -40,12 +40,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
@@ -59,8 +58,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ActionEventInterceptorTest {
     //Predictable constants used throughout this test.
     public static final long EVENT_ID = 1;
@@ -108,6 +106,8 @@ public class ActionEventInterceptorTest {
     protected static final String eventType = EventTypes.EVENT_VM_START;
     protected static final String eventDescription = "Starting VM";
 
+    private MockedStatic<ComponentContext> componentContextMocked;
+
     /**
      * This setup method injects the mocked beans into the ActionEventUtils class.
      * Because ActionEventUtils has static methods, we must also remember these fields
@@ -152,7 +152,7 @@ public class ActionEventInterceptorTest {
     public void setupCommonMocks() throws Exception {
         //Some basic mocks.
         Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
-        PowerMockito.mockStatic(ComponentContext.class);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         Mockito.when(ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
 
         //Needed for persist to actually set an ID that can be returned from the ActionEventUtils
@@ -208,6 +208,8 @@ public class ActionEventInterceptorTest {
         }
 
         utils.init();
+
+        componentContextMocked.close();
     }
 
     @Test

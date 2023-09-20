@@ -21,12 +21,11 @@ import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
 import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
 import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
 import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +43,7 @@ import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,12 +51,11 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -81,9 +80,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ActionEventUtils.class, ResourceManagerImpl.class, SSHCmdHelper.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ResourceManagerImplTest {
 
     @Mock
@@ -121,11 +120,6 @@ public class ResourceManagerImplTest {
     @Mock
     private GetVncPortAnswer getVncPortAnswerVm2;
     @Mock
-    private GetVncPortCommand getVncPortCommandVm1;
-    @Mock
-    private GetVncPortCommand getVncPortCommandVm2;
-
-    @Mock
     private VolumeVO rootDisk1;
     @Mock
     private VolumeVO rootDisk2;
@@ -154,15 +148,18 @@ public class ResourceManagerImplTest {
     private static long poolId = 1L;
     private List<VolumeVO> rootDisks;
     private List<VolumeVO> dataDisks;
+    private MockedStatic<SSHCmdHelper> sshHelperMocked;
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+    private MockedConstruction<GetVncPortCommand> getVncPortCommandMockedConstruction;
+    private AutoCloseable closeable;
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         when(host.getType()).thenReturn(Host.Type.Routing);
         when(host.getId()).thenReturn(hostId);
         when(host.getResourceState()).thenReturn(ResourceState.Enabled);
         when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-        when(host.getClusterId()).thenReturn(1L);
         when(hostDao.findById(hostId)).thenReturn(host);
         when(host.getDetail("username")).thenReturn(hostUsername);
         when(host.getDetail("password")).thenReturn(hostPassword);
@@ -176,19 +173,22 @@ public class ResourceManagerImplTest {
         when(vmInstanceDao.listByHostId(hostId)).thenReturn(new ArrayList<>());
         when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(new ArrayList<>());
         when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(new ArrayList<>());
-        PowerMockito.mockStatic(ActionEventUtils.class);
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
                 .willReturn(1L);
         when(getVncPortAnswerVm1.getAddress()).thenReturn(vm1VncAddress);
         when(getVncPortAnswerVm1.getPort()).thenReturn(vm1VncPort);
         when(getVncPortAnswerVm2.getAddress()).thenReturn(vm2VncAddress);
         when(getVncPortAnswerVm2.getPort()).thenReturn(vm2VncPort);
-        PowerMockito.whenNew(GetVncPortCommand.class).withArguments(vm1Id, vm1InstanceName).thenReturn(getVncPortCommandVm1);
-        PowerMockito.whenNew(GetVncPortCommand.class).withArguments(vm2Id, vm2InstanceName).thenReturn(getVncPortCommandVm2);
-        when(agentManager.easySend(eq(hostId), eq(getVncPortCommandVm1))).thenReturn(getVncPortAnswerVm1);
-        when(agentManager.easySend(eq(hostId), eq(getVncPortCommandVm2))).thenReturn(getVncPortAnswerVm2);
+        getVncPortCommandMockedConstruction = Mockito.mockConstruction(GetVncPortCommand.class, (mock,context) -> {
+            if (context.arguments().get(0).equals(vm1Id) && context.arguments().get(1) == vm1InstanceName) {
+                when(agentManager.easySend(eq(hostId), eq(mock))).thenReturn(getVncPortAnswerVm1);
+            } else if (context.arguments().get(0).equals(vm2Id) && context.arguments().get(1) == vm2InstanceName) {
+                when(agentManager.easySend(eq(hostId), eq(mock))).thenReturn(getVncPortAnswerVm2);
+            }
+        });
 
-        PowerMockito.mockStatic(SSHCmdHelper.class);
+        sshHelperMocked = Mockito.mockStatic(SSHCmdHelper.class);
         BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
                 eq(hostUsername), eq(hostPassword), eq(hostPrivateKey))).willReturn(sshConnection);
         BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
@@ -203,15 +203,23 @@ public class ResourceManagerImplTest {
         when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        sshHelperMocked.close();
+        actionEventUtilsMocked.close();
+        getVncPortCommandMockedConstruction.close();
+        closeable.close();
+    }
+
     @Test
     public void testCheckAndMaintainEnterMaintenanceModeNoVms() throws NoTransitionException {
         // Test entering into maintenance with no VMs running on host.
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
         verify(resourceManager).setHostIntoMaintenance(host);
-        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(InternalEnterMaintenance), anyLong());
 
         Assert.assertTrue(enterMaintenanceMode);
@@ -306,11 +314,11 @@ public class ResourceManagerImplTest {
         verify(agentManager).pullAgentOutMaintenance(hostId);
         verify(resourceManager).setKVMVncAccess(hostId, vms);
         verify(agentManager, times(vms.size())).easySend(eq(hostId), any(GetVncPortCommand.class));
+        verify(agentManager).pullAgentToMaintenance(hostId);
         verify(userVmDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.address"), eq(vm1VncAddress), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm1Id), eq("kvm.vnc.port"), eq(String.valueOf(vm1VncPort)), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
-        verify(agentManager).pullAgentToMaintenance(hostId);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -374,7 +382,6 @@ public class ResourceManagerImplTest {
     @Test
     public void testHandleAgentSSHDisabledConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Up);
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager, never()).getHostCredentials(eq(host));
         verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
@@ -400,7 +407,6 @@ public class ResourceManagerImplTest {
 
     private void setupPendingMigrationRetries() {
         when(haManager.hasPendingMigrationsWork(vm1.getId())).thenReturn(true);
-        when(haManager.hasPendingMigrationsWork(vm2.getId())).thenReturn(false);
     }
 
     private void setupFailedMigrations() {
@@ -418,10 +424,10 @@ public class ResourceManagerImplTest {
     private void verifyErrorInMaintenanceCalls() throws NoTransitionException {
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
-        verify(resourceManager).setHostIntoErrorInMaintenance(eq(host), anyObject());
-        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager).setHostIntoErrorInMaintenance(eq(host), any());
+        verify(resourceManager, never()).setHostIntoMaintenance(any());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMaintain), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
     }
@@ -429,10 +435,10 @@ public class ResourceManagerImplTest {
     private void verifyErrorInPrepareForMaintenanceCalls() throws NoTransitionException {
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
-        verify(resourceManager).setHostIntoErrorInPrepareForMaintenance(eq(host), anyObject());
-        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
+        verify(resourceManager).setHostIntoErrorInPrepareForMaintenance(eq(host), any());
+        verify(resourceManager, never()).setHostIntoMaintenance(any());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(UnableToMigrate), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
     }
@@ -442,20 +448,20 @@ public class ResourceManagerImplTest {
         verify(resourceManager).attemptMaintain(host);
         verify(resourceManager).setHostIntoPrepareForMaintenanceAfterErrorsFixed(eq(host));
         verify(resourceManager).resourceStateTransitTo(eq(host), eq(ErrorsCorrected), anyLong());
-        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
+        verify(resourceManager, never()).setHostIntoMaintenance(any());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(any(), any());
         Assert.assertFalse(enterMaintenanceMode);
     }
 
     private void verifyNoChangeInMaintenance() throws NoTransitionException {
         boolean enterMaintenanceMode = resourceManager.checkAndMaintain(hostId);
         verify(resourceManager).attemptMaintain(host);
-        verify(resourceManager, never()).setHostIntoMaintenance(anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoErrorInMaintenance(anyObject(), anyObject());
-        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
-        verify(resourceManager, never()).resourceStateTransitTo(anyObject(), any(), anyLong());
+        verify(resourceManager, never()).setHostIntoMaintenance(any());
+        verify(resourceManager, never()).setHostIntoErrorInPrepareForMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoErrorInMaintenance(any(), any());
+        verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(any());
+        verify(resourceManager, never()).resourceStateTransitTo(any(), any(), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
     }
 

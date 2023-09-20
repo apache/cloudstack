@@ -50,19 +50,19 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -80,8 +80,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HypervisorTemplateAdapterTest {
     @Mock
     EventBus _bus;
@@ -130,9 +129,21 @@ public class HypervisorTemplateAdapterTest {
     private Map<String, Object> oldFields = new HashMap<>();
     private List<UsageEventVO> usageEvents = new ArrayList<>();
 
+    private MockedStatic<ComponentContext> componentContextMocked;
+
+    private AutoCloseable closeable;
+
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (componentContextMocked != null) {
+            componentContextMocked.close();
+        }
+        closeable.close();
     }
 
     public UsageEventUtils setupUsageUtils() throws EventBusException {
@@ -155,7 +166,7 @@ public class HypervisorTemplateAdapterTest {
             }
         }).when(_bus).publish(any(Event.class));
 
-        PowerMockito.mockStatic(ComponentContext.class);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         when(ComponentContext.getComponent(eq(EventBus.class))).thenReturn(_bus);
 
         UsageEventUtils utils = new UsageEventUtils();
