@@ -36,6 +36,12 @@
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
+                  <font-awesome-icon
+                    v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
+                    :icon="$route.meta.icon"
+                    size="4x"
+                    class="anticon"
+                    :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                   <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
                 </span>
               </slot>

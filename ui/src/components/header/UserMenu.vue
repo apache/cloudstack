@@ -46,7 +46,7 @@
                   <a-col style="margin-right: 12px">
                     <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
                       <template #icon>
-                        <cluster-outlined />
+                        <font-awesome-icon :icon="['fa-solid', 'fa-dharmachakra']" />
                       </template>
                     </a-avatar>
                   </a-col>
