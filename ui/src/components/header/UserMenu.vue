@@ -18,7 +18,7 @@
 <template>
   <div class="user-menu">
     <span class="action">
-      <a-dropdown>
+      <a-dropdown v-if="device !== 'mobile'">
         <template #overlay>
           <a-menu>
             <a-menu-item style="width: 100%; padding: 12px">
@@ -210,6 +210,13 @@ export default {
     TranslationMenu,
     HeaderNotice,
     ResourceIcon
+  },
+  props: {
+    device: {
+      type: String,
+      required: false,
+      default: 'desktop'
+    }
   },
   data () {
     return {
