@@ -278,6 +278,11 @@ export default {
   &.dark {
     .ant-drawer-content {
       background-color: rgb(0, 21, 41);
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;;
     }
   }
 
@@ -286,11 +291,16 @@ export default {
 
     .ant-drawer-content {
       background-color: #fff;
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;
     }
   }
 
   .ant-drawer-body {
-    padding: 0
+    padding: 0;
   }
 }
 
