@@ -44,6 +44,6 @@ export const deviceEnquire = function (callback) {
 
   enquireJs
     .register('screen and (max-width: 765px)', matchMobile)
-    .register('screen and (min-width: 765px) and (max-width: 1366px)', matchTablet)
-    .register('screen and (min-width: 1367px)', matchDesktop)
+    .register('screen and (min-width: 766px) and (max-width: 1279px)', matchTablet)
+    .register('screen and (min-width: 1280px)', matchDesktop)
 }

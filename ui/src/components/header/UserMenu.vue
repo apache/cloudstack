@@ -18,7 +18,7 @@
 <template>
   <div class="user-menu">
     <span class="action">
-      <a-dropdown v-if="device !== 'mobile'">
+      <a-dropdown v-if="device === 'desktop'">
         <template #overlay>
           <a-menu>
             <a-menu-item style="width: 100%; padding: 12px">
