@@ -67,7 +67,7 @@
             <router-link :to="{ path: '/vm' }">
               <a-statistic :title="$t('label.instances')" :value="data.instances">
                 <template #prefix>
-                  <cloud-server-outlined/>
+                  <cloud-server-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -76,7 +76,7 @@
             <router-link :to="{ path: '/kubernetes' }">
               <a-statistic :title="$t('label.kubernetes.cluster')" :value="data.kubernetes">
                 <template #prefix>
-                  <cluster-outlined/>
+                  <cluster-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -85,7 +85,7 @@
             <router-link :to="{ path: '/autoscalevmgroup' }">
               <a-statistic :title="$t('label.autoscale.vm.groups')" :value="data.autoscalegroups">
                 <template #prefix>
-                  <fullscreen-outlined />
+                  <fullscreen-outlined />&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -94,7 +94,7 @@
             <router-link :to="{ path: '/ssh' }">
               <a-statistic :title="$t('label.keypairs')" :value="data.sshkeys">
                 <template #prefix>
-                  <key-outlined/>
+                  <key-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -103,7 +103,7 @@
             <router-link :to="{ path: '/volume' }">
               <a-statistic :title="$t('label.volumes')" :value="data.volumes">
                 <template #prefix>
-                  <hdd-outlined/>
+                  <hdd-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -112,7 +112,7 @@
             <router-link :to="{ path: '/snapshot' }">
               <a-statistic :title="$t('label.snapshots')" :value="data.snapshots">
                 <template #prefix>
-                  <build-outlined/>
+                  <build-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -121,7 +121,7 @@
             <router-link :to="{ path: '/guestnetwork' }">
               <a-statistic :title="$t('label.guest.networks')" :value="data.networks">
                 <template #prefix>
-                  <apartment-outlined/>
+                  <apartment-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -130,7 +130,7 @@
             <router-link :to="{ path: '/vpc' }">
               <a-statistic :title="$t('label.vpcs')" :value="data.vpcs">
                 <template #prefix>
-                  <deployment-unit-outlined/>
+                  <deployment-unit-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -139,7 +139,7 @@
             <router-link :to="{ path: '/publicip' }">
               <a-statistic :title="$t('label.public.ips')" :value="data.ips">
                 <template #prefix>
-                  <environment-outlined/>
+                  <environment-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -148,7 +148,7 @@
             <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
               <a-statistic :title="$t('label.templates')" :value="data.templates">
                 <template #prefix>
-                  <picture-outlined/>
+                  <picture-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -186,7 +186,7 @@
             </router-link>
           </a-col>
         </a-row>
-        <a-divider style="margin: 8px 0px; border-width: 0px;"/>
+        <a-divider style="margin: 1px 0px; border-width: 0px;"/>
         <div
           v-for="usageType in ['vm', 'cpu', 'memory', 'project']"
           :key="usageType">
