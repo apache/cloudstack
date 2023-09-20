@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
 import org.junit.Assert;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
@@ -181,8 +183,7 @@ public class VpcManagerImplTest {
     }
 
     @Before
-    public void setup()
-    {
+    public void setup() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
         manager = new VpcManagerImpl();
         manager._vpcOffSvcMapDao = vpcOfferingServiceMapDao;
@@ -207,6 +208,7 @@ public class VpcManagerImplTest {
         manager._firewallDao = firewallDao;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         registerCallContext();
+        overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "false");
     }
 
     @After
@@ -214,6 +216,13 @@ public class VpcManagerImplTest {
         CallContext.unregister();
         closeable.close();
     }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
     @Test
     public void getVpcOffSvcProvidersMapForEmptyServiceTest() {
         long vpcOffId = 1L;
@@ -365,7 +374,6 @@ public class VpcManagerImplTest {
         String sourceNatIp = "1.2.3.4";
         Account accountMock = Mockito.mock(Account.class);
         VpcVO vpcVO = new VpcVO();
-        ReflectionTestUtils.setField(vpcVO, "zoneId", zoneId);
 
         Answer answer = Mockito.mock(Answer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
@@ -431,8 +439,7 @@ public class VpcManagerImplTest {
         Integer publicMtu = 2500;
         Integer expectedMtu = 1500;
 
-        VpcVO vpcVO = Mockito.mock(VpcVO.class);
-        Mockito.when(vpcVO.getZoneId()).thenReturn(zoneId);
+        VpcVO vpcVO = new VpcVO();
 
         Integer mtu = manager.validateMtu(vpcVO, publicMtu);
         Assert.assertEquals(expectedMtu, mtu);

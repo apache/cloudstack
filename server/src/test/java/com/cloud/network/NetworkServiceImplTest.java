@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doReturn;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -161,8 +160,6 @@ public class NetworkServiceImplTest {
     @Mock
     IpAddressManager ipAddressManager;
     @Mock
-    ConfigKey<Integer> privateMtuKey;
-    @Mock
     private CallContext callContextMock;
     @InjectMocks
     CreateNetworkCmd createNetworkCmd = new CreateNetworkCmd();
@@ -213,8 +210,7 @@ public class NetworkServiceImplTest {
     @Before
     public void setup() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
-        replaceUserChangeMtuField();
-        Mockito.when(userChangeMtuKey.valueIn(anyLong())).thenReturn(Boolean.TRUE);
+        overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "true");
         offering = Mockito.mock(NetworkOfferingVO.class);
         network = Mockito.mock(Network.class);
         dc = Mockito.mock(DataCenterVO.class);
@@ -256,6 +252,12 @@ public class NetworkServiceImplTest {
     public void tearDown() throws Exception {
         callContextMocked.close();
         closeable.close();
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
     }
 
     @Test
@@ -478,16 +480,6 @@ public class NetworkServiceImplTest {
         service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu, privateMtu);
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
-    }
-
-    private void replaceUserChangeMtuField() throws Exception {
-        Field field = NetworkService.class.getDeclaredField("AllowUsersToSpecifyVRMtu");
-        field.setAccessible(true);
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, userChangeMtuKey);
     }
 
     private void prepareCreateNetworkDnsMocks(CreateNetworkCmd cmd, Network.GuestType guestType, boolean ipv6, boolean isVpc, boolean dnsServiceSupported) {
