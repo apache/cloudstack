@@ -18,7 +18,6 @@
 package com.cloud.network.vpc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -249,7 +248,7 @@ public class NetworkACLServiceImplTest {
         long networkId = 1L;
         Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(networkId);
         Network networkMock = Mockito.mock(Network.class);
-        ;
+
         Mockito.when(networkMock.getVpcId()).thenReturn(12L);
         Long expectedAclListId = 15L;
         Mockito.when(networkMock.getNetworkACLId()).thenReturn(expectedAclListId);
@@ -395,7 +394,6 @@ public class NetworkACLServiceImplTest {
     public void validateNetworkAclTestAclNotDefaulWithoutVpc() {
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
         Mockito.doReturn(null).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        ;
 
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
     }

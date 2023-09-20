@@ -23,9 +23,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -44,7 +43,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.network.NetworkService;
 import com.cloud.network.dao.FirewallRulesDao;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -80,7 +78,6 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
@@ -98,7 +95,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
@@ -175,6 +171,8 @@ public class VpcManagerImplTest {
     final String vpcName = "Test-VPC";
     final String vpcDomain = "domain";
 
+    private AutoCloseable closeable;
+
     private void registerCallContext() {
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
@@ -186,7 +184,7 @@ public class VpcManagerImplTest {
     @Before
     public void setup()
     {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         manager = new VpcManagerImpl();
         manager._vpcOffSvcMapDao = vpcOfferingServiceMapDao;
         manager.vpcDao = vpcDao;
@@ -213,8 +211,9 @@ public class VpcManagerImplTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         CallContext.unregister();
+        closeable.close();
     }
     @Test
     public void getVpcOffSvcProvidersMapForEmptyServiceTest() {
@@ -333,7 +332,7 @@ public class VpcManagerImplTest {
         List<NetworkOfferingServiceMapVO> serviceMap = new ArrayList<>();
 
         when(manager.getActiveVpc(anyLong())).thenReturn(vpcMock);
-        lenient().doNothing().when(accountManager).checkAccess(any(Account.class), nullable(SecurityChecker.AccessType.class), anyBoolean(), any(Vpc.class));
+        doNothing().when(accountManager).checkAccess(any(Account.class), nullable(SecurityChecker.AccessType.class), anyBoolean(), any(Vpc.class));
         when(vpcMock.isRegionLevelVpc()).thenReturn(true);
         when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
         when(vpcMock.getId()).thenReturn(VPC_ID);
@@ -435,7 +434,6 @@ public class VpcManagerImplTest {
 
         VpcVO vpcVO = new VpcVO();
 
-        lenient().doNothing().when(alertManager).sendAlert(any(AlertService.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
         Integer mtu = manager.validateMtu(vpcVO, publicMtu);
         Assert.assertEquals(expectedMtu, mtu);
     }
@@ -444,7 +442,7 @@ public class VpcManagerImplTest {
     public void testDisabledConfigCreateIpv6VpcOffering() {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
         when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
-        Mockito.doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
+        doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
         manager.createVpcOffering(cmd);
     }
 
@@ -456,7 +454,7 @@ public class VpcManagerImplTest {
         when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(vpcOfferingVO);
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
         when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
-        Mockito.doNothing().when(accountManager).checkAccess(account, vpcOfferingVO, dataCenterVO);
+        doNothing().when(accountManager).checkAccess(account, vpcOfferingVO, dataCenterVO);
         when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpcOfferingId, new Service[]{Service.Dns})).thenReturn(supportDnsService);
         when(vpcOfferingDao.isIpv6Supported(vpcOfferingId)).thenReturn(isIpv6);
     }
@@ -465,7 +463,7 @@ public class VpcManagerImplTest {
     public void testCreateVpcDnsOfferingServiceFailure() {
         mockVpcDnsResources(false, false);
         try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
                     ip4Dns[0], null, null, null, true, 1500);
         } catch (ResourceAllocationException e) {
@@ -477,7 +475,7 @@ public class VpcManagerImplTest {
     public void testCreateVpcDnsIpv6OfferingFailure() {
         mockVpcDnsResources(true, false);
         try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
                     ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true, 1500);
         } catch (ResourceAllocationException e) {

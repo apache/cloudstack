@@ -123,7 +123,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleValueType;
 import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
-import com.cloud.network.rules.LoadBalancer;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
