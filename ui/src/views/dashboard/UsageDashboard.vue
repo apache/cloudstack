@@ -62,7 +62,7 @@
           </div>
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
-        <a-row :gutter="[12, 12]">
+        <a-row :gutter="[10, 10]">
           <a-col :span="12">
             <router-link :to="{ path: '/vm' }">
               <a-statistic :title="$t('label.instances')" :value="data.instances">
@@ -202,10 +202,9 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
-            style="width:94%; float: left"
             />
             <br/>
             <div style="text-align: center">
@@ -239,10 +238,9 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
-            style="width:94%; float: left"
             />
             <br/>
             <div style="text-align: center">
@@ -276,10 +274,9 @@
             <a-progress
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
-            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(2) + '%' : ''"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
             stroke-color="#52c41a"
             size="small"
-            style="width:94%; float: left"
             />
             <br/>
             <div style="text-align: center">
@@ -625,14 +622,14 @@ export default {
 
   .dashboard-card {
     width: 100%;
-    min-height: 455px;
+    min-height: 470px;
   }
 
   .dashboard-event {
     width: 100%;
     overflow-x:hidden;
     overflow-y: scroll;
-    max-height: 455px;
+    max-height: 470px;
   }
 
   .center {

@@ -160,6 +160,7 @@
               <a-progress
               status="active"
               :percent="parseFloat(statsMap[ctype]?.percentused)"
+              :format="p => statsMap[ctype]?.percentused + '%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
@@ -189,6 +190,7 @@
               <a-progress
               status="active"
               :percent="parseFloat(statsMap[ctype]?.percentused)"
+              :format="p => statsMap[ctype]?.percentused + '%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
@@ -218,6 +220,7 @@
               <a-progress
               status="active"
               :percent="parseFloat(statsMap[ctype]?.percentused)"
+              :format="p => statsMap[ctype]?.percentused + '%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
