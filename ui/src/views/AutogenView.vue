@@ -444,7 +444,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
@@ -1301,13 +1302,30 @@ export default {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
-              const description = action.response(result.jobresult)
-              if (description) {
-                this.$notification.info({
-                  message: this.$t(action.label),
-                  description: (<span v-html={description}></span>),
-                  duration: 0
-                })
+              const response = action.response(result.jobresult)
+              if (response) {
+                if (typeof response === 'object') {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response.message}></span>),
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(response.copytext)
+                      },
+                      [this.$t(response.copybuttontext)]
+                    ),
+                    duration: 15
+                  })
+                } else {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response}></span>),
+                    duration: 0
+                  })
+                }
               }
             }
             if ('successMethod' in action) {
@@ -1903,6 +1921,10 @@ export default {
       if (screenWidth <= 768) {
         this.modalWidth = '450px'
       }
+    },
+    copyToClipboard (txt) {
+      navigator.clipboard.writeText(txt)
+      this.$message.success(this.$t('label.copied.clipboard'))
     }
   }
 }
