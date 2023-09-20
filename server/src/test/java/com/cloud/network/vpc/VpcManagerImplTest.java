@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 
 import java.util.ArrayList;
@@ -220,7 +219,7 @@ public class VpcManagerImplTest {
         long vpcOffId = 1L;
         List<VpcOfferingServiceMapVO> list = new ArrayList<VpcOfferingServiceMapVO>();
         list.add(mock(VpcOfferingServiceMapVO.class));
-        when(manager._vpcOffSvcMapDao.listByVpcOffId(vpcOffId)).thenReturn(list);
+        Mockito.when(manager._vpcOffSvcMapDao.listByVpcOffId(vpcOffId)).thenReturn(list);
 
         Map<Service, Set<Provider>> map = manager.getVpcOffSvcProvidersMap(vpcOffId);
 
@@ -307,10 +306,10 @@ public class VpcManagerImplTest {
         final boolean distributedRouter = true;
         final NetworkElement nwElement1 = mock(NetworkElement.class);
         this.manager._ntwkModel = mock(NetworkModel.class);
-        when(this.manager._ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()))
+        Mockito.when(this.manager._ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()))
                 .thenReturn(nwElement1);
         final Map<Service, Map<Network.Capability, String>> capabilitiesService1 = new HashMap<>();
-        when(nwElement1.getCapabilities()).thenReturn(capabilitiesService1);
+        Mockito.when(nwElement1.getCapabilities()).thenReturn(capabilitiesService1);
         capabilities.put(Capability.RegionLevelVpc, "");
         capabilities.put(Capability.DistributedRouter, "");
         capabilitiesService1.put(service, capabilities);
@@ -331,18 +330,18 @@ public class VpcManagerImplTest {
         services.add(Service.SourceNat);
         List<NetworkOfferingServiceMapVO> serviceMap = new ArrayList<>();
 
-        when(manager.getActiveVpc(anyLong())).thenReturn(vpcMock);
+        Mockito.when(manager.getActiveVpc(anyLong())).thenReturn(vpcMock);
         doNothing().when(accountManager).checkAccess(any(Account.class), nullable(SecurityChecker.AccessType.class), anyBoolean(), any(Vpc.class));
-        when(vpcMock.isRegionLevelVpc()).thenReturn(true);
-        when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
-        when(vpcMock.getId()).thenReturn(VPC_ID);
-        when(vpcDao.acquireInLockTable(VPC_ID)).thenReturn(vpcMockVO);
-        when(networkDao.countVpcNetworks(anyLong())).thenReturn(1L);
-        when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
-        when(networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
-        when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
-        when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
-        when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
+        Mockito.when(vpcMock.isRegionLevelVpc()).thenReturn(true);
+        Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
+        Mockito.when(vpcMock.getId()).thenReturn(VPC_ID);
+        Mockito.when(vpcDao.acquireInLockTable(VPC_ID)).thenReturn(vpcMockVO);
+        Mockito.when(networkDao.countVpcNetworks(anyLong())).thenReturn(1L);
+        Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+        Mockito.when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
+        Mockito.when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
+        Mockito.when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
 
         manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", accountMock, vpcMock, "cs1cloud.internal");
         manager.validateNtwkOffForNtwkInVpc(2L, 1, "10.10.10.0/24", "111-", vpcMock, "10.1.1.1", new AccountVO(), null);
@@ -366,13 +365,14 @@ public class VpcManagerImplTest {
         String sourceNatIp = "1.2.3.4";
         Account accountMock = Mockito.mock(Account.class);
         VpcVO vpcVO = new VpcVO();
+        ReflectionTestUtils.setField(vpcVO, "zoneId", zoneId);
 
         Answer answer = Mockito.mock(Answer.class);
-        when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getResult()).thenReturn(true);
         VirtualRouter routerMock = Mockito.mock(VirtualRouter.class);
         List<IPAddressVO> ipAddresses = new ArrayList<>();
         IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
-        when(ipAddressVO.getAddress()).thenReturn(Mockito.mock(Ip.class));
+        Mockito.when(ipAddressVO.getAddress()).thenReturn(Mockito.mock(Ip.class));
         ipAddresses.add(ipAddressVO);
         List<IpAddressTO> ips = new ArrayList<>();
         List<DomainRouterVO> routers = new ArrayList<>();
@@ -381,13 +381,13 @@ public class VpcManagerImplTest {
 
         IpAddressTO[] ipsToSend = ips.toArray(new IpAddressTO[0]);
 
-        when(vpcDao.findById(vpcId)).thenReturn(vpcVO);
-        when(vpcDao.createForUpdate(anyLong())).thenReturn(vpcVO);
-        when(ipAddressDao.listByAssociatedVpc(anyLong(), nullable(Boolean.class))).thenReturn(ipAddresses);
-        when(routerDao.listByVpcId(anyLong())).thenReturn(routers);
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpcVO);
+        Mockito.when(vpcDao.createForUpdate(anyLong())).thenReturn(vpcVO);
+        Mockito.when(ipAddressDao.listByAssociatedVpc(anyLong(), nullable(Boolean.class))).thenReturn(ipAddresses);
+        Mockito.when(routerDao.listByVpcId(anyLong())).thenReturn(routers);
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
-        when(vlanVO.getVlanNetmask()).thenReturn("netmask");
-        when(vlanDao.findById(anyLong())).thenReturn(vlanVO);
+        Mockito.when(vlanVO.getVlanNetmask()).thenReturn("netmask");
+        Mockito.when(vlanDao.findById(anyLong())).thenReturn(vlanVO);
         Mockito.doAnswer((org.mockito.stubbing.Answer<Void>) invocation -> {
             Commands commands = (Commands)invocation.getArguments()[2];
             commands.addCommand("updateNetwork", new UpdateNetworkCommand(ipsToSend));
@@ -398,16 +398,16 @@ public class VpcManagerImplTest {
             commands.setAnswers(new Answer[]{answer});
             return true;
         }).when(networkHelper).sendCommandsToRouter(Mockito.any(), Mockito.any());
-        when(vpcDao.update(vpcId, vpcVO)).thenReturn(true);
+        Mockito.when(vpcDao.update(vpcId, vpcVO)).thenReturn(true);
 
         UpdateVPCCmd cmd = Mockito.mock(UpdateVPCCmd.class);
-        when(cmd.getId()).thenReturn(vpcId);
-        when(cmd.getVpcName()).thenReturn(null);
-        when(cmd.getDisplayText()).thenReturn(null);
-        when(cmd.getCustomId()).thenReturn(null);
-        when(cmd.isDisplayVpc()).thenReturn(true);
-        when(cmd.getPublicMtu()).thenReturn(publicMtu);
-        when(cmd.getSourceNatIP()).thenReturn(sourceNatIp);
+        Mockito.when(cmd.getId()).thenReturn(vpcId);
+        Mockito.when(cmd.getVpcName()).thenReturn(null);
+        Mockito.when(cmd.getDisplayText()).thenReturn(null);
+        Mockito.when(cmd.getCustomId()).thenReturn(null);
+        Mockito.when(cmd.isDisplayVpc()).thenReturn(true);
+        Mockito.when(cmd.getPublicMtu()).thenReturn(publicMtu);
+        Mockito.when(cmd.getSourceNatIP()).thenReturn(sourceNatIp);
 
         manager.updateVpc(cmd);
         Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
@@ -417,11 +417,11 @@ public class VpcManagerImplTest {
     public void verifySourceNatIp() {
         String sourceNatIp = "1.2.3.4";
         VpcVO vpcVO = Mockito.mock(VpcVO.class); //new VpcVO(1l, "vpc", null, 10l, 1l, 1l, "10.1.0.0/16", null, false, false, false, null, null, null, null);
-        when(vpcVO.getId()).thenReturn(1l);
+        Mockito.when(vpcVO.getId()).thenReturn(1l);
         IPAddressVO requestedIp = Mockito.mock(IPAddressVO.class);//new IPAddressVO(new Ip(sourceNatIp), 1l, 1l, 1l, true);
-        when(ipAddressDao.findByIp(sourceNatIp)).thenReturn(requestedIp);
-        when(requestedIp.getVpcId()).thenReturn(1l);
-        when(requestedIp.getVpcId()).thenReturn(1l);
+        Mockito.when(ipAddressDao.findByIp(sourceNatIp)).thenReturn(requestedIp);
+        Mockito.when(requestedIp.getVpcId()).thenReturn(1l);
+        Mockito.when(requestedIp.getVpcId()).thenReturn(1l);
         Assert.assertNull(manager.validateSourceNatip(vpcVO, null));
         Assert.assertEquals(requestedIp, manager.validateSourceNatip(vpcVO, sourceNatIp));
     }
@@ -430,9 +430,9 @@ public class VpcManagerImplTest {
     public void testUpdatePublicMtuToGreaterThanThreshold() {
         Integer publicMtu = 2500;
         Integer expectedMtu = 1500;
-        Long vpcId = 1L;
 
-        VpcVO vpcVO = new VpcVO();
+        VpcVO vpcVO = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcVO.getZoneId()).thenReturn(zoneId);
 
         Integer mtu = manager.validateMtu(vpcVO, publicMtu);
         Assert.assertEquals(expectedMtu, mtu);
@@ -441,22 +441,22 @@ public class VpcManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testDisabledConfigCreateIpv6VpcOffering() {
         CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
-        when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
         doNothing().when(networkServiceMock).validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(Mockito.any());
         manager.createVpcOffering(cmd);
     }
 
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {
-        when(accountManager.getAccount(vpcOwnerId)).thenReturn(account);
+        Mockito.when(accountManager.getAccount(vpcOwnerId)).thenReturn(account);
         VpcOfferingVO vpcOfferingVO = Mockito.mock(VpcOfferingVO.class);
-        when(vpcOfferingVO.getId()).thenReturn(vpcOfferingId);
-        when(vpcOfferingVO.getState()).thenReturn(VpcOffering.State.Enabled);
-        when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(vpcOfferingVO);
+        Mockito.when(vpcOfferingVO.getId()).thenReturn(vpcOfferingId);
+        Mockito.when(vpcOfferingVO.getState()).thenReturn(VpcOffering.State.Enabled);
+        Mockito.when(vpcOfferingDao.findById(vpcOfferingId)).thenReturn(vpcOfferingVO);
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
-        when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
         doNothing().when(accountManager).checkAccess(account, vpcOfferingVO, dataCenterVO);
-        when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpcOfferingId, new Service[]{Service.Dns})).thenReturn(supportDnsService);
-        when(vpcOfferingDao.isIpv6Supported(vpcOfferingId)).thenReturn(isIpv6);
+        Mockito.when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpcOfferingId, new Service[]{Service.Dns})).thenReturn(supportDnsService);
+        Mockito.when(vpcOfferingDao.isIpv6Supported(vpcOfferingId)).thenReturn(isIpv6);
     }
 
     @Test(expected = InvalidParameterValueException.class)

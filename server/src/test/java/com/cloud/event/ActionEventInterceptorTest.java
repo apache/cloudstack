@@ -170,22 +170,12 @@ public class ActionEventInterceptorTest {
         });
 
         //Needed to record events published on the bus.
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override public Void answer(InvocationOnMock invocation) throws Throwable {
-                Event event = (Event)invocation.getArguments()[0];
-                publishedEvents.add(event);
-                return null;
-            }
-
-        }).when(eventBus).publish(Mockito.any(Event.class));
-
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         Mockito.when(accountDao.findById(ACCOUNT_ID)).thenReturn(account);
-        Mockito.when(userDao.findById(USER_ID)).thenReturn(user);
     }
 
     /**
