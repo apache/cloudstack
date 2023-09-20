@@ -43,7 +43,7 @@ public interface PasswordPolicy {
             Integer.class,
             "password.policy.minimum.uppercase.letters",
             "0",
-            "Minimum number of uppercase letters that the user's password must have. The value 0 means the user's password does not require any uppercase letters.",
+            "Minimum number of uppercase letters [A-Z] that the user's password must have. The value 0 means the user's password does not require any uppercase letters.",
             true,
             ConfigKey.Scope.Domain);
 
@@ -52,7 +52,7 @@ public interface PasswordPolicy {
             Integer.class,
             "password.policy.minimum.lowercase.letters",
             "0",
-            "Minimum number of lowercase letters that the user's password must have. The value 0 means the user's password does not require any lowercase letters.",
+            "Minimum number of lowercase letters [a-z] that the user's password must have. The value 0 means the user's password does not require any lowercase letters.",
             true,
             ConfigKey.Scope.Domain);
 
@@ -61,7 +61,7 @@ public interface PasswordPolicy {
             Integer.class,
             "password.policy.minimum.digits",
             "0",
-            "Minimum number of digits that the user's password must have. The value 0 means the user's password does not require any digits.",
+            "Minimum number of numeric characters [0-9] that the user's password must have. The value 0 means the user's password does not require any numeric characters.",
             true,
             ConfigKey.Scope.Domain);
 
