@@ -209,14 +209,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
-        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + adjustedStartDate + " and " + adjustedEndDate +
-                ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
-        }
+        s_logger.debug(String.format("Getting usage records for account [%s] in domain [%s], between [%s] and [%s], using pageSize [%s] and startIndex [%s].", accountId, domainId,
+                startDate, endDate, cmd.getPageSizeVal(), cmd.getStartIndex()));
 
         Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -341,9 +336,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         // Filter out hidden usages
         sc.addAnd("isHidden", SearchCriteria.Op.EQ, false);
 
-        if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {
-            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
-            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
+        if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
         } else {
             return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0)); // return an empty list if we fail to validate the dates
         }
@@ -491,30 +486,6 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             throw new InvalidParameterValueException("Invalid interval value. Interval to remove cloud_usage records should be greater than 0");
         }
         return true;
-    }
-
-    private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(initialDate);
-        TimeZone localTZ = cal.getTimeZone();
-        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
-        if (localTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-        cal.add(Calendar.MILLISECOND, timezoneOffset);
-
-        Date newTime = cal.getTime();
-
-        Calendar calTS = Calendar.getInstance(targetTZ);
-        calTS.setTime(newTime);
-        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
-        if (targetTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-
-        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-
-        return calTS.getTime();
     }
 
     @Override

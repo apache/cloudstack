@@ -4320,10 +4320,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (usageRecord.getStartDate() != null) {
-            usageRecResponse.setStartDate(getDateStringInternal(usageRecord.getStartDate()));
+            usageRecResponse.setStartDate(usageRecord.getStartDate());
         }
         if (usageRecord.getEndDate() != null) {
-            usageRecResponse.setEndDate(getDateStringInternal(usageRecord.getEndDate()));
+            usageRecResponse.setEndDate(usageRecord.getEndDate());
         }
 
         return usageRecResponse;
