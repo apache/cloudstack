@@ -59,32 +59,36 @@
     "jp": "label.japanese.keyboard",
     "sc": "label.simplified.chinese.keyboard"
   },
-  "userDoc": [
-    {
-      "title": "Documentation",
-      "text": "CloudStack documentation website",
-      "link": "https://docs.cloudstack.apache.org/en/latest/",
-      "icon": "read-outlined"
-    },
-    {
-      "title": "Usage Guide",
-      "text": "Refer to CloudStack usage documentation",
-      "link": "https://docs.cloudstack.apache.org/en/latest/adminguide/index.html",
-      "icon": "compass-outlined"
-    },
-    {
-      "title": "API Documentation",
-      "text": "Refer to API documentation",
-      "link": "https://cloudstack.apache.org/api.html",
-      "icon": "api-outlined"
-    },
-    {
-      "title": "Report Issue",
-      "text": "Submit a bug or improvement request",
-      "link": "https://github.com/apache/cloudstack/issues/new",
-      "icon": "bug-outlined"
-    }
-  ],
+  "userCard": {
+    "title": "label.help",
+    "icon": "question-circle-outlined",
+    "links": [
+      {
+        "title": "Giles Docs",
+        "text": "SB documentation website",
+        "link": "https://docs.cloudstack.apache.org/en/latest/",
+        "icon": "read-outlined"
+      },
+      {
+        "title": "Usage Guide",
+        "text": "Refer to CloudStack usage documentation",
+        "link": "https://docs.cloudstack.apache.org/en/latest/adminguide/index.html",
+        "icon": "compass-outlined"
+      },
+      {
+        "title": "API Documentation",
+        "text": "Refer to API documentation",
+        "link": "https://cloudstack.apache.org/api.html",
+        "icon": "api-outlined"
+      },
+      {
+        "title": "Report Issue",
+        "text": "Submit a bug or improvement request",
+        "link": "https://github.com/apache/cloudstack/issues/new",
+        "icon": "bug-outlined"
+      }
+    ]
+  },
   "plugins": [],
   "basicZoneEnabled": true,
   "multipleServer": false,

@@ -23,11 +23,11 @@
           <div class="center">
             <h3>
               <dashboard-outlined /> {{ $t('label.resources') }}
-              <span style="float: right">
+              <span style="float: right" v-if="showProject">
                 <a-dropdown>
                   <template #overlay>
                     <a-menu>
-                      <a-menu-item v-if="showProject">
+                      <a-menu-item>
                         <router-link :to="{ path: '/project/' + project.id }">
                           <project-outlined/>
                             {{ $t('label.view') }} {{  $t('label.project') }}
@@ -39,21 +39,9 @@
                           {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
                         </router-link>
                       </a-menu-item>
-                      <a-menu-item v-if="!showProject">
-                        <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
-                          <user-outlined/>
-                          {{ $t('label.view') }} {{  $t('label.user') }}
-                        </router-link>
-                      </a-menu-item>
-                      <a-menu-item v-if="!showProject">
-                        <router-link :to="{ path: '/account/' + account.id }">
-                          <team-outlined/>
-                          {{ $t('label.view') }} {{  $t('label.account') }}
-                        </router-link>
-                      </a-menu-item>
                     </a-menu>
                   </template>
-                  <a-button size="small">
+                  <a-button size="small" type="text">
                     <more-outlined />
                   </a-button>
                 </a-dropdown>
@@ -77,24 +65,6 @@
               <a-statistic :title="$t('label.kubernetes.cluster')" :value="data.kubernetes">
                 <template #prefix>
                   <cluster-outlined/>&nbsp;
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/autoscalevmgroup' }">
-              <a-statistic :title="$t('label.autoscale.vm.groups')" :value="data.autoscalegroups">
-                <template #prefix>
-                  <fullscreen-outlined />&nbsp;
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
-          <a-col :span="12">
-            <router-link :to="{ path: '/ssh' }">
-              <a-statistic :title="$t('label.keypairs')" :value="data.sshkeys">
-                <template #prefix>
-                  <key-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -208,8 +178,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
@@ -244,8 +214,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
@@ -280,8 +250,8 @@
             />
             <br/>
             <div style="text-align: center">
-              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }} |
-              {{ entity[usageType + 'limit'] === 'Unlimited' ? $t('label.unlimited') : (getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
             </div>
           </div>
         </div>
@@ -291,16 +261,16 @@
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
-            <h3><question-circle-outlined /> {{ $t('label.help') }}</h3>
+            <h3><render-icon :icon="$config.userCard.icon" /> {{ $t($config.userCard.title) }}</h3>
           </div>
         </template>
         <a-divider style="margin: 6px 0px; border-width: 0px"/>
-        <a-list item-layout="horizontal" :data-source="$config.userDoc">
+        <a-list item-layout="horizontal" :data-source="$config.userCard.links">
           <template #renderItem="{ item }">
             <a-list-item>
               <a-list-item-meta :description="item.text">
                 <template #title>
-                  <a :href="item.link" target="_blank">{{ item.title }}</a>
+                  <a :href="item.link" target="_blank"><h4>{{ item.title }}</h4></a>
                 </template>
                 <template #avatar>
                   <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
@@ -388,8 +358,6 @@ export default {
         stopped: 0,
         instances: 0,
         kubernetes: 0,
-        autoscalegroups: 0,
-        sshkeys: 0,
         volumes: 0,
         snapshots: 0,
         networks: 0,
@@ -475,8 +443,6 @@ export default {
         stopped: 0,
         instances: 0,
         kubernetes: 0,
-        autoscalegroups: 0,
-        sshkeys: 0,
         volumes: 0,
         snapshots: 0,
         networks: 0,
@@ -490,14 +456,6 @@ export default {
       api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
         this.loading = false
         this.data.kubernetes = json?.listkubernetesclustersresponse?.count
-      })
-      api('listAutoScaleVmGroups', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.autoscalegroups = json?.listautoscalevmgroupsresponse?.count
-      })
-      api('listSSHKeyPairs', { listall: true, page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.sshkeys = json?.listsshkeypairsresponse?.count
       })
       api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
         this.loading = false
@@ -622,14 +580,14 @@ export default {
 
   .dashboard-card {
     width: 100%;
-    min-height: 470px;
+    min-height: 420px;
   }
 
   .dashboard-event {
     width: 100%;
     overflow-x:hidden;
     overflow-y: scroll;
-    max-height: 470px;
+    max-height: 420px;
   }
 
   .center {
