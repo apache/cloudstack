@@ -58,6 +58,10 @@ public class NsxControllerResponse extends BaseResponse {
     @Param(description = "The name of the edge cluster. An edge cluster is a logical grouping of edge nodes in NSX")
     private String edgeCluster;
 
+    @SerializedName(ApiConstants.TRANSPORT_ZONE)
+    @Param(description = "The name of the transport zone. A transport zone controls to which hosts a logical switch can reach")
+    private String transportZone;
+
     public String getUuid() {
         return uuid;
     }
@@ -120,5 +124,13 @@ public class NsxControllerResponse extends BaseResponse {
 
     public void setEdgeCluster(String edgeCluster) {
         this.edgeCluster = edgeCluster;
+    }
+
+    public String getTransportZone() {
+        return transportZone;
+    }
+
+    public void setTransportZone(String transportZone) {
+        this.transportZone = transportZone;
     }
 }

@@ -1704,7 +1704,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //apply network ACLs
-        if (!_networkACLMgr.applyACLToNetwork(networkId)) {
+        // TODO: remove check for NSX
+        if (!offering.isForNsx() && !_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
@@ -3855,7 +3856,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private boolean cleanupNetworkResources(final long networkId, final Account caller, final long callerUserId) {
         boolean success = true;
-        final Network network = _networksDao.findById(networkId);
+        final NetworkVO network = _networksDao.findById(networkId);
+        final NetworkOfferingVO networkOffering= _networkOfferingDao.findById(network.getNetworkOfferingId());
 
         //remove all PF/Static Nat rules for the network
         try {
@@ -3895,8 +3897,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //revoke all network ACLs for network
+        // TODO: Change this when ACLs are supported for NSX
         try {
-            if (_networkACLMgr.revokeACLItemsForNetwork(networkId)) {
+            if (networkOffering.isForNsx() || _networkACLMgr.revokeACLItemsForNetwork(networkId)) {
                 s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
             } else {
                 success = false;

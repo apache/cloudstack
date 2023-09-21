@@ -173,7 +173,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        return false;
+        return true;
     }
 
     @Override
@@ -293,7 +293,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         if (CollectionUtils.isNullOrEmpty(physicalNetworks) || physicalNetworks.size() > 1 ) {
             throw new InvalidConfigurationException(String.format("Desired number of physical networks is not present in the zone %s for traffic type %s. ", zone.getName(), Networks.TrafficType.Guest.name()));
         }
-        if (physicalNetworks.get(0).getIsolationMethods().contains(Network.Provider.Nsx.getName())) {
+        if (physicalNetworks.get(0).getIsolationMethods().contains("NSX")) {
             account = accountMgr.getAccount(vpc.getAccountId());
             forNsx = true;
         }

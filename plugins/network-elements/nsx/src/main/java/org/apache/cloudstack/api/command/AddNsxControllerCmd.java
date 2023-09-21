@@ -66,6 +66,9 @@ public class AddNsxControllerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.EDGE_CLUSTER, type = CommandType.STRING, required = true, description = "Edge Cluster name")
     private String edgeCluster;
 
+    @Parameter(name = ApiConstants.TRANSPORT_ZONE, type = CommandType.STRING, required = true, description = "Transport Zone controls to which hosts a logical switch can reach")
+    private String transportZone;
+
     public NsxProviderService getNsxProviderService() {
         return nsxProviderService;
     }
@@ -100,6 +103,10 @@ public class AddNsxControllerCmd extends BaseCmd {
 
     public String getEdgeCluster() {
         return edgeCluster;
+    }
+
+    public String getTransportZone() {
+        return transportZone;
     }
 
     @Override

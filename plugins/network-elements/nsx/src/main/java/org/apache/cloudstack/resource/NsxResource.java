@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -27,14 +28,21 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import com.vmware.nsx.model.TransportZone;
+import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.Segments;
+import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
+import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.ChildLocaleServices;
+import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
+import com.vmware.nsx_policy.model.SiteListResult;
 import com.vmware.nsx_policy.model.Tier1;
 import com.vmware.vapi.bindings.Service;
 import com.vmware.vapi.std.errors.Error;
@@ -53,11 +61,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.FailoverMode.PREEMPTIVE;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.TransportType.OVERLAY;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.createApiClient;
 
 public class NsxResource implements ServerResource {
@@ -75,6 +85,7 @@ public class NsxResource implements ServerResource {
     protected String port;
     protected String tier0Gateway;
     protected String edgeCluster;
+    protected String transportZone;
     protected String zoneId;
 
     protected NsxApi nsxApi;
@@ -211,6 +222,11 @@ public class NsxResource implements ServerResource {
             throw new ConfigurationException("Missing NSX edgeCluster");
         }
 
+        transportZone = (String) params.get("transportZone");
+        if (transportZone == null) {
+            throw new ConfigurationException("Missing NSX transportZone");
+        }
+
         nsxApi = new NsxApi();
         nsxApi.setApiClient(createApiClient(hostname, port, username, password.toCharArray()));
         return true;
@@ -270,6 +286,36 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(CreateNsxSegmentCommand cmd) {
         try {
+            SiteListResult sites = getSites();
+            String errorMsg = null;
+            if (CollectionUtils.isNullOrEmpty(sites.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no sites are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                LOGGER.error(errorMsg);
+                return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
+            }
+            String siteId = sites.getResults().get(0).getId();
+
+            EnforcementPointListResult epList = getEnforcementPoints(siteId);
+            if (CollectionUtils.isNullOrEmpty(epList.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no enforcement points are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                LOGGER.error(errorMsg);
+                return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
+            }
+            String enforcementPointPath = epList.getResults().get(0).getPath();
+
+            TransportZoneListResult transportZoneListResult = getTransportZones();
+            if (CollectionUtils.isNullOrEmpty(transportZoneListResult.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                LOGGER.error(errorMsg);
+                return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
+            }
+            List<TransportZone> transportZones = transportZoneListResult.getResults().stream().filter(tz -> tz.getDisplayName().equals(transportZone)).collect(Collectors.toList());
+            if (CollectionUtils.isNullOrEmpty(transportZones)) {
+                errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", cmd.getTierNetwork().getName(), transportZone);
+                LOGGER.error(errorMsg);
+                return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
+            }
+
             String segmentName = getSegmentName(cmd);
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
@@ -282,6 +328,7 @@ public class NsxResource implements ServerResource {
                             : TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
                     .setAdminState(NsxApiClientUtils.AdminState.UP.name())
                     .setSubnets(List.of(subnet))
+                    .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
                     .build();
             segmentService.patch(segmentName, segment);
         } catch (Exception e) {
@@ -323,12 +370,43 @@ public class NsxResource implements ServerResource {
         return null;
     }
 
+    private SiteListResult getSites() {
+        try {
+            Sites sites = (Sites) nsxService.apply(Sites.class);
+            return sites.list(null, false, null, null, null, null);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+        }
+    }
+
+    private EnforcementPointListResult getEnforcementPoints(String siteId) {
+        try {
+            EnforcementPoints enforcementPoints = (EnforcementPoints) nsxService.apply(EnforcementPoints.class);
+            return enforcementPoints.list(siteId, null, false, null, null, null, null);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+        }
+    }
+
+    private TransportZoneListResult getTransportZones() {
+        try {
+            com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
+            return transportZones.list(null, null, true, null, false, null, null, null, OVERLAY.name(), null);
+        } catch (Exception e) {
+            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
+        }
+    }
+
     private String getTier1GatewayName(CreateNsxTier1GatewayCommand cmd) {
         return cmd.getZoneName() + "-" + cmd.getAccountName() + "-" + cmd.getVpcName();
     }
 
     private String getSegmentName(CreateNsxSegmentCommand cmd) {
-        return cmd.getAccountName() + "-" + cmd.getTierNetwork().getName();
+        String segmentName = cmd.getAccountName() + "-";
+        if (isNull(cmd.getVpcName())) {
+            return segmentName + cmd.getTierNetwork().getName();
+        }
+         return segmentName + cmd.getVpcName() + "-" + cmd.getTierNetwork().getName();
     }
 
     @Override

@@ -25,6 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -67,6 +68,14 @@ public class NsxProviderVO implements NsxProvider {
     @Column(name = "edge_cluster")
     private String edgeCluster;
 
+    @Column(name = "transport_zone")
+    private String transportZone;
+
+    @Column(name = "created")
+    private Date created;
+
+    @Column(name = "removed")
+    private Date removed;
     public NsxProviderVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -166,6 +175,30 @@ public class NsxProviderVO implements NsxProvider {
         this.edgeCluster = edgeCluster;
     }
 
+    public String getTransportZone() {
+        return transportZone;
+    }
+
+    public void setTransportZone(String transportZone) {
+        this.transportZone = transportZone;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     public static final class Builder {
         private long zoneId;
         private long hostId;
@@ -176,6 +209,8 @@ public class NsxProviderVO implements NsxProvider {
         private String password;
         private String tier0Gateway;
         private String edgeCluster;
+        private String transportZone;
+
 
         public Builder() {
         }
@@ -224,6 +259,11 @@ public class NsxProviderVO implements NsxProvider {
             this.edgeCluster = edgeCluster;
             return this;
         }
+
+        public Builder setTransportZone(String transportZone) {
+            this.transportZone = transportZone;
+            return this;
+        }
         public NsxProviderVO build() {
             NsxProviderVO provider = new NsxProviderVO();
             provider.setZoneId(this.zoneId);
@@ -236,6 +276,8 @@ public class NsxProviderVO implements NsxProvider {
             provider.setPassword(this.password);
             provider.setTier0Gateway(this.tier0Gateway);
             provider.setEdgeCluster(this.edgeCluster);
+            provider.setTransportZone(this.transportZone);
+            provider.setCreated(new Date());
             return provider;
         }
     }

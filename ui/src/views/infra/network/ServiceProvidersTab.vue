@@ -1097,7 +1097,7 @@ export default {
                   value: (record) => { return record.zoneid }
                 }
               },
-              columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster']
+              columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster', 'transportzone']
             }
           ]
         }

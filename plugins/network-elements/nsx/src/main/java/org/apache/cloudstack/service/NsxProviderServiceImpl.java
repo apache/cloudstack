@@ -81,6 +81,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         final String password = cmd.getPassword();
         final String tier0Gateway = cmd.getTier0Gateway();
         final String edgeCluster = cmd.getEdgeCluster();
+        final String transportZone = cmd.getTransportZone();
 
         Map<String, String> params = new HashMap<>();
         params.put("guid", UUID.randomUUID().toString());
@@ -92,6 +93,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         params.put("password", password);
         params.put("tier0Gateway", tier0Gateway);
         params.put("edgeCluster", edgeCluster);
+        params.put("transportZone", transportZone);
 
         Map<String, Object> hostdetails = new HashMap<>(params);
         NsxProvider nsxProvider;
@@ -112,6 +114,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
                             .setPassword(password)
                             .setTier0Gateway(tier0Gateway)
                             .setEdgeCluster(edgeCluster)
+                            .setTransportZone(transportZone)
                             .build();
 
                     nsxProviderDao.persist(nsxProviderVO);
@@ -145,7 +148,8 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
         response.setTier0Gateway(nsxProvider.getTier0Gateway());
-        response.setTier0Gateway(nsxProvider.getEdgeCluster());
+        response.setEdgeCluster(nsxProvider.getEdgeCluster());
+        response.setTransportZone(nsxProvider.getTransportZone());
         response.setObjectName("nsxController");
         return response;
     }

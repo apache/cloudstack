@@ -193,6 +193,7 @@ CREATE TABLE `cloud`.`nsx_providers` (
     `password` varchar(255) NOT NULL,
     `tier0_gateway` varchar(255),
     `edge_cluster` varchar(255),
+    `transport_zone` varchar(255),
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime COMMENT 'date removed if not null',
     PRIMARY KEY (`id`),

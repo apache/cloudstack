@@ -200,7 +200,6 @@ export default {
         this.stepData.tasks = []
         this.stepData.stepMove = this.stepData.stepMove.filter(item => item.indexOf('createStorageNetworkIpRange') === -1)
       }
-      console.log('step-data', this.stepData)
       // this.handleSubmit()
     }
   },
@@ -947,30 +946,39 @@ export default {
           }
 
           try {
+            console.log('is nsx zone: ', this.stepData.isNsxZone)
+            console.log('value of this.stepData.stepMove.includes(createPublicVlanIpRange)', this.stepData.stepMove.includes('createPublicVlanIpRange' + index))
+            // for not add vlan ; next phase add the check: && this.stepData.isNsxZone
             if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
+              console.log('create public vlan ip range')
               this.stepData.stepMove.push('createPublicVlanIpRange' + index)
             }
           } catch (e) {
+            console.log('error')
             this.messageError = e
             this.processStatus = STATUS_FAILED
             this.setStepStatus(STATUS_FAILED)
             stopNow = true
           }
+          console.log('added public vlan range')
 
           if (stopNow) {
+            console.log('stop now - break')
             break
           }
         }
 
         if (stopNow) {
+          console.log('stop now - return')
           return
         }
 
         if (this.stepData.isTungstenZone) {
           await this.stepCreateTungstenFabricPublicNetwork()
         } else if (this.stepData.isNsxZone) {
+          console.log('added nsx controller')
           await this.stepAddNsxController()
         } else {
           await this.stepConfigureStorageTraffic()
@@ -987,6 +995,7 @@ export default {
           if (storageExists && storageExists.length > 0) {
             await this.stepConfigureStorageTraffic()
           } else {
+            console.log('conf guest traffic')
             await this.stepConfigureGuestTraffic()
           }
         }
@@ -1043,6 +1052,13 @@ export default {
       }
     },
     async stepAddNsxController () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.add.nsx.controller', 'nsx')
+      if (this.stepData.stepMove.includes('nsx')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
       try {
         if (!this.stepData.stepMove.includes('addNsxController')) {
           const providerParams = {}
@@ -1054,10 +1070,13 @@ export default {
           providerParams.zoneid = this.stepData.zoneReturned.id
           providerParams.tier0gateway = this.prefillContent?.tier0Gateway || ''
           providerParams.edgecluster = this.prefillContent?.edgeCluster || ''
+          providerParams.transportzone = this.prefillContent?.transportZone || ''
 
           await this.addNsxController(providerParams)
           this.stepData.stepMove.push('addNsxController')
         }
+        this.stepData.stepMove.push('nsx')
+        await this.stepConfigureStorageTraffic()
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
@@ -1074,7 +1093,7 @@ export default {
         }
       })
 
-      if (!targetNetwork) {
+      if (!targetNetwork && !this.isNsxZone) {
         await this.stepConfigureGuestTraffic()
         return
       }

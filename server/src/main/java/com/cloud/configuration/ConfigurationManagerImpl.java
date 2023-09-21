@@ -2532,7 +2532,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // we should actually find the mapping and remove if it exists
                 // but we don't know about vmware/plugin/hypervisors at this point
                 NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
-                nsxProviderDao.remove(nsxProvider.getId());
+                if (Objects.nonNull(nsxProvider)) {
+                    nsxProviderDao.remove(nsxProvider.getId());
+                }
 
                 final boolean success = _zoneDao.remove(zoneId);
 

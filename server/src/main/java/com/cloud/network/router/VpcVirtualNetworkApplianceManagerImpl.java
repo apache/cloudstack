@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -128,6 +130,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private EntityManager _entityMgr;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {

@@ -26,9 +26,9 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.NetworkVO;
@@ -86,7 +86,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         }
 
         NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
-
+        network.setBroadcastDomainType(Networks.BroadcastDomainType.NSX);
         if (network == null) {
             return null;
         }
@@ -188,7 +188,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
-        String vpcName = null;
+            String vpcName = null;
         if (nonNull(networkVO.getVpcId())) {
             VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
             if (isNull(vpc)) {

@@ -18,10 +18,15 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -76,6 +81,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected
     NetworkDao networkDao;
+    @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected AccountManager accountManager;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
@@ -146,9 +155,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setMtu(profile.getMtu());
         to.setIp6Dns1(profile.getIPv6Dns1());
         to.setIp6Dns2(profile.getIPv6Dns2());
+        to.setNetworkId(profile.getNetworkId());
 
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
+        Account account = accountManager.getAccount(network.getAccountId());
+        VpcVO vpc = null;
+        if (Objects.nonNull(network) && Objects.nonNull(network.getVpcId())) {
+            vpc = vpcDao.findById(network.getVpcId());
+        }
+        to.setNetworkSegmentName(getNetworkName(account.getAccountName(), vpc, network.getName()));
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
@@ -176,6 +192,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         // configuration. Use full when vm stop/start
         return to;
     }
+
+    private String getNetworkName(String accountName, VpcVO vpc, String networkName) {
+        if (Objects.isNull(vpc)) {
+            return accountName + "-" + networkName;
+        }
+        return accountName + "-" + vpc.getName() + "-" + networkName;
+    }
+
 
     /**
      * Add extra configuration from VM details. Extra configuration is stored as details starting with 'extraconfig'

@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
@@ -172,6 +173,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     Ipv6Service ipv6Service;
     @Inject
     CapacityManager capacityMgr;
+    @Inject
+    VpcDao vpcDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 

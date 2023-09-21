@@ -29,4 +29,6 @@ public interface NsxProvider extends InternalIdentity, Identity {
 
     String getTier0Gateway();
     String getEdgeCluster();
+
+    String getTransportZone();
 }

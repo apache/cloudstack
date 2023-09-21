@@ -683,6 +683,8 @@ public class ApiConstants {
     // NSX
     public static final String EDGE_CLUSTER = "edgecluster";
     public static final String TIER0_GATEWAY = "tier0gateway";
+
+    public static final String TRANSPORT_ZONE = "transportzone";
     // Tungsten-Fabric
     public static final String TUNGSTEN_VIRTUAL_ROUTER_UUID = "tungstenvirtualrouteruuid";
     public static final String TUNGSTEN_PROVIDER_HOSTNAME = "tungstenproviderhostname";

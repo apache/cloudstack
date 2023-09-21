@@ -627,6 +627,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,

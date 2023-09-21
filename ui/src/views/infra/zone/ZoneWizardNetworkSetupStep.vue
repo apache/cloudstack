@@ -99,6 +99,7 @@
     />
 
     <div v-if="guestTrafficRangeMode">
+      <div>{{ isNsxZone }}</div>
       <static-inputs-form
         v-if="steps && steps[currentStep].formKey === 'guestTraffic'"
         @nextPressed="nextPressed"
@@ -113,7 +114,7 @@
     </div>
     <div v-else>
       <advanced-guest-traffic-form
-        v-if="steps && steps[currentStep].formKey === 'guestTraffic'"
+        v-if="steps && steps[currentStep].formKey === 'guestTraffic' && !isNsxZone"
         @nextPressed="nextPressed"
         @backPressed="handleBack"
         @fieldsChanged="fieldsChanged"
@@ -212,6 +213,7 @@ export default {
       return isNsx
     },
     allSteps () {
+      console.log(this.isNsxZone)
       const steps = []
       steps.push({
         title: 'label.physical.network',
@@ -244,7 +246,7 @@ export default {
         title: 'label.pod',
         formKey: 'pod'
       })
-      if (!this.isTungstenZone) {
+      if (!this.isTungstenZone && !this.isNsxZone) {
         steps.push({
           title: 'label.guest.traffic',
           formKey: 'guestTraffic',
@@ -418,6 +420,12 @@ export default {
           key: 'tier0Gateway',
           placeHolder: 'message.installwizard.tooltip.nsx.provider.tier0gateway',
           required: true
+        },
+        {
+          title: 'label.nsx.provider.transportzone',
+          key: 'transportZone',
+          placeHolder: 'message.installwizard.tooltip.nsx.provider.transportZone',
+          required: true
         }
       ]
       return fields
@@ -542,7 +550,7 @@ export default {
     }
     this.scrollToStepActive()
     if (this.zoneType === 'Basic' ||
-      (this.zoneType === 'Advanced' && this.sgEnabled)) {
+      (this.zoneType === 'Advanced' && (this.sgEnabled || this.isNsxZone))) {
       this.skipGuestTrafficStep = false
     } else {
       this.fetchConfiguration()

@@ -59,6 +59,11 @@ public class NsxApiClientUtils {
         UP,
         DOWN
     }
+
+    public enum TransportType {
+        OVERLAY,
+        VLAN
+    }
     public static ApiClient createApiClient(String hostname, String port, String username, char[] password) {
         String controllerUrl = String.format("https://%s:%s", hostname, port);
         HttpConfiguration.SslConfiguration.Builder sslConfigBuilder = new HttpConfiguration.SslConfiguration.Builder();

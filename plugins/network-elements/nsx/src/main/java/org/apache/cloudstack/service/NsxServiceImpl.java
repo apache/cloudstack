@@ -17,16 +17,22 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 
 import javax.inject.Inject;
+import java.util.Objects;
 
 public class NsxServiceImpl implements NsxService {
     @Inject
     private NsxControllerUtils nsxControllerUtils;
+    @Inject
+    private VpcDao vpcDao;
+
     public boolean createVpcNetwork(Long zoneId, String zoneName, Long accountId, String accountName, String vpcName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
                 new CreateNsxTier1GatewayCommand(zoneName, zoneId, accountName, accountId, vpcName);
@@ -42,7 +48,12 @@ public class NsxServiceImpl implements NsxService {
     }
 
     public boolean deleteNetwork(String accountName, NetworkVO network) {
-        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(accountName, network);
+        String vpcName = null;
+        if (Objects.nonNull(network.getVpcId())) {
+            VpcVO vpc = vpcDao.findById(network.getVpcId());
+            vpcName = Objects.nonNull(vpc) ? vpc.getName() : null;
+        }
+        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(accountName, vpcName, network);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         return result.getResult();
     }
