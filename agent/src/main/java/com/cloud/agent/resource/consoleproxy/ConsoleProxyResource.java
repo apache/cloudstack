@@ -89,10 +89,10 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     long proxyVmId;
     int proxyPort;
 
-    String localgw;
+    String localGateway;
     String eth1Ip;
     String eth1Mask;
-    String pubIp;
+    String publicIp;
 
     @Override
     public Answer executeRequest(final Command cmd) {
@@ -205,8 +205,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         fillNetworkInformation(cmd);
         cmd.setProxyPort(proxyPort);
         cmd.setProxyVmId(proxyVmId);
-        if (pubIp != null)
-            cmd.setPublicIpAddress(pubIp);
+        if (publicIp != null)
+            cmd.setPublicIpAddress(publicIp);
         return new StartupCommand[] {cmd};
     }
 
@@ -221,7 +221,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        localgw = (String)params.get("localgw");
+        localGateway = (String)params.get("localgw");
         eth1Mask = (String)params.get("eth1mask");
         eth1Ip = (String)params.get("eth1ip");
         if (eth1Ip != null) {
@@ -254,26 +254,26 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         value = (String)params.get("proxy_vm");
         proxyVmId = NumbersUtil.parseLong(value, 0);
 
-        if (localgw != null) {
+        if (localGateway != null) {
             String mgmtHosts = (String)params.get("host");
             if (eth1Ip != null) {
                 for (final String mgmtHost : mgmtHosts.split(",")) {
-                    addRouteToInternalIpOrCidr(localgw, eth1Ip, eth1Mask, mgmtHost);
+                    addRouteToInternalIpOrCidr(localGateway, eth1Ip, eth1Mask, mgmtHost);
                 }
                 String internalDns1 = (String) params.get("internaldns1");
                 if (internalDns1 == null) {
                     s_logger.warn("No DNS entry found during configuration of ConsoleProxy");
                 } else {
-                    addRouteToInternalIpOrCidr(localgw, eth1Ip, eth1Mask, internalDns1);
+                    addRouteToInternalIpOrCidr(localGateway, eth1Ip, eth1Mask, internalDns1);
                 }
                 String internalDns2 = (String) params.get("internaldns2");
                 if (internalDns2 != null) {
-                    addRouteToInternalIpOrCidr(localgw, eth1Ip, eth1Mask, internalDns2);
+                    addRouteToInternalIpOrCidr(localGateway, eth1Ip, eth1Mask, internalDns2);
                 }
             }
         }
 
-        pubIp = (String)params.get("public.ip");
+        publicIp = (String)params.get("public.ip");
 
         value = (String)params.get("disable_rp_filter");
         if (value != null && value.equalsIgnoreCase("true")) {
@@ -442,15 +442,15 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     }
 
     public void ensureRoute(String address) {
-        if (localgw != null) {
+        if (localGateway != null) {
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Ensure route for " + address + " via " + localgw);
+                s_logger.debug("Ensure route for " + address + " via " + localGateway);
 
             // this method won't be called in high frequency, serialize access
             // to script execution
             synchronized (this) {
                 try {
-                    addRouteToInternalIpOrCidr(localgw, eth1Ip, eth1Mask, address);
+                    addRouteToInternalIpOrCidr(localGateway, eth1Ip, eth1Mask, address);
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception while adding internal route to " + address, e);
                 }
