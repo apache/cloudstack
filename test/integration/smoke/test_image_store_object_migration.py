@@ -40,8 +40,8 @@ from marvin.cloudstackAPI import (createTemplate, listOsTypes)
 
 _multiprocess_shared_ = True
 
-class TestImageStoreObjectMigrationForTemplates(cloudstackTestCase):
-    """Test Image Store Object migration for templates
+class TestImageStoreObjectMigration(cloudstackTestCase):
+    """Test Image Store Object migration
     """
     def setUp(self):
         self.testClient = super(TestImageStoreObjectMigration, self).getClsTestClient()
