@@ -41,18 +41,10 @@
         <div class="capacity-dashboard-button">
           <a-button
             shape="round"
-            @click="() => { listCapacity(zoneSelected, true); updateData(zoneSelected); listAlerts(); listEvents(); }">
+            @click="() => { updateData(zoneSelected); listAlerts(); listEvents(); }">
             <reload-outlined/>
             {{ $t('label.fetch.latest') }}
           </a-button>
-        </div>
-        <div class="capacity-dashboard-button">
-          <router-link :to="{ path: '/zone/' + zoneSelected.id }">
-            <a-button shape="round">
-              <global-outlined/>
-              {{ $t('label.view') }} {{ $t('label.zone') }}
-            </a-button>
-          </router-link>
         </div>
       </div>
     </a-col>
@@ -60,10 +52,18 @@
       <chart-card :loading="loading" class="dashboard-card">
         <template #title>
           <div class="center">
-            <h3>
-              <dashboard-outlined />
-              {{ $t('label.resources') }}
-            </h3>
+            <router-link :to="{ path: '/infrasummary' }" v-if="!zoneSelected.id">
+              <h3>
+                <bank-outlined />
+                {{ $t('label.infrastructure') }}
+              </h3>
+            </router-link>
+            <router-link :to="{ path: '/zone/' + zoneSelected.id }" v-else>
+              <h3>
+                <global-outlined />
+                {{ $t('label.zone') }}
+              </h3>
+            </router-link>
           </div>
         </template>
         <a-divider style="margin: 0px 0px; border-width: 0px"/>
@@ -159,8 +159,8 @@
               </div>
               <a-progress
               status="active"
-              :percent="parseFloat(statsMap[ctype]?.percentused)"
-              :format="p => statsMap[ctype]?.percentused + '%'"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
@@ -189,8 +189,8 @@
               </div>
               <a-progress
               status="active"
-              :percent="parseFloat(statsMap[ctype]?.percentused)"
-              :format="p => statsMap[ctype]?.percentused + '%'"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
@@ -219,8 +219,8 @@
               </div>
               <a-progress
               status="active"
-              :percent="parseFloat(statsMap[ctype]?.percentused)"
-              :format="p => statsMap[ctype]?.percentused + '%'"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
@@ -320,7 +320,6 @@ export default {
       events: [],
       zones: [],
       zoneSelected: {},
-      stats: [],
       statsMap: {},
       data: {
         pods: 0,
@@ -406,25 +405,44 @@ export default {
       this.listAlerts()
       this.listEvents()
     },
-    listCapacity (zone, latest = false) {
-      const params = {
-        zoneid: zone.id,
-        fetchlatest: latest
-      }
+    listCapacity (zone, latest = false, additive = false) {
       this.loading = true
-      api('listCapacity', params).then(json => {
-        this.stats = []
+      api('listCapacity', { zoneid: zone.id, fetchlatest: latest }).then(json => {
         this.loading = false
+        let stats = []
         if (json && json.listcapacityresponse && json.listcapacityresponse.capacity) {
-          this.stats = json.listcapacityresponse.capacity
+          stats = json.listcapacityresponse.capacity
         }
-        this.statsMap = {}
-        for (const stat of this.stats) {
-          this.statsMap[stat.name] = stat
+        for (const stat of stats) {
+          if (additive) {
+            for (const [key, value] of Object.entries(stat)) {
+              if (stat.name in this.statsMap) {
+                if (key in this.statsMap[stat.name]) {
+                  this.statsMap[stat.name][key] += value
+                } else {
+                  this.statsMap[stat.name][key] = value
+                }
+              } else {
+                this.statsMap[stat.name] = { key: value }
+              }
+            }
+          } else {
+            this.statsMap[stat.name] = stat
+          }
         }
       })
     },
     updateData (zone) {
+      if (!zone.id) {
+        this.statsMap = {}
+        for (const zone of this.zones.slice(1)) {
+          this.listCapacity(zone, true, true)
+        }
+      } else {
+        this.statsMap = {}
+        this.listCapacity(this.zoneSelected, true)
+      }
+
       this.data = {
         pods: 0,
         clusters: 0,
@@ -537,8 +555,8 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
+            this.zones.splice(0, 0, { name: this.$t('label.all.zone') })
             this.zoneSelected = this.zones[0]
-            this.listCapacity(this.zones[0])
             this.updateData(this.zones[0])
           }
         }
@@ -546,7 +564,6 @@ export default {
     },
     changeZone (index) {
       this.zoneSelected = this.zones[index]
-      this.listCapacity(this.zoneSelected)
       this.updateData(this.zoneSelected)
     },
     filterZone (input, option) {
