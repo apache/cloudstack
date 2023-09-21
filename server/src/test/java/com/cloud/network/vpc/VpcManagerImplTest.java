@@ -18,16 +18,70 @@
  */
 package com.cloud.network.vpc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.UpdateNetworkCommand;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
+import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -38,72 +92,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-
-import com.cloud.alert.AlertManager;
-import com.cloud.network.NetworkService;
-import com.cloud.network.dao.FirewallRulesDao;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.junit.After;
-import org.junit.Assert;
-import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.routing.UpdateNetworkCommand;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.configuration.Resource;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.element.NetworkElement;
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.vpc.dao.VpcDao;
-import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.net.Ip;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.UserVO;
-import com.cloud.utils.net.NetUtils;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VpcManagerImplTest {
@@ -217,7 +214,8 @@ public class VpcManagerImplTest {
         closeable.close();
     }
 
-    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name,
+            final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field f = ConfigKey.class.getDeclaredField(name);
         f.setAccessible(true);
         f.set(configKey, o);
@@ -233,7 +231,7 @@ public class VpcManagerImplTest {
         Map<Service, Set<Provider>> map = manager.getVpcOffSvcProvidersMap(vpcOffId);
 
         assertNotNull(map);
-        assertEquals(map.size(),1);
+        assertEquals(map.size(), 1);
     }
 
     protected Map<String, String> createFakeCapabilityInputMap() {
@@ -397,12 +395,12 @@ public class VpcManagerImplTest {
         Mockito.when(vlanVO.getVlanNetmask()).thenReturn("netmask");
         Mockito.when(vlanDao.findById(anyLong())).thenReturn(vlanVO);
         Mockito.doAnswer((org.mockito.stubbing.Answer<Void>) invocation -> {
-            Commands commands = (Commands)invocation.getArguments()[2];
+            Commands commands = (Commands) invocation.getArguments()[2];
             commands.addCommand("updateNetwork", new UpdateNetworkCommand(ipsToSend));
             return null;
         }).when(commandSetupHelper).setupUpdateNetworkCommands(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doAnswer((org.mockito.stubbing.Answer<Boolean>) invocation -> {
-            Commands commands = (Commands)invocation.getArguments()[1];
+            Commands commands = (Commands) invocation.getArguments()[1];
             commands.setAnswers(new Answer[]{answer});
             return true;
         }).when(networkHelper).sendCommandsToRouter(Mockito.any(), Mockito.any());

@@ -16,19 +16,18 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import static org.junit.Assert.assertEquals;
-
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.BaseViewWithTagInformationVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.server.ResourceTag.ResourceObjectType;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.junit.After;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.BaseViewWithTagInformationVO;
-import com.cloud.server.ResourceTag.ResourceObjectType;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.Assert.assertEquals;
 
 public abstract class GenericDaoBaseWithTagInformationBaseTest<T extends BaseViewWithTagInformationVO,
                                                                 Z extends BaseResponseWithTagInformation> {

@@ -16,38 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.usage.UsageService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-
 import com.cloud.domain.DomainVO;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -69,7 +37,38 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicSecondaryIp;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.usage.UsageService;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.lang.reflect.Field;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiResponseHelperTest {

@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.configuration;
 
-import java.util.List;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.StorageManager;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
@@ -27,11 +28,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.StorageManager;
-import com.cloud.utils.net.NetUtils;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
 
 
 @RunWith(MockitoJUnitRunner.class)

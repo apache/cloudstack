@@ -17,16 +17,32 @@
 
 package com.cloud.user;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
+import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.dao.VpcOfferingJoinDao;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.configuration.dao.ResourceCountDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NetworkDomainDao;
+import com.cloud.projects.ProjectManager;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.UuidUtils;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -44,29 +60,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-
-import com.cloud.api.query.dao.DiskOfferingJoinDao;
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource.ResourceOwnerType;
-import com.cloud.configuration.dao.ResourceCountDao;
-import com.cloud.configuration.dao.ResourceLimitDao;
-import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.projects.ProjectManager;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 
 @RunWith(MockitoJUnitRunner.class)

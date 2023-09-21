@@ -17,18 +17,19 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.times;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.NetworkACLItem.Action;
+import com.cloud.network.vpc.NetworkACLItem.TrafficType;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.User;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
@@ -52,19 +53,17 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.vpc.NetworkACLItem.Action;
-import com.cloud.network.vpc.NetworkACLItem.TrafficType;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.User;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkACLServiceImplTest {

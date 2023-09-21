@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import com.cloud.api.query.vo.UserVmJoinVO;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.After;
 import org.junit.Before;
@@ -23,8 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import com.cloud.api.query.vo.UserVmJoinVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseTest<UserVmJoinVO, UserVmResponse> {

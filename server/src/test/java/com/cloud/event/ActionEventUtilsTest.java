@@ -16,32 +16,6 @@
 // under the License.
 package com.cloud.event;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.Event;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.IpAddress;
@@ -60,6 +34,30 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ActionEventUtilsTest {

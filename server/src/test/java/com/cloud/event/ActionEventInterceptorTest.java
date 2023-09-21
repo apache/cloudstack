@@ -17,16 +17,17 @@
 
 package com.cloud.event;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.configuration.Config;
+import com.cloud.event.dao.EventDao;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
@@ -46,17 +47,14 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import com.cloud.configuration.Config;
-import com.cloud.event.dao.EventDao;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ActionEventInterceptorTest {

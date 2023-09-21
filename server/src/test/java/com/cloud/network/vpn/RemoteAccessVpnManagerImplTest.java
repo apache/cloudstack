@@ -17,8 +17,6 @@ package com.cloud.network.vpn;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import java.lang.reflect.InvocationTargetException;
-import javax.naming.ConfigurationException;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,6 +24,9 @@ import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.naming.ConfigurationException;
+import java.lang.reflect.InvocationTargetException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RemoteAccessVpnManagerImplTest extends TestCase {

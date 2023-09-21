@@ -16,40 +16,6 @@
 // under the License.
 package com.cloud.server;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
-import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
-import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
-import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
-import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
@@ -79,6 +45,39 @@ import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagementServerImplTest {

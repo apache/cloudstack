@@ -17,27 +17,6 @@
 
 package com.cloud.api.query;
 
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -55,7 +34,27 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QueryManagerImplTest {

@@ -17,29 +17,32 @@
 
 package com.cloud.resource;
 
-import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
-import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
-import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
-import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.utils.ssh.SshException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -56,31 +59,27 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.GetVncPortAnswer;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StorageManager;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.utils.ssh.SshException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.trilead.ssh2.Connection;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import static com.cloud.resource.ResourceState.Event.ErrorsCorrected;
+import static com.cloud.resource.ResourceState.Event.InternalEnterMaintenance;
+import static com.cloud.resource.ResourceState.Event.UnableToMaintain;
+import static com.cloud.resource.ResourceState.Event.UnableToMigrate;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceManagerImplTest {

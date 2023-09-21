@@ -16,13 +16,12 @@
 // under the License.
 package com.cloud.api.query.dao;
 
+import com.cloud.api.query.vo.VolumeJoinVO;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-
-import com.cloud.api.query.vo.VolumeJoinVO;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
