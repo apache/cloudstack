@@ -169,17 +169,15 @@ public class Ipv6ServiceImplTest {
         });
         apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class);
         apiDBUtilsMocked.when(() -> ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+        usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class);
     }
 
     @After
     public void tearDown() throws Exception {
         apiDBUtilsMocked.close();
-        if (actionEventUtilsMocked != null) {
-            actionEventUtilsMocked.close();
-        }
-        if (usageEventUtilsMocked != null) {
-            usageEventUtilsMocked.close();
-        }
+        actionEventUtilsMocked.close();
+        usageEventUtilsMocked.close();
     }
 
     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {
@@ -438,9 +436,7 @@ public class Ipv6ServiceImplTest {
         }
         Mockito.when(nicDao.listPlaceholderNicsByNetworkIdAndVmType(networkId, VirtualMachine.Type.DomainRouter)).thenReturn(placeholderNics);
         Mockito.when(nicDao.createForUpdate(nicId)).thenReturn(new NicVO(publicReserver, 100L, 1L, VirtualMachine.Type.DomainRouter));
-        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
-        usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class);
     }
 
     @Test
@@ -776,9 +772,7 @@ public class Ipv6ServiceImplTest {
             removedNics.add((Long)invocation.getArguments()[0]);
             return true;
         });
-        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         actionEventUtilsMocked.when(() -> ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
-        usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class);
         ipv6Service.removePublicIpv6PlaceholderNics(network);
         Assert.assertEquals(1, removedNics.size());
         Assert.assertEquals(nicId, removedNics.get(0));
