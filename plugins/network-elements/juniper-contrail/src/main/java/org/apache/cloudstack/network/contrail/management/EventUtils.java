@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.stereotype.Component;
@@ -42,13 +43,19 @@ import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentMethodInterceptor;
 
+
 @Component
 public class EventUtils {
     private static final Logger s_logger = Logger.getLogger(EventUtils.class);
 
+    private static EventDistributor eventDistributor;
     protected static  EventBus s_eventBus = null;
 
     public EventUtils() {
+    }
+
+    public static void setEventDistributor(EventDistributor eventDistributorImpl) {
+        eventDistributor = eventDistributorImpl;
     }
 
     private static void publishOnMessageBus(String eventCategory, String eventType, String details, Event.State state) {
@@ -58,6 +65,7 @@ public class EventUtils {
         }
 
         try {
+            setEventDistributor(ComponentContext.getComponent(EventDistributor.class));
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
              return; // no provider is configured to provide events bus, so just return
@@ -66,18 +74,16 @@ public class EventUtils {
         org.apache.cloudstack.framework.events.Event event =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), null);
 
-        Map<String, String> eventDescription = new HashMap<String, String>();
+        Map<String, String> eventDescription = new HashMap<>();
         eventDescription.put("event", eventType);
         eventDescription.put("status", state.toString());
         eventDescription.put("details", details);
         event.setDescription(eventDescription);
-        try {
-            s_eventBus.publish(event);
-        } catch (EventBusException evx) {
-            String errMsg = "Failed to publish contrail event.";
-            s_logger.warn(errMsg, evx);
+        List<EventBusException> exceptions = eventDistributor.publish(event);
+        for (EventBusException ex : exceptions) {
+            String errMsg = "Failed to publish event.";
+            s_logger.warn(errMsg, ex);
         }
-
     }
 
     public static class EventInterceptor implements ComponentMethodInterceptor, MethodInterceptor {
@@ -118,7 +124,7 @@ public class EventUtils {
         }
 
         protected List<ActionEvent> getActionEvents(Method m) {
-            List<ActionEvent> result = new ArrayList<ActionEvent>();
+            List<ActionEvent> result = new ArrayList<>();
 
             ActionEvents events = m.getAnnotation(ActionEvents.class);
 
