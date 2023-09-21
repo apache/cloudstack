@@ -98,7 +98,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     @Override
-    public ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd) {
+    public ListResponse<DataStoreObjectResponse> listImageStoreObjects(ListImageStoreObjectsCmd cmd) {
         Long imageStoreId = cmd.getStoreId();
         String path = cmd.getPath();
 
@@ -110,7 +110,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     @Override
-    public ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd) {
+    public ListResponse<DataStoreObjectResponse> listPrimaryStoreObjects(ListStoragePoolObjectsCmd cmd) {
         Long storeId = cmd.getStoreId();
         String path = cmd.getPath();
 

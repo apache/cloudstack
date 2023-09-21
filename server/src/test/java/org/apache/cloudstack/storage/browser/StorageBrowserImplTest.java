@@ -183,7 +183,7 @@ public class StorageBrowserImplTest {
         ListDataStoreObjectsAnswer answer = Mockito.mock(ListDataStoreObjectsAnswer.class);
         Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStore, path, 0, 10);
 
-        ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStore(cmd);
+        ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStoreObjects(cmd);
 
         Assert.assertNotNull(response);
     }
@@ -204,7 +204,7 @@ public class StorageBrowserImplTest {
         ListDataStoreObjectsAnswer answer = Mockito.mock(ListDataStoreObjectsAnswer.class);
         Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStore, path, 0, 10);
 
-        ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStore(cmd);
+        ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStoreObjects(cmd);
 
         Assert.assertNotNull(response);
         Assert.assertEquals(answer.getPaths().size(), response.getResponses().size());

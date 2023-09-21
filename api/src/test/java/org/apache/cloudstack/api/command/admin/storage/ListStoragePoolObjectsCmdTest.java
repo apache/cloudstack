@@ -88,7 +88,7 @@ public class ListStoragePoolObjectsCmdTest {
     @Test
     public void testSuccessfulExecution() {
         ListResponse<DataStoreObjectResponse> response = Mockito.mock(ListResponse.class);
-        Mockito.when(storageBrowser.listPrimaryStore(cmd)).thenReturn(response);
+        Mockito.when(storageBrowser.listPrimaryStoreObjects(cmd)).thenReturn(response);
         cmd.execute();
         Assert.assertEquals(response, cmd.getResponseObject());
     }

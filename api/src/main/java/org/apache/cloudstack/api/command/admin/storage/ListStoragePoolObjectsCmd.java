@@ -29,7 +29,7 @@ import javax.inject.Inject;
 import java.nio.file.Path;
 
 
-@APICommand(name = "listStoragePoolObjects", description = "Lists objects at specified path on image stores.",
+@APICommand(name = "listStoragePoolObjects", description = "Lists objects at specified path on a storage pool.",
             responseObject = DataStoreObjectResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListStoragePoolObjectsCmd extends BaseListCmd {
@@ -70,7 +70,7 @@ public class ListStoragePoolObjectsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStore(this);
+        ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStoreObjects(this);
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);

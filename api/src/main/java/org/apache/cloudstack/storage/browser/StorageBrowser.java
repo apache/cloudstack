@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd
 import org.apache.cloudstack.api.response.ListResponse;
 
 public interface StorageBrowser extends PluggableService {
-    ListResponse<DataStoreObjectResponse> listImageStore(ListImageStoreObjectsCmd cmd);
+    ListResponse<DataStoreObjectResponse> listImageStoreObjects(ListImageStoreObjectsCmd cmd);
 
-    ListResponse<DataStoreObjectResponse> listPrimaryStore(ListStoragePoolObjectsCmd cmd);
+    ListResponse<DataStoreObjectResponse> listPrimaryStoreObjects(ListStoragePoolObjectsCmd cmd);
 }

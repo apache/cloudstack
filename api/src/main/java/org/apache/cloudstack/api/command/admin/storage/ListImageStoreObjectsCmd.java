@@ -28,7 +28,7 @@ import org.apache.cloudstack.storage.browser.StorageBrowser;
 import javax.inject.Inject;
 import java.nio.file.Path;
 
-@APICommand(name = "listImageStoreObjects", description = "Lists objects at specified path on image stores.",
+@APICommand(name = "listImageStoreObjects", description = "Lists objects at specified path on an image store.",
             responseObject = DataStoreObjectResponse.class, since = "4.19.0", requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class ListImageStoreObjectsCmd extends BaseListCmd {
@@ -69,7 +69,7 @@ public class ListImageStoreObjectsCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStore(this);
+        ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStoreObjects(this);
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);

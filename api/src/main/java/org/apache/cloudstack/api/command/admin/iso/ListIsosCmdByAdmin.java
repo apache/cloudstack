@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListIsosCmdByAdmin extends ListIsosCmd implements AdminCmd {
     @Parameter(name = ApiConstants.DATASTORE_ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
-               description = "the IDs of the image or image cache store", since = "4.19")
+               description = "ID of the image or image cache store", since = "4.19")
     private Long dataStoreId;
 
 

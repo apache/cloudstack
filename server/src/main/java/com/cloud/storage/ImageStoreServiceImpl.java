@@ -145,7 +145,7 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
 
         if (isMigrateJobRunning()){
             message = "A migrate job is in progress, please try again later...";
-            return new MigrationResponse(message, null, false);
+            return new MigrationResponse(message, policy.toString(), false);
         }
 
         CallContext.current().setEventDetails("Migrating files/data objects from : " + imagestores.get(0) + " to: " + imagestores.subList(1, imagestores.size()));

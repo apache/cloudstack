@@ -90,7 +90,7 @@ public class ListImageStoreObjectsCmdTest {
     @Test
     public void testSuccessfulExecution() {
         ListResponse<DataStoreObjectResponse> response = Mockito.mock(ListResponse.class);
-        Mockito.when(storageBrowser.listImageStore(cmd)).thenReturn(response);
+        Mockito.when(storageBrowser.listImageStoreObjects(cmd)).thenReturn(response);
         cmd.execute();
         Assert.assertEquals(response, cmd.getResponseObject());
     }
