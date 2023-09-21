@@ -64,8 +64,8 @@
     "icon": "question-circle-outlined",
     "links": [
       {
-        "title": "Giles Docs",
-        "text": "SB documentation website",
+        "title": "Documentation",
+        "text": "CloudStack documentation website",
         "link": "https://docs.cloudstack.apache.org/en/latest/",
         "icon": "read-outlined"
       },
