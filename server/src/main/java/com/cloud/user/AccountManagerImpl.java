@@ -1812,15 +1812,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (account == null || account.getRemoved() != null) {
-            if (account != null) {
-                s_logger.info("The account:" + account.getAccountName() + " is already removed");
-            }
+        if (! isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
+        // Account that manages project(s) can't be removed
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+        if (!managedProjectIds.isEmpty()) {
+            StringBuilder projectIds = new StringBuilder();
+            for (Long projectId : managedProjectIds) {
+                projectIds.append(projectId).append(", ");
+            }
+
+            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
+        }
+
+        CallContext.current().putContextParameter(Account.class, account.getUuid());
+
+        return deleteAccount(account, callerUserId, caller);
+    }
+
+    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+        if (account == null) {
+            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
+            return false;
+        }
+        if (account.getRemoved() != null) {
+            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            return false;
+        }
         // don't allow removing Project account
-        if (account == null || account.getType() == Account.Type.PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             throw new InvalidParameterValueException("The specified account does not exist in the system");
         }
 
@@ -1830,21 +1852,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account.isDefault()) {
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
-
-        // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
-            for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId + ", ");
-            }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
-        }
-
-        CallContext.current().putContextParameter(Account.class, account.getUuid());
-
-        return deleteAccount(account, callerUserId, caller);
+        return true;
     }
 
     @Override
@@ -3327,7 +3335,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
         UserVO userVO = null;
         if (userId != null) {
-            userVO = validateUser(userId, caller.getDomainId());
+            userVO = validateUser(userId);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
@@ -3349,15 +3357,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserVO validateUser(Long userId, Long domainId) {
+    private UserVO validateUser(Long userId) {
         UserVO user = null;
         if (userId != null) {
             user = _userDao.findById(userId);
             if (user == null) {
                 throw new InvalidParameterValueException("Invalid user ID provided");
-            }
-            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
-                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
             }
         }
         return user;

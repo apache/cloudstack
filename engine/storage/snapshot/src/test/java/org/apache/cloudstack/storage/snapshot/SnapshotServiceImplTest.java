@@ -29,24 +29,20 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.storage.DataStoreRole;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SnapshotServiceImpl.class})
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class SnapshotServiceImplTest {
 
@@ -61,15 +57,7 @@ public class SnapshotServiceImplTest {
     SnapshotDataFactory _snapshotFactory;
 
     @Mock
-    AsyncCallFuture<SnapshotResult> futureMock;
-
-    @Mock
     AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller;
-
-    @Before
-    public void testSetUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testRevertSnapshotWithNoPrimaryStorageEntry() throws Exception {
@@ -86,13 +74,13 @@ public class SnapshotServiceImplTest {
 
         PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
         Mockito.when(store.getDriver()).thenReturn(driver);
-        Mockito.doNothing().when(driver).revertSnapshot(snapshot, null, caller);
 
         SnapshotResult result = Mockito.mock(SnapshotResult.class);
-        PowerMockito.whenNew(AsyncCallFuture.class).withNoArguments().thenReturn(futureMock);
-        Mockito.when(futureMock.get()).thenReturn(result);
-        Mockito.when(result.isFailed()).thenReturn(false);
-
-        Assert.assertEquals(true, snapshotService.revertSnapshot(snapshot));
+        try (MockedConstruction<AsyncCallFuture> ignored = Mockito.mockConstruction(AsyncCallFuture.class, (mock, context) -> {
+            Mockito.when(mock.get()).thenReturn(result);
+            Mockito.when(result.isFailed()).thenReturn(false);
+        })) {
+            Assert.assertTrue(snapshotService.revertSnapshot(snapshot));
+        }
     }
 }

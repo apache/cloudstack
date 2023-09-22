@@ -1113,7 +1113,7 @@ public class ApiDBUtils {
     }
 
     public static GuestOS findGuestOSByDisplayName(String displayName) {
-        return s_guestOSDao.listByDisplayName(displayName);
+        return s_guestOSDao.findOneByDisplayName(displayName);
     }
 
     public static HostVO findHostById(Long hostId) {
@@ -1292,6 +1292,9 @@ public class ApiDBUtils {
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
                   break;
+                } else if (pool.getHypervisor() == HypervisorType.Custom) {
+                    type = HypervisorType.Custom;
+                    break;
                 }
             }
         }

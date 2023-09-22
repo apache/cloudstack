@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +151,7 @@ public class ViewResponseHelper {
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, Set<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
             UserVmJoinVO... userVms) {
         Account caller = CallContext.current().getCallingAccount();
-        Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
+        LinkedHashMap<Long, UserVmResponse> vmDataList = new LinkedHashMap<>();
         // Initialise the vmdatalist with the input data
 
         for (UserVmJoinVO userVm : userVms) {
@@ -171,7 +170,7 @@ public class ViewResponseHelper {
 
     public static List<DomainRouterResponse> createDomainRouterResponse(DomainRouterJoinVO... routers) {
         Account caller = CallContext.current().getCallingAccount();
-        Hashtable<Long, DomainRouterResponse> vrDataList = new Hashtable<Long, DomainRouterResponse>();
+        LinkedHashMap<Long, DomainRouterResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (DomainRouterJoinVO vr : routers) {
             DomainRouterResponse vrData = vrDataList.get(vr.getId());
@@ -189,7 +188,7 @@ public class ViewResponseHelper {
 
     public static List<SecurityGroupResponse> createSecurityGroupResponses(List<SecurityGroupJoinVO> securityGroups) {
         Account caller = CallContext.current().getCallingAccount();
-        Hashtable<Long, SecurityGroupResponse> vrDataList = new Hashtable<Long, SecurityGroupResponse>();
+        LinkedHashMap<Long, SecurityGroupResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (SecurityGroupJoinVO vr : securityGroups) {
             SecurityGroupResponse vrData = vrDataList.get(vr.getId());
@@ -207,7 +206,7 @@ public class ViewResponseHelper {
     }
 
     public static List<ProjectResponse> createProjectResponse(EnumSet<DomainDetails> details, ProjectJoinVO... projects) {
-        Hashtable<Long, ProjectResponse> prjDataList = new Hashtable<Long, ProjectResponse>();
+        LinkedHashMap<Long, ProjectResponse> prjDataList = new LinkedHashMap<>();
         // Initialise the prjdatalist with the input data
         for (ProjectJoinVO p : projects) {
             ProjectResponse pData = prjDataList.get(p.getId());
@@ -249,7 +248,7 @@ public class ViewResponseHelper {
     }
 
     public static List<HostResponse> createHostResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
-        Hashtable<Long, HostResponse> vrDataList = new Hashtable<Long, HostResponse>();
+        LinkedHashMap<Long, HostResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
             HostResponse vrData = ApiDBUtils.newHostResponse(vr, details);
@@ -259,7 +258,7 @@ public class ViewResponseHelper {
     }
 
     public static List<HostForMigrationResponse> createHostForMigrationResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
-        Hashtable<Long, HostForMigrationResponse> vrDataList = new Hashtable<Long, HostForMigrationResponse>();
+        LinkedHashMap<Long, HostForMigrationResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
             HostForMigrationResponse vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
@@ -269,7 +268,7 @@ public class ViewResponseHelper {
     }
 
     public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
-        Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
+        LinkedHashMap<Long, VolumeResponse> vrDataList = new LinkedHashMap<>();
         DecimalFormat df = new DecimalFormat("0.0%");
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
@@ -310,7 +309,7 @@ public class ViewResponseHelper {
     }
 
     public static List<StoragePoolResponse> createStoragePoolResponse(StoragePoolJoinVO... pools) {
-        Hashtable<Long, StoragePoolResponse> vrDataList = new Hashtable<Long, StoragePoolResponse>();
+        LinkedHashMap<Long, StoragePoolResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (StoragePoolJoinVO vr : pools) {
             StoragePoolResponse vrData = vrDataList.get(vr.getId());
@@ -347,7 +346,7 @@ public class ViewResponseHelper {
     }
 
     public static List<ImageStoreResponse> createImageStoreResponse(ImageStoreJoinVO... stores) {
-        Hashtable<Long, ImageStoreResponse> vrDataList = new Hashtable<Long, ImageStoreResponse>();
+        LinkedHashMap<Long, ImageStoreResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (ImageStoreJoinVO vr : stores) {
             ImageStoreResponse vrData = vrDataList.get(vr.getId());
@@ -364,7 +363,7 @@ public class ViewResponseHelper {
     }
 
     public static List<StoragePoolResponse> createStoragePoolForMigrationResponse(StoragePoolJoinVO... pools) {
-        Hashtable<Long, StoragePoolResponse> vrDataList = new Hashtable<Long, StoragePoolResponse>();
+        LinkedHashMap<Long, StoragePoolResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
         for (StoragePoolJoinVO vr : pools) {
             StoragePoolResponse vrData = vrDataList.get(vr.getId());
@@ -579,7 +578,7 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createTemplateResponse(EnumSet<ApiConstants.DomainDetails> detailsView, ResponseView view, TemplateJoinVO... templates) {
-        LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<String, TemplateResponse>();
+        LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
@@ -613,7 +612,7 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createTemplateUpdateResponse(ResponseView view, TemplateJoinVO... templates) {
-        Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
+        LinkedHashMap<Long, TemplateResponse> vrDataList = new LinkedHashMap<>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {
@@ -629,7 +628,7 @@ public class ViewResponseHelper {
     }
 
     public static List<TemplateResponse> createIsoResponse(ResponseView view, TemplateJoinVO... templates) {
-        Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
+        LinkedHashMap<String, TemplateResponse> vrDataList = new LinkedHashMap<>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
@@ -645,7 +644,7 @@ public class ViewResponseHelper {
     }
 
     public static List<AffinityGroupResponse> createAffinityGroupResponses(List<AffinityGroupJoinVO> groups) {
-        Hashtable<Long, AffinityGroupResponse> vrDataList = new Hashtable<Long, AffinityGroupResponse>();
+        LinkedHashMap<Long, AffinityGroupResponse> vrDataList = new LinkedHashMap<>();
         for (AffinityGroupJoinVO vr : groups) {
             AffinityGroupResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {

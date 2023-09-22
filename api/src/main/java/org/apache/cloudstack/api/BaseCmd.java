@@ -21,8 +21,10 @@ import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -42,6 +44,7 @@ import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.ImageStoreService;
 import org.apache.cloudstack.usage.UsageService;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
@@ -456,4 +459,18 @@ public abstract class BaseCmd {
         return ApiCommandResourceType.None;
     }
 
+    public Map<String, String> convertDetailsToMap(Map details) {
+        Map<String, String> detailsMap = new HashMap<String, String>();
+        if (MapUtils.isNotEmpty(details)) {
+            Collection parameterCollection = details.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (Map.Entry<String,String> entry: value.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return detailsMap;
+    }
 }
