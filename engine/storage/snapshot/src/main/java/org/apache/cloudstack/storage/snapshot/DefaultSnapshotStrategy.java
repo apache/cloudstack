@@ -371,22 +371,29 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 }
                 return true;
-            } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject)) {
+            } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject, isLastSnapshotRef)) {
                 return true;
             }
             s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
-            snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+            if (isLastSnapshotRef) {
+                snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+            }
         } catch (NoTransitionException ex) {
             s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
         return false;
     }
 
-    protected boolean deleteSnapshotInPrimaryStorage(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo, String storageToString, SnapshotObject snapshotObject) throws NoTransitionException {
+    protected boolean deleteSnapshotInPrimaryStorage(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo,
+         String storageToString, SnapshotObject snapshotObject, boolean isLastSnapshotRef) throws NoTransitionException {
         try {
             if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
-                snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
-                s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                String msg = String.format("%s was deleted on %s.", snapshotVo, storageToString);
+                if (isLastSnapshotRef) {
+                    msg = String.format("%s We will mark the snapshot as destroyed.", msg);
+                    snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+                }
+                s_logger.debug(msg);
                 return true;
             }
         } catch (CloudRuntimeException ex) {

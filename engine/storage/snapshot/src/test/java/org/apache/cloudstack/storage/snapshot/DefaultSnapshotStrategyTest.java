@@ -236,19 +236,25 @@ public class DefaultSnapshotStrategyTest {
     public void deleteSnapshotInPrimaryStorageTestReturnTrueIfDeleteReturnsTrue() throws NoTransitionException {
         Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, snapshotObjectMock));
+        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, snapshotObjectMock, true));
+    }
+
+    @Test
+    public void deleteSnapshotInPrimaryStorageTestReturnTrueIfDeleteNotLastRefReturnsTrue() throws NoTransitionException {
+        Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
+        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, snapshotObjectMock, false));
     }
 
     @Test
     public void deleteSnapshotInPrimaryStorageTestReturnFalseIfDeleteReturnsFalse() throws NoTransitionException {
         Mockito.doReturn(false).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null));
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null, true));
     }
 
     @Test
     public void deleteSnapshotInPrimaryStorageTestReturnFalseIfDeleteThrowsException() throws NoTransitionException {
         Mockito.doThrow(CloudRuntimeException.class).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null));
+        Assert.assertFalse(defaultSnapshotStrategySpy.deleteSnapshotInPrimaryStorage(null, null, null, null, true));
     }
 
     @Test
