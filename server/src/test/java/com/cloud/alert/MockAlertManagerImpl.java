@@ -17,11 +17,10 @@
 
 package com.cloud.alert;
 
-import java.util.Map;
+import com.cloud.utils.component.ManagerBase;
 
 import javax.naming.ConfigurationException;
-
-import com.cloud.utils.component.ManagerBase;
+import java.util.Map;
 
 public class MockAlertManagerImpl extends ManagerBase implements AlertManager {
 
