@@ -17,12 +17,23 @@
 
 package com.cloud.api.query;
 
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.event.dao.EventJoinDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -35,33 +46,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.api.query.vo.EventJoinVO;
-import com.cloud.event.dao.EventJoinDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.Network;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.projects.Project;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.VirtualMachine;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ComponentContext.class, ViewResponseHelper.class})
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class QueryManagerImplTest {
     public static final long USER_ID = 1;
     public static final long ACCOUNT_ID = 1;
@@ -91,19 +86,12 @@ public class QueryManagerImplTest {
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
-        Mockito.doNothing().when(accountManager).buildACLSearchParameters(Mockito.any(Account.class), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyList(),
-                Mockito.any(), Mockito.anyBoolean(), Mockito.anyBoolean());
-        Mockito.doNothing().when(accountManager).buildACLSearchBuilder(Mockito.any(SearchBuilder.class), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
-                Mockito.any(Project.ListProjectResourcesCriteria.class));
-        Mockito.doNothing().when(accountManager).buildACLViewSearchCriteria(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(),
-                Mockito.any(Project.ListProjectResourcesCriteria.class));
         final SearchBuilder<EventJoinVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         final SearchCriteria<EventJoinVO> searchCriteria = Mockito.mock(SearchCriteria.class);
         final EventJoinVO eventJoinVO = Mockito.mock(EventJoinVO.class);
         when(searchBuilder.entity()).thenReturn(eventJoinVO);
         when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(eventJoinDao.createSearchBuilder()).thenReturn(searchBuilder);
-        Mockito.when(eventJoinDao.createSearchCriteria()).thenReturn(searchCriteria);
     }
 
     private ListEventsCmd setupMockListEventsCmd() {
@@ -134,10 +122,11 @@ public class QueryManagerImplTest {
         for (EventJoinVO vt : events) {
             respList.add(eventJoinDao.newEventResponse(vt));
         }
-        PowerMockito.mockStatic(ViewResponseHelper.class);
-        Mockito.when(ViewResponseHelper.createEventResponse(Mockito.any())).thenReturn(respList);
-        ListResponse<EventResponse> result = queryManager.searchForEvents(cmd);
-        Assert.assertEquals((int) result.getCount(), events.size());
+        try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+            Mockito.when(ViewResponseHelper.createEventResponse(Mockito.any())).thenReturn(respList);
+            ListResponse<EventResponse> result = queryManager.searchForEvents(cmd);
+            Assert.assertEquals((int) result.getCount(), events.size());
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)

@@ -16,14 +16,13 @@
 // under the License.
 package com.cloud.network;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
-
-import com.cloud.dc.DataCenter;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.Pair;
 
 public class NetworkModelImplTest {
     final String[] ip4Dns1 = {"5.5.5.5", "6.6.6.6"};

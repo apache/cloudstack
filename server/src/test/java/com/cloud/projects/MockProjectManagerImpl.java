@@ -16,17 +16,16 @@
 // under the License.
 package com.cloud.projects;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
+
+import javax.naming.ConfigurationException;
+import java.util.List;
+import java.util.Map;
 
 public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {
 
