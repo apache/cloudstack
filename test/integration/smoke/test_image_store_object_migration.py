@@ -155,7 +155,7 @@ class TestImageStoreObjectMigration(cloudstackTestCase):
             secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
 
             if len(secondaryStores) < 2:
-                raise self.skipTest("Only one secondary storage available hence skipping")
+                self.skipTest("Only one secondary storage available hence skipping")
 
             for store in secondaryStores:
                 if store.id != datastoreid:
