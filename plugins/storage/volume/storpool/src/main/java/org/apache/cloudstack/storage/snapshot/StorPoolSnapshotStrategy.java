@@ -132,8 +132,11 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
         }
+        SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
+        if (snapshotOnPrimary == null) {
+            return StrategyPriority.CANT_HANDLE;
+        }
         if (zoneId != null) { // If zoneId is present, then it should be same as the zoneId of primary store
-            SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
             StoragePoolVO storagePoolVO = _primaryDataStoreDao.findById(snapshotOnPrimary.getDataStoreId());
             if (!zoneId.equals(storagePoolVO.getDataCenterId())) {
                 return StrategyPriority.CANT_HANDLE;
