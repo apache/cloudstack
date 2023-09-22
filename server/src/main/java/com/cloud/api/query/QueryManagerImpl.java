@@ -282,6 +282,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
@@ -523,6 +524,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ResourceIconDao resourceIconDao;
+    @Inject
+    StorageManager storageManager;
 
     @Inject
     private ManagementServerHostDao msHostDao;
@@ -3155,8 +3158,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
+        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponses(cmd.getVirtualMachineId(), result.first());
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -3191,6 +3194,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storagePoolId = cmd.getStoragePoolId();
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
+        final Long vmId = cmd.getVirtualMachineId();
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
@@ -3298,6 +3302,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
+        if (vmId != null) {
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Unable to find the VM instance with the specified ID");
+            }
+            if (!isRootAdmin) {
+                accountMgr.checkAccess(account, null, false, vm);
+            }
+        }
+
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
         if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
@@ -3387,6 +3401,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
+        final Long templateId = cmd.getTemplateId();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -3581,6 +3596,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
         }
 
+        List<String> hostTags = new ArrayList<>();
+        if (templateId != null) {
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+            if (template == null) {
+                throw new InvalidParameterValueException("Unable to find template with the specified ID");
+            }
+            if (caller.getType() != Account.Type.ADMIN) {
+                accountMgr.checkAccess(caller, null, false, template);
+            }
+            if (StringUtils.isNotEmpty(template.getTemplateTag())) {
+                hostTags.add(template.getTemplateTag());
+            }
+        }
+
         if (currentVmOffering != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
             List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
@@ -3598,25 +3627,28 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("storageTags", SearchCriteria.Op.SC, scc);
             }
 
-            List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
-            if (!hostTags.isEmpty()) {
-                SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
-                for(String tag : hostTags) {
-                    hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
-                }
-                hostTagsSearchBuilder.done();
-
-                SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
-                for(String tag : hostTags) {
-                    hostTagsSearchCriteria.setParameters(tag, tag);
-                }
-
-                SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
-                finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
-                finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
-
-                sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
+            List<String> offeringHostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
+            if (!offeringHostTags.isEmpty()) {
+                hostTags.addAll(offeringHostTags);
             }
+        }
+        if (CollectionUtils.isNotEmpty(hostTags)) {
+            SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
+            for(String tag : hostTags) {
+                hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
+            }
+            hostTagsSearchBuilder.done();
+
+            SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
+            for(String tag : hostTags) {
+                hostTagsSearchCriteria.setParameters(tag, tag);
+            }
+
+            SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+            finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
+            finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
+
+            sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
         }
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);

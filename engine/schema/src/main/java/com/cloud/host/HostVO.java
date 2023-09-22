@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.host;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +46,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import java.util.Arrays;
@@ -761,7 +764,28 @@ public class HostVO implements Host {
         this.uuid = uuid;
     }
 
-    public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering){
+    public boolean checkHostServiceOfferingAndTemplateTags(ServiceOffering serviceOffering, VirtualMachineTemplate template) {
+        if (serviceOffering == null || template == null) {
+            return false;
+        }
+        if (StringUtils.isEmpty(serviceOffering.getHostTag()) && StringUtils.isEmpty(template.getTemplateTag())) {
+            return true;
+        }
+        if (getHostTags() == null) {
+            return false;
+        }
+        HashSet<String> hostTagsSet = new HashSet<>(getHostTags());
+        List<String> tags = new ArrayList<>();
+        if (StringUtils.isNotEmpty(serviceOffering.getHostTag())) {
+            tags.addAll(Arrays.asList(serviceOffering.getHostTag().split(",")));
+        }
+        if (StringUtils.isNotEmpty(template.getTemplateTag()) && !tags.contains(template.getTemplateTag())) {
+            tags.add(template.getTemplateTag());
+        }
+        return hostTagsSet.containsAll(tags);
+    }
+
+    public boolean checkHostServiceOfferingTags(ServiceOffering serviceOffering) {
         if (serviceOffering == null) {
             return false;
         }
@@ -773,7 +797,6 @@ public class HostVO implements Host {
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
             return true;
         }
-
         List<String> serviceOfferingTags = Arrays.asList(serviceOffering.getHostTag().split(","));
         return this.getHostTags() != null && this.getHostTags().containsAll(serviceOfferingTags);
     }

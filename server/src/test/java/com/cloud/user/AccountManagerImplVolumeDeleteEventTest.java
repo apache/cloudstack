@@ -145,8 +145,6 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
         lenient().when(offering.getCpu()).thenReturn(500);
         lenient().when(offering.getId()).thenReturn(1l);
-        when(offering.getCpu()).thenReturn(500);
-        when(offering.getRamSize()).thenReturn(500);
         when(serviceOfferingDao.findByIdIncludingRemoved(nullable(Long.class), nullable(Long.class))).thenReturn(offering);
 
         lenient().when(_domainMgr.getDomain(nullable(Long.class))).thenReturn(domain);

@@ -30,6 +30,8 @@ import com.cloud.utils.fsm.StateObject;
 
 public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State>, Displayable {
 
+    static final long DISK_OFFERING_SUITABILITY_CHECK_VOLUME_ID = -1;
+
     // Managed storage volume parameters (specified in the compute/disk offering for PowerFlex)
     String BANDWIDTH_LIMIT_IN_MBPS = "bandwidthLimitInMbps";
     String IOPS_LIMIT = "iopsLimit";

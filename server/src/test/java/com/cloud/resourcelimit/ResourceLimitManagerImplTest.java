@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.resourcelimit;
 
-import com.cloud.configuration.ResourceLimit;
-import com.cloud.vpc.MockResourceLimitManagerImpl;
-import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.cloud.configuration.ResourceLimit;
+import com.cloud.vpc.MockResourceLimitManagerImpl;
+
+import junit.framework.TestCase;
 
 public class ResourceLimitManagerImplTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImplTest.class);
@@ -92,7 +94,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         String msg = "Update Resource Limit: TEST FAILED";
         ResourceLimit result = null;
         try {
-            result = _resourceLimitService.updateResourceLimit(accountId, domainId, resourceType, max);
+            result = _resourceLimitService.updateResourceLimit(accountId, domainId, resourceType, max, null);
             assertFalse(msg, (result != null || (result == null && max != null && max.longValue() == -1L)));
         } catch (Exception ex) {
             fail(msg);

@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -341,7 +342,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId, Long clusterId, int level, Long limit) {
+    public List<SummedCapacity> listCapacitiesGroupedByLevelAndType(Integer capacityType, Long zoneId, Long podId,
+        Long clusterId, int level, List<Long> hostIds, List<Long> poolIds, Long limit) {
 
         StringBuilder finalQuery = new StringBuilder();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -379,6 +381,18 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         if (capacityType != null) {
             finalQuery.append(" AND capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
+        }
+        if (CollectionUtils.isNotEmpty(hostIds)) {
+            finalQuery.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
+            if (capacityType == null) {
+                finalQuery.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+        }
+        if (CollectionUtils.isNotEmpty(poolIds)) {
+            finalQuery.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
+            if (capacityType == null) {
+                finalQuery.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
         }
 
         switch (level) {
@@ -464,7 +478,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId) {
+    public List<SummedCapacity> findFilteredCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, List<Long> hostIds, List<Long> poolIds) {
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -516,6 +530,18 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         if (capacityType != null) {
             sql.append(" AND capacity.capacity_type = ?");
             resourceIdList.add(capacityType.longValue());
+        }
+        if (CollectionUtils.isNotEmpty(hostIds)) {
+            sql.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(hostIds, ",")));
+            if (capacityType == null) {
+                sql.append(String.format(" AND capacity_type NOT IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
+        }
+        if (CollectionUtils.isNotEmpty(poolIds)) {
+            sql.append(String.format(" AND capacity.host_id IN (%s)", StringUtils.join(poolIds, ",")));
+            if (capacityType == null) {
+                sql.append(String.format(" AND capacity_type IN (%s)", StringUtils.join(Capacity.STORAGE_CAPACITY_TYPES, ",")));
+            }
         }
 
         if (podId == null && clusterId == null) {
@@ -591,6 +617,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId) {
+        return findFilteredCapacityBy(capacityType, zoneId, podId, clusterId, null, null);
     }
 
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {

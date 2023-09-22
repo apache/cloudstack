@@ -34,6 +34,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.resource.StorageProcessor;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -205,6 +206,8 @@ public class VolumeServiceImpl implements VolumeService {
     private SnapshotApiService snapshotApiService;
     @Inject
     private PassphraseDao passphraseDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -1611,8 +1614,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (vol.getAttachedVM() == null || vol.getAttachedVM().getType() == VirtualMachine.Type.User) {
             // Decrement the resource count for volumes and primary storage belonging user VM's only
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.volume, vol.isDisplay());
-            _resourceLimitMgr.decrementResourceCount(vol.getAccountId(), ResourceType.primary_storage, vol.isDisplay(), new Long(vol.getSize()));
+            _resourceLimitMgr.decrementVolumeResourceCount(vol.getAccountId(), vol.isDisplay(), vol.getSize(), diskOfferingDao.findById(vol.getDiskOfferingId()));
         }
     }
 

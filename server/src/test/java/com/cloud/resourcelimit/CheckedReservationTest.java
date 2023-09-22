@@ -41,6 +41,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+
 @RunWith(MockitoJUnitRunner.class)
 public class CheckedReservationTest {
 
@@ -76,7 +78,9 @@ public class CheckedReservationTest {
         lenient().when(reservationDao.persist(Mockito.any())).thenReturn(reservation);
         lenient().when(reservation.getId()).thenReturn(1L);
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService) ) {
-            long id = cr.getId();
+            List<Long> ids = cr.getIds();
+            assertEquals(1, cr.getIds().size());
+            long id = ids.get(0);
             assertEquals(1L, id);
         } catch (NullPointerException npe) {
             fail("NPE caught");

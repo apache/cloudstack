@@ -558,6 +558,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             resourceLimitResponse.setMax(limit.getMax());
         }
+        resourceLimitResponse.setTag(limit.getTag());
         resourceLimitResponse.setObjectName("resourcelimit");
 
         return resourceLimitResponse;
@@ -579,7 +580,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         resourceCountResponse.setResourceType(resourceCount.getType());
         resourceCountResponse.setResourceCount(resourceCount.getCount());
-        resourceCountResponse.setObjectName("resourcecount");
+        resourceCountResponse.setObjectName(ApiConstants.RESOURCE_COUNT);
+        if (StringUtils.isNotEmpty(resourceCount.getTag())) {
+            resourceCountResponse.setTag(resourceCount.getTag());
+        }
         return resourceCountResponse;
     }
 
