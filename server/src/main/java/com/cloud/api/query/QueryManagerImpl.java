@@ -4628,7 +4628,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
         List<SnapshotJoinVO> snapshots;
         if (cmd.isShowUnique()) {
-            snapshots = snapshotJoinDao.findByDistinctIds(snapshotData.stream().map(SnapshotJoinVO::getId).toArray(Long[]::new));
+            snapshots = snapshotJoinDao.findByDistinctIds(zoneId, snapshotData.stream().map(SnapshotJoinVO::getId).toArray(Long[]::new));
         } else {
             snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
         }

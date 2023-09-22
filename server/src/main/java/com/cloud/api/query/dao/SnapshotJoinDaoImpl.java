@@ -70,6 +70,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         snapshotStorePairSearch.done();
 
         snapshotIdsSearch = createSearchBuilder();
+        snapshotIdsSearch.and("zoneId", snapshotIdsSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         snapshotIdsSearch.and("idsIN", snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
         snapshotIdsSearch.groupBy(snapshotIdsSearch.entity().getId());
         snapshotIdsSearch.done();
@@ -231,7 +232,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
     }
 
     @Override
-    public List<SnapshotJoinVO> findByDistinctIds(Long... ids) {
+    public List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids) {
         if (ids == null || ids.length == 0) {
             return new ArrayList<>();
         }
@@ -239,6 +240,9 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", QueryService.SortKeyAscending.value(), null, null);
 
         SearchCriteria<SnapshotJoinVO> sc = snapshotIdsSearch.create();
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
         sc.setParameters("idsIN", ids);
         return searchIncludingRemoved(sc, searchFilter, null, false);
     }

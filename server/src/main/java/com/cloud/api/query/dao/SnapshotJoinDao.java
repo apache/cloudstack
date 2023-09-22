@@ -37,5 +37,5 @@ public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
     Pair<List<SnapshotJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<SnapshotJoinVO> sc, final Filter filter);
 
     List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs);
-    List<SnapshotJoinVO> findByDistinctIds(Long... ids);
+    List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids);
 }
