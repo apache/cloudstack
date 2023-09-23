@@ -3184,8 +3184,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("zoneId", dcId);
         params.put("url", cmd.getUrl());
-...pache/cloudstack/api/command/admin/storage/MigrateResourcesToAnotherSecondaryStorageCmd.java
-
         params.put("name", cmd.getUrl());
         params.put("details", cmd.getDetails());
         params.put("scope", scopeType);
