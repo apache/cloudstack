@@ -61,6 +61,7 @@
                 >
                   <a-select-option v-for="hv in hypervisors" :key="hv" :label="hv">
                     <span>
+                      <global-outlined style="margin-right: 5px" />
                       {{ hv }}
                     </span>
                   </a-select-option>
@@ -99,7 +100,6 @@
                   }"
                   @change="onSelectZoneId"
                   :loading="optionLoading.zones"
-                  v-focus="true"
                 >
                   <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
                     <span>
@@ -124,7 +124,12 @@
                   :options="podSelectOptions"
                   :loading="optionLoading.pods"
                   @change="onSelectPodId"
-                ></a-select>
+                >  <a-select-option v-for="poditem in podSelectOptions" :key="poditem.value" :label="poditem.label">
+                    <span>
+                      <global-outlined style="margin-right: 5px" />
+                      {{ poditem.label }}
+                    </span>
+                </a-select-option></a-select>
               </a-form-item>
             </a-col>
             <a-col v-if="showCluster" :md="24" :lg="8">
@@ -140,7 +145,12 @@
                   :options="clusterSelectOptions"
                   :loading="optionLoading.clusters"
                   @change="onSelectClusterId"
-                ></a-select>
+                ><a-select-option v-for="clusteritem in clusterSelectOptions" :key="clusteritem.value" :label="clusteritem.label">
+                    <span>
+                      <global-outlined style="margin-right: 5px" />
+                      {{ clusteritem.label }}
+                    </span>
+                </a-select-option></a-select>
               </a-form-item>
             </a-col>
             <a-col v-if="showHost" :md="24" :lg="8">
@@ -187,6 +197,32 @@
                 <a-input-password
                   v-model:value="form.password"
                 ></a-input-password>
+              </a-form-item>
+            </a-col>
+            <a-col v-if="showExtHost" :md="24" :lg="8">
+              <a-form-item
+                  name="tmppath"
+                  ref="tmppath"
+                  :label="$t('label.tmppath')">
+                <a-input
+                    v-model:value="form.tmppath"
+                ></a-input>
+              </a-form-item>
+            </a-col>
+            <a-col v-if="showPool" :md="24" :lg="8">
+              <a-form-item
+                name="poolid"
+                ref="poolid"
+                :label="$t('label.storagepool')">
+                <a-select
+                  v-model:value="form.poolid"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="filterOption"
+                  :options="poolSelectOptions"
+                  :loading="optionLoading.pools"
+                  @change="onSelectPoolId"
+                ></a-select>
               </a-form-item>
             </a-col>
             <a-col v-if="showDiskPath" :md="24" :lg="8">
@@ -368,6 +404,15 @@
             class="importform"
             :resource="selectedUnmanagedInstance"
             :cluster="selectedCluster"
+            :host="selectedHost"
+            :pool="selectedPool"
+            :importsource="this.kvmOption"
+            :hypervisor="this.hypervisor"
+            :hostname="this.values.hostname"
+            :username="this.values.username"
+            :password="this.values.password"
+            :tmppath="this.values.tmppath"
+            :diskpath="this.values.diskpath"
             :isOpen="showUnmanageForm"
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
@@ -380,7 +425,7 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
@@ -451,7 +496,8 @@ export default {
         zones: [],
         pods: [],
         clusters: [],
-        hosts: []
+        hosts: [],
+        pools: []
       },
       rowCount: {},
       optionLoading: {
@@ -459,7 +505,8 @@ export default {
         zones: false,
         pods: false,
         clusters: false,
-        hosts: false
+        hosts: false,
+        pools: false
       },
       page: {
         unmanaged: 1,
@@ -481,9 +528,19 @@ export default {
       hypervisor: 'VMware',
       kvmOption: undefined,
       zone: {},
+      pod: {},
+      cluster: {},
+      values: undefined,
       zoneId: undefined,
       podId: undefined,
       clusterId: undefined,
+      hostname: undefined,
+      username: undefined,
+      password: undefined,
+      hostId: undefined,
+      poolId: undefined,
+      diskpath: undefined,
+      tmppath: undefined,
       listInstancesApi: {
         unmanaged: 'listUnmanagedInstances',
         managed: 'listVirtualMachines',
@@ -547,6 +604,9 @@ export default {
     showHost () {
       return (this.kvmOption === 'local')
     },
+    showPool () {
+      return (this.kvmOption === 'shared')
+    },
     showExtHost () {
       return (this.kvmOption === 'external')
     },
@@ -557,7 +617,7 @@ export default {
       return {
         zones: {
           list: 'listZones',
-          isLoad: true,
+          isLoad: false,
           field: 'zoneid',
           options: {
             showicon: true
@@ -589,6 +649,16 @@ export default {
             clusterid: this.clusterId
           },
           field: 'hostid'
+        },
+        pools: {
+          list: 'listStoragePools',
+          isLoad: false,
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId,
+            clusterid: this.clusterId
+          },
+          field: 'poolid'
         }
       }
     },
@@ -636,6 +706,15 @@ export default {
       })
       return options
     },
+    poolSelectOptions () {
+      const options = this.options.pools.map((pool) => {
+        return {
+          label: pool.name,
+          value: pool.id
+        }
+      })
+      return options
+    },
     unmanagedInstanceSelection () {
       return {
         type: 'radio',
@@ -657,6 +736,22 @@ export default {
         return _.find(this.options.clusters, (option) => option.id === this.clusterId)
       }
       return {}
+    },
+    selectedHost () {
+      if (this.options.hosts &&
+          this.options.hosts.length > 0 &&
+          this.hostId) {
+        return _.find(this.options.hosts, (option) => option.id === this.hostId)
+      }
+      return {}
+    },
+    selectedPool () {
+      if (this.options.pools &&
+          this.options.pools.length > 0 &&
+          this.poolId) {
+        return _.find(this.options.pools, (option) => option.id === this.poolId)
+      }
+      return {}
     }
   },
   methods: {
@@ -669,6 +764,7 @@ export default {
       this.unmanagedInstances = []
       this.managedInstances = []
       this.hypervisors = ['VMware', 'KVM']
+      this.hypervisor = 'VMware'
       this.kvmoptions = {
         ImportUnmanaged: {
           name: 'unmanaged',
@@ -713,7 +809,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -751,7 +847,7 @@ export default {
       return 'dark-row'
     },
     handleFetchOptionsSuccess (name, param) {
-      if (['zones', 'pods', 'clusters', 'hosts'].includes(name)) {
+      if (['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         let paramid = ''
         const query = Object.assign({}, this.$route.query)
         if (query[param.field] && _.find(this.options[name], (option) => option.id === query[param.field])) {
@@ -773,6 +869,9 @@ export default {
           } else if (name === 'hosts') {
             this.form.hostid = paramid
             this.onSelectHostId(paramid)
+          } else if (name === 'pools') {
+            this.form.poolid = paramid
+            this.onSelectPoolId(paramid)
           }
         }
       }
@@ -799,24 +898,31 @@ export default {
     },
     onSelectHypervisor (value) {
       this.hypervisor = value
+      if (this.hypervisor === 'VMware') {
+        this.fetchOptions(this.params.zones, 'zones')
+      }
     },
     onSelectKVMOption (value) {
       this.kvmOption = value
+      this.fetchOptions(this.params.zones, 'zones')
     },
     onSelectZoneId (value) {
       this.zoneId = value
       this.podId = null
       this.clusterId = null
       this.hostId = null
+      this.poolId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.resetLists()
       this.form.clusterid = undefined
       this.form.podid = undefined
+      this.form.poolid = undefined
       this.updateQuery('zoneid', value)
       this.fetchOptions(this.params.pods, 'pods')
     },
     onSelectPodId (value) {
       this.podId = value
+      this.pod = _.find(this.options.pods, (option) => option.id === value)
       this.resetLists()
       this.form.clusterid = undefined
       this.updateQuery('podid', value)
@@ -824,17 +930,22 @@ export default {
     },
     onSelectClusterId (value) {
       this.clusterId = value
+      this.cluster = _.find(this.options.clusters, (option) => option.id === value)
       this.resetLists()
       this.updateQuery('clusterid', value)
       if (this.isUnmanaged) {
         this.fetchInstances()
       } else if (this.kvmOption === 'local') {
         this.fetchOptions(this.params.hosts, 'hosts', value)
+      } else if (this.kvmOption === 'shared') {
+        this.fetchOptions(this.params.pools, 'pools', value)
       }
     },
     onSelectHostId (value) {
       this.hostId = value
-      console.log('Host Id', value)
+    },
+    onSelectPoolId (value) {
+      this.poolId = value
     },
     fetchInstances () {
       if (this.isUnmanaged) {
@@ -892,12 +1003,13 @@ export default {
       if (!this.clusterId) {
         return
       }
+      this.values = toRaw(this.form)
       this.unmanagedInstancesLoading = true
-      params.zoneid = 1
-      params.url = '10.0.34.170'
-      params.username = 'root'
-      params.password = 'P@ssword123'
-      params.hypervisor = 'KVM'
+      params.zoneid = this.zoneId
+      params.url = this.values.hostname
+      params.username = this.values.username
+      params.password = this.values.password
+      params.hypervisor = this.hypervisor
       this.searchParams.unmanaged = params
       api(this.listInstancesApi.external, params).then(json => {
         const listUnmanagedInstances = json.listvmsforimportresponse.unmanagedinstance
@@ -968,12 +1080,15 @@ export default {
     },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
-      if (this.unmanagedInstances.length > 0 &&
-        this.unmanagedInstancesSelectedRowKeys.length > 0) {
-        this.selectedUnmanagedInstance = this.unmanagedInstances[this.unmanagedInstancesSelectedRowKeys[0]]
-        this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
-        this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
+      if (this.kvmOption !== 'local' && this.kvmOption !== 'shared') {
+        if (this.unmanagedInstances.length > 0 &&
+            this.unmanagedInstancesSelectedRowKeys.length > 0) {
+          this.selectedUnmanagedInstance = this.unmanagedInstances[this.unmanagedInstancesSelectedRowKeys[0]]
+          this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
+          this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
+        }
       }
+      this.values = toRaw(this.form)
       this.showUnmanageForm = true
     },
     closeImportUnmanagedInstanceForm () {

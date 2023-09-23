@@ -19,7 +19,7 @@
   <div>
     <a-spin :spinning="loading" v-ctrl-enter="handleSubmit">
       <a-row :gutter="12">
-        <a-col :md="24" :lg="7">
+        <a-col :md="24" :lg="7" v-if="false">
           <info-card
             class="vm-info-card"
             :isStatic="true"
@@ -294,6 +294,14 @@ export default {
       type: Object,
       required: true
     },
+    host: {
+      type: Object,
+      required: true
+    },
+    pool: {
+      type: Object,
+      required: true
+    },
     resource: {
       type: Object,
       required: true
@@ -335,7 +343,8 @@ export default {
       minIopsKey: 'minIops',
       maxIopsKey: 'maxIops',
       switches: {},
-      loading: false
+      loading: false,
+      diskpath: ''
     }
   },
   beforeCreate () {
@@ -505,6 +514,10 @@ export default {
         }
       }
       return meta
+    },
+    isLocal () {
+      // return this.option !== 'local'
+      return false
     },
     getMinCpu () {
       if (this.isVmRunning) {
@@ -678,8 +691,21 @@ export default {
         const params = {
           name: this.resource.name,
           clusterid: this.cluster.id,
-          displayname: values.displayname,
-          zoneid: 1
+          displayname: this.values.displayname,
+          zoneid: this.cluster.zoneid,
+          importsource: this.importsource,
+          hypervisor: this.hypervisor,
+          url: this.hostname,
+          username: this.username,
+          password: this.password,
+          hostid: this.host.id,
+          storageid: this.pool.id,
+          diskpath: this.diskpath
+        }
+        api = 'importUnmanagedInstance'
+        if (this.importsource === 'extrenal' || this.importsource === 'local' || this.importsource === 'shared') {
+          api = 'importVm'
+          params.name = this.values.displayname
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({

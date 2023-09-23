@@ -2055,6 +2055,7 @@
 "label.timeout": "Timeout",
 "label.timeout.in.second ": " Timeout (seconds)",
 "label.timezone": "Timezone",
+"label.tmppath": "Temp Path",
 "label.to": "to",
 "label.token": "Token",
 "label.token.for.dashboard.login": "Token for dashboard login can be retrieved using following command",

@@ -725,7 +725,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                               Long deviceId, Long hostId, String diskPath, DiskProfile diskProfile) {
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
 
-        if(storagePools.size() < 0) {
+        if(storagePools.size() < 1) {
             throw new CloudRuntimeException("Local Storage not found for host");
         }
 
@@ -1439,11 +1439,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         final String hypervisorType = cmd.getHypervisor();
-        if (Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
-            if (StringUtils.isBlank(cmd.getUsername())) {
-                throw new InvalidParameterValueException("Username need to be provided.");
-            }
-        } else {
+        if (!Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
             throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor: %s", hypervisorType));
         }
 
@@ -1513,6 +1509,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UnmanagedInstanceTO unmanagedInstanceTO = null;
         if(ImportSource.EXTERNAL == importSource) {
+            if (StringUtils.isBlank(cmd.getUsername())) {
+                throw new InvalidParameterValueException("Username need to be provided.");
+            }
+
             HashMap<String, UnmanagedInstanceTO> instancesMap = getRemoteVms(zoneId, remoteUrl, cmd.getUsername(), cmd.getPassword());
             unmanagedInstanceTO = instancesMap.get(cmd.getName());
             if (unmanagedInstanceTO == null) {
@@ -1684,7 +1684,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                    final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                    final Map<String, Long> allNicNetworkMap, final Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                   final Long hostId, final long poolId, final String diskPath, final Map<String, String> details) {
+                                                   final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
@@ -1761,6 +1761,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
+    //generate unit test
     public ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {

@@ -1055,6 +1055,7 @@ public class ApiConstants {
     public static final String HAS_RULES = "hasrules";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
+    public static final String TEMP_PATH = "temppath";
 
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";

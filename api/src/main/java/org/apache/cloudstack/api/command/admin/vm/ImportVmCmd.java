@@ -124,7 +124,6 @@ public class ImportVmCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.URL,
             type = CommandType.STRING,
-            required = true,
             description = "the host URL")
     private String url;
 
@@ -178,7 +177,7 @@ public class ImportVmCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "Shared storage pool where disk is located")
     private Long storagePoolId;
 
-    @Parameter(name = ApiConstants.IMPORT_SOURCE,
+    @Parameter(name = ApiConstants.TEMP_PATH,
             type = CommandType.STRING,
             description = "Temp Path on external host for disk image copy" )
     private String tmpPath;
