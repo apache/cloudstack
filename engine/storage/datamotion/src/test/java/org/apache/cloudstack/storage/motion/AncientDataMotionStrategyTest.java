@@ -36,17 +36,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.to.DataTO;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CapacityManager.class)
+
+@RunWith(MockitoJUnitRunner.class)
 public class AncientDataMotionStrategyTest {
 
     @Spy
@@ -69,8 +66,6 @@ public class AncientDataMotionStrategyTest {
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         replaceVmwareCreateCloneFullField();
 
         when(vmwareKey.valueIn(POOL_ID)).thenReturn(FULL_CLONE_FLAG);
@@ -99,7 +94,6 @@ public class AncientDataMotionStrategyTest {
 
     @Test
     public void testAddFullCloneFlagOnNotVmwareDest(){
-        when(dataTO.getHypervisorType()).thenReturn(HypervisorType.Any);
         verify(dataStoreTO, never()).setFullCloneFlag(any(Boolean.class));
     }
 
