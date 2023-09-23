@@ -18,130 +18,7 @@
 <template>
   <div class="user-menu">
     <span class="action">
-      <a-dropdown v-if="device === 'desktop'">
-        <template #overlay>
-          <a-menu>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/action/deployVirtualMachine'}">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <cloud-server-outlined/>
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.instance') }}
-                    </h3>
-                    <small>{{ $t('label.create.instance') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px" v-if="'listKubernetesClusters' in $store.getters.apis">
-              <router-link :to="{ path: '/kubernetes', query: { action: 'createKubernetesCluster' } }">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <font-awesome-icon :icon="['fa-solid', 'fa-dharmachakra']" />
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.kubernetes') }}
-                    </h3>
-                    <small>{{ $t('label.kubernetes.cluster.create') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/volume', query: { action: 'createVolume' } }">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <hdd-outlined />
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.volume') }}
-                    </h3>
-                    <small>{{ $t('label.action.create.volume') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/guestnetwork', query: { action: 'createNetwork' } }">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <apartment-outlined />
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.network') }}
-                    </h3>
-                    <small>{{ $t('label.add.network') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/vpc', query: { action: 'createVPC' } }">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <deployment-unit-outlined />
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.vpc') }}
-                    </h3>
-                    <small>{{ $t('label.add.vpc') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-            <a-menu-item style="width: 100%; padding: 12px">
-              <router-link :to="{ path: '/template', query: { action: 'registerTemplate' } }">
-                <a-row>
-                  <a-col style="margin-right: 12px">
-                    <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
-                      <template #icon>
-                        <picture-outlined />
-                      </template>
-                    </a-avatar>
-                  </a-col>
-                  <a-col>
-                    <h3 style="margin-bottom: 0px;">
-                      {{ $t('label.templatename') }}
-                    </h3>
-                    <small>{{ $t('label.action.register.template') }}</small>
-                  </a-col>
-                </a-row>
-              </router-link>
-            </a-menu-item>
-          </a-menu>
-        </template>
-        <a-button type="primary">
-          {{ $t('label.create') }}
-          <DownOutlined />
-        </a-button>
-      </a-dropdown>
+      <create-menu v-if="device === 'desktop'" />
     </span>
     <external-link class="action"/>
     <translation-menu class="action"/>
@@ -195,6 +72,7 @@
 
 <script>
 import { api } from '@/api'
+import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
@@ -206,6 +84,7 @@ import { SERVER_MANAGER } from '@/store/mutation-types'
 export default {
   name: 'UserMenu',
   components: {
+    CreateMenu,
     ExternalLink,
     TranslationMenu,
     HeaderNotice,

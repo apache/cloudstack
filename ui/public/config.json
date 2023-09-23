@@ -70,16 +70,16 @@
         "icon": "read-outlined"
       },
       {
-        "title": "Usage Guide",
-        "text": "Refer to CloudStack usage documentation",
-        "link": "https://docs.cloudstack.apache.org/en/latest/adminguide/index.html",
-        "icon": "compass-outlined"
-      },
-      {
         "title": "API Documentation",
         "text": "Refer to API documentation",
         "link": "https://cloudstack.apache.org/api.html",
         "icon": "api-outlined"
+      },
+      {
+        "title": "Email Support",
+        "text": "Join CloudStack users mailing list to seek and provide support",
+        "link": "mailto:users-subscribe@cloudstack.apache.org",
+        "icon": "mail-outlined"
       },
       {
         "title": "Report Issue",
