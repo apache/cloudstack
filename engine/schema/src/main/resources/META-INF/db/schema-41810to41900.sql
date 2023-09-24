@@ -557,3 +557,23 @@ CREATE VIEW `cloud`.`snapshot_view` AS
              OR (`snapshot_zone_ref`.`zone_id` = `data_center`.`id`))))
          LEFT JOIN `resource_tags` ON ((`resource_tags`.`resource_id` = `snapshots`.`id`)
              AND (`resource_tags`.`resource_type` = 'Snapshot')));
+
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'Order',
+    `options` = 'PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT,OAUTH2'
+where `name` = 'user.authenticators.order' ;
+
+-- Create table for OAuth provider details
+DROP TABLE IF EXISTS `cloud`.`oauth_provider`;
+CREATE TABLE `cloud`.`oauth_provider` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'unique identifier',
+  `description` varchar(1024) COMMENT 'description of the provider',
+  `provider` varchar(40) NOT NULL COMMENT 'name of the provider',
+  `client_id` varchar(255) NOT NULL COMMENT 'client id which is configured in the provider',
+  `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`provider`, `client_id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

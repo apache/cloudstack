@@ -153,6 +153,19 @@
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>
+    <br><br>
+    <div class="center">
+      <div v-if="googleprovider" class="g-btn-wrapper">
+        <GoogleLogin :callback="callback">
+        </GoogleLogin>
+      </div>
+      <div class="social-auth" v-if="githubprovider">
+        <a-button tag="a" color="primary" :href="getGitHubUrl(from)" class="auth-btn github-auth" style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
+          <a-text>Sign in with Github</a-text>
+        </a-button>
+      </div>
+    </div>
   </a-form>
 </template>
 
@@ -164,6 +177,7 @@ import { mapActions } from 'vuex'
 import { sourceToken } from '@/utils/request'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
+import { decodeCredential } from 'vue3-google-login'
 
 export default {
   components: {
@@ -173,7 +187,17 @@ export default {
     return {
       idps: [],
       customActiveKey: 'cs',
+      customActiveKeyOauth: false,
       loginBtn: false,
+      email: '',
+      secretcode: '',
+      oauthexclude: '',
+      googleprovider: false,
+      githubprovider: false,
+      googleredirecturi: '',
+      githubredirecturi: '',
+      googleclientid: '',
+      githubclientid: '',
       loginType: 0,
       state: {
         time: 60,
@@ -199,7 +223,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['Login', 'Logout']),
+    ...mapActions(['Login', 'Logout', 'OauthLogin']),
     initForm () {
       this.formRef = ref()
       this.form = reactive({
@@ -209,7 +233,7 @@ export default {
       this.setRules()
     },
     setRules () {
-      if (this.customActiveKey === 'cs') {
+      if (this.customActiveKey === 'cs' && this.customActiveKeyOauth === false) {
         this.rules.username = [
           {
             required: true,
@@ -245,6 +269,23 @@ export default {
           this.form.idp = this.idps[0].id || ''
         }
       })
+      api('listOauthProvider', {}).then(response => {
+        if (response) {
+          const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+          oauthproviders.forEach(item => {
+            if (item.provider === 'google') {
+              this.googleprovider = true
+              this.googleclientid = item.clientid
+              this.googleredirecturi = item.redirecturi
+            }
+            if (item.provider === 'github') {
+              this.githubprovider = true
+              this.githubclientid = item.clientid
+              this.githubredirecturi = item.redirecturi
+            }
+          })
+        }
+      })
     },
     // handler
     async handleUsernameOrEmail (rule, value) {
@@ -260,6 +301,48 @@ export default {
     handleTabClick (key) {
       this.customActiveKey = key
       this.setRules()
+    },
+    callback (response) {
+      console.log(response)
+      try {
+        const user = decodeCredential(response.credential)
+        this.email = user.email
+        this.secretcode = response.credential
+        this.handleSubmitOauth('google')
+      } catch (e) {
+        console.log(e)
+      }
+    },
+    getGitHubUrl (from) {
+      const rootURl = 'https://github.com/login/oauth/authorize'
+      const options = {
+        client_id: this.githubclientid,
+        scope: 'user:email',
+        state: from
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
+    },
+    getGoogleUrl (from) {
+      const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+      const options = {
+        redirect_uri: this.googleredirecturi,
+        client_id: this.googleclientid,
+        access_type: 'offline',
+        response_type: 'code',
+        prompt: 'consent',
+        scope: [
+          'https://www.googleapis.com/auth/userinfo.profile',
+          'https://www.googleapis.com/auth/userinfo.email'
+        ].join(' '),
+        state: from
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootUrl}?${qs.toString()}`
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -297,6 +380,27 @@ export default {
         }
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    handleSubmitOauth (provider) {
+      this.customActiveKeyOauth = true
+      this.setRules()
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        const loginParams = { ...values }
+        delete loginParams.username
+        loginParams.email = this.email
+        loginParams.provider = provider
+        loginParams.secretcode = this.secretcode
+        if (!loginParams.domain) {
+          loginParams.domain = '/'
+        }
+        this.OauthLogin(loginParams)
+          .then((res) => this.loginSuccess(res))
+          .catch(err => {
+            this.requestFailed(err)
+            this.state.loginBtn = false
+          })
       })
     },
     loginSuccess (res) {
@@ -372,6 +476,19 @@ export default {
     .register {
       float: right;
     }
+
+    .g-btn-wrapper {
+      background-color: rgb(221, 75, 57);
+      height: 40px;
+      width: 80px;
+    }
   }
+    .center {
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+     align-items: center;
+     height: 100px;
+    }
 }
 </style>

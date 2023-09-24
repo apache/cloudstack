@@ -39,6 +39,7 @@ import {
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
+import vue3GoogleLogin from 'vue3-google-login'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -53,6 +54,7 @@ vueApp.use(localesPlugin)
 vueApp.use(genericUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
+vueApp.use(vue3GoogleLogin, { clientId: '345798102268-cfcpg40k6hnfft2m61mf6jbmjcfg4p82.apps.googleusercontent.com' })
 
 fetch('config.json').then(response => response.json()).then(config => {
   vueProps.$config = config
