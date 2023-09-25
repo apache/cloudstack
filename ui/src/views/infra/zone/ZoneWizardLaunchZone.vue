@@ -1062,7 +1062,7 @@ export default {
       try {
         if (!this.stepData.stepMove.includes('addNsxController')) {
           const providerParams = {}
-          providerParams.name = this.prefillContent?.name || ''
+          providerParams.name = this.prefillContent?.nsxName || ''
           providerParams.nsxproviderhostname = this.prefillContent?.nsxHostname || ''
           providerParams.nsxproviderport = this.prefillContent?.nsxPort || ''
           providerParams.username = this.prefillContent?.username || ''

@@ -2531,14 +2531,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 // we should actually find the mapping and remove if it exists
                 // but we don't know about vmware/plugin/hypervisors at this point
-                NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
-                if (Objects.nonNull(nsxProvider)) {
-                    nsxProviderDao.remove(nsxProvider.getId());
-                }
-
                 final boolean success = _zoneDao.remove(zoneId);
 
                 if (success) {
+                    NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+                    if (Objects.nonNull(nsxProvider)) {
+                        nsxProviderDao.remove(nsxProvider.getId());
+                    }
+
                     // delete template refs for this zone
                     templateZoneDao.deleteByZoneId(zoneId);
                     // delete all capacity records for the zone

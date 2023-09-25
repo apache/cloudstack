@@ -63,6 +63,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_CONNECTED;
+import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.FailoverMode.PREEMPTIVE;
 import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
@@ -253,6 +255,7 @@ public class NsxResource implements ServerResource {
                 .setPoolAllocation(ROUTING.name())
                 .setHaMode(ACTIVE_STANDBY.name())
                 .setFailoverMode(PREEMPTIVE.name())
+                .setRouteAdvertisementTypes(List.of(TIER1_CONNECTED.name(), TIER1_IPSEC_LOCAL_ENDPOINT.name()))
                 .setId(name)
                 .setDisplayName(name)
 //                .setChildren(

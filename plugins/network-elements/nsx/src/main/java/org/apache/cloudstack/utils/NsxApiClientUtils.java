@@ -64,6 +64,16 @@ public class NsxApiClientUtils {
         OVERLAY,
         VLAN
     }
+
+    public enum  RouteAdvertisementType {
+        TIER1_STATIC_ROUTES,
+        TIER1_CONNECTED,
+        TIER1_NAT,
+        TIER1_LB_VIP,
+        TIER1_LB_SNAT,
+        TIER1_DNS_FORWARDER_IP,
+        TIER1_IPSEC_LOCAL_ENDPOINT
+    }
     public static ApiClient createApiClient(String hostname, String port, String username, char[] password) {
         String controllerUrl = String.format("https://%s:%s", hostname, port);
         HttpConfiguration.SslConfiguration.Builder sslConfigBuilder = new HttpConfiguration.SslConfiguration.Builder();

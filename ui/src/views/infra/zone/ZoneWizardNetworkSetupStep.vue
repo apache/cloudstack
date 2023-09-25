@@ -381,7 +381,7 @@ export default {
       const fields = [
         {
           title: 'label.nsx.provider.name',
-          key: 'name',
+          key: 'nsxName',
           placeHolder: 'message.installwizard.tooltip.nsx.provider.name',
           required: true
         },
