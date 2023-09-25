@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
-import org.apache.cloudstack.oauth2.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.log4j.Logger;
 

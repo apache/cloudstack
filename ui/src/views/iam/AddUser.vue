@@ -169,9 +169,6 @@
             </a-select>
           </a-form-item>
         </div>
-        <a-form-item name="samlenable" ref="samlenable" :label="$t('label.enable.oauth')">
-          <a-switch v-model:checked="form.samlenable" />
-        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>

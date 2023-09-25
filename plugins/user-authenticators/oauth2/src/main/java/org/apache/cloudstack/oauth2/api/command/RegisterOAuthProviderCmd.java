@@ -19,7 +19,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
-import org.apache.cloudstack.oauth2.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.cloudstack.api.APICommand;

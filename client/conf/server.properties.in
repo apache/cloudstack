@@ -49,6 +49,3 @@ webapp.dir=/usr/share/cloudstack-management/webapp
 
 # The path to access log file
 access.log=/var/log/cloudstack/management/access.log
-
-OAUTH_CLIENT_ID=345798102268-cfcpg40k6hnfft2m61mf6jbmjcfg4p82.apps.googleusercontent.com
-OAUTH_CLIENT_SECRET=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
