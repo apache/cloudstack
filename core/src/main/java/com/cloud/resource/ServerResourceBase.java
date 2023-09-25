@@ -170,10 +170,10 @@ public abstract class ServerResourceBase implements ServerResource {
             sizes.add(file.length());
             modifiedList.add(file.lastModified());
         } else if (file.isDirectory()) {
-            File[] files = file.listFiles();
+            String[] files = file.list();
             count = files.length;
             for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
-                File f = files[i];
+                File f = new File(nfsMountPoint, relativePath + '/' + files[i]);
                 names.add(f.getName());
                 paths.add(f.getPath().replace(nfsMountPoint, ""));
                 absPaths.add(f.getPath());

@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 
+import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
@@ -57,4 +58,6 @@ public interface VolumeDataStoreDao extends GenericDao<VolumeDataStoreVO, Long>,
     List<VolumeDataStoreVO> listVolumeDownloadUrlsByZoneId(long zoneId);
 
     List<VolumeDataStoreVO> listByVolume(long volumeId, long storeId);
+
+    List<VolumeDataStoreVO> listByStoreIdAndInstallPaths(Long storeId, List<String> paths);
 }

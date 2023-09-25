@@ -47,6 +47,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +90,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     @Inject
     VolumeDao volumeDao;
+
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
 
     @Override
     public List<Class<?>> getCommands() {
@@ -150,11 +155,12 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
         Map<String, VMTemplateVO> pathTemplateMap;
 
-        Map<String, VolumeVO> pathVolumeMap = new HashMap<>();
+        Map<String, VolumeVO> pathVolumeMap;
 
         if (dataStore.getRole() != DataStoreRole.Primary) {
             pathTemplateMap = getPathTemplateMapForSecondaryDS(dataStore.getId(), paths);
             pathSnapshotMap = getPathSnapshotMapForSecondaryDS(dataStore.getId(), paths);
+            pathVolumeMap = getPathVolumeMapForSecondaryDS(dataStore.getId(), paths);
         } else {
             pathTemplateMap = getPathTemplateMapForPrimaryDS(dataStore.getId(), paths);
             pathSnapshotMap = getPathSnapshotMapForPrimaryDS(dataStore.getId(), paths, absPaths);
@@ -285,6 +291,21 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
                 volumePathMap.put(volume.getPath(), volume);
+            }
+        }
+        return volumePathMap;
+    }
+
+    Map<String, VolumeVO> getPathVolumeMapForSecondaryDS(Long dataStoreId, List<String> paths) {
+        Map<String, VolumeVO> volumePathMap = new HashMap<>();
+        List<VolumeDataStoreVO> volumeList = volumeDataStoreDao.listByStoreIdAndInstallPaths(dataStoreId, paths);
+        if (!CollectionUtils.isEmpty(volumeList)) {
+            List<Long> volumeIdList = volumeList.stream().map(VolumeDataStoreVO::getVolumeId).collect(Collectors.toList());
+            List<VolumeVO> volumeVOS = volumeDao.listByIds(volumeIdList);
+            Map<Long, VolumeVO> volumeMap = volumeVOS.stream().collect(Collectors.toMap(VolumeVO::getId, volume -> volume));
+
+            for (VolumeDataStoreVO volumeDataStore : volumeList) {
+                volumePathMap.put(volumeDataStore.getInstallPath(), volumeMap.get(volumeDataStore.getVolumeId()));
             }
         }
         return volumePathMap;
