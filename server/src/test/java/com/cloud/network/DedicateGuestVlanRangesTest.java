@@ -36,7 +36,6 @@ import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

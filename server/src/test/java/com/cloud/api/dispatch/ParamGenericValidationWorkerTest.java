@@ -33,17 +33,22 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ParamGenericValidationWorkerTest {
@@ -52,8 +57,7 @@ public class ParamGenericValidationWorkerTest {
 
     protected static final String FAKE_CMD_ROLE_NAME = "fakecmdrolename";
 
-    @Mock
-    Logger loggerMock;
+    @Mock Logger loggerMock;
 
     protected String loggerOutput;
 
