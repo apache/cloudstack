@@ -83,6 +83,13 @@ contribution. Note that you do not have to be a developer in order to contribute
 to Apache CloudStack. We need folks to help with documentation, translation,
 promotion etc. See our contribution [page](http://cloudstack.apache.org/contribute.html).
 
+If you are a frequent contributors, you can request to be added as collaborators
+(see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
+to our Github repos. This allows you to use project Github with ability to report
+issue with tags, and be assigned to issues and PRs. This is done via the .asf.yaml
+file in this repo.
+You may do so by sharing your github users ID or raise a Github issue.
+
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
 several communications channels, the [mailing lists](http://cloudstack.apache.org/mailing-lists.html) are the most active and the
