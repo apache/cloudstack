@@ -1035,7 +1035,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean isLockAcquired = createSnapshotPolicyLock.lock(5);
 
         if (!isLockAcquired) {
-            throw new CloudRuntimeException(String.format("Unable to aquire lock for creating snapshot policy [%s] for %s.", intervalType, volumeDescription));
+            throw new CloudRuntimeException(String.format("Unable to acquire lock for creating snapshot policy [%s] for %s.", intervalType, volumeDescription));
         }
 
         s_logger.debug(String.format("Acquired lock for creating snapshot policy [%s] for volume %s.", intervalType, volumeDescription));
