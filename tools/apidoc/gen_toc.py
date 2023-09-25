@@ -160,6 +160,8 @@ known_categories = {
     'listSamlAuthorization': 'Authentication',
     'oauthlogin': 'Authentication',
     'deleteOauthProvider': 'Oauth',
+    'listOauthProvider': 'Oauth',
+    'registerOauthProvider': 'Oauth',
     'quota': 'Quota',
     'emailTemplate': 'Quota',
     'Capacity': 'System Capacity',

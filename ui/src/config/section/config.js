@@ -80,7 +80,7 @@ export default {
       details: ['provider', 'description', 'clientid', 'redirecturi', 'enabled'],
       actions: [
         {
-          api: 'registerOAuthProvider',
+          api: 'registerOauthProvider',
           icon: 'plus-outlined',
           label: 'label.register.oauth',
           listView: true,

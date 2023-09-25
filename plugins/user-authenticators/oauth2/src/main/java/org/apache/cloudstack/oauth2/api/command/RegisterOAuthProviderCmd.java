@@ -34,7 +34,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import java.util.Collection;
 import java.util.Map;
 
-@APICommand(name = "registerOAuthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack")
+@APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack")
 public class RegisterOAuthProviderCmd extends BaseCmd {
 
     private static final String s_name = "ConfigureOAuthProvider";
