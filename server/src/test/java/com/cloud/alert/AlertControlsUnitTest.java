@@ -16,17 +16,11 @@
 // under the License.
 package com.cloud.alert;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-
-import java.util.Date;
-
+import com.cloud.alert.dao.AlertDao;
+import com.cloud.server.ManagementServerImpl;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.junit.After;
@@ -36,10 +30,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.alert.dao.AlertDao;
-import com.cloud.server.ManagementServerImpl;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import java.util.Date;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 public class AlertControlsUnitTest extends TestCase {
     private Logger logger = LogManager.getLogger(AlertControlsUnitTest.class);

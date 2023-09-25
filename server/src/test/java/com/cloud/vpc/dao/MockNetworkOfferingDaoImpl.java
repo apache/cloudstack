@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.lang.reflect.Field;
-import java.util.List;
-
-
-
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
@@ -31,6 +26,9 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.db.DB;
+
+import java.lang.reflect.Field;
+import java.util.List;
 
 @DB()
 public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {

@@ -53,6 +53,19 @@ public class ConfigDriveBuilder {
     protected static Logger LOGGER = LogManager.getLogger(ConfigDriveBuilder.class);
 
     /**
+     * This is for mocking the File class. We cannot mock the File class directly because Mockito uses it internally.
+     * @param filepath
+     * @return
+     */
+    static File getFile(String filepath) {
+        return new File(filepath);
+    }
+
+    static File getFile(String dirName, String filename) {
+        return new File(dirName, filename);
+    }
+
+    /**
      * Writes a content {@link String} to a file that is going to be created in a folder. We will not append to the file if it already exists. Therefore, its content will be overwritten.
      * Moreover, the charset used is {@link com.cloud.utils.StringUtils#getPreferredCharset()}.
      *
@@ -138,7 +151,7 @@ public class ConfigDriveBuilder {
      *  [1] https://docs.openstack.org/project-install-guide/baremetal/draft/configdrive.html
      */
     static String generateAndRetrieveIsoAsBase64Iso(String isoFileName, String driveLabel, String tempDirName) throws IOException {
-        File tmpIsoStore = new File(tempDirName, isoFileName);
+        File tmpIsoStore = getFile(tempDirName, isoFileName);
         Script command = new Script(getProgramToGenerateIso(), Duration.standardSeconds(300), LOGGER);
         command.add("-o", tmpIsoStore.getAbsolutePath());
         command.add("-ldots");
@@ -158,7 +171,7 @@ public class ConfigDriveBuilder {
             LOGGER.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        File tmpIsoFile = new File(tmpIsoStore.getAbsolutePath());
+        File tmpIsoFile = getFile(tmpIsoStore.getAbsolutePath());
         if (tmpIsoFile.length() > (64L * 1024L * 1024L)) {
             throw new CloudRuntimeException("Config drive file exceeds maximum allowed size of 64MB");
         }
@@ -174,11 +187,11 @@ public class ConfigDriveBuilder {
      * </ul> /usr/local/bin/mkisofs
      */
     static String getProgramToGenerateIso() throws IOException {
-        File isoCreator = new File("/usr/bin/genisoimage");
+        File isoCreator = getFile("/usr/bin/genisoimage");
         if (!isoCreator.exists()) {
-            isoCreator = new File("/usr/bin/mkisofs");
+            isoCreator = getFile("/usr/bin/mkisofs");
             if (!isoCreator.exists()) {
-                isoCreator = new File("/usr/local/bin/mkisofs");
+                isoCreator = getFile("/usr/local/bin/mkisofs");
             }
         }
         if (!isoCreator.exists()) {
@@ -285,7 +298,7 @@ public class ConfigDriveBuilder {
      */
     static void linkUserData(String tempDirName) {
         String userDataFilePath = tempDirName + ConfigDrive.cloudStackConfigDriveName + "userdata/user_data.txt";
-        File file = new File(userDataFilePath);
+        File file = getFile(userDataFilePath);
         if (file.exists()) {
             Script hardLink = new Script("ln", Duration.standardSeconds(300), LOGGER);
             hardLink.add(userDataFilePath);

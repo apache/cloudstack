@@ -16,16 +16,14 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import com.cloud.configuration.ResourceLimit;
+import com.cloud.vpc.MockResourceLimitManagerImpl;
 import junit.framework.TestCase;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.cloud.configuration.ResourceLimit;
-import com.cloud.vpc.MockResourceLimitManagerImpl;
 
 public class ResourceLimitManagerImplTest extends TestCase {
     private Logger logger = LogManager.getLogger(ResourceLimitManagerImplTest.class);

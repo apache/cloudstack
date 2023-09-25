@@ -34,18 +34,18 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduleDao;
 import org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDao;
 import org.apache.commons.lang.time.DateUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.persistence.EntityExistsException;
@@ -59,8 +59,7 @@ import java.util.TimeZone;
 
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ActionEventUtils.class, ComponentContext.class})
+@RunWith(MockitoJUnitRunner.class)
 public class VMSchedulerImplTest {
     @Spy
     @InjectMocks
@@ -84,10 +83,14 @@ public class VMSchedulerImplTest {
     @Mock
     private AsyncJobDispatcher asyncJobDispatcher;
 
+    private AutoCloseable closeable;
+
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        PowerMockito.mockStatic(ActionEventUtils.class);
+        closeable = MockitoAnnotations.openMocks(this);
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onScheduledActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                        Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(),
                        Mockito.anyLong()))
@@ -96,6 +99,12 @@ public class VMSchedulerImplTest {
                 Mockito.anyString(), Mockito.anyBoolean(),
                 Mockito.anyString(),
                 Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        actionEventUtilsMocked.close();
+        closeable.close();
     }
 
     @Test
@@ -117,11 +126,10 @@ public class VMSchedulerImplTest {
 
         Long jobId = vmScheduler.processJob(vmScheduledJob, vm);
 
-        PowerMockito.verifyStatic(ActionEventUtils.class);
-        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
+        actionEventUtilsMocked.verify(() -> ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
                 actionEventMap.get(action), true,
                 String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
-                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
+                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0));
         Assert.assertEquals(expectedValue, jobId);
     }
 
@@ -355,32 +363,35 @@ public class VMSchedulerImplTest {
     public void testExecuteStopVMJob() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
-        PowerMockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.inject(StopVMCmd.class)).thenReturn(Mockito.mock(StopVMCmd.class));
-        long jobId = vmScheduler.executeStopVMJob(vm, false, 1L);
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.inject(StopVMCmd.class)).thenReturn(Mockito.mock(StopVMCmd.class));
+            long jobId = vmScheduler.executeStopVMJob(vm, false, 1L);
 
-        Assert.assertEquals(1L, jobId);
+            Assert.assertEquals(1L, jobId);
+        }
     }
 
     @Test
     public void testExecuteRebootVMJob() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
-        PowerMockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.inject(RebootVMCmd.class)).thenReturn(Mockito.mock(RebootVMCmd.class));
-        long jobId = vmScheduler.executeRebootVMJob(vm, false, 1L);
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.inject(RebootVMCmd.class)).thenReturn(Mockito.mock(RebootVMCmd.class));
+            long jobId = vmScheduler.executeRebootVMJob(vm, false, 1L);
 
-        Assert.assertEquals(1L, jobId);
+            Assert.assertEquals(1L, jobId);
+        }
     }
 
     @Test
     public void testExecuteStartVMJob() {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
-        PowerMockito.mockStatic(ComponentContext.class);
-        when(ComponentContext.inject(StartVMCmd.class)).thenReturn(Mockito.mock(StartVMCmd.class));
-        long jobId = vmScheduler.executeStartVMJob(vm, 1L);
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.inject(StartVMCmd.class)).thenReturn(Mockito.mock(StartVMCmd.class));
+            long jobId = vmScheduler.executeStartVMJob(vm, 1L);
 
-        Assert.assertEquals(1L, jobId);
+            Assert.assertEquals(1L, jobId);
+        }
     }
 }

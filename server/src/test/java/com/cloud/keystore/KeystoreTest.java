@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.keystore;
 
+import com.cloud.api.ApiSerializerHelper;
+import junit.framework.TestCase;
 import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.After;
 import org.junit.Before;
-
-import com.cloud.api.ApiSerializerHelper;
-
-import junit.framework.TestCase;
 
 public class KeystoreTest extends TestCase {
 

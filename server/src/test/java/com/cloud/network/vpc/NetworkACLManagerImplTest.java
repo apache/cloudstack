@@ -17,6 +17,9 @@
 
 package com.cloud.network.vpc;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.vpc.NetworkACLItem.State;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,10 +28,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.vpc.NetworkACLItem.State;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkACLManagerImplTest {
