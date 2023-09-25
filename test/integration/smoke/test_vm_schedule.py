@@ -571,7 +571,7 @@ class TestVMSchedule(cloudstackTestCase):
         stop_vmschedule.delete(self.apiclient)
 
         # To ensure that all vm schedules have been deleted and all of their jobs have been completed
-        time.sleep(15)
+        time.sleep(60)
 
         # Verify VM Schedule is deleted
         self.assertEqual(
