@@ -16,49 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -112,6 +69,47 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -162,7 +160,7 @@ public class UserVmManagerImplTest {
     private EntityManager entityManager;
 
     @Mock
-    private UserVmDetailsDao userVmDetailVO;
+    private UserVmDetailsDao userVmDetailsDao;
 
     @Mock
     private UserVmVO userVmVoMock;
@@ -304,7 +302,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTest() {
         Mockito.doNothing().when(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
 
@@ -333,7 +330,7 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.verify(userVmDetailVO, Mockito.times(0)).removeDetails(vmId);
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(anyLong(), anyString());
     }
 
     @Test
@@ -343,12 +340,15 @@ public class UserVmManagerImplTest {
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(true);
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.doNothing().when(userVmDetailVO).removeDetails(vmId);
+
         Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
+
+        prepareExistingDetails(vmId, "userdetail");
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
-        Mockito.verify(userVmDetailVO).removeDetails(vmId);
+        Mockito.verify(userVmDetailsDao).removeDetail(vmId, "userdetail");
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
@@ -373,6 +373,16 @@ public class UserVmManagerImplTest {
         prepareAndExecuteMethodDealingWithDetails(false, false);
     }
 
+    private List<UserVmDetailVO> prepareExistingDetails(Long vmId, String... existingDetailKeys) {
+        List<UserVmDetailVO> existingDetails = new ArrayList<>();
+        for (String detail : existingDetailKeys) {
+            existingDetails.add(new UserVmDetailVO(vmId, detail, "foo", true));
+        }
+        existingDetails.add(new UserVmDetailVO(vmId, "systemdetail", "bar", false));
+        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(existingDetails);
+        return existingDetails;
+    }
+
     private void prepareAndExecuteMethodDealingWithDetails(boolean cleanUpDetails, boolean isDetailsEmpty) throws ResourceUnavailableException, InsufficientCapacityException {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
@@ -393,8 +403,9 @@ public class UserVmManagerImplTest {
         lenient().doNothing().when(_networkMgr).saveExtraDhcpOptions(anyString(), anyLong(), anyMap());
         HashMap<String, String> details = new HashMap<>();
         if(!isDetailsEmpty) {
-            details.put("", "");
+            details.put("newdetail", "foo");
         }
+        prepareExistingDetails(vmId, "existingdetail");
         Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
         Mockito.when(updateVmCommand.getDetails()).thenReturn(details);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(cleanUpDetails);
@@ -404,14 +415,15 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmVoMock, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
-        Mockito.verify(userVmDetailVO, Mockito.times(cleanUpDetails ? 1: 0)).removeDetails(vmId);
+        Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
         Mockito.verify(userVmDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     private void configureDoNothingForDetailsMethod() {
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.doNothing().when(userVmDetailVO).removeDetails(vmId);
+        Mockito.doNothing().when(userVmDetailsDao).removeDetail(anyLong(), anyString());
         Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
     }
 
@@ -764,7 +776,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataVMStateNotStopped() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -790,7 +801,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataDontAcceptBothUserdataAndUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -819,7 +829,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdata() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -859,7 +868,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();

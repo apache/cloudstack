@@ -372,6 +372,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -464,6 +465,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     NetworkServiceMapDao ntwkSrvcDao;
     @Inject
     FirewallRulesDao firewallRulesDao;
+    @Inject
+    UserDataDao userDataDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -907,7 +910,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     Long networkId = vlan.getNetworkId();
                     if (networkId != null) {
                         Network network = _ntwkModel.getNetwork(networkId);
-                        if (network != null) {
+                        if (network != null && TrafficType.Guest.equals(network.getTrafficType())) {
                             Long accountId = network.getAccountId();
                             populateAccount(vlanResponse, accountId);
                             populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());
@@ -3437,9 +3440,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             VMTemplateVO template = ApiDBUtils.findTemplateById(profile.getTemplateId());
             if (template != null) {
                 response.setTemplateId(template.getUuid());
+                if (template.getUserDataOverridePolicy() != null) {
+                    response.setUserDataPolicy(template.getUserDataOverridePolicy().toString());
+                }
             }
         }
         response.setUserData(profile.getUserData());
+        if (profile.getUserDataId() != null) {
+            UserData userData = userDataDao.findById(profile.getUserDataId());
+            if (userData != null) {
+                response.setUserDataId(userData.getUuid());
+                response.setUserDataName(userData.getName());
+            }
+        }
+        response.setUserDataDetails(profile.getUserDataDetails());
         response.setOtherDeployParams(profile.getOtherDeployParamsList());
         response.setCounterParams(profile.getCounterParams());
         response.setExpungeVmGracePeriod(profile.getExpungeVmGracePeriod());
@@ -3677,6 +3691,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
         response.setIsUserDefined(String.valueOf(guestOS.getIsUserDefined()));
+        response.setForDisplay(guestOS.getForDisplay());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
