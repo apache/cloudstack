@@ -37,7 +37,6 @@ import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.model.ApiError;
-import com.vmware.nsx_policy.model.ChildLocaleServices;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.Segment;
@@ -244,7 +243,7 @@ public class NsxResource implements ServerResource {
             throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone: %s and account %s", name, cmd.getZoneName(), cmd.getAccountName()));
         }
 
-        List<com.vmware.nsx_policy.model.LocaleServices> localeServices = getTier0LocalServices(tier0Gateway);
+
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
 
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
@@ -256,22 +255,41 @@ public class NsxResource implements ServerResource {
                 .setFailoverMode(PREEMPTIVE.name())
                 .setId(name)
                 .setDisplayName(name)
-                .setChildren(
-                        List.of(new ChildLocaleServices.Builder("ChildLocaleServices")
-                                        .setLocaleServices(
-                                                new com.vmware.nsx_policy.model.LocaleServices.Builder()
-                                                        .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath())
-                                                        .setParentPath(TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
-                                                        .setResourceType("LocaleServices")
-                                                        .build()
-                                        ).build())).build();
+//                .setChildren(
+//                        List.of(new ChildLocaleServices.Builder("ChildLocaleServices")
+//                                        .setLocaleServices(
+//                                                new com.vmware.nsx_policy.model.LocaleServices.Builder()
+//                                                        .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath())
+//                                                        .setParentPath(TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
+//                                                        .setResourceType("LocaleServices")
+//                                                        .build()
+//                                        ).build()))
+                .build();
         try {
             tier1service.patch(name, tier1);
+            createTier1LocaleServices(name, edgeCluster);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
         }
         return new NsxAnswer(cmd, true, "");
+    }
+
+    /**
+     * To instantiate Tier-1 in Edge Cluster
+     * @return
+     */
+    private boolean createTier1LocaleServices(String tier1Id, String edgeCluster) {
+        try {
+            List<com.vmware.nsx_policy.model.LocaleServices> localeServices = getTier0LocalServices(tier0Gateway);
+            com.vmware.nsx_policy.infra.tier_1s.LocaleServices tier1LocalService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
+            com.vmware.nsx_policy.model.LocaleServices localeService = new com.vmware.nsx_policy.model.LocaleServices.Builder()
+                    .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath()).build();
+            tier1LocalService.patch(tier1Id, "default", localeService);
+            return true;
+        } catch (Error error) {
+            throw new CloudRuntimeException(String.format("Failed to instantiate tier-1 gateway %s in edge cluster %s", tier1Id, edgeCluster));
+        }
     }
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
@@ -391,7 +409,7 @@ public class NsxResource implements ServerResource {
     private TransportZoneListResult getTransportZones() {
         try {
             com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
-            return transportZones.list(null, null, true, null, false, null, null, null, OVERLAY.name(), null);
+            return transportZones.list(null, null, true, null, true, null, null, null, OVERLAY.name(), null);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }

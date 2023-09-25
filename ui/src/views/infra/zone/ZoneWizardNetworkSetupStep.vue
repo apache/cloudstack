@@ -407,7 +407,8 @@ export default {
           title: 'label.nsx.provider.password',
           key: 'password',
           placeHolder: 'message.installwizard.tooltip.nsx.provider.password',
-          required: true
+          required: true,
+          password: true
         },
         {
           title: 'label.nsx.provider.edgecluster',
