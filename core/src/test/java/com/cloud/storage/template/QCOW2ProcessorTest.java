@@ -29,15 +29,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(QCOW2Processor.class)
+@RunWith(MockitoJUnitRunner.class)
 public class QCOW2ProcessorTest {
     QCOW2Processor processor;
 
@@ -102,9 +100,7 @@ public class QCOW2ProcessorTest {
     @Test
     public void testGetVirtualSize() throws Exception {
         long virtualSize = 2000;
-        long actualSize = 1000;
         File mockFile = Mockito.mock(File.class);
-        Mockito.when(mockFile.length()).thenReturn(actualSize);
         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize((File)Mockito.any());
         Assert.assertEquals(virtualSize, processor.getVirtualSize(mockFile));
         Mockito.verify(mockFile, Mockito.times(0)).length();

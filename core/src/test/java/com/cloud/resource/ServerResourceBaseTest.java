@@ -23,10 +23,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
 import java.net.NetworkInterface;
@@ -40,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ServerResourceBaseTest {
 
     private static final String[] NIC_NAME_STARTS_TO_AVOID = {"vnif", "vnbr", "peth", "vif", "virbr"};
@@ -54,165 +53,162 @@ public class ServerResourceBaseTest {
 
     @Before
     public void setup() {
-        networkInterfaceMock1 = PowerMockito.mock(NetworkInterface.class);
-        networkInterfaceMock2 = PowerMockito.mock(NetworkInterface.class);
-        networkInterfaceMock3 = PowerMockito.mock(NetworkInterface.class);
-        networkInterfaceMock4 = PowerMockito.mock(NetworkInterface.class);
+        networkInterfaceMock1 = Mockito.mock(NetworkInterface.class);
+        networkInterfaceMock2 = Mockito.mock(NetworkInterface.class);
+        networkInterfaceMock3 = Mockito.mock(NetworkInterface.class);
+        networkInterfaceMock4 = Mockito.mock(NetworkInterface.class);
     }
 
     @Test
-    @PrepareForTest(ServerResourceBase.class)
     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNicIsVirtual() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(true);
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(true);
 
         Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
     }
 
     @Test
-    @PrepareForTest(ServerResourceBase.class)
     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNicNameStartsWithOneOfTheAvoidList() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
-        PowerMockito.when(networkInterfaceMock.getName()).thenReturn("vniftest", "vnbrtest", "pethtest", "viftest", "virbrtest");
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+        Mockito.when(networkInterfaceMock.getName()).thenReturn("vniftest", "vnbrtest", "pethtest", "viftest", "virbrtest");
 
         Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock)));
     }
 
     @Test
-    @PrepareForTest(ServerResourceBase.class)
     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNicNameContainsColon() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
-        PowerMockito.when(networkInterfaceMock.getName()).thenReturn("te:st");
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+        Mockito.when(networkInterfaceMock.getName()).thenReturn("te:st");
 
         Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
     }
 
     @Test
-    @PrepareForTest({ServerResourceBase.class, NetUtils.class})
     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNetUtilsGetNicParamsReturnsNull() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
-        PowerMockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(null);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(null);
 
-        Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
-            Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
-        });
+            Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
+                Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
+            });
+        }
     }
 
     @Test
-    @PrepareForTest({ServerResourceBase.class, NetUtils.class})
     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNetUtilsGetNicParamsReturnsFirstElementNull() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
-        PowerMockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{null});
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{null});
 
-        Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
-            Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
-        });
+            Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
+                Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
+            });
+        }
     }
 
     @Test
-    @PrepareForTest({ServerResourceBase.class, NetUtils.class})
     public void isValidNicToUseAsPrivateNicTestReturnTrueWhenNetUtilsGetNicParamsReturnsAValidFirstElement() {
-        NetworkInterface networkInterfaceMock = PowerMockito.mock(NetworkInterface.class);
-        PowerMockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
-        PowerMockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
 
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{"test"});
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{"test"});
 
-        Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
-            Assert.assertTrue(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
-        });
+            Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> {
+                Assert.assertTrue(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock));
+            });
+        }
     }
 
     @Test(expected = ConfigurationException.class)
-    @PrepareForTest(ServerResourceBase.class)
     public void tryToAutoDiscoverResourcePrivateNetworkInterfaceTestThrowConfigurationExceptionWhenNicsDoesNotHaveMoreElements() throws SocketException, ConfigurationException {
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(new ArrayList<>()));
+        try (MockedStatic<NetworkInterface> ignored = Mockito.mockStatic(NetworkInterface.class)) {
+            Mockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(new ArrayList<>()));
 
-        serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+            serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+        }
     }
 
     @Test(expected = ConfigurationException.class)
-    @PrepareForTest(ServerResourceBase.class)
     public void tryToAutoDiscoverResourcePrivateNetworkInterfaceTestThrowConfigurationExceptionWhenNicsGetNetworkInterfacesThrowsSocketException() throws SocketException, ConfigurationException {
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getNetworkInterfaces()).thenThrow(SocketException.class);
+        try (MockedStatic<NetworkInterface> ignored = Mockito.mockStatic(NetworkInterface.class)) {
+            Mockito.when(NetworkInterface.getNetworkInterfaces()).thenThrow(SocketException.class);
 
-        serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+            serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+        }
     }
 
     @Test(expected = ConfigurationException.class)
-    @PrepareForTest(ServerResourceBase.class)
     public void tryToAutoDiscoverResourcePrivateNetworkInterfaceTestThrowConfigurationExceptionWhenThereIsNoValidNics() throws SocketException, ConfigurationException {
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(Arrays.asList(networkInterfaceMock1, networkInterfaceMock2)));
-        Mockito.doReturn(false).when(serverResourceBaseSpy).isValidNicToUseAsPrivateNic(Mockito.any());
+        try (MockedStatic<NetworkInterface> ignored = Mockito.mockStatic(NetworkInterface.class)) {
+            Mockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(Arrays.asList(networkInterfaceMock1, networkInterfaceMock2)));
+            Mockito.doReturn(false).when(serverResourceBaseSpy).isValidNicToUseAsPrivateNic(Mockito.any());
 
-        serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+            serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
 
-        Mockito.verify(serverResourceBaseSpy, Mockito.times(2)).isValidNicToUseAsPrivateNic(Mockito.any());
+            Mockito.verify(serverResourceBaseSpy, Mockito.times(2)).isValidNicToUseAsPrivateNic(Mockito.any());
+        }
     }
 
     @Test
-    @PrepareForTest(ServerResourceBase.class)
     public void tryToAutoDiscoverResourcePrivateNetworkInterfaceTestReturnNic() throws SocketException, ConfigurationException {
         Enumeration<NetworkInterface> interfaces = Collections.enumeration(Arrays.asList(networkInterfaceMock1, networkInterfaceMock2));
 
-        PowerMockito.mockStatic(NetworkInterface.class);
-        PowerMockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(interfaces);
-        Mockito.doReturn(false, true).when(serverResourceBaseSpy).isValidNicToUseAsPrivateNic(Mockito.any());
+        try (MockedStatic<NetworkInterface> ignored = Mockito.mockStatic(NetworkInterface.class)) {
+            Mockito.when(NetworkInterface.getNetworkInterfaces()).thenReturn(interfaces);
+            Mockito.doReturn(false, true).when(serverResourceBaseSpy).isValidNicToUseAsPrivateNic(Mockito.any());
 
-        serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
+            serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
 
-        Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy._privateNic);
-        Mockito.verify(serverResourceBaseSpy, Mockito.times(2)).isValidNicToUseAsPrivateNic(Mockito.any());
+            Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy._privateNic);
+            Mockito.verify(serverResourceBaseSpy, Mockito.times(2)).isValidNicToUseAsPrivateNic(Mockito.any());
+        }
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void defineResourceNetworkInterfacesTestUseXenbr0WhenPrivateNetworkInterfaceNotConfigured() {
         Map<String, Object> params = createParamsMap(null, "cloudbr1", "cloudbr2", "cloudbr3");
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
-        serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
+            serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-        verifyAndAssertNetworkInterfaces("xenbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces("xenbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+        }
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void defineResourceNetworkInterfacesTestUseXenbr1WhenPublicNetworkInterfaceNotConfigured() {
         Map<String, Object> params = createParamsMap("cloudbr0", null, "cloudbr2", "cloudbr3");
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
-        serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
+            serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-        verifyAndAssertNetworkInterfaces("cloudbr0", "xenbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces("cloudbr0", "xenbr1", "cloudbr2", "cloudbr3");
+        }
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void defineResourceNetworkInterfacesTestUseConfiguredNetworkInterfaces() {
         Map<String, Object> params = createParamsMap("cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2, networkInterfaceMock3, networkInterfaceMock4);
 
-        serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
+            serverResourceBaseSpy.defineResourceNetworkInterfaces(params);
 
-        verifyAndAssertNetworkInterfaces("cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+            verifyAndAssertNetworkInterfaces("cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+        }
     }
 
     private Map<String, Object> createParamsMap(String... params) {
@@ -225,7 +221,7 @@ public class ServerResourceBaseTest {
     }
 
     private void verifyAndAssertNetworkInterfaces(String... expectedResults) {
-        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(4));
+        Mockito.verify(NetUtils.class, Mockito.times(4));
         NetUtils.getNetworkInterface(keyCaptor.capture());
         List<String> keys = keyCaptor.getAllValues();
 

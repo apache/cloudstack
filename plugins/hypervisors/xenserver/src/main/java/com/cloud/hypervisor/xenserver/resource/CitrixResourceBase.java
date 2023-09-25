@@ -801,7 +801,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Throwable e) {
-            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to to " + e.toString();
+            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         }
