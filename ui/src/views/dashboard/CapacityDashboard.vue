@@ -70,7 +70,10 @@
         <a-row :gutter="[12, 12]">
           <a-col :span="12">
             <router-link :to="{ path: '/pod', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.pods')" :value="data.pods">
+              <a-statistic
+                :title="$t('label.pods')"
+                :value="data.pods"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <appstore-outlined/>&nbsp;
                 </template>
@@ -79,7 +82,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/cluster', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.clusters')" :value="data.clusters">
+              <a-statistic
+                :title="$t('label.clusters')"
+                :value="data.clusters"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <cluster-outlined/>&nbsp;
                 </template>
@@ -88,7 +94,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.hosts')" :value="data.totalHosts">
+              <a-statistic
+                :title="$t('label.hosts')"
+                :value="data.totalHosts"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <database-outlined/>&nbsp;
                 </template>
@@ -97,7 +106,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'alert' } }">
-              <a-statistic :title="$t('label.host.alerts')" :value="data.alertHosts">
+              <a-statistic
+                :title="$t('label.host.alerts')"
+                :value="data.alertHosts"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <database-outlined/>
                   <status class="status" text="Alert" style="margin-left: -10px"/>
@@ -107,7 +119,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/storagepool', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.primary.storage')" :value="data.pools">
+              <a-statistic
+                :title="$t('label.primary.storage')"
+                :value="data.pools"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <hdd-outlined/>&nbsp;
                 </template>
@@ -116,7 +131,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/systemvm', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.system.vms')" :value="data.systemvms">
+              <a-statistic
+                :title="$t('label.system.vms')"
+                :value="data.systemvms"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <thunderbolt-outlined/>&nbsp;
                 </template>
@@ -125,7 +143,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/router', query: { zoneid: zoneSelected.id } }">
-              <a-statistic :title="$t('label.virtual.routers')" :value="data.routers">
+              <a-statistic
+                :title="$t('label.virtual.routers')"
+                :value="data.routers"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <fork-outlined/>&nbsp;
                 </template>
@@ -134,7 +155,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
-              <a-statistic :title="$t('label.instances')" :value="data.instances">
+              <a-statistic
+                :title="$t('label.instances')"
+                :value="data.instances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <cloud-server-outlined/>&nbsp;
                 </template>

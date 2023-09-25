@@ -53,7 +53,10 @@
         <a-row :gutter="[10, 10]">
           <a-col :span="12">
             <router-link :to="{ path: '/vm' }">
-              <a-statistic :title="$t('label.instances')" :value="data.instances">
+              <a-statistic
+                :title="$t('label.instances')"
+                :value="data.instances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <cloud-server-outlined/>&nbsp;
                 </template>
@@ -62,7 +65,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/kubernetes' }">
-              <a-statistic :title="$t('label.kubernetes.cluster')" :value="data.kubernetes">
+              <a-statistic
+                :title="$t('label.kubernetes.cluster')"
+                :value="data.kubernetes"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <cluster-outlined/>&nbsp;
                 </template>
@@ -71,7 +77,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/volume' }">
-              <a-statistic :title="$t('label.volumes')" :value="data.volumes">
+              <a-statistic
+                :title="$t('label.volumes')"
+                :value="data.volumes"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <hdd-outlined/>&nbsp;
                 </template>
@@ -80,7 +89,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/snapshot' }">
-              <a-statistic :title="$t('label.snapshots')" :value="data.snapshots">
+              <a-statistic
+                :title="$t('label.snapshots')"
+                :value="data.snapshots"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <build-outlined/>&nbsp;
                 </template>
@@ -89,7 +101,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/guestnetwork' }">
-              <a-statistic :title="$t('label.guest.networks')" :value="data.networks">
+              <a-statistic
+                :title="$t('label.guest.networks')"
+                :value="data.networks"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <apartment-outlined/>&nbsp;
                 </template>
@@ -98,7 +113,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/vpc' }">
-              <a-statistic :title="$t('label.vpcs')" :value="data.vpcs">
+              <a-statistic
+                :title="$t('label.vpcs')"
+                :value="data.vpcs"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <deployment-unit-outlined/>&nbsp;
                 </template>
@@ -107,7 +125,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/publicip' }">
-              <a-statistic :title="$t('label.public.ips')" :value="data.ips">
+              <a-statistic
+                :title="$t('label.public.ips')"
+                :value="data.ips"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <environment-outlined/>&nbsp;
                 </template>
@@ -116,7 +137,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
-              <a-statistic :title="$t('label.templates')" :value="data.templates">
+              <a-statistic
+                :title="$t('label.templates')"
+                :value="data.templates"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <picture-outlined/>&nbsp;
                 </template>
@@ -139,7 +163,10 @@
         <a-row>
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { state: 'running', filter: 'running' } }">
-              <a-statistic :title="$t('label.running') + ' ' + $t('label.instances')" :value="data.running">
+              <a-statistic
+                :title="$t('label.running') + ' ' + $t('label.instances')"
+                :value="data.running"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <status class="status" text="Running"/>
                 </template>
@@ -148,7 +175,10 @@
           </a-col>
           <a-col :span="12">
             <router-link :to="{ path: '/vm', query: { state: 'stopped', filter: 'stopped' } }">
-              <a-statistic :title="$t('label.stopped') + ' ' + $t('label.instances')" :value="data.stopped">
+              <a-statistic
+                :title="$t('label.stopped') + ' ' + $t('label.instances')"
+                :value="data.stopped"
+                :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <status class="status" text="Stopped"/>
                 </template>
