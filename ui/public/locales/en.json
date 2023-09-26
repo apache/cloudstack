@@ -972,6 +972,7 @@
 "label.ikepolicy": "IKE policy",
 "label.ikeversion": "IKE version",
 "label.images": "Images",
+"label.imagestoreid": "Secondary Storage",
 "label.import.backup.offering": "Import backup offering",
 "label.import.instance": "Import instance",
 "label.import.offering": "Import offering",

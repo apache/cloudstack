@@ -17,14 +17,6 @@
 
 <template>
   <div>
-    <a-drawer
-      :visible="showDrawer"
-      :closable="true"
-      @close="onDrawerClose"
-      size='small'
-      placement='right'>
-        <info-card :resource="drawerResource" :loading="drawerLoading" />
-    </a-drawer>
     <a-card class="breadcrumb-card">
       <a-row>
         <a-col :span="24" style="padding-left: 12px">
@@ -93,34 +85,27 @@
                 <folder-outlined /> {{ record.name }}
               </a>
             </template>
-            <template v-else-if="record.snapshotid">
-              <a @click="openDrawer(record)">
-                <build-outlined/>
-                {{ record.name }}
-              </a>
-            </template>
-            <template v-else-if="record.volumeid">
-              <a @click="openDrawer(record)">
-                <hdd-outlined/>
-                {{ record.name }}
-              </a>
-            </template>
-            <template v-else-if="record.templateid">
-              <a @click="openDrawer(record)">
-                <usb-outlined v-if="record.format === 'ISO'"/>
-                <save-outlined v-else />
-                  {{ record.name }}
-              </a>
-            </template>
             <template v-else>
-              {{ record.name }}
+              <template v-if="record.snapshotid">
+                <build-outlined/>
+              </template>
+              <template v-else-if="record.volumeid">
+                  <hdd-outlined/>
+              </template>
+              <template v-else-if="record.templateid">
+                  <usb-outlined v-if="record.format === 'ISO'"/>
+                  <save-outlined v-else />
+              </template>
+                {{ record.name }}
             </template>
           </template>
           <template v-if="column.key == 'size'">
+            <template v-if="!record.isdirectory">
             {{ convertBytes(record.size) }}
+            </template>
           </template>
           <template v-if="column.key == 'lastupdated'">
-            {{ $toLocalDate(record.lastupdated) }}
+            {{ $toLocaleDate(record.lastupdated) }}
           </template>
           <template v-if="column.key == 'related'">
             <template v-if="record.snapshotid">
@@ -159,7 +144,6 @@
 
 <script>
 import { api } from '@/api'
-import { genericCompare } from '@/utils/sort.js'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import MigrateImageStoreResource from '@/views/storage/MigrateImageStoreResource'
@@ -185,23 +169,19 @@ export default {
     var columns = [
       {
         key: 'name',
-        title: this.$t('label.name'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        title: this.$t('label.name')
       },
       {
         key: 'size',
-        title: this.$t('label.size'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        title: this.$t('label.size')
       },
       {
         key: 'lastupdated',
-        title: this.$t('label.last.updated'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        title: this.$t('label.last.updated')
       },
       {
         key: 'related',
-        title: this.$t('label.related'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        title: this.$t('label.related')
       }
     ]
     if (this.resourceType === 'ImageStore') {
@@ -218,10 +198,6 @@ export default {
       pageSize: parseInt(this.$route.query.browserPageSize) || 10,
       total: 0,
       columns: columns,
-      showDrawer: false,
-      drawerLoading: false,
-      drawerResource: {},
-      drawerShowMoreDetailsRoute: {},
       migrateModalLoading: false,
       showMigrateModal: false,
       templateIdsToMigrate: [],
@@ -275,8 +251,10 @@ export default {
     },
     fetchData () {
       this.dataSource = []
+      // this.$route.query.browserPath = this.browserPath
       this.$router.replace(
         {
+          path: this.$route.path,
           query: {
             ...this.$route.query,
             browserPath: this.browserPath,
@@ -320,64 +298,6 @@ export default {
       this.page = 1
       this.pageSize = 10
       this.fetchData()
-    },
-    openDrawer (record) {
-      if (record.snapshotid) {
-        this.fetchSnapshot(record.snapshotid)
-      } else if (record.templateid) {
-        if (record.format === 'ISO') {
-          this.fetchISO(record.templateid)
-        } else {
-          this.fetchTemplate(record.templateid)
-        }
-      }
-    },
-    fetchSnapshot (snapshotid) {
-      this.showDrawer = true
-      this.drawerLoading = true
-      this.drawerShowMoreDetailsRoute = { path: '/snapshot/' + snapshotid }
-      api('listSnapshots', {
-        id: snapshotid,
-        listall: true
-      }).then(json => {
-        this.drawerResource = json.listsnapshotsresponse.snapshot[0]
-      }).finally(() => {
-        this.drawerLoading = false
-      })
-      return null
-    },
-    fetchTemplate (templateid) {
-      this.showDrawer = true
-      this.drawerLoading = true
-      this.drawerShowMoreDetailsRoute = { path: '/template/' + templateid }
-      api('listTemplates', {
-        id: templateid,
-        listall: true,
-        templatefilter: 'all'
-      }).then(json => {
-        this.drawerResource = json.listtemplatesresponse.template[0]
-      }).finally(() => {
-        this.drawerLoading = false
-      })
-      return null
-    },
-    fetchISO (templateid) {
-      this.showDrawer = true
-      this.drawerLoading = true
-      this.drawerShowMoreDetailsRoute = { path: '/template/' + templateid }
-      api('listIsos', {
-        id: templateid,
-        listall: true,
-        isofilter: 'all'
-      }).then(json => {
-        this.drawerResource = json.listisosresponse.iso[0]
-      }).finally(() => {
-        this.drawerLoading = false
-      })
-      return null
-    },
-    onDrawerClose () {
-      this.showDrawer = false
     }
   }
 }

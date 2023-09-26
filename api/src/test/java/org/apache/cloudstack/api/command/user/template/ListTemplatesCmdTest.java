@@ -47,7 +47,7 @@ public class ListTemplatesCmdTest {
     @Test
     public void testGetDataStoreId() {
         ListIsosCmd cmd = new ListIsosCmd();
-        assertNull(cmd.getDataStoreId());
+        assertNull(cmd.getImageStoreId());
     }
 
     @Test

@@ -27,8 +27,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;

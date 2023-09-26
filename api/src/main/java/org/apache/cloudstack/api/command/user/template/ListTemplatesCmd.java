@@ -214,7 +214,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return ids;
     }
 
-    public Long getDataStoreId() {
+    public Long getImageStoreId() {
         return null;
     }
 }

@@ -107,7 +107,7 @@ export default {
     migrateResources (destStoreId) {
       var params = {
         srcpool: this.sourceImageStore.id,
-        destpool: this.selectedStore.id
+        destpool: destStoreId
       }
       params.templates = this.templateIdsToMigrate.join(',')
       params.snapshots = this.snapshotIdsToMigrate.join(',')
@@ -115,10 +115,10 @@ export default {
       api('migrateResourceToAnotherSecondaryStorage', params).then(response => {
         const jobId = response.migrateresourcetoanothersecondarystorageresponse.jobid
         this.$pollJob({
-          title: this.resource ? `this.$t('label.migrating')} ${this.resource.name}` : this.$t('label.migrating.data'),
-          description: this.resource ? this.resource.name : '',
+          title: this.$t('label.migrating.data'),
+          description: '',
           jobId: jobId,
-          successMessage: this.resource ? `${this.$t('message.success.migrating')} ${this.resource.name}` : this.$t('message.success.migration'),
+          successMessage: this.$t('message.success.migration'),
           successMethod: () => {
             this.closeModal()
           },
@@ -126,7 +126,7 @@ export default {
           errorMethod: () => {
             this.closeModal()
           },
-          loadingMessage: `${this.$t('message.migrating.processing')} ${this.resource ? this.resource.name : ''}`,
+          loadingMessage: this.$t('label.migrating'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.closeModal()

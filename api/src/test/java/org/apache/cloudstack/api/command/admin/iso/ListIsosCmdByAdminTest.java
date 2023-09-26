@@ -46,7 +46,7 @@ public class ListIsosCmdByAdminTest {
     public void testGetDataStoreId() {
         Long id = 1234L;
         ReflectionTestUtils.setField(cmd, "dataStoreId", id);
-        assertEquals(id, cmd.getDataStoreId());
+        assertEquals(id, cmd.getImageStoreId());
     }
 
     @Test

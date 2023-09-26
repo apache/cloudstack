@@ -31,13 +31,13 @@ import com.cloud.template.VirtualMachineTemplate;
             responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class},
             responseView = ResponseView.Full, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTemplatesCmdByAdmin extends ListTemplatesCmd implements AdminCmd {
-    @Parameter(name = ApiConstants.DATASTORE_ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
+    @Parameter(name = ApiConstants.IMAGE_STORE_ID, type = CommandType.UUID, entityType = ImageStoreResponse.class,
                description = "ID of the image or image cache store", since = "4.19")
-    private Long dataStoreId;
+    private Long imageStoreId;
 
 
     @Override
-    public Long getDataStoreId() {
-        return dataStoreId;
+    public Long getImageStoreId() {
+        return imageStoreId;
     }
 }

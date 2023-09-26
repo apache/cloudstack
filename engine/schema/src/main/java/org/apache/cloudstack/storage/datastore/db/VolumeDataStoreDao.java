@@ -18,7 +18,6 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.List;
 
-import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 

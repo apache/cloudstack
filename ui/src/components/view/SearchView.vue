@@ -279,7 +279,7 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
+        if (['zoneid', 'domainid', 'imagestoreid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -348,6 +348,7 @@ export default {
       const promises = []
       let zoneIndex = -1
       let domainIndex = -1
+      let imageStoreIndex = -1
       let podIndex = -1
       let clusterIndex = -1
       let groupIndex = -1
@@ -362,6 +363,12 @@ export default {
         domainIndex = this.fields.findIndex(item => item.name === 'domainid')
         this.fields[domainIndex].loading = true
         promises.push(await this.fetchDomains(searchKeyword))
+      }
+
+      if (arrayField.includes('imagestoreid')) {
+        imageStoreIndex = this.fields.findIndex(item => item.name === 'imagestoreid')
+        this.fields[imageStoreIndex].loading = true
+        promises.push(await this.fetchImageStores(searchKeyword))
       }
 
       if (arrayField.includes('podid')) {
@@ -395,6 +402,12 @@ export default {
             this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
           }
         }
+        if (imageStoreIndex > -1) {
+          const imageStore = response.filter(item => item.type === 'imagestoreid')
+          if (imageStore && imageStore.length > 0) {
+            this.fields[imageStoreIndex].opts = this.sortArray(imageStore[0].data, 'name')
+          }
+        }
         if (podIndex > -1) {
           const pod = response.filter(item => item.type === 'podid')
           if (pod && pod.length > 0) {
@@ -419,6 +432,9 @@ export default {
         }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
+        }
+        if (imageStoreIndex > -1) {
+          this.fields[imageStoreIndex].loading = false
         }
         if (podIndex > -1) {
           this.fields[podIndex].loading = false
@@ -481,6 +497,19 @@ export default {
           resolve({
             type: 'domainid',
             data: domain
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchImageStores (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listImageStores', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+          const imageStore = json.listimagestoresresponse.imagestore
+          resolve({
+            type: 'imagestoreid',
+            data: imageStore
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])

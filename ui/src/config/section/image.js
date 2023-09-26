@@ -62,7 +62,7 @@ export default {
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'tags'],
+      searchFilters: ['name', 'zoneid', 'tags', 'imagestoreid'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -215,7 +215,7 @@ export default {
         return fields
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
-      searchFilters: ['name', 'zoneid', 'tags'],
+      searchFilters: ['name', 'zoneid', 'tags', 'imagestoreid'],
       related: [{
         name: 'vm',
         title: 'label.instances',

@@ -133,6 +133,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         }
 
         ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, page, pageSize);
+        // use ep.sendMessageAsync instead of ep.sendMessage
         Answer answer = ep.sendMessage(listDSCmd);
         if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
             throw new CloudRuntimeException("Failed to list datastore objects");

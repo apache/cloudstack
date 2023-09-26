@@ -45,12 +45,12 @@ export default {
   related: [{
     name: 'template',
     title: 'label.templates',
-    param: 'datastoreid'
+    param: 'imagestoreid'
   },
   {
     name: 'iso',
     title: 'label.isos',
-    param: 'datastoreid'
+    param: 'imagestoreid'
   },
   {
     name: 'snapshot',

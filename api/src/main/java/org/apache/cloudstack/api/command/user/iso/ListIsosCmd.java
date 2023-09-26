@@ -134,7 +134,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return showUnique != null && showUnique;
     }
 
-    public Long getDataStoreId() {
+    public Long getImageStoreId() {
         return null;
     }
 

@@ -3652,7 +3652,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         List<Long> ids = cmd.getIds();
-        Long imageStoreId = cmd.getDataStoreId();
+        Long imageStoreId = cmd.getImageStoreId();
 
         if (imageStoreId != null) {
             ids = getTemplateIdsFromIdsAndStoreId(ids, imageStoreId);
@@ -4045,8 +4045,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (cmd.getId() != null) {
             ids.add(cmd.getId());
         }
-        if (cmd.getDataStoreId() != null) {
-            ids = getTemplateIdsFromIdsAndStoreId(List.of(), cmd.getDataStoreId());
+        if (cmd.getImageStoreId() != null) {
+            ids = getTemplateIdsFromIdsAndStoreId(List.of(), cmd.getImageStoreId());
             if (ids.isEmpty()) {
                 return new Pair<>(new ArrayList<>(), 0);
             }
