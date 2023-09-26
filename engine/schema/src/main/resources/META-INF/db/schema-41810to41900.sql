@@ -186,3 +186,17 @@ ALTER TABLE `cloud`.`template_spool_ref` ADD INDEX `i_template_spool_ref__instal
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__path`(`path`);
 ALTER TABLE `cloud`.`snapshot_store_ref` ADD INDEX `i_snapshot_store_ref__install_path`(`install_path`);
 ALTER TABLE `cloud`.`template_store_ref` ADD INDEX `i_template_store_ref__install_path`(`install_path`);
+
+-- Add table for image store object download
+DROP TABLE IF EXISTS `cloud`.`image_store_object_download`;
+CREATE TABLE `cloud`.`image_store_object_download` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'image store id',
+  `path` varchar(255) NOT NULL COMMENT 'path on store',
+  `download_url` varchar(255) NOT NULL COMMENT 'download url',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`store_id`, `path`),
+  INDEX `i_image_store_object_download__created`(`created`),
+  CONSTRAINT `fk_image_store_object_download__store_id` FOREIGN KEY (`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -16,20 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.cloudstack.storage.datastore.db;
 
-package org.apache.cloudstack.storage.browser;
+import com.cloud.utils.db.GenericDao;
 
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.api.command.admin.storage.DownloadImageStoreObjectCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListImageStoreObjectsCmd;
-import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.ListResponse;
+import java.util.Date;
+import java.util.List;
 
-public interface StorageBrowser extends PluggableService {
-    ListResponse<DataStoreObjectResponse> listImageStoreObjects(ListImageStoreObjectsCmd cmd);
+public interface ImageStoreObjectDownloadDao extends GenericDao<ImageStoreObjectDownloadVO, Long> {
+    ImageStoreObjectDownloadVO findByStoreIdAndPath(long storeId, String path);
 
-    ListResponse<DataStoreObjectResponse> listPrimaryStoreObjects(ListStoragePoolObjectsCmd cmd);
-
-    ExtractResponse downloadImageStoreObject(DownloadImageStoreObjectCmd cmd);
+    List<ImageStoreObjectDownloadVO> listToExpire(Date date);
 }

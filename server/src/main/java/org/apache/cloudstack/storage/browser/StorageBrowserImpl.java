@@ -26,6 +26,8 @@ import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
@@ -34,22 +36,31 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.admin.storage.DownloadImageStoreObjectCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoreObjectsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.diagnostics.to.DiagnosticsDataObject;
+import org.apache.cloudstack.diagnostics.to.DiagnosticsDataTO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -66,6 +77,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     @Inject
     ImageStoreJoinDao imageStoreJoinDao;
+
+    @Inject
+    ImageStoreObjectDownloadDao imageStoreObjectDownloadDao;
 
     @Inject
     DataStoreManager dataStoreMgr;
@@ -99,6 +113,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(ListImageStoreObjectsCmd.class);
         cmdList.add(ListStoragePoolObjectsCmd.class);
+        cmdList.add(DownloadImageStoreObjectCmd.class);
         return cmdList;
     }
 
@@ -125,6 +140,41 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return getResponse(dataStore, answer);
     }
 
+    @Override
+    public ExtractResponse downloadImageStoreObject(DownloadImageStoreObjectCmd cmd) {
+        ImageStoreEntity imageStore = (ImageStoreEntity) dataStoreMgr.getDataStore(cmd.getStoreId(), DataStoreRole.Image);
+
+        String path = cmd.getPath();
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+
+        ImageStoreObjectDownloadVO imageStoreObj = imageStoreObjectDownloadDao.findByStoreIdAndPath(cmd.getStoreId(), path);
+
+        if (imageStoreObj == null) {
+            try {
+                String fileExt = path.substring(path.lastIndexOf(".") + 1);
+                Storage.ImageFormat format = EnumUtils.isValidEnum(Storage.ImageFormat.class, fileExt) ? Storage.ImageFormat.valueOf(fileExt.toUpperCase()) : null;
+
+                DiagnosticsDataTO dataTO = new DiagnosticsDataTO(imageStore.getTO());
+                DiagnosticsDataObject dataObject = new DiagnosticsDataObject(dataTO, imageStore);
+                String downloadUrl = imageStore.createEntityExtractUrl(path, format, dataObject);
+                imageStoreObj = imageStoreObjectDownloadDao.persist(new ImageStoreObjectDownloadVO(imageStore.getId(), path, downloadUrl));
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Failed to create download url for image store object", e);
+            }
+        }
+        ExtractResponse response = new ExtractResponse(null, null, CallContext.current().getCallingAccountUuid(), null, null);
+        if (imageStoreObj != null) {
+            response.setUrl(imageStoreObj.getDownloadUrl());
+            response.setName(cmd.getPath().substring(cmd.getPath().lastIndexOf("/") + 1));
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        } else {
+            response.setState(Upload.Status.DOWNLOAD_URL_NOT_CREATED.toString());
+        }
+        return response;
+    }
+
     ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int page, int pageSize) {
         EndPoint ep = endPointSelector.select(dataStore);
 
@@ -133,8 +183,14 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         }
 
         ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, page, pageSize);
-        // use ep.sendMessageAsync instead of ep.sendMessage
-        Answer answer = ep.sendMessage(listDSCmd);
+        listDSCmd.setWait(30);
+        Answer answer = null;
+        try {
+            answer = ep.sendMessage(listDSCmd);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to list datastore objects", e);
+        }
+
         if (answer == null || !answer.getResult() || !(answer instanceof ListDataStoreObjectsAnswer)) {
             throw new CloudRuntimeException("Failed to list datastore objects");
         }
