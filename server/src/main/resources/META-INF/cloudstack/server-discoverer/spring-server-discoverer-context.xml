@@ -38,6 +38,11 @@
         <property name="name" value="Lxc Discover" />
     </bean>
 
+    <bean id="CustomServerDiscoverer"
+          class="com.cloud.hypervisor.discoverer.CustomServerDiscoverer">
+        <property name="name" value="CustomHW Agent" />
+    </bean>
+
     <bean id="dummyHostDiscoverer" class="com.cloud.resource.DummyHostDiscoverer">
         <property name="name" value="dummyHostDiscoverer" />
     </bean>

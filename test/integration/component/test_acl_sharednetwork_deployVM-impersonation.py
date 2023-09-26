@@ -1714,7 +1714,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
                 accountid=self.account_d2a.name,
                 domainid=self.account_d2a.domainid
             )
-            self.fail("Domain admin is able able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account")
+            self.fail("Domain admin is able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account")
         except Exception as e:
             self.debug("When a user from different domain deploys a VM in a shared network with scope=account %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.NO_PERMISSION_TO_OPERATE_DOMAIN):

@@ -860,8 +860,6 @@
                                     <exclude>com.tngtech.java:junit-dataprovider</exclude>
                                     <exclude>org.mockito:mockito-all</exclude>
                                     <exclude>org.hamcrest:hamcrest-all</exclude>
-                                    <exclude>org.powermock:powermock-module-junit4</exclude>
-                                    <exclude>org.powermock:powermock-api-mockito2</exclude>
                                     <exclude>org.springframework:spring-test</exclude>
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>

@@ -72,9 +72,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
@@ -91,9 +88,11 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
+import org.junit.After;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class HypervisorTemplateAdapterTest {
     @Mock
     EventBus _bus;
@@ -149,9 +148,21 @@ public class HypervisorTemplateAdapterTest {
     private Map<String, Object> oldFields = new HashMap<>();
     private List<UsageEventVO> usageEvents = new ArrayList<>();
 
+    private MockedStatic<ComponentContext> componentContextMocked;
+
+    private AutoCloseable closeable;
+
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (componentContextMocked != null) {
+            componentContextMocked.close();
+        }
+        closeable.close();
     }
 
     public UsageEventUtils setupUsageUtils() throws EventBusException {
@@ -174,7 +185,7 @@ public class HypervisorTemplateAdapterTest {
             }
         }).when(_bus).publish(any(Event.class));
 
-        PowerMockito.mockStatic(ComponentContext.class);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         when(ComponentContext.getComponent(eq(EventBus.class))).thenReturn(_bus);
 
         UsageEventUtils utils = new UsageEventUtils();
@@ -523,7 +534,6 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
 
 
@@ -549,7 +559,6 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
 
 
@@ -575,9 +584,7 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
-
 
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Private template will be allocated in image store [%s] in zone [%s].",

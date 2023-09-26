@@ -549,7 +549,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         sanitizeFormat(format);
 
-        // Check that the the disk offering specified is valid
+        // Check that the disk offering specified is valid
         if (diskOfferingId != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if ((diskOffering == null) || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
@@ -740,7 +740,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
 
-            // Check that the the disk offering is specified
+            // Check that the disk offering is specified
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if ((diskOffering == null) || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.");
