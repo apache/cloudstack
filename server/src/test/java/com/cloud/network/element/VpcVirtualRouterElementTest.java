@@ -16,27 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.cloudstack.network.topology.AdvancedNetworkTopology;
-import org.apache.cloudstack.network.topology.BasicNetworkTopology;
-import org.apache.cloudstack.network.topology.NetworkTopologyContext;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceUnavailableException;
@@ -47,6 +26,26 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
+import org.apache.cloudstack.network.topology.AdvancedNetworkTopology;
+import org.apache.cloudstack.network.topology.BasicNetworkTopology;
+import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VpcVirtualRouterElementTest {

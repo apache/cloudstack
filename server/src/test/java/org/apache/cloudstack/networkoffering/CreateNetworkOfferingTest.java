@@ -62,7 +62,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDetailsDao;
-
 import junit.framework.TestCase;
 
 @RunWith(SpringJUnit4ClassRunner.class)

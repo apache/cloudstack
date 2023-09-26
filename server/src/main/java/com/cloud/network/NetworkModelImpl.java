@@ -2673,6 +2673,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             vmData.add(new String[]{METATDATA_DIR, CLOUD_DOMAIN_ID_FILE, domain.getUuid()});
         }
 
+        String customCloudName = VirtualMachineManager.MetadataCustomCloudName.valueIn(datacenterId);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(customCloudName)) {
+            vmData.add(new String[]{METATDATA_DIR, CLOUD_NAME_FILE, customCloudName});
+        }
+
         return vmData;
     }
 

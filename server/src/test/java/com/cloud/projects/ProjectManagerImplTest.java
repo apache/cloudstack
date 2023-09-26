@@ -16,9 +16,7 @@
 // under the License.
 package com.cloud.projects;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.projects.dao.ProjectDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +28,8 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import com.cloud.projects.dao.ProjectDao;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @RunWith(MockitoJUnitRunner.class)
