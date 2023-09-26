@@ -1000,9 +1000,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
 
         final Map<Network.Service, Network.Provider> defaultNSXNetworkOfferingProviders = new HashMap<>();
-        //defaultNSXNetworkOfferingProviders.put(Service.Connectivity, Provider.Nsx);
         defaultNSXNetworkOfferingProviders.put(Service.Dhcp, Provider.Nsx);
         defaultNSXNetworkOfferingProviders.put(Service.Dns, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.SourceNat, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
 
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
@@ -1208,8 +1209,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 // Offering #9 - network offering for nsx provider
                 NetworkOfferingVO defaultNSXNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NSX_OFFERING, "Offering for NSX enabled networks",
-                                TrafficType.Guest, false, true, null, null, true, Availability.Optional, null, GuestType.Isolated, true, true, false, false, false, false);
-
+                                TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, true, false, false, false, true);
+                defaultNSXNetworkOffering.setForNsx(true);
                 defaultNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNSXNetworkOffering);
 

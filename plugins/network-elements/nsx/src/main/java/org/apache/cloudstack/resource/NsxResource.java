@@ -75,6 +75,8 @@ public class NsxResource implements ServerResource {
     private static final Logger LOGGER = Logger.getLogger(NsxResource.class);
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
+
+    private static final String Tier_1_LOCALE_SERVICE_ID = "default";
     private static final String TIER_1_RESOURCE_TYPE = "Tier1";
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
 
@@ -258,15 +260,6 @@ public class NsxResource implements ServerResource {
                 .setRouteAdvertisementTypes(List.of(TIER1_CONNECTED.name(), TIER1_IPSEC_LOCAL_ENDPOINT.name()))
                 .setId(name)
                 .setDisplayName(name)
-//                .setChildren(
-//                        List.of(new ChildLocaleServices.Builder("ChildLocaleServices")
-//                                        .setLocaleServices(
-//                                                new com.vmware.nsx_policy.model.LocaleServices.Builder()
-//                                                        .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath())
-//                                                        .setParentPath(TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
-//                                                        .setResourceType("LocaleServices")
-//                                                        .build()
-//                                        ).build()))
                 .build();
         try {
             tier1service.patch(name, tier1);
@@ -288,7 +281,7 @@ public class NsxResource implements ServerResource {
             com.vmware.nsx_policy.infra.tier_1s.LocaleServices tier1LocalService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
             com.vmware.nsx_policy.model.LocaleServices localeService = new com.vmware.nsx_policy.model.LocaleServices.Builder()
                     .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath()).build();
-            tier1LocalService.patch(tier1Id, "default", localeService);
+            tier1LocalService.patch(tier1Id, Tier_1_LOCALE_SERVICE_ID, localeService);
             return true;
         } catch (Error error) {
             throw new CloudRuntimeException(String.format("Failed to instantiate tier-1 gateway %s in edge cluster %s", tier1Id, edgeCluster));
@@ -297,8 +290,12 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
         try {
+            String tier1Id = getTier1GatewayName(cmd);
+            com.vmware.nsx_policy.infra.tier_1s.LocaleServices localeService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices)
+                    nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
+            localeService.delete(tier1Id, Tier_1_LOCALE_SERVICE_ID);
             Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
-            tier1service.delete(getTier1GatewayName(cmd));
+            tier1service.delete(tier1Id);
         } catch (Exception e) {
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
