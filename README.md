@@ -85,10 +85,10 @@ promotion etc. See our contribution [page](http://cloudstack.apache.org/contribu
 
 If you are a frequent contributors, you can request to be added as collaborators
 (see https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features#Git.asf.yamlfeatures-AssigningexternalcollaboratorswiththetriageroleonGitHub)
-to our Github repos. This allows you to use project Github with ability to report
+to our GitHub repos. This allows you to use project GitHub with ability to report
 issue with tags, and be assigned to issues and PRs. This is done via the .asf.yaml
 file in this repo.
-You may do so by sharing your github users ID or raise a Github issue.
+You may do so by sharing your GitHub users ID or raise a GitHub issue.
 
 If you're interested in learning more or participating in the Apache CloudStack
 project, the mailing lists are the best way to do that. While the project has
