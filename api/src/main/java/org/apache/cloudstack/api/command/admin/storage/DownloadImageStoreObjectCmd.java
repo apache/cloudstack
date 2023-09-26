@@ -71,6 +71,8 @@ public class DownloadImageStoreObjectCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         ExtractResponse response = storageBrowser.downloadImageStoreObject(this);
+        response.setResponseName(getCommandName());
+        response.setObjectName(getCommandName());
         this.setResponseObject(response);
     }
 

@@ -86,17 +86,19 @@
               </a>
             </template>
             <template v-else>
-              <template v-if="record.snapshotid">
-                <build-outlined/>
-              </template>
-              <template v-else-if="record.volumeid">
-                  <hdd-outlined/>
-              </template>
-              <template v-else-if="record.templateid">
-                  <usb-outlined v-if="record.format === 'ISO'"/>
-                  <save-outlined v-else />
-              </template>
+              <a @click="downloadFile(record)">
+                <template v-if="record.snapshotid">
+                  <build-outlined/>
+                </template>
+                <template v-else-if="record.volumeid">
+                    <hdd-outlined/>
+                </template>
+                <template v-else-if="record.templateid">
+                    <usb-outlined v-if="record.format === 'ISO'"/>
+                    <save-outlined v-else />
+                </template>
                 {{ record.name }}
+              </a>
             </template>
           </template>
           <template v-if="column.key == 'size'">
@@ -298,6 +300,42 @@ export default {
       this.page = 1
       this.pageSize = 10
       this.fetchData()
+    },
+    downloadFile (record) {
+      this.loading = true
+      const params = {
+        id: this.resource.id,
+        path: `${this.browserPath}${record.name}`
+      }
+      api('downloadImageStoreObject', params).then(response => {
+        const jobId = response.downloadimagestoreobjectresponse.jobid
+        this.$pollJob({
+          jobId: jobId,
+          successMethod: (result) => {
+            const url = result.jobresult.downloadimagestoreobjectresponse.url
+            const name = result.jobresult.downloadimagestoreobjectresponse.name
+            var elem = window.document.createElement('a')
+            elem.setAttribute('href', new URL(url))
+            elem.setAttribute('download', name)
+            elem.setAttribute('target', '_blank')
+            document.body.appendChild(elem)
+            elem.click()
+            document.body.removeChild(elem)
+            this.loading = false
+          },
+          errorMethod: () => {
+            this.loading = false
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loading = false
+          }
+        })
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(error)
+        this.loading = false
+      })
     }
   }
 }
