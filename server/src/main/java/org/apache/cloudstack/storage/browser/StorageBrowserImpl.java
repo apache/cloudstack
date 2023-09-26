@@ -299,6 +299,13 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     Map<String, VMTemplateVO> getPathTemplateMapForPrimaryDS(Long dataStoreId, List<String> paths) {
         Map<String, VMTemplateVO> pathTemplateMap = new HashMap<>();
+        // get a map of paths without extension to path. We do this because extension is not saved in database for xen server.
+        Map<String, String> pathWithoutExtensionMap = new HashMap<>();
+        for (String path : paths) {
+            String pathWithoutExtension = path.substring(0, path.lastIndexOf("."));
+            pathWithoutExtensionMap.put(pathWithoutExtension, path);
+        }
+        paths.addAll(pathWithoutExtensionMap.keySet());
         List<VMTemplateStoragePoolVO> templateStoragePoolList = templatePoolDao.listByPoolIdAndInstallPath(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(templateStoragePoolList)) {
             List<VMTemplateVO> templates = templateDao.listByIds
@@ -309,6 +316,9 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
             for (VMTemplateStoragePoolVO templatePool : templateStoragePoolList) {
                 pathTemplateMap.put(templatePool.getInstallPath(), templateMap.get(templatePool.getTemplateId()));
+                if (pathWithoutExtensionMap.get(templatePool.getInstallPath()) != null) {
+                    pathTemplateMap.put(pathWithoutExtensionMap.get(templatePool.getInstallPath()), templateMap.get(templatePool.getTemplateId()));
+                }
             }
         }
         return pathTemplateMap;
@@ -317,6 +327,13 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
     Map<String, SnapshotVO> getPathSnapshotMapForPrimaryDS(Long dataStoreId, List<String> paths,
             List<String> absPaths) {
         Map<String, SnapshotVO> snapshotPathMap = new HashMap<>();
+        // get a map of paths without extension to path. We do this because extension is not saved in database for xen server.
+        Map<String, String> absPathWithoutExtensionMap = new HashMap<>();
+        for (String path : absPaths) {
+            String pathWithoutExtension = path.substring(0, path.lastIndexOf("."));
+            absPathWithoutExtensionMap.put(pathWithoutExtension, path);
+        }
+        absPaths.addAll(absPathWithoutExtensionMap.keySet());
         // For primary dataStore, we query using absolutePaths
         List<SnapshotDataStoreVO> snapshotDataStoreList = snapshotDataStoreDao.listByStoreAndInstallPaths(dataStoreId, DataStoreRole.Primary, absPaths);
         if (!CollectionUtils.isEmpty(snapshotDataStoreList)) {
@@ -336,6 +353,14 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
             for (SnapshotDataStoreVO snapshotDataStore : snapshotDataStoreList) {
                 snapshotPathMap.put(absolutePathPathMap.get(snapshotDataStore.getInstallPath()),
                         snapshotMap.get(snapshotDataStore.getSnapshotId()));
+
+                if (absPathWithoutExtensionMap.get(snapshotDataStore.getInstallPath()) != null) {
+                    snapshotPathMap.put(
+                            absolutePathPathMap.get(
+                                    absPathWithoutExtensionMap.get(
+                                            snapshotDataStore.getInstallPath()
+                                    )), snapshotMap.get(snapshotDataStore.getSnapshotId()));
+                }
             }
         }
 
@@ -344,10 +369,21 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
 
     Map<String, VolumeVO> getPathVolumeMapForPrimaryDS(Long dataStoreId, List<String> paths) {
         Map<String, VolumeVO> volumePathMap = new HashMap<>();
+
+        // get a map of paths without extension to path. We do this because extension is not saved in database for xen server.
+        Map<String, String> pathWithoutExtensionMap = new HashMap<>();
+        for (String path : paths) {
+            String pathWithoutExtension = path.substring(0, path.lastIndexOf("."));
+            pathWithoutExtensionMap.put(pathWithoutExtension, path);
+        }
+        paths.addAll(pathWithoutExtensionMap.keySet());
         List<VolumeVO> volumeList = volumeDao.listByPoolIdAndPaths(dataStoreId, paths);
         if (!CollectionUtils.isEmpty(volumeList)) {
             for (VolumeVO volume : volumeList) {
                 volumePathMap.put(volume.getPath(), volume);
+                if (pathWithoutExtensionMap.get(volume.getPath()) != null) {
+                    volumePathMap.put(pathWithoutExtensionMap.get(volume.getPath()), volume);
+                }
             }
         }
         return volumePathMap;
