@@ -34,6 +34,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.admin.storage.DownloadImageStoreObjectCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoreObjectsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolObjectsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -90,6 +92,9 @@ public class StorageBrowserImplTest {
 
     @Mock
     VolumeDao volumeDao;
+
+    @Mock
+    VolumeDataStoreDao volumeDataStoreDao;
 
     @InjectMocks
     @Spy
@@ -215,6 +220,7 @@ public class StorageBrowserImplTest {
         List<Class<?>> expectedCmdList = new ArrayList<>();
         expectedCmdList.add(ListImageStoreObjectsCmd.class);
         expectedCmdList.add(ListStoragePoolObjectsCmd.class);
+        expectedCmdList.add(DownloadImageStoreObjectCmd.class);
 
         List<Class<?>> cmdList = storageBrowser.getCommands();
 

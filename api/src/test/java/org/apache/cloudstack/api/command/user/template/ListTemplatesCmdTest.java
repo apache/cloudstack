@@ -45,13 +45,13 @@ public class ListTemplatesCmdTest {
     }
 
     @Test
-    public void testGetDataStoreId() {
+    public void testGetImageStoreId() {
         ListIsosCmd cmd = new ListIsosCmd();
         assertNull(cmd.getImageStoreId());
     }
 
     @Test
-    public void testGetStoreId() {
+    public void testGetZoneId() {
         Long id = 1234L;
         ReflectionTestUtils.setField(cmd, "zoneId", id);
         assertEquals(id, cmd.getZoneId());
