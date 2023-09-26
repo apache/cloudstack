@@ -40,6 +40,7 @@ import {
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
 import vue3GoogleLogin from 'vue3-google-login'
+import { api } from '@/api'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -55,6 +56,25 @@ vueApp.use(genericUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 vueApp.use(vue3GoogleLogin, { clientId: '345798102268-cfcpg40k6hnfft2m61mf6jbmjcfg4p82.apps.googleusercontent.com' })
+
+api('listOauthProvider', {}).then(response => {
+  console.log('in main.js')
+  if (response) {
+    const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
+    oauthproviders.forEach(item => {
+      if (item.provider === 'google') {
+        this.googleprovider = true
+        this.googleclientid = item.clientid
+        this.googleredirecturi = item.redirecturi
+      }
+      if (item.provider === 'github') {
+        this.githubprovider = true
+        this.githubclientid = item.clientid
+        this.githubredirecturi = item.redirecturi
+      }
+    })
+  }
+})
 
 fetch('config.json').then(response => response.json()).then(config => {
   vueProps.$config = config

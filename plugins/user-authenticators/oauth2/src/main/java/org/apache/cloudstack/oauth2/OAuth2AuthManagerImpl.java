@@ -58,9 +58,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     public List<Class<?>> getAuthCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(OauthLoginAPIAuthenticatorCmd.class);
-        cmdList.add(RegisterOAuthProviderCmd.class);
         cmdList.add(ListOAuthProvidersCmd.class);
-        cmdList.add(DeleteOAuthProviderCmd.class);
         return cmdList;
     }
 
@@ -87,6 +85,12 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        if (!isOAuthPluginEnabled()) {
+            return cmdList;
+        }
+        cmdList.add(RegisterOAuthProviderCmd.class);
+        cmdList.add(DeleteOAuthProviderCmd.class);
+
         return cmdList;
     }
 

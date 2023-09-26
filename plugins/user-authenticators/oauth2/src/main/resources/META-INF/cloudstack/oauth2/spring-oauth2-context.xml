@@ -25,7 +25,7 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <bean id="OauthProviderDaoImpl" class="org.apache.cloudstack.oauth2.dao.OauthProviderDaoImpl" />
+    <bean id="OauthProviderDao" class="org.apache.cloudstack.oauth2.dao.OauthProviderDaoImpl" />
     <bean id="OAuth2UserAuthenticator" class="org.apache.cloudstack.oauth2.OAuth2UserAuthenticator">
         <property name="name" value="oauth2"/>
     </bean>
@@ -36,7 +36,8 @@
         <property name="name" value="github" />
     </bean>
 
-    <bean id="oAuth2AuthManagerImpl" class="org.apache.cloudstack.oauth2.OAuth2AuthManagerImpl">
+    <bean id="OAuth2AuthManager" class="org.apache.cloudstack.oauth2.OAuth2AuthManagerImpl">
+        <property name="name" value="OAUTH2Auth" />
         <property name="userOAuth2AuthenticationProviders" value="#{userOAuth2AuthenticatorsRegistry.registered}" />
     </bean>
 

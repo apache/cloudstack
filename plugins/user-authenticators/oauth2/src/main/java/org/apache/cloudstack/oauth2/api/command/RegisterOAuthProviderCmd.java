@@ -37,8 +37,6 @@ import java.util.Map;
 @APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack")
 public class RegisterOAuthProviderCmd extends BaseCmd {
 
-    private static final String s_name = "ConfigureOAuthProvider";
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -52,17 +50,12 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CLIENT_ID, type = CommandType.STRING, description = "Client ID pre-registered in the specific OAuth provider", required = true)
     private String clientId;
 
-    @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redicect URI pre-registered in the specific OAuth provider", required = true)
+    @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
     protected Map details;
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
 
     @Override
     public long getEntityOwnerId() {

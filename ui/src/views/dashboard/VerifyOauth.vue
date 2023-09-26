@@ -15,4 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-console.log('testOauth')
+<template>
+  <div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'VerifyOauth',
+  data () {
+    console.log('testOauth')
+    return {
+    }
+  }
+}
+</script>

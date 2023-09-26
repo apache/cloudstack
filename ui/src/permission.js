@@ -134,6 +134,8 @@ router.beforeEach((to, from, next) => {
       }
     }
   } else {
+    console.log(to.name)
+    console.log(to.fullPath)
     if (allowList.includes(to.name)) {
       next()
     } else {

@@ -84,6 +84,7 @@ export function oauthlogin (arg) {
   params.append('email', arg.email)
   params.append('secretcode', arg.secretcode)
   params.append('provider', arg.provider)
+  params.append('domain', arg.domain)
   params.append('response', 'json')
   return axios({
     url: '/',

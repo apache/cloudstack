@@ -563,6 +563,11 @@ UPDATE `cloud`.`configuration` SET
     `options` = 'PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT,OAUTH2'
 where `name` = 'user.authenticators.order' ;
 
+UPDATE `cloud`.`configuration` SET
+    `kind` = 'Order',
+    `options` = 'SAML2Auth,OAUTH2Auth'
+where `name` = 'pluggableApi.authenticators.order' ;
+
 -- Create table for OAuth provider details
 DROP TABLE IF EXISTS `cloud`.`oauth_provider`;
 CREATE TABLE `cloud`.`oauth_provider` (
