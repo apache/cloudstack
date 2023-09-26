@@ -3259,7 +3259,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
             }
         } catch (CloudTwoFactorAuthenticationException e) {
-            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
             if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);
             }
