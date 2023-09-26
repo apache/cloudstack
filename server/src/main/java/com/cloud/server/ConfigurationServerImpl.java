@@ -1209,7 +1209,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 // Offering #9 - network offering for nsx provider
                 NetworkOfferingVO defaultNSXNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NSX_OFFERING, "Offering for NSX enabled networks",
-                                TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, true, false, false, false, true);
+                                TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultNSXNetworkOffering.setForNsx(true);
                 defaultNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNSXNetworkOffering);
