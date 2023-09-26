@@ -82,7 +82,6 @@ import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
-import org.libvirt.NodeInfo;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.VcpuInfo;
@@ -936,13 +935,7 @@ public class LibvirtComputingResourceTest {
         Mockito.when(domain.memoryStats(20)).thenReturn(domainMem);
         Mockito.when(domainMem[0].getTag()).thenReturn(4);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
-        final NodeInfo nodeInfo = new NodeInfo();
-        nodeInfo.cpus = 8;
-        nodeInfo.memory = 8 * 1024 * 1024;
-        nodeInfo.sockets = 2;
-        nodeInfo.threads = 2;
-        nodeInfo.model = "Foo processor";
-        Mockito.when(connect.nodeInfo()).thenReturn(nodeInfo);
+
         // this is testing the interface stats, returns an increasing number of sent and received bytes
 
         Mockito.when(domain.interfaceStats(nullable(String.class))).thenAnswer(new org.mockito.stubbing.Answer<DomainInterfaceStats>() {
@@ -1752,8 +1745,6 @@ public class LibvirtComputingResourceTest {
         try {
             when(conn.domainLookupByName(vmName)).thenReturn(dm);
 
-            when(dm.getXMLDesc(8)).thenReturn("<domain type='kvm' id='3'>" + "  <devices>" + "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>"
-                    + "      <listen type='address' address='10.10.10.1'/>" + "    </graphics>" + "  </devices>" + "</domain>");
             when(dm.getXMLDesc(1)).thenReturn("<domain type='kvm' id='3'>" + "  <devices>" + "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>"
                     + "      <listen type='address' address='10.10.10.1'/>" + "    </graphics>" + "  </devices>" + "</domain>");
             when(dm.isPersistent()).thenReturn(1);

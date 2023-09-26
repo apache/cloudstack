@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.storage.configdrive;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -25,7 +24,6 @@ import static org.mockito.Mockito.times;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,69 +37,57 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.reflections.ReflectionUtils;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.google.gson.JsonObject;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FileUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigDriveBuilderTest {
 
     @Test
-    public void writeFileTest() throws Exception {
-        PowerMockito.mockStatic(FileUtils.class);
+    public void writeFileTest() {
+        try (MockedStatic<FileUtils> fileUtilsMocked = Mockito.mockStatic(FileUtils.class)) {
 
-        ConfigDriveBuilder.writeFile(new File("folder"), "subfolder", "content");
+            ConfigDriveBuilder.writeFile(new File("folder"), "subfolder", "content");
 
-        PowerMockito.verifyStatic(FileUtils.class);
-        FileUtils.write(Mockito.any(File.class), Mockito.anyString(), Mockito.any(Charset.class), Mockito.eq(false));
+            fileUtilsMocked.verify(() -> FileUtils.write(Mockito.any(File.class), Mockito.anyString(), Mockito.any(Charset.class), Mockito.eq(false)));
+        }
     }
 
-    @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
-    public void writeFileTestwriteFileTestIOExceptionWhileWritingFile() throws Exception {
-        PowerMockito.mockStatic(FileUtils.class);
-
-        //Does not look good, I know... but this is the price of static methods.
-        Method method = ReflectionUtils.getMethods(FileUtils.class, ReflectionUtils.withParameters(File.class, CharSequence.class, Charset.class, Boolean.TYPE)).iterator().next();
-        PowerMockito.when(FileUtils.class, method).withArguments(Mockito.any(File.class), Mockito.anyString(), Mockito.any(Charset.class), Mockito.anyBoolean()).thenThrow(IOException.class);
-
-        ConfigDriveBuilder.writeFile(new File("folder"), "subfolder", "content");
+    public void writeFileTestwriteFileTestIOExceptionWhileWritingFile() {
+        try (MockedStatic<FileUtils> fileUtilsMocked = Mockito.mockStatic(FileUtils.class)) {
+            fileUtilsMocked.when(() -> FileUtils.write(Mockito.any(File.class), Mockito.any(CharSequence.class), Mockito.any(Charset.class), Mockito.anyBoolean())).thenThrow(IOException.class);
+            ConfigDriveBuilder.writeFile(new File("folder"), "subfolder", "content");
+        }
     }
 
     @Test
     public void fileToBase64StringTest() throws Exception {
-        PowerMockito.mockStatic(FileUtils.class);
+        try (MockedStatic<FileUtils> ignored = Mockito.mockStatic(FileUtils.class)) {
 
-        String fileContent = "content";
-        Method method = getFileUtilsReadfileToByteArrayMethod();
-        PowerMockito.when(FileUtils.class, method).withArguments(Mockito.any(File.class)).thenReturn(fileContent.getBytes());
+            String fileContent = "content";
+            Mockito.when(FileUtils.readFileToByteArray(Mockito.any(File.class))).thenReturn(fileContent.getBytes());
 
-        String returnedContentInBase64 = ConfigDriveBuilder.fileToBase64String(new File("file"));
+            String returnedContentInBase64 = ConfigDriveBuilder.fileToBase64String(new File("file"));
 
-        Assert.assertEquals("Y29udGVudA==", returnedContentInBase64);
+            Assert.assertEquals("Y29udGVudA==", returnedContentInBase64);
+        }
     }
 
-    @SuppressWarnings("unchecked")
     @Test(expected = IOException.class)
     public void fileToBase64StringTestIOException() throws Exception {
-        PowerMockito.mockStatic(FileUtils.class);
+        try (MockedStatic<FileUtils> ignored = Mockito.mockStatic(FileUtils.class)) {
 
-        Method method = getFileUtilsReadfileToByteArrayMethod();
-        PowerMockito.when(FileUtils.class, method).withArguments(Mockito.any(File.class)).thenThrow(IOException.class);
+            Mockito.when(FileUtils.readFileToByteArray(Mockito.any(File.class))).thenThrow(IOException.class);
 
-        ConfigDriveBuilder.fileToBase64String(new File("file"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Method getFileUtilsReadfileToByteArrayMethod() {
-        return ReflectionUtils.getMethods(FileUtils.class, ReflectionUtils.withName("readFileToByteArray")).iterator().next();
+            ConfigDriveBuilder.fileToBase64String(new File("file"));
+        }
     }
 
     @Test
@@ -130,59 +116,40 @@ public class ConfigDriveBuilderTest {
         ConfigDriveBuilder.buildConfigDrive(null, "teste", "C:", null);
     }
 
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
     @Test(expected = CloudRuntimeException.class)
-    public void buildConfigDriveTestIoException() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
-
-        Method method1 = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("writeFile")).iterator().next();
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("writeVendorAndNetworkEmptyJsonFile")).iterator().next();
-
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(nullable(File.class)).thenThrow(CloudRuntimeException.class);
-
-        //This is odd, but it was necessary to allow us to check if we catch the IOexception and re-throw as a CloudRuntimeException
-        //We are mocking the class being tested; therefore, we needed to force the execution of the real method we want to test.
-        PowerMockito.when(ConfigDriveBuilder.class, new ArrayList<>(), "teste", "C:", null).thenCallRealMethod();
-
-        ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+    public void buildConfigDriveTestIoException() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
+            ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void buildConfigDriveTest() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void buildConfigDriveTest() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        Method writeVendorAndNetworkEmptyJsonFileMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("writeVendorAndNetworkEmptyJsonFile")).iterator().next();
-        PowerMockito.doNothing().when(ConfigDriveBuilder.class, writeVendorAndNetworkEmptyJsonFileMethod).withArguments(Mockito.any(File.class));
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
 
-        Method writeVmMetadataMethod = getWriteVmMetadataMethod();
-        PowerMockito.doNothing().when(ConfigDriveBuilder.class, writeVmMetadataMethod).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap());
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap())).then(invocationOnMock -> null);
 
-        Method linkUserDataMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("linkUserData")).iterator().next();
-        PowerMockito.doNothing().when(ConfigDriveBuilder.class, linkUserDataMethod).withArguments(Mockito.anyString());
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData((Mockito.anyString()))).then(invocationOnMock -> null);
 
-        Method generateAndRetrieveIsoAsBase64IsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
-        PowerMockito.doReturn("mockIsoDataBase64").when(ConfigDriveBuilder.class, generateAndRetrieveIsoAsBase64IsoMethod).withArguments(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> "mockIsoDataBase64");
+            //force execution of real method
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null)).thenCallRealMethod();
 
-        //force execution of real method
-        PowerMockito.when(ConfigDriveBuilder.class, new ArrayList<>(), "teste", "C:", null).thenCallRealMethod();
+            String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
 
-        String returnedIsoData = ConfigDriveBuilder.buildConfigDrive(new ArrayList<>(), "teste", "C:", null);
+            Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 
-        Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
-
-        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
-        ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class));
-        ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap());
-        ConfigDriveBuilder.linkUserData(Mockito.anyString());
-        ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
-    }
-
-    @SuppressWarnings("unchecked")
-    private Method getWriteVmMetadataMethod() {
-        return ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("writeVmMetadata")).iterator().next();
+            configDriveBuilderMocked.verify(() -> {
+                ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(Mockito.any(File.class));
+                ConfigDriveBuilder.writeVmMetadata(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.any(File.class), anyMap());
+                ConfigDriveBuilder.linkUserData(Mockito.anyString());
+                ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+            });
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -202,348 +169,336 @@ public class ConfigDriveBuilderTest {
     }
 
     @Test
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void writeVendorAndNetworkEmptyJsonFileTestCreatingFolder() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void writeVendorAndNetworkEmptyJsonFileTestCreatingFolder() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        File folderFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(false).when(folderFileMock).exists();
-        Mockito.doReturn(true).when(folderFileMock).mkdirs();
+            File folderFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(false).when(folderFileMock).exists();
+            Mockito.doReturn(true).when(folderFileMock).mkdirs();
 
-        //force execution of real method
-        Method writeVendorAndNetworkEmptyJsonFileMethod = getWriteVendorAndNetworkEmptyJsonFileMethod();
-        PowerMockito.when(ConfigDriveBuilder.class, writeVendorAndNetworkEmptyJsonFileMethod).withArguments(folderFileMock).thenCallRealMethod();
+            //force execution of real method
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock)).thenCallRealMethod();
 
-        ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock);
+            ConfigDriveBuilder.writeVendorAndNetworkEmptyJsonFile(folderFileMock);
 
-        Mockito.verify(folderFileMock).exists();
-        Mockito.verify(folderFileMock).mkdirs();
+            Mockito.verify(folderFileMock).exists();
+            Mockito.verify(folderFileMock).mkdirs();
 
-        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
-        ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("vendor_data.json"), Mockito.eq("{}"));
-        ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("network_data.json"), Mockito.eq("{}"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Method getWriteVendorAndNetworkEmptyJsonFileMethod() {
-        return ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("writeVendorAndNetworkEmptyJsonFile")).iterator().next();
+            configDriveBuilderMocked.verify(() -> {
+                ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("vendor_data.json"), Mockito.eq("{}"));
+                ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("network_data.json"), Mockito.eq("{}"));
+            });
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void writeVmMetadataTest() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void writeVmMetadataTest() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyMap())).thenReturn(new JsonObject());
 
-        Method method = getWriteVmMetadataMethod();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), anyString(), any(File.class), anyMap()).thenCallRealMethod();
+            List<String[]> vmData = new ArrayList<>();
+            vmData.add(new String[]{"dataType", "fileName", "content"});
+            vmData.add(new String[]{"dataType2", "fileName2", "content2"});
 
-        Method createJsonObjectWithVmDataMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("createJsonObjectWithVmData")).iterator().next();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(vmData, "metadataFile", new File("folder"), new HashMap<>())).thenCallRealMethod();
 
-        PowerMockito.when(ConfigDriveBuilder.class, createJsonObjectWithVmDataMethod).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyMap()).thenReturn(new JsonObject());
+            ConfigDriveBuilder.writeVmMetadata(vmData, "metadataFile", new File("folder"), new HashMap<>());
 
-        List<String[]> vmData = new ArrayList<>();
-        vmData.add(new String[] {"dataType", "fileName", "content"});
-        vmData.add(new String[] {"dataType2", "fileName2", "content2"});
-
-        ConfigDriveBuilder.writeVmMetadata(vmData, "metadataFile", new File("folder"), new HashMap<>());
-
-        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
-        ConfigDriveBuilder.createJsonObjectWithVmData(vmData, "metadataFile", new HashMap<>());
-        ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("meta_data.json"), Mockito.eq("{}"));
+            configDriveBuilderMocked.verify(() -> {
+                ConfigDriveBuilder.createJsonObjectWithVmData(vmData, "metadataFile", new HashMap<>());
+                ConfigDriveBuilder.writeFile(Mockito.any(File.class), Mockito.eq("meta_data.json"), Mockito.eq("{}"));
+            });
+        }
     }
 
     @Test
-    @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
-    public void linkUserDataTestUserDataFilePathDoesNotExist() throws Exception {
+    public void linkUserDataTestUserDataFilePathDoesNotExist() {
         File fileMock = Mockito.mock(File.class);
         Mockito.doReturn(false).when(fileMock).exists();
 
-        PowerMockito.mockStatic(File.class, Script.class);
-        PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(fileMock);
-
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
-
-        ConfigDriveBuilder.linkUserData("test");
-
-        Mockito.verify(scriptMock, times(0)).execute();
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+             MockedConstruction<Script> scriptMock = Mockito.mockConstruction(Script.class)
+        ) {
+            Mockito.when(ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData(anyString())).thenCallRealMethod();
+            ConfigDriveBuilder.linkUserData("test");
+            scriptMock.constructed().forEach(s -> Mockito.verify(s, times(0)).execute());
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
-    public void linkUserDataTestUserDataFilePathExistAndExecutionPresentedSomeError() throws Exception {
+    public void linkUserDataTestUserDataFilePathExistAndExecutionPresentedSomeError() {
         File fileMock = Mockito.mock(File.class);
         Mockito.doReturn(true).when(fileMock).exists();
 
-        PowerMockito.mockStatic(File.class, Script.class);
-        PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(fileMock);
-
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
-
-        Mockito.doReturn("message").when(scriptMock).execute();
-        ConfigDriveBuilder.linkUserData("test");
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.doReturn("message").when(mock).execute();
+             })
+        ) {
+            Mockito.when(ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData(anyString())).thenCallRealMethod();
+            ConfigDriveBuilder.linkUserData("test");
+        }
     }
 
     @Test
-    @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
-    public void linkUserDataTest() throws Exception {
-        File fileMock = Mockito.mock(File.class);
-        Mockito.doReturn(true).when(fileMock).exists();
-
-        PowerMockito.mockStatic(File.class, Script.class);
-        PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(fileMock);
-
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
-
-        Mockito.doReturn(StringUtils.EMPTY).when(scriptMock).execute();
+    public void linkUserDataTest() {
         String tempDirName = "test";
-        ConfigDriveBuilder.linkUserData(tempDirName);
 
-        Mockito.verify(scriptMock).add(tempDirName + ConfigDrive.cloudStackConfigDriveName + "userdata/user_data.txt");
-        Mockito.verify(scriptMock).add(tempDirName + ConfigDrive.openStackConfigDriveName + "user_data");
-        Mockito.verify(scriptMock).execute();
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+             MockedConstruction<Script> scriptMock = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+             })
+        ) {
+            File fileMock = Mockito.mock(File.class);
+            Mockito.doReturn(true).when(fileMock).exists();
+            Mockito.when(ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData(anyString())).thenCallRealMethod();
+
+            ConfigDriveBuilder.linkUserData(tempDirName);
+            Script mockedScript = scriptMock.constructed().get(0);
+            Mockito.verify(mockedScript).add(tempDirName + ConfigDrive.cloudStackConfigDriveName + "userdata/user_data.txt");
+            Mockito.verify(mockedScript).add(tempDirName + ConfigDrive.openStackConfigDriveName + "user_data");
+            Mockito.verify(mockedScript).execute();
+        }
     }
 
-    @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest({Script.class, ConfigDriveBuilder.class})
     public void generateAndRetrieveIsoAsBase64IsoTestGenIsoFailure() throws Exception {
-        PowerMockito.mockStatic(Script.class, ConfigDriveBuilder.class);
 
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+        MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+            Mockito.doReturn("scriptMessage").when(mock).execute();
+        })) {
+            configDriveBuilderMocked.when(ConfigDriveBuilder::getProgramToGenerateIso).thenReturn("/usr/bin/genisoimage");
 
-        Mockito.doReturn("scriptMessage").when(scriptMock).execute();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(anyString(), anyString(), anyString())).thenCallRealMethod();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenCallRealMethod();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenCallRealMethod();
 
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(nullable(String.class), nullable(String.class), nullable(String.class)).thenCallRealMethod();
-
-        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
-
-        ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
+            ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
+        }
     }
 
-    @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
     public void generateAndRetrieveIsoAsBase64IsoTestIsoTooBig() throws Exception {
-        PowerMockito.mockStatic(File.class, Script.class, ConfigDriveBuilder.class);
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+             MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+             })) {
+            File fileMock = Mockito.mock(File.class);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenReturn(fileMock);
 
-        File fileMock = Mockito.mock(File.class);
-        PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(fileMock);
+            Mockito.when(fileMock.getAbsolutePath()).thenReturn("");
+            Mockito.when(fileMock.length()).thenReturn(64L * 1024L * 1024L + 1L);
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenReturn("/usr/bin/genisoimage");
 
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+            Mockito.when(ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(nullable(String.class), nullable(String.class), nullable(String.class))).thenCallRealMethod();
 
-        Mockito.doReturn(StringUtils.EMPTY).when(scriptMock).execute();
-        Mockito.doReturn(64L * 1024L * 1024L + 1l).when(fileMock).length();
-
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(nullable(String.class), nullable(String.class), nullable(String.class)).thenCallRealMethod();
-
-        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
-
-        ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
+            ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
     public void generateAndRetrieveIsoAsBase64IsoTest() throws Exception {
-        PowerMockito.mockStatic(File.class, Script.class, ConfigDriveBuilder.class);
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+             MockedConstruction<Script> scriptMockedConstruction = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                 Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+             })) {
 
-        File fileMock = Mockito.mock(File.class);
-        PowerMockito.whenNew(File.class).withArguments("tempDirName", "isoFileName").thenReturn(fileMock);
+            File fileMock = Mockito.mock(File.class);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenReturn(fileMock);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
 
-        Script scriptMock = Mockito.mock(Script.class);
-        PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
+            Mockito.when(fileMock.getAbsolutePath()).thenReturn("absolutePath");
+            Mockito.doReturn(64L * 1024L * 1024L).when(fileMock).length();
 
-        Mockito.when(fileMock.getAbsolutePath()).thenReturn("absolutePath");
-        Mockito.doReturn(StringUtils.EMPTY).when(scriptMock).execute();
-        Mockito.doReturn(64L * 1024L * 1024L).when(fileMock).length();
+            Mockito.when(ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(nullable(String.class), nullable(String.class), nullable(String.class))).thenCallRealMethod();
 
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(nullable(String.class), nullable(String.class), nullable(String.class)).thenCallRealMethod();
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenReturn("/usr/bin/genisoimage");
 
-        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
+            ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
 
-        ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
+            Script scriptMock = scriptMockedConstruction.constructed().get(0);
+            InOrder inOrder = Mockito.inOrder(scriptMock);
+            inOrder.verify(scriptMock).add("-o", "absolutePath");
+            inOrder.verify(scriptMock).add("-ldots");
+            inOrder.verify(scriptMock).add("-allow-lowercase");
+            inOrder.verify(scriptMock).add("-allow-multidot");
+            inOrder.verify(scriptMock).add("-cache-inodes");
+            inOrder.verify(scriptMock).add("-l");
+            inOrder.verify(scriptMock).add("-quiet");
+            inOrder.verify(scriptMock).add("-J");
+            inOrder.verify(scriptMock).add("-r");
+            inOrder.verify(scriptMock).add("-V", "driveLabel");
+            inOrder.verify(scriptMock).add("tempDirName");
+            inOrder.verify(scriptMock).execute();
 
-        InOrder inOrder = Mockito.inOrder(scriptMock);
-        inOrder.verify(scriptMock).add("-o", "absolutePath");
-        inOrder.verify(scriptMock).add("-ldots");
-        inOrder.verify(scriptMock).add("-allow-lowercase");
-        inOrder.verify(scriptMock).add("-allow-multidot");
-        inOrder.verify(scriptMock).add("-cache-inodes");
-        inOrder.verify(scriptMock).add("-l");
-        inOrder.verify(scriptMock).add("-quiet");
-        inOrder.verify(scriptMock).add("-J");
-        inOrder.verify(scriptMock).add("-r");
-        inOrder.verify(scriptMock).add("-V", "driveLabel");
-        inOrder.verify(scriptMock).add("tempDirName");
-        inOrder.verify(scriptMock).execute();
 
-        PowerMockito.verifyStatic(ConfigDriveBuilder.class);
-        ConfigDriveBuilder.fileToBase64String(nullable(File.class));
-
+            configDriveBuilderMocked.verify(() -> ConfigDriveBuilder.fileToBase64String(nullable(File.class)));
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void createJsonObjectWithVmDataTesT() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void createJsonObjectWithVmDataTesT() {
 
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("createJsonObjectWithVmData")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.nullable(Map.class)).thenCallRealMethod();
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        List<String[]> vmData = new ArrayList<>();
-        vmData.add(new String[] {"dataType", "fileName", "content"});
-        vmData.add(new String[] {"dataType2", "fileName2", "content2"});
+            Mockito.when(ConfigDriveBuilder.createJsonObjectWithVmData(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.nullable(Map.class))).thenCallRealMethod();
 
-        ConfigDriveBuilder.createJsonObjectWithVmData(vmData, "tempDirName", new HashMap<>());
+            List<String[]> vmData = new ArrayList<>();
+            vmData.add(new String[]{"dataType", "fileName", "content"});
+            vmData.add(new String[]{"dataType2", "fileName2", "content2"});
 
-        PowerMockito.verifyStatic(ConfigDriveBuilder.class, Mockito.times(1));
-        ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType"), Mockito.eq("fileName"),
-                Mockito.eq("content"), Mockito.anyMap());
-        ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType2"), Mockito.eq("fileName2"),
-                Mockito.eq("content2"), Mockito.anyMap());
+            ConfigDriveBuilder.createJsonObjectWithVmData(vmData, "tempDirName", new HashMap<>());
+
+            configDriveBuilderMocked.verify(() -> {
+                ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType"), Mockito.eq("fileName"),
+                        Mockito.eq("content"), Mockito.anyMap());
+                ConfigDriveBuilder.createFileInTempDirAnAppendOpenStackMetadataToJsonObject(Mockito.eq("tempDirName"), Mockito.any(JsonObject.class), Mockito.eq("dataType2"), Mockito.eq("fileName2"),
+                        Mockito.eq("content2"), Mockito.anyMap());
+            });
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void buildCustomUserdataParamsMetadataTestNullContent() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void buildCustomUserdataParamsMetadataTestNullContent() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+            JsonObject metadata = new JsonObject();
+            String dataType = "dataType1";
+            String fileName = "testFileName";
+            String content = null;
+            Map<String, String> customUserdataParams = new HashMap<>();
+            customUserdataParams.put(fileName, content);
 
-        JsonObject metadata = new JsonObject();
-        String dataType = "dataType1";
-        String fileName = "testFileName";
-        String content = null;
-        Map<String, String> customUserdataParams = new HashMap<>();
-        customUserdataParams.put(fileName, content);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams)).thenCallRealMethod();
 
-        PowerMockito.when(ConfigDriveBuilder.class, metadata, dataType, fileName, content, customUserdataParams).thenCallRealMethod();
+            ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams);
 
-        ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams);
-
-        Assert.assertEquals(null, metadata.getAsJsonPrimitive(fileName));
+            Assert.assertNull(metadata.getAsJsonPrimitive(fileName));
+        }
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class})
-    public void buildCustomUserdataParamsMetadataTestWithContent() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
+    public void buildCustomUserdataParamsMetadataTestWithContent() {
+        try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        JsonObject metadata = new JsonObject();
-        String dataType = "metadata";
-        String fileName = "testFileName";
-        String content = "testContent";
-        Map<String, String> customUserdataParams = new HashMap<>();
-        customUserdataParams.put(fileName, content);
+            JsonObject metadata = new JsonObject();
+            String dataType = "metadata";
+            String fileName = "testFileName";
+            String content = "testContent";
+            Map<String, String> customUserdataParams = new HashMap<>();
+            customUserdataParams.put(fileName, content);
 
-        PowerMockito.when(ConfigDriveBuilder.class, metadata, dataType, fileName, content, customUserdataParams).thenCallRealMethod();
-        ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams)).thenCallRealMethod();
 
-        Assert.assertEquals(content, metadata.getAsJsonPrimitive(fileName).getAsString());
+            ConfigDriveBuilder.buildCustomUserdataParamsMetaData(metadata, dataType, fileName, content, customUserdataParams);
+
+            Assert.assertEquals(content, metadata.getAsJsonPrimitive(fileName).getAsString());
+        }
     }
 
     @Test
-    @PrepareForTest({File.class, ConfigDriveBuilder.class})
     public void getProgramToGenerateIsoTestGenIsoExistsAndIsExecutable() throws Exception {
-        PowerMockito.mockStatic(File.class);
+        try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        File genIsoFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(true).when(genIsoFileMock).exists();
-        Mockito.doReturn(true).when(genIsoFileMock).canExecute();
+            File genIsoFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(true).when(genIsoFileMock).exists();
+            Mockito.doReturn(true).when(genIsoFileMock).canExecute();
 
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenCallRealMethod();
 
-        ConfigDriveBuilder.getProgramToGenerateIso();
+            ConfigDriveBuilder.getProgramToGenerateIso();
 
-        Mockito.verify(genIsoFileMock, Mockito.times(2)).exists();
-        Mockito.verify(genIsoFileMock).canExecute();
-        Mockito.verify(genIsoFileMock).getCanonicalPath();
+            Mockito.verify(genIsoFileMock, Mockito.times(2)).exists();
+            Mockito.verify(genIsoFileMock).canExecute();
+            Mockito.verify(genIsoFileMock).getCanonicalPath();
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest({File.class, ConfigDriveBuilder.class})
     public void getProgramToGenerateIsoTestGenIsoExistsbutNotExecutable() throws Exception {
-        PowerMockito.mockStatic(File.class);
+        try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        File genIsoFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(true).when(genIsoFileMock).exists();
-        Mockito.doReturn(false).when(genIsoFileMock).canExecute();
+            File genIsoFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(true).when(genIsoFileMock).exists();
+            Mockito.doReturn(false).when(genIsoFileMock).canExecute();
 
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
 
-        ConfigDriveBuilder.getProgramToGenerateIso();
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenCallRealMethod();
+
+            ConfigDriveBuilder.getProgramToGenerateIso();
+        }
     }
 
     @Test
-    @PrepareForTest({File.class, ConfigDriveBuilder.class})
     public void getProgramToGenerateIsoTestNotGenIsoMkIsoInLinux() throws Exception {
-        PowerMockito.mockStatic(File.class);
+        try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        File genIsoFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(false).when(genIsoFileMock).exists();
+            File genIsoFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(false).when(genIsoFileMock).exists();
 
-        File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).exists();
-        Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).canExecute();
+            File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).exists();
+            Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).canExecute();
 
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/mkisofs").thenReturn(mkIsoProgramInLinuxFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/mkisofs")).thenReturn(mkIsoProgramInLinuxFileMock);
 
-        ConfigDriveBuilder.getProgramToGenerateIso();
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenCallRealMethod();
 
-        Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
-        Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
-        Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+            ConfigDriveBuilder.getProgramToGenerateIso();
 
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(2)).exists();
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).canExecute();
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).getCanonicalPath();
+            Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(2)).exists();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).canExecute();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).getCanonicalPath();
+        }
     }
 
     @Test
-    @PrepareForTest({File.class, ConfigDriveBuilder.class})
     public void getProgramToGenerateIsoTestMkIsoMac() throws Exception {
-        PowerMockito.mockStatic(File.class);
+        try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-        File genIsoFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(false).when(genIsoFileMock).exists();
 
-        File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(false).when(mkIsoProgramInLinuxFileMock).exists();
+            File genIsoFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(false).when(genIsoFileMock).exists();
 
-        File mkIsoProgramInMacOsFileMock = Mockito.mock(File.class);
-        Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).exists();
-        Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).canExecute();
+            File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(false).when(mkIsoProgramInLinuxFileMock).exists();
 
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
-        PowerMockito.whenNew(File.class).withArguments("/usr/bin/mkisofs").thenReturn(mkIsoProgramInLinuxFileMock);
-        PowerMockito.whenNew(File.class).withArguments("/usr/local/bin/mkisofs").thenReturn(mkIsoProgramInMacOsFileMock);
+            File mkIsoProgramInMacOsFileMock = Mockito.mock(File.class);
+            Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).exists();
+            Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).canExecute();
 
-        ConfigDriveBuilder.getProgramToGenerateIso();
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/mkisofs")).thenReturn(mkIsoProgramInLinuxFileMock);
+            Mockito.when(ConfigDriveBuilder.getFile("/usr/local/bin/mkisofs")).thenReturn(mkIsoProgramInMacOsFileMock);
 
-        Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
-        Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
-        Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+            Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenCallRealMethod();
 
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).exists();
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).canExecute();
-        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).getCanonicalPath();
 
-        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).exists();
-        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
-        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
+            ConfigDriveBuilder.getProgramToGenerateIso();
+
+            Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
+            Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).exists();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).canExecute();
+            Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).getCanonicalPath();
+
+            Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).exists();
+            Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
+            Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
+        }
     }
 }

@@ -34,17 +34,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 
 import junit.framework.TestCase;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Mock
@@ -85,9 +83,6 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
     @Before
     public void setup() throws IOException, ClassNotFoundException, SQLException {
         STORAGE_POOL_DETAILS.put(DETAIL_KEY, DETAIL_VALUE);
-        doReturn(Arrays.asList(storagePoolVO)).when(primaryDataStoreDao).
-                searchStoragePoolsPreparedStatement(nullable(String.class), nullable(Long.class), nullable(Long.class), nullable(Long.class),
-                        nullable(ScopeType.class), nullable(Integer.class));
     }
 
     @Test
@@ -137,6 +132,9 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Test
     public void testFindPoolsByDetailsOrTagsInternalStorageTagsType() {
+        doReturn(Arrays.asList(storagePoolVO)).when(primaryDataStoreDao).
+                searchStoragePoolsPreparedStatement(nullable(String.class), nullable(Long.class), nullable(Long.class), nullable(Long.class),
+                        nullable(ScopeType.class), nullable(Integer.class));
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findPoolsByDetailsOrTagsInternal(DATACENTER_ID, POD_ID, CLUSTER_ID, SCOPE, SQL_VALUES, ValueType.TAGS, STORAGE_TAGS_ARRAY.length);
         assertEquals(Arrays.asList(storagePoolVO), storagePools);
         verify(primaryDataStoreDao).getSqlPreparedStatement(
@@ -147,6 +145,9 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Test
     public void testFindPoolsByDetailsOrTagsInternalDetailsType() {
+        doReturn(Arrays.asList(storagePoolVO)).when(primaryDataStoreDao).
+                searchStoragePoolsPreparedStatement(nullable(String.class), nullable(Long.class), nullable(Long.class), nullable(Long.class),
+                        nullable(ScopeType.class), nullable(Integer.class));
         List<StoragePoolVO> storagePools = primaryDataStoreDao.findPoolsByDetailsOrTagsInternal(DATACENTER_ID, POD_ID, CLUSTER_ID, SCOPE, SQL_VALUES, ValueType.DETAILS, STORAGE_POOL_DETAILS.size());
         assertEquals(Arrays.asList(storagePoolVO), storagePools);
         verify(primaryDataStoreDao).getSqlPreparedStatement(

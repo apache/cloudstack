@@ -214,7 +214,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',

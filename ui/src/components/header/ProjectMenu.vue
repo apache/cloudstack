@@ -66,6 +66,7 @@ export default {
       let projectIndex = 0
       if (this.$store.getters?.project?.id) {
         projectIndex = this.projects.findIndex(project => project.id === this.$store.getters.project.id)
+        this.$store.dispatch('ToggleTheme', projectIndex === undefined ? 'light' : 'dark')
       }
 
       return projectIndex
@@ -89,9 +90,8 @@ export default {
             getNextPage()
           }
         }).finally(() => {
-          this.projects = _.orderBy(projects, ['displaytext'], ['asc'])
-          this.projects.unshift({ name: this.$t('label.default.view') })
           this.loading = false
+          this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         })
       }
       getNextPage()
@@ -112,6 +112,17 @@ export default {
     filterProject (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
+  },
+  mounted () {
+    this.$store.watch(
+      (state, getters) => getters.allProjects,
+      (newValue, oldValue) => {
+        if (oldValue !== newValue && newValue !== undefined) {
+          this.projects = _.orderBy(newValue, ['displaytext'], ['asc'])
+          this.projects.unshift({ name: this.$t('label.default.view') })
+        }
+      }
+    )
   }
 }
 </script>

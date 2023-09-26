@@ -17,18 +17,6 @@
 
 package com.cloud.snapshot;
 
-import java.io.IOException;
-
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
@@ -40,6 +28,16 @@ import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
+import java.io.IOException;
 
 @Configuration
 @ComponentScan(basePackageClasses = {SnapshotDaoImpl.class, ResourceTagsDaoImpl.class, VMInstanceDaoImpl.class, VolumeDaoImpl.class, NicDaoImpl.class, HostDaoImpl.class,
