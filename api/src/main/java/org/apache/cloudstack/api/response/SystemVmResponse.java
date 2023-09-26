@@ -179,11 +179,11 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     private Boolean isDynamicallyScalable;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the system virtual machine")
+    @Param(description = "the ID of the service offering of the system virtual machine.")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "the name of the service offering of the system virtual machine")
+    @Param(description = "the name of the service offering of the system virtual machine.")
     private String serviceOfferingName;
 
     @Override
