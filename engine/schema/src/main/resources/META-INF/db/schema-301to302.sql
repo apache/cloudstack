@@ -51,7 +51,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.capacity.standby', '10', 'The minimal number of command execution sessions that system is able to serve immediately(standby capacity)');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.cmd.execution.time.max', '30', 'The max command execution time in minute');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'secstorage.session.max', '50', 'The max number of command execution sessions that a SSVM can handle');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.size', '2000', 'The maximum size for a volume (in GB).');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'management-server', 'storage.max.volume.size', '2000', 'The maximum size for a volume (in GiB).');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'task.cleanup.retry.interval', '600', 'Time (in seconds) to wait before retrying cleanup of tasks if the cleanup failed previously.  0 means to never retry.');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.additional.vnc.portrange.start', '50000', 'Start port number of additional VNC port range');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.percluster.host.max', '8', 'maxmium hosts per vCenter cluster(do not let it grow over 8)');
