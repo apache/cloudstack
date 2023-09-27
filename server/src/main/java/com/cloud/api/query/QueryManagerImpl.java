@@ -80,6 +80,7 @@ import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
@@ -4468,7 +4469,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<SnapshotResponse> listSnapshots(ListSnapshotsCmd cmd) {
-        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsInternal(cmd);
+        Account caller = CallContext.current().getCallingAccount();
+        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), cmd.getIds(),
+                cmd.getVolumeId(), cmd.getSnapshotName(), cmd.getKeyword(), cmd.getTags(),
+                cmd.getSnapshotType(), cmd.getIntervalType(), cmd.getZoneId(), cmd.getLocationType(),
+                cmd.isShowUnique(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId(),
+                cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);;
         ListResponse<SnapshotResponse> response = new ListResponse<>();
 
 
@@ -4482,20 +4488,36 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
-    private Pair<List<SnapshotJoinVO>, Integer> searchForSnapshotsInternal(ListSnapshotsCmd cmd) {
-        Long id = cmd.getId();
-        Map<String, String> tags = cmd.getTags();
+    @Override
+    public SnapshotResponse listSnapshot(CopySnapshotCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        Long volumeId = cmd.getVolumeId();
-        String name = cmd.getSnapshotName();
-        String keyword = cmd.getKeyword();
-        String snapshotTypeStr = cmd.getSnapshotType();
-        String intervalTypeStr = cmd.getIntervalType();
-        Long zoneId = cmd.getZoneId();
-        boolean listAll = cmd.listAll();
-        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+        List<Long> zoneIds = cmd.getDestinationZoneIds();
+        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), null,
+                null, null, null, null,
+                null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
+                false, null, null, null,
+                null, null, true, false, caller);;
+        ListResponse<SnapshotResponse> response = new ListResponse<>();
+
+
+        ResponseView respView = ResponseView.Restricted;
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            respView = ResponseView.Full;
+        }
+
+        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, false, result.first().toArray(new SnapshotJoinVO[result.first().size()]));
+        return templateResponses.get(0);
+    }
+
+
+
+    private Pair<List<SnapshotJoinVO>, Integer> searchForSnapshotsWithParams(final Long id, List<Long> ids,
+            final Long volumeId, final String name, final String keyword, final Map<String, String> tags,
+            final String snapshotTypeStr, final String intervalTypeStr, final Long zoneId, final String locationTypeStr,
+            final boolean isShowUnique, final String accountName, Long domainId, final Long projectId,
+            final Long startIndex, final Long pageSize,final boolean listAll, boolean isRecursive, final Account caller) {
+        ids = getIdsListFromCmd(id, ids);
         Snapshot.LocationType locationType = null;
-        String locationTypeStr = cmd.getLocationType();
         if (locationTypeStr != null) {
             try {
                 locationType = Snapshot.LocationType.valueOf(locationTypeStr.trim().toUpperCase());
@@ -4504,14 +4526,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", SortKeyAscending.value(), startIndex, pageSize);
 
         List<Long> permittedAccountIds = new ArrayList<>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
         // Verify parameters
         if (volumeId != null) {
             VolumeVO volume = volumeDao.findById(volumeId);
@@ -4521,7 +4543,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
-        if (cmd.isShowUnique()) {
+        if (isShowUnique) {
             sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct snapshotId
         } else {
             sb.select(null, Func.DISTINCT, sb.entity().getSnapshotStorePair()); // select distinct (snapshotId, store_role, store_id) key
@@ -4614,7 +4636,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Pair<List<SnapshotJoinVO>, Integer> snapshotDataPair;
-        if (cmd.isShowUnique()) {
+        if (isShowUnique) {
             snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.id"});
         } else {
             snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.snapshot_store_pair"});
@@ -4627,7 +4649,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
         List<SnapshotJoinVO> snapshots;
-        if (cmd.isShowUnique()) {
+        if (isShowUnique) {
             snapshots = snapshotJoinDao.findByDistinctIds(zoneId, snapshotData.stream().map(SnapshotJoinVO::getId).toArray(Long[]::new));
         } else {
             snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
