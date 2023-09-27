@@ -358,6 +358,7 @@ public class NsxResource implements ServerResource {
 
     private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
         try {
+            Thread.sleep(30*1000);
             String segmentName = getSegmentName(cmd);
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             segmentService.delete(segmentName);
