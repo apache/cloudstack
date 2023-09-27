@@ -281,7 +281,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
-        File file = new File("/mnt/SecStorage/\" + cmd.getParent() + File.separator + cmd.getInstallPath()");
+        File file = new File("/mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath());
         // Return error if the file does not exist or is a directory
         if (!file.exists() || file.isDirectory()) {
             String errorString = "Error in finding the file " + file.getAbsolutePath();

@@ -155,7 +155,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         if (imageStoreObj == null) {
             try {
                 String fileExt = path.substring(path.lastIndexOf(".") + 1);
-                Storage.ImageFormat format = EnumUtils.isValidEnum(Storage.ImageFormat.class, fileExt) ? Storage.ImageFormat.valueOf(fileExt.toUpperCase()) : null;
+                Storage.ImageFormat format = EnumUtils.getEnumIgnoreCase(Storage.ImageFormat.class, fileExt);
 
                 DiagnosticsDataTO dataTO = new DiagnosticsDataTO(imageStore.getTO());
                 DiagnosticsDataObject dataObject = new DiagnosticsDataObject(dataTO, imageStore);
@@ -184,7 +184,7 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         }
 
         ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, page, pageSize);
-        listDSCmd.setWait(30);
+        listDSCmd.setWait(15);
         Answer answer = null;
         try {
             answer = ep.sendMessage(listDSCmd);

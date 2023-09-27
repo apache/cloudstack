@@ -45,7 +45,7 @@ public class ListDataStoreObjectsCommand extends StorageCommand {
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
 
     public String getPath() {
