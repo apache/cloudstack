@@ -3747,7 +3747,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             //Update URL and check access
             try {
                 objectStore.listBuckets();
-            } catch (CloudRuntimeException e) {
+            } catch (Exception e) {
                 //Revert to old URL on failure
                 objectStoreVO.setUrl(oldUrl);
                 _objectStoreDao.update(id, objectStoreVO);
