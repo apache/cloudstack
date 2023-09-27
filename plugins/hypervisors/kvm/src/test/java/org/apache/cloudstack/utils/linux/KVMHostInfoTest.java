@@ -84,6 +84,9 @@ public class KVMHostInfoTest {
 
     @Test
     public void reservedCpuCoresTest() throws Exception {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         PowerMockito.mockStatic(LibvirtConnection.class);
         Connect conn = Mockito.mock(Connect.class);
         NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
