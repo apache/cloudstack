@@ -141,11 +141,13 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         BucketVO bucket = _bucketDao.findById(cmd.getEntityId());
         boolean objectLock = false;
+        boolean bucketCreated = false;
         if(cmd.isObjectLocking()) {
             objectLock = true;
         }
         try {
             objectStore.createBucket(bucket, objectLock);
+            bucketCreated = true;
 
             if (cmd.isVersioning()) {
                 objectStore.setBucketVersioning(bucket.getName());
@@ -167,6 +169,9 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             _bucketDao.update(bucket.getId(), bucket);
         } catch (Exception e) {
             s_logger.error("Failed to create bucket with name: "+bucket.getName(), e);
+            if(bucketCreated) {
+                objectStore.deleteBucket(bucket.getName());
+            }
             _bucketDao.remove(bucket.getId());
             throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()  );
         }
