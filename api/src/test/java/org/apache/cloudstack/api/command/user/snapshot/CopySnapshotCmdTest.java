@@ -19,9 +19,9 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.query.QueryService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -111,11 +111,11 @@ public class CopySnapshotCmdTest {
     @Test
     public void testExecuteSuccess() {
         SnapshotApiService snapshotApiService = Mockito.mock(SnapshotApiService.class);
-        ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
+        QueryService queryService = Mockito.mock(QueryService.class);
         UUIDManager uuidManager = Mockito.mock(UUIDManager.class);
         final CopySnapshotCmd cmd = new CopySnapshotCmd();
         cmd._snapshotService = snapshotApiService;
-        cmd._responseGenerator = responseGenerator;
+        cmd._queryService = queryService;
         cmd._uuidMgr = uuidManager;
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         final Long id = 100L;
@@ -123,7 +123,7 @@ public class CopySnapshotCmdTest {
         SnapshotResponse snapshotResponse = Mockito.mock(SnapshotResponse.class);
         try {
             Mockito.when(snapshotApiService.copySnapshot(cmd)).thenReturn(snapshot);
-            Mockito.when(responseGenerator.createSnapshotResponse(snapshot)).thenReturn(snapshotResponse);
+            Mockito.when(queryService.listSnapshot(cmd)).thenReturn(snapshotResponse);
             Mockito.when(uuidManager.getUuid(DataCenter.class, id)).thenReturn(UUID.randomUUID().toString());
             cmd.execute();
         } catch (ResourceAllocationException | ResourceUnavailableException e) {
