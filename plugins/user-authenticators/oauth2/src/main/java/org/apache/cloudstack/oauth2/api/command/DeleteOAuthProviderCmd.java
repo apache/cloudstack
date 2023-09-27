@@ -33,7 +33,7 @@ import org.apache.cloudstack.context.CallContext;
 import javax.inject.Inject;
 
 @APICommand(name = "deleteOauthProvider", description = "Deletes the registered OAuth provider", responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public class DeleteOAuthProviderCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteOAuthProviderCmd.class.getName());
 
@@ -41,7 +41,7 @@ public class DeleteOAuthProviderCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "id of the user to be deleted")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "id of the OAuth provider to be deleted")
     private Long id;
 
     @Inject

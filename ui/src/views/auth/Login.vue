@@ -159,12 +159,6 @@
         <GoogleLogin :callback="callback">
         </GoogleLogin>
       </div>
-      <div class="google-auth" v-if="googleprovider">
-        <a-button tag="a" color="primary" :href="getGoogleUrl(from)" class="auth-btn google-auth" style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/google-color.svg" style="width: 32px; padding: 5px" />
-          <a-text>Sign in with Google</a-text>
-        </a-button>
-      </div>
       <div class="social-auth" v-if="githubprovider">
         <a-button tag="a" color="primary" :href="getGitHubUrl(from)" class="auth-btn github-auth" style="height: 38px; width: 185px; padding: 0" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
@@ -422,9 +416,11 @@ export default {
       }
     },
     requestFailed (err) {
-      console.log(err.response.data.loginresponse)
       if (err && err.response && err.response.data && err.response.data.loginresponse) {
         const error = err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext
+        this.$message.error(`${this.$t('label.error')} ${error}`)
+      } else if (err && err.response && err.response.data && err.response.data.oauthloginresponse) {
+        const error = err.response.data.oauthloginresponse.errorcode + ': ' + err.response.data.oauthloginresponse.errortext
         this.$message.error(`${this.$t('label.error')} ${error}`)
       } else {
         this.$message.error(this.$t('message.login.failed'))

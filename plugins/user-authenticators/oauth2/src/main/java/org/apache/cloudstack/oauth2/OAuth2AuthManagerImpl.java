@@ -85,9 +85,6 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        if (!isOAuthPluginEnabled()) {
-            return cmdList;
-        }
         cmdList.add(RegisterOAuthProviderCmd.class);
         cmdList.add(DeleteOAuthProviderCmd.class);
 
@@ -149,6 +146,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = cmd.getClientId();
         String redirectUri = cmd.getRedirectUri();
 
+        if (!OAuth2IsPluginEnabled.value()) {
+            throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
+        }
         OauthProviderVO providerVO = _oauthProviderDao.findByProvider(provider);
         if (providerVO != null) {
             throw new CloudRuntimeException(String.format("Provider with the name %s is already registered", provider));

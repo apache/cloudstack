@@ -48,7 +48,9 @@ import java.net.InetAddress;
 
 import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
 
-@APICommand(name = "oauthlogin", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
+@APICommand(name = "oauthlogin", description = "Logs a user into the CloudStack after successful verification of OAuth secret code from the particular provider." +
+        "A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.",
+        requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {}, since = "4.19.0")
 public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
     public static final Logger s_logger = Logger.getLogger(OauthLoginAPIAuthenticatorCmd.class.getName());
@@ -56,10 +58,10 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.", required = true)
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider", required = true)
     private String provider;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.", required = true)
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "Email id with which user tried to login using OAuth provider", required = true)
     private String email;
 
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Path of the domain that the user belongs to. Example: domain=/com/cloud/internal. If no domain is passed in, the ROOT (/) domain is assumed.")
@@ -68,7 +70,7 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
     @Parameter(name = ApiConstants.DOMAIN__ID, type = CommandType.LONG, description = "The id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precedence.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.SECRET_CODE, type = CommandType.STRING, description = "The id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precedence.")
+    @Parameter(name = ApiConstants.SECRET_CODE, type = CommandType.STRING, description = "Code that is provided by OAuth provider (Eg. google, github) after successful login")
     private String secretCode;
 
     @Inject
@@ -166,7 +168,7 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
             }
             final UserAccount userAccount = _accountService.getActiveUserAccountByEmail(email, domainId);
             if (userAccount == null) {
-                throw new CloudAuthenticationException("User not found in CloudStack to login");
+                throw new CloudAuthenticationException("User not found in CloudStack to login. If user belongs to any domain, please provide it.");
             }
             if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                 throw new CloudAuthenticationException("User is not allowed CloudStack login");

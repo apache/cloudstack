@@ -45,8 +45,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 @APICommand(name = "listOauthProvider", description = "List OAuth providers registered", responseObject = OauthProviderResponse.class, entityType = {},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0")
 public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(ListOAuthProvidersCmd.class.getName());
 
