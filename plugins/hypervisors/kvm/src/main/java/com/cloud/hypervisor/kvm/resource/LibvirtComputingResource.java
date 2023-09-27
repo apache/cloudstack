@@ -452,6 +452,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _dom0OvercommitMem;
 
+    private int _dom0MinCpuCores;
+
     protected int _cmdsTimeout;
     protected int _stopTimeout;
     protected CPUStat _cpuStat = new CPUStat();
@@ -1048,6 +1050,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         // Reserve 1GB unless admin overrides
         _dom0MinMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
+
+        value = (String)params.get("host.reserved.cpu.count");
+        _dom0MinCpuCores = NumbersUtil.parseInt(value, 0);
 
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
@@ -3522,7 +3527,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed);
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed, _dom0MinCpuCores);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {
@@ -3530,7 +3535,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
+                new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
         cmd.setCpuSockets(info.getCpuSockets());
         fillNetworkInformation(cmd);
