@@ -25,7 +25,8 @@ public interface PasswordPolicy {
             Integer.class,
             "password.policy.minimum.special.characters",
             "0",
-            "Minimum number of special characters that the user's password must have. The value 0 means the user's password does not require any special characters.",
+            "Minimum number of special characters that the user's password must have. Any character that is neither a letter nor numeric is considered special. " +
+                    "The value 0 means the user's password does not require any special characters.",
             true,
             ConfigKey.Scope.Domain);
 
