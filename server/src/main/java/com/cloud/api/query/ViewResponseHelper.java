@@ -604,7 +604,7 @@ public class ViewResponseHelper {
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillSnapshotDetails(view, vrData, vr);
+                vrData = ApiDBUtils.fillSnapshotDetails(vrData, vr);
             }
             vrDataList.put(vr.getSnapshotStorePair(), vrData);
         }

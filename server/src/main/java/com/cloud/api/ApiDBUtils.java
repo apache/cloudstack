@@ -2104,8 +2104,8 @@ public class ApiDBUtils {
         return s_templateJoinDao.setTemplateResponse(detailsView, view, vrData, vr);
     }
 
-    public static SnapshotResponse fillSnapshotDetails(ResponseView view, SnapshotResponse vrData, SnapshotJoinVO vr) {
-        return s_snapshotJoinDao.setSnapshotResponse(view, vrData, vr);
+    public static SnapshotResponse fillSnapshotDetails(SnapshotResponse vrData, SnapshotJoinVO vr) {
+        return s_snapshotJoinDao.setSnapshotResponse(vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {

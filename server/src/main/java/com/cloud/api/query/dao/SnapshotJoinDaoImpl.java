@@ -158,15 +158,14 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
             snapshotResponse.setDownloadDetails(downloadDetails);
         }
         setSnapshotInfoDetailsInResponse(snapshot, snapshotResponse, isShowUnique);
-        snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
-                accountService.isRootAdmin(caller.getId())));
+        setSnapshotResponse(snapshotResponse, snapshot);
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
     }
 
     @Override
-    public SnapshotResponse setSnapshotResponse(ResponseObject.ResponseView view, SnapshotResponse snapshotResponse, SnapshotJoinVO snapshot) {
+    public SnapshotResponse setSnapshotResponse(SnapshotResponse snapshotResponse, SnapshotJoinVO snapshot) {
         // update tag information
         long tag_id = snapshot.getTagId();
         if (tag_id > 0) {
@@ -174,7 +173,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         }
 
         if (snapshotResponse.hasAnnotation() == null) {
-            snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.TEMPLATE.name(),
+            snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.SNAPSHOT.name(),
                     accountService.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         }
         return snapshotResponse;
