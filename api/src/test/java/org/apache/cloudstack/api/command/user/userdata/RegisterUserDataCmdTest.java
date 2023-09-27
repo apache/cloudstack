@@ -18,31 +18,27 @@ package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ManagementService;
-import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.UserData;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class RegisterUserDataCmdTest {
 
     @InjectMocks
@@ -61,13 +57,21 @@ public class RegisterUserDataCmdTest {
     private static final long PROJECT_ID = 10L;
     private static final String ACCOUNT_NAME = "user";
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(cmd, "accountName", ACCOUNT_NAME);
         ReflectionTestUtils.setField(cmd, "domainId", DOMAIN_ID);
         ReflectionTestUtils.setField(cmd, "projectId", PROJECT_ID);
     }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
 
     @Test
     public void testValidUserDataExecute() {
@@ -87,20 +91,18 @@ public class RegisterUserDataCmdTest {
 
     @Test
     public void validateArgsCmd() {
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Account accountMock = PowerMockito.mock(Account.class);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
-        Mockito.when(accountMock.getId()).thenReturn(2L);
-        ReflectionTestUtils.setField(cmd, "name", "testUserdataName");
-        ReflectionTestUtils.setField(cmd, "userData", "testUserdata");
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            ReflectionTestUtils.setField(cmd, "name", "testUserdataName");
+            ReflectionTestUtils.setField(cmd, "userData", "testUserdata");
 
-        when(_accountService.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, PROJECT_ID, true)).thenReturn(200L);
+            when(_accountService.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, PROJECT_ID, true)).thenReturn(200L);
 
-        Assert.assertEquals("testUserdataName", cmd.getName());
-        Assert.assertEquals("testUserdata", cmd.getUserData());
-        Assert.assertEquals(200L, cmd.getEntityOwnerId());
+            Assert.assertEquals("testUserdataName", cmd.getName());
+            Assert.assertEquals("testUserdata", cmd.getUserData());
+            Assert.assertEquals(200L, cmd.getEntityOwnerId());
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)

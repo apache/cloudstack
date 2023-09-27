@@ -167,8 +167,8 @@ public class DatabaseUpgradeCheckerTest {
         final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
         final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
         assertNotNull(upgrades);
-        assertEquals("We should have 2 upgrade steps", 2, upgrades.length);
-        assertTrue(upgrades[1] instanceof NoopDbUpgrade);
+        assertEquals("We should have 1 upgrade step", 1, upgrades.length);
+        assertTrue(upgrades[0] instanceof NoopDbUpgrade);
 
     }
 
@@ -204,4 +204,23 @@ public class DatabaseUpgradeCheckerTest {
          assertTrue(upgrades[0] instanceof Upgrade41510to41520);
          assertTrue(upgrades[upgrades.length - 1] instanceof Upgrade41610to41700);
      }
+
+    @Test
+    public void testCalculateUpgradePathFromLatestDbVersion() {
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+
+        final CloudStackVersion dbVersion = checker.getLatestVersion();
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse(dbVersion.getMajorRelease() + "."
+                + dbVersion.getMinorRelease() + "."
+                + dbVersion.getPatchRelease() + "."
+                + (dbVersion.getSecurityRelease() + 1));
+        assertNotNull(currentVersion);
+
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+        assertNotNull(upgrades);
+        assertEquals("We should have 1 upgrade step", 1, upgrades.length);
+        assertTrue(upgrades[0] instanceof NoopDbUpgrade);
+    }
 }
