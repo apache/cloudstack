@@ -32,21 +32,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ObjectStoreImpl.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ObjectStoreProviderManagerImplTest extends TestCase{
-
 
     ObjectStoreProviderManagerImpl objectStoreProviderManagerImplSpy;
 
@@ -73,7 +69,7 @@ public class ObjectStoreProviderManagerImplTest extends TestCase{
 
     @Before
     public void setup(){
-        objectStoreProviderManagerImplSpy = PowerMockito.spy(new ObjectStoreProviderManagerImpl());
+        objectStoreProviderManagerImplSpy = Mockito.spy(new ObjectStoreProviderManagerImpl());
         objectStoreProviderManagerImplSpy.objectStoreDao = objectStoreDao;
         objectStoreProviderManagerImplSpy.providerManager = providerManager;
         objectStoreProviderManagerImplSpy.driverMaps = driverMaps;
