@@ -327,6 +327,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SnapshotZones.vue')))
         },
         {
+          name: 'events',
+          resourceType: 'Snapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
