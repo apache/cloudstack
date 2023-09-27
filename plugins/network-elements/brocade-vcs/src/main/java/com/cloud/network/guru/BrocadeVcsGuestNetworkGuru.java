@@ -97,7 +97,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         // Check of the isolation type of the related physical network is VLAN
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -106,7 +106,7 @@ public class BrocadeVcsGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
         s_logger.debug("Physical isolation type is VCS, asking GuestNetworkGuru to design this network");
-        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, owner);
+        NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
         if (networkObject == null) {
             return null;
         }

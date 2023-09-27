@@ -219,7 +219,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
 
     @Override
-    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
+    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, String name, Long vpcId, final Account owner) {
         final DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         final PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 

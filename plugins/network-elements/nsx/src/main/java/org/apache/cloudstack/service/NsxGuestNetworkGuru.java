@@ -76,7 +76,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner) {
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
@@ -85,7 +85,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             return null;
         }
 
-        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, owner);
+        NetworkVO network = (NetworkVO) super.design(offering, plan, userSpecified, name, vpcId, owner);
         network.setBroadcastDomainType(Networks.BroadcastDomainType.NSX);
         if (network == null) {
             return null;
@@ -104,6 +104,38 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
         network.setBroadcastDomainType(Networks.BroadcastDomainType.NSX);
         network.setState(Network.State.Allocated);
+
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),
+                network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Implemented,
+                network.getDataCenterId(), network.getPhysicalNetworkId(), offering.isRedundantRouter());
+        implemented.setAccountId(owner.getAccountId());
+
+        if (network.getGateway() != null) {
+            implemented.setGateway(network.getGateway());
+        }
+
+        if (network.getCidr() != null) {
+            implemented.setCidr(network.getCidr());
+        }
+
+        if (vpcId != null) {
+            implemented.setVpcId(vpcId);
+        }
+
+        if (name != null) {
+            implemented.setName(name);
+        }
+        implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
+        try {
+            long zoneId = network.getDataCenterId();
+            DataCenter zone = zoneDao.findById(zoneId);
+            if (isNull(zone)) {
+                throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
+            }
+            createNsxSegment(implemented, zone);
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
+        }
         return network;
     }
 
@@ -137,16 +169,16 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             implemented.setName(network.getName());
         }
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
-        try {
-            long zoneId = network.getDataCenterId();
-            DataCenter zone = zoneDao.findById(zoneId);
-            if (isNull(zone)) {
-                throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
-            }
-            createNsxSegment(implemented, zone);
-        } catch (Exception ex) {
-            throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
-        }
+//        try {
+//            long zoneId = network.getDataCenterId();
+//            DataCenter zone = zoneDao.findById(zoneId);
+//            if (isNull(zone)) {
+//                throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
+//            }
+//            createNsxSegment(implemented, zone);
+//        } catch (Exception ex) {
+//            throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
+//        }
         return implemented;
     }
 

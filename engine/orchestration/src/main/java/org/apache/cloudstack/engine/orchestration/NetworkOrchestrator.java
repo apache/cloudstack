@@ -764,7 +764,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             long related = -1;
 
             for (final NetworkGuru guru : networkGurus) {
-                final Network network = guru.design(offering, plan, predefined, owner);
+                final Network network = guru.design(offering, plan, predefined, name, vpcId, owner);
                 if (network == null) {
                     continue;
                 }
