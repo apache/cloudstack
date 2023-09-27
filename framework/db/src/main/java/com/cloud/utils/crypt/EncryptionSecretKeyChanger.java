@@ -486,6 +486,8 @@ public class EncryptionSecretKeyChanger {
             migrateImageStoreUrlForCifs(conn);
             migrateStoragePoolPathForSMB(conn);
 
+            preparePassphraseTableForMigration(conn);
+
             // migrate columns with annotation @Encrypt
             migrateEncryptedTableColumns(conn);
 
@@ -663,6 +665,56 @@ public class EncryptionSecretKeyChanger {
             throwCloudRuntimeException("Unable to update user_vm_deploy_as_is_details values", e);
         }
         System.out.println("End migrate user vm deploy_as_is details");
+    }
+
+    // encrypt any unencrypted passphrases using old style encryptor before we migrate
+    private void preparePassphraseTableForMigration(Connection conn) throws SQLException {
+        System.out.println("Preparing passphrase table by checking for unencrypted passphrases");
+
+        try(PreparedStatement selectPstmt = conn.prepareStatement("SELECT id, passphrase FROM passphrase");
+            ResultSet rs = selectPstmt.executeQuery();
+            PreparedStatement updatePstmt = conn.prepareStatement("UPDATE passphrase SET passphrase=? WHERE id=?")
+            ) {
+            while(rs.next()) {
+                long id = rs.getLong(1);
+                String value = rs.getString(2);
+                if (StringUtils.isBlank(value)) {
+                    continue;
+                }
+
+                // passphrases are 64 bytes long when unencrypted, longer when encrypted
+                if (value.length() == 64) {
+                    // just confirm it won't decrypt, to be safe, before assuming raw value and encrypting
+                    try {
+                        oldEncryptor.decrypt(value);
+                        System.out.printf("Passphrase table entry db id %d was already encrypted with old encryption\n", id);
+                    } catch(EncryptionException | CloudRuntimeException ex) {
+                        String message = null;
+                        if (ex instanceof CloudRuntimeException && ex.getCause() != null) {
+                            if ((ex.getCause() instanceof EncryptionException)) {
+                                message = ex.getCause().getMessage();
+                            }
+                        } else if (ex instanceof EncryptionException) {
+                            message = ex.getMessage();
+                        }
+
+                        if (message != null && message.contains("Failed to decrypt")) {
+                            System.out.printf("Encrypting unencrypted passphrase table entry db id %d before migration using old encryption\n", id);
+                            String encrypted = oldEncryptor.encrypt(value);
+                            updatePstmt.setBytes(1, encrypted.getBytes(StandardCharsets.UTF_8));
+                            updatePstmt.setLong(2, id);
+                            updatePstmt.executeUpdate();
+                        } else {
+                            throwCloudRuntimeException("Unhandled EncryptionException", ex);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throwCloudRuntimeException("Unable to prepare passphrase table", e);
+        }
+
+        System.out.println("End preparing passphrase table");
     }
 
     private void migrateImageStoreUrlForCifs(Connection conn) {
