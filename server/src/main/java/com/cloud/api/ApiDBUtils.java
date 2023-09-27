@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -81,7 +82,9 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -477,6 +480,7 @@ public class ApiDBUtils {
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
+    static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
 
     @Inject
     private ManagementServer ms;
@@ -733,6 +737,8 @@ public class ApiDBUtils {
     private ResourceIconDao resourceIconDao;
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
+    @Inject
+    SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
     @PostConstruct
     void init() {
@@ -841,6 +847,7 @@ public class ApiDBUtils {
         s_vpcOfferingDao = vpcOfferingDao;
         s_vpcOfferingJoinDao = vpcOfferingJoinDao;
         s_snapshotPolicyDao = snapshotPolicyDao;
+        s_snapshotPolicyDetailsDao = snapshotPolicyDetailsDao;
         s_asyncJobDao = asyncJobDao;
         s_hostDetailsDao = hostDetailsDao;
         s_clusterDetailsDao = clusterDetailsDao;
@@ -1656,6 +1663,20 @@ public class ApiDBUtils {
 
     public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
         return s_snapshotPolicyDao.findById(policyId);
+    }
+
+    public static List<DataCenterVO> findSnapshotPolicyZones(SnapshotPolicy policy, Volume volume) {
+        List<SnapshotPolicyDetailVO> zoneDetails = s_snapshotPolicyDetailsDao.findDetails(policy.getId(), ApiConstants.ZONE_ID);
+        List<Long> zoneIds = new ArrayList<>();
+        for (SnapshotPolicyDetailVO detail : zoneDetails) {
+            try {
+                zoneIds.add(Long.valueOf(detail.getValue()));
+            } catch (NumberFormatException ignored) {}
+        }
+        if (volume != null && !zoneIds.contains(volume.getDataCenterId())) {
+            zoneIds.add(0, volume.getDataCenterId());
+        }
+        return s_zoneDao.listByIds(zoneIds);
     }
 
     public static VpcOffering findVpcOfferingById(long offeringId) {

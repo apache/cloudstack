@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -263,6 +262,7 @@ import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -808,6 +808,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         policyResponse.setTags(new HashSet<>(tagResponses));
+        List<ZoneResponse> zoneResponses = new ArrayList<>();
+        List<DataCenterVO> zones = ApiDBUtils.findSnapshotPolicyZones(policy, vol);
+        for (DataCenterVO zone : zones) {
+            ZoneResponse zoneResponse = new ZoneResponse();
+            zoneResponse.setId(zone.getUuid());
+            zoneResponse.setName(zone.getName());
+            zoneResponse.setTags(null);
+            zoneResponses.add(zoneResponse);
+        }
+        policyResponse.setZones(new HashSet<>(zoneResponses));
 
         return policyResponse;
     }
