@@ -20,23 +20,20 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class PatchSystemVMCmdTest {
 
     @Mock
@@ -45,9 +42,16 @@ public class PatchSystemVMCmdTest {
     @InjectMocks
     PatchSystemVMCmd cmd = new PatchSystemVMCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -76,17 +80,16 @@ public class PatchSystemVMCmdTest {
 
     @Test
     public void validateArgsForPatchSystemVMApi() {
-        PowerMockito.mockStatic(CallContext.class);
-        CallContext callContextMock = PowerMockito.mock(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Account accountMock = PowerMockito.mock(Account.class);
-        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
-        Mockito.when(accountMock.getId()).thenReturn(2L);
-        ReflectionTestUtils.setField(cmd, "id", 1L);
-        Assert.assertEquals((long)cmd.getId(), 1L);
-        Assert.assertFalse(cmd.isForced());
-        Assert.assertEquals(cmd.getEntityOwnerId(), 2L);
-
-
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Account accountMock = Mockito.mock(Account.class);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            Mockito.when(accountMock.getId()).thenReturn(2L);
+            ReflectionTestUtils.setField(cmd, "id", 1L);
+            Assert.assertEquals((long) cmd.getId(), 1L);
+            Assert.assertFalse(cmd.isForced());
+            Assert.assertEquals(cmd.getEntityOwnerId(), 2L);
+        }
     }
 }

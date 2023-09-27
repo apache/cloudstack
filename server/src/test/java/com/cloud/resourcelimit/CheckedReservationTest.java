@@ -31,12 +31,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -70,14 +72,16 @@ public class CheckedReservationTest {
     @Test
     public void getId() {
         when(account.getDomainId()).thenReturn(4l);
-        boolean fail = false;
-        try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {
+        // Some weird behaviour depending on whether the database is up or not.
+        lenient().when(reservationDao.persist(Mockito.any())).thenReturn(reservation);
+        lenient().when(reservation.getId()).thenReturn(1L);
+        try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService) ) {
             long id = cr.getId();
-            assertEquals(1l, id);
+            assertEquals(1L, id);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {
-            // this does not work on all plafroms because of the static methods being used in the global lock mechanism
+            // this does not work on all platforms because of the static methods being used in the global lock mechanism
             // normally one would
             // throw new CloudRuntimeException(rae);
             // but we'll ignore this for platforms that can not humour the static bits of the system.
@@ -88,8 +92,7 @@ public class CheckedReservationTest {
 
     @Test
     public void getNoAmount() {
-        boolean fail = false;
-        try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService); ) {
+        try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService) ) {
             Long amount = cr.getReservedAmount();
             assertNull(amount);
         } catch (NullPointerException npe) {
