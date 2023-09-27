@@ -170,7 +170,7 @@ public class ServerResourceBaseTest {
 
             serverResourceBaseSpy.tryToAutoDiscoverResourcePrivateNetworkInterface();
 
-            Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy._privateNic);
+            Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy.privateNic);
             Mockito.verify(serverResourceBaseSpy, Mockito.times(2)).isValidNicToUseAsPrivateNic(Mockito.any());
         }
     }
@@ -229,9 +229,9 @@ public class ServerResourceBaseTest {
             Assert.assertEquals(expectedResults[i], keys.get(i));
         }
 
-        Assert.assertEquals(networkInterfaceMock1, serverResourceBaseSpy._privateNic);
-        Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy._publicNic);
-        Assert.assertEquals(networkInterfaceMock3, serverResourceBaseSpy._storageNic);
-        Assert.assertEquals(networkInterfaceMock4, serverResourceBaseSpy._storageNic2);
+        Assert.assertEquals(networkInterfaceMock1, serverResourceBaseSpy.privateNic);
+        Assert.assertEquals(networkInterfaceMock2, serverResourceBaseSpy.publicNic);
+        Assert.assertEquals(networkInterfaceMock3, serverResourceBaseSpy.storageNic);
+        Assert.assertEquals(networkInterfaceMock4, serverResourceBaseSpy.storageNic2);
     }
 }
