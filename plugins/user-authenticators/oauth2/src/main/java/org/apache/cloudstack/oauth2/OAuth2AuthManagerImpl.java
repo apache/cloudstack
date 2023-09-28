@@ -151,10 +151,10 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     }
 
     @Override
-    public List<OauthProviderVO> listOauthProviders(String provider, Long id) {
+    public List<OauthProviderVO> listOauthProviders(String provider, String uuid) {
         List<OauthProviderVO> providers;
-        if (id != null) {
-            providers = Collections.singletonList(_oauthProviderDao.findById(id));
+        if (uuid != null) {
+            providers = Collections.singletonList(_oauthProviderDao.findByUuid(uuid));
         } else if (StringUtils.isNotBlank(provider)) {
             providers = Collections.singletonList(_oauthProviderDao.findByProvider(provider));
         } else {

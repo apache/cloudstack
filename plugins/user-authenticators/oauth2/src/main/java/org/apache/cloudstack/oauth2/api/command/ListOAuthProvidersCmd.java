@@ -56,7 +56,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OauthProviderResponse.class, description = "the ID of the OAuth provider")
-    private Long id;
+    private String id;
 
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider")
     private String provider;
@@ -64,7 +64,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -91,7 +91,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
-        final Long[] idArray = (Long[])params.get(ApiConstants.ID);
+        final String[] idArray = (String[])params.get(ApiConstants.ID);
         final String[] providerArray = (String[])params.get(ApiConstants.PROVIDER);
         if (ArrayUtils.isNotEmpty(idArray)) {
             id = idArray[0];

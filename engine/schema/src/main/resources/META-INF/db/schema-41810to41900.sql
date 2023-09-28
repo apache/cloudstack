@@ -559,13 +559,15 @@ CREATE VIEW `cloud`.`snapshot_view` AS
              AND (`resource_tags`.`resource_type` = 'Snapshot')));
 
 UPDATE `cloud`.`configuration` SET
-    `kind` = 'Order',
-    `options` = 'PBKDF2,SHA256SALT,MD5,LDAP,SAML2,PLAINTEXT,OAUTH2'
-where `name` = 'user.authenticators.order' ;
+    `options` = concat(`options`, ',OAUTH2'),
+    `default_value` = concat(`default_value`, ',OAUTH2'),
+    `value` = concat(`value`, ',OAUTH2')
+WHERE `name` = 'user.authenticators.order' ;
 
 UPDATE `cloud`.`configuration` SET
-    `kind` = 'Order',
-    `options` = 'SAML2Auth,OAUTH2Auth'
+    `options` = concat(`options`, ',OAUTH2Auth'),
+    `default_value` = concat(`default_value`, ',OAUTH2Auth'),
+    `value` = concat(`value`, ',OAUTH2Auth')
 where `name` = 'pluggableApi.authenticators.order' ;
 
 -- Create table for OAuth provider details

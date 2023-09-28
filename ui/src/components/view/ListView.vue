@@ -206,6 +206,12 @@
       </span>
       <span v-else>{{ text }}</span>
     </template>
+    <template v-if="column.key === 'provider'">
+      <span v-if="$route.name === 'oauthsetting'">
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      </span>
+      <span v-else>{{ text }}</span>
+    </template>
     <template v-if="column.key === 'state'">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
       <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
@@ -586,7 +592,7 @@ export default {
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/guestos', '/guestoshypervisormapping'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

@@ -52,7 +52,7 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
 
     OauthProviderVO registerOauthProvider(RegisterOAuthProviderCmd cmd);
 
-    List<OauthProviderVO> listOauthProviders(String provider, Long id);
+    List<OauthProviderVO> listOauthProviders(String provider, String uuid);
 
     boolean deleteOauthProvider(Long id);
 }

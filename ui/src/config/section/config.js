@@ -84,6 +84,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.register.oauth',
           listView: true,
+          dataView: false,
           args: [
             'provider', 'description', 'clientid', 'redirecturi'
           ],
@@ -96,7 +97,7 @@ export default {
         {
           api: 'deleteOauthProvider',
           icon: 'delete-outlined',
-          label: 'label.action.delete.guest.os',
+          label: 'label.action.delete.oauth.provider',
           message: 'message.action.delete.guest.os',
           dataView: true,
           popup: true
