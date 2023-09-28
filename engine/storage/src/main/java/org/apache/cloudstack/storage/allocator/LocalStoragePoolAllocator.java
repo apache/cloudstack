@@ -83,7 +83,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                         logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                         suitablePools.add(storagePool);
                     } else {
-                        s_logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
+                        logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                         avoid.addPool(pool.getId());
                     }
                 }
@@ -106,10 +106,10 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 }
                 StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
                 if (filter(avoid, storagePool, dskCh, plan)) {
-                    s_logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
+                    logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                     suitablePools.add(storagePool);
                 } else {
-                    s_logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
+                    logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                     avoid.addPool(pool.getId());
                 }
             }

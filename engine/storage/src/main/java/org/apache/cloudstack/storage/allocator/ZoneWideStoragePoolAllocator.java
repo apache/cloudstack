@@ -96,7 +96,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 suitablePools.add(storagePool);
             } else {
                 if (canAddStoragePoolToAvoidSet(storage)) {
-                    LOGGER.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", storagePool, dskCh));
+                    logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", storagePool, dskCh));
                     avoid.addPool(storagePool.getId());
                 }
             }

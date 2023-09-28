@@ -3614,9 +3614,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             try {
                 Library.runEventLoop();
             } catch (LibvirtException e) {
-                s_logger.error("LibvirtException was thrown in event loop: ", e);
+                logger.error("LibvirtException was thrown in event loop: ", e);
             } catch (InterruptedException e) {
-                s_logger.error("Libvirt event loop was interrupted: ", e);
+                logger.error("Libvirt event loop was interrupted: ", e);
             }
         });
 
@@ -3627,15 +3627,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Connect conn = LibvirtConnection.getConnection();
             conn.addLifecycleListener(this::onDomainLifecycleChange);
 
-            s_logger.debug("Set up the libvirt domain event lifecycle listener");
+            logger.debug("Set up the libvirt domain event lifecycle listener");
         } catch (LibvirtException e) {
-            s_logger.error("Failed to get libvirt connection for domain event lifecycle", e);
+            logger.error("Failed to get libvirt connection for domain event lifecycle", e);
         }
     }
 
     private int onDomainLifecycleChange(Domain domain, DomainEvent domainEvent) {
         try {
-            s_logger.debug(String.format("Got event lifecycle change on Domain %s, event %s", domain.getName(), domainEvent));
+            logger.debug(String.format("Got event lifecycle change on Domain %s, event %s", domain.getName(), domainEvent));
             if (domainEvent != null) {
                 switch (domainEvent.getType()) {
                     case STOPPED:
@@ -3644,20 +3644,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                          * initiated, and avoid pushing extra updates for actions we are initiating without a need for extra tracking */
                         DomainEventDetail detail = domainEvent.getDetail();
                         if (StoppedDetail.SHUTDOWN.equals(detail) || StoppedDetail.CRASHED.equals(detail)) {
-                            s_logger.info("Triggering out of band status update due to completed self-shutdown or crash of VM");
+                            logger.info("Triggering out of band status update due to completed self-shutdown or crash of VM");
                             _agentStatusUpdater.triggerUpdate();
                         } else {
-                            s_logger.debug("Event detail: " + detail);
+                            logger.debug("Event detail: " + detail);
                         }
                         break;
                     default:
-                        s_logger.debug(String.format("No handling for event %s", domainEvent));
+                        logger.debug(String.format("No handling for event %s", domainEvent));
                 }
             }
         } catch (LibvirtException e) {
-            s_logger.error("Libvirt exception while processing lifecycle event", e);
+            logger.error("Libvirt exception while processing lifecycle event", e);
         } catch (Throwable e) {
-            s_logger.error("Error during lifecycle", e);
+            logger.error("Error during lifecycle", e);
         }
         return 0;
     }

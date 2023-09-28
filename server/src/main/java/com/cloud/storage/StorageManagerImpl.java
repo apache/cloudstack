@@ -2386,7 +2386,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
-            s_logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
+            logger.debug(String.format("Cannot check if storage [%s] has enough IOPS to allocate volumes [%s].", pool, requestedVolumes));
             return false;
         }
 
@@ -2419,7 +2419,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long futureIops = currentIops + requestedIops;
         boolean hasEnoughIops = futureIops <= pool.getCapacityIops();
         String hasCapacity = hasEnoughIops ? "has" : "does not have";
-        s_logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
+        logger.debug(String.format("Pool [%s] %s enough IOPS to allocate volumes [%s].", pool, hasCapacity, requestedVolumes));
         return hasEnoughIops;
     }
 
@@ -2431,12 +2431,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilesList, StoragePool pool, Long clusterId) {
         if (CollectionUtils.isEmpty(volumeDiskProfilesList)) {
-            s_logger.debug(String.format("Cannot check if pool [%s] has enough space to allocate volumes because the volumes list is empty.", pool));
+            logger.debug(String.format("Cannot check if pool [%s] has enough space to allocate volumes because the volumes list is empty.", pool));
             return false;
         }
 
         if (!checkUsagedSpace(pool)) {
-            s_logger.debug(String.format("Cannot allocate pool [%s] because there is not enough space in this pool.", pool));
+            logger.debug(String.format("Cannot allocate pool [%s] because there is not enough space in this pool.", pool));
             return false;
         }
 
@@ -2699,34 +2699,34 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Override
     public boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume) {
         if (pool == null || volume == null) {
-            s_logger.debug(String.format("Cannot check if storage pool [%s] is compatible with volume [%s].", pool, volume));
+            logger.debug(String.format("Cannot check if storage pool [%s] is compatible with volume [%s].", pool, volume));
             return false;
         }
 
         if (volume.getPoolId() == null) {
-            s_logger.debug(String.format("Volume [%s] is not allocated to any pool. Cannot check compatibility with pool [%s].", volume, pool));
+            logger.debug(String.format("Volume [%s] is not allocated to any pool. Cannot check compatibility with pool [%s].", volume, pool));
             return true;
         }
 
         StoragePool volumePool = _storagePoolDao.findById(volume.getPoolId());
         if (volumePool == null) {
-            s_logger.debug(String.format("Pool [%s] used by volume [%s] does not exist. Cannot check compatibility.", pool, volume));
+            logger.debug(String.format("Pool [%s] used by volume [%s] does not exist. Cannot check compatibility.", pool, volume));
             return true;
         }
 
         if (volume.getState() == Volume.State.Ready) {
             if (volumePool.getPoolType() == Storage.StoragePoolType.PowerFlex && pool.getPoolType() != Storage.StoragePoolType.PowerFlex) {
-                s_logger.debug(String.format("Pool [%s] with type [%s] does not match volume [%s] pool type [%s].", pool, pool.getPoolType(), volume, volumePool.getPoolType()));
+                logger.debug(String.format("Pool [%s] with type [%s] does not match volume [%s] pool type [%s].", pool, pool.getPoolType(), volume, volumePool.getPoolType()));
                 return false;
             } else if (volumePool.getPoolType() != Storage.StoragePoolType.PowerFlex && pool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                s_logger.debug(String.format("Pool [%s] with type [%s] does not match volume [%s] pool type [%s].", pool, pool.getPoolType(), volume, volumePool.getPoolType()));
+                logger.debug(String.format("Pool [%s] with type [%s] does not match volume [%s] pool type [%s].", pool, pool.getPoolType(), volume, volumePool.getPoolType()));
                 return false;
             }
         } else {
-            s_logger.debug(String.format("Cannot check compatibility of pool [%s] because volume [%s] is not in [%s] state.", pool, volume, Volume.State.Ready));
+            logger.debug(String.format("Cannot check compatibility of pool [%s] because volume [%s] is not in [%s] state.", pool, volume, Volume.State.Ready));
             return false;
         }
-        s_logger.debug(String.format("Pool [%s] is compatible with volume [%s].", pool, volume));
+        logger.debug(String.format("Pool [%s] is compatible with volume [%s].", pool, volume));
         return true;
     }
 

@@ -274,7 +274,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(Command cmd) {
-        s_logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", cmd.getClass().getSimpleName(), cmd));
+        logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", cmd.getClass().getSimpleName(), cmd));
         if (cmd instanceof DownloadProgressCommand) {
             return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
@@ -412,7 +412,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         String templateUrl = secondaryStorageUrl + File.separator + srcData.getPath();
         String templateDetails = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(template, "uuid", "path", "name");
-        s_logger.debug(String.format("Trying to get disks of template [%s], using path [%s].", templateDetails, templateUrl));
+        logger.debug(String.format("Trying to get disks of template [%s], using path [%s].", templateDetails, templateUrl));
 
         Pair<String, String> templateInfo = decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
         String templateRelativeFolderPath = templateInfo.first();
@@ -444,7 +444,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 command.add("-R");
                 command.add("666", directory);
 
-                s_logger.debug(String.format("Trying to add, recursivelly, permission 666 to directory [%s] using command [%s].", directory, command.toString()));
+                logger.debug(String.format("Trying to add, recursivelly, permission 666 to directory [%s] using command [%s].", directory, command.toString()));
                 result = command.execute();
                 if (result != null) {
                     logger.warn(String.format("Unable to set permissions 666 for directory [%s] due to [%s].", directory, result));
@@ -454,7 +454,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             Script command = new Script("cp", _timeout, logger);
             command.add(ovfFilePath);
             command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
-            s_logger.debug(String.format("Trying to copy file from [%s] to [%s] using command [%s].", ovfFilePath, ovfFilePath + ORIGINAL_FILE_EXTENSION, command.toString()));
+            logger.debug(String.format("Trying to copy file from [%s] to [%s] using command [%s].", ovfFilePath, ovfFilePath + ORIGINAL_FILE_EXTENSION, command.toString()));
             String result = command.execute();
             if (result != null) {
                 String msg = String.format("Unable to copy original OVF file [%s] to [%s] due to [%s].", ovfFilePath, ovfFilePath + ORIGINAL_FILE_EXTENSION, result);
@@ -465,7 +465,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             OVFHelper ovfHelper = new OVFHelper();
 
             List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
-            s_logger.debug(LogUtils.logGsonWithoutException("Found %s disks reading OVF file [%s] and using configuration id [%s]. The disks specifications are [%s].",
+            logger.debug(LogUtils.logGsonWithoutException("Found %s disks reading OVF file [%s] and using configuration id [%s]. The disks specifications are [%s].",
                     disks.size(), ovfFilePath, configurationId, disks));
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
@@ -597,8 +597,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      *  return Pair of <Template relative path, Template name>
      *  Template url may or may not end with .ova extension
      */
-    public static Pair<String, String> decodeTemplateRelativePathAndNameFromUrl(String storeUrl, String templateUrl, String defaultName) {
-        s_logger.debug(String.format("Trying to get template relative path and name from URL [%s].", templateUrl));
+    public Pair<String, String> decodeTemplateRelativePathAndNameFromUrl(String storeUrl, String templateUrl, String defaultName) {
+        logger.debug(String.format("Trying to get template relative path and name from URL [%s].", templateUrl));
         String templateName = null;
         String mountPoint = null;
         if (templateUrl.endsWith(".ova")) {
@@ -612,7 +612,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             templateName = templateUrl.substring(index + 1).replace(".ova", "");
 
             if (templateName == null || templateName.isEmpty()) {
-                s_logger.debug(String.format("Cannot find template name from URL [%s]. Using default name [%s].", templateUrl, defaultName));
+                logger.debug(String.format("Cannot find template name from URL [%s]. Using default name [%s].", templateUrl, defaultName));
                 templateName = defaultName;
             }
         } else {
@@ -623,12 +623,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             templateName = defaultName;
         }
 
-        s_logger.debug(String.format("Template relative path [%s] and name [%s] found from URL [%s].", mountPoint, templateName, templateUrl));
+        logger.debug(String.format("Template relative path [%s] and name [%s] found from URL [%s].", mountPoint, templateName, templateUrl));
         return new Pair<String, String>(mountPoint, templateName);
     }
 
-    public static String getTemplateOnSecStorageFilePath(String secStorageMountPoint, String templateRelativeFolderPath, String templateName, String fileExtension) {
-        s_logger.debug(String.format("Trying to find template [%s] with file extension [%s] in secondary storage mount point [%s] using relative folder path [%s].",
+    public String getTemplateOnSecStorageFilePath(String secStorageMountPoint, String templateRelativeFolderPath, String templateName, String fileExtension) {
+        logger.debug(String.format("Trying to find template [%s] with file extension [%s] in secondary storage mount point [%s] using relative folder path [%s].",
                 templateName, fileExtension, secStorageMountPoint, templateRelativeFolderPath));
         StringBuffer sb = new StringBuffer();
         sb.append(secStorageMountPoint);
@@ -716,27 +716,27 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String getOVFFilePath(String srcOVAFileName) {
-        s_logger.debug(String.format("Trying to get OVF file from OVA path [%s].", srcOVAFileName));
+        logger.debug(String.format("Trying to get OVF file from OVA path [%s].", srcOVAFileName));
 
         File file = new File(srcOVAFileName);
         assert (_storage != null);
         String[] files = _storage.listFiles(file.getParent());
 
         if (files == null) {
-            s_logger.warn(String.format("Cannot find any files in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
+            logger.warn(String.format("Cannot find any files in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
             return null;
         }
 
-        s_logger.debug(String.format("Found [%s] files in parent directory of OVA file [%s]. Files found are [%s].", files.length + 1, file.getParent(), StringUtils.join(files, ", ")));
+        logger.debug(String.format("Found [%s] files in parent directory of OVA file [%s]. Files found are [%s].", files.length + 1, file.getParent(), StringUtils.join(files, ", ")));
         for (String fileName : files) {
             if (fileName.toLowerCase().endsWith(".ovf")) {
                 File ovfFile = new File(fileName);
                 String ovfFilePath = file.getParent() + File.separator + ovfFile.getName();
-                s_logger.debug(String.format("Found OVF file [%s] from OVA file [%s].", ovfFilePath, srcOVAFileName));
+                logger.debug(String.format("Found OVF file [%s] from OVA file [%s].", ovfFilePath, srcOVAFileName));
                 return ovfFilePath;
             }
         }
-        s_logger.warn(String.format("Cannot find any OVF file in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
+        logger.warn(String.format("Cannot find any OVF file in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
         return null;
     }
 
@@ -2643,7 +2643,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return _parent;
         }
         try {
-            s_logger.debug(String.format("Trying to get root directory from secondary storage URL [%s] using NFS version [%s].", secUrl, nfsVersion));
+            logger.debug(String.format("Trying to get root directory from secondary storage URL [%s] using NFS version [%s].", secUrl, nfsVersion));
             URI uri = new URI(secUrl);
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;

@@ -415,14 +415,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     public void triggerUpdate() {
         PingCommand command = _resource.getCurrentStatus(getId());
         command.setOutOfBand(true);
-        s_logger.debug("Sending out of band ping");
+        logger.debug("Sending out of band ping");
 
         final Request request = new Request(_id, -1, command, false);
         request.setSequence(getNextSequence());
         try {
             _link.send(request.toBytes());
         } catch (final ClosedChannelException e) {
-            s_logger.warn("Unable to send ping update: " + request.toString());
+            logger.warn("Unable to send ping update: " + request.toString());
         }
     }
 
