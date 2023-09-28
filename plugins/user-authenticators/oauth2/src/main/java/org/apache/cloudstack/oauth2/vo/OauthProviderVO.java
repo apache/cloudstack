@@ -49,6 +49,9 @@ public class OauthProviderVO implements Identity, InternalIdentity {
     @Column(name = "client_id")
     private String clientId;
 
+    @Column(name = "secret_key")
+    private String secretKey;
+
     @Column(name = "redirect_uri")
     private String redirectUri;
 
@@ -102,5 +105,13 @@ public class OauthProviderVO implements Identity, InternalIdentity {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
 }

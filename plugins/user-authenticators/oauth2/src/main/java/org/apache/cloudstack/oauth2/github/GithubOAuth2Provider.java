@@ -85,7 +85,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
 
-            String jsonParams = "{\"client_id\":\"" + githubProvider.getClientId() + "\",\"client_secret\":\"" + "1136cd80652b515b714090d8a8e0715c327f619a" + "\",\"code\":\"" + secretCode + "\"}";
+            String jsonParams = "{\"client_id\":\"" + githubProvider.getClientId() + "\",\"client_secret\":\"" + githubProvider.getSecretKey() + "\",\"code\":\"" + secretCode + "\"}";
 
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = jsonParams.getBytes("utf-8");

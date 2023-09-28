@@ -77,7 +77,7 @@ export default {
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listOauthProvider'],
       columns: ['provider', 'description', 'clientid', 'redirecturi', 'enabled'],
-      details: ['provider', 'description', 'clientid', 'redirecturi', 'enabled'],
+      details: ['provider', 'description', 'clientid', 'secretkey', 'redirecturi', 'enabled'],
       actions: [
         {
           api: 'registerOauthProvider',
@@ -86,7 +86,7 @@ export default {
           listView: true,
           dataView: false,
           args: [
-            'provider', 'description', 'clientid', 'redirecturi'
+            'provider', 'description', 'clientid', 'redirecturi', 'secretkey'
           ],
           mapping: {
             provider: {

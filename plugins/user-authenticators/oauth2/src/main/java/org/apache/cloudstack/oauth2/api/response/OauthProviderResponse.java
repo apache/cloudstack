@@ -42,6 +42,10 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Client ID registered in the OAuth provider")
     private String clientId;
 
+    @SerializedName(ApiConstants.SECRET_KEY)
+    @Param(description = "Secret key registered in the OAuth provider")
+    private String secretKey;
+
     @SerializedName(ApiConstants.REDIRECT_URI)
     @Param(description = "Redirect URI registered in the OAuth provider")
     private String redirectUri;
@@ -50,11 +54,12 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Whether the OAuth provider is enabled or not")
     private boolean enabled;
 
-    public OauthProviderResponse(String id, String provider, String description, String clientId, String redirectUri) {
+    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri) {
         this.id = id;
         this.provider = provider;
         this.description = description;
         this.clientId = clientId;
+        this.secretKey = secretKey;
         this.redirectUri =  redirectUri;
     }
 
@@ -105,5 +110,13 @@ public class OauthProviderResponse extends BaseResponse {
 
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
 }

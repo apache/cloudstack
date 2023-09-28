@@ -138,6 +138,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String provider = cmd.getProvider();
         String clientId = cmd.getClientId();
         String redirectUri = cmd.getRedirectUri();
+        String secretKey = cmd.getSecretKey();
 
         if (!OAuth2IsPluginEnabled.value()) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -146,8 +147,11 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (providerVO != null) {
             throw new CloudRuntimeException(String.format("Provider with the name %s is already registered", provider));
         }
+        if (provider.equals("github") && secretKey == null) {
+            throw new CloudRuntimeException("Github provider required secret key to be registered");
+        }
 
-        return saveOauthProvider(provider, description, clientId, redirectUri);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri);
     }
 
     @Override
@@ -163,12 +167,13 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return providers;
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String redirectUri) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
         oauthProviderVO.setDescription(description);
         oauthProviderVO.setClientId(clientId);
+        oauthProviderVO.setSecretKey(secretKey);
         oauthProviderVO.setRedirectUri(redirectUri);
 
         _oauthProviderDao.persist(oauthProviderVO);

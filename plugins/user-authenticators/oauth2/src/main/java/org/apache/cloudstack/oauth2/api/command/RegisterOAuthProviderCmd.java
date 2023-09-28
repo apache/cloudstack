@@ -50,6 +50,9 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CLIENT_ID, type = CommandType.STRING, description = "Client ID pre-registered in the specific OAuth provider", required = true)
     private String clientId;
 
+    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "Secret Key pre-registered in the specific OAuth provider")
+    private String secretKey;
+
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
 
@@ -74,6 +77,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return clientId;
     }
 
+    public String getSecretKey() {
+        return secretKey;
+    }
+
     public String getRedirectUri() {
         return redirectUri;
     }
@@ -94,7 +101,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
-                provider.getDescription(), provider.getClientId(), provider.getRedirectUri());
+                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri());
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);
