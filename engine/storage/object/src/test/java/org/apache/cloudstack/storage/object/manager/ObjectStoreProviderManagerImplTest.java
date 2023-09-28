@@ -27,10 +27,12 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.object.store.ObjectStoreImpl;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -67,13 +69,15 @@ public class ObjectStoreProviderManagerImplTest extends TestCase{
     @Mock
     ObjectStoreEntity objectStoreEntity;
 
+    MockedStatic<ObjectStoreImpl> mockObjectStoreImpl;
+
     @Before
     public void setup(){
         objectStoreProviderManagerImplSpy = Mockito.spy(new ObjectStoreProviderManagerImpl());
         objectStoreProviderManagerImplSpy.objectStoreDao = objectStoreDao;
         objectStoreProviderManagerImplSpy.providerManager = providerManager;
         objectStoreProviderManagerImplSpy.driverMaps = driverMaps;
-        mockStatic(ObjectStoreImpl.class);
+        mockObjectStoreImpl = mockStatic(ObjectStoreImpl.class);
     }
 
     @Test
@@ -83,6 +87,7 @@ public class ObjectStoreProviderManagerImplTest extends TestCase{
         Mockito.doReturn(objectStoreDriver).when(driverMaps).get(Mockito.anyString());
         Mockito.doReturn("Simulator").when(provider).getName();
         Mockito.doReturn("Simulator").when(objectStoreVO).getProviderName();
+
         when(ObjectStoreImpl.getDataStore(Mockito.any(ObjectStoreVO.class), Mockito.any(ObjectStoreDriver.class),
                 Mockito.any(ObjectStoreProvider.class))).thenReturn(objectStoreEntity);
         assertNotNull(objectStoreProviderManagerImplSpy.getObjectStore(1L));
@@ -103,4 +108,10 @@ public class ObjectStoreProviderManagerImplTest extends TestCase{
         assertEquals(1, objectStoreProviderManagerImplSpy.listObjectStores().size());
     }
 
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        mockObjectStoreImpl.close();
+        super.tearDown();
+    }
 }
