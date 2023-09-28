@@ -21,11 +21,64 @@
 </template>
 
 <script>
+import store from '@/store'
+import { mapActions } from 'vuex'
+
 export default {
   name: 'VerifyOauth',
   data () {
-    console.log('testOauth')
     return {
+      state: {
+        time: 60,
+        loginBtn: false,
+        loginType: 0
+      }
+    }
+  },
+  created () {
+    this.verifyOauth()
+  },
+  methods: {
+    ...mapActions(['Login', 'Logout', 'OauthLogin']),
+    verifyOauth () {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      console.log(code)
+      this.state.loginBtn = true
+      const loginParams = {}
+      loginParams.email = 'harikrishna.patnala@gmail.com'
+      loginParams.provider = 'github'
+      loginParams.secretcode = 'secretcode'
+      loginParams.domain = '/'
+      this.OauthLogin(loginParams)
+        .then((res) => this.loginSuccess(res))
+        .catch(err => {
+          this.requestFailed(err)
+          this.state.loginBtn = false
+        })
+    },
+    loginSuccess (res) {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+      if (store.getters.twoFaEnabled === true && store.getters.twoFaProvider !== '' && store.getters.twoFaProvider !== undefined) {
+        this.$router.push({ path: '/verify2FA' }).catch(() => {})
+      } else if (store.getters.twoFaEnabled === true && (store.getters.twoFaProvider === '' || store.getters.twoFaProvider === undefined)) {
+        this.$router.push({ path: '/setup2FA' }).catch(() => {})
+      } else {
+        this.$store.commit('SET_LOGIN_FLAG', true)
+        this.$router.push({ path: '/dashboard' }).catch(() => {})
+      }
+    },
+    requestFailed (err) {
+      if (err && err.response && err.response.data && err.response.data.loginresponse) {
+        const error = err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext
+        this.$message.error(`${this.$t('label.error')} ${error}`)
+      } else if (err && err.response && err.response.data && err.response.data.oauthloginresponse) {
+        const error = err.response.data.oauthloginresponse.errorcode + ': ' + err.response.data.oauthloginresponse.errortext
+        this.$message.error(`${this.$t('label.error')} ${error}`)
+      } else {
+        this.$message.error(this.$t('message.login.failed'))
+      }
     }
   }
 }

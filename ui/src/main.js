@@ -60,7 +60,6 @@ vueApp.use(vue3GoogleLogin, { clientId: '345798102268-cfcpg40k6hnfft2m61mf6jbmjc
 let googleClientId = ''
 api('listOauthProvider', {}).then(response => {
   if (response) {
-    console.log(response)
     const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
     oauthproviders.forEach(item => {
       if (item.provider === 'google') {

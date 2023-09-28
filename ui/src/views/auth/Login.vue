@@ -317,7 +317,7 @@ export default {
       const options = {
         client_id: this.githubclientid,
         scope: 'user:email',
-        state: from
+        state: 'cloudstack'
       }
 
       const qs = new URLSearchParams(options)
