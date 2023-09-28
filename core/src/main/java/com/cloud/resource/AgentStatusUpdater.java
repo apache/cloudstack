@@ -14,20 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.resource;
 
-import java.util.Map;
-
-import com.cloud.agent.api.HostVmStateReportEntry;
-
-public interface VirtualMachinePowerStateSync {
-
-    void resetHostSyncState(long hostId);
-
-    void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
-
-    // to adapt legacy ping report
-    void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force);
-
-    Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states);
+/**
+ * AgentStatusUpdater is an agent with triggerable update functionality
+ */
+public interface AgentStatusUpdater {
+    /**
+     * Trigger the sending of an update (Ping).
+     */
+    void triggerUpdate();
 }

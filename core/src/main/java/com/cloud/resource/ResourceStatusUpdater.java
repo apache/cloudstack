@@ -14,20 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.resource;
 
-import java.util.Map;
-
-import com.cloud.agent.api.HostVmStateReportEntry;
-
-public interface VirtualMachinePowerStateSync {
-
-    void resetHostSyncState(long hostId);
-
-    void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
-
-    // to adapt legacy ping report
-    void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force);
-
-    Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states);
+/**
+ * ResourceStatusUpdater is a resource that can trigger out of band status updates
+ */
+public interface ResourceStatusUpdater {
+    /**
+     * Register an AgentStatusUpdater to use for triggering out of band updates.
+     *
+     * @param updater The object to call triggerUpdate() on
+     */
+    void registerStatusUpdater(AgentStatusUpdater updater);
 }
