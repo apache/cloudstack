@@ -437,7 +437,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public List<DataCenterVO> listByIds(List<Long> ids) {
         SearchBuilder<DataCenterVO> idsSearch = createSearchBuilder();
-        idsSearch.and("ids", idsSearch.entity().getName(), SearchCriteria.Op.IN);
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
         idsSearch.done();
         SearchCriteria<DataCenterVO> sc = idsSearch.create();
         sc.setParameters("ids", ids.toArray());
