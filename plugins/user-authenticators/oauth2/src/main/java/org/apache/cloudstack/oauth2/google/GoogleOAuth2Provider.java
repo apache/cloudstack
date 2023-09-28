@@ -18,6 +18,7 @@ package org.apache.cloudstack.oauth2.google;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -85,5 +86,15 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         }
 
         return idToken.getPayload().getEmail();
+    }
+
+    @Override
+    public String verifyCodeAndFetchEmail(String secretCode) {
+        return null;
+    }
+
+    @Override
+    public String getUserEmailAddress(String accessToken) throws CloudRuntimeException {
+        return null;
     }
 }

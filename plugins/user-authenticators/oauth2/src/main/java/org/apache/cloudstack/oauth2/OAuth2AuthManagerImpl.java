@@ -18,8 +18,6 @@
 //
 package org.apache.cloudstack.oauth2;
 
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -31,6 +29,7 @@ import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.ListOAuthProvidersCmd;
 import org.apache.cloudstack.oauth2.api.command.OauthLoginAPIAuthenticatorCmd;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
+import org.apache.cloudstack.oauth2.api.command.VerifyOAuthCodeAndGetUserCmd;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +37,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +59,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(OauthLoginAPIAuthenticatorCmd.class);
         cmdList.add(ListOAuthProvidersCmd.class);
+        cmdList.add(VerifyOAuthCodeAndGetUserCmd.class);
         return cmdList;
     }
 
@@ -124,19 +125,11 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     }
 
     @Override
-    public boolean authorizeUser(Long userId, String oAuthProviderId, boolean enable) {
-        UserVO user = _userDao.getUser(userId);
-        if (user != null) {
-            if (enable) {
-                user.setExternalEntity(oAuthProviderId);
-                user.setSource(User.Source.OAUTH2);
-            } else {
-                return false;
-            }
-            _userDao.update(user.getId(), user);
-            return true;
-        }
-        return false;
+    public String verifyCodeAndFetchEmail(String code, String provider) {
+        UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider);
+        String email = authenticator.verifyCodeAndFetchEmail(code);
+
+        return email;
     }
 
     @Override
@@ -158,8 +151,16 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     }
 
     @Override
-    public List<OauthProviderVO> listOauthProviders(ListOAuthProvidersCmd cmd) {
-        return _oauthProviderDao.listAll();
+    public List<OauthProviderVO> listOauthProviders(String provider, Long id) {
+        List<OauthProviderVO> providers;
+        if (id != null) {
+            providers = Collections.singletonList(_oauthProviderDao.findById(id));
+        } else if (StringUtils.isNotBlank(provider)) {
+            providers = Collections.singletonList(_oauthProviderDao.findByProvider(provider));
+        } else {
+            providers = _oauthProviderDao.listAll();
+        }
+        return providers;
     }
 
     private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String redirectUri) {

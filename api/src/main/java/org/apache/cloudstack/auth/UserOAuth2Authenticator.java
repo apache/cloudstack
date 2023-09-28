@@ -17,6 +17,7 @@
 package org.apache.cloudstack.auth;
 
 import com.cloud.utils.component.Adapter;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public interface UserOAuth2Authenticator extends Adapter {
     /**
@@ -37,4 +38,16 @@ public interface UserOAuth2Authenticator extends Adapter {
      */
     boolean verifyUser(String email, String secretCode);
 
+    /**
+     * Verifies the code provided by provider and fetches email
+     * @return returns email
+     */
+    String verifyCodeAndFetchEmail(String secretCode);
+
+
+    /**
+     * Fetches email using the accessToken
+     * @return returns email
+     */
+    String getUserEmailAddress(String accessToken) throws CloudRuntimeException;
 }

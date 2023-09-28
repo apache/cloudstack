@@ -23,6 +23,7 @@
 <script>
 import store from '@/store'
 import { mapActions } from 'vuex'
+import { api } from '@/api'
 
 export default {
   name: 'VerifyOauth',
@@ -43,19 +44,24 @@ export default {
     verifyOauth () {
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
-      console.log(code)
       this.state.loginBtn = true
-      const loginParams = {}
-      loginParams.email = 'harikrishna.patnala@gmail.com'
-      loginParams.provider = 'github'
-      loginParams.secretcode = 'secretcode'
-      loginParams.domain = '/'
-      this.OauthLogin(loginParams)
-        .then((res) => this.loginSuccess(res))
-        .catch(err => {
-          this.requestFailed(err)
-          this.state.loginBtn = false
-        })
+      api('verifyOAuthCodeAndGetUser', { provider: 'github', secretcode: code }).then(response => {
+        const email = response.verifyoauthcodeandgetuserresponse.oauthemail.email
+        const loginParams = {}
+        loginParams.email = email
+        loginParams.provider = 'github'
+        loginParams.secretcode = code
+        loginParams.domain = '/'
+        this.OauthLogin(loginParams)
+          .then((res) => this.loginSuccess(res))
+          .catch(err => {
+            this.requestFailed(err)
+            this.state.loginBtn = false
+          })
+      }).catch(err => {
+        this.requestFailed(err)
+        this.state.loginBtn = false
+      })
     },
     loginSuccess (res) {
       this.$notification.destroy()

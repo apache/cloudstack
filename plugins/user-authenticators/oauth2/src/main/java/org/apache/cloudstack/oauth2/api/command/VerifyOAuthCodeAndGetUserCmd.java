@@ -17,7 +17,6 @@
 package org.apache.cloudstack.oauth2.api.command;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -33,11 +32,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
@@ -45,31 +42,32 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@APICommand(name = "listOauthProvider", description = "List OAuth providers registered", responseObject = OauthProviderResponse.class, entityType = {},
+@APICommand(name = "verifyOAuthCodeAndGetUser", description = "Verify the OAuth Code and fetch the corresponding user from provider", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0")
-public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(ListOAuthProvidersCmd.class.getName());
+public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuthenticator {
+    public static final Logger s_logger = Logger.getLogger(VerifyOAuthCodeAndGetUserCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OauthProviderResponse.class, description = "the ID of the OAuth provider")
-    private Long id;
-
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider", required = true)
     private String provider;
+
+    @Parameter(name = ApiConstants.SECRET_CODE, type = CommandType.STRING, description = "Code that is provided by OAuth provider (Eg. google, github) after successful login")
+    private String secretCode;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    public Long getId() {
-        return id;
-    }
 
     public String getProvider() {
         return provider;
+    }
+
+    public String getSecretCode() {
+        return secretCode;
     }
 
     /////////////////////////////////////////////////////
@@ -91,41 +89,26 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, HttpServletRequest req, HttpServletResponse resp) throws ServerApiException {
-        final Long[] idArray = (Long[])params.get(ApiConstants.ID);
+        final String[] secretcodeArray = (String[])params.get(ApiConstants.SECRET_CODE);
         final String[] providerArray = (String[])params.get(ApiConstants.PROVIDER);
-        if (ArrayUtils.isNotEmpty(idArray)) {
-            id = idArray[0];
+        if (ArrayUtils.isNotEmpty(secretcodeArray)) {
+            secretCode = secretcodeArray[0];
         }
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
 
-        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id);
-        List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
-        List<String> authenticatorPluginNames = new ArrayList<>();
-        for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
-            String name = authenticator.getName();
-            authenticatorPluginNames.add(name);
-        }
-        List<OauthProviderResponse> responses = new ArrayList<>();
-        for (OauthProviderVO result : resultList) {
-            OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getRedirectUri());
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider())) {
-                r.setEnabled(true);
-            } else {
-                r.setEnabled(false);
-            }
-            r.setObjectName(ApiConstants.OAUTH_PROVIDER);
-            responses.add(r);
+        String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider);
+        if (email != null) {
+            UserResponse response = new UserResponse();
+            response.setEmail(email);
+            response.setResponseName(getCommandName());
+            response.setObjectName("oauthemail");
+
+            return ApiResponseSerializer.toSerializedString(response, responseType);
         }
 
-        ListResponse<OauthProviderResponse> response = new ListResponse<>();
-        response.setResponses(responses, resultList.size());
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-
-        return ApiResponseSerializer.toSerializedString(response, responseType);
+        throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to verify the code provided");
     }
 
     @Override
