@@ -29,7 +29,7 @@ import org.apache.cloudstack.shutdown.ShutdownManager;
 import com.cloud.user.Account;
 
 @APICommand(name = ReadyForShutdownCmd.APINAME,
-            description = "Returs the status of CloudStack, whether a shutdown has been triggered and if ready to shutdown",
+            description = "Returns the status of CloudStack, whether a shutdown has been triggered and if ready to shutdown",
             since = "4.19.0",
             responseObject = ReadyForShutdownResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)

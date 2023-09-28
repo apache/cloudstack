@@ -812,8 +812,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return false;
         }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Removed account " + accountId);
+        account.setState(State.REMOVED);
+        _accountDao.update(accountId, account);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Removed account " + accountId);
         }
 
         return cleanupAccount(account, callerUserId, caller);

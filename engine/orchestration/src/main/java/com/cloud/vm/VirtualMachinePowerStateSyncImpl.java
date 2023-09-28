@@ -56,19 +56,19 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             logger.debug("Process host VM state report. host: " + hostId);
 
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
-        processReport(hostId, translatedInfo);
+        processReport(hostId, translatedInfo, false);
     }
 
     @Override
-    public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report) {
+    public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force) {
         if (logger.isDebugEnabled())
             logger.debug("Process host VM state report from ping process. host: " + hostId);
 
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
-        processReport(hostId, translatedInfo);
+        processReport(hostId, translatedInfo, force);
     }
 
-    private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
+    private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo, boolean force) {
 
         if (logger.isDebugEnabled()) {
             logger.debug("Process VM state report. host: " + hostId + ", number of records in report: " + translatedInfo.size());
@@ -118,7 +118,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
                 // Make sure powerState is up to date for missing VMs
                 try {
-                    if (!_instanceDao.isPowerStateUpToDate(instance.getId())) {
+                    if (!force && !_instanceDao.isPowerStateUpToDate(instance.getId())) {
                         logger.warn("Detected missing VM but power state is outdated, wait for another process report run for VM id: " + instance.getId());
                         _instanceDao.resetVmPowerStateTracking(instance.getId());
                         continue;
@@ -151,7 +151,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
                 long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
 
-                if (milliSecondsSinceLastStateUpdate > milliSecondsGracefullPeriod) {
+                if (force || milliSecondsSinceLastStateUpdate > milliSecondsGracefullPeriod) {
                     logger.debug("vm id: " + instance.getId() + " - time since last state update(" + milliSecondsSinceLastStateUpdate + "ms) has passed graceful period");
 
                     // this is were a race condition might have happened if we don't re-fetch the instance;

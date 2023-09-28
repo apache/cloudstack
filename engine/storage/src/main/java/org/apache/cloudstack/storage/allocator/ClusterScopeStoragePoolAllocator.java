@@ -98,9 +98,10 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                logger.trace(String.format("Found suitable local storage pool [%s], adding to list.", pool));
+                logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                 suitablePools.add(storagePool);
             } else {
+                logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));
                 avoid.addPool(pool.getId());
             }
         }
