@@ -4474,15 +4474,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 cmd.getVolumeId(), cmd.getSnapshotName(), cmd.getKeyword(), cmd.getTags(),
                 cmd.getSnapshotType(), cmd.getIntervalType(), cmd.getZoneId(), cmd.getLocationType(),
                 cmd.isShowUnique(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId(),
-                cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);;
+                cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);
         ListResponse<SnapshotResponse> response = new ListResponse<>();
-
-
         ResponseView respView = ResponseView.Restricted;
         if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
             respView = ResponseView.Full;
         }
-
         List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, cmd.isShowUnique(), result.first().toArray(new SnapshotJoinVO[result.first().size()]));
         response.setResponses(templateResponses, result.second());
         return response;
@@ -4496,16 +4493,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, null, null, null,
                 null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
                 false, null, null, null,
-                null, null, true, false, caller);;
-        ListResponse<SnapshotResponse> response = new ListResponse<>();
-
-
+                null, null, true, false, caller);
         ResponseView respView = ResponseView.Restricted;
         if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
             respView = ResponseView.Full;
         }
-
-        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, false, result.first().toArray(new SnapshotJoinVO[result.first().size()]));
+        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, false, result.first().get(0));
         return templateResponses.get(0);
     }
 
