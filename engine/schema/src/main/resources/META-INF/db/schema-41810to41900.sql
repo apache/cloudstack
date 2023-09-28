@@ -181,6 +181,9 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
 
+-- Set removed state for all removed accounts
+UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
+
 -- Flexible tags
 ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
