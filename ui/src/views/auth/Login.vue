@@ -274,12 +274,12 @@ export default {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
             if (item.provider === 'google') {
-              this.googleprovider = true
+              this.googleprovider = item.enabled
               this.googleclientid = item.clientid
               this.googleredirecturi = item.redirecturi
             }
             if (item.provider === 'github') {
-              this.githubprovider = true
+              this.githubprovider = item.enabled
               this.githubclientid = item.clientid
               this.githubredirecturi = item.redirecturi
             }

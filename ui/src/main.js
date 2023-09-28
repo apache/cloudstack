@@ -57,22 +57,20 @@ vueApp.use(extensions)
 vueApp.use(directives)
 vueApp.use(vue3GoogleLogin, { clientId: '345798102268-cfcpg40k6hnfft2m61mf6jbmjcfg4p82.apps.googleusercontent.com' })
 
+let googleClientId = ''
 api('listOauthProvider', {}).then(response => {
-  console.log('in main.js')
   if (response) {
+    console.log(response)
     const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
     oauthproviders.forEach(item => {
       if (item.provider === 'google') {
-        this.googleprovider = true
-        this.googleclientid = item.clientid
-        this.googleredirecturi = item.redirecturi
-      }
-      if (item.provider === 'github') {
-        this.githubprovider = true
-        this.githubclientid = item.clientid
-        this.githubredirecturi = item.redirecturi
+        googleClientId = item.clientid
       }
     })
+    console.log(googleClientId)
+    if (googleClientId !== '') {
+      vueApp.use(vue3GoogleLogin, { clientId: googleClientId })
+    }
   }
 })
 

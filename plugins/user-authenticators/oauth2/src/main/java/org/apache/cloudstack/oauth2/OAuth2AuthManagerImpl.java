@@ -159,11 +159,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public List<OauthProviderVO> listOauthProviders(ListOAuthProvidersCmd cmd) {
-        if (OAuth2IsPluginEnabled.value()) {
-            return _oauthProviderDao.listAll();
-        }
-
-        return new ArrayList<OauthProviderVO>();
+        return _oauthProviderDao.listAll();
     }
 
     private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String redirectUri) {
