@@ -124,40 +124,22 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         final String[] emailArray = (String[])params.get(ApiConstants.EMAIL);
         final String[] secretCodeArray = (String[])params.get(ApiConstants.SECRET_CODE);
 
-        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
-
-        if (domainIdArr == null) {
-            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
-        }
-        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
-        Long domainId = null;
-        if ((domainIdArr != null) && (domainIdArr.length > 0)) {
-            try {
-                //check if UUID is passed in for domain
-                domainId = _apiServer.fetchDomainId(domainIdArr[0]);
-                if (domainId == null) {
-                    domainId = Long.parseLong(domainIdArr[0]);
-                }
-                auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
-            } catch (final NumberFormatException e) {
-                s_logger.warn("Invalid domain id entered by user");
-                auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "Invalid domain id entered, please enter a valid one");
-                throw new ServerApiException(ApiErrorCode.UNAUTHORIZED,
-                        _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid domain id entered, please enter a valid one", params,
-                                responseType));
-            }
-        }
-
-        String domain = null;
-        domain = getDomainName(auditTrailSb, domainName, domain);
-
-        String serializedResponse = null;
         String oauthProvider = ((provider == null) ? null : provider[0]);
         String email = ((emailArray == null) ? null : emailArray[0]);
         String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
         if (StringUtils.isAnyEmpty(oauthProvider, email, secretCode)) {
             throw new CloudAuthenticationException("OAuth provider, email, secretCode any of these cannot be null");
         }
+
+        Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
+        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
+        String domain = getDomainName(auditTrailSb, domainName);
+
+        return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
+    }
+
+    private String doOauthAuthentication(HttpSession session, Long domainId, String domain, String email, Map<String, Object[]> params, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb) {
+        String serializedResponse = null;
 
         try {
             final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
@@ -177,7 +159,6 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     responseType);
         } catch (final CloudAuthenticationException ex) {
             ApiServlet.invalidateHttpSession(session, "fall through to API key,");
-            // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
             String msg = String.format("%s", ex.getMessage() != null ?
                     ex.getMessage() :
                     "failed to authenticate user, check if username/password are correct");
@@ -192,8 +173,35 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, serializedResponse);
     }
 
+    protected Long getDomainIdFromParams(Map<String, Object[]> params, StringBuilder auditTrailSb, String responseType) {
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+
+        if (domainIdArr == null) {
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+        Long domainId = null;
+        if ((domainIdArr != null) && (domainIdArr.length > 0)) {
+            try {
+                //check if UUID is passed in for domain
+                domainId = _apiServer.fetchDomainId(domainIdArr[0]);
+                if (domainId == null) {
+                    domainId = Long.parseLong(domainIdArr[0]);
+                }
+                auditTrailSb.append(" domainid=" + domainId);// building the params for POST call
+            } catch (final NumberFormatException e) {
+                s_logger.warn("Invalid domain id entered by user");
+                auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "Invalid domain id entered, please enter a valid one");
+                throw new ServerApiException(ApiErrorCode.UNAUTHORIZED,
+                        _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid domain id entered, please enter a valid one", params,
+                                responseType));
+            }
+        }
+        return domainId;
+    }
+
     @Nullable
-    private String getDomainName(StringBuilder auditTrailSb, String[] domainName, String domain) {
+    protected String getDomainName(StringBuilder auditTrailSb, String[] domainName) {
+        String domain = null;
         if (domainName != null) {
             domain = domainName[0];
             auditTrailSb.append(" domain=" + domain);
