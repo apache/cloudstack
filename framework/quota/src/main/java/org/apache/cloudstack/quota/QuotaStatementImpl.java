@@ -31,8 +31,12 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.QuotaAlertManagerImpl.DeferredQuotaEmail;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +58,12 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
     private QuotaAlertManager _quotaAlert;
     @Inject
     private ConfigurationDao _configDao;
+
+    @Inject
+    private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
+
+    @Inject
+    private QuotaEmailTemplatesDao quotaEmailTemplatesDao;
 
     final public static int s_LAST_STATEMENT_SENT_DAYS = 6; //ideally should be less than 7 days
 
@@ -109,9 +119,15 @@ public class QuotaStatementImpl extends ManagerBase implements QuotaStatement {
     public void sendStatement() {
 
         List<DeferredQuotaEmail> deferredQuotaEmailList = new ArrayList<DeferredQuotaEmail>();
+        QuotaEmailTemplatesVO templateVO = quotaEmailTemplatesDao.listAllQuotaEmailTemplates(QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT.toString()).get(0);
         for (final QuotaAccountVO quotaAccount : _quotaAcc.listAllQuotaAccount()) {
             if (quotaAccount.getQuotaBalance() == null) {
                 continue; // no quota usage for this account ever, ignore
+            }
+            QuotaEmailConfigurationVO quotaEmailConfigurationVO = quotaEmailConfigurationDao.findByAccountIdAndEmailTemplateId(quotaAccount.getAccountId(), templateVO.getId());
+            if (quotaEmailConfigurationVO != null && !quotaEmailConfigurationVO.isEnabled()) {
+                s_logger.debug(String.format("%s has [%s] email disabled. Therefore the email will not be sent.", quotaAccount, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_STATEMENT));
+                continue;
             }
 
             //check if it is statement time
