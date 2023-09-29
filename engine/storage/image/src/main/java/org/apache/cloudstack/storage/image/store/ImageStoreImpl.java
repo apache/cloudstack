@@ -19,15 +19,13 @@
 package org.apache.cloudstack.storage.image.store;
 
 import java.util.Date;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.Upload;
-import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;

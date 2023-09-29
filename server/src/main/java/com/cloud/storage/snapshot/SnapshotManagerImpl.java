@@ -1691,7 +1691,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new StorageUnavailableException("Destination zone is not ready, no image store associated", DataCenter.class, dstZoneId);
         }
         AccountVO account = _accountDao.findById(snapshotVO.getAccountId());
-        // find the size of the template to be copied
+        // find the size of the snapshot to be copied
         SnapshotDataStoreVO snapshotDataStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcSecStore.getId(), snapshotId);
 
         _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
@@ -1708,7 +1708,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
                 SnapshotResult result = future.get();
                 if (result.isFailed()) {
-                    s_logger.debug("copy template failed for image store " + dstSecStore.getName() + ":" + result.getResult());
+                    s_logger.debug("copy snapshot failed for image store " + dstSecStore.getName() + ":" + result.getResult());
                     continue; // try next image store
                 }
 
@@ -1720,7 +1720,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 }
                 return true;
             } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-                s_logger.debug("failed to copy template to image store:" + dstSecStore.getName() + " ,will try next one");
+                s_logger.debug("failed to copy snapshot to image store:" + dstSecStore.getName() + " ,will try next one");
             }
         }
         return false;
@@ -1739,10 +1739,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 copyUrl = result.getPath();
             }
         } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            throw new CloudRuntimeException("Failed to copy template", ex);
+            throw new CloudRuntimeException("Failed to copy snapshot", ex);
         }
         if (copyUrl == null) {
-            throw new CloudRuntimeException("Failed to copy template");
+            s_logger.debug(String.format("Unable to prepare URL for snapshot copy for snapshot: %s on store: %s", snapshotVO, srcSecStore.getName()));
+            throw new CloudRuntimeException("Failed to copy snapshot");
         }
         s_logger.debug(String.format("Copying snapshot to destination zones using download URL: %s", copyUrl));
 
@@ -1836,7 +1837,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             return snapshot;
         } else {
-            throw new CloudRuntimeException("Failed to copy template");
+            throw new CloudRuntimeException("Failed to copy snapshot");
         }
     }
 

@@ -717,7 +717,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         snapshotForCopy.setUrl(copyUrl);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Mark template_store_ref entry as Creating");
+            s_logger.debug("Mark snapshot_store_ref entry as Creating");
         }
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         DataObject snapshotOnStore = store.create(snapshotForCopy);
@@ -725,7 +725,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         snapshotOnStore.processEvent(Event.CreateOnlyRequested);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Invoke datastore driver createAsync to create template on destination store");
+            s_logger.debug("Invoke datastore driver createAsync to create snapshot on destination store");
         }
         try {
             CopySnapshotContext<CommandResult> context = new CopySnapshotContext<>(null, (SnapshotObject)snapshotOnStore, snapshotForCopy, future);
@@ -733,9 +733,9 @@ public class SnapshotServiceImpl implements SnapshotService {
             caller.setCallback(caller.getTarget().copySnapshotZoneAsyncCallback(null, null)).setContext(context);
             store.getDriver().createAsync(store, snapshotOnStore, caller);
         } catch (CloudRuntimeException ex) {
-            // clean up already persisted template_store_ref entry in case of createTemplateCallback is never called
-            SnapshotDataStoreVO templateStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
-            if (templateStoreVO != null) {
+            // clean up already persisted snapshot_store_ref entry
+            SnapshotDataStoreVO snapshotStoreVO = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), snapshot.getId());
+            if (snapshotStoreVO != null) {
                 snapshotForCopy.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
             }
             SnapshotResult res = new SnapshotResult((SnapshotObject)snapshotOnStore, null);
