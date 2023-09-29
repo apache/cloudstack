@@ -83,4 +83,3 @@ public class OauthLoginAPIAuthenticatorCmdTest {
         assertEquals(" domainid=5678", auditTrailSb.toString());
     }
 }
-
