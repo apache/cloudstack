@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,22 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.direct.download;
+package com.cloud.resource;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-
-public class MetalinkDirectTemplateDownloaderTest extends BaseDirectTemplateDownloaderTest {
-
-    @InjectMocks
-    protected MetalinkDirectTemplateDownloader metalinkDownloader = new MetalinkDirectTemplateDownloader(httpsUrl, 1000, 1000);
-
-    @Test
-    public void testCheckUrlMetalink() {
-        metalinkDownloader.downloader = httpsDownloader;
-        boolean result = metalinkDownloader.checkUrl(httpsUrl);
-        Assert.assertTrue(result);
-    }
+/**
+ * AgentStatusUpdater is an agent with triggerable update functionality
+ */
+public interface AgentStatusUpdater {
+    /**
+     * Trigger the sending of an update (Ping).
+     */
+    void triggerUpdate();
 }
