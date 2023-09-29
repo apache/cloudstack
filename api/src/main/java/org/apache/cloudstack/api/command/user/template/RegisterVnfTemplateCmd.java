@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
 
@@ -33,7 +34,7 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
         responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RegisterVnfTemplateCmd extends RegisterTemplateCmd {
+public class RegisterVnfTemplateCmd extends RegisterTemplateCmd implements UserCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

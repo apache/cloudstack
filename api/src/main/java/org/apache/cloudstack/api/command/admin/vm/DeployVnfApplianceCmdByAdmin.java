@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.vm;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 @APICommand(name = "deployVnfAppliance",
@@ -27,5 +29,5 @@ import org.apache.cloudstack.api.response.UserVmResponse;
         responseView = ResponseObject.ResponseView.Full,
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class DeployVnfApplianceCmdByAdmin extends DeployVMCmdByAdmin {
+public class DeployVnfApplianceCmdByAdmin extends DeployVnfApplianceCmd implements AdminCmd {
 }

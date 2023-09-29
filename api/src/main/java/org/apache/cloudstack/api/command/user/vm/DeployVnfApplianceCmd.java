@@ -20,6 +20,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 @APICommand(name = "deployVnfAppliance",
@@ -29,5 +30,5 @@ import org.apache.cloudstack.api.response.UserVmResponse;
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class DeployVnfApplianceCmd extends DeployVMCmd {
+public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {
 }
