@@ -42,13 +42,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@ResourceWrapper(handles= GetUnmanagedInstancesCommand.class)
+@ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
-    private static final Logger s_logger = Logger.getLogger(LibvirtPrepareUnmanageVMInstanceCommandWrapper.class);
+    private static final Logger LOGGER = Logger.getLogger(LibvirtPrepareUnmanageVMInstanceCommandWrapper.class);
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {
-        s_logger.info("Fetching unmanaged instance on host");
+        LOGGER.info("Fetching unmanaged instance on host");
 
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
@@ -62,7 +62,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
                 domain.free();
             }
         } catch (Exception e) {
-            s_logger.error("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
+            LOGGER.error("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
             throw new CloudRuntimeException("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
         }
 
@@ -77,20 +77,20 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         if (StringUtils.isNotBlank(vmNameCmd)) {
             final Domain domain = libvirtComputingResource.getDomain(conn, vmNameCmd);
             if (domain == null) {
-                s_logger.error("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
+                LOGGER.error("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
                 throw new CloudRuntimeException("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
             }
 
             // Filter instance if answer is requested for a particular instance name
             if (StringUtils.isNotEmpty(vmNameCmd) &&
                     !vmNameCmd.equals(domain.getName())) {
-                s_logger.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
+                LOGGER.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
                 throw new CloudRuntimeException("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
             }
 
             // Filter out if asked name is already managed
             if (command.hasManagedInstance(domain.getName())) {
-                s_logger.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
+                LOGGER.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
                 throw new CloudRuntimeException("GetUnmanagedInstancesCommand:  vm already managed " + vmNameCmd);
             }
 
@@ -129,7 +129,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
             return instance;
         } catch (Exception e) {
-            s_logger.info("Unable to retrieve unmanaged instance info. " + e.getMessage());
+            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage());
             throw new CloudRuntimeException("Unable to retrieve unmanaged instance info. " + e.getMessage());
         }
     }

@@ -288,7 +288,6 @@ public class UnmanagedVMsManagerImplTest {
                 nullable(String.class), nullable(Hypervisor.HypervisorType.class), nullable(Map.class), nullable(VirtualMachine.PowerState.class))).thenReturn(userVm);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
-        when(networkVO.getBroadcastUri()).thenReturn(URI.create(String.format("vlan://%d", instanceNic.getVlan())));
         when(networkVO.getDataCenterId()).thenReturn(1L);
         when(networkDao.findById(Mockito.anyLong())).thenReturn(networkVO);
         List<NetworkVO> networks = new ArrayList<>();
@@ -347,8 +346,6 @@ public class UnmanagedVMsManagerImplTest {
     private void testListUnmanagedInstancesInvalidCallerTest(Hypervisor.HypervisorType hypervisorType) {
         CallContext.unregister();
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
@@ -382,8 +379,6 @@ public class UnmanagedVMsManagerImplTest {
 
     private void testImportUnmanagedInstanceInvalidHostnameTest(Hypervisor.HypervisorType hypervisorType) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getName()).thenReturn("some name");
@@ -398,8 +393,6 @@ public class UnmanagedVMsManagerImplTest {
 
     private void testImportUnmanagedInstanceMissingInstanceTest(Hypervisor.HypervisorType hypervisorType) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
@@ -415,8 +408,6 @@ public class UnmanagedVMsManagerImplTest {
 
     private void testUnmanageVMInstanceMissingInstanceTest(Hypervisor.HypervisorType hypervisorType) {
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         long notExistingId = 10L;
         unmanagedVMsManager.unmanageVMInstance(notExistingId);
     }
@@ -429,8 +420,6 @@ public class UnmanagedVMsManagerImplTest {
 
     private void testUnmanageVMInstanceDestroyedInstanceTest(Hypervisor.HypervisorType hypervisorType){
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Destroyed);
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
@@ -443,8 +432,6 @@ public class UnmanagedVMsManagerImplTest {
 
     private void testUnmanageVMInstanceExpungedInstanceTest(Hypervisor.HypervisorType hypervisorType){
         clusterVO.setHypervisorType(hypervisorType.toString());
-        when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Expunging);
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
@@ -458,8 +445,6 @@ public class UnmanagedVMsManagerImplTest {
     private void testUnmanageVMInstanceExistingVMSnapshotsTest(Hypervisor.HypervisorType hypervisorType) {
         clusterVO.setHypervisorType(hypervisorType.toString());
         when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
-        when(vmSnapshotDao.findByVm(virtualMachineId)).thenReturn(Arrays.asList(new VMSnapshotVO(), new VMSnapshotVO()));
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
@@ -472,8 +457,6 @@ public class UnmanagedVMsManagerImplTest {
     private void testUnmanageVMInstanceExistingVolumeSnapshotsTest(Hypervisor.HypervisorType hypervisorType){
         clusterVO.setHypervisorType(hypervisorType.toString());
         when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
-        when(snapshotDao.listByVolumeId(virtualMachineId)).thenReturn(Arrays.asList(new SnapshotVO(), new SnapshotVO()));
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 
@@ -486,10 +469,7 @@ public class UnmanagedVMsManagerImplTest {
     private void testUnmanageVMInstanceExistingISOAttachedTest(Hypervisor.HypervisorType hypervisorType) {
         clusterVO.setHypervisorType(hypervisorType.toString());
         when(virtualMachine.getHypervisorType()).thenReturn(hypervisorType);
-        when(userVm.getHypervisorType()).thenReturn(hypervisorType);
         UserVmVO userVmVO = mock(UserVmVO.class);
-        when(userVmDao.findById(virtualMachineId)).thenReturn(userVmVO);
-        when(userVmVO.getIsoId()).thenReturn(3L);
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
 }

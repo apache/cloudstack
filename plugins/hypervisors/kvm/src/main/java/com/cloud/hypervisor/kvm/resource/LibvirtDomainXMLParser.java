@@ -356,8 +356,8 @@ public class LibvirtDomainXMLParser {
 
                 watchDogDefs.add(def);
             }
-            extractCpuTuneDef(rootElement);
-            extractCpuModeDef(rootElement);
+            cpuTuneDef = extractCpuTuneDef(rootElement);
+            cpuModeDef = extractCpuModeDef(rootElement);
             return true;
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
@@ -454,36 +454,39 @@ public class LibvirtDomainXMLParser {
         return cpuModeDef;
     }
 
-    private void extractCpuTuneDef(final Element rootElement) {
+    private static CpuTuneDef extractCpuTuneDef(final Element rootElement) {
         NodeList cpuTunesList = rootElement.getElementsByTagName("cputune");
+        CpuTuneDef def = null;
         if (cpuTunesList.getLength() > 0) {
-            cpuTuneDef = new CpuTuneDef();
+            def = new CpuTuneDef();
             final Element cpuTuneDefElement = (Element) cpuTunesList.item(0);
             final String cpuShares = getTagValue("shares", cpuTuneDefElement);
             if (StringUtils.isNotBlank(cpuShares)) {
-                cpuTuneDef.setShares((Integer.parseInt(cpuShares)));
+                def.setShares((Integer.parseInt(cpuShares)));
             }
 
             final String quota = getTagValue("quota", cpuTuneDefElement);
             if (StringUtils.isNotBlank(quota)) {
-                cpuTuneDef.setQuota((Integer.parseInt(quota)));
+                def.setQuota((Integer.parseInt(quota)));
             }
 
             final String period = getTagValue("period", cpuTuneDefElement);
             if (StringUtils.isNotBlank(period)) {
-                cpuTuneDef.setPeriod((Integer.parseInt(period)));
+                def.setPeriod((Integer.parseInt(period)));
             }
         }
+        return def;
     }
 
-    private void extractCpuModeDef(final Element rootElement){
+    private static CpuModeDef extractCpuModeDef(final Element rootElement){
         NodeList cpuModeList = rootElement.getElementsByTagName("cpu");
+        CpuModeDef def = null;
         if (cpuModeList.getLength() > 0){
-            cpuModeDef = new CpuModeDef();
+            def = new CpuModeDef();
             final Element cpuModeDefElement = (Element) cpuModeList.item(0);
             final String cpuModel = getTagValue("model", cpuModeDefElement);
             if (StringUtils.isNotBlank(cpuModel)){
-                cpuModeDef.setModel(cpuModel);
+                def.setModel(cpuModel);
             }
             NodeList cpuFeatures = cpuModeDefElement.getElementsByTagName("features");
             if (cpuFeatures.getLength() > 0) {
@@ -497,13 +500,14 @@ public class LibvirtDomainXMLParser {
                     }
                     features.add(featureName);
                 }
-                cpuModeDef.setFeatures(features);
+                def.setFeatures(features);
             }
             final String sockets = getAttrValue("topology", "sockets", cpuModeDefElement);
             final String cores = getAttrValue("topology", "cores", cpuModeDefElement);
             if (StringUtils.isNotBlank(sockets) && StringUtils.isNotBlank(cores)) {
-                cpuModeDef.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
+                def.setTopology(Integer.parseInt(cores), Integer.parseInt(sockets));
             }
         }
+        return def;
     }
 }

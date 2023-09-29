@@ -656,7 +656,7 @@
 "label.deployasis": "Read VM settings from OVA",
 "label.deploymentplanner": "Deployment planner",
 "label.desc.db.stats": "Database Statistics",
-"label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware/KVM cluster.",
+"label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware or KVM cluster.",
 "label.desc.usage.stats": "Usage Server Statistics",
 "label.description": "Description",
 "label.destaddressgroupuuid": "Destination Address Group",

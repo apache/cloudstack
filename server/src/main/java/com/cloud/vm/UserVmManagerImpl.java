@@ -4479,10 +4479,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (customParameters.containsKey(VmDetailConstants.KVM_VNC_PASSWORD)
-                && StringUtils.isNotEmpty(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD))) {
-            vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
-        }
+        setVncPasswordForKvmIfAvailable(customParameters, vm);
 
         vm.setUserVmType(vmType);
         _vmDao.persist(vm);
@@ -8352,5 +8349,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
         return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
+    }
+
+    private void setVncPasswordForKvmIfAvailable(Map<String, String> customParameters, UserVmVO vm){
+        if (customParameters.containsKey(VmDetailConstants.KVM_VNC_PASSWORD)
+                && StringUtils.isNotEmpty(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD))) {
+            vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
+        }
     }
 }

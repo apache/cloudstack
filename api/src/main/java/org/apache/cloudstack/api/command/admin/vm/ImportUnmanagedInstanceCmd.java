@@ -84,7 +84,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
             required = true,
-            description = "the name of the instance as on the hypervisor")
+            description = "the name of the instance as it is known to the hypervisor")
     private String name;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,

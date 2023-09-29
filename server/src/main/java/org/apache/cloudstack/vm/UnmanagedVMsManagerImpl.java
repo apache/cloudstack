@@ -504,7 +504,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         Set<String> callerDiskIds = dataDiskOfferingMap.keySet();
         if (callerDiskIds.size() != disks.size() - 1) {
-            String msg = String.format("VM has total %d disks for which %d disk offering mappings provided. %d disks need a disk offering for import", disks.size(), callerDiskIds.size(), disks.size()-1);
+            String msg = String.format("VM has total %d disks for which %d disk offering mappings provided. %d disks need a disk offering for import", disks.size(), callerDiskIds.size(), disks.size() - 1);
             LOGGER.error(String.format("%s. %s parameter can be used to provide disk offerings for the disks", msg, ApiConstants.DATADISK_OFFERING_LIST));
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
         }
@@ -523,11 +523,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         if (diskIdsWithoutOffering.size() > 1 || rootDisk == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM has total %d disks, disk offering mapping not provided for %d disks. Disk IDs that may need a disk offering - %s", disks.size(), diskIdsWithoutOffering.size()-1, String.join(", ", diskIdsWithoutOffering)));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM has total %d disks, disk offering mapping not provided for %d disks. Disk IDs that may need a disk offering - %s", disks.size(), diskIdsWithoutOffering.size() - 1, String.join(", ", diskIdsWithoutOffering)));
         }
 
         DiskOffering rootDiskOffering = diskOfferingDao.findById(rootDiskOfferingId);
-        if ((rootDisk.getCapacity() == null || rootDisk.getCapacity() <= 0)  && rootDiskOffering != null) {
+        if ((rootDisk.getCapacity() == null || rootDisk.getCapacity() <= 0) && rootDiskOffering != null) {
             rootDisk.setCapacity(rootDiskOffering.getDiskSize());
         }
 
@@ -590,7 +590,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         if (hypervisorType == Hypervisor.HypervisorType.VMware) {
-
             String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
             if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
                     (StringUtils.isEmpty(networkBroadcastUri) ||
@@ -812,7 +811,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (StoragePool pool : storagePools) {
                     if (diskProfileStoragePool.second().getId() != pool.getId() &&
                             storagePoolSupportsDiskOffering(pool, dOffering)
-                            ) {
+                    ) {
                         storagePool = pool;
                         break;
                     }
@@ -824,7 +823,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 for (StoragePool pool : storagePools) {
                     if (diskProfileStoragePool.second().getId() != pool.getId() &&
                             storagePoolSupportsDiskOffering(pool, dOffering)
-                            ) {
+                    ) {
                         storagePool = pool;
                         break;
                     }
@@ -931,7 +930,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         String internalCSName = unmanagedInstance.getInternalCSName();
-        if(StringUtils.isEmpty(internalCSName)){
+        if (StringUtils.isEmpty(internalCSName)) {
             internalCSName = instanceName;
         }
         Map<String, String> allDetails = new HashMap<>(details);
@@ -1039,7 +1038,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
                 Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
                 Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, forced);
+                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex == 0, forced);
                 nicIndex++;
             }
         } catch (Exception e) {
@@ -1392,6 +1391,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { UnmanageVMPreserveNic };
+        return new ConfigKey<?>[]{UnmanageVMPreserveNic};
     }
 }
