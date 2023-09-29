@@ -74,7 +74,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    OAuth2AuthManager _oauth2mgr;
+    protected OAuth2AuthManager _oauth2mgr;
 
     @Override
     public long getEntityOwnerId() {

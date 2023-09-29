@@ -28,8 +28,8 @@ import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import java.util.List;
 
 public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableService {
-    public static final ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
-            "Indicates whether OAuth SSO plugin is enabled or not", false);
+    public static ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
+            "Indicates whether OAuth plugin is enabled or not", false);
     public static final ConfigKey<String> OAuth2Plugins = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins", "google,github",
             "List of OAuth plugins", true);
     public static final ConfigKey<String> OAuth2PluginsExclude = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins.exclude", "",

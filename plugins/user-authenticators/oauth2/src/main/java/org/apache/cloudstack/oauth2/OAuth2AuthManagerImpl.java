@@ -48,7 +48,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     private UserDao _userDao;
 
     @Inject
-    OauthProviderDao _oauthProviderDao;
+    protected OauthProviderDao _oauthProviderDao;
 
     protected static Map<String, UserOAuth2Authenticator> userOAuth2AuthenticationProvidersMap = new HashMap<>();
 
@@ -74,7 +74,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return true;
     }
 
-    private boolean isOAuthPluginEnabled() {
+    protected boolean isOAuthPluginEnabled() {
         return OAuth2IsPluginEnabled.value();
     }
 
@@ -140,7 +140,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String redirectUri = cmd.getRedirectUri();
         String secretKey = cmd.getSecretKey();
 
-        if (!OAuth2IsPluginEnabled.value()) {
+        if (!isOAuthPluginEnabled()) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
         }
         OauthProviderVO providerVO = _oauthProviderDao.findByProvider(provider);

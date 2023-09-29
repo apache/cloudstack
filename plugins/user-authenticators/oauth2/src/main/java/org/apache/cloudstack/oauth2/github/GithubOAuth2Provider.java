@@ -74,7 +74,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return getUserEmailAddress(accessToken);
     }
 
-    private String getAccessToken(String secretCode) throws CloudRuntimeException {
+    protected String getAccessToken(String secretCode) throws CloudRuntimeException {
         OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
         String tokenUrl = "https://github.com/login/oauth/access_token";
         String accessToken = null;
