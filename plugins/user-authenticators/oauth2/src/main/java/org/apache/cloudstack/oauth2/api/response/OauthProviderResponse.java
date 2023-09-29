@@ -42,7 +42,7 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Client ID registered in the OAuth provider")
     private String clientId;
 
-    @SerializedName(ApiConstants.SECRET_KEY)
+    @SerializedName(ApiConstants.OAUTH_SECRET_KEY)
     @Param(description = "Secret key registered in the OAuth provider")
     private String secretKey;
 

@@ -595,6 +595,7 @@ public class ApiConstants {
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
     public static final String PROVIDER = "provider";
     public static final String OAUTH_PROVIDER = "oauthprovider";
+    public static final String OAUTH_SECRET_KEY = "secretkey";
     public static final String MANAGED = "managed";
     public static final String CAPACITY_BYTES = "capacitybytes";
     public static final String CAPACITY_IOPS = "capacityiops";
