@@ -18,6 +18,7 @@ package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VnfNicResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
@@ -55,6 +57,11 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.dao.VnfTemplateDetailsDao;
+import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -94,6 +101,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private VpcDao vpcDao;
     @Inject
     UserStatisticsDao userStatsDao;
+    @Inject
+    VnfTemplateDetailsDao vnfTemplateDetailsDao;
+    @Inject
+    VnfTemplateNicDao vnfTemplateNicDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -182,6 +193,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setTemplateName(userVm.getTemplateName());
             userVmResponse.setTemplateDisplayText(userVm.getTemplateDisplayText());
             userVmResponse.setPasswordEnabled(userVm.isPasswordEnabled());
+            userVmResponse.setTemplateType(userVm.getTemplateType().toString());
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.iso)) {
             userVmResponse.setIsoId(userVm.getIsoUuid());
@@ -417,6 +429,18 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         addVmRxTxDataToResponse(userVm, userVmResponse);
+
+        if (TemplateType.VNF.equals(userVm.getTemplateType()) && (details.contains(VMDetails.all) || details.contains(VMDetails.vnfnics))) {
+            List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(userVm.getTemplateId());
+            for (VnfTemplateNicVO nic : vnfNics) {
+                userVmResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.getRequired(), nic.getDescription()));
+            }
+            List<VnfTemplateDetailVO> vnfDetails = vnfTemplateDetailsDao.listDetails(userVm.getTemplateId());
+            Collections.sort(vnfDetails, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));
+            for (VnfTemplateDetailVO detail : vnfDetails) {
+                userVmResponse.addVnfDetail(detail.getName(), detail.getValue());
+            }
+        }
 
         return userVmResponse;
     }

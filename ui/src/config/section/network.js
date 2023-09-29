@@ -317,6 +317,79 @@ export default {
       ]
     },
     {
+      name: 'vnftemplate',
+      title: 'label.vnf.templates',
+      icon: 'gateway-outlined',
+      permission: ['listVnfTemplates'],
+      params: { templatefilter: 'self', showunique: 'true' },
+      filters: ['self', 'shared', 'featured', 'community'],
+      columns: () => {
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename', 'hypervisor']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
+          fields.push('account')
+        }
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('templatetype')
+          fields.push('order')
+        }
+        return fields
+      },
+      actions: [
+        {
+          api: 'registerVnfTemplate',
+          icon: 'plus-outlined',
+          label: 'label.vnf.template.register',
+          docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
+        }
+      ]
+    },
+    {
+      name: 'vnfapp',
+      title: 'label.vnf.appliance',
+      icon: 'gateway-outlined',
+      permission: ['listVirtualMachinesMetrics'],
+      params: () => {
+        return { details: 'servoff,tmpl,nics', isvnf: true }
+      },
+      columns: () => {
+        const fields = ['name', 'state', 'ipaddress']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(2, 0, 'instancename')
+          fields.push('account')
+          fields.push('domain')
+          fields.push('hostname')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+        } else {
+          fields.push('serviceofferingname')
+        }
+        fields.push('zonename')
+        return fields
+      },
+      actions: [
+        {
+          api: 'deployVnfAppliance',
+          icon: 'plus-outlined',
+          label: 'label.vnf.appliance.add',
+          docHelp: 'adminguide/virtual_machines.html#creating-vms',
+          listView: true,
+          component: () => import('@/views/compute/DeployVnfAppliance.vue')
+        }
+      ]
+    },
+    {
       name: 'publicip',
       title: 'label.public.ip.addresses',
       icon: 'environment-outlined',

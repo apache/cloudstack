@@ -28,6 +28,11 @@
       <p v-html="ip6routes" />
     </template>
   </a-alert>
+  <a-alert v-if="vnfAccessMethods" type="info" :showIcon="true" :message="$t('label.vnf.appliance.access.methods')">
+    <template #description>
+      <p v-html="vnfAccessMethods" />
+    </template>
+  </a-alert>
   <a-list
     size="small"
     :dataSource="fetchDetails()">
@@ -159,11 +164,81 @@ export default {
     customDisplayItems () {
       return ['ip6routes', 'privatemtu', 'publicmtu']
     },
+    vnfAccessMethods () {
+      if (this.resource.templatetype === 'VNF' && ['vm'].includes(this.$route.meta.name)) {
+        const accessMethodsDescription = []
+        const accessMethods = this.resource.vnfdetails?.access_methods || null
+        const username = this.resource.vnfdetails?.username || null
+        const password = this.resource.vnfdetails?.password || null
+        const sshPort = this.resource.vnfdetails?.ssh_port || 22
+        const sshUsername = this.resource.vnfdetails?.ssh_user || null
+        const sshPassword = this.resource.vnfdetails?.ssh_password || null
+        const httpPath = this.resource.vnfdetails?.http_path || null
+        const httpPort = this.resource.vnfdetails?.http_port || null
+        const httpsPath = this.resource.vnfdetails?.https_path || null
+        const httpsPort = this.resource.vnfdetails?.https_port || null
+        const webUsername = this.resource.vnfdetails?.web_user || null
+        const webPassword = this.resource.vnfdetails?.web_password || null
+
+        const credentials = []
+        if (username) {
+          credentials.push(this.$t('label.username') + ' : ' + username)
+        }
+        if (password) {
+          credentials.push(this.$t('label.password') + ' : ' + password)
+        }
+        if (sshUsername) {
+          credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
+        }
+        if (sshPassword) {
+          credentials.push('SSH ' + this.$t('label.password') + ' : ' + sshPassword)
+        }
+        if (webUsername) {
+          credentials.push('Web ' + this.$t('label.username') + ' : ' + webUsername)
+        }
+        if (webPassword) {
+          credentials.push('Web ' + this.$t('label.password') + ' : ' + webPassword)
+        }
+
+        if (accessMethods) {
+          const accessMethodsArray = accessMethods.split(',')
+          for (const accessMethod of accessMethodsArray) {
+            if (accessMethod === 'console') {
+              accessMethodsDescription.push('- VM Console.')
+            } else if (accessMethod === 'ssh-password') {
+              accessMethodsDescription.push('- SSH with password' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
+            } else if (accessMethod === 'ssh-key') {
+              accessMethodsDescription.push('- SSH with key' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
+            } else if (accessMethod === 'http') {
+              accessMethodsDescription.push('- Webpage: http://' + this.resource.ipaddress + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
+              if (this.resource.publicip) {
+                accessMethodsDescription.push('- Webpage: http://' + this.resource.publicip + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
+              }
+            } else if (accessMethod === 'https') {
+              accessMethodsDescription.push('- Webpage: https://' + this.resource.ipaddress + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
+              if (this.resource.publicip) {
+                accessMethodsDescription.push('- Webpage: https://' + this.resource.publicip + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
+              }
+            }
+          }
+        } else {
+          accessMethodsDescription.push('- VM Console.')
+        }
+        if (credentials) {
+          accessMethodsDescription.push('')
+          accessMethodsDescription.push('- Credentials:')
+          for (const credential of credentials) {
+            accessMethodsDescription.push('* ' + credential)
+          }
+        }
+        return accessMethodsDescription.join('<br>')
+      }
+      return null
+    },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
         return this.dataResource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
       }
-
       return null
     },
     ip6routes () {

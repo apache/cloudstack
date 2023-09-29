@@ -6700,3 +6700,121 @@ class VMSchedule:
         cmd.id = self.id
         cmd.virtualmachineid = self.virtualmachineid
         return (apiclient.deleteVMSchedule(cmd))
+
+class VnfTemplate:
+    """Manage VNF template life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def register(cls, apiclient, services, zoneid=None,
+                 account=None, domainid=None, hypervisor=None,
+                 projectid=None, details=None, randomize_name=True,
+                 vnfnics=None, vnfdetails=None):
+        """Create VNF template from URL"""
+
+        # Create template from Virtual machine and Volume ID
+        cmd = registerVnfTemplate.registerVnfTemplateCmd()
+        cmd.displaytext = services["displaytext"]
+        if randomize_name:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
+        cmd.format = services["format"]
+        if hypervisor:
+            cmd.hypervisor = hypervisor
+        elif "hypervisor" in services:
+            cmd.hypervisor = services["hypervisor"]
+
+        if "ostypeid" in services:
+            cmd.ostypeid = services["ostypeid"]
+        elif "ostype" in services:
+            # Find OSTypeId from Os type
+            sub_cmd = listOsTypes.listOsTypesCmd()
+            sub_cmd.description = services["ostype"]
+            ostypes = apiclient.listOsTypes(sub_cmd)
+
+            if not isinstance(ostypes, list):
+                raise Exception(
+                    "Unable to find Ostype id with desc: %s" %
+                    services["ostype"])
+            cmd.ostypeid = ostypes[0].id
+        else:
+            raise Exception(
+                "Unable to find Ostype is required for registering template")
+
+        cmd.url = services["url"]
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        else:
+            cmd.zoneid = services["zoneid"]
+
+        cmd.isfeatured = services[
+            "isfeatured"] if "isfeatured" in services else False
+        cmd.ispublic = services[
+            "ispublic"] if "ispublic" in services else False
+        cmd.isextractable = services[
+            "isextractable"] if "isextractable" in services else False
+        cmd.isdynamicallyscalable = services["isdynamicallyscalable"] if "isdynamicallyscalable" in services else False
+        cmd.passwordenabled = services[
+            "passwordenabled"] if "passwordenabled" in services else False
+        cmd.deployasis = services["deployasis"] if "deployasis" in services else False
+
+        if account:
+            cmd.account = account
+
+        if domainid:
+            cmd.domainid = domainid
+
+        if projectid:
+            cmd.projectid = projectid
+        elif "projectid" in services:
+            cmd.projectid = services["projectid"]
+
+        if details:
+            cmd.details = details
+
+        if "directdownload" in services:
+            cmd.directdownload = services["directdownload"]
+
+        if vnfnics:
+            cmd.vnfnics = vnfnics
+
+        if vnfdetails:
+            cmd.vnfdetails = vnfdetails
+
+        # Register Template
+        template = apiclient.registerVnfTemplate(cmd)
+
+        if isinstance(template, list):
+            return VnfTemplate(template[0].__dict__)
+
+    def delete(self, apiclient, zoneid=None):
+        """Delete VNF Template"""
+
+        cmd = deleteVnfTemplate.deleteVnfTemplateCmd()
+        cmd.id = self.id
+        if zoneid:
+            cmd.zoneid = zoneid
+        apiclient.deleteVnfTemplate(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the template details"""
+
+        cmd = updateVnfTemplate.updateVnfTemplateCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateVnfTemplate(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all templates matching criteria"""
+
+        cmd = listVnfTemplates.listVnfTemplatesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listVnfTemplates(cmd))
+

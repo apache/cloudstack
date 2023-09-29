@@ -82,6 +82,7 @@ import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
+import org.apache.cloudstack.api.command.user.template.ListVnfTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
@@ -200,6 +201,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.RouterHealthCheckResult;
+import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
@@ -1158,6 +1160,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("autoScaleVmGroupId", sb.entity().getAutoScaleVmGroupId(), SearchCriteria.Op.EQ);
         }
 
+        Boolean isVnf = cmd.getVnf();
+        if (isVnf != null) {
+            sb.and("templateTypeEQ", sb.entity().getTemplateType(), SearchCriteria.Op.EQ);
+            sb.and("templateTypeNEQ", sb.entity().getTemplateType(), SearchCriteria.Op.NEQ);
+        }
+
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmJoinVO> sc = sb.create();
 
@@ -1275,6 +1283,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("keyPairName", keyPairName);
         }
 
+        if (isVnf != null) {
+            if (isVnf) {
+                sc.setParameters("templateTypeEQ", TemplateType.VNF);
+            } else {
+                sc.setParameters("templateTypeNEQ", TemplateType.VNF);
+            }
+        }
         if (_accountMgr.isRootAdmin(caller.getId())) {
             if (pod != null) {
                 sc.setParameters("podId", pod);
@@ -3643,13 +3658,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
+        String templateType = cmd.getTemplateType();
+        if (cmd instanceof ListVnfTemplatesCmd) {
+            if (templateType == null) {
+                templateType = TemplateType.VNF.name();
+            } else if (!TemplateType.VNF.name().equals(templateType)) {
+                throw new InvalidParameterValueException("Template type must be VNF when list VNF templates");
+            }
+        }
+        Boolean isVnf = cmd.getVnf();
+
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique());
+                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(), templateType, isVnf);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique) {
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
+            Boolean isVnf) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3811,13 +3837,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
-                showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
+                showRemovedTmpl, parentTemplateId, showUnique, templateType, isVnf, searchFilter, sc);
 
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
                                                                HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr, Account caller,
-                                                               boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
+                                                               boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique, String templateType, Boolean isVnf,
                                                                Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
         if (!isIso) {
             // add hypervisor criteria for template case
@@ -3897,6 +3923,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (parentTemplateId != null) {
             sc.addAnd("parentTemplateId", SearchCriteria.Op.EQ, parentTemplateId);
+        }
+
+        if (templateType != null) {
+            sc.addAnd("templateType", SearchCriteria.Op.EQ, templateType);
+        }
+
+        if (isVnf != null) {
+            if (isVnf) {
+                sc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.VNF);
+            } else {
+                sc.addAnd("templateType", SearchCriteria.Op.NEQ, TemplateType.VNF);
+            }
         }
 
         // don't return removed template, this should not be needed since we
@@ -4007,7 +4045,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique());
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null);
     }
 
     @Override
@@ -4027,6 +4065,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
                 fillVMOrTemplateDetailOptions(options, hypervisorType);
                 break;
+            case VnfTemplate:
+                fillVnfTemplateDetailOptions(options);
+                return new DetailOptionsResponse(options);
             default:
                 throw new CloudRuntimeException("Resource type not supported.");
         }
@@ -4048,6 +4089,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<ResourceIconResponse> responses = new ListResponse<>();
         responses.setResponses(resourceIconDao.listResourceIcons(cmd.getResourceIds(), cmd.getResourceType()));
         return responses;
+    }
+
+    private void fillVnfTemplateDetailOptions(final Map<String, List<String>> options) {
+        for (VNF.AccessDetail detail : VNF.AccessDetail.values()) {
+            if (VNF.AccessDetail.ACCESS_METHODS.equals(detail)) {
+                options.put(detail.name().toLowerCase(), Arrays.stream(VNF.AccessMethod.values()).map(method -> method.toString()).sorted().collect(Collectors.toList()));
+            } else {
+                options.put(detail.name().toLowerCase(), Collections.emptyList());
+            }
+        }
+        for (VNF.VnfDetail detail : VNF.VnfDetail.values()) {
+            options.put(detail.name().toLowerCase(), Collections.emptyList());
+        }
     }
 
     private void fillVMOrTemplateDetailOptions(final Map<String, List<String>> options, final HypervisorType hypervisorType) {

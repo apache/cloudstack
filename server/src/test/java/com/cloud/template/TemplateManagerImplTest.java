@@ -91,6 +91,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -191,6 +192,8 @@ public class TemplateManagerImplTest {
 
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    VnfTemplateManager vnfTemplateManager;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -785,6 +788,11 @@ public class TemplateManagerImplTest {
         @Bean
         public HypervisorGuruManager hypervisorGuruManager() {
             return Mockito.mock(HypervisorGuruManager.class);
+        }
+
+        @Bean
+        public VnfTemplateManager vnfTemplateManager() {
+            return Mockito.mock(VnfTemplateManager.class);
         }
 
         @Bean

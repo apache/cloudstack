@@ -2346,6 +2346,7 @@ export default {
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.templateId
+      args.isvnf = false
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
