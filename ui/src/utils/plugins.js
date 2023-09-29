@@ -519,14 +519,12 @@ export function loadGoogleOAuthClientId () {
   return api('listOauthProvider', {}).then(response => {
     let googleClientId = ''
     if (response) {
-      console.log(response)
       const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
       oauthproviders.forEach(item => {
         if (item.provider === 'google') {
           googleClientId = item.clientid
         }
       })
-      console.log(googleClientId)
     }
     return googleClientId
   })
