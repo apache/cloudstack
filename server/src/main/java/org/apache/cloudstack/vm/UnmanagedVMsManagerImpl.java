@@ -1205,6 +1205,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (host.isInMaintenanceStates()) {
                 continue;
             }
+            if (StringUtils.isNotEmpty(cmd.getHostName()) && !host.getName().equals(cmd.getHostName())){
+                continue;
+            }
             List<String> managedVms = new ArrayList<>();
             managedVms.addAll(additionalNameFilters);
             managedVms.addAll(getHostManagedVms(host));
