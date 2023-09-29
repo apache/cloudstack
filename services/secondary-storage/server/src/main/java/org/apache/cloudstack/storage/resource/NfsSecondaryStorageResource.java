@@ -2050,6 +2050,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.warn(details);
                 return new Answer(cmd, false, details);
             }
+
+            // delete the directory if it is empty
+            if (snapshotDir.isDirectory() && snapshotDir.list().length == 0 && !snapshotDir.delete()) {
+                details = String.format("Unable to delete directory [%s] at path [%s].", snapshotDir.getName(), snapshotPath);
+                s_logger.debug(details);
+                return new Answer(cmd, false, details);
+            }
             return new Answer(cmd, true, null);
         } else if (dstore instanceof S3TO) {
             final S3TO s3 = (S3TO)dstore;
