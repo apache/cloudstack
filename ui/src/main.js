@@ -35,12 +35,12 @@ import {
   resourceTypePlugin,
   fileSizeUtilPlugin,
   genericUtilPlugin,
-  localesPlugin
+  localesPlugin,
+  loadGoogleOAuthClientId
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
 import vue3GoogleLogin from 'vue3-google-login'
-import { api } from '@/api'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -55,23 +55,6 @@ vueApp.use(localesPlugin)
 vueApp.use(genericUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
-vueApp.use(vue3GoogleLogin, { clientId: '345798102268-cfcpg40k6hnfft2m61mf6jbmjcfg4p82.apps.googleusercontent.com' })
-
-let googleClientId = ''
-api('listOauthProvider', {}).then(response => {
-  if (response) {
-    const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
-    oauthproviders.forEach(item => {
-      if (item.provider === 'google') {
-        googleClientId = item.clientid
-      }
-    })
-    console.log(googleClientId)
-    if (googleClientId !== '') {
-      vueApp.use(vue3GoogleLogin, { clientId: googleClientId })
-    }
-  }
-})
 
 fetch('config.json').then(response => response.json()).then(config => {
   vueProps.$config = config
@@ -88,5 +71,11 @@ fetch('config.json').then(response => response.json()).then(config => {
       .use(i18n)
       .use(bootstrap)
       .mount('#app')
+  })
+
+  loadGoogleOAuthClientId().then(clientId => {
+    if (clientId !== '') {
+      vueApp.use(vue3GoogleLogin, { clientId: clientId })
+    }
   })
 })
