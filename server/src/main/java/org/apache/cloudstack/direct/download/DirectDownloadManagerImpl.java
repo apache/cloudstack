@@ -329,6 +329,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         Long[] hostsToRetry = getHostsToRetryOn(host, storagePoolVO);
         int hostIndex = 0;
         Answer answer = null;
+        String answerDetails = "";
         Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
         boolean continueRetrying = true;
         while (!downloaded && retry > 0 && continueRetrying) {
@@ -349,6 +350,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                 if (answer != null) {
                     DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
                     downloaded = answer.getResult();
+                    answerDetails = answer.getDetails();
                     continueRetrying = ans.isRetryOnOtherHosts();
                 }
                 hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
@@ -362,7 +364,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         }
         if (!downloaded) {
             logUsageEvent(template, poolId);
-            throw new CloudRuntimeException("Template " + template.getId() + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
+            if (!answerDetails.isEmpty()){
+                answerDetails = String.format(" Details: %s", answerDetails);
+            }
+            throw new CloudRuntimeException(String.format("Template %d could not be downloaded on pool %d, failing after trying on several hosts%s", template.getId(), poolId, answerDetails));
         }
         return answer;
     }
