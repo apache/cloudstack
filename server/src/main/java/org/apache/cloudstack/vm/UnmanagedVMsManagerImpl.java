@@ -588,7 +588,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (!autoAssign && network.getGuestType().equals(Network.GuestType.Isolated)) {
             return;
         }
+        checksOnlyNeededForVmware(nic, network, hypervisorType);
+    }
 
+    private void checksOnlyNeededForVmware(UnmanagedInstanceTO.Nic nic, Network network, final Hypervisor.HypervisorType hypervisorType) {
         if (hypervisorType == Hypervisor.HypervisorType.VMware) {
             String networkBroadcastUri = network.getBroadcastUri() == null ? null : network.getBroadcastUri().toString();
             if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() == null &&
