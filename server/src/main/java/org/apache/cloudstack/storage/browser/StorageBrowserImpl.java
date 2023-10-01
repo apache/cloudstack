@@ -176,14 +176,14 @@ public class StorageBrowserImpl extends MutualExclusiveIdsManagerBase implements
         return response;
     }
 
-    ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int page, int pageSize) {
+    ListDataStoreObjectsAnswer listObjectsInStore(DataStore dataStore, String path, int startIndex, int pageSize) {
         EndPoint ep = endPointSelector.select(dataStore);
 
         if (ep == null) {
             throw new CloudRuntimeException("No remote endpoint to send command");
         }
 
-        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, page, pageSize);
+        ListDataStoreObjectsCommand listDSCmd = new ListDataStoreObjectsCommand(dataStore.getTO(), path, startIndex, pageSize);
         listDSCmd.setWait(15);
         Answer answer = null;
         try {

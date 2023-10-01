@@ -67,6 +67,7 @@ public class ListImageStoreObjectsCmdTest {
         List<Pair<String, String>> pair = List.of(
             new Pair<>("", null),
             new Pair<>("", ""),
+            new Pair<>("", "/"),
             new Pair<>("etc", "etc"),
             new Pair<>("etc", "/etc"),
             new Pair<>("etc/passwd", "etc/passwd"),
