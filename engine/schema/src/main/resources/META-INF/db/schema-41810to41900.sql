@@ -200,3 +200,6 @@ CREATE TABLE `cloud`.`image_store_object_download` (
   INDEX `i_image_store_object_download__created`(`created`),
   CONSTRAINT `fk_image_store_object_download__store_id` FOREIGN KEY (`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Set removed state for all removed accounts
+UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
