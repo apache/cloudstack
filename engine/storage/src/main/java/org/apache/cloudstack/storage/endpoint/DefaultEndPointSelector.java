@@ -77,12 +77,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
-            + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
-            + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
-            + "join cluster c on c.id=h.cluster_id "
-            + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
-            + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
-            + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
+                            + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
+                            + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
+                            + "join cluster c on c.id=h.cluster_id "
+                            + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
+                            + "left join host_details hd on h.id=hd.host_id and hd.name='" + HOST_VOLUME_ENCRYPTION + "' "
+                            + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
 
     private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
     private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";

@@ -110,5 +110,4 @@ public class DatadiskTO {
     public String getConfiguration() {
         return configuration;
     }
-
 }

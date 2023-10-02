@@ -111,7 +111,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     public boolean isTemplateUpdateable(Long templateId, Long storeId) {
         List<TemplateDataStoreVO> downloadsInProgress =
-                _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId, Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
+            _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId, Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
         return (downloadsInProgress.size() == 0);
     }
 
@@ -123,7 +123,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
             vmTemplateStore =
-                    new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
+                new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             vmTemplateStore.setDataStoreRole(store.getRole());
             vmTemplateStore = _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
