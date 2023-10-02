@@ -45,6 +45,10 @@ public class UnmanagedInstanceTO {
 
     private String operatingSystem;
 
+    private String clusterName;
+
+    private String hostName;
+
     private List<Disk> disks;
 
     private List<Nic> nics;
@@ -119,6 +123,22 @@ public class UnmanagedInstanceTO {
 
     public void setOperatingSystem(String operatingSystem) {
         this.operatingSystem = operatingSystem;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     public List<Disk> getDisks() {

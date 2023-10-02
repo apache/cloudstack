@@ -173,7 +173,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 username, password, null, hostName, vmName, imageStore.getUri());
         DownloadCommand cmd = new DownloadCommand((TemplateObjectTO) template.getTO(), maxTemplateSizeInBytes);
         cmd.setVmwareVmForMigrationTO(vmTO);
-        cmd.setWait(StorageManager.KvmTemplateFromVmwareVmMigrationWait.value());
+        cmd.setWait(StorageManager.ConvertInstanceProcessTimeout.value());
 
         DownloadListener dl = new DownloadListener(endPoint, imageStore, template, _timer,
                 this, cmd, callback);

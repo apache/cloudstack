@@ -27,10 +27,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.HypervisorOutOfBandVMClone;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
@@ -49,6 +49,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1244,7 +1245,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VirtualMachineMO createCloneFromSourceVM(String vmName, VirtualMachineMO vmMo,
                                                      DatacenterMO dataCenterMO) throws Exception {
         HostMO sourceHost = vmMo.getRunningHost();
-        String cloneName = String.format("%s-%s", vmName, UUID.randomUUID());
+        String cloneName = UUID.randomUUID().toString();
         DatastoreMO datastoreMO = vmMo.getAllDatastores().get(0); //pick the first datastore
         ManagedObjectReference morPool = vmMo.getRunningHost().getHyperHostOwnerResourcePool();
         boolean result = vmMo.createFullClone(cloneName, dataCenterMO.getVmFolder(), morPool, datastoreMO.getMor(), Storage.ProvisioningType.THIN);
@@ -1258,17 +1259,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return clonedVM;
     }
 
-    private HypervisorOutOfBandVMClone generateResponseFromClone(VirtualMachineMO clonedVM) throws Exception {
-        List<VirtualDisk> virtualDisks = clonedVM.getVirtualDisks();
-        long capacity = 0;
-        for (VirtualDisk disk : virtualDisks) {
-            capacity = Long.sum(capacity, disk.getCapacityInBytes());
-        }
-        return new HypervisorOutOfBandVMClone(clonedVM.getVmName(), virtualDisks.size(), capacity);
-    }
-
     @Override
-    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
                                                                  boolean forced, Map<String, String> params) {
         s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
@@ -1297,9 +1289,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
-            HypervisorOutOfBandVMClone clone = generateResponseFromClone(clonedVM);
-            s_logger.debug(String.format("VM cloned successfully"));
-            return clone;
+            s_logger.debug(String.format("VM %s cloned successfully", vmName));
+            return VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);

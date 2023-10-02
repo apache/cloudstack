@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 
 import com.cloud.exception.InternalErrorException;
@@ -47,8 +46,6 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 public interface TemplateApiService {
 
     VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
-
-    VirtualMachineTemplate registerTemplateFromVMwareVM(RegisterTemplateFromVMwareVMCmd cmd) throws ResourceAllocationException;
 
     GetUploadParamsResponse registerTemplateForPostUpload(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException, MalformedURLException;
 

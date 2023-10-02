@@ -96,11 +96,11 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
-    ConfigKey<Integer> KvmTemplateFromVmwareVmMigrationWait = new ConfigKey<>(Integer.class,
-            "kvm.template.from.vmware.vm.migration.wait",
+    ConfigKey<Integer> ConvertInstanceProcessTimeout = new ConfigKey<>(Integer.class,
+            "convert.instance.process.timeout",
             "Storage",
-            "7200000",
-            "Timeout in milliseconds for virt-v2v migration from VMware VM to secondary storage completes on KVM hosts",
+            "720",
+            "Timeout (in seconds) for the instance conversion process through the virt-v2v binary on a KVM host",
             true,
             ConfigKey.Scope.Global,
             null);

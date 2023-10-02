@@ -17,7 +17,7 @@
 
 <template>
   <div
-    :class="currentForm !== 'MigrateFromVMware' ? 'form-layout' : 'form-layout-migrate'"
+    :class="'form-layout'"
     @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <loading-outlined />
@@ -58,12 +58,6 @@
               </p>
             </a-upload-dragger>
           </a-form-item>
-        </div>
-        <div v-else-if="currentForm === 'MigrateFromVMware'">
-          <RegisterTemplateFromVcenter
-            :zoneid="zone"
-            @select-vmware-dc-vm="($event) => selectVmwareDcVM($event)"
-          />
         </div>
         <a-form-item ref="name" name="name">
           <template #label>
@@ -421,22 +415,8 @@
             </a-form-item>
           </a-col>
         </a-row>
-
-        <div :span="24" class="action-button" v-if="vmwareDcVM && vmwareDcVM.powerstate === 'PowerOn'">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-popconfirm
-            :title="$t('message.confirm.register.template.from.vmware.vm.running.vm')"
-            @confirm="handleSubmit"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')"
-          >
-            <a-button :loading="loading" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
-          </a-popconfirm>
-        </div>
-        <div :span="24" class="action-button" v-else>
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
-        </div>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </a-form>
     </a-spin>
   </div>
@@ -450,7 +430,6 @@ import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
-import RegisterTemplateFromVcenter from './RegisterTemplateFromVcenter.vue'
 
 export default {
   name: 'RegisterOrUploadTemplate',
@@ -467,8 +446,7 @@ export default {
   },
   components: {
     ResourceIcon,
-    TooltipLabel,
-    RegisterTemplateFromVcenter
+    TooltipLabel
   },
   data () {
     return {
@@ -501,9 +479,7 @@ export default {
       allowed: false,
       allowDirectDownload: false,
       uploadParams: null,
-      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create'
-        : this.action.currentAction.label.includes('vmware') ? 'MigrateFromVMware' : 'Upload',
-      vmwareDcVM: null,
+      currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload',
       domains: [],
       accounts: [],
       domainLoading: false,
@@ -1085,37 +1061,6 @@ export default {
           }).finally(() => {
             this.loading = false
           })
-        } else if (this.currentForm === 'MigrateFromVMware') {
-          this.loading = true
-          if (this.vmwareDcVM.vcenterid) {
-            params.existingvcenterid = this.vmwareDcVM.vcenterid
-          } else {
-            params.vcenter = this.vmwareDcVM.vcenter
-            params.datacentername = this.vmwareDcVM.datacentername
-            params.clustername = this.vmwareDcVM.clustername
-            params.username = this.vmwareDcVM.username
-            params.password = this.vmwareDcVM.password
-          }
-          params.hostip = this.vmwareDcVM.host
-          params.virtualmachinename = this.vmwareDcVM.vmname
-          if (this.vmwareDcVM.powerstate === 'PowerOn') {
-            params.forced = true
-          }
-          api('registerTemplateFromVmwareVm', params).then(json => {
-            if (this.userdataid !== null) {
-              this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
-            }
-            this.$notification.success({
-              message: this.$t('label.register.template'),
-              description: `${this.$t('message.success.register.template')} ${params.name}`
-            })
-            this.$emit('refresh-data')
-            this.closeAction()
-          }).catch(error => {
-            this.$notifyError(error)
-          }).finally(() => {
-            this.loading = false
-          })
         }
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
@@ -1159,9 +1104,6 @@ export default {
       arrSelectReset.forEach(name => {
         this.form[name] = undefined
       })
-    },
-    selectVmwareDcVM (vm) {
-      this.vmwareDcVM = vm
     },
     fetchDomains () {
       const params = {}
@@ -1210,14 +1152,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .form-layout-migrate {
-    width: 80vw;
-
-    @media (min-width: 900px) {
-      width: 850px;
     }
   }
 </style>

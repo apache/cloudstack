@@ -33,6 +33,7 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public interface HypervisorGuru extends Adapter {
 
@@ -108,8 +109,8 @@ public interface HypervisorGuru extends Adapter {
     /**
      * Will perform a clone of a VM on an external host (if the guru can handle)
      */
-    HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                          boolean forced, Map<String, String> params);
+    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+                                                   boolean forced, Map<String, String> params);
 
     boolean removeHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params);
 }

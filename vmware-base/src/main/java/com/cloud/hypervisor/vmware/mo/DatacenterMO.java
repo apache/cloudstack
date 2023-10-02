@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cloud.vm.VirtualMachine;
-import com.vmware.vim25.VirtualMachinePowerState;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -161,8 +161,8 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<VmwareVmOnDatacenter> getAllVmsOnDatacenter() throws Exception {
-        List<VmwareVmOnDatacenter> vms = new ArrayList<>();
+    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter() throws Exception {
+        List<UnmanagedInstanceTO> vms = new ArrayList<>();
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
@@ -170,32 +170,15 @@ public class DatacenterMO extends BaseMO {
                 if (vmMor != null) {
                     VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
                     if (!vmMo.isTemplate()) {
-                        VmwareVmOnDatacenter vmOnDatacenter = getVmOnDatacenterInformation(vmMo);
-                        vms.add(vmOnDatacenter);
+                        HostMO hostMO = vmMo.getRunningHost();
+                        UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
+                        vms.add(unmanagedInstance);
                     }
                 }
             }
         }
 
         return vms;
-    }
-
-    private VmwareVmOnDatacenter getVmOnDatacenterInformation(VirtualMachineMO vmMo) throws Exception {
-        HostMO host = vmMo.getRunningHost();
-        ManagedObjectReference hyperHostCluster = host.getHyperHostCluster();
-        ClusterMO cluster = new ClusterMO(_context, hyperHostCluster);
-        String clusterName = cluster.getName();
-        String hostName = host.getHostName();
-        VirtualMachine.PowerState powerState = getPowerState(vmMo.getPowerState());
-        return new VmwareVmOnDatacenter(clusterName, hostName, vmMo.getVmName(), powerState);
-    }
-
-    private VirtualMachine.PowerState getPowerState(VirtualMachinePowerState powerState) {
-        if (powerState != VirtualMachinePowerState.POWERED_ON && powerState != VirtualMachinePowerState.POWERED_OFF) {
-            return VirtualMachine.PowerState.PowerUnknown;
-        }
-        return powerState == VirtualMachinePowerState.POWERED_ON ?
-                VirtualMachine.PowerState.PowerOn : VirtualMachine.PowerState.PowerOff;
     }
 
     public List<HostMO> getAllHostsOnDatacenter() throws Exception {

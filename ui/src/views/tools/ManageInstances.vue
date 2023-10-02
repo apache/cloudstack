@@ -39,72 +39,83 @@
         <a-card>
           <a-alert type="info" :showIcon="true" :message="$t('label.desc.importexportinstancewizard')" :description="$t('message.desc.importexportinstancewizard')" />
           <br />
-          <a-form
-            style="min-width: 170px"
-            :ref="formRef"
-            :model="form"
-            :rules="rules"
-            layout="vertical"
-           >
-            <a-col :md="24" :lg="8">
-              <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
-                <a-select
-                  v-model:value="form.zoneid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  @change="onSelectZoneId"
-                  :loading="optionLoading.zones"
-                  v-focus="true"
-                >
-                  <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
-                    <span>
-                      <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                      <global-outlined v-else style="margin-right: 5px" />
-                      {{ zoneitem.label }}
-                    </span>
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :md="24" :lg="8">
-              <a-form-item
-                name="podid"
-                ref="podid"
-                :label="$t('label.podid')">
-                <a-select
-                  v-model:value="form.podid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="filterOption"
-                  :options="podSelectOptions"
-                  :loading="optionLoading.pods"
-                  @change="onSelectPodId"
-                ></a-select>
-              </a-form-item>
-            </a-col>
-            <a-col :md="24" :lg="8">
-              <a-form-item
-                name="clusterid"
-                ref="clusterid"
-                :label="$t('label.clusterid')">
-                <a-select
-                  v-model:value="form.clusterid"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="filterOption"
-                  :options="clusterSelectOptions"
-                  :loading="optionLoading.clusters"
-                  @change="onSelectClusterId"
-                ></a-select>
-              </a-form-item>
-            </a-col>
-          </a-form>
-          <a-divider />
           <a-row :gutter="12">
             <a-col :md="24" :lg="12">
+              <a-form
+                style="min-width: 170px"
+                :ref="formRef"
+                :model="form"
+                :rules="rules"
+                layout="vertical"
+              >
+                <a-col :md="24" :lg="16">
+                  <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
+                    <a-select
+                      v-model:value="form.zoneid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="(input, option) => {
+                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }"
+                      @change="onSelectZoneId"
+                      :loading="optionLoading.zones"
+                      v-focus="true"
+                    >
+                      <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
+                        <span>
+                          <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                          <global-outlined v-else style="margin-right: 5px" />
+                          {{ zoneitem.label }}
+                        </span>
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="24" :lg="16">
+                  <a-form-item
+                    name="podid"
+                    ref="podid"
+                    :label="$t('label.podid')">
+                    <a-select
+                      v-model:value="form.podid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="filterOption"
+                      :options="podSelectOptions"
+                      :loading="optionLoading.pods"
+                      @change="onSelectPodId"
+                    ></a-select>
+                  </a-form-item>
+                </a-col>
+                <a-col :md="24" :lg="16">
+                  <a-form-item
+                    name="clusterid"
+                    ref="clusterid"
+                    :label="$t('label.clusterid')">
+                    <a-select
+                      v-model:value="form.clusterid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="filterOption"
+                      :options="clusterSelectOptions"
+                      :loading="optionLoading.clusters"
+                      @change="onSelectClusterId"
+                    ></a-select>
+                  </a-form-item>
+                </a-col>
+              </a-form>
+            </a-col>
+            <a-col :md="24" :lg="12" v-if="selectedCluster.hypervisortype === 'KVM'">
+              <SelectVmwareVcenter
+                :zoneid="zoneid"
+                @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
+                @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
+              />
+            </a-col>
+          </a-row>
+          <a-divider />
+          <a-row :gutter="12">
+            <a-col :md="24" :lg="selectedCluster.hypervisortype !== 'KVM' ? 12 : 24">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.unmanaged.instances') }}
@@ -172,7 +183,7 @@
                 </div>
               </a-card>
             </a-col>
-            <a-col :md="24" :lg="12">
+            <a-col :md="24" :lg="12" v-if="selectedCluster.hypervisortype !== 'KVM'">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.managed.instances') }}
@@ -262,6 +273,7 @@
             :resource="selectedUnmanagedInstance"
             :cluster="selectedCluster"
             :isOpen="showUnmanageForm"
+            :selectedVmwareVcenter="selectedVmwareVcenter"
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
@@ -281,6 +293,7 @@ import Status from '@/components/widgets/Status'
 import SearchView from '@/components/view/SearchView'
 import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
 
 export default {
   components: {
@@ -288,7 +301,8 @@ export default {
     Status,
     SearchView,
     ImportUnmanagedInstances,
-    ResourceIcon
+    ResourceIcon,
+    SelectVmwareVcenter
   },
   name: 'ManageVms',
   data () {
@@ -306,6 +320,10 @@ export default {
       {
         title: this.$t('label.hostname'),
         dataIndex: 'hostname'
+      },
+      {
+        title: this.$t('label.clustername'),
+        dataIndex: 'clustername'
       },
       {
         title: this.$t('label.ostypename'),
@@ -385,7 +403,8 @@ export default {
       managedInstancesSelectedRowKeys: [],
       showUnmanageForm: false,
       selectedUnmanagedInstance: {},
-      query: {}
+      query: {},
+      selectedVmwareVcenter: {}
     }
   },
   created () {
@@ -780,6 +799,12 @@ export default {
           this.loading = false
         })
       }
+    },
+    onListUnmanagedInstancesFromVmware (obj) {
+      this.selectedVmwareVcenter = obj.params
+      this.unmanagedInstances = obj.response.unmanagedinstance
+      this.itemCount.unmanaged = obj.response.count
+      this.unmanagedInstancesLoading = false
     }
   }
 }

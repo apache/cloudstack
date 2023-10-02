@@ -27,6 +27,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.collections.MapUtils;
@@ -156,6 +158,40 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.BOOLEAN,
             description = "VM is imported despite some of its NIC's MAC addresses are already present")
     private Boolean forced;
+
+    @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
+            type = CommandType.UUID,
+            entityType = VmwareDatacenterResponse.class,
+            description = "UUID of a linked existing vCenter")
+    private Long existingVcenterId;
+
+    @Parameter(name = ApiConstants.HOST_IP,
+            type = BaseCmd.CommandType.STRING,
+            required = true,
+            description = "VMware ESXi host IP/Name.")
+    private String host;
+
+    @Parameter(name = ApiConstants.VCENTER,
+            type = CommandType.STRING,
+            description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+    private String vcenter;
+
+    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
+            description = "Name of VMware datacenter.")
+    private String datacenterName;
+
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
+            required = true,
+            description = "Name of VMware cluster.")
+    private String clusterName;
+
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
+            description = "The Username required to connect to resource.")
+    private String username;
+
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
+            description = "The password for the specified username.")
+    private String password;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -284,6 +320,34 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public boolean isForced() {
         return BooleanUtils.isTrue(forced);
+    }
+
+    public Long getExistingVcenterId() {
+        return existingVcenterId;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getVcenter() {
+        return vcenter;
+    }
+
+    public String getDatacenterName() {
+        return datacenterName;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     /////////////////////////////////////////////////////

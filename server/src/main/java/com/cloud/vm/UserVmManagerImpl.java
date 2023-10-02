@@ -4470,7 +4470,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (isImport) {
             vm.setDataCenterId(zone.getId());
-            vm.setHostId(host.getId());
+            if (hypervisorType == HypervisorType.VMware) {
+                vm.setHostId(host.getId());
+            }
             if (lastHost != null) {
                 vm.setLastHostId(lastHost.getId());
             }
@@ -8133,7 +8135,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid zone");
         }
-        if (host == null) {
+        if (host == null && hypervisorType == HypervisorType.VMware) {
             throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
         }
 

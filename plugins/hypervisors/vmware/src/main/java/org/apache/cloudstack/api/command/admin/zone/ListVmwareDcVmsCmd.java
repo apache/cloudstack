@@ -22,7 +22,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
-import com.cloud.hypervisor.vmware.mo.VmwareVmOnDatacenter;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
@@ -32,8 +31,10 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.VmwareVmResponse;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -93,21 +94,16 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            List<VmwareVmOnDatacenter> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
-            ListResponse<VmwareVmResponse> response = new ListResponse<>();
-            List<VmwareVmResponse> responses = new ArrayList<>();
+            List<UnmanagedInstanceTO> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
+            List<UnmanagedInstanceResponse> responses = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(vms)) {
-                for (VmwareVmOnDatacenter vmwareVm : vms) {
-                    String host = vmwareVm.getHostName();
-                    String vmName = vmwareVm.getVmName();
-                    String clusterName = vmwareVm.getClusterName();
-                    String powerState = vmwareVm.getPowerState().name();
-                    VmwareVmResponse resp = new VmwareVmResponse(host, vmName, clusterName, powerState);
-                    resp.setObjectName("vmwarevm");
+                for (UnmanagedInstanceTO vmwareVm : vms) {
+                    UnmanagedInstanceResponse resp = _responseGenerator.createUnmanagedInstanceResponse(vmwareVm, null, null);
                     responses.add(resp);
                 }
             }
-            response.setResponses(responses);
+            ListResponse<UnmanagedInstanceResponse> response = new ListResponse<>();
+            response.setResponses(responses, responses.size());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {

@@ -3416,7 +3416,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                KvmTemplateFromVmwareVmMigrationWait
+                ConvertInstanceProcessTimeout
         };
     }
 

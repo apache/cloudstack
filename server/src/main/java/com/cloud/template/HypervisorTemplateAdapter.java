@@ -22,15 +22,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.HypervisorOutOfBandVMClone;
-import com.cloud.vm.VmDetailConstants;
 import com.cloud.domain.Domain;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
@@ -42,7 +39,6 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -219,26 +215,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage);
-        return profile;
-    }
-
-    @Override
-    public TemplateProfile prepareTemplateFromVmwareMigration(RegisterTemplateFromVMwareVMCmd cmd,
-                                                              Map<String, String> params, HypervisorOutOfBandVMClone clone) throws ResourceAllocationException {
-        TemplateProfile profile = super.prepare(cmd);
-
-        String url = String.format("vpx://%s/%s/%s?no_verify=1 %s", params.get(VmDetailConstants.VMWARE_VCENTER_HOST),
-                params.get(VmDetailConstants.VMWARE_DATACENTER_NAME), params.get(VmDetailConstants.VMWARE_HOST_NAME),
-                params.get(VmDetailConstants.VMWARE_VM_NAME));
-        profile.setUrl(url);
-
-        for (String key : params.keySet()) {
-            profile.getDetails().put(key, params.get(key));
-        }
-
-        long capacity = clone.getCapacity();
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, capacity);
         return profile;
     }
 

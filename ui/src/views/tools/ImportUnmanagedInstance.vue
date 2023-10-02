@@ -225,6 +225,7 @@
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   filterMatchKey="broadcasturi"
+                  :hypervisor="this.cluster.hypervisortype"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
               <a-row :gutter="12">
@@ -293,6 +294,10 @@ export default {
     },
     isOpen: {
       type: Boolean,
+      required: false
+    },
+    selectedVmwareVcenter: {
+      type: Array,
       required: false
     }
   },
@@ -448,7 +453,11 @@ export default {
               nic.broadcasturi = 'pvlan://' + nic.vlanid + '-i' + nic.isolatedpvlan
             }
           }
-          nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
+          if (this.cluster.hypervisortype === 'VMWare') {
+            nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
+          } else {
+            nic.meta = this.getMeta(nic, { macaddress: 'mac', networkname: 'network' })
+          }
           nics.push(nic)
         }
       }
@@ -714,6 +723,19 @@ export default {
               description: this.$t('error.form.message')
             })
           }
+        }
+        console.log(this.resource)
+        if (this.selectedVmwareVcenter) {
+          if (this.selectedVmwareVcenter.existingvcenterid) {
+            params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+          } else {
+            params.vcenter = this.selectedVmwareVcenter.vcenter
+            params.datacentername = this.selectedVmwareVcenter.datacentername
+            params.username = this.selectedVmwareVcenter.username
+            params.password = this.selectedVmwareVcenter.password
+          }
+          params.hostip = this.resource.hostname
+          params.clustername = this.resource.clustername
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']
         if (this.templateType !== 'auto') {

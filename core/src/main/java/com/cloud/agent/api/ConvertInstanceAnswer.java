@@ -14,37 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.mo;
+package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-public class VmwareVmOnDatacenter {
+public class ConvertInstanceAnswer extends Answer {
 
-    private String clusterName;
-    private String hostName;
-    private String vmName;
-    private VirtualMachine.PowerState powerState;
+    public ConvertInstanceAnswer() {
+        super();
+    }
+    private UnmanagedInstanceTO convertedInstance;
 
-    public VmwareVmOnDatacenter(String clusterName, String hostName, String vmName, VirtualMachine.PowerState powerState) {
-        this.clusterName = clusterName;
-        this.hostName = hostName;
-        this.vmName = vmName;
-        this.powerState = powerState;
+    public ConvertInstanceAnswer(Command command, boolean success, String details) {
+        super(command, success, details);
     }
 
-    public String getClusterName() {
-        return clusterName;
+    public ConvertInstanceAnswer(Command command, UnmanagedInstanceTO convertedInstance) {
+        super(command, true, "");
+        this.convertedInstance = convertedInstance;
     }
 
-    public String getHostName() {
-        return hostName;
-    }
-
-    public String getVmName() {
-        return vmName;
-    }
-
-    public VirtualMachine.PowerState getPowerState() {
-        return powerState;
+    public UnmanagedInstanceTO getConvertedInstance() {
+        return convertedInstance;
     }
 }

@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -367,7 +368,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public HypervisorOutOfBandVMClone cloneHypervisorVMOutOfBand(String hostIp, String vmName, boolean forced, Map<String, String> params) {
+    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName, boolean forced, Map<String, String> params) {
         s_logger.error("Unsupported operation: cannot clone external VM");
         return null;
     }

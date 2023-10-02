@@ -19,7 +19,6 @@ package com.cloud.template;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.HypervisorOutOfBandVMClone;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -35,7 +34,6 @@ import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
-import org.apache.cloudstack.api.command.user.template.RegisterTemplateFromVMwareVMCmd;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 
 public interface TemplateAdapter extends Adapter {
@@ -61,9 +59,6 @@ public interface TemplateAdapter extends Adapter {
     TemplateProfile prepare(RegisterIsoCmd cmd) throws ResourceAllocationException;
 
     TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException;
-
-    TemplateProfile prepareTemplateFromVmwareMigration(RegisterTemplateFromVMwareVMCmd cmd,
-                                                       Map<String, String> params, HypervisorOutOfBandVMClone clone) throws ResourceAllocationException;
 
     VMTemplateVO create(TemplateProfile profile);
 
