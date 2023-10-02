@@ -18,6 +18,7 @@ package com.cloud.resource;
 
 import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -257,17 +258,17 @@ public class ServerResourceBaseTest {
 
         Assert.assertTrue(result.getResult());
         Assert.assertEquals(2, result.getCount());
-        List<String> expectedNames = Arrays.asList("file2.txt", "file1.txt");
-        List<String> expectedPaths = Arrays.asList("/test/file2.txt", "/test/file1.txt");
-        List<String> expectedAbsPaths = Arrays.asList(nfsMountPoint + "/test/file2.txt", nfsMountPoint + "/test/file1.txt");
+        List<String> expectedNames = Arrays.asList("file1.txt", "file2.txt");
+        List<String> expectedPaths = Arrays.asList("/test/file1.txt", "/test/file2.txt");
+        List<String> expectedAbsPaths = Arrays.asList(nfsMountPoint + "/test/file1.txt", nfsMountPoint + "/test/file2.txt");
         List<Boolean> expectedIsDirs = Arrays.asList(false, false);
         List<Long> expectedSizes = Arrays.asList(file2.length(), file1.length());
         List<Long> expectedModifiedList = Arrays.asList(file2.lastModified(), file1.lastModified());
-        Assert.assertEquals(expectedNames, result.getNames());
-        Assert.assertEquals(expectedPaths, result.getPaths());
-        Assert.assertEquals(expectedAbsPaths, result.getAbsPaths());
-        Assert.assertEquals(expectedIsDirs, result.getIsDirs());
-        Assert.assertEquals(expectedSizes, result.getSizes());
-        Assert.assertEquals(expectedModifiedList, result.getLastModified());
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedNames, result.getNames()));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedPaths, result.getPaths()));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedAbsPaths, result.getAbsPaths()));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedIsDirs, result.getIsDirs()));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedSizes, result.getSizes()));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expectedModifiedList, result.getLastModified()));
     }
 }
