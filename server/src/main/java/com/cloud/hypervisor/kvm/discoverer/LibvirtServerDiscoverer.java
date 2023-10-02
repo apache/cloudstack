@@ -110,7 +110,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Override
     public void processHostAdded(long hostId) {
         HostVO host = hostDao.findById(hostId);
-        if (host != null) {
+        if (host != null && getHypervisorType().equals(host.getHypervisorType())) {
             directDownloadManager.syncCertificatesToHost(hostId, host.getDataCenterId());
         }
     }
@@ -471,8 +471,12 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostOsInCluster = oneHost.getDetail("Host.OS");
             String hostOs = ssCmd.getHostDetails().get("Host.OS");
             if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
-                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," +
-                        "in which there are " + hostOsInCluster + " hosts added");
+                String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
+                if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {
+                    s_logger.warn(String.format("Adding %s. This may or may not be ok!", msg));
+                } else {
+                    throw new IllegalArgumentException(String.format("Can't add %s.", msg));
+                }
             }
         }
 

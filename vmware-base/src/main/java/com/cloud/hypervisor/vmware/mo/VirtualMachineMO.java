@@ -1881,7 +1881,7 @@ public class VirtualMachineMO extends BaseMO {
 
                         // tar files into OVA
                         if (packToOva) {
-                            // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+                            // Important! we need to sync file system before we can safely use tar to work around a linux kernel bug(or feature)
                             s_logger.info("Sync file system before we package OVA...");
 
                             Script commandSync = new Script(true, "sync", 0, s_logger);

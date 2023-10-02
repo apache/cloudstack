@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
@@ -105,7 +106,7 @@ public interface ManagementService {
     Pair<List<? extends Configuration>, Integer> searchForConfigurations(ListCfgsByCmd c);
 
     /**
-     * returns the the configuration groups
+     * returns the configuration groups
      *
      * @return list of configuration groups
      */
@@ -188,6 +189,12 @@ public interface ManagementService {
      */
     GuestOSHypervisor getAddedGuestOsMapping(Long guestOsHypervisorId);
 
+    /**
+     * Get hypervisor guest OS names
+     *
+     * @return the hypervisor guest OS name that can be used for mapping, with guest OS name, and the name of guest OS specific to hypervisor
+     */
+    List<Pair<String, String>> getHypervisorGuestOsNames(GetHypervisorGuestOsNamesCmd getHypervisorGuestOsNamesCmd);
     /**
      * Adds a new guest OS
      *

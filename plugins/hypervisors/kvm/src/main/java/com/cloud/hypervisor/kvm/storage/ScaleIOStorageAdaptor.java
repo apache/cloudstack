@@ -387,6 +387,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             boolean forceSourceFormat = srcQemuFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
             LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcQemuFile.getFileName(), srcQemuFile.getFormat(), destQemuFile.getFileName(), destQemuFile.getFormat(), forceSourceFormat));
+            qemuImageOpts.setImageOptsFlag(true);
             qemu.convert(srcQemuFile, destQemuFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
             LOGGER.debug("Successfully converted source disk image " + srcQemuFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
 
@@ -551,12 +552,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     /**
      * Calculates usable size from raw size, assuming qcow2 requires 192k/1GB for metadata
-     * We also remove 32MiB for potential encryption/safety factor.
+     * We also remove 128MiB for encryption/fragmentation/safety factor.
      * @param raw size in bytes
      * @return usable size in bytesbytes
      */
     public static long getUsableBytesFromRawBytes(Long raw) {
-        long usable = raw - (32 << 20) - ((raw >> 30) * 200704);
+        long usable = raw - (128 << 20) - ((raw >> 30) * 200704);
         if (usable < 0) {
             usable = 0L;
         }

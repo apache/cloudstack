@@ -55,7 +55,8 @@ public class StopVMCmd extends BaseAsyncCmd implements UserCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM "
-        + "(vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted).  The caller knows the VM is stopped.")
+        + "(vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted)."
+        + " This option is to be used if the caller knows the VM is stopped and should be marked as such.")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////

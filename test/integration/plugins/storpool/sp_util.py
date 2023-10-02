@@ -75,6 +75,8 @@ class TestData():
     diskName = "diskname"
     diskOffering = "diskoffering"
     diskOffering2 = "diskoffering2"
+    diskOfferingEncrypted = "diskOfferingEncrypted"
+    diskOfferingEncrypted2 = "diskOfferingEncrypted2"
     cephDiskOffering = "cephDiskOffering"
     nfsDiskOffering = "nfsDiskOffering"
     domainId = "domainId"
@@ -236,6 +238,24 @@ class TestData():
                 TestData.tags: sp_template_2,
                 "storagetype": "shared"
             },
+            TestData.diskOfferingEncrypted: {
+                "name": "ssd-encrypted",
+                "displaytext": "ssd-encrypted",
+                "disksize": 5,
+                "hypervisorsnapshotreserve": 200,
+                "encrypt": True,
+                TestData.tags: sp_template_1,
+                "storagetype": "shared"
+            },
+            TestData.diskOfferingEncrypted2: {
+                "name": "ssd2-encrypted",
+                "displaytext": "ssd2-encrypted",
+                "disksize": 5,
+                "hypervisorsnapshotreserve": 200,
+                "encrypt": True,
+                TestData.tags: sp_template_2,
+                "storagetype": "shared"
+            },
             TestData.cephDiskOffering: {
                 "name": "ceph",
                 "displaytext": "Ceph fixed disk offering",
@@ -281,6 +301,12 @@ class TestData():
             },
         }
 class StorPoolHelper():
+    def setUpClass(cls):
+        cls.logger = None
+
+    @classmethod
+    def logging(cls):
+        return cls.logger
 
     @classmethod
     def create_template_from_snapshot(self, apiclient, services, snapshotid=None, volumeid=None):

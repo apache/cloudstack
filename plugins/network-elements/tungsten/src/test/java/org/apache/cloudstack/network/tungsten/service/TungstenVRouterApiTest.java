@@ -20,27 +20,34 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.apache.cloudstack.network.tungsten.vrouter.Port;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnector;
 import org.apache.cloudstack.network.tungsten.vrouter.VRouterApiConnectorFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(VRouterApiConnectorFactory.class)
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenVRouterApiTest {
+    MockedStatic<VRouterApiConnectorFactory> vRouterApiConnectorFactoryMocked;
+
     @Before
     public void setup() {
-        mockStatic(VRouterApiConnectorFactory.class);
+        vRouterApiConnectorFactoryMocked = Mockito.mockStatic(VRouterApiConnectorFactory.class);
+    }
+
+    @After
+    public void tearDown() {
+        vRouterApiConnectorFactoryMocked.close();
     }
 
     @Test

@@ -801,7 +801,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
-  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
+  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the port range to map to',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_port_forwarding_rules__instance_id` FOREIGN KEY `fk_port_forwarding_rules__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
@@ -2137,7 +2137,7 @@ CREATE TABLE `cloud`.`external_load_balancer_devices` (
   `allocation_state` varchar(32) NOT NULL DEFAULT 'Free' COMMENT 'Allocation state (Free/Shared/Dedicated/Provider) of the device',
   `is_dedicated` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if device/appliance is provisioned for dedicated use only',
   `is_inline` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer will be used in in-line configuration with firewall',
-  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by by cloudstack',
+  `is_managed` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is provisioned and its life cycle is managed by cloudstack',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external load balancer device',
   `parent_host_id` bigint unsigned COMMENT 'if the load balancer appliance is cloudstack managed, then host id on which this appliance is provisioned',
   PRIMARY KEY (`id`),
@@ -2475,4 +2475,3 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;
-

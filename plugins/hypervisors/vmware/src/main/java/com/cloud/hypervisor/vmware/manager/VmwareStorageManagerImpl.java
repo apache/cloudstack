@@ -198,7 +198,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
     }
 
     //Fang: new command added;
-    // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+    // Important! we need to sync file system before we can safely use tar to work around a linux kernel bug(or feature)
     public String createOvaForVolume(VolumeObjectTO volume, int archiveTimeout) {
         DataStoreTO storeTO = volume.getDataStore();
         if (!(storeTO instanceof NfsTO)) {
@@ -1054,7 +1054,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
             String exportDir = ova_metafile.getParent();
             s_logger.info("exportDir: " + exportDir);
-            // Important! we need to sync file system before we can safely use tar to work around a linux kernal bug(or feature)
+            // Important! we need to sync file system before we can safely use tar to work around a linux kernel bug(or feature)
             s_logger.info("Sync file system before we package OVA..., before tar ");
             s_logger.info("ova: " + ovaFileName + ", ovf:" + ovfFileName + ", vmdk:" + disks[0] + ".");
             Script commandSync = new Script(true, "sync", 0, s_logger);
@@ -1107,12 +1107,25 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
+    protected boolean isManagedStorageDatastorePath(final String datastorePath) {
+        // ex. [-iqn.2010-01.com.solidfire:3p53.data-9999.97-0] i-2-9999-VM
+        return datastorePath != null && datastorePath.startsWith("[-iqn.");
+    }
+
+    protected String getManagedDatastoreName(final String datastorePath) {
+        // ex. [-iqn.2010-01.com.solidfire:3p53.data-9999.97-0]
+        return datastorePath == null ? datastorePath : datastorePath.split(" ")[0];
+    }
+
     private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, ManagedObjectReference morDs,
                                         String exceptFileName, String vmName) throws Exception {
         long size = 0;
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
         HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
         String datastorePath = (new DatastoreFile(dsMo.getName(), vmName)).getPath();
+        if (isManagedStorageDatastorePath(datastorePath)) {
+            datastorePath = getManagedDatastoreName(datastorePath);
+        }
         HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
         FileQueryFlags fqf = new FileQueryFlags();
         fqf.setFileSize(true);
@@ -1241,11 +1254,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 String vmdkName = null;
 
                 // if this is managed storage
-                if (fullPath.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
-                    baseName = fullPath.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
-
-                    // remove '[' and ']'
-                    baseName = baseName.substring(1, baseName.length() - 1);
+                if (isManagedStorageDatastorePath(fullPath)) {
+                    baseName = getManagedDatastoreName(fullPath);
+                    baseName = baseName.substring(1, baseName.length() - 1); // remove '[' and ']'
 
                     vmdkName = fullPath; // for managed storage, vmdkName == fullPath
                 } else {
@@ -1288,12 +1299,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
             } else {
                 Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-                // if this is managed storage
-                if (path.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
-                    path = path.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
-
-                    // remove '[' and ']'
-                    baseName = path.substring(1, path.length() - 1);
+                if (isManagedStorageDatastorePath(path)) {
+                    path = getManagedDatastoreName(path);
+                    baseName = path.substring(1, path.length() - 1); // remove '[' and ']'
                 } else {
                     baseName = VmwareHelper.trimSnapshotDeltaPostfix(path);
                 }

@@ -27,11 +27,16 @@ github:
     - infrastructure
     - java
     - python
-    - hosting
     - kvm
+    - libvirt
     - vsphere
+    - vmware
     - xenserver
     - xcp-ng
+    - orchestration
+    - virtualization
+    - virtual-machine
+    - kubernetes
 
   features:
     wiki: true
@@ -49,6 +54,10 @@ github:
     - alexandremattioli
     - vishesh92
     - soreana
+    - GaOrtiga
     - acs-robot
+    - BryanMLima
+    - SadiJr
+    - JoaoJandre
 
   protected_branches: ~

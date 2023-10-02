@@ -231,7 +231,7 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
-  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
+  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the port range to map to',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1016,4 +1016,3 @@ INSERT INTO configuration (category, instance, component, name, value, descripti
 
 DELETE FROM load_balancer_vm_map WHERE load_balancer_id NOT IN (SELECT id FROM load_balancer);
 DELETE FROM vm_instance WHERE type='User' AND id NOT IN (SELECT id FROM user_vm);
-

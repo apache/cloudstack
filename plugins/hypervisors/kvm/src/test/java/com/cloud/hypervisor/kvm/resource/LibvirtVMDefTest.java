@@ -22,7 +22,6 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 import junit.framework.TestCase;
@@ -31,17 +30,13 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
-import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuObject;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtVMDefTest extends TestCase {
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
@@ -51,12 +46,6 @@ public class LibvirtVMDefTest extends TestCase {
             "SwapCached:            0 kB\n" +
             "Active:          4260808 kB\n" +
             "Inactive:         949392 kB\n";
-
-    @Before
-    public void setup() throws Exception {
-        Scanner scanner = new Scanner(memInfo);
-        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
-    }
 
     @Test
     public void testInterfaceTypeUserWithNetwork() {
@@ -270,7 +259,7 @@ public class LibvirtVMDefTest extends TestCase {
         String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='" + cacheMode.toString() + "' />\n" +
                              "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n</disk>\n";
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -288,7 +277,7 @@ public class LibvirtVMDefTest extends TestCase {
             "<secret type='passphrase' uuid='" + passphraseUuid + "' />\n" +
             "</encryption>\n" +
             "</disk>\n";
-        assertEquals(disk.toString(), expectedXML);
+        assertEquals(expectedXML, disk.toString());
     }
 
     @Test
@@ -408,7 +397,7 @@ public class LibvirtVMDefTest extends TestCase {
                 "<read_bytes_sec_max_length>"+bytesReadRateMaxLength+"</read_bytes_sec_max_length>\n<write_bytes_sec_max_length>"+bytesWriteRateMaxLength+"</write_bytes_sec_max_length>\n" +
                 "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
 
-                assertEquals(xmlDef, expectedXml);
+                assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -419,7 +408,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String xmlDef = memBalloonDef.toString();
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -430,7 +419,7 @@ public class LibvirtVMDefTest extends TestCase {
 
         String xmlDef = memBalloonDef.toString();
 
-        assertEquals(xmlDef, expectedXml);
+        assertEquals(expectedXml, xmlDef);
     }
 
     @Test
@@ -465,11 +454,11 @@ public class LibvirtVMDefTest extends TestCase {
         int bytes = 2048;
 
         LibvirtVMDef.RngDef def = new LibvirtVMDef.RngDef(path, backendModel, bytes, period);
-        assertEquals(def.getPath(), path);
-        assertEquals(def.getRngBackendModel(), backendModel);
-        assertEquals(def.getRngModel(), LibvirtVMDef.RngDef.RngModel.VIRTIO);
-        assertEquals(def.getRngRateBytes(), bytes);
-        assertEquals(def.getRngRatePeriod(), period);
+        assertEquals(path, def.getPath());
+        assertEquals(backendModel, def.getRngBackendModel());
+        assertEquals(LibvirtVMDef.RngDef.RngModel.VIRTIO, def.getRngModel());
+        assertEquals(bytes, def.getRngRateBytes());
+        assertEquals(period, def.getRngRatePeriod());
     }
 
     @Test
@@ -493,8 +482,8 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
 
         LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
-        assertEquals(def.getModel(), model);
-        assertEquals(def.getAction(), action);
+        assertEquals(model, def.getModel());
+        assertEquals(action, def.getAction());
     }
 
     @Test
@@ -505,6 +494,6 @@ public class LibvirtVMDefTest extends TestCase {
                 "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
                 "<driver queues='4'/>\n" +
                 "</controller>\n";
-        assertEquals(str, expected);
+        assertEquals(expected, str);
     }
 }

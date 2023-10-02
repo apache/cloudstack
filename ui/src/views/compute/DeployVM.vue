@@ -35,24 +35,27 @@
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
                     <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
                       <div v-if="zones.length <= 8">
-                        <a-row type="flex" :gutter="5" justify="start">
+                        <a-row type="flex" :gutter="[16, 18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
                             <a-radio-group
                               :key="idx"
+                              :size="large"
                               v-model:value="form.zoneid"
                               @change="onSelectZoneId(zoneItem.id)">
-                              <a-col :span="8">
-                                <a-card style="width:200px;" :hoverable="false">
-                                  <a-radio :value="zoneItem.id" />
-                                  <div :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-30px', marginBottom: '10px'}">
-                                      <resource-icon
-                                        v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :image="zoneItem.icon.base64image"
-                                        size="36" />
-                                      <global-outlined v-else/>
-                                    </div>
-                                  <a-card-meta title="" :description="zoneItem.name" style="text-align:center; paddingTop: 10px;" />
-                                </a-card>
+                              <a-col :span="6">
+                                <a-radio-button
+                                  :value="zoneItem.id"
+                                  style="border-width: 2px"
+                                  class="zone-radio-button">
+                                  <span>
+                                    <resource-icon
+                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
+                                      :image="zoneItem.icon.base64image"
+                                      size="2x" />
+                                    <global-outlined size="2x" v-else />
+                                    {{ zoneItem.name }}
+                                    </span>
+                                </a-radio-button>
                               </a-col>
                             </a-radio-group>
                           </div>
@@ -72,7 +75,7 @@
                       >
                         <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
                           <span>
-                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="1x" style="margin-right: 5px"/>
+                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
                             <global-outlined v-else style="margin-right: 5px" />
                             {{ zone1.name }}
                           </span>
@@ -837,7 +840,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw, nextTick, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -860,7 +864,6 @@ import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
-import { sanitizeReverse } from '@/utils/util'
 
 export default {
   name: 'Wizard',
@@ -1813,11 +1816,17 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.defaultBootType)
-          this.defaultBootMode = this.template?.details?.UEFI
-          this.updateTemplateLinkedUserData(this.template.userdataid)
-          this.userdataDefaultOverridePolicy = this.template.userdatapolicy
+          this.updateTemplateLinkedUserData(template.userdataid)
+          this.userdataDefaultOverridePolicy = template.userdatapolicy
+          this.form.dynamicscalingenabled = template.isdynamicallyscalable
+          this.defaultBootType = template.details?.UEFI ? 'UEFI' : 'BIOS'
+          this.form.boottype = this.defaultBootType
+          this.fetchBootModes(this.form.boottype)
+          this.defaultBootMode = template.details?.UEFI || this.options.bootModes?.[0]?.id || undefined
+          this.form.bootmode = this.defaultBootMode
+          this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
+          this.form.iodriverpolicy = template.details?.['io.policy']
+          this.form.keyboard = template.details?.keyboard
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1996,8 +2005,9 @@ export default {
         deployVmData.iodriverpolicy = values.iodriverpolicy
         deployVmData.nicmultiqueuenumber = values.nicmultiqueuenumber
         deployVmData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
-        if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(sanitizeReverse(values.userdata)))
+        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
+        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
+          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
         if (this.tabKey === 'templateid') {
@@ -2119,7 +2129,9 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        deployVmData.userdataid = values.userdataid
+        if (isUserdataAllowed) {
+          deployVmData.userdataid = values.userdataid
+        }
 
         if (values.name) {
           deployVmData.name = values.name
@@ -2155,7 +2167,7 @@ export default {
             idx++
           }
         }
-        if (this.userDataValues) {
+        if (isUserdataAllowed && this.userDataValues) {
           for (const [key, value] of Object.entries(this.userDataValues)) {
             deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
             idx++
@@ -2180,6 +2192,15 @@ export default {
                   this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(vm.password)
+                      },
+                      () => [this.$t('label.copy.password')]
+                    ),
                     duration: 0
                   })
                 }
@@ -2679,6 +2700,14 @@ export default {
         }
       }
       return networks
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }
@@ -2717,6 +2746,15 @@ export default {
     border: 1px solid @border-color-split;
     border-radius: @border-radius-base !important;
     margin: 0 0 1.2rem;
+  }
+
+  .zone-radio-button {
+    width:100%;
+    min-width: 345px;
+    height: 60px;
+    display: flex;
+    padding-left: 20px;
+    align-items: center;
   }
 
   .vm-info-card {

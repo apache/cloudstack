@@ -114,7 +114,7 @@ public class BaseMO {
                 key = field.getKey();
             } catch (Exception e) {
                 // assuming the exception is caused by concurrent operation from other places
-                // so we retieve the key again
+                // so we retrieve the key again
                 key = getCustomFieldKey(fieldName);
             }
         }

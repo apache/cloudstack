@@ -171,11 +171,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostDisconnected(long hostId, long poolId) {
-        StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(poolId, hostId);
-        if (storagePoolHost != null) {
-            _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
-        }
-
+        // SDC ID is getting updated upon host connect, no need to delete the storage_pool_host_ref entry
         return true;
     }
 

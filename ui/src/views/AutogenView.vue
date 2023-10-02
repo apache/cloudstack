@@ -64,7 +64,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -444,10 +444,12 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
+import { sourceToken } from '@/utils/request'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
@@ -627,6 +629,9 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    console.log('DEBUG - Due to route change, ignoring results for any on-going API request', this.apiName)
+    sourceToken.cancel()
+    sourceToken.init()
     this.currentPath = this.$route.fullPath
     next()
   },
@@ -676,7 +681,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -718,8 +723,10 @@ export default {
       }
       api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
+        const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
         this.$store.dispatch('SetProject', project)
+        this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
         this.$message.success(`${this.$t('message.switch.to')} "${project.name}"`)
         const query = Object.assign({}, this.$route.query)
@@ -794,6 +801,10 @@ export default {
         this.dataView = false
       }
 
+      if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
+        params.listsystemvms = true
+      }
+
       if ('listview' in this.$refs && this.$refs.listview) {
         this.$refs.listview.resetSelection()
       }
@@ -831,6 +842,7 @@ export default {
         })
       }
 
+      const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
@@ -838,9 +850,11 @@ export default {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
             title = columnKey.customTitle
+            customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
             title = Object.keys(columnKey)[0]
+            customRender[key] = columnKey[key]
           }
         }
         this.columns.push({
@@ -873,6 +887,10 @@ export default {
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
+      }
+
+      if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
+        delete params.details
       }
 
       this.loading = true
@@ -937,25 +955,33 @@ export default {
             break
           }
         }
-        this.itemCount = 0
+        var apiItemCount = 0
         for (const key in json[responseName]) {
           if (key === 'count') {
-            this.itemCount = json[responseName].count
+            apiItemCount = json[responseName].count
             continue
           }
           objectName = key
           break
         }
+
+        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+          console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
+          return
+        }
+
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
           this.items = []
         }
+        this.itemCount = apiItemCount
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
 
         if (this.apiName === 'listProjects' && this.items.length > 0) {
+          this.$store.commit('RELOAD_ALL_PROJECTS', this.items)
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
@@ -977,6 +1003,12 @@ export default {
 
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
+          for (const key in customRender) {
+            const func = customRender[key]
+            if (func && typeof func === 'function') {
+              this.items[idx][key] = func(this.items[idx])
+            }
+          }
           if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
@@ -992,6 +1024,10 @@ export default {
           }
         }
       }).catch(error => {
+        if (!error || !error.message) {
+          console.log('API request likely got cancelled due to route change:', this.apiName)
+          return
+        }
         if ([401].includes(error.response.status)) {
           return
         }
@@ -1047,7 +1083,6 @@ export default {
       this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
-      const self = this
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
@@ -1085,6 +1120,7 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      this.currentAction.paramFilters = []
       if ('message' in action) {
         var message = action.message
         if (typeof action.message === 'function') {
@@ -1092,6 +1128,29 @@ export default {
         }
         action.message = message
       }
+
+      this.getArgs(action, isGroupAction, paramFields)
+      this.getFilters(action, isGroupAction, paramFields)
+      this.getFirstIndexFocus()
+
+      this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+          param.type = 'string'
+        }
+        this.setRules(param)
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
+        }
+      }
+      this.actionLoading = false
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
+        this.fillEditFormFieldValues()
+      }
+    },
+    getArgs (action, isGroupAction, paramFields) {
+      const self = this
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -1107,28 +1166,28 @@ export default {
                 description: self.$t('label.confirmpassword.description')
               }
             }
+            if (arg === 'ostypeid') {
+              return {
+                type: 'uuid',
+                name: 'ostypeid',
+                required: true,
+                description: self.$t('label.select.guest.os.type')
+              }
+            }
             return paramFields.filter(function (param) {
               return param.name.toLowerCase() === arg.toLowerCase()
             })[0]
           })
         }
       }
-      this.getFirstIndexFocus()
-
-      this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
-      for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
-          param.type = 'string'
+    },
+    getFilters (action, isGroupAction, paramFields) {
+      if ('filters' in action) {
+        var filters = action.filters
+        if (typeof action.filters === 'function') {
+          filters = action.filters(action.resource, this.$store.getters, isGroupAction)
         }
-        this.setRules(param)
-        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param)
-        }
-      }
-      this.actionLoading = false
-      if (action.dataView && listIconForFillValues.includes(action.icon)) {
-        this.fillEditFormFieldValues()
+        this.currentAction.paramFilters = filters
       }
     },
     getFirstIndexFocus () {
@@ -1141,13 +1200,16 @@ export default {
         }
       }
     },
-    listUuidOpts (param) {
+    listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {
@@ -1240,13 +1302,30 @@ export default {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
-              const description = action.response(result.jobresult)
-              if (description) {
-                this.$notification.info({
-                  message: this.$t(action.label),
-                  description: (<span v-html={description}></span>),
-                  duration: 0
-                })
+              const response = action.response(result.jobresult)
+              if (response) {
+                if (typeof response === 'object') {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response.message}></span>),
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(response.copytext)
+                      },
+                      () => [this.$t(response.copybuttontext)]
+                    ),
+                    duration: 0
+                  })
+                } else {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response}></span>),
+                    duration: 0
+                  })
+                }
               }
             }
             if ('successMethod' in action) {
@@ -1643,6 +1722,18 @@ export default {
         } else {
           delete query.archived
         }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
+      } else if (this.$route.name === 'kubernetes') {
+        if (filter === 'all') {
+          delete query.clustertype
+        } else {
+          query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
+        }
       }
       query.filter = filter
       query.page = '1'
@@ -1668,6 +1759,10 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
+            } else if (this.$route.name === 'guestos') {
+              query.description = value
             } else {
               query.keyword = value
             }
@@ -1826,6 +1921,14 @@ export default {
       if (screenWidth <= 768) {
         this.modalWidth = '450px'
       }
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }

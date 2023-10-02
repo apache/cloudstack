@@ -34,10 +34,39 @@ repos:
       #- id: check-merge-conflict
       - id: check-vcs-permalinks
       #- id: check-yaml
-      #- id: detect-private-key
+      - id: detect-private-key
+        exclude: >
+          (?x)
+          ^scripts/vm/systemvm/id_rsa\.cloud$|
+          ^server/src/test/java/com/cloud/keystore/KeystoreTest\.java$|
+          ^server/src/test/resources/certs/dsa_self_signed\.key$|
+          ^server/src/test/resources/certs/non_root\.key$|
+          ^server/src/test/resources/certs/root_chain\.key$|
+          ^server/src/test/resources/certs/rsa_ca_signed\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed_with_pwd\.key$|
+          ^server/src/test/resources/certs/rsa_self_signed\.key$|
+          ^services/console-proxy/rdpconsole/src/test/doc/rdp-key\.pem$|
+          ^systemvm/agent/certs/localhost\.key$|
+          ^systemvm/agent/certs/realhostip\.key$
       - id: end-of-file-fixer
-        files: \.(java|md|py|txt|yaml|yml)$
+        exclude: \.vhd$
       #- id: fix-byte-order-marker
       - id: mixed-line-ending
         files: \.(java|md|py|txt|yaml|yml)$
       # - id: trailing-whitespace
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+    - id: flake8
+      args: [--config, .github/linters/.flake8]
+      exclude: >
+        (?x)
+        ^agent/bindir/cloud-setup-agent\.in$|
+        ^client/bindir/cloud-update-xenserver-licenses\.in$|
+        ^cloud-cli/bindir/cloud-tool$|
+        ^python/bindir/cloud-grab-dependent-library-versions$|
+        ^python/bindir/cloud-setup-baremetal$|
+        ^scripts/vm/hypervisor/xenserver/storagePlugin$|
+        ^scripts/vm/hypervisor/xenserver/vmopspremium$|
+        ^setup/bindir/cloud-setup-encryption\.in$|
+        ^venv/.*$

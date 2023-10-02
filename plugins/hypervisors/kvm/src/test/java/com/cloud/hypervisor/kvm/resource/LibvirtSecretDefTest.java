@@ -21,9 +21,14 @@ package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtSecretDef.Usage;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class LibvirtSecretDefTest extends TestCase {
 
+    @Test
     public void testVolumeSecretDef() {
         String uuid = "db66f42b-a79e-4666-9910-9dfc8a024427";
         String name = "myEncryptedQCOW2";
@@ -38,6 +43,7 @@ public class LibvirtSecretDefTest extends TestCase {
         assertEquals(expectedXml, def.toString());
     }
 
+    @Test
     public void testCephSecretDef() {
         String uuid = "a9febe83-ac5c-467a-bf19-eb75325ec23c";
         String name = "admin";

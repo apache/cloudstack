@@ -213,7 +213,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Integer maxHostCpuCore = max.second();
 
         long minMemory = virtualMachineTo.getMinRam();
-        Long maxMemory = minMemory;
+        Long maxMemory = virtualMachineTo.getMaxRam();
         int minCpuCores = virtualMachineTo.getCpus();
         Integer maxCpuCores = minCpuCores;
 

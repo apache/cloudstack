@@ -704,7 +704,7 @@ const UI = {
 
     updateControlbarHandle() {
         // Since the control bar is fixed on the viewport and not the page,
-        // the move function expects coordinates relative the the viewport.
+        // the move function expects coordinates relative the viewport.
         const handle = document.getElementById("noVNC_control_bar_handle");
         const handleBounds = handle.getBoundingClientRect();
         UI.moveControlbarHandle(handleBounds.top);
@@ -1077,6 +1077,7 @@ const UI = {
         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
                          { shared: UI.getSetting('shared'),
                            repeaterID: UI.getSetting('repeaterID'),
+                           language: WebUtil.getConfigVar('language'),
                            credentials: { password: password } });
         UI.rfb.addEventListener("connect", UI.connectFinished);
         UI.rfb.addEventListener("disconnect", UI.disconnectFinished);

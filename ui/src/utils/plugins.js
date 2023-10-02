@@ -65,7 +65,8 @@ export const pollJobPlugin = {
         key: jobId,
         title,
         description,
-        status: 'progress'
+        status: 'progress',
+        timestamp: new Date()
       })
 
       eventBus.on('update-job-details', (args) => {
@@ -107,7 +108,8 @@ export const pollJobPlugin = {
             title,
             description,
             status: 'done',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
@@ -157,7 +159,8 @@ export const pollJobPlugin = {
             title,
             description: desc,
             status: 'failed',
-            duration: 2
+            duration: 2,
+            timestamp: new Date()
           })
           eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
@@ -345,7 +348,7 @@ export const showIconPlugin = {
       if (resource) {
         resourceType = resource
       }
-      if (['zone', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
+      if (['zone', 'zones', 'template', 'iso', 'account', 'accountuser', 'vm', 'domain', 'project', 'vpc', 'guestnetwork'].includes(resourceType)) {
         return true
       } else {
         return false
@@ -483,6 +486,14 @@ export const genericUtilPlugin = {
     app.config.globalProperties.$isValidUuid = function (uuid) {
       const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
       return regexExp.test(uuid)
+    }
+
+    app.config.globalProperties.$toBase64AndURIEncoded = function (text) {
+      const base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/
+      if (base64regex.test(text)) {
+        return text
+      }
+      return encodeURIComponent(btoa(unescape(encodeURIComponent(text))))
     }
   }
 }
