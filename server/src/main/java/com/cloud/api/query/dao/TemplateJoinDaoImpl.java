@@ -321,7 +321,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             VnfTemplateResponse vnfTemplateResponse = new VnfTemplateResponse();
             List<VnfTemplateNicVO> nics = vnfTemplateNicDao.listByTemplateId(template.getId());
             for (VnfTemplateNicVO nic : nics) {
-                vnfTemplateResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.getRequired(), nic.getDescription()));
+                vnfTemplateResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.isRequired(), nic.isManagement(), nic.getDescription()));
             }
             List<VnfTemplateDetailVO> details = vnfTemplateDetailsDao.listDetails(template.getId());
             Collections.sort(details, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));

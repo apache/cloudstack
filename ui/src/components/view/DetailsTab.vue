@@ -187,18 +187,35 @@ export default {
         if (password) {
           credentials.push(this.$t('label.password') + ' : ' + password)
         }
-        if (sshUsername) {
-          credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
-        }
-        if (sshPassword) {
-          credentials.push('SSH ' + this.$t('label.password') + ' : ' + sshPassword)
-        }
         if (webUsername) {
           credentials.push('Web ' + this.$t('label.username') + ' : ' + webUsername)
         }
         if (webPassword) {
           credentials.push('Web ' + this.$t('label.password') + ' : ' + webPassword)
         }
+        if (sshUsername) {
+          credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
+        }
+        if (sshPassword) {
+          credentials.push('SSH ' + this.$t('label.password') + ' : ' + sshPassword)
+        }
+
+        const managementDeviceIds = []
+        for (const vnfnic of this.resource.vnfnics) {
+          if (vnfnic.management) {
+            managementDeviceIds.push(vnfnic.deviceid)
+          }
+        }
+        const managementIps = []
+        for (const nic of this.resource.nic) {
+          if (managementDeviceIds.includes(parseInt(nic.deviceid)) && nic.ipaddress) {
+            managementIps.push(nic.ipaddress)
+          }
+        }
+        if (this.resource.publicip && managementDeviceIds.includes(0)) {
+          managementIps.push(this.resource.publicip)
+        }
+        console.log('managementIps = ' + managementIps)
 
         if (accessMethods) {
           const accessMethodsArray = accessMethods.split(',')
@@ -210,14 +227,12 @@ export default {
             } else if (accessMethod === 'ssh-key') {
               accessMethodsDescription.push('- SSH with key' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
             } else if (accessMethod === 'http') {
-              accessMethodsDescription.push('- Webpage: http://' + this.resource.ipaddress + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
-              if (this.resource.publicip) {
-                accessMethodsDescription.push('- Webpage: http://' + this.resource.publicip + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
+              for (const managementIp of managementIps) {
+                accessMethodsDescription.push('- Webpage: http://' + managementIp + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
               }
             } else if (accessMethod === 'https') {
-              accessMethodsDescription.push('- Webpage: https://' + this.resource.ipaddress + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
-              if (this.resource.publicip) {
-                accessMethodsDescription.push('- Webpage: https://' + this.resource.publicip + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
+              for (const managementIp of managementIps) {
+                accessMethodsDescription.push('- Webpage: https://' + managementIp + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
               }
             }
           }

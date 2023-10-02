@@ -192,6 +192,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vnf_template_nics` (
     `device_id` bigint unsigned NOT NULL COMMENT 'Device id of the NIC when plugged into the VNF appliances',
     `device_name` varchar(1024) NOT NULL COMMENT 'Name of the NIC',
     `required` tinyint NOT NULL DEFAULT '1' COMMENT 'True if the NIC is required. False if optional',
+    `management` tinyint NOT NULL DEFAULT '1' COMMENT 'True if the NIC is a management interface',
     `description` varchar(1024) COMMENT 'Description of the NIC',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_template_id_device_id` (`template_id`, `device_id`),

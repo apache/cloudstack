@@ -64,6 +64,7 @@ public interface VnfTemplateManager {
                 String deviceIdString = nicDetails.get("deviceid");
                 String name = nicDetails.get("name");
                 String requiredString = nicDetails.get("required");
+                String managementString = nicDetails.get("management");
                 String description = nicDetails.get("description");
                 Integer deviceId = null;
                 if (StringUtils.isAnyBlank(name, deviceIdString)) {
@@ -75,7 +76,8 @@ public interface VnfTemplateManager {
                     throw new InvalidParameterValueException("Unable to parse VNF nic deviceId to Integer: " + deviceId);
                 }
                 boolean required = StringUtils.isBlank(requiredString) || Boolean.parseBoolean(requiredString);
-                nicsList.add(new VNF.VnfNic(deviceId, name, required, description));
+                boolean management = StringUtils.isBlank(managementString) || Boolean.parseBoolean(managementString);
+                nicsList.add(new VNF.VnfNic(deviceId, name, required, management, description));
             }
         }
         Collections.sort(nicsList, Comparator.comparing(VNF.VnfNic::getDeviceId));

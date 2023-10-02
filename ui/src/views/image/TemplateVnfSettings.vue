@@ -53,6 +53,10 @@
         <span v-if="record.required">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
       </template>
+      <template #management="{ record }">
+        <span v-if="record.management">{{ $t('label.yes') }}</span>
+        <span v-else>{{ $t('label.no') }}</span>
+      </template>
       <template #description="{record}">
         <span> {{ record.description }} </span>
       </template>
@@ -124,6 +128,13 @@
         </div>
         <div class="new-vnf-nic__item">
           <div class="new-vnf-nic__label">
+            <span class="new-vnf-nic__required">*</span>
+            <tooltip-label :title="$t('label.vnf.nic.management')" :tooltip="$t('label.vnf.nic.management.description')"/>
+          </div>
+          <a-switch v-model:checked="newVnfNic.management" :checked="false" />
+        </div>
+        <div class="new-vnf-nic__item">
+          <div class="new-vnf-nic__label">
             <tooltip-label :title="$t('label.description')"  :tooltip="$t('label.vnf.nic.description')"/>
           </div>
           <a-input v-model:value="newVnfNic.description"></a-input>
@@ -168,6 +179,13 @@
         </div>
         <div class="new-vnf-nic__item">
           <div class="new-vnf-nic__label">
+            <span class="new-vnf-nic__required">*</span>
+            <tooltip-label :title="$t('label.vnf.nic.management')" :tooltip="$t('label.vnf.nic.management.description')"/>
+          </div>
+          <a-switch v-model:checked="newVnfNic.management" :checked="false" />
+        </div>
+        <div class="new-vnf-nic__item">
+          <div class="new-vnf-nic__label">
             <tooltip-label :title="$t('label.description')"  :tooltip="$t('label.vnf.nic.description')"/>
           </div>
           <a-input v-model:value="newVnfNic.description"></a-input>
@@ -209,6 +227,13 @@
             <tooltip-label :title="$t('label.required')" :tooltip="$t('label.vnf.nic.required')"/>
           </div>
           <a-switch v-model:checked="updateVnfNic.required" :checked="true" />
+        </div>
+        <div class="update-vnf-nic__item">
+          <div class="update-vnf-nic__label">
+            <span class="update-vnf-nic__required">*</span>
+            <tooltip-label :title="$t('label.vnf.nic.management')" :tooltip="$t('label.vnf.nic.management.description')"/>
+          </div>
+          <a-switch v-model:checked="updateVnfNic.management" :checked="false" />
         </div>
         <div class="update-vnf-nic__item">
           <div class="update-vnf-nic__label">
@@ -391,12 +416,14 @@ export default {
         deviceid: null,
         name: null,
         required: true,
+        management: false,
         description: null
       },
       updateVnfNic: {
         deviceid: null,
         name: null,
         required: true,
+        management: false,
         description: null
       },
       vnfDetails: [],
@@ -448,6 +475,11 @@ export default {
         title: this.$t('label.required'),
         dataIndex: 'required',
         slots: { customRender: 'required' }
+      },
+      {
+        title: this.$t('label.vnf.nic.management'),
+        dataIndex: 'management',
+        slots: { customRender: 'management' }
       },
       {
         title: this.$t('label.description'),
@@ -533,6 +565,7 @@ export default {
           deviceid: this.newVnfNic.deviceid,
           name: this.newVnfNic.name,
           required: this.newVnfNic.required,
+          management: this.newVnfNic.management,
           description: this.newVnfNic.description
         })
       }
@@ -552,6 +585,7 @@ export default {
       this.updateVnfNic.deviceid = record.deviceid
       this.updateVnfNic.name = record.name
       this.updateVnfNic.required = record.required
+      this.updateVnfNic.management = record.management
       this.updateVnfNic.description = record.description
       this.showEditVnfNic = true
     },
@@ -670,6 +704,7 @@ export default {
           params['vnfnics[' + i + '].deviceid'] = nic.deviceid
           params['vnfnics[' + i + '].name'] = nic.name
           params['vnfnics[' + i + '].required'] = nic.required
+          params['vnfnics[' + i + '].management'] = nic.management
           params['vnfnics[' + i + '].description'] = nic.description
           i++
         }
@@ -747,6 +782,7 @@ export default {
         deviceid: null,
         name: null,
         required: true,
+        management: false,
         description: null
       }
     }

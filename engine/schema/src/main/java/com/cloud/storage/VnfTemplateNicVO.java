@@ -47,17 +47,21 @@ public class VnfTemplateNicVO implements InternalIdentity {
     @Column(name = "required")
     private boolean required = true;
 
+    @Column(name = "management")
+    private boolean management = true;
+
     @Column(name = "description")
     private String description;
 
     public VnfTemplateNicVO() {
     }
 
-    public VnfTemplateNicVO(long templateId, long deviceId, String deviceName, boolean required, String description) {
+    public VnfTemplateNicVO(long templateId, long deviceId, String deviceName, boolean required, boolean management, String description) {
         this.templateId = templateId;
         this.deviceId = deviceId;
         this.deviceName = deviceName;
         this.required = required;
+        this.management = management;
         this.description = description;
     }
 
@@ -83,8 +87,12 @@ public class VnfTemplateNicVO implements InternalIdentity {
         return deviceName;
     }
 
-    public boolean getRequired() {
+    public boolean isRequired() {
         return required;
+    }
+
+    public boolean isManagement() {
+        return management;
     }
 
     public String getDescription() {

@@ -108,36 +108,36 @@ public class VnfTemplateManagerTest {
     @Test
     public void testValidateVnfNicsAllGood() {
         List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, "first NIC"));
-        nicsList.add(new VnfNic(1, "eth1", true, "second NIC"));
-        nicsList.add(new VnfNic(2, "eth2", false, "third NIC"));
+        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
+        nicsList.add(new VnfNic(1, "eth1", true, true, "second NIC"));
+        nicsList.add(new VnfNic(2, "eth2", false, true, "third NIC"));
         VnfTemplateManager.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsStartWithNonzero() {
         List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(1, "eth0", true, "first NIC"));
-        nicsList.add(new VnfNic(2, "eth1", true, "second NIC"));
-        nicsList.add(new VnfNic(3, "eth2", false, "third NIC"));
+        nicsList.add(new VnfNic(1, "eth0", true, true, "first NIC"));
+        nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
+        nicsList.add(new VnfNic(3, "eth2", false, true, "third NIC"));
         VnfTemplateManager.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsWithNonConstantDeviceIds() {
         List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, "first NIC"));
-        nicsList.add(new VnfNic(2, "eth1", true, "second NIC"));
-        nicsList.add(new VnfNic(4, "eth2", false, "third NIC"));
+        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
+        nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
+        nicsList.add(new VnfNic(4, "eth2", false, true, "third NIC"));
         VnfTemplateManager.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsWithInvalidRequired() {
         List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, "first NIC"));
-        nicsList.add(new VnfNic(1, "eth1", false, "second NIC"));
-        nicsList.add(new VnfNic(2, "eth2", true, "third NIC"));
+        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
+        nicsList.add(new VnfNic(1, "eth1", false, true, "second NIC"));
+        nicsList.add(new VnfNic(2, "eth2", true, true, "third NIC"));
         VnfTemplateManager.validateVnfNics(nicsList);
     }
 

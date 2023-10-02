@@ -78,12 +78,14 @@ public interface VNF {
         int deviceId;
         String name;
         boolean required;
+        boolean management;
         String description;
 
-        public VnfNic(int deviceId, String nicName, boolean required, String nicDescription) {
+        public VnfNic(int deviceId, String nicName, boolean required, boolean management, String nicDescription) {
             this.deviceId = deviceId;
             this.name = nicName;
             this.required = required;
+            this.management = management;
             this.description = nicDescription;
         }
 
@@ -97,6 +99,10 @@ public interface VNF {
 
         public boolean isRequired() {
             return required;
+        }
+
+        public boolean isManagement() {
+            return management;
         }
 
         public String getDescription() {

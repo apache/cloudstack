@@ -83,7 +83,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
 
     private void persistVnfTemplateNics(long templateId, List<VNF.VnfNic> nics) {
         for (VNF.VnfNic nic : nics) {
-            VnfTemplateNicVO vnfTemplateNicVO = new VnfTemplateNicVO(templateId, nic.getDeviceId(), nic.getName(), nic.isRequired(), nic.getDescription());
+            VnfTemplateNicVO vnfTemplateNicVO = new VnfTemplateNicVO(templateId, nic.getDeviceId(), nic.getName(), nic.isRequired(), nic.isManagement(), nic.getDescription());
             vnfTemplateNicDao.persist(vnfTemplateNicVO);
         }
     }
@@ -144,7 +144,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
         List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(template.getId());
         for (VnfTemplateNicVO vnfNic : vnfNics) {
-            if (vnfNic.getRequired() && networkIds.size() <= vnfNic.getDeviceId()) {
+            if (vnfNic.isRequired() && networkIds.size() <= vnfNic.getDeviceId()) {
                 throw new InvalidParameterValueException("VNF nic is required but not found: " + vnfNic);
             }
         }

@@ -34,6 +34,10 @@ public class VnfNicResponse {
     @Param(description = "True if the NIC is required. False if optional")
     private Boolean required;
 
+    @SerializedName(ApiConstants.MANAGEMENT)
+    @Param(description = "True if the NIC is a management interface. False otherwise")
+    private Boolean management;
+
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "Description of the NIC")
     private String description;
@@ -58,6 +62,10 @@ public class VnfNicResponse {
         this.required = required;
     }
 
+    public void setManagement(Boolean management) {
+        this.management = management;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
@@ -73,10 +81,11 @@ public class VnfNicResponse {
     public VnfNicResponse() {
     }
 
-    public VnfNicResponse(long deviceId, String name, Boolean required, String description) {
+    public VnfNicResponse(long deviceId, String name, Boolean required, Boolean management, String description) {
         this.deviceId = deviceId;
         this.name = name;
         this.required = required;
+        this.management = management;
         this.description = description;
     }
 }

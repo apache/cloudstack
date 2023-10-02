@@ -1042,6 +1042,7 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
 
+    public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";
     public static final String VNF_NICS = "vnfnics";
     public static final String VNF_DETAILS = "vnfdetails";

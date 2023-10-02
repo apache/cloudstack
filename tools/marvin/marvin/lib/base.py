@@ -6817,4 +6817,3 @@ class VnfTemplate:
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
             cmd.listall = True
         return (apiclient.listVnfTemplates(cmd))
-
