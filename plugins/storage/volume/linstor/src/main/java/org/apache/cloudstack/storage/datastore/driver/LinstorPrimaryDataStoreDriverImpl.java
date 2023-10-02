@@ -435,10 +435,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         ApiCallRcList answers = api.volumeDefinitionModify(resourceName, 0, dfm);
         if (answers.hasError()) {
-            s_logger.error("Resize error: " + answers.get(0).getMessage());
+            logger.error("Resize error: " + answers.get(0).getMessage());
             throw new CloudRuntimeException(answers.get(0).getMessage());
         } else {
-            s_logger.info(String.format("Successfully resized %s to %d kib", resourceName, dfm.getSizeKib()));
+            logger.info(String.format("Successfully resized %s to %d kib", resourceName, dfm.getSizeKib()));
         }
     }
 
