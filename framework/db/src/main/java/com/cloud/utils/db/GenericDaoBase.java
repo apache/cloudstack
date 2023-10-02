@@ -919,7 +919,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(final SearchCriteria<T> sc) {
+    public List<T> listBy(final SearchCriteria<T> sc) {
         return listBy(sc, null);
     }
 

@@ -16,49 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -112,6 +69,47 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -304,7 +302,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void validateInputsAndPermissionForUpdateVirtualMachineCommandTest() {
         Mockito.doNothing().when(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
 
@@ -779,7 +776,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataVMStateNotStopped() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -805,7 +801,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataDontAcceptBothUserdataAndUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -834,7 +829,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdata() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
@@ -874,7 +868,6 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void testResetVMUserDataSuccessResetWithUserdataId() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();

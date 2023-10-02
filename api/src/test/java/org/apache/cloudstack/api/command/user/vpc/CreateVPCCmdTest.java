@@ -30,14 +30,15 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CreateVPCCmdTest extends TestCase {
 
     @Mock
@@ -48,97 +49,107 @@ public class CreateVPCCmdTest extends TestCase {
     public AccountService _accountService;
     private ResponseGenerator responseGenerator;
     @InjectMocks
-    CreateVPCCmd cmd = new CreateVPCCmd() {
-        @Override
-        public Long getEntityId() {
-            return 2L;
-        }
-    };
+    CreateVPCCmd cmd = new CreateVPCCmd();
 
+    @Test
     public void testGetAccountName() {
         String accountName = "admin";
         ReflectionTestUtils.setField(cmd, "accountName", accountName);
         Assert.assertEquals(cmd.getAccountName(), accountName);
     }
 
+    @Test
     public void testGetDomainId() {
         Long domainId = 1L;
         ReflectionTestUtils.setField(cmd, "domainId", domainId);
         Assert.assertEquals(cmd.getDomainId(), domainId);
     }
 
+    @Test
     public void testGetZoneId() {
         Long zoneId = 1L;
         ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
         Assert.assertEquals(cmd.getZoneId(), zoneId);
     }
 
+    @Test
     public void testGetVpcName() {
         String vpcName = "vpcNet";
         ReflectionTestUtils.setField(cmd, "vpcName", vpcName);
         Assert.assertEquals(cmd.getVpcName(), vpcName);
     }
 
+    @Test
     public void testGetCidr() {
         String cidr = "10.0.0.0/8";
         ReflectionTestUtils.setField(cmd, "cidr", cidr);
         Assert.assertEquals(cmd.getCidr(), cidr);
     }
 
+    @Test
     public void testGetDisplayText() {
         String displayText = "VPC Network";
         ReflectionTestUtils.setField(cmd, "displayText", displayText);
         Assert.assertEquals(cmd.getDisplayText(), displayText);
     }
 
+    @Test
     public void testGetVpcOffering() {
         Long vpcOffering = 1L;
         ReflectionTestUtils.setField(cmd, "vpcOffering", vpcOffering);
         Assert.assertEquals(cmd.getVpcOffering(), vpcOffering);
     }
 
+    @Test
     public void testGetNetworkDomain() {
         String netDomain = "cs1cloud.internal";
         ReflectionTestUtils.setField(cmd, "networkDomain", netDomain);
         Assert.assertEquals(cmd.getNetworkDomain(), netDomain);
     }
 
+    @Test
     public void testGetPublicMtuWhenNotSet() {
         Integer publicMtu = null;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
         Assert.assertEquals(NetworkService.DEFAULT_MTU, cmd.getPublicMtu());
     }
 
+    @Test
     public void testGetPublicMtuWhenSet() {
         Integer publicMtu = 1450;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
         Assert.assertEquals(cmd.getPublicMtu(), publicMtu);
     }
 
+    @Test
     public void testIsStartWhenNull() {
         Boolean start = null;
         ReflectionTestUtils.setField(cmd, "start", start);
         Assert.assertTrue(cmd.isStart());
     }
 
+    @Test
     public void testIsStartWhenValidValuePassed() {
         Boolean start = true;
         ReflectionTestUtils.setField(cmd, "start", start);
         Assert.assertTrue(cmd.isStart());
     }
 
+    @Test
     public void testGetDisplayVpc() {
         Boolean display = true;
         ReflectionTestUtils.setField(cmd, "display", display);
         Assert.assertTrue(cmd.getDisplayVpc());
     }
 
+    @Test
     public void testGetDisplayTextWhenEmpty() {
         String netName = "net-vpc";
         ReflectionTestUtils.setField(cmd, "vpcName", netName);
         Assert.assertEquals(cmd.getDisplayText(), netName);
     }
 
+    @Test
     public void testCreate() throws ResourceAllocationException {
         Vpc vpc = Mockito.mock(Vpc.class);
         ReflectionTestUtils.setField(cmd, "zoneId", 1L);
@@ -149,17 +160,18 @@ public class CreateVPCCmdTest extends TestCase {
         ReflectionTestUtils.setField(cmd, "networkDomain", "cs1cloud.internal");
         ReflectionTestUtils.setField(cmd, "display", true);
         ReflectionTestUtils.setField(cmd, "publicMtu", 1450);
-        Mockito.when(_accountService.finalyzeAccountId(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(1L);
-        Mockito.when(cmd.getEntityOwnerId()).thenReturn(1L);
         Mockito.when(_vpcService.createVpc(Mockito.any(CreateVPCCmd.class))).thenReturn(vpc);
         cmd.create();
         Mockito.verify(_vpcService, Mockito.times(1)).createVpc(Mockito.any(CreateVPCCmd.class));
     }
 
+    @Test
     public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
         ReflectionTestUtils.setField(cmd, "start", true);
         Vpc vpc = Mockito.mock(Vpc.class);
         VpcResponse response = Mockito.mock(VpcResponse.class);
+
+        ReflectionTestUtils.setField(cmd, "id", 1L);
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         Mockito.when(_vpcService.startVpc(1L, true)).thenReturn(true);
         Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.any(Long.class))).thenReturn(vpc);
