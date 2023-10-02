@@ -431,18 +431,22 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         addVmRxTxDataToResponse(userVm, userVmResponse);
 
         if (TemplateType.VNF.equals(userVm.getTemplateType()) && (details.contains(VMDetails.all) || details.contains(VMDetails.vnfnics))) {
-            List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(userVm.getTemplateId());
-            for (VnfTemplateNicVO nic : vnfNics) {
-                userVmResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.isRequired(), nic.isManagement(), nic.getDescription()));
-            }
-            List<VnfTemplateDetailVO> vnfDetails = vnfTemplateDetailsDao.listDetails(userVm.getTemplateId());
-            Collections.sort(vnfDetails, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));
-            for (VnfTemplateDetailVO detail : vnfDetails) {
-                userVmResponse.addVnfDetail(detail.getName(), detail.getValue());
-            }
+            addVnfInfoToserVmResponse(userVm, userVmResponse);
         }
 
         return userVmResponse;
+    }
+
+    private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {
+        List<VnfTemplateNicVO> vnfNics = vnfTemplateNicDao.listByTemplateId(userVm.getTemplateId());
+        for (VnfTemplateNicVO nic : vnfNics) {
+            userVmResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.isRequired(), nic.isManagement(), nic.getDescription()));
+        }
+        List<VnfTemplateDetailVO> vnfDetails = vnfTemplateDetailsDao.listDetails(userVm.getTemplateId());
+        Collections.sort(vnfDetails, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));
+        for (VnfTemplateDetailVO detail : vnfDetails) {
+            userVmResponse.addVnfDetail(detail.getName(), detail.getValue());
+        }
     }
 
     private void addVmRxTxDataToResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {

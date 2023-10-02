@@ -138,6 +138,4 @@ public interface TemplateManager {
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones);
 
     List<DatadiskTO> getTemplateDisksOnImageStore(Long templateId, DataStoreRole role, String configurationId);
-
-
 }

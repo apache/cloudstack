@@ -60,12 +60,16 @@ class TestVnfTemplates(cloudstackTestCase):
             cls.apiclient,
             cls.services["domain"]
         )
+        cls._cleanup.append(cls.domain)
+
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
+
         cls.user = cls.account.user[0]
         cls.user_apiclient = cls.testClient.getUserApiClient(
             cls.user.username, cls.domain.name
@@ -75,12 +79,7 @@ class TestVnfTemplates(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["big"]
         )
-
-        cls._cleanup = [
-            cls.service_offering,
-            cls.domain,
-            cls.account
-        ]
+        cls._cleanup.append(cls.service_offering)
 
         cls.vnf_template_config = {
             "name": "pfsense",
