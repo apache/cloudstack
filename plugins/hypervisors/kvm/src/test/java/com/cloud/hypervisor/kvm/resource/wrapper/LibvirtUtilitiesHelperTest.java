@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,8 +29,6 @@ import com.cloud.utils.Pair;
 
 import junit.framework.TestCase;
 
-import java.util.Map;
-
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtUtilitiesHelperTest extends TestCase {
 
@@ -39,12 +36,6 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
 
     @Mock
     Connect connectMock;
-
-    private static final long virtualSize = 123456;
-    private static final long diskSize = 111111;
-    private final Map<String, String> info = Map.of(
-            QemuImg.VIRTUAL_SIZE, String.valueOf(virtualSize),
-            QemuImg.DISK_SIZE, String.valueOf(diskSize));
 
     @Test
     public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterExceptionOnRetrievingLibvirtVersionReturnsFalse() throws LibvirtException {
@@ -83,27 +74,5 @@ public class LibvirtUtilitiesHelperTest extends TestCase {
 
         Assert.assertEquals(String.valueOf(libvirtVersion), result.first());
         Assert.assertTrue(result.second());
-    }
-
-    @Test
-    public void testGetSizesFromQemuInfoVirtualSize() {
-        long[] sizes = LibvirtUtilitiesHelper.getSizesFromQemuInfo(info, "path", QemuImg.VIRTUAL_SIZE);
-        Assert.assertEquals(1, sizes.length);
-        Assert.assertEquals(virtualSize, sizes[0]);
-    }
-
-    @Test
-    public void testGetSizesFromQemuInfoDiskSize() {
-        long[] sizes = LibvirtUtilitiesHelper.getSizesFromQemuInfo(info, "path", QemuImg.DISK_SIZE);
-        Assert.assertEquals(1, sizes.length);
-        Assert.assertEquals(diskSize, sizes[0]);
-    }
-
-    @Test
-    public void testGetSizesFromQemuInfoMultipleSizes() {
-        long[] sizes = LibvirtUtilitiesHelper.getSizesFromQemuInfo(info, "path", QemuImg.VIRTUAL_SIZE, QemuImg.DISK_SIZE);
-        Assert.assertEquals(2, sizes.length);
-        Assert.assertEquals(virtualSize, sizes[0]);
-        Assert.assertEquals(diskSize, sizes[1]);
     }
 }

@@ -24,10 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,19 +34,9 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.HypervisorGuru;
-import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateDetailVO;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -144,15 +132,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     protected SecondaryStorageVmDao _secStorageVmDao;
     @Inject
     AgentManager agentMgr;
-    @Inject
-    VMTemplateDetailsDao templateDetailsDao;
-    @Inject
-    HypervisorGuruManager hypervisorGuruManager;
-
-    private static final List<String> templateFromVmwareToKVMDetails = Arrays.asList(VmDetailConstants.VMWARE_VCENTER_HOST,
-            VmDetailConstants.VMWARE_DATACENTER_NAME, VmDetailConstants.VMWARE_VCENTER_USERNAME,
-            VmDetailConstants.VMWARE_VCENTER_PASSWORD, VmDetailConstants.VMWARE_HOST_NAME,
-            VmDetailConstants.VMWARE_VM_NAME);
 
     protected String _proxy = null;
 
@@ -241,24 +220,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                     LOGGER.debug("Template is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
-            } else if (template.isMigratedFromVmwareVMToKVM() && answer != null && answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
-                if (ovfInformationTO != null) {
-                    List<DatadiskTO> disks = ovfInformationTO.getDisks();
-                    if (CollectionUtils.isNotEmpty(disks)) {
-                        persistTemplateDisksAsChildrenFromMigratedVmwareVm(template.getId(), disks, store.getId());
-                    }
-                    List<OVFNetworkTO> networks = ovfInformationTO.getNetworks();
-                    if (CollectionUtils.isNotEmpty(networks)) {
-                        persistTemplatePresetMacAddresses(template.getId(), networks);
-                    }
-                }
-                List<VMTemplateDetailVO> details = templateDetailsDao.listDetails(template.getId());
-                if (CollectionUtils.isNotEmpty(details)) {
-                    Map<String, String> params = createRemoveDetails(details);
-                    HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
-                    vmwareGuru.removeHypervisorVMOutOfBand(params.get(VmDetailConstants.VMWARE_HOST_NAME), params.get(VmDetailConstants.VMWARE_VM_NAME), params);
-                }
             }
             LOGGER.info("Updating store ref entry for template " + template.getName());
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
@@ -300,73 +261,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             caller.complete(result);
         }
         return null;
-    }
-
-    private void persistTemplatePresetMacAddresses(long templateId, List<OVFNetworkTO> networks) {
-        List<String> macAddresses = networks.stream().map(OVFNetworkTO::getNicDescription).collect(Collectors.toList());
-        String value = GsonHelper.getGson().toJson(macAddresses);
-        String key = VmDetailConstants.VMWARE_MAC_ADDRESSES;
-        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
-        templateDetailsDao.persist(detailVO);
-    }
-
-    private Map<String, String> createRemoveDetails(List<VMTemplateDetailVO> details) {
-        Map<String, String> params = new HashMap<>();
-        for (VMTemplateDetailVO detail : details) {
-            if (templateFromVmwareToKVMDetails.contains(detail.getName())) {
-                params.put(detail.getName(), detail.getValue());
-            }
-        }
-        return params;
-    }
-
-    protected void persistTemplateDisksAsChildrenFromMigratedVmwareVm(long templateId, List<DatadiskTO> disks,
-                                                                      long storeId) {
-        LOGGER.debug(String.format("Persisting template children for template: %s", templateId));
-        for (DatadiskTO disk : disks) {
-            VMTemplateVO childTemplate = createChildTemplateChildEntry(templateId, disk);
-            createChildTemplateStoreRefEntry(childTemplate, disk, storeId);
-            persistDiskDetailsOnParentTemplate(templateId, disk, childTemplate.getId());
-        }
-    }
-
-    protected void persistDiskDetailsOnParentTemplate(long templateId, DatadiskTO disk, Long childTemplateId) {
-        LOGGER.debug(String.format("Persisting disk detail on parent template: %s", templateId));
-        disk.setTemplateId(childTemplateId);
-        String value = GsonHelper.getGson().toJson(disk);
-        String key = String.format("%s-%d", VmDetailConstants.VMWARE_DISK, disk.getDiskNumber());
-        VMTemplateDetailVO detailVO = new VMTemplateDetailVO(templateId, key, value, false);
-        templateDetailsDao.persist(detailVO);
-    }
-
-    protected void createChildTemplateStoreRefEntry(VMTemplateVO childTemplate, DatadiskTO disk,
-                                                    long storeId) {
-        LOGGER.debug(String.format("Persisting template child store ref for template: %s for disk %s in store %s",
-                childTemplate.getId(), disk.getDiskNumber(), storeId));
-        TemplateDataStoreVO tmpltStore = new TemplateDataStoreVO(storeId, childTemplate.getId(), new Date(), 100,
-                VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null,
-                null, disk.getPath(), childTemplate.getUrl());
-        tmpltStore.setSize(disk.getVirtualSize());
-        tmpltStore.setPhysicalSize(disk.getFileSize());
-        tmpltStore.setDataStoreRole(DataStoreRole.Image);
-        _templateStoreDao.persist(tmpltStore);
-    }
-
-    protected VMTemplateVO createChildTemplateChildEntry(long templateId, DatadiskTO disk) {
-        LOGGER.debug(String.format("Persisting template child for template: %s for disk %s", templateId, disk.getDiskNumber()));
-        VMTemplateVO parentTemplate = _templateDao.findById(templateId);
-        Storage.ImageFormat format = parentTemplate.getFormat();
-        String suffix = "DataDiskTemplate";
-        Storage.TemplateType templateType = Storage.TemplateType.DATADISK;
-        final long childTemplateId = _templateDao.getNextInSequence(Long.class, "id");
-        long guestOsId = 0;
-        String templateName = String.format("%s-%s-%d", parentTemplate.getName(), suffix, disk.getDiskNumber());
-        VMTemplateVO childTemplate = new VMTemplateVO(childTemplateId, templateName, format, false, false, false, templateType, parentTemplate.getUrl(),
-                parentTemplate.requiresHvm(), parentTemplate.getBits(), parentTemplate.getAccountId(), null, templateName, false, guestOsId, false, parentTemplate.getHypervisorType(), null,
-                null, false, false, false, false);
-        childTemplate.setParentTemplateId(parentTemplate.getId());
-        childTemplate.setSize(disk.getVirtualSize());
-        return _templateDao.persist(childTemplate);
     }
 
     protected Void

@@ -107,6 +107,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.URL,
                type = CommandType.STRING,
+               required = true,
                length = 2048,
                description = "the URL of where the template is hosted. Possible URL include http:// and https://")
     private String url;
@@ -329,7 +330,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         }
     }
 
-    protected void baseParametersValidation() {
+    protected void validateParameters() {
         if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Both zoneid and zoneids cannot be specified at the same time");
@@ -352,13 +353,5 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         if (!isDeployAsIs() && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a guest OS type");
         }
-    }
-
-    protected void validateParameters() {
-        if (StringUtils.isBlank(url)) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    String.format("Missing parameter: %s", ApiConstants.URL));
-        }
-        baseParametersValidation();
     }
 }

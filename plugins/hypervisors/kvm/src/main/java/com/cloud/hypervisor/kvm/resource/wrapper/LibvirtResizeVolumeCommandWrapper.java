@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.hypervisor.kvm.storage.ScaleIOStorageAdaptor;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -95,7 +97,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                 newSize = ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(newSize);
             } else if (spool.getType().equals(StoragePoolType.PowerFlex)) {
                 // PowerFlex RAW/LUKS is already resized, we just notify the domain based on new size (considering LUKS overhead)
-                newSize = LibvirtUtilitiesHelper.getVirtualSizeFromFile(path);
+                newSize = getVirtualSizeFromFile(path);
             }
 
             if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex) {
@@ -206,6 +208,21 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             throw new CloudRuntimeException("Failed to create keyfile for encrypted resize", ex);
         } finally {
             Arrays.fill(passphrase, (byte) 0);
+        }
+    }
+
+    private long getVirtualSizeFromFile(String path) {
+        try {
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(path);
+            Map<String, String> info = qemu.info(qemuFile);
+            if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
+                return Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+            } else {
+                throw new CloudRuntimeException("Unable to determine virtual size of volume at path " + path);
+            }
+        } catch (QemuImgException | LibvirtException ex) {
+            throw new CloudRuntimeException("Error when inspecting volume at path " + path, ex);
         }
     }
 }

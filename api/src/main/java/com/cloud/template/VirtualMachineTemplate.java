@@ -144,8 +144,6 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     boolean isDeployAsIs();
 
-    boolean isMigratedFromVmwareVMToKVM();
-
     Long getUserDataId();
 
     UserData.UserDataOverridePolicy getUserDataOverridePolicy();

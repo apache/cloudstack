@@ -330,7 +330,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
             caller.setContext(context);
-
             imageService.createTemplateAsync(tmpl, imageStore, caller);
         }
     }

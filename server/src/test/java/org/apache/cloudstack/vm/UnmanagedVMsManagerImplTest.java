@@ -316,7 +316,7 @@ public class UnmanagedVMsManagerImplTest {
     public void listUnmanagedInstancesInvalidHypervisorTest() {
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
-        cluster.setHypervisorType(Hypervisor.HypervisorType.KVM.toString());
+        cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
         when(clusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         unmanagedVMsManager.listUnmanagedInstances(cmd);
     }

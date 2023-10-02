@@ -23,7 +23,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -192,8 +191,6 @@ public class TemplateManagerImplTest {
 
     @Inject
     AccountManager _accountMgr;
-    @Inject
-    VmwareDatacenterDao vmwareDatacenterDao;
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
@@ -653,11 +650,6 @@ public class TemplateManagerImplTest {
         @Bean
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
-        }
-
-        @Bean
-        public VmwareDatacenterDao vmwareDatacenterDao() {
-            return Mockito.mock(VmwareDatacenterDao.class);
         }
 
         @Bean

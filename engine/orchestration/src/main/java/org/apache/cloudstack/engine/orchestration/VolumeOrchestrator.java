@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.serializer.GsonHelper;
-import com.cloud.storage.VMTemplateDetailVO;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -899,8 +897,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         Long size = _tmpltMgr.getTemplateSize(template.getId(), vm.getDataCenterId());
         if (rootDisksize != null) {
-            if (template.isDeployAsIs() || template.isMigratedFromVmwareVMToKVM()) {
-                // Volume size specified from template deploy-as-is and VMware-migrated VMs
+            if (template.isDeployAsIs()) {
+                // Volume size specified from template deploy-as-is
                 size = rootDisksize;
             } else {
                 rootDisksize = rootDisksize * 1024 * 1024 * 1024;
@@ -982,7 +980,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         List<DatadiskTO> templateAsIsDisks = null;
         String configurationId = null;
         boolean deployVmAsIs = false;
-        boolean migratedFromVmwareVm = false;
         if (template.isDeployAsIs() && vm.getType() != VirtualMachine.Type.SecondaryStorageVm) {
             List<SecondaryStorageVmVO> runningSSVMs = secondaryStorageVmDao.getSecStorageVmListInStates(null, vm.getDataCenterId(), State.Running);
             if (CollectionUtils.isEmpty(runningSSVMs)) {
@@ -1003,10 +1000,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 volumesNumber = templateAsIsDisks.size();
                 deployVmAsIs = true;
             }
-        } else if (template.isMigratedFromVmwareVMToKVM()) {
-            templateAsIsDisks = getMigratedVmToTemplateDisks(template, rootDisksize);
-            volumesNumber = templateAsIsDisks.size();
-            migratedFromVmwareVm = true;
         }
 
         if (volumesNumber < 1) {
@@ -1015,24 +1008,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<DiskProfile> profiles = new ArrayList<>();
 
-        VirtualMachineTemplate baseTemplate = template;
         for (int number = 0; number < volumesNumber; number++) {
             String volumeName = name;
             Long volumeSize = rootDisksize;
             long deviceId = type.equals(Type.ROOT) ? 0L : 1L;
-            if (deployVmAsIs || migratedFromVmwareVm) {
+            if (deployVmAsIs) {
                 int volumeNameSuffix = templateAsIsDisks.get(number).getDiskNumber();
                 volumeName = String.format("%s-%d", volumeName, volumeNameSuffix);
                 volumeSize = templateAsIsDisks.get(number).getVirtualSize();
                 deviceId = templateAsIsDisks.get(number).getDiskNumber();
-                if (migratedFromVmwareVm) {
-                    Long childTemplateId = templateAsIsDisks.get(number).getTemplateId();
-                    baseTemplate = tmplFactory.getTemplate(childTemplateId, DataStoreRole.Image);
-                }
             }
             s_logger.info(String.format("Adding disk object [%s] to VM [%s]", volumeName, vm));
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    baseTemplate, vm, owner, deviceId, configurationId);
+                    template, vm, owner, deviceId, configurationId);
             profiles.add(diskProfile);
         }
 
@@ -1040,29 +1028,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         handleRootDiskControllerTpeForDeployAsIs(templateAsIsDisks, vm);
         return profiles;
-    }
-
-    protected List<DatadiskTO> getMigratedVmToTemplateDisks(VirtualMachineTemplate template, Long rootDisksize) {
-        List<DatadiskTO> disks = new ArrayList<>();
-        DatadiskTO rootDisk = new DatadiskTO();
-        rootDisk.setVirtualSize(rootDisksize);
-        rootDisk.setDiskNumber(0);
-        rootDisk.setTemplateId(template.getId());
-        disks.add(rootDisk);
-
-        List<VMTemplateDetailVO> details = templateDetailsDao.listDetails(template.getId());
-        if (CollectionUtils.isNotEmpty(details)) {
-            List<VMTemplateDetailVO> diskDetails = details.stream()
-                    .filter(x -> x.getName().startsWith(VmDetailConstants.VMWARE_DISK))
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(diskDetails)) {
-                for (VMTemplateDetailVO detailVO : diskDetails) {
-                    DatadiskTO disk = GsonHelper.getGson().fromJson(detailVO.getValue(), DatadiskTO.class);
-                    disks.add(disk);
-                }
-            }
-        }
-        return disks;
     }
 
     /**
