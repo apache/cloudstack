@@ -524,7 +524,12 @@ export default {
       this.previousVnfDetails = []
       if (this.resource.vnfdetails) {
         this.previousVnfDetails = Object.keys(this.resource.vnfdetails).map(k => {
-          return { name: k, value: this.resource.vnfdetails[k], values: this.resource.vnfdetails[k].split(','), edit: false }
+          return {
+            name: k,
+            value: this.resource.vnfdetails[k],
+            values: k === 'access_methods' ? this.resource.vnfdetails[k].split(',') : null,
+            edit: false
+          }
         })
       }
       api('listDetailOptions', { resourcetype: this.resourceType }).then(json => {
@@ -714,7 +719,12 @@ export default {
         this.vnfNics = json.updatetemplateresponse.template.vnfnics || []
         const details = json.updatetemplateresponse.template.vnfdetails || []
         this.vnfDetails = Object.keys(details).map(k => {
-          return { name: k, value: details[k], values: details[k].split(','), edit: false }
+          return {
+            name: k,
+            value: details[k],
+            values: k === 'access_methods' ? details[k].split(',') : null,
+            edit: false
+          }
         })
         this.previousVnfNics = this.vnfNics.slice()
         this.previousVnfDetails = this.vnfDetails.slice()
