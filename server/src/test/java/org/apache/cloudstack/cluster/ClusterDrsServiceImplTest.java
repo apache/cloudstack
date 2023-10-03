@@ -27,9 +27,6 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -58,13 +55,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.naming.ConfigurationException;
@@ -79,9 +74,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GlobalLock.class, ActionEventUtils.class})
-@PowerMockIgnore("javax.management.*")
+@RunWith(MockitoJUnitRunner.class)
 public class ClusterDrsServiceImplTest {
 
     @Mock
@@ -126,6 +119,8 @@ public class ClusterDrsServiceImplTest {
     @InjectMocks
     private ClusterDrsServiceImpl clusterDrsService = new ClusterDrsServiceImpl();
 
+    private MockedStatic<GlobalLock> globalLockMocked;
+
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
@@ -141,14 +136,14 @@ public class ClusterDrsServiceImplTest {
         f.set(clusterDrsService.ClusterDrsAlgorithm, "balanced");
         Mockito.when(cmd.getId()).thenReturn(1L);
 
-        PowerMockito.mockStatic(GlobalLock.class);
+        globalLockMocked = Mockito.mockStatic(GlobalLock.class);
         GlobalLock lock = Mockito.mock(GlobalLock.class);
-        PowerMockito.when(GlobalLock.getInternLock("cluster.drs.1")).thenReturn(lock);
-        Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
+        Mockito.when(GlobalLock.getInternLock("cluster.drs.1")).thenReturn(lock);
     }
 
     @After
     public void tearDown() throws Exception {
+        globalLockMocked.close();
         closeable.close();
     }
 
@@ -158,12 +153,10 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
-    public void testGetDrsPlan() throws ConfigurationException, ManagementServerException,
-                                        ResourceUnavailableException, VirtualMachineMigrationException {
+    public void testGetDrsPlan() throws ConfigurationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
 
         HostVO host1 = Mockito.mock(HostVO.class);
         Mockito.when(host1.getId()).thenReturn(1L);
@@ -173,7 +166,6 @@ public class ClusterDrsServiceImplTest {
 
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(1L);
-        Mockito.when(vm1.getInstanceName()).thenReturn("testVM1");
         Mockito.when(vm1.getHostId()).thenReturn(1L);
 
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
@@ -251,7 +243,6 @@ public class ClusterDrsServiceImplTest {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getName()).thenReturn("testCluster");
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.ExternalManaged);
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
 
@@ -263,7 +254,6 @@ public class ClusterDrsServiceImplTest {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getName()).thenReturn("testCluster");
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
 
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(cmd.getMaxMigrations()).thenReturn(0);
@@ -276,7 +266,6 @@ public class ClusterDrsServiceImplTest {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(clusterDrsService.getDrsPlan(cluster, 5)).thenThrow(new ConfigurationException("test"));
         Mockito.when(cmd.getMaxMigrations()).thenReturn(1);
@@ -289,7 +278,6 @@ public class ClusterDrsServiceImplTest {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
         Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(cluster.getClusterType()).thenReturn(Cluster.ClusterType.CloudManaged);
 
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getId()).thenReturn(1L);
@@ -311,17 +299,18 @@ public class ClusterDrsServiceImplTest {
         Mockito.when(clusterDrsService.getResponseObjectForMigrations(Mockito.anyList())).thenReturn(
                 List.of(migrationResponse));
 
-        PowerMockito.mockStatic(ActionEventUtils.class);
-        PowerMockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
-                Mockito.anyLong(),
-                Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+        try(MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
-        ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(
-                cmd);
+            ClusterDrsPlanResponse response = clusterDrsService.generateDrsPlan(
+                    cmd);
 
-        assertEquals(1L, response.getMigrationPlans().size());
-        assertEquals(migrationResponse, response.getMigrationPlans().get(0));
+            assertEquals(1L, response.getMigrationPlans().size());
+            assertEquals(migrationResponse, response.getMigrationPlans().get(0));
+        }
     }
 
     @Test
