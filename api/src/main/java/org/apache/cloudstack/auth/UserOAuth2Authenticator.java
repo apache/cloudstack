@@ -49,5 +49,5 @@ public interface UserOAuth2Authenticator extends Adapter {
      * Fetches email using the accessToken
      * @return returns email
      */
-    String getUserEmailAddress(String accessToken) throws CloudRuntimeException;
+    String getUserEmailAddress() throws CloudRuntimeException;
 }

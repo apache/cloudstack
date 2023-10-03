@@ -1401,6 +1401,7 @@
 "label.numretries": "Number of retries",
 "label.nvpdeviceid": "ID",
 "label.oauth.configuration": "OAuth configuration",
+"label.oauth.verification": "OAuth verification",
 "label.ocfs2": "OCFS2",
 "label.of": "of",
 "label.of.month": "of month",

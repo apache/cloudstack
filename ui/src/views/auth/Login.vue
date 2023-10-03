@@ -161,7 +161,7 @@
       </div>
       <div class="social-auth" v-if="githubprovider">
         <a-button
-          @click="handledomain"
+          @click="handleGithubProviderAndDomain"
           tag="a"
           color="primary"
           :href="getGitHubUrl(from)"
@@ -169,6 +169,18 @@
           style="height: 38px; width: 185px; padding: 0" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
           <a-text>Sign in with Github</a-text>
+        </a-button>
+      </div>
+      <div class="social-auth" v-if="googleprovider">
+        <a-button
+          @click="handleGoogleProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getGoogleUrl(from)"
+          class="auth-btn google-auth"
+          style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+          <a-text>Sign in with Google</a-text>
         </a-button>
       </div>
     </div>
@@ -318,7 +330,15 @@ export default {
         console.log(e)
       }
     },
-    handledomain () {
+    handleGithubProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'github')
+    },
+    handleGoogleProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
+    },
+    handleDomain () {
       const values = toRaw(this.form)
       if (!values.domain) {
         this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')

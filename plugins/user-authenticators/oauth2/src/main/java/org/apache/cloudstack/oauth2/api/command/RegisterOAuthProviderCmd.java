@@ -50,7 +50,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CLIENT_ID, type = CommandType.STRING, description = "Client ID pre-registered in the specific OAuth provider", required = true)
     private String clientId;
 
-    @Parameter(name = ApiConstants.OAUTH_SECRET_KEY, type = CommandType.STRING, description = "Secret Key pre-registered in the specific OAuth provider")
+    @Parameter(name = ApiConstants.OAUTH_SECRET_KEY, type = CommandType.STRING, description = "Secret Key pre-registered in the specific OAuth provider", required = true)
     private String secretKey;
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)

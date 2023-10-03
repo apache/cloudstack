@@ -41,6 +41,8 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     @Inject
     OauthProviderDao _oauthProviderDao;
 
+    private String accessToken = null;
+
     @Override
     public String getName() {
         return "github";
@@ -59,8 +61,15 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
         OauthProviderVO providerVO = _oauthProviderDao.findByProvider(getName());
         if (providerVO == null) {
-            throw new CloudRuntimeException("Google provider is not registered, so user cannot be verified");
+            throw new CloudRuntimeException("Github provider is not registered, so user cannot be verified");
         }
+
+        String verifiedEmail = getUserEmailAddress();
+        if (verifiedEmail == null || !email.equals(verifiedEmail)) {
+            throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
+        }
+
+        clearAccessToken();
 
         return true;
     }
@@ -71,13 +80,13 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         if (accessToken == null) {
             return null;
         }
-        return getUserEmailAddress(accessToken);
+        return getUserEmailAddress();
     }
 
     protected String getAccessToken(String secretCode) throws CloudRuntimeException {
         OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
         String tokenUrl = "https://github.com/login/oauth/access_token";
-        String accessToken = null;
+        String generatedAccessToken = null;
         try {
             URL url = new URL(tokenUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -104,7 +113,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
                     Pattern pattern = Pattern.compile(regexPattern);
                     Matcher matcher = pattern.matcher(response);
                     if (matcher.find()) {
-                        accessToken = matcher.group(1);
+                        generatedAccessToken = matcher.group(1);
                     } else {
                         throw new CloudRuntimeException("Could not fetch access token from the given code");
                     }
@@ -116,10 +125,15 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudRuntimeException(String.format("Error while trying to fetch the github access token : %s", e.getMessage()));
         }
 
+        accessToken = generatedAccessToken;
         return accessToken;
     }
 
-    public String getUserEmailAddress(String accessToken) throws CloudRuntimeException {
+    public String getUserEmailAddress() throws CloudRuntimeException {
+        if (accessToken == null) {
+            throw new CloudRuntimeException("Access Token not found to fetch the email address");
+        }
+
         String apiUrl = "https://api.github.com/user/emails";
         String email = null;
         try {
@@ -157,5 +171,9 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         }
 
         return email;
+    }
+
+    private void clearAccessToken() {
+        accessToken = null;
     }
 }

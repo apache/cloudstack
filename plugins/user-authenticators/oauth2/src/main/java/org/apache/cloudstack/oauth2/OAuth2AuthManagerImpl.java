@@ -147,9 +147,6 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (providerVO != null) {
             throw new CloudRuntimeException(String.format("Provider with the name %s is already registered", provider));
         }
-        if (provider.equals("github") && secretKey == null) {
-            throw new CloudRuntimeException("Github provider required secret key to be registered");
-        }
 
         return saveOauthProvider(provider, description, clientId, secretKey, redirectUri);
     }

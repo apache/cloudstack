@@ -24,7 +24,7 @@
 import store from '@/store'
 import { mapActions } from 'vuex'
 import { api } from '@/api'
-import { OAUTH_DOMAIN } from '@/store/mutation-types'
+import { OAUTH_DOMAIN, OAUTH_PROVIDER } from '@/store/mutation-types'
 
 export default {
   name: 'VerifyOauth',
@@ -45,12 +45,13 @@ export default {
     verifyOauth () {
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
+      const provider = this.$localStorage.get(OAUTH_PROVIDER)
       this.state.loginBtn = true
-      api('verifyOAuthCodeAndGetUser', { provider: 'github', secretcode: code }).then(response => {
+      api('verifyOAuthCodeAndGetUser', { provider: provider, secretcode: code }).then(response => {
         const email = response.verifyoauthcodeandgetuserresponse.oauthemail.email
         const loginParams = {}
         loginParams.email = email
-        loginParams.provider = 'github'
+        loginParams.provider = provider
         loginParams.secretcode = code
         loginParams.domain = this.$localStorage.get(OAUTH_DOMAIN)
         this.OauthLogin(loginParams)

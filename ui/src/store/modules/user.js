@@ -37,7 +37,8 @@ import {
   DOMAIN_STORE,
   DARK_MODE,
   CUSTOM_COLUMNS,
-  OAUTH_DOMAIN
+  OAUTH_DOMAIN,
+  OAUTH_PROVIDER
 } from '@/store/mutation-types'
 
 const user = {
@@ -163,6 +164,9 @@ const user = {
     },
     SET_DOMAIN_USED_TO_LOGIN: (state, domain) => {
       vueProps.$localStorage.set(OAUTH_DOMAIN, domain)
+    },
+    SET_OAUTH_PROVIDER_USED_TO_LOGIN: (state, provider) => {
+      vueProps.$localStorage.set(OAUTH_PROVIDER, provider)
     }
   },
 

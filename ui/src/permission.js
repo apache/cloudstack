@@ -137,7 +137,11 @@ router.beforeEach((to, from, next) => {
     if (allowList.includes(to.name)) {
       next()
     } else {
-      next({ path: '/user/login', query: { redirect: to.fullPath } })
+      if (window.location.pathname === '/verifyOauth') {
+        next({ path: '/verifyOauth', query: { redirect: to.fullPath } })
+      } else {
+        next({ path: '/user/login', query: { redirect: to.fullPath } })
+      }
       NProgress.done()
     }
   }
