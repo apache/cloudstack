@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.storage.template.VnfTemplateUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
 
 
     public List<VNF.VnfNic> getVnfNics() {
-        return VnfTemplateManager.getVnfNicsList(this.vnfNics);
+        return VnfTemplateUtils.getVnfNicsList(this.vnfNics);
     }
 
     public Map<String, String> getVnfDetails() {

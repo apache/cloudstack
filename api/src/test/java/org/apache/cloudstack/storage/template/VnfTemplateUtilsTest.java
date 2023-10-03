@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VnfTemplateManagerTest {
+public class VnfTemplateUtilsTest {
 
     @Test
     public void testGetVnfNicsListAllGood() {
@@ -55,7 +55,7 @@ public class VnfTemplateManagerTest {
                 Map.entry("name", "eth0"),
                 Map.entry("description", "The first NIC of VNF appliance")
         )));
-        List<VnfNic> nicsList = VnfTemplateManager.getVnfNicsList(vnfNics);
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
         Assert.assertEquals(3, nicsList.size());
         Assert.assertEquals(0, nicsList.get(0).getDeviceId());
         Assert.assertEquals("eth0", nicsList.get(0).getName());
@@ -77,7 +77,7 @@ public class VnfTemplateManagerTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateManager.getVnfNicsList(vnfNics);
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -89,7 +89,7 @@ public class VnfTemplateManagerTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateManager.getVnfNicsList(vnfNics);
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -102,7 +102,7 @@ public class VnfTemplateManagerTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateManager.getVnfNicsList(vnfNics);
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class VnfTemplateManagerTest {
         nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
         nicsList.add(new VnfNic(1, "eth1", true, true, "second NIC"));
         nicsList.add(new VnfNic(2, "eth2", false, true, "third NIC"));
-        VnfTemplateManager.validateVnfNics(nicsList);
+        VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -120,7 +120,7 @@ public class VnfTemplateManagerTest {
         nicsList.add(new VnfNic(1, "eth0", true, true, "first NIC"));
         nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
         nicsList.add(new VnfNic(3, "eth2", false, true, "third NIC"));
-        VnfTemplateManager.validateVnfNics(nicsList);
+        VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -129,7 +129,7 @@ public class VnfTemplateManagerTest {
         nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
         nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
         nicsList.add(new VnfNic(4, "eth2", false, true, "third NIC"));
-        VnfTemplateManager.validateVnfNics(nicsList);
+        VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -138,7 +138,7 @@ public class VnfTemplateManagerTest {
         nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
         nicsList.add(new VnfNic(1, "eth1", false, true, "second NIC"));
         nicsList.add(new VnfNic(2, "eth2", true, true, "third NIC"));
-        VnfTemplateManager.validateVnfNics(nicsList);
+        VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class VnfTemplateManagerTest {
         Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
         RegisterVnfTemplateCmd cmd = new RegisterVnfTemplateCmd();
 
-        VnfTemplateManager.validateApiCommandParams(cmd, template);
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -161,7 +161,7 @@ public class VnfTemplateManagerTest {
         )));
         ReflectionTestUtils.setField(cmd,"vnfDetails", vnfDetails);
 
-        VnfTemplateManager.validateApiCommandParams(cmd, template);
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -177,7 +177,7 @@ public class VnfTemplateManagerTest {
         )));
         ReflectionTestUtils.setField(cmd,"vnfDetails", accessDetails);
 
-        VnfTemplateManager.validateApiCommandParams(cmd, template);
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -196,6 +196,6 @@ public class VnfTemplateManagerTest {
         )));
         ReflectionTestUtils.setField(cmd,"vnfDetails", vnfDetails);
 
-        VnfTemplateManager.validateApiCommandParams(cmd, template);
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
 }

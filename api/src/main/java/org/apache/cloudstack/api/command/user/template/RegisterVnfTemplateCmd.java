@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.storage.template.VnfTemplateUtils;
 
 @APICommand(name = "registerVnfTemplate",
         description = "Registers an existing VNF template into the CloudStack cloud. ",
@@ -58,7 +58,7 @@ public class RegisterVnfTemplateCmd extends RegisterTemplateCmd implements UserC
     /////////////////////////////////////////////////////
 
     public List<VNF.VnfNic> getVnfNics() {
-        return VnfTemplateManager.getVnfNicsList(this.vnfNics);
+        return VnfTemplateUtils.getVnfNicsList(this.vnfNics);
     }
 
     public Map<String, String> getVnfDetails() {
@@ -73,6 +73,6 @@ public class RegisterVnfTemplateCmd extends RegisterTemplateCmd implements UserC
     protected void validateParameters() {
         super.validateParameters();
 
-        VnfTemplateManager.validateApiCommandParams(this, null);
+        VnfTemplateUtils.validateApiCommandParams(this, null);
     }
 }

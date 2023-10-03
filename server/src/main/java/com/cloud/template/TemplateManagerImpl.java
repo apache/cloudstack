@@ -101,6 +101,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.storage.template.VnfTemplateUtils;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -1338,7 +1339,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
-        VnfTemplateManager.validateApiCommandParams(cmd, template);
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
 
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
@@ -2108,7 +2109,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             boolean isAdmin = _accountMgr.isAdmin(account.getId());
             templateType = validateTemplateType(cmd, isAdmin, template.isCrossZones());
             if (cmd instanceof UpdateVnfTemplateCmd) {
-                VnfTemplateManager.validateApiCommandParams(cmd, template);
+                VnfTemplateUtils.validateApiCommandParams(cmd, template);
                 vnfTemplateManager.updateVnfTemplate(template.getId(), (UpdateVnfTemplateCmd) cmd);
             }
         }
