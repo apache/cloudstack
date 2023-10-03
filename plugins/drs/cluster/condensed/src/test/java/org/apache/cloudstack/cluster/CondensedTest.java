@@ -75,7 +75,6 @@ public class CondensedTest {
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         closeable = MockitoAnnotations.openMocks(this);
 
-
         vm1 = Mockito.mock(VirtualMachine.class);
         vm2 = Mockito.mock(VirtualMachine.class);
         vm3 = Mockito.mock(VirtualMachine.class); // vm to migrate
@@ -89,7 +88,6 @@ public class CondensedTest {
         Mockito.when(vm3.getHostId()).thenReturn(2L);
 
         Mockito.when(destHost.getId()).thenReturn(1L);
-        Mockito.when(destHost.getTotalMemory()).thenReturn(8192L * 1024L * 1024L);
 
         Mockito.when(serviceOffering.getCpu()).thenReturn(1);
         Mockito.when(serviceOffering.getSpeed()).thenReturn(1000);
@@ -189,8 +187,8 @@ public class CondensedTest {
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
                 hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(0.0, result.first(), 0.0);
-        assertEquals(512.0, result.second(), 0.0);
-        assertEquals(-3276.8, result.third(), 0.01);
+        assertEquals(0, result.second(), 0.0);
+        assertEquals(1, result.third(), 0.0);
     }
 
     /*
@@ -203,8 +201,8 @@ public class CondensedTest {
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
                 hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(-0.4, result.first(), 0.01);
-        assertEquals(512.0, result.second(), 0.0);
-        assertEquals(-3276.8, result.third(), 0.01);
+        assertEquals(0, result.second(), 0.0);
+        assertEquals(1, result.third(), 0.0);
     }
 
     /*
@@ -217,7 +215,7 @@ public class CondensedTest {
         Ternary<Double, Double, Double> result = condensed.getMetrics(clusterId, vm3, serviceOffering, destHost,
                 hostCpuUsedMap, hostMemoryUsedMap, false);
         assertEquals(-0.4, result.first(), 0.0001);
-        assertEquals(512.0, result.second(), 0.0);
-        assertEquals(-3276.8, result.third(), 0.01);
+        assertEquals(0, result.second(), 0.0);
+        assertEquals(1, result.third(), 0.0);
     }
 }

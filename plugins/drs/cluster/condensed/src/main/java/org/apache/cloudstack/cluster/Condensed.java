@@ -75,10 +75,11 @@ public class Condensed extends AdapterBase implements ClusterDrsAlgorithm {
         Double postCpuImbalance = imbalancePair.first();
         Double postMemoryImbalance = imbalancePair.second();
 
-        // TODO: Cost should also include the cost of storage motion
-        // TODO: Cost should also consider dirty memory pages
-        double cost = serviceOffering.getRamSize();
-        double benefit = (postMemoryImbalance - preMemoryImbalance) * destHost.getTotalMemory() / (1024L * 1024L);
+        // This needs more research to determine the cost and benefit of a migration
+        // TODO: Cost should be a factor of the VM size and the host capacity
+        // TODO: Benefit should be a factor of the VM size and the host capacity and the number of VMs on the host
+        double cost = 0;
+        double benefit = 1;
 
         String metric = ClusterDrsMetric.valueIn(clusterId);
         double improvement;

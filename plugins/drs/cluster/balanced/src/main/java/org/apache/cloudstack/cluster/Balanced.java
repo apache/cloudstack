@@ -75,8 +75,11 @@ public class Balanced extends AdapterBase implements ClusterDrsAlgorithm {
         Double postCpuImbalance = imbalancePair.first();
         Double postMemoryImbalance = imbalancePair.second();
 
-        double cost = serviceOffering.getRamSize();
-        double benefit = (preMemoryImbalance - postMemoryImbalance) * destHost.getTotalMemory() / (1024L * 1024L);
+        // This needs more research to determine the cost and benefit of a migration
+        // TODO: Cost should be a factor of the VM size and the host capacity
+        // TODO: Benefit should be a factor of the VM size and the host capacity and the number of VMs on the host
+        double cost = 0.0;
+        double benefit = 1.0;
 
         String metric = ClusterDrsMetric.valueIn(clusterId);
         final double improvement;
