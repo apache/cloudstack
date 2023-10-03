@@ -2243,8 +2243,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else if (cmd instanceof RegisterTemplateCmd) {
             newType = ((RegisterTemplateCmd)cmd).getTemplateType();
             isRoutingType = ((RegisterTemplateCmd)cmd).isRoutingType();
-            boolean isRouting = Boolean.TRUE.equals(isRoutingType);
-            templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
         }
         if (newType != null) {
             try {
@@ -2253,22 +2251,25 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
                         org.apache.commons.lang3.StringUtils.join(",", TemplateType.values())));
             }
-            if (!isAdmin && !Arrays.asList(TemplateType.USER, TemplateType.VNF).contains(templateType)) {
-                if (cmd instanceof RegisterTemplateCmd) {
-                    throw new InvalidParameterValueException(String.format("Users can not register template with template type = %s.", templateType));
-                } else if (cmd instanceof UpdateTemplateCmd) {
-                    throw new InvalidParameterValueException(String.format("Users can not update template to template type = %s.", templateType));
-                }
+        }
+        if (templateType != null) {
+            if (isRoutingType != null && (TemplateType.ROUTING.equals(templateType) != isRoutingType)) {
+                throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
+            } else if ((templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !isCrossZones) {
+                throw new InvalidParameterValueException("System and Builtin templates must be cross zone.");
+            } else if ((cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
+                throw new InvalidParameterValueException("The template type must be VNF for VNF templates, but the actual type is " + templateType);
             }
+        } else if (cmd instanceof RegisterTemplateCmd) {
+            boolean isRouting = Boolean.TRUE.equals(isRoutingType);
+            templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
         }
-        if (templateType != null && isRoutingType != null && (TemplateType.ROUTING.equals(templateType) != isRoutingType)) {
-            throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
-        }
-        if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !isCrossZones) {
-            throw new InvalidParameterValueException("System and Builtin templates must be cross zone.");
-        }
-        if (templateType != null && (cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
-            throw new InvalidParameterValueException("The template type must be VNF for VNF templates.");
+        if (templateType != null && !isAdmin && !Arrays.asList(TemplateType.USER, TemplateType.VNF).contains(templateType)) {
+            if (cmd instanceof RegisterTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not register template with template type %s.", templateType));
+            } else if (cmd instanceof UpdateTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not update template to template type %s.", templateType));
+            }
         }
         return templateType;
     }

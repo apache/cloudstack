@@ -26,7 +26,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 public class VnfTemplateNicDaoImpl extends GenericDaoBase<VnfTemplateNicVO, Long> implements VnfTemplateNicDao {
 
-    protected final SearchBuilder<VnfTemplateNicVO> TemplateSearch;
+    protected SearchBuilder<VnfTemplateNicVO> TemplateSearch;
 
     public VnfTemplateNicDaoImpl() {
         TemplateSearch = createSearchBuilder();

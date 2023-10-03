@@ -49,4 +49,12 @@ public class VnfTemplateResponse extends TemplateResponse {
         }
         this.vnfDetails.put(key,value);
     }
+
+    public List<VnfNicResponse> getVnfNics() {
+        return vnfNics;
+    }
+
+    public Map<String, String> getVnfDetails() {
+        return vnfDetails;
+    }
 }
