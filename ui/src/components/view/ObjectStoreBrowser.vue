@@ -19,13 +19,13 @@
   <a-modal
     :visible="showUploadModal"
     :closable="true"
-    destroyOnClose="true"
+    :destroyOnClose="true"
     :title="$t('label.upload')"
     :maskClosable="false"
     :cancelText="$t('label.cancel')"
     @cancel="() => showUploadModal = false"
     :okText="$t('label.upload')"
-    @ok="uploadFiles"
+    @ok="uploadFiles()"
     centered
     >
     <a-upload-dragger
@@ -168,8 +168,8 @@
             shape="round"
             size="medium"
             type="primary"
-            @onClick="() => showUploadModal = true">
-            <reload-outlined />
+            @click="() => showUploadModal = true">
+            <upload-outlined />
             {{ $t('label.upload') }}
           </a-button>
         </a-col>
