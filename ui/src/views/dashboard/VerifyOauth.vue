@@ -76,10 +76,10 @@ export default {
       }
     },
     requestFailed (err) {
-      if (err && err.response && err.response.data && err.response.data.loginresponse) {
-        const error = err.response.data.loginresponse.errorcode + ': ' + err.response.data.loginresponse.errortext
-        this.$message.error(`${this.$t('label.error')} ${error}`)
-      } else if (err && err.response && err.response.data && err.response.data.oauthloginresponse) {
+      this.$store.dispatch('Logout').then(() => {
+        this.$router.replace({ path: '/user/login' })
+      })
+      if (err && err.response && err.response.data && err.response.data.oauthloginresponse) {
         const error = err.response.data.oauthloginresponse.errorcode + ': ' + err.response.data.oauthloginresponse.errortext
         this.$message.error(`${this.$t('label.error')} ${error}`)
       } else {
