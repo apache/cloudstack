@@ -88,4 +88,32 @@ public class VnfNicResponse {
         this.management = management;
         this.description = description;
     }
+
+    public long getDeviceId() {
+        return deviceId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Boolean getRequired() {
+        return required;
+    }
+
+    public Boolean getManagement() {
+        return management;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getNetworkId() {
+        return networkId;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
 }

@@ -646,6 +646,28 @@ public class TemplateManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateTemplateWithInvalidTemplateType() {
+        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+        when(cmd.getTemplateType()).thenReturn("invalidtype");
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateTemplateWithInvalidTemplateTypeForRouting() {
+        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+        when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.USER.toString());
+        when(cmd.isRoutingType()).thenReturn(true);
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testUpdateTemplateWithInvalidCrossZonesForSystem() {
+        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+        when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
+        Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
     public void testUpdateTemplateWithSystemTemplateTypeByUser() {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
         when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
