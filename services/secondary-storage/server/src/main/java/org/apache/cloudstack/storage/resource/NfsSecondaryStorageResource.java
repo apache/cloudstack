@@ -3591,6 +3591,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         SnapshotObjectTO snapshot = cmd.getSnapshot();
         String parentPath = getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
         String path = snapshot.getPath();
+        File snapFile = new File(parentPath + File.separator + path);
+        if (snapFile.exists() && !snapFile.isDirectory()) {
+            return new QuerySnapshotZoneCopyAnswer(cmd, List.of(path));
+        }
         int index = path.lastIndexOf(File.separator);
         String snapDir = path.substring(0, index);
         List<String> files = new ArrayList<>();
@@ -3602,7 +3606,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     .collect(Collectors.toList());
             for (String file : fileNames) {
                 file = snapDir + "/" + file;
-                s_logger.info(String.format("Found snapshot file %s", file));
+                s_logger.debug(String.format("Found snapshot file %s", file));
                 files.add(file);
             }
         } catch (IOException ioe) {
