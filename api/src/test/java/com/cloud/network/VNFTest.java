@@ -14,12 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.response;
+package com.cloud.network;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-public final class VnfNicResponseTest {
+
+public class VNFTest {
 
     static long deviceId = 0L;
     static String deviceName = "eth0";
@@ -27,25 +29,27 @@ public final class VnfNicResponseTest {
     static boolean management = false;
     static String description = "description of vnf nic";
 
-    static String networkUuid = "networkuuid";
-    static String networkName = "networkname";
-
-    @Test
-    public void testNewVnfNicResponse() {
-        final VnfNicResponse response = new VnfNicResponse(deviceId, deviceName, required, management, description);
-        Assert.assertEquals(deviceId, response.getDeviceId());
-        Assert.assertEquals(deviceName, response.getName());
-        Assert.assertEquals(required, response.isRequired());
-        Assert.assertEquals(management, response.isManagement());
-        Assert.assertEquals(description, response.getDescription());
+    @Before
+    public void setUp() {
     }
 
     @Test
-    public void testSetVnfNicResponse() {
-        final VnfNicResponse response = new VnfNicResponse();
-        response.setNetworkId(networkUuid);
-        response.setNetworkName(networkName);
-        Assert.assertEquals(networkUuid, response.getNetworkId());
-        Assert.assertEquals(networkName, response.getNetworkName());
+    public void testAccessMethods() {
+        Assert.assertEquals(VNF.AccessMethod.CONSOLE, VNF.AccessMethod.fromValue("console"));
+        Assert.assertEquals(VNF.AccessMethod.HTTP, VNF.AccessMethod.fromValue("http"));
+        Assert.assertEquals(VNF.AccessMethod.HTTPS, VNF.AccessMethod.fromValue("https"));
+        Assert.assertEquals(VNF.AccessMethod.SSH_WITH_KEY, VNF.AccessMethod.fromValue("ssh-key"));
+        Assert.assertEquals(VNF.AccessMethod.SSH_WITH_PASSWORD, VNF.AccessMethod.fromValue("ssh-password"));
+    }
+
+    @Test
+    public void testVnfNic() {
+        VNF.VnfNic vnfNic = new VNF.VnfNic(deviceId, deviceName, required, management, description);
+
+        Assert.assertEquals(deviceId, vnfNic.getDeviceId());
+        Assert.assertEquals(deviceName, vnfNic.getName());
+        Assert.assertEquals(required, vnfNic.isRequired());
+        Assert.assertEquals(management, vnfNic.isManagement());
+        Assert.assertEquals(description, vnfNic.getDescription());
     }
 }

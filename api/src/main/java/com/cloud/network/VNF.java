@@ -75,13 +75,13 @@ public interface VNF {
     }
 
     class VnfNic {
-        int deviceId;
+        long deviceId;
         String name;
         boolean required;
         boolean management;
         String description;
 
-        public VnfNic(int deviceId, String nicName, boolean required, boolean management, String nicDescription) {
+        public VnfNic(long deviceId, String nicName, boolean required, boolean management, String nicDescription) {
             this.deviceId = deviceId;
             this.name = nicName;
             this.required = required;
@@ -89,7 +89,7 @@ public interface VNF {
             this.description = nicDescription;
         }
 
-        public int getDeviceId() {
+        public long getDeviceId() {
             return deviceId;
         }
 

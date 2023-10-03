@@ -102,7 +102,7 @@ public class VnfTemplateUtils {
     }
 
     public static void validateVnfNics(List<VNF.VnfNic> nicsList) {
-        int deviceId = 0;
+        long deviceId = 0L;
         boolean required = true;
         for (VNF.VnfNic nic : nicsList) {
             if (nic.getDeviceId() != deviceId) {

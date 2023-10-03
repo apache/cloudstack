@@ -97,11 +97,11 @@ public class VnfNicResponse {
         return name;
     }
 
-    public Boolean getRequired() {
+    public Boolean isRequired() {
         return required;
     }
 
-    public Boolean getManagement() {
+    public Boolean isManagement() {
         return management;
     }
 
