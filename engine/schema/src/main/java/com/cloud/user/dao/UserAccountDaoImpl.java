@@ -60,7 +60,7 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
     }
 
     @Override
-    public UserAccount getUserAccountByEmail(String email, Long domainId) {
+    public List<UserAccountVO> getUserAccountByEmail(String email, Long domainId) {
         if (email == null) {
             return null;
         }
@@ -68,7 +68,7 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
         SearchCriteria<UserAccountVO> sc = createSearchCriteria();
         sc.addAnd("email", SearchCriteria.Op.EQ, email);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override

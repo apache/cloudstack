@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -2331,8 +2332,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount getActiveUserAccountByEmail(String email, Long domainId) {
-        return _userAccountDao.getUserAccountByEmail(email, domainId);
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
+        List<UserAccountVO> userAccountByEmail = _userAccountDao.getUserAccountByEmail(email, domainId);
+        List<UserAccount> userAccounts = userAccountByEmail.stream()
+                .map(userAccountVO -> (UserAccount) userAccountVO)
+                .collect(Collectors.toList());
+        return userAccounts;
     }
 
     @Override

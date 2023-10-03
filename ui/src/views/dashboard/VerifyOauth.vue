@@ -24,6 +24,7 @@
 import store from '@/store'
 import { mapActions } from 'vuex'
 import { api } from '@/api'
+import { OAUTH_DOMAIN } from '@/store/mutation-types'
 
 export default {
   name: 'VerifyOauth',
@@ -51,7 +52,7 @@ export default {
         loginParams.email = email
         loginParams.provider = 'github'
         loginParams.secretcode = code
-        loginParams.domain = '/'
+        loginParams.domain = this.$localStorage.get(OAUTH_DOMAIN)
         this.OauthLogin(loginParams)
           .then((res) => this.loginSuccess(res))
           .catch(err => {

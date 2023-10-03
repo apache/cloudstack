@@ -160,7 +160,13 @@
         </GoogleLogin>
       </div>
       <div class="social-auth" v-if="githubprovider">
-        <a-button tag="a" color="primary" :href="getGitHubUrl(from)" class="auth-btn github-auth" style="height: 38px; width: 185px; padding: 0" >
+        <a-button
+          @click="handledomain"
+          tag="a"
+          color="primary"
+          :href="getGitHubUrl(from)"
+          class="auth-btn github-auth"
+          style="height: 38px; width: 185px; padding: 0" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
           <a-text>Sign in with Github</a-text>
         </a-button>
@@ -310,6 +316,14 @@ export default {
         this.handleSubmitOauth('google')
       } catch (e) {
         console.log(e)
+      }
+    },
+    handledomain () {
+      const values = toRaw(this.form)
+      if (!values.domain) {
+        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
+      } else {
+        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
       }
     },
     getGitHubUrl (from) {

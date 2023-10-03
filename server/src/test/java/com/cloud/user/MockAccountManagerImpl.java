@@ -177,7 +177,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount getActiveUserAccountByEmail(String email, Long domainId) {
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
         return null;
     }
 

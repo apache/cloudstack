@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -148,10 +149,14 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
             } else {
                 throw new CloudAuthenticationException("Unable to find the domain from the path " + domain);
             }
-            final UserAccount userAccount = _accountService.getActiveUserAccountByEmail(email, domainId);
-            if (userAccount == null) {
+            final List<UserAccount> userAccounts = _accountService.getActiveUserAccountByEmail(email, domainId);
+            if (CollectionUtils.isEmpty(userAccounts)) {
                 throw new CloudAuthenticationException("User not found in CloudStack to login. If user belongs to any domain, please provide it.");
             }
+            if (userAccounts.size() > 1) {
+                throw new CloudAuthenticationException("Multiple Users found in CloudStack. If user belongs to any specific domain, please provide it.");
+            }
+            UserAccount userAccount = userAccounts.get(0);
             if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                 throw new CloudAuthenticationException("User is not allowed CloudStack login");
             }

@@ -36,7 +36,8 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  CUSTOM_COLUMNS
+  CUSTOM_COLUMNS,
+  OAUTH_DOMAIN
 } from '@/store/mutation-types'
 
 const user = {
@@ -159,6 +160,9 @@ const user = {
     },
     SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, job) => {
       state.readyForShutdownPollingJob = job
+    },
+    SET_DOMAIN_USED_TO_LOGIN: (state, domain) => {
+      vueProps.$localStorage.set(OAUTH_DOMAIN, domain)
     }
   },
 
@@ -168,10 +172,8 @@ const user = {
     },
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
-        console.log(userInfo)
         login(userInfo).then(response => {
           const result = response.loginresponse || {}
-          console.log(result)
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })
@@ -217,10 +219,8 @@ const user = {
 
     OauthLogin ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
-        console.log(userInfo)
         oauthlogin(userInfo).then(response => {
           const result = response.loginresponse || {}
-          console.log(result)
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
           Cookies.set('role', result.type, { expires: 1 })

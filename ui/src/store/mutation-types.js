@@ -38,6 +38,7 @@ export const DARK_MODE = 'DARK_MODE'
 export const VUE_VERSION = 'VUE_VERSION'
 export const CUSTOM_COLUMNS = 'CUSTOM_COLUMNS'
 export const RELOAD_ALL_PROJECTS = 'RELOAD_ALL_PROJECTS'
+export const OAUTH_DOMAIN = 'OAUTH_DOMAIN'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',
