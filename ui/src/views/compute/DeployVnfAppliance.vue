@@ -366,7 +366,7 @@
               <a-step
                 :title="$t('label.vnf.nics')"
                 :status="zoneSelected ? 'process' : 'wait'"
-                v-if="networks.length > 0 && vm.templateid && templateVnfNics && templateVnfNics.length > 0">
+                v-if="showVnfNicsSection">
                 <template #description>
                   <div>
                     <vnf-nics-selection
@@ -456,7 +456,7 @@
                     {{ $t('label.isadvanced') }}
                     <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
                   </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
+                  <div style="margin-top: 15px" v-if="showDetails">
                     <div>
                       <a-form-item
                         v-if="!isNormalAndDomainUser"
@@ -1288,6 +1288,9 @@ export default {
       }]
 
       return tabList
+    },
+    showVnfNicsSection () {
+      return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
