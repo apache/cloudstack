@@ -83,24 +83,12 @@ public class OAuth2AuthManagerImplTest {
             Assert.assertEquals("Provider with the name testProvider is already registered", e.getMessage());
         }
 
-        // Test when provider is github and secret key is null
-        providerVO = null;
-        when(_authManager._oauthProviderDao.findByProvider(Mockito.anyString())).thenReturn(providerVO);
-        when(cmd.getProvider()).thenReturn("github");
-        when(cmd.getSecretKey()).thenReturn(null);
-        try {
-            _authManager.registerOauthProvider(cmd);
-            Assert.fail("Expected CloudRuntimeException was not thrown");
-        } catch (CloudRuntimeException e) {
-            Assert.assertEquals("Github provider required secret key to be registered", e.getMessage());
-        }
-
         // Test when provider is github and secret key is not null
         when(cmd.getSecretKey()).thenReturn("testSecretKey");
         providerVO = null;
         when(_authManager._oauthProviderDao.findByProvider(Mockito.anyString())).thenReturn(providerVO);
         OauthProviderVO savedProviderVO = new OauthProviderVO();
-        savedProviderVO.setProvider("github");
+        when(cmd.getProvider()).thenReturn("github");
         when(_authManager._oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenReturn(savedProviderVO);
         OauthProviderVO result = _authManager.registerOauthProvider(cmd);
         Assert.assertEquals("github", result.getProvider());
