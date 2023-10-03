@@ -79,6 +79,12 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
     private UserVmJoinVO userVm = new UserVmJoinVO();
     private UserVmResponse userVmResponse = new UserVmResponse();
 
+    @Mock
+    Account caller;
+
+    @Mock
+    UserVmJoinVO userVmMock;
+
     private Long vmId = 100L;
 
     private Long templateId = 101L;
@@ -99,14 +105,11 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         testUpdateTagInformation(_userVmJoinDaoImpl, userVm, userVmResponse);
     }
 
-    @Test
-    public void testNewUserVmResponseForVnfAppliance() {
-        UserVmJoinVO userVM = Mockito.mock(UserVmJoinVO.class);
-        Mockito.when(userVM.getId()).thenReturn(vmId);
-        Mockito.when(userVM.getTemplateId()).thenReturn(templateId);
-        Mockito.when(userVM.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+    private void prepareNewUserVmResponseForVnfAppliance() {
+        Mockito.when(userVmMock.getId()).thenReturn(vmId);
+        Mockito.when(userVmMock.getTemplateId()).thenReturn(templateId);
+        Mockito.when(userVmMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
 
-        Account caller = Mockito.mock(Account.class);
         Mockito.when(caller.getId()).thenReturn(2L);
         Mockito.when(accountMgr.isRootAdmin(nullable(Long.class))).thenReturn(true);
 
@@ -126,9 +129,25 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         VnfTemplateDetailVO detail2 = new VnfTemplateDetailVO(templateId, "name2", "value2", true);
         VnfTemplateDetailVO detail3 = new VnfTemplateDetailVO(templateId, "name3", "value3", true);
         Mockito.doReturn(Arrays.asList(detail1, detail2, detail3)).when(vnfTemplateDetailsDao).listDetails(templateId);
+    }
 
-        UserVmResponse response = _userVmJoinDaoImpl.newUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVM,
+    @Test
+    public void testNewUserVmResponseForVnfAppliance() {
+        prepareNewUserVmResponseForVnfAppliance();
+
+        UserVmResponse response = _userVmJoinDaoImpl.newUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVmMock,
                 EnumSet.of(ApiConstants.VMDetails.all), null, null, caller);
+
+        Assert.assertEquals(2, response.getVnfNics().size());
+        Assert.assertEquals(3, response.getVnfDetails().size());
+    }
+
+    @Test
+    public void testNewUserVmResponseForVnfApplianceVnfNics() {
+        prepareNewUserVmResponseForVnfAppliance();
+
+        UserVmResponse response = _userVmJoinDaoImpl.newUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVmMock,
+                EnumSet.of(ApiConstants.VMDetails.vnfnics), null, null, caller);
 
         Assert.assertEquals(2, response.getVnfNics().size());
         Assert.assertEquals(3, response.getVnfDetails().size());
