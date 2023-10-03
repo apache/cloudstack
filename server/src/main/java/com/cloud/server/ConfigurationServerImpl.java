@@ -1000,8 +1000,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultTungstenSharedSGNetworkOfferingProviders.put(Service.SecurityGroup, Provider.Tungsten);
 
         final Map<Network.Service, Network.Provider> defaultNSXNetworkOfferingProviders = new HashMap<>();
-        defaultNSXNetworkOfferingProviders.put(Service.Dhcp, Provider.Nsx);
-        defaultNSXNetworkOfferingProviders.put(Service.Dns, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        defaultNSXNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
         defaultNSXNetworkOfferingProviders.put(Service.SourceNat, Provider.Nsx);
         defaultNSXNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
 

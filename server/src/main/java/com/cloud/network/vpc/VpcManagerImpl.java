@@ -373,7 +373,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
-                        if (svc == Service.UserData) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
                         } else {
