@@ -1083,7 +1083,8 @@ export default {
         }
         if (this.currentForm === 'Create') {
           this.loading = true
-          api('registerTemplate', params).then(json => {
+          const apiName = this.isVnf ? 'registerVnfTemplate' : 'registerTemplate'
+          api(apiName, params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
