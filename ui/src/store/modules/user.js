@@ -65,7 +65,8 @@ const user = {
     twoFaEnabled: false,
     twoFaProvider: '',
     twoFaIssuer: '',
-    customHypervisorName: 'Custom'
+    customHypervisorName: 'Custom',
+    readyForShutdownPollingJob: ''
   },
 
   mutations: {
@@ -155,6 +156,9 @@ const user = {
     },
     SET_CUSTOM_HYPERVISOR_NAME (state, name) {
       state.customHypervisorName = name
+    },
+    SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, job) => {
+      state.readyForShutdownPollingJob = job
     }
   },
 

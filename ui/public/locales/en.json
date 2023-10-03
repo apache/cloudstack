@@ -517,6 +517,7 @@
 "label.copy.clipboard": "Copy to clipboard",
 "label.copy.consoleurl": "Copy console URL to clipboard",
 "label.copyid": "Copy ID",
+"label.copy.password": "Copy password",
 "label.core": "Core",
 "label.core.zone.type": "Core zone type",
 "label.counter": "Counter",

@@ -282,3 +282,6 @@ FROM
     `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
 GROUP BY
     `network_offerings`.`id`;
+
+-- Set removed state for all removed accounts
+UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
