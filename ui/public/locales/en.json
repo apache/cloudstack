@@ -665,6 +665,7 @@
 "label.destendport": "Destination End Port",
 "label.destination": "Destination",
 "label.destination.hypervisor":  "Destination Hypervisor",
+"label.destination.zone":  "Destination Zone",
 "label.destinationphysicalnetworkid": "Destination physical network ID",
 "label.destinationtype": "Destination Type",
 "label.destipprefix": "Destination Network Address",
