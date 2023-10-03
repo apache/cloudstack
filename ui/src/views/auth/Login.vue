@@ -155,10 +155,6 @@
     <translation-menu/>
     <br><br>
     <div class="center">
-      <div v-if="googleprovider" class="g-btn-wrapper">
-        <GoogleLogin :callback="callback">
-        </GoogleLogin>
-      </div>
       <div class="social-auth" v-if="githubprovider">
         <a-button
           @click="handleGithubProviderAndDomain"
@@ -171,6 +167,7 @@
           <a-text>Sign in with Github</a-text>
         </a-button>
       </div>
+      <br>
       <div class="social-auth" v-if="googleprovider">
         <a-button
           @click="handleGoogleProviderAndDomain"
@@ -195,7 +192,6 @@ import { mapActions } from 'vuex'
 import { sourceToken } from '@/utils/request'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
-import { decodeCredential } from 'vue3-google-login'
 
 export default {
   components: {
@@ -319,16 +315,6 @@ export default {
     handleTabClick (key) {
       this.customActiveKey = key
       this.setRules()
-    },
-    callback (response) {
-      try {
-        const user = decodeCredential(response.credential)
-        this.email = user.email
-        this.secretcode = response.credential
-        this.handleSubmitOauth('google')
-      } catch (e) {
-        console.log(e)
-      }
     },
     handleGithubProviderAndDomain () {
       this.handleDomain()

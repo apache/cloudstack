@@ -514,18 +514,3 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
 
   return path + virtualmachineid
 }
-
-export function loadGoogleOAuthClientId () {
-  return api('listOauthProvider', {}).then(response => {
-    let googleClientId = ''
-    if (response) {
-      const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
-      oauthproviders.forEach(item => {
-        if (item.provider === 'google') {
-          googleClientId = item.clientid
-        }
-      })
-    }
-    return googleClientId
-  })
-}

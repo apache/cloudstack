@@ -35,12 +35,10 @@ import {
   resourceTypePlugin,
   fileSizeUtilPlugin,
   genericUtilPlugin,
-  localesPlugin,
-  loadGoogleOAuthClientId
+  localesPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
-import vue3GoogleLogin from 'vue3-google-login'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -71,11 +69,5 @@ fetch('config.json').then(response => response.json()).then(config => {
       .use(i18n)
       .use(bootstrap)
       .mount('#app')
-  })
-
-  loadGoogleOAuthClientId().then(clientId => {
-    if (clientId !== '') {
-      vueApp.use(vue3GoogleLogin, { clientId: clientId })
-    }
   })
 })
