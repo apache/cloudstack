@@ -153,7 +153,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -329,8 +329,10 @@
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="zone && zone.networktype !== 'Basic'">
                 <template #description>
-                  <label>{{ $t('message.vnf.appliance.networks') }}</label>
-                  <div v-if="zoneSelected">
+                  <div v-if="zoneSelected" style="margin-top: 5px">
+                    <div style="margin-bottom: 10px">
+                      {{ $t('message.vnf.appliance.networks') }}
+                    </div>
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
                       <instance-nics-network-select-list-view
                         :nics="templateNics"
@@ -419,11 +421,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="label"
+                            optionFilterProp="value"
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -511,7 +513,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
+                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id" :label="bootType.description">
                             {{ bootType.description }}
                           </a-select-option>
                         </a-select>
@@ -522,7 +524,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
+                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id" :label="bootMode.description">
                             {{ bootMode.description }}
                           </a-select-option>
                         </a-select>
@@ -565,8 +567,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -588,8 +592,10 @@
                                 :dataSource="templateUserDataParams"
                                 :pagination="false"
                                 :rowKey="record => record.key">
-                                <template #value="{ record }">
-                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                <template #bodyCell="{ column, record }">
+                                  <template v-if="column.key === 'value'">
+                                    <a-input v-model:value="templateUserDataValues[record.key]" />
+                                  </template>
                                 </template>
                               </a-table>
                             </a-input-group>
@@ -637,8 +643,10 @@
                                                 :dataSource="userDataParams"
                                                 :pagination="false"
                                                 :rowKey="record => record.key">
-                                                <template #value="{ record }">
-                                                  <a-input v-model:value="userDataValues[record.key]" />
+                                                <template #bodyCell="{ column, record }">
+                                                  <template v-if="column.key === 'value'">
+                                                    <a-input v-model:value="userDataValues[record.key]" />
+                                                  </template>
                                                 </template>
                                               </a-table>
                                             </a-input-group>
@@ -692,6 +700,23 @@
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
                     </a-form-item>
+                    <a-form-item name="nicmultiqueuenumber" ref="nicmultiqueuenumber" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.nicmultiqueuenumber')" :tooltip="$t('label.nicmultiqueuenumber.tooltip')"/>
+                      </template>
+                      <a-input-number
+                        style="width: 100%;"
+                        v-model:value="form.nicmultiqueuenumber" />
+                    </a-form-item>
+                    <a-form-item name="nicpackedvirtqueuesenabled" ref="nicpackedvirtqueuesenabled" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
+                      <template #label>
+                        <tooltip-label :title="$t('label.nicpackedvirtqueuesenabled')" :tooltip="$t('label.nicpackedvirtqueuesenabled.tooltip')"/>
+                      </template>
+                      <a-switch
+                        v-model:checked="form.nicpackedvirtqueuesenabled"
+                        :checked="nicpackedvirtqueuesenabled"
+                        @change="val => { nicpackedvirtqueuesenabled = val }"/>
+                    </a-form-item>
                     <a-form-item name="iothreadsenabled" ref="iothreadsenabled" v-if="vm.templateid && ['KVM'].includes(hypervisor)">
                       <template #label>
                         <tooltip-label :title="$t('label.iothreadsenabled')" :tooltip="$t('label.iothreadsenabled.tooltip')"/>
@@ -711,7 +736,7 @@
                         v-model:value="form.iodriverpolicy"
                         optionFilterProp="label"
                         :filterOption="filterOption">
-                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id">
+                        <a-select-option v-for="iodriverpolicy in options.ioPolicyTypes" :key="iodriverpolicy.id" :label="iodriverpolicy.description">
                           {{ iodriverpolicy.description }}
                         </a-select-option>
                       </a-select>
@@ -815,7 +840,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw, nextTick, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -972,7 +998,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -1660,7 +1686,7 @@ export default {
       this.fetchInstaceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
-        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy'].forEach(this.fillValue)
+        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
         this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
         this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.vnfAppConfig = toRaw(this.form)
@@ -1866,8 +1892,8 @@ export default {
       this.form.userdataid = id
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
-        const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        const resp = json.listuserdataresponse?.userdata || []
+        if (resp.length > 0) {
           var params = resp[0]?.params || null
           if (params) {
             var dataParams = params.split(',')
@@ -2029,6 +2055,8 @@ export default {
         createVnfAppData.dynamicscalingenabled = values.dynamicscalingenabled
         createVnfAppData.iothreadsenabled = values.iothreadsenabled
         createVnfAppData.iodriverpolicy = values.iodriverpolicy
+        createVnfAppData.nicmultiqueuenumber = values.nicmultiqueuenumber
+        createVnfAppData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
         const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           createVnfAppData.userdata = this.$toBase64AndURIEncoded(values.userdata)
@@ -2228,6 +2256,15 @@ export default {
                   this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(vm.password)
+                      },
+                      () => [this.$t('label.copy.password')]
+                    ),
                     duration: 0
                   })
                 }
@@ -2731,6 +2768,14 @@ export default {
         }
       }
       return networks
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }
