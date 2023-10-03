@@ -48,6 +48,49 @@
                 :rules="rules"
                 layout="vertical"
               >
+                <a-col :md="24" :lg="8">
+                  <a-form-item name="hypervisor" ref="hypervisor" :label="$t('label.destination.hypervisor')">
+                    <a-select
+                      v-model:value="form.hypervisor"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="(input, option) => {
+                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }"
+                      @change="onSelectHypervisor"
+                      :loading="optionLoading.hypervisors"
+                      v-focus="true"
+                    >
+                      <a-select-option v-for="hv in hypervisors" :key="hv" :label="hv">
+                        <span>
+                          <global-outlined style="margin-right: 5px" />
+                          {{ hv }}
+                        </span>
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
+                <a-col v-if="isKVM" :md="24" :lg="8">
+                  <a-form-item name="kvmoption" ref="kvmoption" :label="$t('label.source')">
+                    <a-select
+                      v-model:value="form.kvmoption"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="(input, option) => {
+                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }"
+                      @change="onSelectKVMOption"
+                      :loading="optionLoading.kvmoption"
+                      v-focus="true"
+                    >
+                      <a-select-option v-for="kvmoption in kvmoptions" :key="kvmoption.name" :label="kvmoption.label">
+                        <span>
+                          {{ kvmoption.label }}
+                        </span>
+                      </a-select-option>
+                    </a-select>
+                  </a-form-item>
+                </a-col>
                 <a-col :md="24" :lg="16">
                   <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
                     <a-select
@@ -59,7 +102,6 @@
                       }"
                       @change="onSelectZoneId"
                       :loading="optionLoading.zones"
-                      v-focus="true"
                     >
                       <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
                         <span>
@@ -105,9 +147,8 @@
                 </a-col>
               </a-form>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="selectedCluster.hypervisortype === 'KVM'">
+            <a-col :md="24" :lg="12" v-if="selectedCluster.hypervisortype === 'KVM' && kvmOption === 'vmware'">
               <SelectVmwareVcenter
-                :zoneid="zoneid"
                 @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
                 @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
               />
@@ -115,7 +156,7 @@
           </a-row>
           <a-divider />
           <a-row :gutter="12">
-            <a-col :md="24" :lg="selectedCluster.hypervisortype !== 'KVM' ? 12 : 24">
+            <a-col :md="24" :lg="kvmOption !== 'vmware' ? 12 : 24">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.unmanaged.instances') }}
@@ -183,7 +224,7 @@
                 </div>
               </a-card>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="selectedCluster.hypervisortype !== 'KVM'">
+            <a-col :md="24" :lg="12" v-if="kvmOption !== 'vmware'">
               <a-card class="instances-card">
                 <template #title>
                   {{ $t('label.managed.instances') }}
@@ -357,12 +398,14 @@ export default {
     ]
     return {
       options: {
+        hypervisors: [],
         zones: [],
         pods: [],
         clusters: []
       },
       rowCount: {},
       optionLoading: {
+        hypervisors: false,
         zones: false,
         pods: false,
         clusters: false
@@ -384,6 +427,8 @@ export default {
         managed: {}
       },
       itemCount: {},
+      hypervisor: 'VMware',
+      kvmOption: undefined,
       zone: {},
       zoneId: undefined,
       podId: undefined,
@@ -424,11 +469,23 @@ export default {
       }
       return true
     },
+    isUnmanaged () {
+      return ((this.selectedCluster.hypervisortype === 'VMware') || this.kvmOption === 'unmanaged')
+    },
+    isUnmanagedOrExternal () {
+      return ((this.isUnmanaged) || this.kvmOption === 'external')
+    },
+    isVMware () {
+      return (this.hypervisor === 'VMware')
+    },
+    isKVM () {
+      return (this.hypervisor === 'KVM')
+    },
     params () {
       return {
         zones: {
           list: 'listZones',
-          isLoad: true,
+          isLoad: false,
           field: 'zoneid',
           options: {
             showicon: true
@@ -520,6 +577,30 @@ export default {
     fetchData () {
       this.unmanagedInstances = []
       this.managedInstances = []
+      this.hypervisors = ['VMware', 'KVM']
+      this.hypervisor = 'VMware'
+      this.kvmoptions = {
+        ImportUnmanaged: {
+          name: 'unmanaged',
+          label: 'Unmnaged Instance'
+        },
+        MigrateFromVMware: {
+          name: 'vmware',
+          label: 'VMware'
+        },
+        ExternalImport: {
+          name: 'external',
+          label: 'External KVM'
+        },
+        LocalStorageImport: {
+          name: 'local',
+          label: 'Local Storage'
+        },
+        SharedStorageImport: {
+          name: 'shared',
+          label: 'Shared Storage'
+        }
+      }
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
           this.fetchOptions(param, name)
@@ -621,6 +702,16 @@ export default {
       this.page.managed = 1
       this.managedInstances = []
       this.managedInstancesSelectedRowKeys = []
+    },
+    onSelectHypervisor (value) {
+      this.hypervisor = value
+      if (this.hypervisor === 'VMware') {
+        this.fetchOptions(this.params.zones, 'zones')
+      }
+    },
+    onSelectKVMOption (value) {
+      this.kvmOption = value
+      this.fetchOptions(this.params.zones, 'zones')
     },
     onSelectZoneId (value) {
       this.zoneId = value

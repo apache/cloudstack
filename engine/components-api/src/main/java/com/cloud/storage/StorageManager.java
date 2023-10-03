@@ -99,7 +99,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> ConvertInstanceProcessTimeout = new ConfigKey<>(Integer.class,
             "convert.instance.process.timeout",
             "Storage",
-            "720",
+            "14400",
             "Timeout (in seconds) for the instance conversion process through the virt-v2v binary on a KVM host",
             true,
             ConfigKey.Scope.Global,

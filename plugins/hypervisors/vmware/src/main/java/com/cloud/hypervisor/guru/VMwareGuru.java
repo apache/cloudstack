@@ -32,6 +32,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -1277,9 +1278,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
-
-            if (forced) {
-                s_logger.debug(String.format("Forced parameter set, attempting to stop the VM %s on %s/%s",
+            VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
+            if (forced && sourceVmPowerState == VirtualMachinePowerState.POWERED_ON) {
+                s_logger.debug(String.format("VM is running, attempting to stop the VM %s on %s/%s",
                         vmName, vcenter, datacenter));
                 if (!vmMo.powerOff()) {
                     String err = String.format("Could not stop VM %s on %s/%s", vmName, vcenter, datacenter);
@@ -1290,7 +1291,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
             VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
             s_logger.debug(String.format("VM %s cloned successfully", vmName));
-            return VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
+            UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
+            setNicsFromSourceVM(clonedInstance, vmMo);
+            clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
+            return clonedInstance;
         } catch (Exception e) {
             String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
@@ -1298,8 +1302,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
     }
 
+    private void setNicsFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
+        UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+        List<UnmanagedInstanceTO.Disk> sourceDisks = sourceInstance.getDisks();
+        List<UnmanagedInstanceTO.Disk> clonedDisks = clonedInstance.getDisks();
+        for (int i = 0; i < sourceDisks.size(); i++) {
+            UnmanagedInstanceTO.Disk sourceDisk = sourceDisks.get(i);
+            UnmanagedInstanceTO.Disk clonedDisk = clonedDisks.get(i);
+            clonedDisk.setDiskId(sourceDisk.getDiskId());
+        }
+    }
+
     @Override
-    public boolean removeHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, boolean powerUpSourceVM, Map<String, String> params) {
         s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1315,7 +1330,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 return false;
             }
-            return vmMo.destroy();
+            boolean success = vmMo.destroy();
+            if (powerUpSourceVM) {
+                String sourceVM = params.get(VmDetailConstants.VMWARE_VM_NAME);
+                s_logger.debug(String.format("Powering up the source VM %s", sourceVM));
+                VirtualMachineMO sourceVmMo = dataCenterMO.findVm(sourceVM);
+                if (sourceVmMo == null) {
+                    s_logger.error(String.format("Could not find the source VM %s, cannot power it on", sourceVM));
+                    return false;
+                }
+                success = success && sourceVmMo.powerOn();
+            }
+            return success;
         } catch (Exception e) {
             String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
             s_logger.error(err, e);

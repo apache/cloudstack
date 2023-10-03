@@ -34,6 +34,12 @@
               :rules="rules"
               @finish="handleSubmit"
               layout="vertical">
+              <a-alert
+                v-if="selectedVmwareVcenter && isVmRunning"
+                type="warning"
+                :showIcon="true"
+                :message="$t('message.import.running.instance.warning')"
+              />
               <a-form-item name="displayname" ref="displayname">
                 <template #label>
                   <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
@@ -160,6 +166,7 @@
                 :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
                 :minimumMemory="isVmRunning ? resource.memory : null"
                 size="small"
+                :allowRunningVmsSelection="selectedVmwareVcenter ? true : false"
                 @select-compute-item="($event) => updateComputeOffering($event)"
                 @handle-search-filter="($event) => fetchComputeOfferings($event)" />
               <compute-selection
@@ -234,7 +241,7 @@
                     <template #label>
                       <tooltip-label :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
                     </template>
-                    <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
+                    <a-switch v-model:checked="form.migrateallowed" :disabled="selectedVmwareVcenter" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
                 <a-col :md="24" :lg="12">
@@ -248,7 +255,16 @@
               </a-row>
               <div :span="24" class="action-button">
                 <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+                <a-popconfirm
+                  v-if="selectedVmwareVcenter && isVmRunning"
+                  :title="$t('message.import.running.instance.confirm')"
+                  @confirm="handleSubmit"
+                  :okText="$t('label.yes')"
+                  :cancelText="$t('label.no')"
+                >
+                  <a-button :loading="loading" type="primary">{{ $t('label.ok') }}</a-button>
+                </a-popconfirm>
+                <a-button v-else :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
               </div>
             </a-form>
           </a-card>
@@ -456,7 +472,7 @@ export default {
           if (this.cluster.hypervisortype === 'VMWare') {
             nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan', networkname: 'network' })
           } else {
-            nic.meta = this.getMeta(nic, { macaddress: 'mac', networkname: 'network' })
+            nic.meta = this.getMeta(nic, { macaddress: 'mac', vlanid: 'vlan' })
           }
           nics.push(nic)
         }
@@ -724,7 +740,6 @@ export default {
             })
           }
         }
-        console.log(this.resource)
         if (this.selectedVmwareVcenter) {
           if (this.selectedVmwareVcenter.existingvcenterid) {
             params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid

@@ -33,6 +33,8 @@ public class UnmanagedInstanceTO {
 
     private PowerState powerState;
 
+    private PowerState cloneSourcePowerState;
+
     private Integer cpuCores;
 
     private Integer cpuCoresPerSocket;
@@ -75,6 +77,14 @@ public class UnmanagedInstanceTO {
 
     public void setPowerState(PowerState powerState) {
         this.powerState = powerState;
+    }
+
+    public PowerState getCloneSourcePowerState() {
+        return cloneSourcePowerState;
+    }
+
+    public void setCloneSourcePowerState(PowerState cloneSourcePowerState) {
+        this.cloneSourcePowerState = cloneSourcePowerState;
     }
 
     public Integer getCpuCores() {

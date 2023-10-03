@@ -374,7 +374,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
-    public boolean removeHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, boolean powerUpSourceVM, Map<String, String> params) {
         s_logger.error("Unsupported operation: cannot remove external VM");
         return false;
     }

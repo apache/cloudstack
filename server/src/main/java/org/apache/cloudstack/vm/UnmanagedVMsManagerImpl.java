@@ -39,6 +39,7 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
+import com.cloud.vm.VirtualMachineName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -1152,9 +1153,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     nicNetworkMap, nicIpAddressMap,
                     details, cmd.getMigrateAllowed(), forced);
         } else if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-            return importUnmanagedInstanceFromVmwareToKvm(zone, cluster, caller, owner, userId, template,
+            userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster, caller, owner, userId, template,
                     serviceOffering, dataDiskOfferingMap, details,
-                    instanceName, displayName, hostName, nicNetworkMap, nicIpAddressMap, cmd);
+                    displayName, hostName, nicNetworkMap, nicIpAddressMap, cmd);
         }
 
         if (userVm == null) {
@@ -1232,7 +1233,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(Long existingVcenterId, String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM, boolean forced) {
+    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(Long existingVcenterId, String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
@@ -1244,16 +1245,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(existingVcenterId,
                 vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
 
-        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName,
-                sourceVM, forced, params);
+        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, true, params);
     }
 
-    private UserVmResponse importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, Account caller,
-                                                                  Account owner, long userId, VMTemplateVO template,
-                                                                  ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap, Map<String, String> details, String instanceName, String displayName,
-                                                                  String hostName, Map<String, Long> nicNetworkMap,
-                                                                  Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                                  ImportUnmanagedInstanceCmd cmd) {
+    private UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, Account caller,
+                                                          Account owner, long userId, VMTemplateVO template,
+                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
+                                                          Map<String, String> details, String displayName,
+                                                          String hostName, Map<String, Long> nicNetworkMap,
+                                                          Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                          ImportUnmanagedInstanceCmd cmd) {
         Long existingVcenterId = cmd.getExistingVcenterId();
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
@@ -1274,28 +1275,64 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         UnmanagedInstanceTO clonedInstance = null;
-        UserVm userVm = null;
+        boolean isSourceVMRestoreNeeded = false;
         try {
             clonedInstance = cloneSourceVmwareUnmanagedInstance(existingVcenterId, vcenter, datacenterName, username, password,
-                    clusterName, sourceHostName, sourceVM, forced);
+                    clusterName, sourceHostName, sourceVM);
+            isSourceVMRestoreNeeded = clonedInstance.getCloneSourcePowerState() == UnmanagedInstanceTO.PowerState.PowerOn;
+            checkClonedInstanceMacAddresses(clonedInstance, nicNetworkMap, forced);
             UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
                     sourceHostName, clonedInstance, destinationCluster);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
-//            UserVm userVm = convertClonedVmwareUnmanagedInstance(zone, destinationCluster, caller, owner, userId, template, serviceOffering, displayName,
-//                    hostName, nicNetworkMap, nicIpAddressMap, convertedInstance, forced);
-
-            userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
+            String instanceName = getGeneratedInstanceName(owner);
+            return importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap,
                     details, false, forced);
-            return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Error importing VM: %s", e.getMessage()), e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
-            removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName());
+            removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, isSourceVMRestoreNeeded);
         }
+    }
+
+    private void checkClonedInstanceMacAddresses(UnmanagedInstanceTO clonedInstance, Map<String, Long> nicNetworkMap, boolean forced) {
+        List<UnmanagedInstanceTO.Nic> nics = clonedInstance.getNics();
+        List<Long> networkIds = new ArrayList<>(nicNetworkMap.values());
+        if (nics.size() != networkIds.size()) {
+            String msg = String.format("Different number of nics found on instance %s: %s vs %s nics provided",
+                    clonedInstance.getName(), nics.size(), networkIds.size());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        for (int i = 0; i < nics.size(); i++) {
+            UnmanagedInstanceTO.Nic nic = nics.get(i);
+            Long networkId = networkIds.get(i);
+            NetworkVO network = networkDao.findById(networkId);
+            if (network == null) {
+                String err = String.format("Cannot find a network with id = %s", networkId);
+                LOGGER.error(err);
+                throw new CloudRuntimeException(err);
+            }
+            NicVO existingNic = nicDao.findByNetworkIdAndMacAddress(networkId, nic.getMacAddress());
+            if (existingNic != null && !forced) {
+                String err = String.format("NIC with MAC address = %s exists on network with ID = %s and forced flag is disabled",
+                        nic.getMacAddress(), networkId);
+                LOGGER.error(err);
+                throw new CloudRuntimeException(err);
+            }
+        }
+    }
+
+    private String getGeneratedInstanceName(Account owner) {
+        long id = vmDao.getNextInSequence(Long.class, "id");
+        String instanceSuffix = configurationDao.getValue(Config.InstanceName.key());
+        if (instanceSuffix == null) {
+            instanceSuffix = "DEFAULT";
+        }
+        return VirtualMachineName.getVmName(id, owner.getId(), instanceSuffix);
     }
 
     private void sanitizeConvertedInstance(UnmanagedInstanceTO convertedInstance, UnmanagedInstanceTO clonedInstance) {
@@ -1304,14 +1341,21 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         convertedInstance.setCpuCoresPerSocket(clonedInstance.getCpuCoresPerSocket());
         convertedInstance.setMemory(clonedInstance.getMemory());
         convertedInstance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
+        List<UnmanagedInstanceTO.Disk> convertedInstanceDisks = convertedInstance.getDisks();
+        List<UnmanagedInstanceTO.Disk> clonedInstanceDisks = clonedInstance.getDisks();
+        for (int i = 0; i < convertedInstanceDisks.size(); i++) {
+            UnmanagedInstanceTO.Disk disk = convertedInstanceDisks.get(i);
+            disk.setDiskId(clonedInstanceDisks.get(i).getDiskId());
+        }
     }
 
     private void removeClonedInstance(String vcenter, String datacenterName,
                                       String username, String password,
-                                      String sourceHostName, String clonedInstanceName) {
+                                      String sourceHostName, String clonedInstanceName,
+                                      String sourceVM, boolean powerOnSourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
-        Map<String, String> params = createParamsForRemoveClonedInstance(vcenter, datacenterName, username, password);
-        boolean result = vmwareGuru.removeHypervisorVMOutOfBand(sourceHostName, clonedInstanceName, params);
+        Map<String, String> params = createParamsForRemoveClonedInstance(vcenter, datacenterName, username, password, sourceVM, powerOnSourceVM);
+        boolean result = vmwareGuru.removeClonedHypervisorVMOutOfBand(sourceHostName, clonedInstanceName, powerOnSourceVM, params);
         if (!result) {
             String msg = String.format("Could not properly remove the cloned instance %s from VMware datacenter %s:%s",
                     clonedInstanceName, vcenter, datacenterName);
@@ -1322,12 +1366,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 clonedInstanceName, vcenter, datacenterName));
     }
 
-    private Map<String, String> createParamsForRemoveClonedInstance(String vcenter, String datacenterName, String username, String password) {
+    private Map<String, String> createParamsForRemoveClonedInstance(String vcenter, String datacenterName, String username,
+                                                                    String password, String sourceVM, boolean powerOnSourceVM) {
         Map<String, String> params = new HashMap<>();
         params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vcenter);
         params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, username);
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, password);
+        if (powerOnSourceVM) {
+            params.put(VmDetailConstants.VMWARE_VM_NAME, sourceVM);
+        }
         return params;
     }
 
@@ -1406,63 +1454,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     "for instance conversion", zoneId);
         }
         return imageStore.getUrl();
-    }
-
-    private UserVm convertClonedVmwareUnmanagedInstance(DataCenter zone, Cluster cluster, Account caller, Account owner,
-                                                        long userId, VMTemplateVO template,
-                                                        ServiceOfferingVO serviceOffering, String displayName,
-                                                        String hostName, Map<String, Long> nicNetworkMap,
-                                                        Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                        UnmanagedInstanceTO convertedInstance, boolean forced) {
-        DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), cluster.getPodId(), cluster.getId(), null, null, null);
-        DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
-
-        UserVm userVm = null;
-        DeployDestination dest = null;
-
-        try {
-            Map<String, String> params = new HashMap<>();
-            userVm = userVmManager.importVM(zone, null, template, hostName, displayName, owner,
-                    null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
-                    cluster.getHypervisorType(), params, VirtualMachine.PowerState.PowerOff);
-        } catch (InsufficientCapacityException ice) {
-            LOGGER.error(String.format("Failed to import vm name: %s", hostName), ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
-        }
-
-        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertedInstance.getDisks();
-        if (CollectionUtils.isEmpty(unmanagedInstanceDisks)) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("No attached disks found for the unmanaged VM: %s", hostName));
-        }
-        Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> rootAndDataDisksPair = getRootAndDataDisks(unmanagedInstanceDisks, new HashMap<>());
-        final UnmanagedInstanceTO.Disk rootDisk = rootAndDataDisksPair.first();
-        final List<UnmanagedInstanceTO.Disk> dataDisks = rootAndDataDisksPair.second();
-        if (rootDisk == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk for the VM: %s ", hostName));
-        }
-
-        DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
-        importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
-                (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), null, null,
-                template, owner, null);
-
-        try {
-            Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(displayName, convertedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, cluster.getHypervisorType());
-            int nicIndex = 0;
-            for (UnmanagedInstanceTO.Nic nic : convertedInstance.getNics()) {
-                Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
-                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, forced);
-                nicIndex++;
-            }
-        } catch (Exception e) {
-            LOGGER.error(String.format("Failed to import NICs while importing vm: %s", hostName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", hostName, StringUtils.defaultString(e.getMessage())));
-        }
-
-        return userVm;
     }
 
     protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(Long existingVcenterId,

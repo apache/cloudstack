@@ -33,6 +33,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.io.IOUtils;
@@ -68,7 +69,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         String secondaryStorageUrl = cmd.getConversionTemporaryPath();
-        int timeout = cmd.getWait() * 1000;
+        long timeout = (long) cmd.getWait() * 1000;
 
         if (destinationHypervisorType != Hypervisor.HypervisorType.KVM ||
                 !supportedInstanceConvertSourceHypervisors.contains(sourceHypervisorType)) {
@@ -91,6 +92,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         secondaryPool.createFolder(temporaryConvertFolder);
         final String temporaryConvertPath = String.format("%s/%s", secondaryPool.getLocalPath(), temporaryConvertFolder);
 
+        boolean cleanupTemporaryConvertPath = false;
         try {
             Pair<Boolean, String> conversionResultPair = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
                     temporaryConvertPath, temporaryConvertUuid, timeout);
@@ -119,6 +121,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
             List<KVMPhysicalDisk> destinationDisks = moveConvertedInstanceFromTemporaryLocaltionToDestination(disks, secondaryPool,
                     destinationStoragePools, storagePoolMgr);
+            cleanupTemporaryConvertPath = true;
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
                     destinationDisks, disks, interfaces, xmlParser);
@@ -129,7 +132,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             s_logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
+            s_logger.debug("Cleaning up instance conversion temporary files");
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
+            if (cleanupTemporaryConvertPath) {
+                Script.runSimpleBashScript(String.format("rm -rf %s", temporaryConvertPath));
+            }
         }
     }
 
@@ -235,7 +242,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                            String temporaryPasswordFilePath,
                                            String temporaryConvertFolder,
                                            String temporaryConvertUuid,
-                                           int timeout) {
+                                           long timeout) {
         Script script = new Script("virt-v2v", timeout, s_logger);
         script.add("--root", "first");
         script.add("-ic", convertInstanceUrl);
@@ -284,8 +291,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         InputStream is = new BufferedInputStream(new FileInputStream(xmlPath));
         String xml = IOUtils.toString(is, Charset.defaultCharset());
         final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-        parser.parseDomainXML(xml);
-        return parser;
+        try {
+            parser.parseDomainXML(xml);
+            return parser;
+        } catch (RuntimeException e) {
+            String err = String.format("Error parsing the converted instance XML domain at %s: %s", installPath, e.getMessage());
+            s_logger.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
     }
 
     protected String encodeUsername(String username) {
