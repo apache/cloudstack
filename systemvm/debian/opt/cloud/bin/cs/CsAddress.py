@@ -668,8 +668,12 @@ class CsIP:
                 logging.info("Not making dns publicly available")
 
             if self.config.has_metadata():
-                app = CsApache(self)
-                app.setup()
+                if method == "add":
+                    app = CsApache(self)
+                    app.setup()
+                elif method == "delete":
+                    app = CsApache(self)
+                    app.remove()
 
                 # If redundant then this is dealt with
                 # by the primary backup functions

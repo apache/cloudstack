@@ -170,7 +170,7 @@ public class ConfigurationVO implements Configuration {
 
     @Override
     public boolean isEncrypted() {
-        return "Hidden".equals(getCategory()) || "Secure".equals(getCategory());
+        return StringUtils.equalsAny(getCategory(), "Hidden", "Secure");
     }
 
     @Override
