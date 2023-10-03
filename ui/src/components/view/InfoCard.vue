@@ -523,7 +523,7 @@
           <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <cloud-outlined />
-            <router-link v-if="!isStatic && $route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>

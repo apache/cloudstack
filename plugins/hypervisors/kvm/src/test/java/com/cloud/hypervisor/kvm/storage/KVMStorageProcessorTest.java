@@ -230,7 +230,6 @@ public class KVMStorageProcessorTest {
     @Test (expected = LibvirtException.class)
     public void validateTakeVolumeSnapshotFailToCreateSnapshotThrowLibvirtException() throws LibvirtException{
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
-        Mockito.doReturn("").when(domainMock).getName();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
         Mockito.doThrow(LibvirtException.class).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());
 
@@ -242,7 +241,6 @@ public class KVMStorageProcessorTest {
         String expectedResult = "label";
 
         Mockito.doReturn(diskToSnapshotAndDisksToAvoidMock).when(storageProcessorSpy).getDiskToSnapshotAndDisksToAvoid(Mockito.any(), Mockito.anyString(), Mockito.any());
-        Mockito.doReturn("").when(domainMock).getName();
         Mockito.doReturn(expectedResult).when(diskToSnapshotAndDisksToAvoidMock).first();
         Mockito.doReturn(new HashSet<>()).when(diskToSnapshotAndDisksToAvoidMock).second();
         Mockito.doReturn(null).when(domainMock).snapshotCreateXML(Mockito.anyString(), Mockito.anyInt());

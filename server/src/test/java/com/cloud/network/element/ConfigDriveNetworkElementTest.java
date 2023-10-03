@@ -16,58 +16,15 @@
 // under the License.
 package com.cloud.network.element;
 
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.reflections.ReflectionUtils;
-
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.HandleConfigDriveIsoAnswer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
@@ -103,9 +60,44 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Maps;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigDriveNetworkElementTest {
 
     public static final String CLOUD_ID = "xx";
@@ -157,28 +149,30 @@ public class ConfigDriveNetworkElementTest {
     @Mock private CallContext callContextMock;
     @Mock private DomainVO domainVO;
 
-    @InjectMocks private final ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
-    @InjectMocks @Spy private NetworkModelImpl _networkModel = new NetworkModelImpl();
+    @Spy @InjectMocks
+    private ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
+    @InjectMocks @Spy private NetworkModelImpl _networkModel;
+
+    private AutoCloseable closeable;
 
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
 
         _configDrivesNetworkElement._networkModel = _networkModel;
+        _configDrivesNetworkElement._networkMgr = _networkModel;
 
         when(_dataStoreMgr.getImageStoreWithFreeCapacity(DATACENTERID)).thenReturn(dataStore);
         when(_ep.select(dataStore)).thenReturn(endpoint);
         when(_vmDao.findById(VMID)).thenReturn(virtualMachine);
         when(_vmInstanceDao.findById(VMID)).thenReturn(virtualMachine);
         when(_dcDao.findById(DATACENTERID)).thenReturn(dataCenterVO);
-        when(_hostDao.findById(HOSTID)).thenReturn(hostVO);
         when(_domainDao.findById(DOMAINID)).thenReturn(domainVO);
         doReturn(nic).when(_networkModel).getDefaultNic(VMID);
         when(_serviceOfferingDao.findByIdIncludingRemoved(VMID, SOID)).thenReturn(serviceOfferingVO);
-        when(_guestOSDao.findById(anyLong())).thenReturn(guestOSVO);
-        when(_guestOSCategoryDao.findById(anyLong())).thenReturn(guestOSCategoryVo);
+        when(_guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
+        when(_guestOSCategoryDao.findById(Mockito.anyLong())).thenReturn(guestOSCategoryVo);
         when(_configDao.getValue("cloud.identifier")).thenReturn(CLOUD_ID);
-        when(network.getDataCenterId()).thenReturn(DATACENTERID);
         when(guestOSCategoryVo.getName()).thenReturn("Linux");
         when(dataCenterVO.getName()).thenReturn(ZONENAME);
         when(serviceOfferingVO.getDisplayText()).thenReturn(VMOFFERING);
@@ -197,17 +191,21 @@ public class ConfigDriveNetworkElementTest {
         when(deployDestination.getHost()).thenReturn(hostVO);
         when(deployDestination.getDataCenter()).thenReturn(dataCenter);
         when(hostVO.getId()).thenReturn(HOSTID);
-        when(nic.isDefaultNic()).thenReturn(true);
         when(nic.getNetworkId()).thenReturn(NETWORK_ID);
         when(network.getId()).thenReturn(NETWORK_ID);
         when(_networkModel.getNetwork(NETWORK_ID)).thenReturn(network);
         //when(_networkModel.getUserDataUpdateProvider(network)).thenReturn(_configDrivesNetworkElement);
 
-        when(_ntwkSrvcDao.getProviderForServiceInNetwork(NETWORK_ID, Network.Service.UserData)).thenReturn(_configDrivesNetworkElement.getProvider().getName());
+        doReturn(_configDrivesNetworkElement.getProvider().getName()).when(_ntwkSrvcDao).getProviderForServiceInNetwork(NETWORK_ID, Network.Service.UserData);
 
         _networkModel.setNetworkElements(Arrays.asList(_configDrivesNetworkElement));
         _networkModel.start();
 
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
@@ -221,7 +219,6 @@ public class ConfigDriveNetworkElementTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testExpunge() throws NoTransitionException, NoSuchFieldException, IllegalAccessException {
         final StateMachine2<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> stateMachine = VirtualMachine.State.getStateMachine();
 
@@ -238,13 +235,13 @@ public class ConfigDriveNetworkElementTest {
         when(_vmInstanceDao.updateState(VirtualMachine.State.Stopped, VirtualMachine.Event.ExpungeOperation, VirtualMachine.State.Expunging, virtualMachine, null)).thenReturn(true);
 
         final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
-        when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
+        when(agentManager.easySend(Mockito.anyLong(), Mockito.any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
 
         stateMachine.transitTo(virtualMachine, VirtualMachine.Event.ExpungeOperation, null, _vmInstanceDao);
 
         ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
-        verify(agentManager, times(1)).easySend(anyLong(), commandCaptor.capture());
+        verify(agentManager, times(1)).easySend(Mockito.anyLong(), commandCaptor.capture());
         HandleConfigDriveIsoCommand deleteCommand = commandCaptor.getValue();
 
         assertThat(deleteCommand.isCreate(), is(false));
@@ -253,9 +250,6 @@ public class ConfigDriveNetworkElementTest {
 
     @Test
     public void testRelease() {
-        final Answer answer = mock(Answer.class);
-        when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
-        when(answer.getResult()).thenReturn(true);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, null);
         assertTrue(_configDrivesNetworkElement.release(network, nicp, profile, null));
     }
@@ -266,46 +260,42 @@ public class ConfigDriveNetworkElementTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    @PrepareForTest({ConfigDriveBuilder.class, CallContext.class})
     public void testAddPasswordAndUserData() throws Exception {
-        PowerMockito.mockStatic(ConfigDriveBuilder.class);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
-        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("buildConfigDrive")).iterator().next();
-        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap()).thenReturn("content");
+        try (MockedStatic<ConfigDriveBuilder> ignored1 = Mockito.mockStatic(ConfigDriveBuilder.class); MockedStatic<CallContext> ignored2 = Mockito.mockStatic(CallContext.class)) {
+            Mockito.when(CallContext.current()).thenReturn(callContextMock);
+            Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
+            Mockito.when(ConfigDriveBuilder.buildConfigDrive(Mockito.anyListOf(String[].class), Mockito.anyString(), Mockito.anyString(), Mockito.anyMap())).thenReturn("content");
 
-        final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
-        final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
-        when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
-        when(answer.getResult()).thenReturn(true);
-        when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
-        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
-        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
-        when(virtualMachine.getUuid()).thenReturn("vm-uuid");
-        when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
-        when(nicp.getIPv4Address()).thenReturn("192.168.111.111");
-        when(_userVmDetailsDao.findDetail(anyLong(), anyString())).thenReturn(userVmDetailVO);
-        when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
-        when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
-        when(_hostDao.findById(virtualMachine.getHostId())).thenReturn(hostVO);
-        when(_hostDao.findById(virtualMachine.getHostId()).getName()).thenReturn("dest-hyp-host-name");
+            final HandleConfigDriveIsoAnswer answer = mock(HandleConfigDriveIsoAnswer.class);
+            final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+            when(agentManager.easySend(Mockito.anyLong(), Mockito.any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
+            when(answer.getResult()).thenReturn(true);
+            when(answer.getConfigDriveLocation()).thenReturn(NetworkElement.Location.PRIMARY);
+            when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+            when(virtualMachine.getUuid()).thenReturn("vm-uuid");
+            when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
+            when(nicp.getIPv4Address()).thenReturn("192.168.111.111");
+            when(_userVmDetailsDao.findDetail(Mockito.anyLong(), Mockito.anyString())).thenReturn(userVmDetailVO);
+            when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
+            when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
+            when(_hostDao.findById(virtualMachine.getHostId())).thenReturn(hostVO);
+            when(_hostDao.findById(virtualMachine.getHostId()).getName()).thenReturn("dest-hyp-host-name");
 
-        Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
-        parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
-        parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, parms);
-        profile.setConfigDriveLabel("testlabel");
-        assertTrue(_configDrivesNetworkElement.addPasswordAndUserdata(
-                network, nicp, profile, deployDestination, null));
+            Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
+            parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
+            parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);
+            VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, parms);
+            profile.setConfigDriveLabel("testlabel");
+            assertTrue(_configDrivesNetworkElement.addPasswordAndUserdata(
+                    network, nicp, profile, deployDestination, null));
 
-        ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
-        verify(agentManager, times(1)).easySend(anyLong(), commandCaptor.capture());
-        HandleConfigDriveIsoCommand createCommand = commandCaptor.getValue();
+            ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
+            verify(agentManager, times(1)).easySend(Mockito.anyLong(), commandCaptor.capture());
+            HandleConfigDriveIsoCommand createCommand = commandCaptor.getValue();
 
-        assertTrue(createCommand.isCreate());
-        assertTrue(createCommand.getIsoData().length() > 0);
-        assertTrue(createCommand.getIsoFile().equals(ConfigDrive.createConfigDrivePath(profile.getInstanceName())));
+            assertTrue(createCommand.isCreate());
+            assertTrue(createCommand.getIsoData().length() > 0);
+            assertTrue(createCommand.getIsoFile().equals(ConfigDrive.createConfigDrivePath(profile.getInstanceName())));
+        }
     }
 }

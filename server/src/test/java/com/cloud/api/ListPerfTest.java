@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.HashMap;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.HashMap;
 
 /**
  * Test fixture to do performance test for list command
