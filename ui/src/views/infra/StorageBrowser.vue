@@ -54,9 +54,11 @@
     </a-card>
 
     <a-modal
+      :title="$t('message.data.migration')"
       :visible="showMigrateModal"
+      :maskClosable="true"
       :confirmLoading="migrateModalLoading"
-      @close-action="showMigrateModal = false"
+      @cancel="showMigrateModal = false"
       :footer="null"
       width="50%"
       :okText="$t('label.ok')"
@@ -85,7 +87,7 @@
                 <folder-outlined /> {{ record.name }}
               </a>
             </template>
-            <template v-else>
+            <template v-else-if="resourceType === 'ImageStore'">
               <a @click="downloadFile(record)">
                 <template v-if="record.snapshotid">
                   <build-outlined/>
@@ -99,6 +101,19 @@
                 </template>
                 {{ record.name }}
               </a>
+            </template>
+            <template v-else>
+              <template v-if="record.snapshotid">
+                  <build-outlined/>
+                </template>
+                <template v-else-if="record.volumeid">
+                    <hdd-outlined/>
+                </template>
+                <template v-else-if="record.templateid">
+                    <usb-outlined v-if="record.format === 'ISO'"/>
+                    <save-outlined v-else />
+                </template>
+                {{ record.name }}
             </template>
           </template>
           <template v-if="column.key == 'size'">
@@ -253,7 +268,6 @@ export default {
     },
     fetchData () {
       this.dataSource = []
-      // this.$route.query.browserPath = this.browserPath
       this.$router.replace(
         {
           path: this.$route.path,

@@ -3651,7 +3651,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        List<Long> ids = cmd.getIds();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         Long imageStoreId = cmd.getImageStoreId();
 
         if (imageStoreId != null) {
@@ -4046,7 +4046,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ids.add(cmd.getId());
         }
         if (cmd.getImageStoreId() != null) {
-            ids = getTemplateIdsFromIdsAndStoreId(List.of(), cmd.getImageStoreId());
+            ids = getTemplateIdsFromIdsAndStoreId(ids, cmd.getImageStoreId());
             if (ids.isEmpty()) {
                 return new Pair<>(new ArrayList<>(), 0);
             }
