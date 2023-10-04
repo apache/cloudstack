@@ -23,19 +23,21 @@
         @finish="handleSubmit"
         layout="vertical">
     <a-col :md="24" :lg="18">
-      <a-form-item :label="$t('label.select.source.vcenter.datacenter')" name="vmwareopt" ref="vmwareopt">
-        <a-radio-group
-          v-model:value="vcenterSelectedOption"
-          buttonStyle="solid">
-          <a-radio-button value="existing">
-            {{ $t('label.existing.vcenter') }}
-          </a-radio-button>
-          <a-radio-button value="new">
-            {{ $t('label.external.vcenter') }}
-          </a-radio-button>
-        </a-radio-group>
-      </a-form-item>
-
+      <div>
+        <a-form-item :label="$t('label.select.source.vcenter.datacenter')" name="vmwareopt" ref="vmwareopt">
+          <a-radio-group
+            style="text-align: center; width: 100%"
+            v-model:value="vcenterSelectedOption"
+            buttonStyle="solid">
+            <a-radio-button value="existing" style="width: 50%; text-align: center">
+              {{ $t('label.existing') }}
+            </a-radio-button>
+            <a-radio-button value="new" style="width: 50%; text-align: center">
+              {{ $t('label.external') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+      </div>
       <div v-if="vcenterSelectedOption === 'existing'">
         <a-form-item name="sourcezoneid" ref="sourcezoneid" :label="$t('label.zoneid')">
           <a-select
@@ -258,3 +260,14 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.card-footer {
+  text-align: right;
+}
+
+.card-footer button {
+  width: 50%;
+  text-align: center;
+}
+</style>
