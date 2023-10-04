@@ -65,7 +65,7 @@ public class PasswordGeneratorTest {
     }
 
     private boolean containsSpecialChar(String password) {
-        String symbols = new String(passwordgenerator.symbols);
+        String symbols = new String(PasswordGenerator.symbols);
         for (char c : password.toCharArray()) {
             if (symbols.contains(String.valueOf(c))) {
                 return true;
