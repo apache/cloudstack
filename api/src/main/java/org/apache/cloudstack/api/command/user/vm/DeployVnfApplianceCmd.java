@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        since = "4.19.0")
 public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {
 }

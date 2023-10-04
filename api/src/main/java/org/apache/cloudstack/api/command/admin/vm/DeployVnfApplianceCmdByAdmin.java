@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         entityType = {VirtualMachine.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
+        since = "4.19.0")
 public class DeployVnfApplianceCmdByAdmin extends DeployVnfApplianceCmd implements AdminCmd {
 }

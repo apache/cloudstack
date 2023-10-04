@@ -27,7 +27,8 @@ import com.cloud.user.Account;
         responseObject = SuccessResponse.class,
         description = "Deletes a VNF template from the system. All virtual machines using the deleted template will not be affected.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        since = "4.19.0")
 public class DeleteVnfTemplateCmd extends DeleteTemplateCmd {
 
     /////////////////////////////////////////////////////

@@ -33,7 +33,8 @@ import java.util.Map;
 @APICommand(name = "updateVnfTemplate", description = "Updates a template to VNF template or attributes of a VNF template.",
         responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
+        since = "4.19.0")
 public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
 
     /////////////////////////////////////////////////////
@@ -42,15 +43,15 @@ public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.VNF_NICS,
             type = CommandType.MAP,
-            description = "VNF nics in key/value pairs using format details[i].keyname=keyvalue. "
+            description = "VNF nics in key/value pairs using format vnfnics[i].keyname=keyvalue. "
                     + " Example: vnfnics[0].deviceid=0&&vnfnics[0].name=FirstNIC&&vnfnics[0].required=true"
                     + "&&vnfnics[1].deviceid=1&&vnfnics[1].name=SecondNIC")
     protected Map vnfNics;
 
     @Parameter(name = ApiConstants.VNF_DETAILS,
             type = CommandType.MAP,
-            description = "VNF details in key/value pairs using format details[i].keyname=keyvalue. "
-                    + "Example: vnfdetails[0].vendor=xxx&&details[0].version=2.0")
+            description = "VNF details in key/value pairs using format vnfdetails[i].keyname=keyvalue. "
+                    + "Example: vnfdetails[0].vendor=xxx&&vnfdetails[0].version=2.0")
     protected Map vnfDetails;
 
     @Parameter(name = ApiConstants.CLEAN_UP_VNF_DETAILS,
