@@ -397,10 +397,13 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String[] items = uri.getPath().split("/");
         name = items[items.length - 1];
-        if (!name.contains(".")) {
+        if (items.length < 2) {
             return name;
         }
-        name = (items.length > 1 ? items[items.length - 2] : name.split(".")[0]) + File.separator + name;
+        String parentDir = items[items.length - 2];
+        if (name.startsWith(parentDir)) {
+            return parentDir + File.separator + name;
+        }
         return name;
     }
 
@@ -425,9 +428,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return "Unable process post snapshot download due to " + e.getMessage();
         }
         String installedPath = relativeResourcePath + File.separator + name;
-        if (installedPath.contains(".")) {
-            installedPath = installedPath.substring(0, installedPath.lastIndexOf(File.separator));
-        }
         job.setTmpltPath(installedPath);
         job.setTemplatePhysicalSize(td.getDownloadedBytes());
         return null;

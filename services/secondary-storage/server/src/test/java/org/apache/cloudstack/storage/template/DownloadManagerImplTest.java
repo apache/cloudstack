@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import java.util.UUID;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,14 +32,16 @@ public class DownloadManagerImplTest {
 
     @Test
     public void testGetSnapshotInstallNameFromDownloadUrl() {
-        String filename = UUID.randomUUID().toString();
-        String url = "http://abc.com/xyz/somepath/" + filename;
-        String name = downloadManager.getSnapshotInstallNameFromDownloadUrl(url);
-        Assert.assertEquals(filename, name);
-        filename = UUID.randomUUID().toString().replace("-", "");
-        filename = filename + "/" + filename + ".ovf";
-        url = "http://abc.com/xyz/" + filename;
-        name = downloadManager.getSnapshotInstallNameFromDownloadUrl(url);
-        Assert.assertEquals(filename, name);
+        Map<String, String> urlNames = Map.of(
+                "http://HOST/copy/SecStorage/e2e4dc8b-394a-3200-838d-667e4f9f82b7/snapshots/2/5/b62ce61a-f87b-4bd7-9b3b-18962d992004.vhd", "b62ce61a-f87b-4bd7-9b3b-18962d992004.vhd",
+                "http://HOST/copy/SecStorage/24492d16-66a6-34df-84ea-cc335e7d5b4a/snapshots/2/6/a84ee92d-43cf-4151-908d-1e8ea6c43d35", "a84ee92d-43cf-4151-908d-1e8ea6c43d35",
+                "http://HOST/copy/SecStorage/0e3ec9a5-e23d-3edc-bc0f-ce6e641e12c3/snapshots/2/28/ce0e1e42-9268-414c-a874-1802d2d7b429/ce0e1e42-9268-414c-a874-1802d2d7b429.vmdk", "ce0e1e42-9268-414c-a874-1802d2d7b429/ce0e1e42-9268-414c-a874-1802d2d7b429.vmdk"
+        );
+        for (Map.Entry<String, String> entry: urlNames.entrySet()) {
+            String url = entry.getKey();
+            String filename = entry.getValue();
+            String name = downloadManager.getSnapshotInstallNameFromDownloadUrl(url);
+            Assert.assertEquals(filename, name);
+        }
     }
 }
