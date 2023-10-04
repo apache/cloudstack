@@ -29,6 +29,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.LogUtils;
 import javax.inject.Inject;
 
+import com.google.common.collect.Lists;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.backup.Backup;
@@ -543,13 +544,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get pool ID for disk
      */
-    private Long getPoolId(VirtualDisk disk, long datacenterId, long clusterId) {
+    protected Long getPoolId(VirtualDisk disk, long datacenterId, long clusterId) {
         VirtualDeviceBackingInfo backing = disk.getBacking();
         checkBackingInfo(backing);
         VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo)backing;
         String[] fileNameParts = info.getFileName().split(" ");
         String datastore = StringUtils.substringBetween(fileNameParts[0], "[", "]");
-        if (UuidUtils.isUuid(datastore)) {
+        if (UuidUtils.isUuidWithoutHyphens(datastore)) {
             return getPoolIdFromDatastoreUuid(datastore);
         }
         return getPoolIdFromDatastoreNameOrPath(datastore, datacenterId, clusterId);
@@ -1045,15 +1046,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Find restored volume based on volume info
      */
-    private VirtualDisk findRestoredVolume(Backup.VolumeInfo volumeInfo, VirtualMachineMO vm) throws Exception {
-        List<VirtualDisk> virtualDisks = vm.getVirtualDisks();
+    protected VirtualDisk findRestoredVolume(Backup.VolumeInfo volumeInfo, VirtualMachineMO vm, String volumeName, int deviceId) throws Exception {
+        List<VirtualDisk> virtualDisks = Lists.reverse(vm.getVirtualDisks());
+        s_logger.debug(LogUtils.logGsonWithoutException("Trying to find restored volume with size [%s], name [%s] and deviceId (unitNumber in VMWare) [%s] "
+                + "in VM [%s] disks [%s].", volumeInfo.getSize(), volumeName, deviceId, vm.getVmName(), virtualDisks));
         for (VirtualDisk disk : virtualDisks) {
-            if (disk.getCapacityInBytes().equals(volumeInfo.getSize())) {
-                return disk;
+            VirtualDeviceBackingInfo backingInfo = disk.getBacking();
+            if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                if (disk.getCapacityInBytes().equals(volumeInfo.getSize()) && diskBackingInfo.getFileName().contains(volumeName) && disk.getUnitNumber() == deviceId) {
+                    return disk;
+                }
             }
         }
         throw new CloudRuntimeException("Volume to restore could not be found");
     }
+
 
     /**
      * Get volume full path
@@ -1121,8 +1129,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmRestored = findVM(dcMo, location);
+        int newDeviceId = (int) (_volumeDao.findByInstance(vm.getId()).stream().mapToLong(VolumeVO::getDeviceId).max().orElse(0L) + 1);
         VirtualMachineMO vmMo = findVM(dcMo, vm.getInstanceName());
-        VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
+        VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored, location.split(".vmdk")[0], newDeviceId);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
         s_logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB()) + " path=" + diskPath);

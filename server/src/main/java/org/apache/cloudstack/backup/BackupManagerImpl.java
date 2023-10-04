@@ -676,13 +676,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      *
      */
     private void tryToUpdateStateOfSpecifiedVolume(VolumeVO volume, Volume.Event event, Volume.State next) {
-        LOG.debug(String.format("Trying to update state of volume [%s] with event [%s].", volume, event));
+        LOG.debug(String.format("Trying to update state of volume [%s] with event [%s].", volume.getVolumeDescription(), event));
         try {
             if (!volumeApiService.stateTransitTo(volume, event)) {
-                throw new CloudRuntimeException(String.format("Unable to change state of volume [%s] to [%s].", volume, next));
+                throw new CloudRuntimeException(String.format("Unable to change state of volume [%s] to [%s].", volume.getVolumeDescription(), next));
             }
         } catch (NoTransitionException e) {
-            String errMsg = String.format("Failed to update state of volume [%s] with event [%s] due to [%s].", volume, event, e.getMessage());
+            String errMsg = String.format("Failed to update state of volume [%s] with event [%s] due to [%s].", volume.getVolumeDescription(), event, e.getMessage());
             LOG.error(errMsg, e);
             throw new RuntimeException(errMsg);
         }
