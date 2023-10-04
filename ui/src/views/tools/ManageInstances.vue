@@ -114,11 +114,11 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :md="24" :lg="16" v-if="isUnmanaged">
+                <a-col :md="24" :lg="16">
                   <a-form-item
                     name="podid"
                     ref="podid"
-                    :label="$t('label.podid')">
+                    :label="isMigrateFromVmware ? $t('label.destination.pod') : $t('label.podid')">
                     <a-select
                       v-model:value="form.podid"
                       showSearch
@@ -130,11 +130,11 @@
                     ></a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :md="24" :lg="16" v-if="isUnmanaged">
+                <a-col :md="24" :lg="16">
                   <a-form-item
                     name="clusterid"
                     ref="clusterid"
-                    :label="$t('label.clusterid')">
+                    :label="isMigrateFromVmware ? $t('label.destination.cluster') : $t('label.clusterid')">
                     <a-select
                       v-model:value="form.clusterid"
                       showSearch
@@ -148,7 +148,7 @@
                 </a-col>
               </a-form>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="isKVM && isMigrateFromVmware">
+            <a-col :md="24" :lg="12" v-if="isKVM && isMigrateFromVmware && clusterId != undefined">
               <SelectVmwareVcenter
                 @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
                 @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
@@ -513,7 +513,8 @@ export default {
           isLoad: false,
           options: {
             zoneid: _.get(this.zone, 'id'),
-            podid: this.podId
+            podid: this.podId,
+            hypervisor: this.destinationHypervisor
           },
           field: 'clusterid'
         }
@@ -744,6 +745,7 @@ export default {
     onSelectPodId (value) {
       this.podId = value
       this.resetLists()
+      this.clusterId = null
       this.form.clusterid = undefined
       this.updateQuery('podid', value)
       this.fetchOptions(this.params.clusters, 'clusters', value)
