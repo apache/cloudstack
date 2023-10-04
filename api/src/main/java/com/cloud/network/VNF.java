@@ -18,9 +18,9 @@ package com.cloud.network;
 
 import org.apache.commons.lang3.StringUtils;
 
-public interface VNF {
+public class VNF {
 
-    enum AccessMethod {
+    public enum AccessMethod {
         SSH_WITH_PASSWORD("ssh-password"),
         SSH_WITH_KEY("ssh-key"),
         HTTP("http"),
@@ -52,7 +52,7 @@ public interface VNF {
         }
     }
 
-    enum AccessDetail {
+    public enum AccessDetail {
         ACCESS_METHODS,
         USERNAME,
         PASSWORD,
@@ -67,14 +67,14 @@ public interface VNF {
         HTTPS_PORT
     }
 
-    enum VnfDetail {
+    public enum VnfDetail {
         ICON,
         VERSION,
         VENDOR,
         MAINTAINER
     }
 
-    class VnfNic {
+    public static class VnfNic {
         long deviceId;
         String name;
         boolean required;
