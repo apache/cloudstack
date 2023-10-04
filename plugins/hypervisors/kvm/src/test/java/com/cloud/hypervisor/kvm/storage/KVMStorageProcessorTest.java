@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Set;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,6 +93,9 @@ public class KVMStorageProcessorTest {
 
     @Mock
     Connect connectMock;
+
+    @Mock
+    QemuImg qemuImgMock;
 
     @Mock
     LibvirtDomainXMLParser libvirtDomainXMLParserMock;
@@ -251,32 +257,53 @@ public class KVMStorageProcessorTest {
 
     @Test
     @PrepareForTest(KVMStorageProcessor.class)
-    public void validateCopySnapshotToPrimaryStorageDirFailToCopyReturnErrorMessage() throws Exception {
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithQemuImgExceptionReturnErrorMessage() throws Exception {
         String baseFile = "baseFile";
         String snapshotPath = "snapshotPath";
         String errorMessage = "error";
-        String expectedResult = String.format("Unable to copy %s snapshot [%s] to [%s] due to [%s].", volumeObjectToMock, baseFile, snapshotPath, errorMessage);
+        String expectedResult = String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volumeObjectToMock, baseFile, snapshotPath, errorMessage);
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.copy(Mockito.any(Path.class), Mockito.any(Path.class), Mockito.any())).thenThrow(new IOException(errorMessage));
 
-        String result = storageProcessorSpy.copySnapshotToPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock);
+        PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
+        Mockito.doThrow(new QemuImgException(errorMessage)).when(qemuImgMock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
+
+        String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
 
         Assert.assertEquals(expectedResult, result);
     }
 
     @Test
     @PrepareForTest(KVMStorageProcessor.class)
-    public void validateCopySnapshotToPrimaryStorageDirCopySuccessReturnNull() throws Exception {
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() throws Exception {
+        String baseFile = "baseFile";
+        String snapshotPath = "snapshotPath";
+        String errorMessage = "null";
+        String expectedResult = String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volumeObjectToMock, baseFile, snapshotPath, errorMessage);
+
+        Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
+
+        PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
+        Mockito.doThrow(LibvirtException.class).when(qemuImgMock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
+
+        String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
+
+        Assert.assertEquals(expectedResult, result);
+    }
+
+
+    @Test
+    @PrepareForTest(KVMStorageProcessor.class)
+    public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestConvertSuccessReturnNull() throws Exception {
         String baseFile = "baseFile";
         String snapshotPath = "snapshotPath";
 
         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
-        PowerMockito.mockStatic(Files.class);
-        PowerMockito.when(Files.copy(Mockito.any(Path.class), Mockito.any(Path.class), Mockito.any())).thenReturn(null);
 
-        String result = storageProcessorSpy.copySnapshotToPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock);
+        PowerMockito.whenNew(QemuImg.class).withArguments(Mockito.anyInt()).thenReturn(qemuImgMock);
+        Mockito.doNothing().when(qemuImgMock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
+
+        String result = storageProcessorSpy.convertBaseFileToSnapshotFileInPrimaryStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, volumeObjectToMock, 1);
 
         Assert.assertNull(result);
     }
@@ -321,14 +348,14 @@ public class KVMStorageProcessorTest {
 
     @Test
     public void validateValidateCopyResultResultIsNullReturn() throws CloudRuntimeException, IOException{
-        storageProcessorSpy.validateCopyResult(null, "");
+        storageProcessorSpy.validateConvertResult(null, "");
     }
 
     @Test (expected = IOException.class)
     public void validateValidateCopyResultFailToDeleteThrowIOException() throws CloudRuntimeException, IOException{
         PowerMockito.mockStatic(Files.class);
         PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenThrow(new IOException(""));
-        storageProcessorSpy.validateCopyResult("", "");
+        storageProcessorSpy.validateConvertResult("", "");
     }
 
     @Test (expected = CloudRuntimeException.class)
@@ -336,7 +363,7 @@ public class KVMStorageProcessorTest {
     public void validateValidateCopyResulResultNotNullThrowCloudRuntimeException() throws CloudRuntimeException, IOException{
         PowerMockito.mockStatic(Files.class);
         PowerMockito.when(Files.deleteIfExists(Mockito.any())).thenReturn(true);
-        storageProcessorSpy.validateCopyResult("", "");
+        storageProcessorSpy.validateConvertResult("", "");
     }
 
     @Test (expected = CloudRuntimeException.class)
