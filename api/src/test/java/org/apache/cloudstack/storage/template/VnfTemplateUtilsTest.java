@@ -26,9 +26,8 @@ import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,11 @@ public class VnfTemplateUtilsTest {
                 Map.entry("name", "eth0"),
                 Map.entry("description", "The first NIC of VNF appliance")
         )));
-        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
+
+        Map<String, Object> vnfNicsMock = Mockito.mock(Map.class);
+        Mockito.when(vnfNicsMock.values()).thenReturn(vnfNics.values());
+
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNicsMock);
         Assert.assertEquals(3, nicsList.size());
         Assert.assertEquals(0, nicsList.get(0).getDeviceId());
         Assert.assertEquals("eth0", nicsList.get(0).getName());
@@ -77,7 +80,10 @@ public class VnfTemplateUtilsTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
+        Map<String, Object> vnfNicsMock = Mockito.mock(Map.class);
+        Mockito.when(vnfNicsMock.values()).thenReturn(vnfNics.values());
+
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNicsMock);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -89,7 +95,10 @@ public class VnfTemplateUtilsTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
+        Map<String, Object> vnfNicsMock = Mockito.mock(Map.class);
+        Mockito.when(vnfNicsMock.values()).thenReturn(vnfNics.values());
+
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNicsMock);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -102,42 +111,85 @@ public class VnfTemplateUtilsTest {
                 Map.entry("description", "The second NIC of VNF appliance")
         )));
 
-        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNics);
+        Map<String, Object> vnfNicsMock = Mockito.mock(Map.class);
+        Mockito.when(vnfNicsMock.values()).thenReturn(vnfNics.values());
+
+        List<VnfNic> nicsList = VnfTemplateUtils.getVnfNicsList(vnfNicsMock);
     }
 
     @Test
     public void testValidateVnfNicsAllGood() {
-        List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
-        nicsList.add(new VnfNic(1, "eth1", true, true, "second NIC"));
-        nicsList.add(new VnfNic(2, "eth2", false, true, "third NIC"));
+        VnfNic nic1 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic1.getDeviceId()).thenReturn(0L);
+        Mockito.when(nic1.isRequired()).thenReturn(true);
+
+        VnfNic nic2 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic2.getDeviceId()).thenReturn(1L);
+        Mockito.when(nic2.isRequired()).thenReturn(true);
+
+        VnfNic nic3 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic3.getDeviceId()).thenReturn(2L);
+        Mockito.when(nic3.isRequired()).thenReturn(false);
+
+        List<VnfNic> nicsList = Arrays.asList(nic1, nic2, nic3);
+
         VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsStartWithNonzero() {
-        List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(1, "eth0", true, true, "first NIC"));
-        nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
-        nicsList.add(new VnfNic(3, "eth2", false, true, "third NIC"));
+        VnfNic nic1 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic1.getDeviceId()).thenReturn(1L);
+        Mockito.when(nic1.isRequired()).thenReturn(true);
+
+        VnfNic nic2 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic2.getDeviceId()).thenReturn(2L);
+        Mockito.when(nic2.isRequired()).thenReturn(true);
+
+        VnfNic nic3 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic3.getDeviceId()).thenReturn(3L);
+        Mockito.when(nic3.isRequired()).thenReturn(false);
+
+        List<VnfNic> nicsList = Arrays.asList(nic1, nic2, nic3);
+
         VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsWithNonConstantDeviceIds() {
-        List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
-        nicsList.add(new VnfNic(2, "eth1", true, true, "second NIC"));
-        nicsList.add(new VnfNic(4, "eth2", false, true, "third NIC"));
+        VnfNic nic1 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic1.getDeviceId()).thenReturn(0L);
+        Mockito.when(nic1.isRequired()).thenReturn(true);
+
+        VnfNic nic2 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic2.getDeviceId()).thenReturn(2L);
+        Mockito.when(nic2.isRequired()).thenReturn(true);
+
+        VnfNic nic3 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic3.getDeviceId()).thenReturn(4L);
+        Mockito.when(nic3.isRequired()).thenReturn(false);
+
+        List<VnfNic> nicsList = Arrays.asList(nic1, nic2, nic3);
+
         VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVnfNicsWithInvalidRequired() {
-        List<VnfNic> nicsList = new ArrayList<>();
-        nicsList.add(new VnfNic(0, "eth0", true, true, "first NIC"));
-        nicsList.add(new VnfNic(1, "eth1", false, true, "second NIC"));
-        nicsList.add(new VnfNic(2, "eth2", true, true, "third NIC"));
+        VnfNic nic1 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic1.getDeviceId()).thenReturn(0L);
+        Mockito.when(nic1.isRequired()).thenReturn(true);
+
+        VnfNic nic2 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic2.getDeviceId()).thenReturn(1L);
+        Mockito.when(nic2.isRequired()).thenReturn(false);
+
+        VnfNic nic3 = Mockito.mock(VnfNic.class);
+        Mockito.when(nic3.getDeviceId()).thenReturn(2L);
+        Mockito.when(nic3.isRequired()).thenReturn(true);
+
+        List<VnfNic> nicsList = Arrays.asList(nic1, nic2, nic3);
+
         VnfTemplateUtils.validateVnfNics(nicsList);
     }
 
@@ -145,7 +197,14 @@ public class VnfTemplateUtilsTest {
     public void testValidateApiCommandParamsAllGood() {
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
-        RegisterVnfTemplateCmd cmd = new RegisterVnfTemplateCmd();
+        RegisterVnfTemplateCmd cmd = Mockito.mock(RegisterVnfTemplateCmd.class);
+        Map<String, String> vnfDetails = Mockito.spy(new HashMap<>());
+        vnfDetails.put("access_methods", "console");
+        vnfDetails.put("username", "admin");
+        vnfDetails.put("password", "password");
+        vnfDetails.put("version", "4.19.0");
+        vnfDetails.put("vendor", "cloudstack");
+        Mockito.when(cmd.getVnfDetails()).thenReturn(vnfDetails);
 
         VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
@@ -154,12 +213,10 @@ public class VnfTemplateUtilsTest {
     public void testValidateApiCommandParamsInvalidAccessMethods() {
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
-        UpdateVnfTemplateCmd cmd = new UpdateVnfTemplateCmd();
-        Map<String, Object> vnfDetails = new HashMap<>();
-        vnfDetails.put("0", new HashMap<>(Map.ofEntries(
-                Map.entry("accessMethods", "invalid")
-        )));
-        ReflectionTestUtils.setField(cmd,"vnfDetails", vnfDetails);
+        UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
+        Map<String, String> vnfDetails = Mockito.spy(new HashMap<>());
+        vnfDetails.put("access_methods", "invalid");
+        Mockito.when(cmd.getVnfDetails()).thenReturn(vnfDetails);
 
         VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
@@ -168,33 +225,19 @@ public class VnfTemplateUtilsTest {
     public void testValidateApiCommandParamsInvalidAccessDetails() {
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
-        UpdateVnfTemplateCmd cmd = new UpdateVnfTemplateCmd();
-        Map<String, Object> accessDetails = new HashMap<>();
-        accessDetails.put("0", new HashMap<>(Map.ofEntries(
-                Map.entry("username", "admin"),
-                Map.entry("password", "password"),
-                Map.entry("invalid", "value")
-        )));
-        ReflectionTestUtils.setField(cmd,"vnfDetails", accessDetails);
+        UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
+        Map<String, String> vnfDetails = Mockito.spy(new HashMap<>());
+        vnfDetails.put("invalid", "value");
+        Mockito.when(cmd.getVnfDetails()).thenReturn(vnfDetails);
 
         VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testValidateApiCommandParamsInvalidVnfDetails() {
+    public void testValidateApiCommandParamsInvalidTemplateType() {
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
-        UpdateVnfTemplateCmd cmd = new UpdateVnfTemplateCmd();
-        Map<String, Object> vnfDetails = new HashMap<>();
-        vnfDetails.put("0", new HashMap<>(Map.ofEntries(
-                Map.entry("accessMethods", "console"),
-                Map.entry("username", "admin"),
-                Map.entry("password", "password"),
-                Map.entry("version", "4.19.0"),
-                Map.entry("vendor", "cloudstack"),
-                Map.entry("invalid", "value")
-        )));
-        ReflectionTestUtils.setField(cmd,"vnfDetails", vnfDetails);
+        Mockito.when(template.getTemplateType()).thenReturn(Storage.TemplateType.USER);
+        UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
 
         VnfTemplateUtils.validateApiCommandParams(cmd, template);
     }
