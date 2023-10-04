@@ -25,7 +25,7 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.utils.db.Filter;
@@ -43,7 +43,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class StoragePoolTagsDaoImplTest extends TestCase {
 
     @Mock

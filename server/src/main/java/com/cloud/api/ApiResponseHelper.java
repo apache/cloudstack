@@ -1639,6 +1639,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmResponse.setCreated(vm.getCreated());
             vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
 
+            ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+            if (serviceOffering != null) {
+                vmResponse.setServiceOfferingId(serviceOffering.getUuid());
+                vmResponse.setServiceOfferingName(serviceOffering.getName());
+            }
+
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
                 if (host != null) {

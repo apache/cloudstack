@@ -427,7 +427,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(network)
         self.assertEqual(network.state.lower() == ALLOCATED.lower(),
                          True,
-                         "Admin User is not able to create a network for for other users in other domain")
+                         "Admin User is not able to create a network for other users in other domain")
 
 
     ## Test cases relating to createNetwork as domain admin user
@@ -575,7 +575,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         except Exception as e:
             self.debug("When user tries to create network for users in their domain %s" % e)
             if not CloudstackAclException.verifyMsginException(e, CloudstackAclException.UNABLE_TO_LIST_NETWORK_ACCOUNT):
-                self.fail("Error message validation failed when when User tries to create network for other users in their domain ")
+                self.fail("Error message validation failed when User tries to create network for other users in their domain ")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_10_createNetwork_user_foruserinotherdomain(self):
@@ -674,7 +674,7 @@ class TestIsolatedNetwork(cloudstackTestCase):
         self.cleanup.append(vm)
         self.assertEqual(vm.state.lower() == RUNNING.lower() and vm.account == self.account_d2a.name and vm.domainid == self.account_d2a.domainid,
                          True,
-                         "Admin User is not able to deploy VM for users users in other domain")
+                         "Admin User is not able to deploy VM for users in other domain")
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_13_1_deployvm_admin_foruserinotherdomain_crossnetwork(self):

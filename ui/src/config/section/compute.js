@@ -370,7 +370,13 @@ export default {
           message: 'message.action.instance.reset.password',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
-          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
+          response: (result) => {
+            return {
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
+              copytext: result.virtualmachine.password ? result.virtualmachine.password : null
+            }
+          }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',

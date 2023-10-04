@@ -140,7 +140,7 @@ public final class NiciraNvpConfigureSharedNetworkUuidCommandWrapper extends Com
             cleanupLSwitchPort(logicalSwitchUuid, lSwitchPort, niciraNvpApi);
             return handleException(e, command, niciraNvpResource);
         }
-        s_logger.debug("Logical Router Port " + lRouterPort.getUuid() + " (" + lRouterPort.getDisplayName() + ") successfully attached to to Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") with a PatchAttachment");
+        s_logger.debug("Logical Router Port " + lRouterPort.getUuid() + " (" + lRouterPort.getDisplayName() + ") successfully attached to Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") with a PatchAttachment");
 
 
         //Step 5: Attach lSwitchPort to lRouterPort with a PatchAttachment
@@ -154,7 +154,7 @@ public final class NiciraNvpConfigureSharedNetworkUuidCommandWrapper extends Com
             cleanupLSwitchPort(logicalSwitchUuid, lSwitchPort, niciraNvpApi);
             return handleException(e, command, niciraNvpResource);
         }
-        s_logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully attached to to Logical Router Port " + lRouterPort.getUuid() + " (" + lRouterPort.getDisplayName() + ") with a PatchAttachment");
+        s_logger.debug("Logical Switch Port " + lSwitchPort.getUuid() + " (" + lSwitchPort.getDisplayName() + ") successfully attached to Logical Router Port " + lRouterPort.getUuid() + " (" + lRouterPort.getDisplayName() + ") with a PatchAttachment");
 
         s_logger.info("Successfully attached Logical Switch " + logicalSwitchUuid + " on Logical Router " + logicalRouterUuid + " for Shared Network " + networkId);
         return new ConfigureSharedNetworkUuidAnswer(command, true, "OK");
