@@ -84,7 +84,7 @@ class TestVnfTemplates(cloudstackTestCase):
         cls.vnf_template_config = {
             "name": "pfsense",
             "displaytext": "pfsense",
-            "format": "QCOW2",
+            "format": cls.template.format,
             "url": cls.template.url,
             "requireshvm": "True",
             "ispublic": "True",
@@ -106,6 +106,9 @@ class TestVnfTemplates(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         Configurations.update(cls.apiclient, "vnf.template.appliance.enabled", cls.initial_setting)
+        if len(cls.vnf_templates) > 0:
+            for vnf_template in cls.vnf_templates:
+                vnf_template.delete(cls.user_apiclient)
         super(TestVnfTemplates, cls).tearDownClass()
 
     def setUp(self):
@@ -116,43 +119,19 @@ class TestVnfTemplates(cloudstackTestCase):
     def tearDown(self):
         super(TestVnfTemplates, self).tearDown()
 
-    @attr(tags=["advanced"], required_hardware="false")
-    def test_01_register_vnf_template(self):
-        """Test register VNF template
-        """
-        self.vnf_template = VnfTemplate.register(self.user_apiclient,
-                                                 self.vnf_template_config,
-                                                 zoneid=self.zone.id,
-                                                 hypervisor=self.hypervisor,
-                                                 vnfnics=VNF_NICS,
-                                                 vnfdetails=VNF_DETAILS)
-        self.vnf_templates.append(self.vnf_template)
-
-    @attr(tags=["advanced"], required_hardware="false")
-    def test_02_list_vnf_template(self):
-        """Test list VNF template
-        """
-        self.assertIsNotNone(self.vnf_templates, "VNF templates should not be null")
-        self.assertEqual(1, len(self.vnf_templates), "There should be 1 VNF template")
-        self.vnf_template = self.vnf_templates[0]
-
-        templates_response = VnfTemplate.list(
-            self.user_apiclient,
-            id=self.vnf_template.id,
-            zoneid=self.zone.id,
-            templatefilter='self'
-        )
-
-        if isinstance(templates_response, list) and len(templates_response) > 0:
-            template = templates_response[0]
-            self.assertEqual("VNF", template.templatetype,
-                             "The template type of VNF template should be VNF but actually it is %s" % template.templatetype)
-            self.assertTrue(isinstance(template.vnfnics, list), "The template vnfnics must be a list")
-            self.assertEqual(2, len(template.vnfnics), "The VNF template should have 2 VNF nics")
-            self.assertEqual(2, len(template.vnfdetails.__dict__), "The VNF template should have 2 VNF details")
+    def ensureVnfTemplateExists(self):
+        if len(self.vnf_templates) == 0:
+            self.vnf_template = VnfTemplate.register(self.user_apiclient,
+                                                     self.vnf_template_config,
+                                                     zoneid=self.zone.id,
+                                                     hypervisor=self.hypervisor,
+                                                     vnfnics=VNF_NICS,
+                                                     vnfdetails=VNF_DETAILS)
+            self.vnf_templates.append(self.vnf_template)
         else:
-            self.fail("Failed to get VNF templates by listVnfTemplates API")
+            self.vnf_template = self.vnf_templates[0]
 
+    def ensureVnfTemplateDownloaded(self):
         """Check if template download will finish in 5 minutes"""
         retries = 30
         interval = 10
@@ -191,13 +170,39 @@ class TestVnfTemplates(cloudstackTestCase):
         raise Exception("Template download failed exception.")
 
     @attr(tags=["advanced"], required_hardware="false")
+    def test_01_register_vnf_template(self):
+        """Test register VNF template
+        """
+        self.ensureVnfTemplateExists()
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_02_list_vnf_template(self):
+        """Test list VNF template
+        """
+        self.ensureVnfTemplateExists()
+
+        templates_response = VnfTemplate.list(
+            self.user_apiclient,
+            id=self.vnf_template.id,
+            zoneid=self.zone.id,
+            templatefilter='self'
+        )
+
+        if isinstance(templates_response, list) and len(templates_response) > 0:
+            template = templates_response[0]
+            self.assertEqual("VNF", template.templatetype,
+                             "The template type of VNF template should be VNF but actually it is %s" % template.templatetype)
+            self.assertTrue(isinstance(template.vnfnics, list), "The template vnfnics must be a list")
+            self.assertEqual(2, len(template.vnfnics), "The VNF template should have 2 VNF nics")
+            self.assertEqual(2, len(template.vnfdetails.__dict__), "The VNF template should have 2 VNF details")
+        else:
+            self.fail("Failed to get VNF templates by listVnfTemplates API")
+
+    @attr(tags=["advanced"], required_hardware="false")
     def test_03_edit_vnf_template(self):
         """Test edit VNF template
         """
-
-        self.assertIsNotNone(self.vnf_templates, "VNF templates should not be null")
-        self.assertEqual(1, len(self.vnf_templates), "There should be 1 VNF template")
-        self.vnf_template = self.vnf_templates[0]
+        self.ensureVnfTemplateExists()
 
         self.vnf_template.update(
             self.user_apiclient,
@@ -226,10 +231,8 @@ class TestVnfTemplates(cloudstackTestCase):
     def test_04_deploy_vnf_appliance(self):
         """Test deploy VNF appliance
         """
-
-        self.assertIsNotNone(self.vnf_templates, "VNF templates should not be null")
-        self.assertEqual(1, len(self.vnf_templates), "There should be 1 VNF template")
-        self.vnf_template = self.vnf_templates[0]
+        self.ensureVnfTemplateExists()
+        self.ensureVnfTemplateDownloaded()
 
         templates_response = VnfTemplate.list(
             self.user_apiclient,
@@ -321,10 +324,7 @@ class TestVnfTemplates(cloudstackTestCase):
     def test_05_delete_vnf_template(self):
         """Test delete VNF template
         """
-
-        self.assertIsNotNone(self.vnf_templates, "VNF templates should not be null")
-        self.assertEqual(1, len(self.vnf_templates), "There should be 1 VNF template")
-        self.vnf_template = self.vnf_templates[0]
+        self.ensureVnfTemplateExists()
 
         self.vnf_template.delete(self.user_apiclient)
 
@@ -335,3 +335,5 @@ class TestVnfTemplates(cloudstackTestCase):
             templatefilter='self'
         )
         self.assertIsNone(templates_response, "The VNF template should be removed")
+
+        self.vnf_templates.remove(self.vnf_template)
