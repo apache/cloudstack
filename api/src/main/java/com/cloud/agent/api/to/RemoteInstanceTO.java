@@ -18,6 +18,7 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.agent.api.LogLevel;
 import com.cloud.hypervisor.Hypervisor;
 
 import java.io.Serializable;
@@ -31,6 +32,7 @@ public class RemoteInstanceTO implements Serializable {
     // Vmware Remote Instances parameters
     // TODO: cloud.agent.transport.Request#getCommands() cannot handle gsoc decode for polymorphic classes
     private String vcenterUsername;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private String vcenterPassword;
     private String vcenterHost;
     private String datacenterName;

@@ -263,7 +263,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             password = sourceInstance.getVcenterPassword();
         }
         String passwordFile = String.format("/tmp/vmw-%s", UUID.randomUUID());
-        Script.runSimpleBashScript(String.format("echo \"%s\" > %s", password, passwordFile));
+        String msg = String.format("Creating a temporary password file for VMware instance %s conversion on: %s", sourceInstance.getInstanceName(), passwordFile);
+        s_logger.debug(msg);
+        Script.runSimpleBashScriptForExitValueAvoidLogging(String.format("echo \"%s\" > %s", password, passwordFile));
         return passwordFile;
     }
 

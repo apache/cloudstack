@@ -1233,17 +1233,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(Long existingVcenterId, String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
+    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
-        if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
-            throw new CloudRuntimeException("Please provide an existing vCenter ID or a vCenter IP/Name, parameters are mutually exclusive");
-        } else if (existingVcenterId == null && org.apache.commons.lang3.StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
-            throw new CloudRuntimeException("Please set all the information for a vCenter IP/Name, datacenter, username and password");
-        }
-
-        Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(existingVcenterId,
-                vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVM);
+        Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
+                username, password, clusterName, sourceHostName, sourceVM);
 
         return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, true, params);
     }
@@ -1274,10 +1268,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
 
+        if (existingVcenterId != null) {
+            VmwareDatacenterVO existingDC = vmwareDatacenterDao.findById(existingVcenterId);
+            if (existingDC == null) {
+                String err = String.format("Cannot find any existing Vmware DC with ID %s", existingVcenterId);
+                LOGGER.error(err);
+                throw new CloudRuntimeException(err);
+            }
+            vcenter = existingDC.getVcenterHost();
+            datacenterName = existingDC.getVmwareDatacenterName();
+            username = existingDC.getUser();
+            password = existingDC.getPassword();
+        }
+
         UnmanagedInstanceTO clonedInstance = null;
         boolean isSourceVMRestoreNeeded = false;
         try {
-            clonedInstance = cloneSourceVmwareUnmanagedInstance(existingVcenterId, vcenter, datacenterName, username, password,
+            clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
                     clusterName, sourceHostName, sourceVM);
             isSourceVMRestoreNeeded = clonedInstance.getCloneSourcePowerState() == UnmanagedInstanceTO.PowerState.PowerOn;
             checkClonedInstanceMacAddresses(clonedInstance, nicNetworkMap, forced);
@@ -1456,25 +1463,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return imageStore.getUrl();
     }
 
-    protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(Long existingVcenterId,
-                                                                               String vcenterHost, String datacenterName,
+    protected Map<String, String> createParamsForTemplateFromVmwareVmMigration(String vcenterHost, String datacenterName,
                                                                                String username, String password,
                                                                                String clusterName, String sourceHostName,
                                                                                String sourceVMName) {
         Map<String, String> params = new HashMap<>();
-        VmwareDatacenterVO existingDC = null;
-        if (existingVcenterId != null) {
-            existingDC = vmwareDatacenterDao.findById(existingVcenterId);
-            if (existingDC == null) {
-                String err = String.format("Cannot find any existing Vmware DC with ID %s", existingDC);
-                LOGGER.error(err);
-                throw new CloudRuntimeException(err);
-            }
-        }
-        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, existingDC != null ? existingDC.getVcenterHost() : vcenterHost);
-        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, existingDC != null ? existingDC.getVmwareDatacenterName() : datacenterName);
-        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, existingDC != null ? existingDC.getUser() : username);
-        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, existingDC != null ? existingDC.getPassword() : password);
+        params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vcenterHost);
+        params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
+        params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, username);
+        params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, password);
         params.put(VmDetailConstants.VMWARE_CLUSTER_NAME, clusterName);
         params.put(VmDetailConstants.VMWARE_HOST_NAME, sourceHostName);
         params.put(VmDetailConstants.VMWARE_VM_NAME, sourceVMName);
