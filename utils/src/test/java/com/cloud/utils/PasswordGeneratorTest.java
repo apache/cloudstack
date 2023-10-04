@@ -63,6 +63,7 @@ public class PasswordGeneratorTest {
         }
         return false;
     }
+
     private boolean containsSpecialChar(String password) {
         String symbols = new String(passwordgenerator.symbols);
         for (char c : password.toCharArray()) {
