@@ -22,6 +22,7 @@ This PR...
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] Enhancement (improves an existing feature and functionality)
 - [ ] Cleanup (Code refactoring and cleanup, that may add test cases)
+- [ ] build/CI
 
 ### Feature/Enhancement Scale or Bug Severity
 
