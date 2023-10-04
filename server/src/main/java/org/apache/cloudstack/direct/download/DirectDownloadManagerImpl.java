@@ -42,6 +42,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
@@ -330,6 +331,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         int hostIndex = 0;
         Answer answer = null;
         String answerDetails = "";
+        String errorDetails = "";
         Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
         boolean continueRetrying = true;
         while (!downloaded && retry > 0 && continueRetrying) {
@@ -365,9 +367,12 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         if (!downloaded) {
             logUsageEvent(template, poolId);
             if (!answerDetails.isEmpty()){
-                answerDetails = String.format(" Details: %s", answerDetails);
+                Account caller = CallContext.current().getCallingAccount();
+                if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+                    errorDetails = String.format(" Details: %s", answerDetails);
+                }
             }
-            throw new CloudRuntimeException(String.format("Template %d could not be downloaded on pool %d, failing after trying on several hosts%s", template.getId(), poolId, answerDetails));
+            throw new CloudRuntimeException(String.format("Template %d could not be downloaded on pool %d, failing after trying on several hosts%s", template.getId(), poolId, errorDetails));
         }
         return answer;
     }
