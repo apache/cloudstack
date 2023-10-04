@@ -81,18 +81,8 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
                 throw new CloudRuntimeException("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
             }
 
-            // Filter instance if answer is requested for a particular instance name
-            if (StringUtils.isNotEmpty(vmNameCmd) &&
-                    !vmNameCmd.equals(domain.getName())) {
-                LOGGER.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
-                throw new CloudRuntimeException("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
-            }
-
-            // Filter out if asked name is already managed
-            if (command.hasManagedInstance(domain.getName())) {
-                LOGGER.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
-                throw new CloudRuntimeException("GetUnmanagedInstancesCommand:  vm already managed " + vmNameCmd);
-            }
+            checkIfVmExists(vmNameCmd,domain);
+            checkIfVmIsManaged(command,vmNameCmd,domain);
 
             domains.add(domain);
         } else {
@@ -107,6 +97,20 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         return domains;
     }
 
+    private void checkIfVmExists(String vmNameCmd,final Domain domain) throws LibvirtException {
+        if (StringUtils.isNotEmpty(vmNameCmd) &&
+                !vmNameCmd.equals(domain.getName())) {
+            LOGGER.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
+            throw new CloudRuntimeException("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
+        }
+    }
+
+    private void checkIfVmIsManaged(GetUnmanagedInstancesCommand command,String vmNameCmd,final Domain domain) throws LibvirtException {
+        if (command.hasManagedInstance(domain.getName())) {
+            LOGGER.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
+            throw new CloudRuntimeException("GetUnmanagedInstancesCommand:  vm already managed " + vmNameCmd);
+        }
+    }
     private UnmanagedInstanceTO getUnmanagedInstance(LibvirtComputingResource libvirtComputingResource, Domain domain, Connect conn) {
         try {
             final LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
