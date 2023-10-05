@@ -35,6 +35,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -155,6 +163,12 @@ public class VirtualMachineManagerImplTest {
     private UserVmDao userVmDaoMock;
     @Mock
     private UserVmVO userVmMock;
+    @Mock
+    private NetworkDao networkDao;
+    @Mock
+    private AccountDao accountDao;
+    @Mock
+    private VpcDao vpcDao;
 
     @Before
     public void setup() {
@@ -894,5 +908,36 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(pool2.getClusterId()).thenReturn(null);
         map.put(Mockito.mock(Volume.class), pool2);
         virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, destinationClusterId, map);
+    }
+
+    @Test
+    public void checkIfVmNetworkDetailsReturnedIsCorrect() {
+        VMInstanceVO vm = new VMInstanceVO(1L, 1L, "VM1", "i-2-2-VM",
+                VirtualMachine.Type.User, 1L, HypervisorType.KVM, 1L, 1L, 1L,
+                1L, false, false);
+
+        VirtualMachineTO vmTO = new VirtualMachineTO() {};
+        UserVmJoinVO userVm = new UserVmJoinVO();
+        NetworkVO networkVO = new NetworkVO();
+        AccountVO accountVO = new AccountVO();
+        VpcVO vpcVO = new VpcVO();
+
+        networkVO.setAccountId(1L);
+        networkVO.setName("testNet");
+        networkVO.setVpcId(1L);
+
+        accountVO.setAccountName("testAcc");
+
+        vpcVO.setName("VPC1");
+
+
+        List<UserVmJoinVO> userVms = List.of(userVm);
+        Mockito.when(userVmJoinDaoMock.searchByIds(anyLong())).thenReturn(userVms);
+        Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
+        Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
+        Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+        virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
+        assertEquals(vmTO.getNetworkIdToNetworkNameMap().size(), 1);
+        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(0L), "testAcc-VPC1-testNet");
     }
 }
