@@ -51,19 +51,18 @@ public interface ClusterDrsService extends Manager, Configurable, Scheduler {
             true, ConfigKey.Scope.Cluster, null, "Maximum number of migrations for DRS", null, null, null);
 
     ConfigKey<String> ClusterDrsAlgorithm = new ConfigKey<>(String.class, "drs.algorithm",
-            ConfigKey.CATEGORY_ADVANCED, "condensed", "DRS algorithm to execute on the cluster. Possible values are condensed, balanced.",
+            ConfigKey.CATEGORY_ADVANCED, "balanced", "The DRS algorithm to be executed on the cluster. Possible values are condensed, balanced.",
             true, ConfigKey.Scope.Cluster, null, "DRS algorithm", null, null,
             null, ConfigKey.Kind.Select, "condensed,balanced");
 
     ConfigKey<Float> ClusterDrsImbalanceThreshold = new ConfigKey<>(Float.class, "drs.imbalance",
             ConfigKey.CATEGORY_ADVANCED, "0.4",
-            "Percentage (as a value between 0.0 and 1.0) of imbalance allowed in the cluster. 1.0 means no imbalance " +
-                    "is allowed and 0.0 means imbalance is allowed.",
+            "Value of imbalance allowed in the cluster. 1.0 means no imbalance is allowed and 0.0 means full imbalance is allowed",
             true, ConfigKey.Scope.Cluster, null, "DRS imbalance", null, null, null);
 
     ConfigKey<String> ClusterDrsMetric = new ConfigKey<>(String.class, "drs.metric", ConfigKey.CATEGORY_ADVANCED,
             "memory",
-            "The cluster imbalance metric to use when considering the imbalance in cluster. Possible values are memory, cpu.",
+            "The allocated resource metric used to measure imbalance in a cluster. Possible values are memory, cpu.",
             true, ConfigKey.Scope.Cluster, null, "DRS metric", null, null, null, ConfigKey.Kind.Select,
             "memory,cpu");
 
