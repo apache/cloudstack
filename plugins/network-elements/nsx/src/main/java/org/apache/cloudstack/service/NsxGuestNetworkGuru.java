@@ -58,8 +58,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Inject
     NsxControllerUtils nsxControllerUtils;
     @Inject
-    DataCenterDao zoneDao;
-    @Inject
     AccountDao accountDao;
 
     public NsxGuestNetworkGuru() {
@@ -128,7 +126,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
         try {
             long zoneId = network.getDataCenterId();
-            DataCenter zone = zoneDao.findById(zoneId);
+            DataCenter zone = _dcDao.findById(zoneId);
             if (isNull(zone)) {
                 throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
             }
@@ -169,16 +167,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             implemented.setName(network.getName());
         }
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
-//        try {
-//            long zoneId = network.getDataCenterId();
-//            DataCenter zone = zoneDao.findById(zoneId);
-//            if (isNull(zone)) {
-//                throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
-//            }
-//            createNsxSegment(implemented, zone);
-//        } catch (Exception ex) {
-//            throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
-//        }
         return implemented;
     }
 
