@@ -1172,7 +1172,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     syncBackupMetrics(backupProvider, metrics);
                 }
             } catch (final Throwable t) {
-                LOG.error(String.format("Error trying to run backup-sync background task due to: [%s].", t.getMessage()), t);
+                logger.error(String.format("Error trying to run backup-sync background task due to: [%s].", t.getMessage()), t);
             }
         }
 

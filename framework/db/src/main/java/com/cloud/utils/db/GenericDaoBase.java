@@ -872,7 +872,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         if (_idField.getAnnotation(EmbeddedId.class) == null) {
             sql.append(_table).append(".").append(DbUtil.getColumnName(_idField, null)).append(" = ? ");
         } else {
-            s_logger.debug(String.format("field type vs declarator : %s vs %s", _idField.getType(), _idField.getDeclaringClass()));
+            logger.debug(String.format("field type vs declarator : %s vs %s", _idField.getType(), _idField.getDeclaringClass()));
             final Class<?> clazz = _idField.getType();
             final AttributeOverride[] overrides = DbUtil.getAttributeOverrides(_idField);
             for (final Field field : clazz.getDeclaredFields()) {
