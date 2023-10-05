@@ -3111,14 +3111,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
-        if (!_accountMgr.isRootAdmin(owner.getId()) && isSystem) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system offerings.");
         }
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this
         // domain
-        if (domainId != null && !_accountMgr.isRootAdmin(owner.getId())) {
+        if (domainId != null && !_accountMgr.isRootAdmin(caller.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
             if (!isPermissible(owner.getDomainId(), domainId)) {
