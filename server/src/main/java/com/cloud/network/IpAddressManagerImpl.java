@@ -2044,9 +2044,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (requestedIp != null) {
             return this.acquireGuestIpAddress(network, requestedIp);
         }
-        if ("NsxGuestNetworkGuru".equals(network.getGuruName())) {
-            return getRouterIp(network.getGateway());
-        }
         String placementConfig = VrouterRedundantTiersPlacement.valueIn(network.getAccountId());
         IpPlacement ipPlacement = IpPlacement.fromString(placementConfig);
         switch (ipPlacement) {
@@ -2056,13 +2053,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 return this.acquireFirstGuestIpAddress(network);
         }
         return this.acquireGuestIpAddress(network, null);
-    }
-
-    private String getRouterIp(String gatewayIp) {
-        int i = gatewayIp.lastIndexOf('.');
-        String ipPart1 = gatewayIp.substring(0, i);
-        int ipLastOctect = Integer.parseInt(gatewayIp.substring(i+1)) + 1;
-        return ipPart1.concat("." + ipLastOctect);
     }
 
     /**
