@@ -127,7 +127,7 @@
           <template #itemRender="{ route }">
             <span v-if="[''].includes(route.path) && route.breadcrumbName === 'root'">
               <a @click="openDir('')">
-                <FunnelPlotOutlined/>
+                <HomeOutlined/>
               </a>
             </span>
             <span v-else>
@@ -139,8 +139,8 @@
         </a-breadcrumb>
       </a-row>
       <a-divider/>
-      <a-row justify="space-around">
-        <a-col span="15">
+      <a-row :gutter="[10,10]" :wrap="true">
+        <a-col flex="75%">
           <a-input-search
             allowClear
             size="medium"
@@ -150,7 +150,7 @@
             @search="listObjects()"
             :enter-button="$t('label.search')"/>
         </a-col>
-        <a-col span="3">
+        <a-col flex="auto">
           <a-button
             :loading="loading"
             style="margin-bottom: 5px"
@@ -161,7 +161,7 @@
             {{ $t('label.refresh') }}
           </a-button>
         </a-col>
-        <a-col span="3">
+        <a-col flex="auto">
           <a-button
             :loading="loading"
             style="margin-bottom: 5px"
@@ -173,7 +173,7 @@
             {{ $t('label.upload') }}
           </a-button>
         </a-col>
-        <a-col span="1">
+        <a-col flex="auto">
           <tooltip-button
             type="primary"
             size="medium"
@@ -255,17 +255,17 @@ export default {
       {
         key: 'name',
         title: this.$t('label.name'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        sorter: (a, b) => genericCompare(a?.name || '', b?.name || '')
       },
       {
         key: 'size',
         title: this.$t('label.size'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        sorter: (a, b) => genericCompare(a?.size || '', b?.size || '')
       },
       {
         key: 'lastModified',
         title: this.$t('label.last.updated'),
-        sorter: function (a, b) { return genericCompare(a[this.key] || '', b[this.key] || '') }
+        sorter: (a, b) => genericCompare(a?.lastModified || '', b?.lastModified || '')
       }
     ]
     return {
@@ -293,8 +293,10 @@ export default {
   },
   methods: {
     handleTableChange (pagination, filters, sorter) {
-      this.page = pagination.current
-      this.fetchData()
+      if (this.page !== pagination.current) {
+        this.page = pagination.current
+        this.fetchData()
+      }
     },
     fetchData () {
       this.loading = true
