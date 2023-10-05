@@ -68,8 +68,23 @@
       <template #expandedRowRender="{ record }">
         <a-table
           style="margin: 10px 0;"
-          :columns="innerColumns"
-          :data-source="record.downloaddetails"
+          :columns="storagePoolInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          :pagination="false"
+          :bordered="true"
+          :rowKey="record => record.datastoreId">
+          <template #bodyCell="{ text, record, column }">
+            <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
+                <router-link :to="{ path: '/storagepool/' + record.datastoreId }">
+                {{ text }}
+              </router-link>
+            </template>
+          </template>
+        </a-table>
+        <a-table
+          style="margin: 10px 0;"
+          :columns="imageStoreInnerColumns"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Image')"
           :pagination="false"
           :bordered="true"
           :rowKey="record => record.datastoreId">
@@ -300,9 +315,23 @@ export default {
         dataIndex: 'isready'
       }
     ]
-    this.innerColumns = [
+    this.imageStoreInnerColumns = [
       {
         title: this.$t('label.secondary.storage'),
+        dataIndex: 'datastore'
+      },
+      {
+        title: this.$t('label.download.percent'),
+        dataIndex: 'downloadPercent'
+      },
+      {
+        title: this.$t('label.download.state'),
+        dataIndex: 'downloadState'
+      }
+    ]
+    this.storagePoolInnerColumns = [
+      {
+        title: this.$t('label.primary.storage'),
         dataIndex: 'datastore'
       },
       {

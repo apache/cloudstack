@@ -19,7 +19,7 @@ package org.apache.cloudstack.storage.datastore.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -482,7 +482,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listByStoreAndInstallPaths(long storeId, DataStoreRole role, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         SearchCriteria<SnapshotDataStoreVO> sc = dataStoreAndInstallPathSearch.create();
@@ -495,7 +495,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public List<SnapshotDataStoreVO> listByStoreAndSnapshotIds(long storeId, DataStoreRole role, List<Long> snapshotIds) {
         if (CollectionUtils.isEmpty(snapshotIds)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         SearchCriteria<SnapshotDataStoreVO> sc = storeAndSnapshotIdsSearch.create();

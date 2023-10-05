@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.image.db;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -349,7 +350,7 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
     @Override
     public List<VolumeDataStoreVO> listByStoreIdAndInstallPaths(Long storeId, List<String> paths) {
         if (CollectionUtils.isEmpty(paths)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         SearchCriteria<VolumeDataStoreVO> sc =  imageStoreAndInstallPathSearch.create();

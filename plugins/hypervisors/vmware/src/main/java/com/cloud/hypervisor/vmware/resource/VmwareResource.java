@@ -7836,19 +7836,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             String dsPath = String.format("[%s] %s", dsMo.getName(), path);
 
-            if (!path.isEmpty() && dsMo.fileExists(dsPath)) {
-                String[] pathSplit = path.split("/");
-                if (pathSplit.length > 1) {
-                    spec.getMatchPattern().add(pathSplit[pathSplit.length - 1]);
-                    path = path.substring(0, path.lastIndexOf("/"));
-                } else {
-                    // File at root of datastore
-                    spec.getMatchPattern().add(path);
-                    path = "";
-                }
-                dsPath = String.format("[%s] %s", dsMo.getName(), path);
-            }
-
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
             List<FileInfo> fileInfoList = results.getFile();
             count = fileInfoList.size();

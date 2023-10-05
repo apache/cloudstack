@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
@@ -32,9 +33,17 @@ public class ListIsosCmdByAdmin extends ListIsosCmd implements AdminCmd {
                description = "ID of the image or image cache store", since = "4.19")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
+               description = "ID of the storage pool", since = "4.19")
+    private Long storagePoolId;
 
     @Override
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    @Override
+    public Long getStoragePoolId() {
+        return storagePoolId;
     }
 }

@@ -217,4 +217,8 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     public Long getImageStoreId() {
         return null;
     }
+
+    public Long getStoragePoolId() {
+        return null;
+    }
 }

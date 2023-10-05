@@ -186,7 +186,7 @@ public class QueryManagerImplTest {
     public void getTemplateIdsFromIdsAndStoreIdWithNoTemplatesInStore() {
         List<Long> ids = new ArrayList<>();
         when(templateDataStoreDao.listByStoreId(1L)).thenReturn(new ArrayList<>());
-        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndImageStoreId(ids, 1L);
         Assert.assertEquals(0, result.size());
     }
 
@@ -198,7 +198,7 @@ public class QueryManagerImplTest {
         List<TemplateDataStoreVO> templatesInStore = new ArrayList<>();
         templatesInStore.add(templateDataStoreVO);
         when(templateDataStoreDao.listByStoreId(1L)).thenReturn(templatesInStore);
-        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndImageStoreId(ids, 1L);
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(10L, result.get(0).longValue());
     }
@@ -214,7 +214,7 @@ public class QueryManagerImplTest {
         List<TemplateDataStoreVO> templatesInStore = new ArrayList<>();
         templatesInStore.add(templateDataStoreVO);
         when(templateDataStoreDao.listByStoreId(1L)).thenReturn(templatesInStore);
-        List<Long> result = queryManager.getTemplateIdsFromIdsAndStoreId(ids, 1L);
+        List<Long> result = queryManager.getTemplateIdsFromIdsAndImageStoreId(ids, 1L);
         Assert.assertEquals(1, result.size());
         Assert.assertEquals(10L, result.get(0).longValue());
     }

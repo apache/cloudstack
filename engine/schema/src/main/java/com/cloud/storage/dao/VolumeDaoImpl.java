@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -794,7 +795,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     @Override
     public List<VolumeVO> listByPoolIdAndPaths(long id, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         SearchCriteria<VolumeVO> sc = storeAndInstallPathSearch.create();
@@ -806,7 +807,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     @Override
     public List<VolumeVO> listByIds(List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
         SearchCriteria<VolumeVO> sc = volumeIdSearch.create();
         sc.setParameters("idIN", ids.toArray());

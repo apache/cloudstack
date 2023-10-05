@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -451,6 +453,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private TemplateDataStoreDao templateDataStoreDao;
+
+    @Inject
+    private VMTemplatePoolDao templatePoolDao;
 
     @Inject
     private UserDao userDao;
@@ -3653,9 +3658,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         Long imageStoreId = cmd.getImageStoreId();
+        Long storagePoolId = cmd.getStoragePoolId();
 
         if (imageStoreId != null) {
-            ids = getTemplateIdsFromIdsAndStoreId(ids, imageStoreId);
+            ids = getTemplateIdsFromIdsAndImageStoreId(ids, imageStoreId);
+            if (ids.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+        }
+
+        if (storagePoolId != null) {
+            ids = getTemplateIdsFromIdsAndStoragePoolId(ids, storagePoolId);
             if (ids.isEmpty()) {
                 return new Pair<>(new ArrayList<>(), 0);
             }
@@ -3667,7 +3680,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ids, parentTemplateId, cmd.getShowUnique());
     }
 
-    List<Long> getTemplateIdsFromIdsAndStoreId(List<Long> ids, long storeId) {
+    List<Long> getTemplateIdsFromIdsAndStoragePoolId(List<Long> ids, long poolId) {
+        List<VMTemplateStoragePoolVO> templatesInStore = templatePoolDao.listByPoolId(poolId);
+        if (CollectionUtils.isEmpty(templatesInStore)) {
+            ids = Collections.emptyList();
+        } else {
+            List<Long> templateIdList = templatesInStore.stream().map(VMTemplateStoragePoolVO::getTemplateId).collect(Collectors.toList());
+            if (ids.isEmpty()) {
+                ids = templateIdList;
+            } else {
+                ids.retainAll(templateIdList);
+            }
+        }
+        return ids;
+    }
+
+    List<Long> getTemplateIdsFromIdsAndImageStoreId(List<Long> ids, long storeId) {
         List<TemplateDataStoreVO> templatesInStore = templateDataStoreDao.listByStoreId(storeId);
         if (CollectionUtils.isEmpty(templatesInStore)) {
             ids = Collections.emptyList();
@@ -4046,7 +4074,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             ids.add(cmd.getId());
         }
         if (cmd.getImageStoreId() != null) {
-            ids = getTemplateIdsFromIdsAndStoreId(ids, cmd.getImageStoreId());
+            ids = getTemplateIdsFromIdsAndImageStoreId(ids, cmd.getImageStoreId());
+            if (ids.isEmpty()) {
+                return new Pair<>(new ArrayList<>(), 0);
+            }
+        }
+
+        if (cmd.getStoragePoolId() != null) {
+            ids = getTemplateIdsFromIdsAndStoragePoolId(ids, cmd.getStoragePoolId());
             if (ids.isEmpty()) {
                 return new Pair<>(new ArrayList<>(), 0);
             }

@@ -23,17 +23,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -85,6 +91,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private TemplateDataStoreDao _templateStoreDao;
     @Inject
     private ImageStoreDao dataStoreDao;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private VMTemplatePoolDao templatePoolDao;
     @Inject
     private VMTemplateDetailsDao _templateDetailsDao;
     @Inject
@@ -175,14 +185,34 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         HashMap<String, String> downloadDetailInImageStores = null;
         for (TemplateDataStoreVO templateInStore : templatesInStore) {
             downloadDetailInImageStores = new HashMap<>();
-            ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
-            if (datastore != null) {
-                downloadDetailInImageStores.put("datastore", datastore.getName());
+            ImageStoreVO imageStore = dataStoreDao.findById(templateInStore.getDataStoreId());
+            if (imageStore != null) {
+                downloadDetailInImageStores.put("datastore", imageStore.getName());
                 if (view.equals(ResponseView.Full)) {
-                    downloadDetailInImageStores.put("datastoreId", datastore.getUuid());
+                    downloadDetailInImageStores.put("datastoreId", imageStore.getUuid());
+                    downloadDetailInImageStores.put("datastoreRole", imageStore.getRole().name());
                 }
                 downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
                 downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                downloadProgressDetails.add(downloadDetailInImageStores);
+            }
+        }
+
+        List<StoragePoolVO> poolsInZone = primaryDataStoreDao.listByDataCenterId(template.getDataCenterId());
+        List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+        List<VMTemplateStoragePoolVO> templatesInPool = templatePoolDao.listByTemplateId(template.getId(), poolIds);
+
+        for (VMTemplateStoragePoolVO templateInPool : templatesInPool) {
+            downloadDetailInImageStores = new HashMap<>();
+            StoragePoolVO storagePool = primaryDataStoreDao.findById(templateInPool.getDataStoreId());
+            if (storagePool != null) {
+                downloadDetailInImageStores.put("datastore", storagePool.getName());
+                if (view.equals(ResponseView.Full)) {
+                    downloadDetailInImageStores.put("datastoreId", storagePool.getUuid());
+                    downloadDetailInImageStores.put("datastoreRole", DataStoreRole.Primary.name());
+                }
+                downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInPool.getDownloadPercent()));
+                downloadDetailInImageStores.put("downloadState", (templateInPool.getDownloadState() != null ? templateInPool.getDownloadState().toString() : ""));
                 downloadProgressDetails.add(downloadDetailInImageStores);
             }
         }
@@ -458,19 +488,39 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.setStatus("Successfully Installed");
             }
             isoResponse.setUrl(iso.getUrl());
-            List<TemplateDataStoreVO> templatesInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
+            List<TemplateDataStoreVO> isosInStore = _templateStoreDao.listByTemplateNotBypassed(iso.getId());
             List<Map<String, String>> downloadProgressDetails = new ArrayList<>();
             HashMap<String, String> downloadDetailInImageStores = null;
-            for (TemplateDataStoreVO templateInStore : templatesInStore) {
+            for (TemplateDataStoreVO isoInStore : isosInStore) {
                 downloadDetailInImageStores = new HashMap<>();
-                ImageStoreVO datastore = dataStoreDao.findById(templateInStore.getDataStoreId());
-                if (datastore != null) {
-                    downloadDetailInImageStores.put("datastore", datastore.getName());
+                ImageStoreVO imageStore = dataStoreDao.findById(isoInStore.getDataStoreId());
+                if (imageStore != null) {
+                    downloadDetailInImageStores.put("datastore", imageStore.getName());
                     if (view.equals(ResponseView.Full)) {
-                        downloadDetailInImageStores.put("datastoreId", datastore.getUuid());
+                        downloadDetailInImageStores.put("datastoreId", imageStore.getUuid());
+                        downloadDetailInImageStores.put("datastoreRole", imageStore.getRole().name());
                     }
-                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(templateInStore.getDownloadPercent()));
-                    downloadDetailInImageStores.put("downloadState", (templateInStore.getDownloadState() != null ? templateInStore.getDownloadState().toString() : ""));
+                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(isoInStore.getDownloadPercent()));
+                    downloadDetailInImageStores.put("downloadState", (isoInStore.getDownloadState() != null ? isoInStore.getDownloadState().toString() : ""));
+                    downloadProgressDetails.add(downloadDetailInImageStores);
+                }
+            }
+
+            List<StoragePoolVO> poolsInZone = primaryDataStoreDao.listByDataCenterId(iso.getDataCenterId());
+            List<Long> poolIds = poolsInZone.stream().map(StoragePoolVO::getId).collect(Collectors.toList());
+            List<VMTemplateStoragePoolVO> isosInPool = templatePoolDao.listByTemplateId(iso.getId(), poolIds);
+
+            for (VMTemplateStoragePoolVO isoInPool : isosInPool) {
+                downloadDetailInImageStores = new HashMap<>();
+                StoragePoolVO storagePool = primaryDataStoreDao.findById(isoInPool.getDataStoreId());
+                if (storagePool != null) {
+                    downloadDetailInImageStores.put("datastore", storagePool.getName());
+                    if (view.equals(ResponseView.Full)) {
+                        downloadDetailInImageStores.put("datastoreId", storagePool.getUuid());
+                        downloadDetailInImageStores.put("datastoreRole", DataStoreRole.Primary.name());
+                    }
+                    downloadDetailInImageStores.put("downloadPercent", Integer.toString(isoInPool.getDownloadPercent()));
+                    downloadDetailInImageStores.put("downloadState", (isoInPool.getDownloadState() != null ? isoInPool.getDownloadState().toString() : ""));
                     downloadProgressDetails.add(downloadDetailInImageStores);
                 }
             }

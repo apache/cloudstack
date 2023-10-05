@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -658,7 +659,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     public List<VMTemplateVO> listByIds(List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
         SearchCriteria<VMTemplateVO> sc = templateIdSearch.create();
         sc.setParameters("idIN", ids.toArray());

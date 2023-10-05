@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -87,7 +88,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         TemplateSearch.done();
 
         PoolTemplateSearch = createSearchBuilder();
-        PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        PoolTemplateSearch.and("pool_id", PoolTemplateSearch.entity().getPoolId(), Op.IN);
         PoolTemplateSearch.and("template_id", PoolTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.and("configuration", PoolTemplateSearch.entity().getDeploymentOption(), SearchCriteria.Op.EQ);
         PoolTemplateSearch.done();
@@ -297,11 +298,22 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     @Override
     public List<VMTemplateStoragePoolVO> listByPoolIdAndInstallPath(Long poolId, List<String> pathList) {
         if (CollectionUtils.isEmpty(pathList)) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
         SearchCriteria<VMTemplateStoragePoolVO> sc = templatePathSearch.create();
         sc.setParameters("pool_id", poolId);
         sc.setParameters("install_path", pathList.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId, List<Long> poolIds) {
+        if (CollectionUtils.isEmpty(poolIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("pool_id", poolIds.toArray());
         return listBy(sc);
     }
 

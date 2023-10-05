@@ -195,4 +195,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             templateResponse.setResourceIconResponse(iconResponse);
         }
     }
+
+    public Long getStoragePoolId() {
+        return null;
+    };
 }
