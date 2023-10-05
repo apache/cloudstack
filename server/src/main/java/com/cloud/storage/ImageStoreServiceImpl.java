@@ -20,10 +20,12 @@ package com.cloud.storage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.UUIDManager;
 import org.apache.cloudstack.api.command.admin.storage.MigrateResourcesToAnotherSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.storage.MigrateSecondaryStorageDataCmd;
 import org.apache.cloudstack.api.response.MigrationResponse;
@@ -53,6 +55,9 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
     private AsyncJobManager jobMgr;
     @Inject
     private StorageOrchestrationService stgService;
+
+    @Inject
+    public UUIDManager uuidMgr;
 
     ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
             "image.store.imbalance.threshold",
@@ -196,9 +201,17 @@ public class ImageStoreServiceImpl extends ManagerBase implements ImageStoreServ
             throw new InvalidParameterValueException("Source and destination stores are not in the same zone.");
         }
 
-        CallContext.current().setEventDetails("Migrating templates and snapshots from : " + srcImageStore.getName() + " to: " + destImageStore.getName());
+        List<Long> templateIdList = cmd.getTemplateIdList();
+        List<Long> snapshotIdList = cmd.getSnapshotIdList();
+        List<String> templateUuidList = templateIdList.stream().map((id) -> uuidMgr.getUuid(VMTemplateVO.class, id)).collect(Collectors.toList());
+        List<String> snapshotUuidList = snapshotIdList.stream().map((id) -> uuidMgr.getUuid(SnapshotVO.class, id)).collect(Collectors.toList());
+        CallContext.current().setEventDetails(
+                "Migrating templates (" + String.join(", ", templateUuidList) +
+                        ") and snapshots (" + String.join(", ", snapshotUuidList) +
+                        ") from : " + srcImageStore.getName() + " to: " + destImageStore.getName()
+        );
 
-        return stgService.migrateResources(srcImgStoreId, destImgStoreId, cmd.getTemplateIdList(), cmd.getSnapshotIdList());
+        return stgService.migrateResources(srcImgStoreId, destImgStoreId, templateIdList, snapshotIdList);
     }
 
 

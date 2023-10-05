@@ -29,7 +29,9 @@ import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 @APICommand(name = "migrateResourceToAnotherSecondaryStorage",
@@ -86,10 +88,16 @@ public class MigrateResourcesToAnotherSecondaryStorageCmd extends BaseAsyncCmd {
     }
 
     public List<Long> getTemplateIdList() {
+        if (CollectionUtils.isEmpty(templateIdList)) {
+            return Collections.emptyList();
+        }
         return templateIdList;
     }
 
     public List<Long> getSnapshotIdList() {
+        if (CollectionUtils.isEmpty(snapshotIdList)) {
+            return Collections.emptyList();
+        }
         return snapshotIdList;
     }
 
