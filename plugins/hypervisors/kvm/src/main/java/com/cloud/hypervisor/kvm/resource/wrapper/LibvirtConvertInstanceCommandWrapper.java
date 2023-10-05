@@ -92,7 +92,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         secondaryPool.createFolder(temporaryConvertFolder);
         final String temporaryConvertPath = String.format("%s/%s", secondaryPool.getLocalPath(), temporaryConvertFolder);
 
-        boolean cleanupTemporaryConvertPath = false;
         try {
             Pair<Boolean, String> conversionResultPair = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
                     temporaryConvertPath, temporaryConvertUuid, timeout);
@@ -121,7 +120,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
             List<KVMPhysicalDisk> destinationDisks = moveConvertedInstanceFromTemporaryLocaltionToDestination(disks, secondaryPool,
                     destinationStoragePools, storagePoolMgr);
-            cleanupTemporaryConvertPath = true;
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
                     destinationDisks, disks, interfaces, xmlParser);
@@ -134,9 +132,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         } finally {
             s_logger.debug("Cleaning up instance conversion temporary files");
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
-            if (cleanupTemporaryConvertPath) {
-                Script.runSimpleBashScript(String.format("rm -rf %s", temporaryConvertPath));
-            }
+            Script.runSimpleBashScript(String.format("rm -rf %s", temporaryConvertPath));
         }
     }
 
