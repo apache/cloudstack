@@ -137,7 +137,7 @@ router.beforeEach((to, from, next) => {
     if (allowList.includes(to.name)) {
       next()
     } else {
-      if (window.location.pathname === '/verifyOauth') {
+      if (window.location.pathname.includes('/verifyOauth')) {
         next({ path: '/verifyOauth', query: { redirect: to.fullPath } })
       } else {
         next({ path: '/user/login', query: { redirect: to.fullPath } })
