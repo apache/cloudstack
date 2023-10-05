@@ -31,6 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
+import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
 import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
@@ -360,6 +361,8 @@ public class NsxResource implements ServerResource {
         try {
             Thread.sleep(30*1000);
             String segmentName = getSegmentName(cmd);
+            DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
+            dhcpRelayConfig.delete(getDhcpRelayId(cmd));
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             segmentService.delete(segmentName);
         } catch (Exception e) {
@@ -426,6 +429,14 @@ public class NsxResource implements ServerResource {
             return segmentName + cmd.getTierNetwork().getName();
         }
          return segmentName + cmd.getVpcName() + "-" + cmd.getTierNetwork().getName();
+    }
+
+    private String getDhcpRelayId(CreateNsxSegmentCommand cmd) {
+        String suffix = "-Relay";
+        if (isNull(cmd.getVpcName())) {
+            return cmd.getTierNetwork() + suffix;
+        }
+        return String.format("%s-%s%s", cmd.getVpcName(), cmd.getTierNetwork(), suffix);
     }
 
     @Override
