@@ -368,7 +368,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             logUsageEvent(template, poolId);
             if (!answerDetails.isEmpty()){
                 Account caller = CallContext.current().getCallingAccount();
-                if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN){
+                if (caller != null && caller.getType() == Account.Type.ADMIN){
                     errorDetails = String.format(" Details: %s", answerDetails);
                 }
             }
