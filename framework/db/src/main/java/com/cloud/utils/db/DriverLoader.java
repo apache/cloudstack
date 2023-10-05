@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.utils.db;
 
+import java.lang.reflect.InvocationTargetException;
+import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,12 +58,13 @@ public class DriverLoader {
         }
 
         try {
-            Class.forName(driverClass).newInstance();
+            Class<Driver> klazz = (Class<Driver>) Class.forName(driverClass);
+            klazz.getDeclaredConstructor().newInstance();
             LOADED_DRIVERS.add(dbDriver);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Successfully loaded DB driver " + driverClass);
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             LOGGER.error("Failed to load DB driver " + driverClass);
             throw new CloudRuntimeException("Failed to load DB driver " + driverClass, e);
         }
