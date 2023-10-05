@@ -1314,7 +1314,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     @Override
-    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, boolean powerUpSourceVM, Map<String, String> params) {
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, boolean powerOnSourceVM, Map<String, String> params) {
         s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
@@ -1331,9 +1331,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 return false;
             }
             boolean success = vmMo.destroy();
-            if (powerUpSourceVM) {
+            if (powerOnSourceVM) {
                 String sourceVM = params.get(VmDetailConstants.VMWARE_VM_NAME);
-                s_logger.debug(String.format("Powering up the source VM %s", sourceVM));
+                s_logger.debug(String.format("Powering on the source VM %s", sourceVM));
                 VirtualMachineMO sourceVmMo = dataCenterMO.findVm(sourceVM);
                 if (sourceVmMo == null) {
                     s_logger.error(String.format("Could not find the source VM %s, cannot power it on", sourceVM));

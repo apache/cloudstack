@@ -1292,13 +1292,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     sourceHostName, clonedInstance, destinationCluster);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             String instanceName = getGeneratedInstanceName(owner);
-            return importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
+            UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap,
                     details, false, forced);
+            LOGGER.debug(String.format("VM %s imported successfully", sourceVM));
+            if (isSourceVMRestoreNeeded) {
+                LOGGER.debug(String.format("VM %s was originally running before the import and will remain stopped", sourceVM));
+                isSourceVMRestoreNeeded = false;
+            }
+            return userVm;
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Error importing VM: %s", e.getMessage()), e);
+            if (isSourceVMRestoreNeeded) {
+                LOGGER.debug(String.format("VM %s import failed and was originally running, starting it again after the failure", sourceVM));
+            }
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
             removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, isSourceVMRestoreNeeded);
