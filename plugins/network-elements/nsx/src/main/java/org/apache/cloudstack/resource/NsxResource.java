@@ -31,12 +31,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
+import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
 import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.model.ApiError;
+import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.Segment;
@@ -47,6 +49,7 @@ import com.vmware.vapi.bindings.Service;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.agent.api.CreateDhcpRelayCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
@@ -128,6 +131,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxSegmentCommand) cmd);
         }  else if (cmd instanceof CreateNsxTier1GatewayCommand) {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
+        } else if (cmd instanceof CreateDhcpRelayCommand) {
+            return executeRequest((CreateDhcpRelayCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -233,6 +238,29 @@ public class NsxResource implements ServerResource {
         nsxApi = new NsxApi();
         nsxApi.setApiClient(createApiClient(hostname, port, username, password.toCharArray()));
         return true;
+    }
+
+    private Answer executeRequest(CreateDhcpRelayCommand cmd) {
+        String dhcpRelayName = cmd.getDhcpRelayName();
+        List<String> addresses = cmd.getServerAddresses();
+        String msg = String.format("Creating DHCP relay with name %s for addresses %s", dhcpRelayName, addresses);
+        LOGGER.debug(msg);
+
+        try {
+            DhcpRelayConfigs service = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
+            DhcpRelayConfig config = new DhcpRelayConfig.Builder()
+                    .setServerAddresses(addresses)
+                    .setId(dhcpRelayName)
+                    .setDisplayName(dhcpRelayName)
+                    .build();
+            service.patch(dhcpRelayName, config);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            msg = String.format("Error creating the DHCP relay with name %s: %s", dhcpRelayName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
+        }
+        return new NsxAnswer(cmd, true, "");
     }
 
     private Answer executeRequest(ReadyCommand cmd) {
