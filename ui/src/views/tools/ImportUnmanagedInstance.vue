@@ -802,27 +802,35 @@ export default {
         }
         this.updateLoading(true)
         const name = this.resource.name
-        api('importUnmanagedInstance', params).then(json => {
-          const jobId = json.importunmanagedinstanceresponse.jobid
-          this.$pollJob({
-            jobId,
-            title: this.$t('label.import.instance'),
-            description: name,
-            loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
-            catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: this.$t('message.success.import.instance') + ' ' + name,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+        return new Promise((resolve, reject) => {
+          api('importUnmanagedInstance', params).then(response => {
+            const jobId = response.importunmanagedinstanceresponse.jobid
+            this.$pollJob({
+              jobId,
+              title: this.$t('label.import.instance'),
+              description: name,
+              loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              successMessage: this.$t('message.success.import.instance') + ' ' + name,
+              successMethod: result => {
+                this.$emit('refresh-data')
+                resolve(result)
+              },
+              errorMethod: (result) => {
+                this.updateLoading(false)
+                reject(result.jobresult.errortext)
+              }
+            })
+          }).catch(error => {
+            this.updateLoading(false)
+            this.$notifyError(error)
+          }).finally(() => {
+            this.closeAction()
+            this.updateLoading(false)
           })
-          this.closeAction()
-        }).catch(error => {
-          this.$notifyError(error)
-        }).finally(() => {
-          this.updateLoading(false)
         })
-      }).catch((error) => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).catch(() => {
+        this.$emit('loading-changed', false)
       })
     },
     updateLoading (value) {
