@@ -335,7 +335,7 @@ public class NsxResource implements ServerResource {
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
 
-            String segmentName = getSegmentName(cmd);
+            String segmentName = getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName());
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
                     .setGatewayAddress(cmd.getTierNetwork().getGateway() + "/" + cmd.getTierNetwork().getCidr().split("/")[1]).build();
@@ -360,13 +360,13 @@ public class NsxResource implements ServerResource {
     private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
         try {
             Thread.sleep(30*1000);
-            String segmentName = getSegmentName(cmd);
-            DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            dhcpRelayConfig.delete(getDhcpRelayId(cmd));
+            String segmentName = getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName());
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             segmentService.delete(segmentName);
+            DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
+            dhcpRelayConfig.delete(getDhcpRelayId(cmd));
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to delete NSX segment: %s", getSegmentName(cmd)) );
+            LOGGER.error(String.format("Failed to delete NSX segment: %s", getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName())));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -423,20 +423,20 @@ public class NsxResource implements ServerResource {
         return cmd.getZoneName() + "-" + cmd.getAccountName() + "-" + cmd.getVpcName();
     }
 
-    private String getSegmentName(CreateNsxSegmentCommand cmd) {
-        String segmentName = cmd.getAccountName() + "-";
-        if (isNull(cmd.getVpcName())) {
-            return segmentName + cmd.getTierNetwork().getName();
+    private String getSegmentName(String accountName, String tierNetworkName, String vpcName) {
+        String segmentName = accountName + "-";
+        if (isNull(vpcName)) {
+            return segmentName + tierNetworkName;
         }
-         return segmentName + cmd.getVpcName() + "-" + cmd.getTierNetwork().getName();
+         return segmentName + vpcName + "-" + tierNetworkName;
     }
 
-    private String getDhcpRelayId(CreateNsxSegmentCommand cmd) {
+    private String getDhcpRelayId(String zoneName, String accountName, String vpcName, String networkName) {
         String suffix = "-Relay";
-        if (isNull(cmd.getVpcName())) {
-            return cmd.getTierNetwork() + suffix;
+        if (isNull(vpcName)) {
+            return zoneName + "-" + networkName + suffix;
         }
-        return String.format("%s-%s%s", cmd.getVpcName(), cmd.getTierNetwork(), suffix);
+        return String.format("%s-%s-%s-%s%s", zoneName, accountName, vpcName, networkName, suffix);
     }
 
     @Override
