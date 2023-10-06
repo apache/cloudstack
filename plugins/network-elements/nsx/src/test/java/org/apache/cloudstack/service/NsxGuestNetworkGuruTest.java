@@ -122,7 +122,7 @@ public class NsxGuestNetworkGuruTest {
     }
 
     @Test
-    public void testCanHandles() {
+    public void testCanHandle() {
         assertTrue(guru.canHandle(offering, dataCenterVO.getNetworkType(), physicalNetwork));
     }
 
@@ -131,7 +131,7 @@ public class NsxGuestNetworkGuruTest {
         when(physicalNetworkDao.findById(ArgumentMatchers.anyLong())).thenReturn(physicalNetwork);
         when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dataCenterVO);
         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong())).thenReturn(
-                new NsxAnswer(new NsxCommand(nullable(String.class), nullable(Long.class), nullable(String.class), nullable(Long.class)), true, ""));
+                new NsxAnswer(new NsxCommand(), true, ""));
 
         Network designedNetwork = guru.design(offering,  plan, network, "", 1L, account);
         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong());
@@ -151,12 +151,12 @@ public class NsxGuestNetworkGuruTest {
         when(network.getCidr()).thenReturn("192.168.1.0/24");
         when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.NSX);
         when(network.getNetworkOfferingId()).thenReturn(1L);
-        when(network.getState()).thenReturn(Network.State.Implementing);
+        lenient().when(network.getState()).thenReturn(Network.State.Implementing);
         when(network.getDataCenterId()).thenReturn(2L);
         when(network.getPhysicalNetworkId()).thenReturn(3L);
         when(network.getVpcId()).thenReturn(4L);
         when(offering.isRedundantRouter()).thenReturn(false);
-        when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        lenient().when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
 
 
         final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);

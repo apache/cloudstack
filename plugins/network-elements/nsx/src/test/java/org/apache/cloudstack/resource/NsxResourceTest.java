@@ -1,6 +1,8 @@
 package org.apache.cloudstack.resource;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.utils.script.Script;
 import com.vmware.nsx.TransportZones;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
@@ -31,6 +33,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -81,8 +85,6 @@ public class NsxResourceTest {
     TransportZoneListResult transportZoneListResult;
     @Mock
     com.vmware.nsx_policy.model.LocaleServices localeService;
-
-    private Function<Class<? extends Service>, Service> nsxService = svcClass -> nsxApi.getApiClient().createStub(svcClass);
 
     @Before
     public void setup() {
@@ -184,15 +186,15 @@ public class NsxResourceTest {
                 nullable(String.class), anyString(), nullable(String.class))).thenReturn(transportZoneListResult);
         when(transportZoneListResult.getResults()).thenReturn(transportZoneList);
 
-        when(localeServices.list(nullable(String.class), nullable(String.class),
+        lenient().when(localeServices.list(nullable(String.class), nullable(String.class),
                 nullable(Boolean.class), nullable(String.class), nullable(Long.class),
                 nullable(Boolean.class), nullable(String.class))).thenReturn(localeServicesListResult);
-        when(localeServicesListResult.getResults()).thenReturn(List.of(localeService));
+        lenient().when(localeServicesListResult.getResults()).thenReturn(List.of(localeService));
 
         when(apiClient.createStub(Segments.class)).thenReturn(segments);
         doNothing().when(segments).patch(anyString(), any(Segment.class));
 
-        doNothing().when(tier1LocaleService).patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.LocaleServices.class));
+        lenient().doNothing().when(tier1LocaleService).patch(anyString(), anyString(), any(com.vmware.nsx_policy.model.LocaleServices.class));
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         System.out.println(answer.getResult());
