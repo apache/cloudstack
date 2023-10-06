@@ -16,8 +16,8 @@
 // under the License.
 
 <template>
-  <a-row class="capacity-dashboard" :gutter="12">
-    <a-col :xl="18">
+  <a-row class="capacity-dashboard" :gutter="[12,12]">
+    <a-col :span="24">
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
@@ -41,90 +41,281 @@
         <div class="capacity-dashboard-button">
           <a-button
             shape="round"
-            @click="() => { listCapacity(zoneSelected, true); listEvents() }">
+            @click="() => { updateData(zoneSelected); listAlerts(); listEvents(); }">
+            <reload-outlined/>
             {{ $t('label.fetch.latest') }}
           </a-button>
         </div>
       </div>
-      <a-row :gutter="12">
-        <a-col
-          :xs="12"
-          :sm="8"
-          :md="6"
-          :style="{ marginBottom: '12px' }"
-          v-for="stat in stats"
-          :key="stat.type">
-          <chart-card :loading="loading">
-            <router-link :to="{ path: '/zone/' + zoneSelected.id }">
-              <div class="capacity-dashboard-chart-card-inner">
-                <h3>{{ $t(ts[stat.name]) }}</h3>
-                <a-progress
-                  type="dashboard"
-                  :status="getStatus(parseFloat(stat.percentused))"
-                  :percent="parseFloat(stat.percentused)"
-                  :format="percent => `${parseFloat(stat.percentused).toFixed(2)}%`"
-                  :strokeColor="getStrokeColour(parseFloat(stat.percentused))"
-                  :width="100" />
-              </div>
-            </router-link>
-            <template #footer>
-              <div class="center">{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</div>
-            </template>
-          </chart-card>
-        </a-col>
-      </a-row>
     </a-col>
-
-    <a-col :xl="6" class="dashboard-event">
-      <chart-card :loading="loading">
-        <div style="text-align: center">
-          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template #title>
-              {{ $t('label.view') + ' ' + $t('label.host.alerts') }}
-            </template>
-            <a-button type="primary" danger shape="circle">
-              <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <desktop-outlined class="capacity-dashboard-button-icon" />
-              </router-link>
-            </a-button>
-          </a-tooltip>
-          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template #title>
-              {{ $t('label.view') + ' ' + $t('label.alerts') }}
-            </template>
-            <a-button shape="circle">
-              <router-link :to="{ name: 'alert' }">
-                <flag-outlined class="capacity-dashboard-button-icon" />
-              </router-link>
-            </a-button>
-          </a-tooltip>
-          <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template #title>
-              {{ $t('label.view') + ' ' + $t('label.events') }}
-            </template>
-            <a-button shape="circle">
-              <router-link :to="{ name: 'event' }">
-                <schedule-outlined class="capacity-dashboard-button-icon" />
-              </router-link>
-            </a-button>
-          </a-tooltip>
-        </div>
-        <template #footer>
-          <div class="capacity-dashboard-footer">
-            <a-timeline>
-              <a-timeline-item
-                v-for="event in events"
-                :key="event.id"
-                :color="getEventColour(event)">
-                <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
-                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
-                <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
-              </a-timeline-item>
-            </a-timeline>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <router-link :to="{ path: '/infrasummary' }" v-if="!zoneSelected.id">
+              <h3>
+                <bank-outlined />
+                {{ $t('label.infrastructure') }}
+              </h3>
+            </router-link>
+            <router-link :to="{ path: '/zone/' + zoneSelected.id }" v-else>
+              <h3>
+                <global-outlined />
+                {{ $t('label.zone') }}
+              </h3>
+            </router-link>
           </div>
         </template>
+        <a-divider style="margin: 0px 0px; border-width: 0px"/>
+        <a-row :gutter="[12, 12]">
+          <a-col :span="12">
+            <router-link :to="{ path: '/pod', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.pods')"
+                :value="data.pods"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <appstore-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/cluster', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.clusters')"
+                :value="data.clusters"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <cluster-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.hosts')"
+                :value="data.totalHosts"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <database-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/host', query: { zoneid: zoneSelected.id, state: 'alert' } }">
+              <a-statistic
+                :title="$t('label.host.alerts')"
+                :value="data.alertHosts"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <database-outlined/>
+                  <status class="status" text="Alert" style="margin-left: -10px"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/storagepool', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.primary.storage')"
+                :value="data.pools"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <hdd-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/systemvm', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.system.vms')"
+                :value="data.systemvms"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <thunderbolt-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/router', query: { zoneid: zoneSelected.id } }">
+              <a-statistic
+                :title="$t('label.virtual.routers')"
+                :value="data.routers"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <fork-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1' } }">
+              <a-statistic
+                :title="$t('label.instances')"
+                :value="data.instances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <cloud-server-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
       </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div v-for="ctype in ['MEMORY', 'CPU', 'CPU_CORE', 'GPU']" :key="ctype" >
+            <div v-if="statsMap[ctype]">
+              <div>
+                <strong>{{ $t(ts[ctype]) }}</strong>
+              </div>
+              <a-progress
+              status="active"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE']" :key="ctype" >
+            <div v-if="statsMap[ctype]">
+              <div>
+                <strong>{{ $t(ts[ctype]) }}</strong>
+              </div>
+              <a-progress
+              status="active"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} <span v-if="ctype !== 'STORAGE'">{{ $t('label.allocated') }}</span><span v-else>{{ $t('label.used') }}</span> | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
+          </div>
+        </template>
+        <div>
+          <div v-for="ctype in ['VLAN', 'VIRTUAL_NETWORK_PUBLIC_IP', 'VIRTUAL_NETWORK_IPV6_SUBNET', 'DIRECT_ATTACHED_PUBLIC_IP', 'PRIVATE_IP']" :key="ctype" >
+            <div v-if="statsMap[ctype]">
+              <div>
+                <strong>{{ $t(ts[ctype]) }}</strong>
+              </div>
+              <a-progress
+              status="active"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
+              stroke-color="#52c41a"
+              size="small"
+              style="width:95%; float: left"
+              />
+              <br/>
+              <div style="text-align: center">
+                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <router-link :to="{ path: '/alert' }">
+      <a-card :loading="loading" :bordered="false" class="dashboard-card dashboard-event">
+        <div class="center" style="margin-top: -8px">
+          <h3>
+            <flag-outlined />
+            {{ $t('label.alerts') }}
+          </h3>
+        </div>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-timeline>
+          <a-timeline-item
+            v-for="alert in alerts"
+            :key="alert.id"
+            color="red">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(alert.sent) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/alert/' + alert.id }">{{ alert.name }}</router-link></small></span><br/>
+            <span :style="{ color: '#aaa' }">{{ alert.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/alert' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.alerts') }}
+          </a-button>
+        </router-link>
+      </a-card>
+      </router-link>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <router-link :to="{ path: '/event' }">
+      <a-card :loading="loading" :bordered="false" class="dashboard-card dashboard-event">
+        <div class="center" style="margin-top: -8px">
+          <h3>
+            <schedule-outlined />
+            {{ $t('label.events') }}
+          </h3>
+        </div>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-timeline>
+          <a-timeline-item
+            v-for="event in events"
+            :key="event.id"
+            :color="getEventColour(event)">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+            <span>
+              <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
+            </span>
+            <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/event' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.events') }}
+          </a-button>
+        </router-link>
+      </a-card>
+      </router-link>
     </a-col>
   </a-row>
 </template>
@@ -135,21 +326,35 @@ import { api } from '@/api'
 import ChartCard from '@/components/widgets/ChartCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'CapacityDashboard',
   components: {
     ChartCard,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    Status
   },
   data () {
     return {
       loading: true,
+      tabKey: 'alerts',
+      alerts: [],
       events: [],
       zones: [],
       zoneSelected: {},
-      stats: [],
+      statsMap: {},
+      data: {
+        pods: 0,
+        clusters: 0,
+        totalHosts: 0,
+        alertHosts: 0,
+        pools: 0,
+        instances: 0,
+        systemvms: 0,
+        routers: 0
+      },
       ts: {
         CPU: 'label.cpu',
         CPU_CORE: 'label.cpunumber',
@@ -159,8 +364,8 @@ export default {
         MEMORY: 'label.memory',
         PRIVATE_IP: 'label.management.ips',
         SECONDARY_STORAGE: 'label.secondary.storage',
-        STORAGE: 'label.storage',
-        STORAGE_ALLOCATED: 'label.primary.storage',
+        STORAGE: 'label.primary.storage.used',
+        STORAGE_ALLOCATED: 'label.primary.storage.allocated',
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
@@ -196,13 +401,10 @@ export default {
       }
       return 'normal'
     },
-    getStrokeColour (value) {
-      if (value >= 80) {
-        return this.$config.theme['@graph-exception-color'] || 'red'
-      }
-      return this.$config.theme['@graph-normal-color'] || 'primary'
-    },
     displayData (dataType, value) {
+      if (!value) {
+        value = 0
+      }
       switch (dataType) {
         case 'CPU':
           value = parseFloat(value / 1000.0, 10).toFixed(2) + ' GHz'
@@ -214,9 +416,9 @@ export default {
         case 'LOCAL_STORAGE':
           value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)
           if (value >= 1024.0) {
-            value = parseFloat(value / 1024.0).toFixed(2) + ' TB'
+            value = parseFloat(value / 1024.0).toFixed(2) + ' TiB'
           } else {
-            value = value + ' GB'
+            value = value + ' GiB'
           }
           break
       }
@@ -224,26 +426,134 @@ export default {
     },
     fetchData () {
       this.listZones()
+      this.listAlerts()
       this.listEvents()
     },
-    listCapacity (zone, latest = false) {
-      const params = {
-        zoneid: zone.id,
-        fetchlatest: latest
+    listCapacity (zone, latest = false, additive = false) {
+      this.loading = true
+      api('listCapacity', { zoneid: zone.id, fetchlatest: latest }).then(json => {
+        this.loading = false
+        let stats = []
+        if (json && json.listcapacityresponse && json.listcapacityresponse.capacity) {
+          stats = json.listcapacityresponse.capacity
+        }
+        for (const stat of stats) {
+          if (additive) {
+            for (const [key, value] of Object.entries(stat)) {
+              if (stat.name in this.statsMap) {
+                if (key in this.statsMap[stat.name]) {
+                  this.statsMap[stat.name][key] += value
+                } else {
+                  this.statsMap[stat.name][key] = value
+                }
+              } else {
+                this.statsMap[stat.name] = { key: value }
+              }
+            }
+          } else {
+            this.statsMap[stat.name] = stat
+          }
+        }
+      })
+    },
+    updateData (zone) {
+      if (!zone.id) {
+        this.statsMap = {}
+        for (const zone of this.zones.slice(1)) {
+          this.listCapacity(zone, true, true)
+        }
+      } else {
+        this.statsMap = {}
+        this.listCapacity(this.zoneSelected, true)
+      }
+
+      this.data = {
+        pods: 0,
+        clusters: 0,
+        totalHosts: 0,
+        alertHosts: 0,
+        pools: 0,
+        instances: 0,
+        systemvms: 0,
+        routers: 0
       }
       this.loading = true
-      api('listCapacity', params).then(json => {
-        this.stats = []
+      api('listPods', { zoneid: zone.id }).then(json => {
         this.loading = false
-        if (json && json.listcapacityresponse && json.listcapacityresponse.capacity) {
-          this.stats = json.listcapacityresponse.capacity
+        this.data.pods = json?.listpodsresponse?.count
+        if (!this.data.pods) {
+          this.data.pods = 0
+        }
+      })
+      api('listClusters', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.clusters = json?.listclustersresponse?.count
+        if (!this.data.clusters) {
+          this.data.clusters = 0
+        }
+      })
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.totalHosts = json?.listhostsresponse?.count
+        if (!this.data.totalHosts) {
+          this.data.totalHosts = 0
+        }
+      })
+      api('listHosts', { zoneid: zone.id, listall: true, details: 'min', type: 'routing', state: 'alert', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.alertHosts = json?.listhostsresponse?.count
+        if (!this.data.alertHosts) {
+          this.data.alertHosts = 0
+        }
+      })
+      api('listStoragePools', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.pools = json?.liststoragepoolsresponse?.count
+        if (!this.data.pools) {
+          this.data.pools = 0
+        }
+      })
+      api('listSystemVms', { zoneid: zone.id }).then(json => {
+        this.loading = false
+        this.data.systemvms = json?.listsystemvmsresponse?.count
+        if (!this.data.systemvms) {
+          this.data.systemvms = 0
+        }
+      })
+      api('listRouters', { zoneid: zone.id, listall: true }).then(json => {
+        this.loading = false
+        this.data.routers = json?.listroutersresponse?.count
+        if (!this.data.routers) {
+          this.data.routers = 0
+        }
+      })
+      api('listVirtualMachines', { zoneid: zone.id, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.instances = json?.listvirtualmachinesresponse?.count
+        if (!this.data.instances) {
+          this.data.instances = 0
+        }
+      })
+    },
+    listAlerts () {
+      const params = {
+        page: 1,
+        pagesize: 8,
+        listall: true
+      }
+      this.loading = true
+      api('listAlerts', params).then(json => {
+        this.alerts = []
+        this.loading = false
+        if (json && json.listalertsresponse && json.listalertsresponse.alert) {
+          this.alerts = json.listalertsresponse.alert
         }
       })
     },
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 6,
+        pagesize: 8,
         listall: true
       }
       this.loading = true
@@ -269,15 +579,16 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
+            this.zones.splice(0, 0, { name: this.$t('label.all.zone') })
             this.zoneSelected = this.zones[0]
-            this.listCapacity(this.zones[0])
+            this.updateData(this.zones[0])
           }
         }
       })
     },
     changeZone (index) {
       this.zoneSelected = this.zones[index]
-      this.listCapacity(this.zoneSelected)
+      this.updateData(this.zoneSelected)
     },
     filterZone (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -290,7 +601,6 @@ export default {
 .capacity-dashboard {
   &-wrapper {
     display: flex;
-    margin-bottom: 12px;
   }
 
   &-chart-card-inner {
@@ -313,7 +623,7 @@ export default {
 
   &-button {
     width: auto;
-    padding-left: 12px;
+    padding-left: 8px;
   }
 
   &-button-icon {
@@ -321,11 +631,23 @@ export default {
     padding: 2px;
   }
 
-  &-footer {
+  &-title {
     padding-top: 12px;
     padding-left: 3px;
     white-space: normal;
   }
+}
+
+.dashboard-card {
+  width: 100%;
+  min-height: 370px;
+}
+
+.dashboard-event {
+  width: 100%;
+  overflow-x:hidden;
+  overflow-y: auto;
+  max-height: 370px;
 }
 
 .center {
@@ -333,9 +655,4 @@ export default {
   text-align: center;
 }
 
-@media (max-width: 1200px) {
-  .dashboard-event {
-    width: 100%;
-  }
-}
 </style>

@@ -37,7 +37,7 @@
         </keep-alive>
         <a-tabs
           v-else
-          style="width: 100%"
+          style="width: 100%; margin-top: -12px"
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
