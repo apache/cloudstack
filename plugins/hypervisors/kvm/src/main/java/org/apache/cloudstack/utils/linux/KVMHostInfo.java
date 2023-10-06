@@ -48,7 +48,8 @@ public class KVMHostInfo {
 
     private static final Logger LOGGER = Logger.getLogger(KVMHostInfo.class);
 
-    private int cpus;
+    private int totalCpus;
+    private int allocatableCpus;
     private int cpusockets;
     private long cpuSpeed;
     private long totalMemory;
@@ -58,16 +59,25 @@ public class KVMHostInfo {
 
     private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
 
-    public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed) {
+    public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed, int reservedCpus) {
         this.cpuSpeed = manualSpeed;
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
         this.getHostInfoFromLibvirt();
         this.totalMemory = new MemStat(this.getReservedMemory(), this.getOverCommitMemory()).getTotal();
+        this.allocatableCpus = totalCpus - reservedCpus;
+        if (allocatableCpus < 1) {
+            LOGGER.warn(String.format("Aggressive reserved CPU config leaves no usable CPUs for VMs! Total system CPUs: %d, Reserved: %d, Allocatable: %d", totalCpus, reservedCpus, allocatableCpus));
+            allocatableCpus = 0;
+        }
     }
 
-    public int getCpus() {
-        return this.cpus;
+    public int getTotalCpus() {
+        return this.totalCpus;
+    }
+
+    public int getAllocatableCpus() {
+        return this.allocatableCpus;
     }
 
     public int getCpuSockets() {
@@ -189,7 +199,7 @@ public class KVMHostInfo {
             if (hosts.nodes > 0) {
                 this.cpusockets = hosts.sockets * hosts.nodes;
             }
-            this.cpus = hosts.cpus;
+            this.totalCpus = hosts.cpus;
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
             parser.parseCapabilitiesXML(capabilities);
