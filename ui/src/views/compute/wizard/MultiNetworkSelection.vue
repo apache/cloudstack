@@ -36,7 +36,16 @@
           </div>
         </template>
         <template v-if="column.key === 'network'">
+          <a-alert
+            v-if="hypervisor === 'KVM' && unableToMatch"
+            type="warning"
+            showIcon
+            banner
+            style="margin-bottom: 10px"
+            :message="$t('message.select.nic.network')"
+          />
           <a-select
+            style="width: 100%"
             v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
             :defaultValue="validNetworks[record.id][0].id"
             @change="val => handleNetworkChange(record, val)"
@@ -46,11 +55,10 @@
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
-              v-for="network in validNetworks[record.id]"
+              v-for="network in hypervisor !== 'KVM' ? validNetworks[record.id] : networks"
               :key="network.id"
               :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
-              <div v-if="this.hypervisor === 'KVM'">{{ network.displaytext  + ' - ' + (network.id.slice(0,8)) }}</div>
-              <div v-else>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
+              <div>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
             </a-select-option>
           </a-select>
           <span v-else>
@@ -131,6 +139,7 @@ export default {
       selectedRowKeys: [],
       networks: [],
       validNetworks: {},
+      unableToMatch: false,
       values: {},
       ipAddressesEnabled: {},
       ipAddresses: {},
@@ -205,8 +214,14 @@ export default {
         if (this.filterUnimplementedNetworks) {
           this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))))
         }
-        if (this.filterMatchKey && this.hypervisor === 'VMWare') {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
+        if (this.filterMatchKey) {
+          const filtered = this.networks.filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
+          if (this.hypervisor === 'KVM') {
+            this.unableToMatch = filtered.length === 0
+            this.validNetworks[item.id] = filtered.length === 0 ? this.networks : filtered.concat(this.networks.filter(x => filtered.includes(x)))
+          } else {
+            this.validNetworks[item.id] = filtered
+          }
         }
       }
       this.setDefaultValues()
@@ -232,7 +247,11 @@ export default {
       this.sendValuesTimed()
     },
     handleNetworkChange (nic, networkId) {
-      this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
+      if (this.hypervisor === 'KVM') {
+        this.setIpAddressEnabled(nic, _.find(this.networks, (option) => option.id === networkId))
+      } else {
+        this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
+      }
       this.sendValuesTimed()
     },
     sendValuesTimed () {
