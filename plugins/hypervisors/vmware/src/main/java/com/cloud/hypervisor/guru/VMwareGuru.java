@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
@@ -1260,15 +1261,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return clonedVM;
     }
 
-    @Override
-    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                                 boolean forced, Map<String, String> params) {
-        s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
-        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
-        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
-        String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
-        String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
-
+    private VirtualMachineMO getInstanceOnVcenter(String vmName, String vcenter, String datacenter, String username, String password) {
         try {
             VmwareContext context = connectToVcenter(vcenter, username, password);
             DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
@@ -1278,74 +1271,68 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 s_logger.error(err);
                 throw new CloudRuntimeException(err);
             }
-            VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
-            if (forced && sourceVmPowerState == VirtualMachinePowerState.POWERED_ON) {
-                s_logger.debug(String.format("VM is running, attempting to stop the VM %s on %s/%s",
-                        vmName, vcenter, datacenter));
-                if (!vmMo.powerOff()) {
-                    String err = String.format("Could not stop VM %s on %s/%s", vmName, vcenter, datacenter);
-                    s_logger.error(err);
-                    throw new CloudRuntimeException(err);
-                }
-            }
-
-            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
-            s_logger.debug(String.format("VM %s cloned successfully", vmName));
-            UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
-            setNicsFromSourceVM(clonedInstance, vmMo);
-            clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
-            return clonedInstance;
+            return vmMo;
         } catch (Exception e) {
-            String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
+            String err = String.format("Error obtaining VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
             throw new CloudRuntimeException(err, e);
         }
     }
 
-    private void setNicsFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
-        UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
-        List<UnmanagedInstanceTO.Disk> sourceDisks = sourceInstance.getDisks();
-        List<UnmanagedInstanceTO.Disk> clonedDisks = clonedInstance.getDisks();
-        for (int i = 0; i < sourceDisks.size(); i++) {
-            UnmanagedInstanceTO.Disk sourceDisk = sourceDisks.get(i);
-            UnmanagedInstanceTO.Disk clonedDisk = clonedDisks.get(i);
-            clonedDisk.setDiskId(sourceDisk.getDiskId());
-        }
-    }
-
     @Override
-    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, boolean powerOnSourceVM, Map<String, String> params) {
-        s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
+    public UnmanagedInstanceTO getUnmanagedInstanceInformation(String hostIp, String vmName,
+                                                               boolean forced, Map<String, String> params) {
+        s_logger.debug(String.format("Getting information for VM %s on external vCenter %s", vmName, hostIp));
         String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
         String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
         String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
         String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+
+        VirtualMachineMO vmMo = getInstanceOnVcenter(vmName, vcenter, datacenter, username, password);
+
         try {
-            VmwareContext context = connectToVcenter(vcenter, username, password);
-            DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
-            VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
-            if (vmMo == null) {
-                String err = String.format("Cannot find VM %s on datacenter %s, not possible to remove VM out of band",
-                        vmName, datacenter);
-                s_logger.error(err);
-                return false;
+            VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
+            if (forced && sourceVmPowerState == VirtualMachinePowerState.POWERED_ON) {
+                applyOperationToVMOnVcenter(vmMo, vmName, OutOfBandManagement.PowerOperation.OFF);
             }
-            boolean success = vmMo.destroy();
-            if (powerOnSourceVM) {
-                String sourceVM = params.get(VmDetailConstants.VMWARE_VM_NAME);
-                s_logger.debug(String.format("Powering on the source VM %s", sourceVM));
-                VirtualMachineMO sourceVmMo = dataCenterMO.findVm(sourceVM);
-                if (sourceVmMo == null) {
-                    s_logger.error(String.format("Could not find the source VM %s, cannot power it on", sourceVM));
-                    return false;
-                }
-                success = success && sourceVmMo.powerOn();
-            }
-            return success;
+            UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+            clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
+            return clonedInstance;
         } catch (Exception e) {
-            String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
+            String err = String.format("Error getting information for VM : %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
             s_logger.error(err, e);
-            return false;
+            throw new CloudRuntimeException(err, e);
         }
+    }
+
+    private boolean applyOperationToVMOnVcenter(VirtualMachineMO vmMo, String vmName, OutOfBandManagement.PowerOperation operation) {
+        try {
+            if (operation == OutOfBandManagement.PowerOperation.ON) {
+                s_logger.debug(String.format("Powering on the VM %s", vmMo));
+                return vmMo.powerOn();
+            } else if (operation == OutOfBandManagement.PowerOperation.OFF) {
+                s_logger.debug(String.format("Powering off the VM %s", vmMo));
+                return vmMo.powerOff();
+            }
+        } catch (Exception e) {
+            String err = String.format("Could not apply the operation %s to VM %s: %s", operation.name(), vmName, e.getMessage());
+            s_logger.error(err, e);
+            throw new CloudRuntimeException(err);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean applyOperationToOutOfBandInstance(String hostIp, String vmName,
+                                                     OutOfBandManagement.PowerOperation operation,
+                                                     Map<String, String> params) {
+        s_logger.debug(String.format("Applying operation to VM %s on external vCenter %s", vmName, hostIp));
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
+        String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
+        String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+
+        VirtualMachineMO vmMo =  getInstanceOnVcenter(vmName, vcenter, datacenter, username, password);
+        return applyOperationToVMOnVcenter(vmMo, vmName, operation);
     }
 }
