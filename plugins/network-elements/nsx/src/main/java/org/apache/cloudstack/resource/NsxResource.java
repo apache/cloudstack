@@ -97,7 +97,6 @@ public class NsxResource implements ServerResource {
     public Host.Type getType() {
         return Host.Type.Routing;
     }
-
     @Override
     public StartupCommand[] initialize() {
         StartupNsxCommand sc = new StartupNsxCommand();
