@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +52,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.SnapshotZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -78,6 +80,8 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     DataStoreManager dataStoreMgr;
+    @Inject
+    SnapshotZoneDao snapshotZoneDao;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -214,11 +218,22 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         return result;
     }
 
-    protected boolean deleteSnapshotOnImage(long snapshotId, DataStore store) {
+    protected boolean areLastSnapshotRef(long snapshotId) {
+        List<SnapshotDataStoreVO> snapshotStoreRefs = _snapshotStoreDao.findBySnapshotId(snapshotId);
+        if (CollectionUtils.isEmpty(snapshotStoreRefs) || snapshotStoreRefs.size() == 1) {
+            return true;
+        }
+        return snapshotStoreRefs.size() == 2 && DataStoreRole.Primary.equals(snapshotStoreRefs.get(1).getRole());
+    }
+
+    protected boolean deleteSnapshotOnImageAndPrimary(long snapshotId, DataStore store) {
         SnapshotInfo snapshotOnImage = snapshotDataFactory.getSnapshot(snapshotId, store);
         SnapshotObject obj = (SnapshotObject)snapshotOnImage;
+        boolean areLastSnapshotRef = areLastSnapshotRef(snapshotId);
         try {
-            obj.processEvent(Snapshot.Event.DestroyRequested);
+            if (areLastSnapshotRef) {
+                obj.processEvent(Snapshot.Event.DestroyRequested);
+            }
         } catch (NoTransitionException e) {
             log.debug("Failed to set the state to destroying: ", e);
             return false;
@@ -226,7 +241,9 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
         try {
             boolean result = deleteSnapshotChain(snapshotOnImage);
-            obj.processEvent(Snapshot.Event.OperationSucceeded);
+            if (areLastSnapshotRef) {
+                obj.processEvent(Snapshot.Event.OperationSucceeded);
+            }
             if (result) {
                 SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotOnImage.getSnapshotId(), DataStoreRole.Primary);
                 if (snapshotOnPrimary != null) {
@@ -237,7 +254,9 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         } catch (Exception e) {
             log.debug("Failed to delete snapshot: ", e);
             try {
-                obj.processEvent(Snapshot.Event.OperationFailed);
+                if (areLastSnapshotRef) {
+                    obj.processEvent(Snapshot.Event.OperationFailed);
+                }
             } catch (NoTransitionException e1) {
                 log.debug("Failed to change snapshot state: " + e.toString());
             }
@@ -294,16 +313,21 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
-            throw new InvalidParameterValueException("Can't delete snapshotshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
+            throw new InvalidParameterValueException("Can't delete snapshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
         }
-        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {
             storeRefs.removeIf(ref -> !zoneId.equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())));
         }
         for (SnapshotDataStoreVO ref : storeRefs) {
-            if (!deleteSnapshotOnImage(snapshotId, dataStoreMgr.getDataStore(ref.getId(), ref.getRole()))) {
+            if (!deleteSnapshotOnImageAndPrimary(snapshotId, dataStoreMgr.getDataStore(ref.getId(), ref.getRole()))) {
                 return false;
             }
+        }
+        if (zoneId != null) {
+            snapshotZoneDao.removeSnapshotFromZone(snapshotVO.getId(), zoneId);
+        } else {
+            snapshotZoneDao.removeSnapshotFromZones(snapshotVO.getId());
         }
         return true;
     }

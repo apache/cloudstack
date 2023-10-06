@@ -149,7 +149,7 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         if (snapshot == null) {
             return null;
         }
-        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listBySnapshot(snapshotId, role);
+        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listReadyBySnapshot(snapshotId, role);
         SnapshotDataStoreVO snapshotStore = null;
         for (SnapshotDataStoreVO ref : snapshotStores) {
             if (zoneId == storeMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {

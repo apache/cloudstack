@@ -102,7 +102,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     SnapshotZoneDao snapshotZoneDao;
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
-        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
             if (zoneId == dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
                 return ref;
@@ -337,7 +337,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         boolean result = false;
         for (var snapshotInfo : snapshotInfos) {
             if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(snapshotInfo, snapshotVo), false)) {
-                snapshotStoreDao.removeBySnapshotStore(snapshotInfo.getId(), snapshotInfo.getDataStore().getId(), snapshotInfo.getDataStore().getRole());
                 result = true;
             }
         }

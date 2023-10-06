@@ -148,7 +148,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     DataStoreManager dataStoreManager;
 
     private SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
-        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
             if (zoneId == dataStoreManager.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
                 return ref;

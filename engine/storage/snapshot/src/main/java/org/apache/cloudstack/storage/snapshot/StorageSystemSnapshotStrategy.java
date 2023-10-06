@@ -921,7 +921,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 return StrategyPriority.CANT_HANDLE;
             }
 
-            List<SnapshotDataStoreVO> snapshotOnImageStores = snapshotStoreDao.listBySnapshot(snapshot.getId(), DataStoreRole.Image);
+            List<SnapshotDataStoreVO> snapshotOnImageStores = snapshotStoreDao.listReadyBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
             // If the snapshot exists on Secondary Storage, we can't delete it.
             if (CollectionUtils.isNotEmpty(snapshotOnImageStores)) {

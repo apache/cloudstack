@@ -17,6 +17,8 @@
 
 package com.cloud.storage.dao;
 
+import java.util.List;
+
 import com.cloud.storage.SnapshotZoneVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -25,4 +27,5 @@ public interface SnapshotZoneDao extends GenericDao<SnapshotZoneVO, Long> {
     void addSnapshotToZone(long snapshotId, long zoneId);
     void removeSnapshotFromZone(long snapshotId, long zoneId);
     void removeSnapshotFromZones(long snapshotId);
+    List<SnapshotZoneVO> listBySnapshot(long snapshotId);
 }

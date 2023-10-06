@@ -101,7 +101,7 @@ public class SnapshotManagerImplTest {
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(Mockito.mock(SnapshotDataStoreVO.class), ref);
         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(Mockito.mock(DataStore.class));
-        Mockito.when(snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
         DataStore store = snapshotManager.getSnapshotZoneImageStore(snapshotId, zoneId);
         Assert.assertNotNull(store);
     }
@@ -116,7 +116,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref);
         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(100L);
-        Mockito.when(snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
         DataStore store = snapshotManager.getSnapshotZoneImageStore(snapshotId, zoneId);
         Assert.assertNull(store);
     }
@@ -269,13 +269,14 @@ public class SnapshotManagerImplTest {
         DataStore store = Mockito.mock(DataStore.class);
         Mockito.when(store.getId()).thenReturn(storeId);
         Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(store);
-        Mockito.when(snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
         Mockito.when(snapshotDataFactory.getSnapshot(Mockito.anyLong(), Mockito.any())).thenReturn(Mockito.mock(SnapshotInfo.class));
         CreateCmdResult result = Mockito.mock(CreateCmdResult.class);
         Mockito.when(result.isFailed()).thenReturn(false);
         Mockito.when(result.getPath()).thenReturn("SOMEPATH");
         AsyncCallFuture<CreateCmdResult> future = Mockito.mock(AsyncCallFuture.class);
         Mockito.when(dataStoreManager.getImageStoresByScopeExcludingReadOnly(Mockito.any())).thenReturn(List.of(Mockito.mock(DataStore.class)));
+        Mockito.when(dataStoreManager.getImageStoreWithFreeCapacity(Mockito.anyList())).thenReturn(Mockito.mock(DataStore.class));
         Mockito.when(snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, 1L, 1L)).thenReturn(Mockito.mock(SnapshotDataStoreVO.class));
         AccountVO account = Mockito.mock(AccountVO.class);
         Mockito.when(account.getId()).thenReturn(1L);

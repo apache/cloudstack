@@ -561,7 +561,7 @@ public class PresetVariableHelper {
     }
 
     protected SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
-        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         for (SnapshotDataStoreVO ref : snaps) {
             ImageStoreVO store = imageStoreDao.findById(ref.getDataStoreId());
             if (store != null && zoneId == store.getDataCenterId()) {

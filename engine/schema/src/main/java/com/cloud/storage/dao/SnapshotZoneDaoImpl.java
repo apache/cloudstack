@@ -18,6 +18,7 @@
 package com.cloud.storage.dao;
 
 import java.util.Date;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -72,5 +73,12 @@ public class SnapshotZoneDaoImpl extends GenericDaoBase<SnapshotZoneVO, Long> im
         SearchCriteria<SnapshotZoneVO> sc = ZoneSnapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);
         remove(sc);
+    }
+
+    @Override
+    public List<SnapshotZoneVO> listBySnapshot(long snapshotId) {
+        SearchCriteria<SnapshotZoneVO> sc = ZoneSnapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        return listBy(sc);
     }
 }

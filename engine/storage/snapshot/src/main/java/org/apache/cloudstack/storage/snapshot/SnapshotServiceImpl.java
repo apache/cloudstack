@@ -305,7 +305,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             // find the image store where the parent snapshot backup is located
             SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
             if (parentSnapshot != null) {
-                List<SnapshotDataStoreVO> snaps = _snapshotStoreDao.listBySnapshot(snapshot.getId(), DataStoreRole.Image);
+                List<SnapshotDataStoreVO> snaps = _snapshotStoreDao.listReadyBySnapshot(snapshot.getId(), DataStoreRole.Image);
                 for (SnapshotDataStoreVO ref : snaps) {
                     if (snapshot.getDataCenterId() != null && snapshot.getDataCenterId().equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole()))) {
                         parentSnapshotOnBackupStore = ref;
