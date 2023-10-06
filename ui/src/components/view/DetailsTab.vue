@@ -173,9 +173,15 @@ export default {
         const sshPort = this.resource.vnfdetails?.ssh_port || 22
         const sshUsername = this.resource.vnfdetails?.ssh_user || null
         const sshPassword = this.resource.vnfdetails?.ssh_password || null
-        const httpPath = this.resource.vnfdetails?.http_path || null
+        let httpPath = this.resource.vnfdetails?.http_path || ''
+        if (!httpPath.startsWith('/')) {
+          httpPath = '/' + httpPath
+        }
         const httpPort = this.resource.vnfdetails?.http_port || null
-        const httpsPath = this.resource.vnfdetails?.https_path || null
+        let httpsPath = this.resource.vnfdetails?.https_path || ''
+        if (!httpsPath.startsWith('/')) {
+          httpsPath = '/' + httpsPath
+        }
         const httpsPort = this.resource.vnfdetails?.https_port || null
         const webUsername = this.resource.vnfdetails?.web_user || null
         const webPassword = this.resource.vnfdetails?.web_password || null
@@ -215,7 +221,6 @@ export default {
         if (this.resource.publicip && managementDeviceIds.includes(0)) {
           managementIps.push(this.resource.publicip)
         }
-        console.log('managementIps = ' + managementIps)
 
         if (accessMethods) {
           const accessMethodsArray = accessMethods.split(',')
@@ -228,11 +233,13 @@ export default {
               accessMethodsDescription.push('- SSH with key' + (sshPort ? ' (SSH port is ' + sshPort + ').' : '.'))
             } else if (accessMethod === 'http') {
               for (const managementIp of managementIps) {
-                accessMethodsDescription.push('- Webpage: http://' + managementIp + (httpPort ? ':' + httpPort : '') + (httpPath ? '/' + httpPath : ''))
+                const url = 'http://' + managementIp + (httpPort ? ':' + httpPort : '') + httpPath
+                accessMethodsDescription.push('- Webpage: <a href="' + url + '" target="_blank>">' + url + '</a>')
               }
             } else if (accessMethod === 'https') {
               for (const managementIp of managementIps) {
-                accessMethodsDescription.push('- Webpage: https://' + managementIp + (httpsPort ? ':' + httpsPort : '') + (httpsPath ? '/' + httpsPath : ''))
+                const url = 'https://' + managementIp + (httpsPort ? ':' + httpsPort : '') + httpsPath
+                accessMethodsDescription.push('- Webpage: <a href="' + url + '" target="_blank">' + url + '</a>')
               }
             }
           }
@@ -240,11 +247,7 @@ export default {
           accessMethodsDescription.push('- VM Console.')
         }
         if (credentials) {
-          accessMethodsDescription.push('')
-          accessMethodsDescription.push('- Credentials:')
-          for (const credential of credentials) {
-            accessMethodsDescription.push('* ' + credential)
-          }
+          accessMethodsDescription.push('<br>' + this.$t('message.vnf.credentials.in.template.vnf.details'))
         }
         return accessMethodsDescription.join('<br>')
       }

@@ -342,18 +342,7 @@ export default {
           fields.push('order')
         }
         return fields
-      },
-      actions: [
-        {
-          api: 'registerVnfTemplate',
-          icon: 'plus-outlined',
-          label: 'label.vnf.template.register',
-          docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
-          listView: true,
-          popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
-        }
-      ]
+      }
     },
     {
       name: 'vnfapp',

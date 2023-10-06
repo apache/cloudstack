@@ -3142,6 +3142,7 @@
 "message.vm.state.stopping": "VM is being stopped.",
 "message.vm.state.unknown": "VM state is unknown.",
 "message.vnf.appliance.networks": "Please select networks for the new VNF appliance.",
+"message.vnf.credentials.in.template.vnf.details": "Please find the credentials in the VNF details of the template.",
 "message.vnf.error.deviceid.should.be.continuous": "The deviceid of selected VNF nics should be continuous.",
 "message.vnf.error.network.is.already.used": "Network has been used by multiple nics of the new VNF appliance.",
 "message.vnf.error.no.networks": "Please select networks for nics of the new VNF appliance.",
