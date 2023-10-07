@@ -420,9 +420,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 } else {
                     handleVolumeMigrationForKVM(srcVolumeInfo, destVolumeInfo, callback);
                 }
-                //String errMsg = "The 'StorageSystemDataMotionStrategy' does not support this migration use case.";
-
-                //handleError(errMsg, callback);
             } else {
                 handleVolumeMigrationFromNonManagedStorageToManagedStorage(srcVolumeInfo, destVolumeInfo, callback);
             }
