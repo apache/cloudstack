@@ -63,7 +63,11 @@ public class UpdateStoragePoolCmd extends BaseCmd {
             " enable it back.")
     private Boolean enabled;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, required = false, description = "the details for the storage pool")
+    @Parameter(name = ApiConstants.DETAILS,
+                            type = CommandType.MAP,
+                            required = false,
+                            description = "the details for the storage pool",
+                            since = "4.19.0")
     private Map details;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the URL of the storage pool")
