@@ -70,7 +70,11 @@ public class UpdateStoragePoolCmd extends BaseCmd {
                             since = "4.19.0")
     private Map details;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the URL of the storage pool")
+    @Parameter(name = ApiConstants.URL,
+                            type = CommandType.STRING,
+                            required = false,
+                            description = "the URL of the storage pool",
+                            since = "4.19.0")
     private String url;
 
     /////////////////////////////////////////////////////
