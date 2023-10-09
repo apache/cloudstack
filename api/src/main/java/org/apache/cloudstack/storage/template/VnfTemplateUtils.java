@@ -106,7 +106,7 @@ public class VnfTemplateUtils {
         boolean required = true;
         for (VNF.VnfNic nic : nicsList) {
             if (nic.getDeviceId() != deviceId) {
-                throw new InvalidParameterValueException(String.format("deviceid must be constant and start from 0. Nic deviceid should be %s but actual is %s.", deviceId, nic.getDeviceId()));
+                throw new InvalidParameterValueException(String.format("deviceid must be consecutive and start from 0. Nic deviceid should be %s but actual is %s.", deviceId, nic.getDeviceId()));
             }
             if (!required && nic.isRequired()) {
                 throw new InvalidParameterValueException(String.format("required cannot be true if a precedent nic is optional. Nic with deviceid %s should be required but actual is optional.", deviceId));

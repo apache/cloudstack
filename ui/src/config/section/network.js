@@ -346,7 +346,7 @@ export default {
     },
     {
       name: 'vnfapp',
-      title: 'label.vnf.appliance',
+      title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
       permission: ['listVirtualMachinesMetrics'],
       params: () => {

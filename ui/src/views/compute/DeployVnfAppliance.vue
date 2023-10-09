@@ -815,13 +815,13 @@
               </a-button>
               <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
-                {{ $t('label.launch.vm') }}
+                {{ $t('label.launch.vnf.appliance') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
                   <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
                     <a-menu-item type="primary" key="1">
                       <rocket-outlined />
-                      {{ $t('label.launch.vm.and.stay') }}
+                      {{ $t('label.launch.vnf.appliance.and.stay') }}
                     </a-menu-item>
                   </a-menu>
                 </template>
