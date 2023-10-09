@@ -1668,6 +1668,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
         if (dstSnapshotStore.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            if (!dstSnapshotStore.isDisplay()) {
+                s_logger.debug(String.format("Snapshot ID: %d is in ready state on image store ID: %d, marking it displayable for view", snapshotId, dstSnapshotStore.getDataStoreId()));
+                dstSnapshotStore.setDisplay(true);
+                _snapshotStoreDao.update(dstSnapshotStore.getId(), dstSnapshotStore);
+            }
             return true; // already downloaded on this image store
         }
         if (List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
@@ -1744,6 +1749,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 s_logger.debug(String.format("Snapshot ID: %d is already present in secondary storage: %s" +
                         " in zone %s in ready state, don't need to copy any further",
                         currentSnap.getSnapshotId(), dstSecStore.getName(), destZone));
+                if (snapshotId == currentSnap.getSnapshotId()) {
+                    checkAndProcessSnapshotAlreadyExistInStore(snapshotId, dstSecStore);
+                }
                 break;
             }
             snapshotChain.add(currentSnap);

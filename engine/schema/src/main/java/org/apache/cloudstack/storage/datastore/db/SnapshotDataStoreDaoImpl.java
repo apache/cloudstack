@@ -506,6 +506,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     public void updateDisplayForSnapshotStoreRole(long snapshotId, long storeId, DataStoreRole role, boolean display) {
         SnapshotDataStoreVO ref = findByStoreSnapshot(role, storeId, snapshotId);
+        if (ref == null) {
+            return;
+        }
         ref.setDisplay(display);
         update(ref.getId(), ref);
     }

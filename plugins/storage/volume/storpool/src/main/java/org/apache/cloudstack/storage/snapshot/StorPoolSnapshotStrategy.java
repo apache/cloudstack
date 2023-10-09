@@ -241,6 +241,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
         try {
             boolean result = deleteSnapshotChain(snapshotOnImage);
+            _snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotId, store.getId(), store.getRole(), false);
             if (areLastSnapshotRef) {
                 obj.processEvent(Snapshot.Event.OperationSucceeded);
             }

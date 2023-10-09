@@ -362,11 +362,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
                 if (deleteSnapshotChain(snapshotInfo, storageToString)) {
                     s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
-                    snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotVo.getId(), dataStore.getId(), dataStore.getRole(), false);
                 } else {
                     s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
                 }
+                snapshotStoreDao.updateDisplayForSnapshotStoreRole(snapshotVo.getId(), dataStore.getId(), dataStore.getRole(), false);
                 if (isLastSnapshotRef) {
                     snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 }
