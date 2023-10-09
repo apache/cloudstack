@@ -1183,7 +1183,7 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void moveRuleBetweenAclRulesTestThereIsSpaceBetweenPreviousRuleAndNextRuleToAccommodateTheNewRuleWithOtherruleColliding() {
+    public void moveRuleBetweenAclRulesTestThereIsSpaceBetweenPreviousRuleAndNextRuleToAccommodateTheNewRuleWithOtherRuleColliding() {
         Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(15);
 
