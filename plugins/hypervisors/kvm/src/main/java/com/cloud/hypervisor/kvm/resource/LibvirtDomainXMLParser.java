@@ -310,14 +310,16 @@ public class LibvirtDomainXMLParser {
                 Element rng = (Element)rngs.item(i);
                 String backendModel = getAttrValue("backend", "model", rng);
                 String path = getTagValue("backend", rng);
-                String bytes = getAttrValue("rate", "bytes", rng);
-                String period = getAttrValue("rate", "period", rng);
+                String bytesStr = getAttrValue("rate", "bytes", rng);
+                String periodStr = getAttrValue("rate", "period", rng);
+                Integer bytes = StringUtils.isNotBlank(bytesStr) ? Integer.parseInt(bytesStr) : null;
+                Integer period = StringUtils.isNotBlank(periodStr) ? Integer.parseInt(periodStr) : null;
 
                 if (StringUtils.isEmpty(backendModel)) {
-                    def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
+                    def = new RngDef(path, bytes, period);
                 } else {
                     def = new RngDef(path, RngBackendModel.valueOf(backendModel.toUpperCase()),
-                                     Integer.parseInt(bytes), Integer.parseInt(period));
+                                     bytes, period);
                 }
 
                 rngDefs.add(def);
