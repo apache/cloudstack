@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -94,15 +95,16 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
         checkParameters();
         try {
             List<UnmanagedInstanceTO> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
-            List<UnmanagedInstanceResponse> responses = new ArrayList<>();
+            List<BaseResponse> baseResponseList = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(vms)) {
                 for (UnmanagedInstanceTO vmwareVm : vms) {
                     UnmanagedInstanceResponse resp = _responseGenerator.createUnmanagedInstanceResponse(vmwareVm, null, null);
-                    responses.add(resp);
+                    baseResponseList.add(resp);
                 }
             }
-            ListResponse<UnmanagedInstanceResponse> response = new ListResponse<>();
-            response.setResponses(responses, responses.size());
+            List<BaseResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
+            ListResponse<BaseResponse> response = new ListResponse<>();
+            response.setResponses(pagingList, pagingList.size());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {

@@ -1597,6 +1597,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String username = cmd.getUsername();
         String password = cmd.getPassword();
         Long existingVcenterId = cmd.getExistingVcenterId();
+        String keyword = cmd.getKeyword();
 
         if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
                 (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {
@@ -1634,7 +1635,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
-            return dcMo.getAllVmsOnDatacenter();
+            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
+            return StringUtils.isBlank(keyword) ? instances :
+                    instances.stream().filter(x -> x.getName().contains(keyword)).collect(Collectors.toList());
         } catch (Exception e) {
             String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());

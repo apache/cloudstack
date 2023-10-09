@@ -455,7 +455,7 @@ export default {
       showUnmanageForm: false,
       selectedUnmanagedInstance: {},
       query: {},
-      selectedVmwareVcenter: {}
+      selectedVmwareVcenter: undefined
     }
   },
   created () {
@@ -757,9 +757,11 @@ export default {
       this.fetchInstances()
     },
     fetchInstances () {
-      if (this.selectedCluster.hypervisortype === 'VMware') {
+      if (this.isUnmanaged) {
         this.fetchUnmanagedInstances()
         this.fetchManagedInstances()
+      } else if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        this.fetchVmwareDatacenterInstances()
       }
     },
     fetchUnmanagedInstances (page, pageSize) {
@@ -794,7 +796,11 @@ export default {
     },
     searchUnmanagedInstances (params) {
       this.searchParams.unmanaged.keyword = params.searchQuery
-      this.fetchUnmanagedInstances()
+      if (this.isUnmanaged) {
+        this.fetchUnmanagedInstances()
+      } else if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        this.fetchVmwareDatacenterInstances()
+      }
     },
     fetchManagedInstances (page, pageSize) {
       const params = {
@@ -915,6 +921,38 @@ export default {
       this.unmanagedInstances = obj.response.unmanagedinstance
       this.itemCount.unmanaged = obj.response.count
       this.unmanagedInstancesLoading = false
+    },
+    fetchVmwareDatacenterInstances (page, pageSize) {
+      const params = {}
+      const query = Object.assign({}, this.$route.query)
+      this.page.unmanaged = page || parseInt(query.unmanagedpage) || this.page.unmanaged
+      this.updateQuery('unmanagedpage', this.page.unmanaged)
+      params.page = this.page.unmanaged
+      this.pageSize.unmanaged = pageSize || this.pageSize.unmanaged
+      params.pagesize = this.pageSize.unmanaged
+      this.unmanagedInstances = []
+      this.unmanagedInstancesSelectedRowKeys = []
+      if (this.searchParams.unmanaged.keyword) {
+        params.keyword = this.searchParams.unmanaged.keyword
+      }
+      if (this.selectedVmwareVcenter.vcenter) {
+        params.datacentername = this.selectedVmwareVcenter.datacenter
+        params.vcenter = this.selectedVmwareVcenter.vcenter
+        params.username = this.selectedVmwareVcenter.username
+        params.password = this.selectedVmwareVcenter.password
+      } else {
+        params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+      }
+      this.unmanagedInstancesLoading = true
+      api('listVmwareDcVms', params).then(json => {
+        const response = json.listvmwaredcvmsresponse
+        this.unmanagedInstances = response.unmanagedinstance
+        this.itemCount.unmanaged = response.count
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.unmanagedInstancesLoading = false
+      })
     }
   }
 }
