@@ -48,6 +48,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
