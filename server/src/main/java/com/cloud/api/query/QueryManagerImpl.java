@@ -1302,7 +1302,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (autoScaleVmGroupId != null) {
             SearchBuilder<AutoScaleVmGroupVmMapVO> autoScaleMapSearch = autoScaleVmGroupVmMapDao.createSearchBuilder();
-            autoScaleMapSearch.and("autoScaleVmGroupId", autoScaleMapSearch.entity().getId(), Op.EQ);
+            autoScaleMapSearch.and("autoScaleVmGroupId", autoScaleMapSearch.entity().getVmGroupId(), Op.EQ);
             userVmSearchBuilder.join("autoScaleVmGroup", autoScaleMapSearch, autoScaleMapSearch.entity().getInstanceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
