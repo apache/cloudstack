@@ -111,7 +111,7 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="templateid" ref="templateid">
+              <a-form-item name="templateid" ref="templateid" v-if="hypervisor === 'KVM' && !selectedVmwareVcenter">
                 <template #label>
                   <tooltip-label :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
                 </template>
