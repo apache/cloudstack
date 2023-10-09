@@ -474,8 +474,8 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStoreRole) {
-        SnapshotDataStoreVO snapshotDataStoreVo = findOneBy(createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, dataStoreRole));
+    public boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, long storeId, DataStoreRole dataStoreRole) {
+        SnapshotDataStoreVO snapshotDataStoreVo = findByStoreSnapshot(dataStoreRole, storeId, snapshotId);
         return snapshotDataStoreVo == null || expunge(snapshotDataStoreVo.getId());
     }
 

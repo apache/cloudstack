@@ -88,7 +88,7 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
      * Removes the snapshot reference from the database according to its id and data store role.
      * @return true if success, otherwise, false.
      */
-    boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStorerole);
+    boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, long storeId, DataStoreRole dataStorerole);
 
     /**
      * List all snapshots in 'snapshot_store_ref' with state 'Ready' by volume ID.

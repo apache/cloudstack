@@ -104,13 +104,17 @@ public class SnapshotHelperTest {
 
     @Test
     public void validateExpungeTemporarySnapshotKvmSnapshotOnPrimaryStorageExpungesSnapshot() {
+        DataStore store = Mockito.mock(DataStore.class);
+        Mockito.when(store.getRole()).thenReturn(DataStoreRole.Image);
+        Mockito.when(store.getId()).thenReturn(1L);
+        Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(store);
         Mockito.doReturn(true).when(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Mockito.doReturn(true).when(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.any());
+        Mockito.doReturn(true).when(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
 
         snapshotHelperSpy.expungeTemporarySnapshot(true, snapshotInfoMock);
 
         Mockito.verify(snapshotServiceMock).deleteSnapshot(Mockito.any());
-        Mockito.verify(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(snapshotDataStoreDaoMock).expungeReferenceBySnapshotIdAndDataStoreRole(Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
     }
 
     @Test

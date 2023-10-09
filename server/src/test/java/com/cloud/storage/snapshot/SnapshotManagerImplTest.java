@@ -252,7 +252,6 @@ public class SnapshotManagerImplTest {
         final long snapshotId = 1L;
         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
         Mockito.when(snapshotVO.getId()).thenReturn(snapshotId);
-        Mockito.when(snapshotVO.getSize()).thenReturn(100L);
         Mockito.when(snapshotVO.getAccountId()).thenReturn(1L);
         Mockito.when(snapshotDao.findById(snapshotId)).thenReturn(snapshotVO);
         final long zoneId = 1L;

@@ -110,8 +110,13 @@ public class SnapshotHelper {
             logger.warn(String.format("Unable to delete the temporary snapshot [%s] on secondary storage due to [%s]. We still will expunge the database reference, consider"
               + " manually deleting the file [%s].", snapInfo.getId(), ex.getMessage(), snapInfo.getPath()), ex);
         }
-
-        snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), DataStoreRole.Image);
+        long storeId = snapInfo.getDataStore().getId();
+        if (!DataStoreRole.Image.equals(snapInfo.getDataStore().getRole())) {
+            long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
+            SnapshotInfo imageStoreSnapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapInfo.getId(), DataStoreRole.Image, zoneId);
+            storeId = imageStoreSnapInfo.getDataStore().getId();
+        }
+        snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
     }
 
     /**
