@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.api.command.admin.annotation;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -26,9 +27,16 @@ public class AddAnnotationCmdTest {
 
     private AddAnnotationCmd addAnnotationCmd = new AddAnnotationCmd();
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test (expected = IllegalStateException.class)

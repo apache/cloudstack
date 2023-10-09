@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'host',
   title: 'label.hosts',
-  icon: 'desktop-outlined',
+  icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
@@ -81,7 +81,9 @@ export default {
       label: 'label.action.secure.host',
       message: 'message.action.secure.host',
       dataView: true,
-      show: (record) => { return record.hypervisor === 'KVM' },
+      show: (record) => {
+        return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
+      },
       args: ['hostid'],
       mapping: {
         hostid: {

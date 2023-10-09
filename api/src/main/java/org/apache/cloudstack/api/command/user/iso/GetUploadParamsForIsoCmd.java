@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,14 +36,12 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = GetUploadParamsForIsoCmd.APINAME,
+@APICommand(name = "getUploadParamsForIso",
         description = "upload an existing ISO into the CloudStack cloud.",
         responseObject = GetUploadParamsResponse.class, since = "4.13",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
-
-    public static final String APINAME = "getUploadParamsForIso";
 
     private static final String s_name = "postuploadisoresponse";
 
@@ -73,18 +70,11 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
     @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "true if the ISO or its derivatives are extractable; default is false")
     private Boolean extractable;
 
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true, description = "the name of the ISO")
-    private String isoName;
-
     @Parameter(name = ApiConstants.OS_TYPE_ID,
             type = BaseCmd.CommandType.UUID,
             entityType = GuestOSResponse.class,
             description = "the ID of the OS type that best represents the OS of this ISO. If the ISO is bootable this parameter needs to be passed")
     private Long osTypeId;
-
-    @Parameter(name=ApiConstants.ZONE_ID, type= BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="the ID of the zone you wish to register the ISO to.")
-    protected Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,17 +100,10 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
         return extractable;
     }
 
-    public String getIsoName() {
-        return isoName;
-    }
-
     public Long getOsTypeId() {
         return osTypeId;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -134,7 +117,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (ResourceAllocationException | MalformedURLException e) {
-            s_logger.error("Exception while registering template", e);
+            s_logger.error("Exception while registering ISO", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Exception while registering ISO: " + e.getMessage());
         }
     }

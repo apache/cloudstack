@@ -393,8 +393,8 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
-      <div v-if="dataView" style="margin-top: -10px">
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+      <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
           v-else
@@ -444,10 +444,12 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
+import { sourceToken } from '@/utils/request'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
@@ -627,6 +629,9 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    console.log('DEBUG - Due to route change, ignoring results for any on-going API request', this.apiName)
+    sourceToken.cancel()
+    sourceToken.init()
     this.currentPath = this.$route.fullPath
     next()
   },
@@ -718,8 +723,10 @@ export default {
       }
       api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
+        const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
         this.$store.dispatch('SetProject', project)
+        this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
         this.$message.success(`${this.$t('message.switch.to')} "${project.name}"`)
         const query = Object.assign({}, this.$route.query)
@@ -835,6 +842,7 @@ export default {
         })
       }
 
+      const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
         let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
@@ -842,9 +850,11 @@ export default {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.field
             title = columnKey.customTitle
+            customRender[key] = columnKey[key]
           } else {
             key = Object.keys(columnKey)[0]
             title = Object.keys(columnKey)[0]
+            customRender[key] = columnKey[key]
           }
         }
         this.columns.push({
@@ -877,6 +887,10 @@ export default {
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
+      }
+
+      if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
+        delete params.details
       }
 
       this.loading = true
@@ -941,25 +955,33 @@ export default {
             break
           }
         }
-        this.itemCount = 0
+        var apiItemCount = 0
         for (const key in json[responseName]) {
           if (key === 'count') {
-            this.itemCount = json[responseName].count
+            apiItemCount = json[responseName].count
             continue
           }
           objectName = key
           break
         }
+
+        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+          console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
+          return
+        }
+
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
           this.items = []
         }
+        this.itemCount = apiItemCount
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
 
         if (this.apiName === 'listProjects' && this.items.length > 0) {
+          this.$store.commit('RELOAD_ALL_PROJECTS', this.items)
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
@@ -981,6 +1003,12 @@ export default {
 
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
+          for (const key in customRender) {
+            const func = customRender[key]
+            if (func && typeof func === 'function') {
+              this.items[idx][key] = func(this.items[idx])
+            }
+          }
           if (this.$route.path.startsWith('/ldapsetting')) {
             this.items[idx].id = this.items[idx].hostname
           }
@@ -996,6 +1024,10 @@ export default {
           }
         }
       }).catch(error => {
+        if (!error || !error.message) {
+          console.log('API request likely got cancelled due to route change:', this.apiName)
+          return
+        }
         if ([401].includes(error.response.status)) {
           return
         }
@@ -1027,6 +1059,19 @@ export default {
         this.loading = false
         this.searchParams = params
       })
+
+      if ('action' in this.$route.query) {
+        const actionName = this.$route.query.action
+        for (const action of this.actions) {
+          if (action.listView && action.api === actionName) {
+            this.execAction(action, false)
+            const query = Object.assign({}, this.$route.query)
+            delete query.action
+            this.$router.replace({ query })
+            break
+          }
+        }
+      }
     },
     closeAction () {
       this.actionLoading = false
@@ -1270,13 +1315,30 @@ export default {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
-              const description = action.response(result.jobresult)
-              if (description) {
-                this.$notification.info({
-                  message: this.$t(action.label),
-                  description: (<span v-html={description}></span>),
-                  duration: 0
-                })
+              const response = action.response(result.jobresult)
+              if (response) {
+                if (typeof response === 'object') {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response.message}></span>),
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(response.copytext)
+                      },
+                      () => [this.$t(response.copybuttontext)]
+                    ),
+                    duration: 0
+                  })
+                } else {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response}></span>),
+                    duration: 0
+                  })
+                }
               }
             }
             if ('successMethod' in action) {
@@ -1872,6 +1934,14 @@ export default {
       if (screenWidth <= 768) {
         this.modalWidth = '450px'
       }
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }

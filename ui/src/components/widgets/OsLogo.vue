@@ -24,29 +24,15 @@
       :icon="['fab', logo]"
       :size="size"
       :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]"
-      v-if="logo !== 'debian'" />
-    <debian-icon
-      v-else-if="logo === 'debian'"
-      :width="size === '4x' ? 56 : 16"
-      :height="size === '4x' ? 56 : 16"
-      :style="{
-        height: size === '4x' ? '56px' : '16px',
-        width: size === '4x' ? '56px' : '16px',
-        marginBottom: '-4px',
-        background: $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : ''
-      }" />
+      />
   </a-tooltip>
 </template>
 
 <script>
 import { api } from '@/api'
-import DebianIcon from '@/assets/icons/debian.svg?inline'
 
 export default {
   name: 'OsLogo',
-  components: {
-    DebianIcon
-  },
   props: {
     osId: {
       type: String,

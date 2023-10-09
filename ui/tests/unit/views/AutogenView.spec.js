@@ -739,12 +739,14 @@ describe('Views > AutogenView.vue', () => {
         expect(wrapper.vm.items).toEqual([{
           id: 'test-id',
           name: 'test-name-value',
-          key: 0
+          key: 0,
+          column1: 'test-name-value'
         }])
         expect(wrapper.vm.resource).toEqual({
           id: 'test-id',
           name: 'test-name-value',
-          key: 0
+          key: 0,
+          column1: 'test-name-value'
         })
         done()
       })

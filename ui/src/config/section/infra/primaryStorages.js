@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'storagepool',
   title: 'label.primary.storage',
-  icon: 'database-outlined',
+  icon: 'hdd-outlined',
   docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
   columns: () => {
