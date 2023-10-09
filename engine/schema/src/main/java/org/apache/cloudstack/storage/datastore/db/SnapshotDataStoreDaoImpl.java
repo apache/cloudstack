@@ -502,4 +502,11 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters(STATE, State.Ready);
         return findOneBy(sc);
     }
+
+    @Override
+    public void updateDisplayForSnapshotStoreRole(long snapshotId, long storeId, DataStoreRole role, boolean display) {
+        SnapshotDataStoreVO ref = findByStoreSnapshot(role, storeId, snapshotId);
+        ref.setDisplay(display);
+        update(ref.getId(), ref);
+    }
 }

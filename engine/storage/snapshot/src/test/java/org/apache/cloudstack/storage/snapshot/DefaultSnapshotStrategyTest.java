@@ -135,8 +135,6 @@ public class DefaultSnapshotStrategyTest {
     public void validateDeleteSnapshotInfosDeletesSuccessfullyReturnsTrue() {
         Mockito.doReturn(mockSnapshotInfos).when(defaultSnapshotStrategySpy).retrieveSnapshotEntries(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(true).when(defaultSnapshotStrategySpy).deleteSnapshotInfo(Mockito.any(), Mockito.any());
-        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
-        Mockito.doReturn(dataStoreMock).when(snapshotInfo2Mock).getDataStore();
         Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfos(snapshotVoMock, null));
     }
 

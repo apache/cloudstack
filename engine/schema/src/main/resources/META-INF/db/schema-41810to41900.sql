@@ -205,7 +205,8 @@ ALTER TABLE `cloud`.`snapshot_store_ref`
     ADD COLUMN `download_state` varchar(255) DEFAULT NULL COMMENT 'the state of the snapshot download' AFTER `volume_id`,
     ADD COLUMN `download_pct` int unsigned DEFAULT NULL COMMENT 'the percentage of the snapshot download completed' AFTER `download_state`,
     ADD COLUMN `error_str` varchar(255) DEFAULT NULL COMMENT 'the error message when the snapshot download occurs' AFTER `download_pct`,
-    ADD COLUMN `local_path` varchar(255) DEFAULT NULL COMMENT 'the path of the snapshot download' AFTER `error_str`;
+    ADD COLUMN `local_path` varchar(255) DEFAULT NULL COMMENT 'the path of the snapshot download' AFTER `error_str`,
+    ADD COLUMN `display` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT '1 implies store reference is available for listing' AFTER `error_str`;
 
 -- Create snapshot_view
 DROP VIEW IF EXISTS `cloud`.`snapshot_view`;
@@ -277,7 +278,8 @@ CREATE VIEW `cloud`.`snapshot_view` AS
          LEFT JOIN `projects` ON ((`projects`.`project_account_id` = `account`.`id`)))
          LEFT JOIN `volumes` ON ((`volumes`.`id` = `snapshots`.`volume_id`)))
          LEFT JOIN `snapshot_store_ref` ON (((`snapshot_store_ref`.`snapshot_id` = `snapshots`.`id`)
-             AND (`snapshot_store_ref`.`state` != 'Destroyed'))))
+             AND (`snapshot_store_ref`.`state` != 'Destroyed')
+             AND (`snapshot_store_ref`.`display` = 1))))
          LEFT JOIN `image_store` ON ((ISNULL(`image_store`.`removed`)
              AND (`snapshot_store_ref`.`store_role` = 'Image')
              AND (`snapshot_store_ref`.`store_id` IS NOT NULL)

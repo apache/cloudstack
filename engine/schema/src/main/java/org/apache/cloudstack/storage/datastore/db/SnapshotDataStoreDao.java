@@ -98,4 +98,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listBySnasphotStoreDownloadStatus(long snapshotId, long storeId, VMTemplateStorageResourceAssoc.Status... status);
 
     SnapshotDataStoreVO findOneBySnapshotAndDatastoreRole(long snapshotId, DataStoreRole role);
+
+    void updateDisplayForSnapshotStoreRole(long snapshotId, long storeId, DataStoreRole role, boolean display);
 }

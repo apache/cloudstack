@@ -109,6 +109,9 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "error_str")
     private String errorString;
 
+    @Column(name = "display")
+    private boolean display = true;
+
     @Column(name = "ref_cnt")
     Long refCnt = 0L;
 
@@ -340,5 +343,13 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public String getErrorString() {
         return errorString;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }
