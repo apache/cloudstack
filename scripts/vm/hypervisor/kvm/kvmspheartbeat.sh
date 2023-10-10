@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,7 +17,7 @@
 # under the License.
 
 help() {
-  printf "Usage: $0 
+  printf "Usage: $0
                     -c cleanup"
   exit 1
 }
@@ -39,7 +39,7 @@ done
 
 #delete VMs on this mountpoint
 deleteVMs() {
-  vmPids=$(ps aux| grep qemu | grep 'storpool-byid' | awk '{print $2}' 2> /dev/null) 
+  vmPids=$(ps aux| grep qemu | grep 'storpool-byid' | awk '{print $2}' 2> /dev/null)
   if [ $? -gt 0 ]
   then
      return
