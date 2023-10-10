@@ -360,10 +360,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        //This check could be removed when PR #5297 is merged
-        if (vmHasNFSOrLocalVolumes(vmId)) {
-            return StrategyPriority.CANT_HANDLE;
-        }
         if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm.getState() == VirtualMachine.State.Running) {
@@ -464,18 +460,5 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         payload.setAsyncBackup(false);
         payload.setQuiescevm(false);
         return payload;
-    }
-
-    private boolean vmHasNFSOrLocalVolumes(long vmId) {
-        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmId);
-
-        for (VolumeObjectTO volumeTO : volumeTOs) {
-            Long poolId = volumeTO.getPoolId();
-            Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
-            if (poolType == Storage.StoragePoolType.NetworkFilesystem || poolType == Storage.StoragePoolType.Filesystem) {
-                return true;
-            }
-        }
-        return false;
     }
 }
