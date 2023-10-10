@@ -442,6 +442,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
+import { sourceToken } from '@/utils/request'
 import store from '@/store'
 import eventBus from '@/config/eventBus'
 
@@ -621,6 +622,9 @@ export default {
     next()
   },
   beforeRouteLeave (to, from, next) {
+    console.log('DEBUG - Due to route change, ignoring results for any on-going API request', this.apiName)
+    sourceToken.cancel()
+    sourceToken.init()
     this.currentPath = this.$route.fullPath
     next()
   },
@@ -693,8 +697,10 @@ export default {
       }
       api('listProjects', { id: projectId, listall: true, details: 'min' }).then(json => {
         if (!json || !json.listprojectsresponse || !json.listprojectsresponse.project) return
+        const projects = json.listprojectsresponse.project
         const project = json.listprojectsresponse.project[0]
         this.$store.dispatch('SetProject', project)
+        this.$store.commit('RELOAD_ALL_PROJECTS', projects)
         this.$store.dispatch('ToggleTheme', project.id === undefined ? 'light' : 'dark')
         this.$message.success(`${this.$t('message.switch.to')} "${project.name}"`)
         const query = Object.assign({}, this.$route.query)
@@ -767,6 +773,10 @@ export default {
         }
       } else {
         this.dataView = false
+      }
+
+      if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {
+        params.listsystemvms = true
       }
 
       if ('listview' in this.$refs && this.$refs.listview) {
@@ -852,6 +862,10 @@ export default {
         delete params.showunique
       }
 
+      if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
+        delete params.details
+      }
+
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
@@ -914,25 +928,33 @@ export default {
             break
           }
         }
-        this.itemCount = 0
+        var apiItemCount = 0
         for (const key in json[responseName]) {
           if (key === 'count') {
-            this.itemCount = json[responseName].count
+            apiItemCount = json[responseName].count
             continue
           }
           objectName = key
           break
         }
+
+        if ('id' in this.$route.params && this.$route.params.id !== params.id) {
+          console.log('DEBUG - Discarding API response as its `id` does not match the uuid on the browser path')
+          return
+        }
+
         this.items = json[responseName][objectName]
         if (!this.items || this.items.length === 0) {
           this.items = []
         }
+        this.itemCount = apiItemCount
 
         if (['listTemplates', 'listIsos'].includes(this.apiName) && this.items.length > 1) {
           this.items = [...new Map(this.items.map(x => [x.id, x])).values()]
         }
 
         if (this.apiName === 'listProjects' && this.items.length > 0) {
+          this.$store.commit('RELOAD_ALL_PROJECTS', this.items)
           this.columns.map(col => {
             if (col.title === 'Account') {
               col.title = this.$t('label.project.owner')
@@ -975,6 +997,10 @@ export default {
           }
         }
       }).catch(error => {
+        if (!error || !error.message) {
+          console.log('API request likely got cancelled due to route change:', this.apiName)
+          return
+        }
         if ([401].includes(error.response.status)) {
           return
         }
@@ -1030,7 +1056,6 @@ export default {
       this.setModalWidthByScreen()
     },
     execAction (action, isGroupAction) {
-      const self = this
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
@@ -1068,6 +1093,7 @@ export default {
         return 0
       })
       this.currentAction.paramFields = []
+      this.currentAction.paramFilters = []
       if ('message' in action) {
         var message = action.message
         if (typeof action.message === 'function') {
@@ -1075,6 +1101,29 @@ export default {
         }
         action.message = message
       }
+
+      this.getArgs(action, isGroupAction, paramFields)
+      this.getFilters(action, isGroupAction, paramFields)
+      this.getFirstIndexFocus()
+
+      this.showAction = true
+      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
+      for (const param of this.currentAction.paramFields) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+          param.type = 'string'
+        }
+        this.setRules(param)
+        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
+          this.listUuidOpts(param, this.currentAction.paramFilters[param.name])
+        }
+      }
+      this.actionLoading = false
+      if (action.dataView && listIconForFillValues.includes(action.icon)) {
+        this.fillEditFormFieldValues()
+      }
+    },
+    getArgs (action, isGroupAction, paramFields) {
+      const self = this
       if ('args' in action) {
         var args = action.args
         if (typeof action.args === 'function') {
@@ -1096,22 +1145,14 @@ export default {
           })
         }
       }
-      this.getFirstIndexFocus()
-
-      this.showAction = true
-      const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
-      for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
-          param.type = 'string'
+    },
+    getFilters (action, isGroupAction, paramFields) {
+      if ('filters' in action) {
+        var filters = action.filters
+        if (typeof action.filters === 'function') {
+          filters = action.filters(action.resource, this.$store.getters, isGroupAction)
         }
-        this.setRules(param)
-        if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
-          this.listUuidOpts(param)
-        }
-      }
-      this.actionLoading = false
-      if (action.dataView && listIconForFillValues.includes(action.icon)) {
-        this.fillEditFormFieldValues()
+        this.currentAction.paramFilters = filters
       }
     },
     getFirstIndexFocus () {
@@ -1124,13 +1165,16 @@ export default {
         }
       }
     },
-    listUuidOpts (param) {
+    listUuidOpts (param, filters) {
       if (this.currentAction.mapping && param.name in this.currentAction.mapping && !this.currentAction.mapping[param.name].api) {
         return
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
       var params = { listall: true }
+      for (const filter in filters) {
+        params[filter] = filters[filter]
+      }
       const possibleName = 'list' + extractedParamName + 's'
       var showIcon = false
       if (this.$showIcon(extractedParamName)) {
@@ -1786,7 +1830,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         default:
-          console.log('hererere')
           rule.required = field.required
           rule.message = this.$t('message.error.required.input')
           this.rules[field.name].push(rule)

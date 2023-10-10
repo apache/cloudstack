@@ -436,9 +436,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         if(zoneMacIdentifier != null && zoneMacIdentifier.intValue() != 0 ){
             seq = seq | _prefix << 40 | (long)zoneMacIdentifier << 32 | networkConfigId << 16 & 0x00000000ffff0000l;
         }
-        else {
-            seq = seq | _prefix << 40 | _rand.nextInt(Short.MAX_VALUE) << 16 & 0x00000000ffff0000l;
-        }
         return NetUtils.long2Mac(seq);
     }
 

@@ -109,6 +109,8 @@ const err = (error) => {
         if (originalPath !== '/user/login') {
           router.push({ path: '/user/login', query: { redirect: originalPath } })
         }
+        store.commit('SET_COUNT_NOTIFY', 0)
+        notification.destroy()
       })
     }
     if (response.status === 404) {
@@ -192,7 +194,11 @@ const sourceToken = {
   },
   cancel: () => {
     if (!source) sourceToken.init()
-    source.cancel()
+    if (source) {
+      source.cancel()
+    } else {
+      console.log('Source token failed to be cancelled')
+    }
   }
 }
 

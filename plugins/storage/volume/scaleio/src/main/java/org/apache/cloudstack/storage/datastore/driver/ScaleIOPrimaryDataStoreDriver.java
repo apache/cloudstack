@@ -504,11 +504,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volume.setFolder(scaleIOVolume.getVtreeId());
             volume.setSize(scaleIOVolume.getSizeInKb() * 1024);
             volume.setPoolType(Storage.StoragePoolType.PowerFlex);
-            if (volumeInfo.getVolumeType().equals(Volume.Type.ROOT)) {
-                volume.setFormat(volumeInfo.getFormat());
-            } else {
-                volume.setFormat(Storage.ImageFormat.RAW);
-            }
+            volume.setFormat(volumeInfo.getFormat());
             volume.setPoolId(storagePoolId);
             VolumeObject createdObject = VolumeObject.getVolumeObject(volumeInfo.getDataStore(), volume);
             createdObject.update();
@@ -1202,7 +1198,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             if (payload.instanceName != null) {
                 VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(payload.instanceName);
-                if (instance.getState().equals(VirtualMachine.State.Running)) {
+                if (instance != null && instance.getState().equals(VirtualMachine.State.Running)) {
                     hostId = instance.getHostId();
                     attachedRunning = true;
                 }

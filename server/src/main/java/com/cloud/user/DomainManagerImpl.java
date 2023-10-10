@@ -24,7 +24,15 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.NetworkOfferingJoinDao;
+import com.cloud.api.query.dao.VpcOfferingJoinDao;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
+import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -106,11 +114,23 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private NetworkOfferingJoinDao networkOfferingJoinDao;
+    @Inject
+    private NetworkOfferingDetailsDao networkOfferingDetailsDao;
+    @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
+    @Inject
+    private VpcOfferingJoinDao vpcOfferingJoinDao;
+    @Inject
+    private VpcOfferingDetailsDao vpcOfferingDetailsDao;
     @Inject
     private ProjectDao _projectDao;
     @Inject
@@ -324,16 +344,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
     @Override
     public boolean deleteDomain(DomainVO domain, Boolean cleanup) {
-        GlobalLock lock = getGlobalLock("AccountCleanup");
-        if (lock == null) {
-            s_logger.debug("Couldn't get the global lock");
-            return false;
-        }
-
-        if (!lock.lock(30)) {
-            s_logger.debug("Couldn't lock the db");
-            return false;
-        }
+        GlobalLock lock = getGlobalLock();
+        if (lock == null) return false;
 
         try {
             // mark domain as inactive
@@ -341,39 +353,57 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             domain.setState(Domain.State.Inactive);
             _domainDao.update(domain.getId(), domain);
 
-            try {
-                long ownerId = domain.getAccountId();
-                if (BooleanUtils.toBoolean(cleanup)) {
-                    tryCleanupDomain(domain, ownerId);
-                } else {
-                    removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
-                }
-
-                if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
-                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
-                    e.addProxyObject(domain.getUuid(), "domainId");
-                    throw e;
-                } else {
-                    s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
-                }
-
-                cleanupDomainDetails(domain.getId());
-                cleanupDomainOfferings(domain.getId());
-                annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
-                CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                return true;
-            } catch (Exception ex) {
-                s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
-                if (ex instanceof CloudRuntimeException) {
-                    rollbackDomainState(domain);
-                    throw (CloudRuntimeException)ex;
-                }
-                else
-                    return false;
-            }
+            return cleanDomain(domain, cleanup);
         }
         finally {
             lock.unlock();
+        }
+    }
+
+    private GlobalLock getGlobalLock() {
+        GlobalLock lock = getGlobalLock("DomainCleanup");
+        if (lock == null) {
+            s_logger.debug("Couldn't get the global lock");
+            return null;
+        }
+
+        if (!lock.lock(30)) {
+            s_logger.debug("Couldn't lock the db");
+            return null;
+        }
+        return lock;
+    }
+
+    private boolean cleanDomain(DomainVO domain, Boolean cleanup) {
+        try {
+            long ownerId = domain.getAccountId();
+            if (BooleanUtils.toBoolean(cleanup)) {
+                tryCleanupDomain(domain, ownerId);
+            } else {
+                removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+            }
+
+            if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
+                CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
+                e.addProxyObject(domain.getUuid(), "domainId");
+                throw e;
+            } else {
+                s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
+            }
+
+            cleanupDomainDetails(domain.getId());
+            cleanupDomainOfferings(domain.getId());
+            annotationDao.removeByEntityType(AnnotationService.EntityType.DOMAIN.name(), domain.getUuid());
+            CallContext.current().putContextParameter(Domain.class, domain.getUuid());
+            return true;
+        } catch (Exception ex) {
+            s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
+            if (ex instanceof CloudRuntimeException) {
+                rollbackDomainState(domain);
+                throw (CloudRuntimeException)ex;
+            }
+            else
+                return false;
         }
     }
 
@@ -483,18 +513,48 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         String domainIdString = String.valueOf(domainId);
-        List<Long> diskOfferingsDetailsToRemove = new ArrayList<>();
-        List<Long> serviceOfferingsDetailsToRemove = new ArrayList<>();
 
-        // delete the service and disk offerings associated with this domain
-        List<DiskOfferingJoinVO> diskOfferingsForThisDomain = diskOfferingJoinDao.findByDomainId(domainId);
-        for (DiskOfferingJoinVO diskOffering : diskOfferingsForThisDomain) {
-            if (domainIdString.equals(diskOffering.getDomainId())) {
-                diskOfferingDao.remove(diskOffering.getId());
+        removeDiskOfferings(domainId, domainIdString);
+
+        removeServiceOfferings(domainId, domainIdString);
+
+        removeNetworkOfferings(domainId, domainIdString);
+
+        removeVpcOfferings(domainId, domainIdString);
+    }
+
+    private void removeVpcOfferings(Long domainId, String domainIdString) {
+        List<Long> vpcOfferingsDetailsToRemove = new ArrayList<>();
+        List<VpcOfferingJoinVO> vpcOfferingsForThisDomain = vpcOfferingJoinDao.findByDomainId(domainId);
+        for (VpcOfferingJoinVO vpcOffering : vpcOfferingsForThisDomain) {
+            if (domainIdString.equals(vpcOffering.getDomainId())) {
+                vpcOfferingDao.remove(vpcOffering.getId());
             } else {
-                diskOfferingsDetailsToRemove.add(diskOffering.getId());
+                vpcOfferingsDetailsToRemove.add(vpcOffering.getId());
             }
         }
+        for (final Long vpcOfferingId : vpcOfferingsDetailsToRemove) {
+            vpcOfferingDetailsDao.removeDetail(vpcOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
+        }
+    }
+
+    private void removeNetworkOfferings(Long domainId, String domainIdString) {
+        List<Long> networkOfferingsDetailsToRemove = new ArrayList<>();
+        List<NetworkOfferingJoinVO> networkOfferingsForThisDomain = networkOfferingJoinDao.findByDomainId(domainId, false);
+        for (NetworkOfferingJoinVO networkOffering : networkOfferingsForThisDomain) {
+            if (domainIdString.equals(networkOffering.getDomainId())) {
+                networkOfferingDao.remove(networkOffering.getId());
+            } else {
+                networkOfferingsDetailsToRemove.add(networkOffering.getId());
+            }
+        }
+        for (final Long networkOfferingId : networkOfferingsDetailsToRemove) {
+            networkOfferingDetailsDao.removeDetail(networkOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
+        }
+    }
+
+    private void removeServiceOfferings(Long domainId, String domainIdString) {
+        List<Long> serviceOfferingsDetailsToRemove = new ArrayList<>();
         List<ServiceOfferingJoinVO> serviceOfferingsForThisDomain = serviceOfferingJoinDao.findByDomainId(domainId);
         for (ServiceOfferingJoinVO serviceOffering : serviceOfferingsForThisDomain) {
             if (domainIdString.equals(serviceOffering.getDomainId())) {
@@ -503,13 +563,24 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 serviceOfferingsDetailsToRemove.add(serviceOffering.getId());
             }
         }
+        for (final Long serviceOfferingId : serviceOfferingsDetailsToRemove) {
+            serviceOfferingDetailsDao.removeDetail(serviceOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
+        }
+    }
 
+    private void removeDiskOfferings(Long domainId, String domainIdString) {
+        List<Long> diskOfferingsDetailsToRemove = new ArrayList<>();
+        List<DiskOfferingJoinVO> diskOfferingsForThisDomain = diskOfferingJoinDao.findByDomainId(domainId);
+        for (DiskOfferingJoinVO diskOffering : diskOfferingsForThisDomain) {
+            if (domainIdString.equals(diskOffering.getDomainId())) {
+                diskOfferingDao.remove(diskOffering.getId());
+            } else {
+                diskOfferingsDetailsToRemove.add(diskOffering.getId());
+            }
+        }
         // Remove domain IDs for offerings which may be multi-domain
         for (final Long diskOfferingId : diskOfferingsDetailsToRemove) {
             diskOfferingDetailsDao.removeDetail(diskOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
-        }
-        for (final Long serviceOfferingId : serviceOfferingsDetailsToRemove) {
-            serviceOfferingDetailsDao.removeDetail(serviceOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
         }
     }
 

@@ -27,7 +27,7 @@
     <a-dropdown>
       <span class="user-menu-dropdown action">
         <span v-if="image">
-          <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
+          <resource-icon :image="image" size="4x" style="margin-right: 5px; margin-top: -3px"/>
         </span>
         <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
           {{ userInitials }}
@@ -43,6 +43,12 @@
             <a-menu-item class="user-menu-item" key="0">
                 <UserOutlined class="user-menu-item-icon" />
                 <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
+            </a-menu-item>
+          </router-link>
+          <router-link :to="{ path: '/account/' + $store.getters.userInfo.accountid, query: { tab: 'limits' } }">
+            <a-menu-item class="user-menu-item" key="0">
+                <ControlOutlined class="user-menu-item-icon" />
+                <span class="user-menu-item-name">{{ $t('label.limits') }}</span>
             </a-menu-item>
           </router-link>
           <a @click="toggleUseBrowserTimezone">

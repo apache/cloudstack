@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -500,22 +501,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             allocateRootVolume(persistedVm, template, rootDiskOfferingInfo, owner, rootDiskSizeFinal);
 
-            if (dataDiskOfferings != null) {
-                for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
-                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
-                            dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
+            // Create new Volume context and inject event resource type, id and details to generate VOLUME.CREATE event for the ROOT disk.
+            CallContext volumeContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Volume);
+            try {
+                if (dataDiskOfferings != null) {
+                    for (final DiskOfferingInfo dataDiskOfferingInfo : dataDiskOfferings) {
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId(), dataDiskOfferingInfo.getDiskOffering(), dataDiskOfferingInfo.getSize(),
+                                dataDiskOfferingInfo.getMinIops(), dataDiskOfferingInfo.getMaxIops(), persistedVm, template, owner, null);
+                    }
                 }
-            }
-            if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
-                int diskNumber = 1;
-                for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
-                    DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
-                    long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
-                    VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
-                    volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
-                            persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
-                    diskNumber++;
+                if (datadiskTemplateToDiskOfferingMap != null && !datadiskTemplateToDiskOfferingMap.isEmpty()) {
+                    int diskNumber = 1;
+                    for (Entry<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap : datadiskTemplateToDiskOfferingMap.entrySet()) {
+                        DiskOffering diskOffering = dataDiskTemplateToDiskOfferingMap.getValue();
+                        long diskOfferingSize = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
+                        VMTemplateVO dataDiskTemplate = _templateDao.findById(dataDiskTemplateToDiskOfferingMap.getKey());
+                        volumeMgr.allocateRawVolume(Type.DATADISK, "DATA-" + persistedVm.getId() + "-" + String.valueOf(diskNumber), diskOffering, diskOfferingSize, null, null,
+                                persistedVm, dataDiskTemplate, owner, Long.valueOf(diskNumber));
+                        diskNumber++;
+                    }
                 }
+            } finally {
+                // Remove volumeContext and pop vmContext back
+                CallContext.unregister();
             }
 
             if (s_logger.isDebugEnabled()) {
@@ -4797,6 +4805,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
                     + " -> Running) from out-of-context transition. VM network environment may need to be reset");
 
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, vm.getDomainId(),
+                    EventTypes.EVENT_VM_START, "Out of band VM power on", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
             s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Running state according to power-on report from hypervisor");
             break;
 
@@ -4830,6 +4840,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Stopping:
         case Running:
         case Stopped:
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,vm.getDomainId(),
+                    EventTypes.EVENT_VM_STOP, "Out of band VM power off", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
         case Migrating:
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(

@@ -118,7 +118,9 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network. " +
-            "If no account is provided then network will be assigned to the caller account and domain")
+            "If the account is not specified, but the acltype is Account or not specified, the network will be automatically assigned to the caller account and domain. " +
+            "To create a network under the domain without linking it to any account, make sure to include acltype=Domain parameter in the api call. " +
+            "If account is not specified, but acltype is Domain, the network will be created for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
@@ -311,10 +313,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             }
         }
         if (physicalNetworkId != null) {
-            if (offering.getGuestType() == GuestType.Shared) {
+            if ((offering.getGuestType() == GuestType.Shared) || (offering.getGuestType() == GuestType.L2)) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " only.");
+                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " or " + GuestType.L2 + " only.");
             }
         } else {
             if (zoneId == null) {

@@ -289,14 +289,6 @@ export default {
       this[type] = key
       this.userDataParams = []
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     isUserAllowedToListUserDatas () {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
@@ -343,10 +335,9 @@ export default {
       this.loadingData = true
       console.log(values)
       const params = {
-        id: this.resource.id
       }
       if (values.userdata && values.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
       }
       if (values.userdataid) {
         params.userdataid = values.userdataid
@@ -364,7 +355,14 @@ export default {
           idx++
         }
       }
-      api('resetUserDataForVirtualMachine', params).then(json => {
+      params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
+
+      const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
           content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2

@@ -619,21 +619,30 @@ public class UriUtils {
     }
 
     private static UriInfo getRbdUrlInfo(String url) {
-        int secondSlash = StringUtils.ordinalIndexOf(url, "/", 2);
-        int thirdSlash = StringUtils.ordinalIndexOf(url, "/", 3);
+        if (url == null || !url.toLowerCase().startsWith("rbd://")) {
+            throw new CloudRuntimeException("RBD URL must start with \"rbd://\"");
+        }
+        String schema = StringUtils.substring(url, 0, 6);
+        url = StringUtils.substring(url, 6, url.length());
         int firstAt = StringUtils.indexOf(url, "@");
-        int lastColon = StringUtils.lastIndexOf(url,":");
-        int lastSquareBracket = StringUtils.lastIndexOf(url,"]");
-        int startOfHost = Math.max(secondSlash, firstAt) + 1;
-        int endOfHost = lastColon < startOfHost ? (thirdSlash > 0 ? thirdSlash : url.length() + 1) :
+        String credentials = (firstAt == -1) ? null : StringUtils.substring(url, 0, firstAt);
+        String hostInfo = (firstAt == -1) ? url : StringUtils.substring(url, firstAt + 1, url.length());
+
+        int firstSlash = StringUtils.indexOf(hostInfo, "/");
+        int lastColon = StringUtils.lastIndexOf(hostInfo,":");
+        int lastSquareBracket = StringUtils.lastIndexOf(hostInfo,"]");
+        int endOfHost = lastColon == -1 ? (firstSlash > 0 ? firstSlash : hostInfo.length() + 1) :
                 (lastSquareBracket > lastColon ? lastSquareBracket + 1 : lastColon);
-        String storageHosts = StringUtils.substring(url, startOfHost, endOfHost);
+        String storageHosts = StringUtils.substring(hostInfo, 0, endOfHost);
         String firstHost = storageHosts.split(",")[0];
-        String strBeforeHosts = StringUtils.substring(url, 0, startOfHost);
-        String strAfterHosts = StringUtils.substring(url, endOfHost);
+        String strAfterHosts = StringUtils.substring(hostInfo, endOfHost);
         try {
-            URI uri = new URI(UriUtils.encodeURIComponent(strBeforeHosts + firstHost + strAfterHosts));
-            return new UriInfo(uri.getScheme(), storageHosts, uri.getPath(), uri.getUserInfo(), uri.getPort());
+            URI uri = new URI(UriUtils.encodeURIComponent(schema + firstHost + strAfterHosts));
+            if (credentials != null) {
+                credentials = credentials.replace("+", "-");
+                credentials = credentials.replace("/", "_");
+            }
+            return new UriInfo(uri.getScheme(), storageHosts, uri.getPath(), credentials, uri.getPort());
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
         }

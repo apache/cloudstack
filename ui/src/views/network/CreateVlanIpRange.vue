@@ -195,14 +195,14 @@ export default {
           {
             validator: this.checkIpFormat,
             ipV6: true,
-            message: this.$t('message.error.ipV6.address')
+            message: this.$t('message.error.ipv6.address')
           }
         ],
         endipv6: [
           {
             validator: this.checkIpFormat,
             ipV6: true,
-            message: this.$t('message.error.ipV6.address')
+            message: this.$t('message.error.ipv6.address')
           }
         ]
       })

@@ -82,6 +82,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -97,6 +98,7 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -1047,18 +1049,54 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public boolean canProvideStorageStats() {
-        return false;
+        return StorPoolConfigurationManager.StorageStatsInterval.value() > 0;
     }
 
     public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
+        if (storagePool == null) {
+            return null;
+        }
+        Map<Long, Map<String, Pair<Long, Long>>> templatesStats = StorPoolStatsCollector.templatesStats;
+        if (MapUtils.isNotEmpty(templatesStats) && templatesStats.containsKey(storagePool.getDataCenterId())) {
+            Map<String, Pair<Long, Long>> storageStats = templatesStats.get(storagePool.getDataCenterId());
+            StoragePoolDetailVO templateName = storagePoolDetailsDao.findDetail(storagePool.getId(), StorPoolUtil.SP_TEMPLATE);
+            if (storageStats.containsKey(templateName.getValue()) && templateName != null) {
+                Pair<Long, Long> stats = storageStats.get(templateName.getValue());
+                if (stats.first() != storagePool.getCapacityBytes()) {
+                    primaryStoreDao.updateCapacityBytes(storagePool.getId(), stats.first());
+                }
+                return storageStats.get(templateName.getValue());
+            }
+        }
         return null;
     }
 
     public boolean canProvideVolumeStats() {
-        return false;
+        return StorPoolConfigurationManager.VolumesStatsInterval.value() > 0;
     }
 
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
+
+        if (volumeId == null) {
+            return null;
+        }
+
+        Map<String, Pair<Long, Long>> volumesStats = StorPoolStatsCollector.volumesStats;
+        if (MapUtils.isNotEmpty(volumesStats)) {
+            Pair<Long, Long> volumeStats = volumesStats.get(StorPoolStorageAdaptor.getVolumeNameFromPath(volumeId, true));
+            if (volumeStats != null) {
+                return volumeStats;
+            }
+        } else {
+            List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId());
+            for (VolumeVO volume : volumes) {
+                if (volume.getPath() != null && volume.getPath().equals(volumeId)) {
+                    long size = volume.getSize();
+                    StorPoolUtil.spLog("Volume [%s] doesn't have any statistics, returning its size [%s]", volumeId, size);
+                    return new Pair<>(size, size);
+                }
+            }
+        }
         return null;
     }
 

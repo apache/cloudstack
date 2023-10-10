@@ -32,7 +32,10 @@
         @finish="handleSubmit"
         layout="vertical">
         <div v-if="currentForm === 'Create'">
-          <a-form-item :label="$t('label.url')" name="url" ref="url">
+          <a-form-item name="url" ref="url">
+            <template #label>
+              <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+            </template>
             <a-input
               v-focus="currentForm === 'Create'"
               v-model:value="form.url"
@@ -56,22 +59,30 @@
             </a-upload-dragger>
           </a-form-item>
         </div>
-        <a-form-item :label="$t('label.name')" ref="name" name="name">
+        <a-form-item ref="name" name="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
             v-focus="currentForm !== 'Create'"/>
         </a-form-item>
-        <a-form-item :label="$t('label.displaytext')" ref="displaytext" name="displaytext">
+        <a-form-item ref="displaytext" name="displaytext">
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description" />
         </a-form-item>
         <div v-if="currentForm === 'Create'">
           <a-form-item
-            :label="$t('label.zone')"
             name="zoneids"
             ref="zoneids">
+            <template #label>
+              <tooltip-label :title="$t('label.zone')" :tooltip="apiParams.zoneids.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneids"
               :loading="zones.loading"
@@ -94,9 +105,11 @@
         </div>
         <div v-else>
           <a-form-item
-            :label="$t('label.zoneid')"
             ref="zoneid"
             name="zoneid">
+            <template #label>
+              <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            </template>
             <a-select
               v-model:value="form.zoneid"
               showSearch
@@ -119,7 +132,10 @@
         </div>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item ref="hypervisor" name="hypervisor" :label="$t('label.hypervisor')">
+            <a-form-item ref="hypervisor" name="hypervisor">
+              <template #label>
+                <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
+              </template>
               <a-select
                 v-model:value="form.hypervisor"
                 :loading="hyperVisor.loading"
@@ -137,7 +153,10 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item ref="format" name="format" :label="$t('label.format')">
+            <a-form-item ref="format" name="format">
+              <template #label>
+                <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+              </template>
               <a-select
                 v-model:value="form.format"
                 :placeholder="apiParams.format.description"
@@ -156,12 +175,18 @@
         </a-row>
         <a-row :gutter="12" v-if="allowed && hyperKVMShow && currentForm !== 'Upload'">
           <a-col :md="24" :lg="12">
-            <a-form-item ref="directdownload" name="directdownload" :label="$t('label.directdownload')">
+            <a-form-item ref="directdownload" name="directdownload">
+              <template #label>
+                <tooltip-label :title="$t('label.directdownload')" :tooltip="apiParams.directdownload.description"/>
+              </template>
               <a-switch v-model:checked="form.directdownload" @change="handleChangeDirect" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="allowDirectDownload">
-            <a-form-item ref="checksum" name="checksum" :label="$t('label.checksum')">
+            <a-form-item ref="checksum" name="checksum">
+              <template #label>
+                <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+              </template>
               <a-input
                 v-model:value="form.checksum"
                 :placeholder="apiParams.checksum.description" />
@@ -174,7 +199,10 @@
           </a-form-item>
         </a-row>
 
-        <a-form-item ref="deployasis" name="deployasis" :label="$t('label.deployasis')" v-if="selectedFormat === 'OVA'">
+        <a-form-item ref="deployasis" name="deployasis" v-if="selectedFormat === 'OVA'">
+          <template #label>
+            <tooltip-label :title="$t('label.deployasis')" :tooltip="apiParams.deployasis.description"/>
+          </template>
           <a-switch
             v-model:checked="form.deployasis"
             :checked="deployasis"
@@ -237,8 +265,10 @@
         <a-form-item
           name="ostypeid"
           ref="ostypeid"
-          :label="$t('label.ostypeid')"
           v-if="!hyperVMWShow || (hyperVMWShow && !deployasis)">
+          <template #label>
+            <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+          </template>
           <a-select
             showSearch
             optionFilterProp="label"
@@ -257,8 +287,10 @@
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
-              ref="userdataid"
-              :label="$t('label.userdata')">
+              ref="userdataid">
+              <template #label>
+                <tooltip-label :title="$t('label.userdata')" :tooltip="linkUserDataParams.userdataid.description"/>
+              </template>
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -277,7 +309,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="linkUserDataParams.userdatapolicy.description"/>
               </template>
               <a-select
                 v-model:value="userdatapolicy"
