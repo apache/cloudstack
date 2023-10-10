@@ -292,13 +292,13 @@
           </a-form-item>
           <a-form-item name="primeraUsername" ref="primeraUsername">
             <template #label>
-              <tooltip-label :title="$t('label.primera.username')" :tooltip="$t('label.primera.username.tooltip')"/>
+              <tooltip-label :title="$t('label.username')" :tooltip="$t('label.primera.username.tooltip')"/>
             </template>
             <a-input v-model:value="form.primeraUsername" :placeholder="$t('label.primera.username.tooltip')"/>
           </a-form-item>
           <a-form-item name="primeraPassword" ref="primeraPassword">
             <template #label>
-              <tooltip-label :title="$t('label.primera.password')" :tooltip="$t('label.primera.password')"/>
+              <tooltip-label :title="$t('label.password')" :tooltip="$t('label.primera.password')"/>
             </template>
             <a-input-password v-model:value="form.primeraPassword" :placeholder="$t('label.primera.password')"/>
           </a-form-item>
@@ -324,13 +324,13 @@
           </a-form-item>
           <a-form-item name="flashArrayUsername" ref="flashArrayUsername">
             <template #label>
-              <tooltip-label :title="$t('label.flashArray.username')" :tooltip="$t('label.flashArray.username.tooltip')"/>
+              <tooltip-label :title="$t('label.username')" :tooltip="$t('label.flashArray.username.tooltip')"/>
             </template>
             <a-input v-model:value="form.flashArrayUsername" :placeholder="$t('label.flashArray.username.tooltip')"/>
           </a-form-item>
           <a-form-item name="flashArrayPassword" ref="flashArrayPassword">
             <template #label>
-              <tooltip-label :title="$t('label.flashArray.password')" :tooltip="$t('label.flashArray.password')"/>
+              <tooltip-label :title="$t('label.password')" :tooltip="$t('label.flashArray.password')"/>
             </template>
             <a-input-password v-model:value="form.flashArrayPassword" :placeholder="$t('label.flashArray.password')"/>
           </a-form-item>

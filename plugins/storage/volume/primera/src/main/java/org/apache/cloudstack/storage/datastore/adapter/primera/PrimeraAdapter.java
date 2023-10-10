@@ -106,11 +106,13 @@ public class PrimeraAdapter implements ProviderAdapter {
         this.refreshSession(true);
     }
 
+    /**
+     * Validate that the hostgroup and pod from the details data exists.  Each
+     * configuration object/connection needs a distinct set of these 2 things.
+     */
     @Override
     public void validate() {
         login();
-        // check if hostgroup and pod from details really exist - we will
-        // require a distinct configuration object/connection object for each type
         if (this.getHostset(hostset) == null) {
             throw new RuntimeException("Hostgroup [" + hostset + "] not found in FlashArray at [" + url
                     + "], please validate configuration");
@@ -502,14 +504,8 @@ public class PrimeraAdapter implements ProviderAdapter {
             keyExpiration = System.currentTimeMillis() + (5*1000);
         }
     }
-    /**
-     * Login to the array and get an access token
-     */
-    private void login() {
-        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
-        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
 
+    private void validateLoginInfo(String urlStr) {
         URL urlFull;
         try {
             urlFull = new URL(urlStr);
@@ -619,7 +615,16 @@ public class PrimeraAdapter implements ProviderAdapter {
         } else {
             skipTlsValidation = true;
         }
+    }
 
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
+        validateLoginInfo(urlStr);
         CloseableHttpResponse response = null;
         try {
             HttpPost request = new HttpPost(url + "/credentials");

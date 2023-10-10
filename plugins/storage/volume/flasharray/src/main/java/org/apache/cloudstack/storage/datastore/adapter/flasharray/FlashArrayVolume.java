@@ -83,7 +83,7 @@ public class FlashArrayVolume implements ProviderSnapshot {
     @JsonIgnore
     public String getPodName() {
         if (pod != null) {
-            return pod.name;
+            return pod.getName();
         } else {
             return null;
         }
@@ -129,7 +129,7 @@ public class FlashArrayVolume implements ProviderSnapshot {
     }
     public void setPodName(String podname) {
         FlashArrayVolumePod pod = new FlashArrayVolumePod();
-        pod.name = podname;
+        pod.setName(podname);
         this.pod = pod;
     }
     @Override

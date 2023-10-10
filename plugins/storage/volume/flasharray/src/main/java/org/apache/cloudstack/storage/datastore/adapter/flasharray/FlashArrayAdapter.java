@@ -533,14 +533,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
         }
     }
 
-    /**
-     * Login to the array and get an access token
-     */
-    private void login() {
-        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
-        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
-        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
-
+    private void validateLoginInfo(String urlStr) {
         URL urlFull;
         try {
             urlFull = new URL(urlStr);
@@ -658,7 +651,16 @@ public class FlashArrayAdapter implements ProviderAdapter {
         } else {
             skipTlsValidation = true;
         }
+    }
 
+    /**
+     * Login to the array and get an access token
+     */
+    private void login() {
+        username = connectionDetails.get(ProviderAdapter.API_USERNAME_KEY);
+        password = connectionDetails.get(ProviderAdapter.API_PASSWORD_KEY);
+        String urlStr = connectionDetails.get(ProviderAdapter.API_URL_KEY);
+        validateLoginInfo(urlStr);
         CloseableHttpResponse response = null;
         try {
             HttpPost request = new HttpPost(url + "/" + apiLoginVersion + "/auth/apitoken");
