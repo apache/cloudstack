@@ -115,6 +115,7 @@ class TestCreateTemplateWithChecksum(cloudstackTestCase):
                 cmd = deleteTemplate.deleteTemplateCmd()
                 cmd.id = temp.id
                 cmd.zoneid = self.zone.id
+                cmd.forced = True
                 self.apiclient.deleteTemplate(cmd)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)

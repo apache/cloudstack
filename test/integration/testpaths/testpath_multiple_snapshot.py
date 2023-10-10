@@ -157,7 +157,7 @@ class TestMultipleVolumeSnapshots(cloudstackTestCase):
                 storage pools available in the setup")
             if len(list(storagePool for storagePool in self.pools
                         if storagePool.scope == "CLUSTER")) < 2:
-                self.skipTest("There must be at at least two cluster wide\
+                self.skipTest("There must be at least two cluster wide\
                 storage pools available in the setup")
         except Exception as e:
             self.skipTest(e)

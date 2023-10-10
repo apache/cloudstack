@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.vpc;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.user.ResourceReservation;
-import org.springframework.stereotype.Component;
-
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -33,6 +24,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.user.ResourceReservation;
+import org.springframework.stereotype.Component;
+
+import javax.naming.ConfigurationException;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class MockResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {

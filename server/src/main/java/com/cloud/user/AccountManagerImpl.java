@@ -814,6 +814,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return false;
         }
 
+        account.setState(State.REMOVED);
+        _accountDao.update(accountId, account);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Removed account " + accountId);
         }
@@ -1812,15 +1815,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (account == null || account.getRemoved() != null) {
-            if (account != null) {
-                s_logger.info("The account:" + account.getAccountName() + " is already removed");
-            }
+        if (! isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
+        // Account that manages project(s) can't be removed
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+        if (!managedProjectIds.isEmpty()) {
+            StringBuilder projectIds = new StringBuilder();
+            for (Long projectId : managedProjectIds) {
+                projectIds.append(projectId).append(", ");
+            }
+
+            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
+        }
+
+        CallContext.current().putContextParameter(Account.class, account.getUuid());
+
+        return deleteAccount(account, callerUserId, caller);
+    }
+
+    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+        if (account == null) {
+            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
+            return false;
+        }
+        if (account.getRemoved() != null) {
+            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            return false;
+        }
         // don't allow removing Project account
-        if (account == null || account.getType() == Account.Type.PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             throw new InvalidParameterValueException("The specified account does not exist in the system");
         }
 
@@ -1830,21 +1855,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account.isDefault()) {
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
-
-        // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
-            for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId + ", ");
-            }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
-        }
-
-        CallContext.current().putContextParameter(Account.class, account.getUuid());
-
-        return deleteAccount(account, callerUserId, caller);
+        return true;
     }
 
     @Override
@@ -3251,7 +3262,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
             }
         } catch (CloudTwoFactorAuthenticationException e) {
-            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
             if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);
             }
