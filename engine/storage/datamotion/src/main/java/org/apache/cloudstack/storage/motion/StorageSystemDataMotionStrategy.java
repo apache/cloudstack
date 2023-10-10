@@ -528,7 +528,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
 
         try {
-            //if (!ImageFormat.QCOW2.equals(srcVolumeInfo.getFormat())) {
             if (!HypervisorType.KVM.equals(srcVolumeInfo.getHypervisorType())) {
                 throw new CloudRuntimeException("Currently, only the KVM hypervisor type is supported for the migration of a volume " +
                         "from managed storage to non-managed storage.");
