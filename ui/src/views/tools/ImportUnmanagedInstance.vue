@@ -227,6 +227,13 @@
                   filterMatchKey="broadcasturi"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
+              <a-row v-else style="margin: 12px 0">
+                <a-alert type="warning">
+                  <template #message>
+                    <div v-html="$t('message.warn.importing.instance.without.nic')"></div>
+                  </template>
+                </a-alert>
+              </a-row>
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
                   <a-form-item name="migrateallowed" ref="migrateallowed">
