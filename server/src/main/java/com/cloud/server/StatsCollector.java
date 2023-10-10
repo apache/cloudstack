@@ -1620,8 +1620,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
-                       if (volume.getFormat() != ImageFormat.QCOW2 && volume.getFormat() != ImageFormat.VHD &&
-                            volume.getFormat() != ImageFormat.OVA && pool.getPoolType() != Storage.StoragePoolType.PowerFlex &&
+                       if (volume.getFormat() != ImageFormat.QCOW2 &&
+                            volume.getFormat() != ImageFormat.VHD &&
+                            volume.getFormat() != ImageFormat.OVA &&
+                            pool.getPoolType() != Storage.StoragePoolType.PowerFlex &&
                             pool.getPoolType() != Storage.StoragePoolType.FiberChannel) {
                             LOGGER.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
