@@ -1508,7 +1508,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long poolId = cmd.getStoragePoolId();
 
         UnmanagedInstanceTO unmanagedInstanceTO = null;
-        if(ImportSource.EXTERNAL == importSource) {
+        if (ImportSource.EXTERNAL == importSource) {
             if (StringUtils.isBlank(cmd.getUsername())) {
                 throw new InvalidParameterValueException("Username need to be provided.");
             }
@@ -1520,35 +1520,35 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
 
-        if(ImportSource.SHARED == importSource) {
-            if(poolId == null) {
+        if (ImportSource.SHARED == importSource) {
+            if (poolId == null) {
                 throw new InvalidParameterValueException("Storage Pool is required for Import from shared storage");
             }
 
-            if(primaryDataStoreDao.findById(poolId) == null) {
+            if (primaryDataStoreDao.findById(poolId) == null) {
                 throw new InvalidParameterValueException("Storage Pool not found");
             }
         }
 
-        if(ImportSource.LOCAL == importSource) {
-            if(hostId == null) {
+        if (ImportSource.LOCAL == importSource) {
+            if (hostId == null) {
                 throw new InvalidParameterValueException("Host is required for Import from local storage");
             }
 
-            if(hostDao.findById(hostId) == null) {
+            if (hostDao.findById(hostId) == null) {
                 throw new InvalidParameterValueException("Host not found");
             }
         }
 
-        if(ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
-            if(diskPath == null) {
+        if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
+            if (diskPath == null) {
                 throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
             }
         }
 
         UserVm userVm = null;
 
-        if(ImportSource.EXTERNAL == importSource) {
+        if (ImportSource.EXTERNAL == importSource) {
             String username = cmd.getUsername();
             String password = cmd.getPassword();
             String tmpPath = cmd.getTmpPath();
@@ -1600,7 +1600,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
         if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
