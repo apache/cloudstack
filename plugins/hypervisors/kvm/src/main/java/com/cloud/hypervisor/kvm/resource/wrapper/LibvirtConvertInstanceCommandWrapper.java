@@ -50,6 +50,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ResourceWrapper(handles =  ConvertInstanceCommand.class)
 public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<ConvertInstanceCommand, Answer, LibvirtComputingResource> {
@@ -106,6 +107,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
             LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(convertedBasePath);
             List<LibvirtVMDef.DiskDef> disks = xmlParser.getDisks();
+            disks = disks.stream().filter(x -> x.getDiskType() == LibvirtVMDef.DiskDef.DiskType.FILE &&
+                    x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
             List<LibvirtVMDef.InterfaceDef> interfaces = xmlParser.getInterfaces();
             if (disks.size() < 1) {
                 String err = String.format("Cannot find any disk for the converted instance %s on path: %s",
