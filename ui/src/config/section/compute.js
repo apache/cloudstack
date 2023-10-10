@@ -16,7 +16,6 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
-import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
@@ -27,7 +26,7 @@ export default {
     {
       name: 'vm',
       title: 'label.instances',
-      icon: 'desktop-outlined',
+      icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
@@ -456,7 +455,7 @@ export default {
     {
       name: 'kubernetes',
       title: 'label.kubernetes',
-      icon: shallowRef(kubernetes),
+      icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: (store) => {
@@ -557,7 +556,7 @@ export default {
     {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
-      icon: 'ordered-list-outlined',
+      icon: 'fullscreen-outlined',
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],

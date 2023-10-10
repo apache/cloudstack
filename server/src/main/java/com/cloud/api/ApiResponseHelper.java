@@ -3357,10 +3357,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
+    public PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result) {
         PrivateGatewayResponse response = new PrivateGatewayResponse();
         response.setId(result.getUuid());
-        response.setBroadcastUri(result.getBroadcastUri());
+        if (view == ResponseView.Full) {
+            response.setBroadcastUri(result.getBroadcastUri());
+        }
         response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         if (result.getVpcId() != null) {
