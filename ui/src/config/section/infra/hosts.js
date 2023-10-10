@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'host',
   title: 'label.hosts',
-  icon: 'desktop-outlined',
+  icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',

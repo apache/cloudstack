@@ -29,4 +29,9 @@ public class CustomServerDiscoverer extends LibvirtServerDiscoverer {
     protected String getPatchPath() {
         return "scripts/vm/hypervisor/kvm/";
     }
+
+    @Override
+    public void processHostAdded(long hostId) {
+        // Not using super class implementation here.
+    }
 }

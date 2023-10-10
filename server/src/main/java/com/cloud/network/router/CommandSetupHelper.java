@@ -231,6 +231,11 @@ public class CommandSetupHelper {
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_ID_FILE, domain.getUuid());
             }
 
+            String customCloudName = VirtualMachineManager.MetadataCustomCloudName.valueIn(vm.getDataCenterId());
+            if (org.apache.commons.lang3.StringUtils.isNotBlank(customCloudName)) {
+                vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_NAME_FILE, customCloudName);
+            }
+
             cmds.addCommand("vmdata", vmDataCommand);
         }
     }

@@ -52,9 +52,11 @@ public class CreateAccountCmdTest {
     private Integer accountType = 1;
     private Long domainId = 1L;
 
+    private AutoCloseable closeable;
+
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(createAccountCmd, "domainId", domainId);
         ReflectionTestUtils.setField(createAccountCmd, "accountType", accountType);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
@@ -62,6 +64,7 @@ public class CreateAccountCmdTest {
 
     @After
     public void tearDown() throws Exception {
+        closeable.close();
         CallContext.unregister();
     }
 

@@ -475,6 +475,8 @@ public class EncryptionSecretKeyChanger {
 
             // migrate resource details values
             migrateHostDetails(conn);
+            migrateEncryptedAccountDetails(conn);
+            migrateEncryptedDomainDetails(conn);
             migrateClusterDetails(conn);
             migrateImageStoreDetails(conn);
             migrateStoragePoolDetails(conn);
@@ -495,6 +497,30 @@ public class EncryptionSecretKeyChanger {
         }
         System.out.println("End Data migration");
         return true;
+    }
+
+    private void migrateEncryptedAccountDetails(Connection conn) {
+        System.out.println("Beginning migration of account_details encrypted values");
+
+        String tableName = "account_details";
+        String selectSql = "SELECT details.id, details.value from account_details details, cloud.configuration c " +
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+        String updateSql = "UPDATE cloud.account_details SET value = ? WHERE id = ?;";
+        migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
+
+        System.out.println("End migration of account details values");
+    }
+
+    private void migrateEncryptedDomainDetails(Connection conn) {
+        System.out.println("Beginning migration of domain_details encrypted values");
+
+        String tableName = "domain_details";
+        String selectSql = "SELECT details.id, details.value from domain_details details, cloud.configuration c " +
+                "WHERE details.name = c.name AND c.category IN ('Hidden', 'Secure') AND details.value <> \"\" ORDER BY details.id;";
+        String updateSql = "UPDATE cloud.domain_details SET value = ? WHERE id = ?;";
+        migrateValueAndUpdateDatabaseById(conn, tableName, selectSql, updateSql, false);
+
+        System.out.println("End migration of domain details values");
     }
 
     protected String migrateValue(String value) {

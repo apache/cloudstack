@@ -16,18 +16,6 @@
 // under the License.
 package com.cloud.server;
 
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
-
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -41,6 +29,17 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationServerImplTest {

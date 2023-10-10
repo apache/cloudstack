@@ -50,8 +50,8 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    protected HttpDirectTemplateDownloader(String url) {
-        this(url, null, null, null, null, null, null, null);
+    protected HttpDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null);
     }
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,

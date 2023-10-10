@@ -1639,6 +1639,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmResponse.setCreated(vm.getCreated());
             vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());
 
+            ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+            if (serviceOffering != null) {
+                vmResponse.setServiceOfferingId(serviceOffering.getUuid());
+                vmResponse.setServiceOfferingName(serviceOffering.getName());
+            }
+
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
                 if (host != null) {
@@ -3351,10 +3357,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
+    public PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result) {
         PrivateGatewayResponse response = new PrivateGatewayResponse();
         response.setId(result.getUuid());
-        response.setBroadcastUri(result.getBroadcastUri());
+        if (view == ResponseView.Full) {
+            response.setBroadcastUri(result.getBroadcastUri());
+        }
         response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         if (result.getVpcId() != null) {

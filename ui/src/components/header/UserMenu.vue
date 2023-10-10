@@ -17,6 +17,9 @@
 
 <template>
   <div class="user-menu">
+    <span class="action">
+      <create-menu v-if="device === 'desktop'" />
+    </span>
     <external-link class="action"/>
     <translation-menu class="action"/>
     <header-notice class="action"/>
@@ -69,6 +72,7 @@
 
 <script>
 import { api } from '@/api'
+import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
@@ -80,10 +84,18 @@ import { SERVER_MANAGER } from '@/store/mutation-types'
 export default {
   name: 'UserMenu',
   components: {
+    CreateMenu,
     ExternalLink,
     TranslationMenu,
     HeaderNotice,
     ResourceIcon
+  },
+  props: {
+    device: {
+      type: String,
+      required: false,
+      default: 'desktop'
+    }
   },
   data () {
     return {

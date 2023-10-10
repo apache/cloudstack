@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.agent.lb;
 
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -35,13 +34,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceState;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import static org.mockito.Mockito.when;
 
 public class IndirectAgentLBServiceImplTest {
 

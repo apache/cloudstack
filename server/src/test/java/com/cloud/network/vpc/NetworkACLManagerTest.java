@@ -15,22 +15,27 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.vpc.NetworkACLItem.State;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
+import junit.framework.TestCase;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -52,27 +57,19 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.vpc.NetworkACLItem.State;
-import com.cloud.network.vpc.dao.NetworkACLDao;
-import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)

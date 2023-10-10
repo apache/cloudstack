@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -2492,7 +2493,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     IPv6Address.class.getName(), null);
         }
 
-        //remove the secondary ip addresses corresponding to to this nic
+        //remove the secondary ip addresses corresponding to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
             s_logger.debug("Removing nic " + nic.getId() + " secondary ip addresses failed");
         }
@@ -3516,7 +3517,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             setRestartRequired(network, restartRequired);
             return status;
         } else if (livePatch) {
-            List<DomainRouterVO> domainRouters = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER, VirtualRouter.Role.INTERNAL_LB_VM);
+            List<DomainRouterVO> domainRouters;
+            if (Objects.nonNull(network.getVpcId())) {
+                domainRouters = routerDao.listByVpcId(network.getVpcId());
+            } else {
+                domainRouters = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER, VirtualRouter.Role.INTERNAL_LB_VM);
+            }
             for (DomainRouterVO router: domainRouters) {
                 try {
                     VMInstanceVO instanceVO = _vmDao.findById(router.getId());

@@ -98,6 +98,8 @@ public class ConfigDepotAdminTest extends TestCase {
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
         ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
+        ConfigurationGroupVO groupVO = new ConfigurationGroupVO();
+        ConfigurationSubGroupVO subGroupVO = new ConfigurationSubGroupVO();
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
@@ -105,6 +107,8 @@ public class ConfigDepotAdminTest extends TestCase {
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         when(_configDao.findById(TestCK.key())).thenReturn(testCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
+        when(_configGroupDao.persist(any(ConfigurationGroupVO.class))).thenReturn(groupVO);
+        when(_configSubGroupDao.persist(any(ConfigurationSubGroupVO.class))).thenReturn(subGroupVO);
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.

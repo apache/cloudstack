@@ -17,9 +17,9 @@
 
 package org.apache.cloudstack.acl;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -32,9 +32,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RoleManagerImplTest {

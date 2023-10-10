@@ -16,11 +16,17 @@
 // under the License.
 package com.cloud.vpc;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.dao.Site2SiteVpnConnectionVO;
+import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.network.vpn.Site2SiteVpnService;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.vm.DomainRouterVO;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnCustomerGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpn.CreateVpnGatewayCmd;
@@ -34,17 +40,9 @@ import org.apache.cloudstack.api.command.user.vpn.ResetVpnConnectionCmd;
 import org.apache.cloudstack.api.command.user.vpn.UpdateVpnCustomerGatewayCmd;
 import org.springframework.stereotype.Component;
 
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Site2SiteCustomerGateway;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.dao.Site2SiteVpnConnectionVO;
-import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.network.vpn.Site2SiteVpnService;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.vm.DomainRouterVO;
+import javax.naming.ConfigurationException;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpnManager, Site2SiteVpnService {

@@ -17,16 +17,17 @@
 
 package com.cloud.event;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
+import com.cloud.configuration.Config;
+import com.cloud.event.dao.EventDao;
+import com.cloud.projects.dao.ProjectDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
@@ -40,27 +41,22 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.configuration.Config;
-import com.cloud.event.dao.EventDao;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ActionEventInterceptorTest {
     //Predictable constants used throughout this test.
     public static final long EVENT_ID = 1;
@@ -108,6 +104,8 @@ public class ActionEventInterceptorTest {
     protected static final String eventType = EventTypes.EVENT_VM_START;
     protected static final String eventDescription = "Starting VM";
 
+    private MockedStatic<ComponentContext> componentContextMocked;
+
     /**
      * This setup method injects the mocked beans into the ActionEventUtils class.
      * Because ActionEventUtils has static methods, we must also remember these fields
@@ -152,7 +150,7 @@ public class ActionEventInterceptorTest {
     public void setupCommonMocks() throws Exception {
         //Some basic mocks.
         Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
-        PowerMockito.mockStatic(ComponentContext.class);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         Mockito.when(ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
 
         //Needed for persist to actually set an ID that can be returned from the ActionEventUtils
@@ -170,22 +168,12 @@ public class ActionEventInterceptorTest {
         });
 
         //Needed to record events published on the bus.
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override public Void answer(InvocationOnMock invocation) throws Throwable {
-                Event event = (Event)invocation.getArguments()[0];
-                publishedEvents.add(event);
-                return null;
-            }
-
-        }).when(eventBus).publish(Mockito.any(Event.class));
-
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         Mockito.when(accountDao.findById(ACCOUNT_ID)).thenReturn(account);
-        Mockito.when(userDao.findById(USER_ID)).thenReturn(user);
     }
 
     /**
@@ -208,6 +196,8 @@ public class ActionEventInterceptorTest {
         }
 
         utils.init();
+
+        componentContextMocked.close();
     }
 
     @Test

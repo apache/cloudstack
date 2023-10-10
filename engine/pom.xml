@@ -47,7 +47,6 @@
         <!-- keep in alphabetic order -->
         <module>api</module>
         <module>components-api</module>
-        <module>network</module>
         <module>orchestration</module>
         <module>schema</module>
         <module>service</module>

@@ -88,6 +88,11 @@ public final class DatabaseVersionHierarchy {
             return new DbUpgrade[0];
         }
 
+        // The CloudStack version is latest or higher than latest
+        if (fromVersion.compareTo(getLatestVersion()) >= 0) {
+            return new DbUpgrade[0];
+        }
+
         // we cannot find the version specified, so get the
         // most recent one immediately before this version
         if (!contains(fromVersion)) {
@@ -183,5 +188,9 @@ public final class DatabaseVersionHierarchy {
         public DatabaseVersionHierarchy build() {
             return new DatabaseVersionHierarchy(ImmutableList.copyOf(hierarchyBuilder));
         }
+    }
+
+    public CloudStackVersion getLatestVersion() {
+        return CloudStackVersion.parse(hierarchy.get(hierarchy.size() - 1).upgrader.getUpgradedVersion());
     }
 }

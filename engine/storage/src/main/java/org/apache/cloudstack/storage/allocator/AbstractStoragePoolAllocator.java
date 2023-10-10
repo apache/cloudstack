@@ -263,13 +263,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     protected boolean filter(ExcludeList avoid, StoragePool pool, DiskProfile dskCh, DeploymentPlan plan) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if storage pool is suitable, name: " + pool.getName() + " ,poolId: " + pool.getId());
-        }
+        s_logger.debug(String.format("Checking if storage pool [%s] is suitable to disk [%s].", pool, dskCh));
         if (avoid.shouldAvoid(pool)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("StoragePool is in avoid set, skipping this pool");
-            }
+            s_logger.debug(String.format("StoragePool [%s] is in avoid set, skipping this pool to allocation of disk [%s].", pool, dskCh));
             return false;
         }
 
@@ -297,6 +293,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         if (!checkDiskProvisioningSupport(dskCh, pool)) {
+            s_logger.debug(String.format("Storage pool [%s] does not have support to disk provisioning of disk [%s].", pool, ReflectionToStringBuilderUtils.reflectOnlySelectedFields(dskCh,
+                    "type", "name", "diskOfferingId", "templateId", "volumeId", "provisioningType", "hyperType")));
             return false;
         }
 
@@ -306,10 +304,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
         Volume volume = volumeDao.findById(dskCh.getVolumeId());
         if(!storageMgr.storagePoolCompatibleWithVolumePool(pool, volume)) {
+            s_logger.debug(String.format("Pool [%s] is not compatible with volume [%s], skipping it.", pool, volume));
             return false;
         }
 
         if (pool.isManaged() && !storageUtil.managedStoragePoolCanScale(pool, plan.getClusterId(), plan.getHostId())) {
+            s_logger.debug(String.format("Cannot allocate pool [%s] to volume [%s] because the max number of managed clustered filesystems has been exceeded.", pool, volume));
             return false;
         }
 
@@ -317,14 +317,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         List<Pair<Volume, DiskProfile>> requestVolumeDiskProfilePairs = new ArrayList<>();
         requestVolumeDiskProfilePairs.add(new Pair<>(volume, dskCh));
         if (dskCh.getHypervisorType() == HypervisorType.VMware) {
-            // Skip the parent datastore cluster, consider only child storage pools in it
             if (pool.getPoolType() == Storage.StoragePoolType.DatastoreCluster && storageMgr.isStoragePoolDatastoreClusterParent(pool)) {
+                s_logger.debug(String.format("Skipping allocation of pool [%s] to volume [%s] because this pool is a parent datastore cluster.", pool, volume));
                 return false;
             }
-            // Skip the storage pool whose parent datastore cluster is not in UP state.
             if (pool.getParent() != 0L) {
                 StoragePoolVO datastoreCluster = storagePoolDao.findById(pool.getParent());
                 if (datastoreCluster == null || (datastoreCluster != null && datastoreCluster.getStatus() != StoragePoolStatus.Up)) {
+                    s_logger.debug(String.format("Skipping allocation of pool [%s] to volume [%s] because this pool is not in [%s] state.", datastoreCluster, volume, StoragePoolStatus.Up));
                     return false;
                 }
             }
@@ -332,6 +332,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             try {
                 boolean isStoragePoolStoragepolicyComplaince = storageMgr.isStoragePoolCompliantWithStoragePolicy(requestVolumeDiskProfilePairs, pool);
                 if (!isStoragePoolStoragepolicyComplaince) {
+                    s_logger.debug(String.format("Skipping allocation of pool [%s] to volume [%s] because this pool is not compliant with the storage policy required by the volume.", pool, volume));
                     return false;
                 }
             } catch (StorageUnavailableException e) {

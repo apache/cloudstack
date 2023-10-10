@@ -93,7 +93,6 @@ export default {
   }
 
   &-footer {
-    border-top: 1px solid #e8e8e8;
     padding-top: 9px;
     margin-top: 8px;
   }

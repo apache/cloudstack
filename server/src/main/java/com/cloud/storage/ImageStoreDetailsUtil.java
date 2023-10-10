@@ -51,7 +51,7 @@ public class ImageStoreDetailsUtil {
      * Obtain NFS protocol version (if provided) for a store id, if not use default config value<br/>
      * @param storeId image store id
      * @return {@code null} if {@code secstorage.nfs.version} is not found for storeId <br/>
-     * {@code X} if {@code secstorage.nfs.version} is found found for storeId
+     * {@code X} if {@code secstorage.nfs.version} is found for storeId
      */
     public String getNfsVersion(long storeId) throws NumberFormatException {
 
@@ -68,7 +68,7 @@ public class ImageStoreDetailsUtil {
      * Obtain NFS protocol version (if provided) for a store uuid.<br/>
      * @param storeUuid image store id
      * @return {@code null} if {@code secstorage.nfs.version} is not found for storeUuid <br/>
-     * {@code X} if {@code secstorage.nfs.version} is found found for storeUuid
+     * {@code X} if {@code secstorage.nfs.version} is found for storeUuid
      */
     public String getNfsVersionByUuid(String storeUuid){
         ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);

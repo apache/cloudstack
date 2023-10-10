@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'storage',
   title: 'label.storage',
-  icon: 'database-outlined',
+  icon: 'hdd-outlined',
   children: [
     {
       name: 'volume',

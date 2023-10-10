@@ -840,7 +840,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw, nextTick, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -2191,6 +2192,15 @@ export default {
                   this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(vm.password)
+                      },
+                      () => [this.$t('label.copy.password')]
+                    ),
                     duration: 0
                   })
                 }
@@ -2690,6 +2700,14 @@ export default {
         }
       }
       return networks
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }

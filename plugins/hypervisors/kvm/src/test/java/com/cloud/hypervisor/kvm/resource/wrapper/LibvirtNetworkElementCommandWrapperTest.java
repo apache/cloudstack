@@ -211,7 +211,7 @@ public class LibvirtNetworkElementCommandWrapperTest {
             + "</domain>\n";
 
     private LibvirtComputingResource res;
-    private final Domain _domain = mock(Domain.class);
+    private final Domain domain = mock(Domain.class);
 
     final String memInfo = "MemTotal:        5830236 kB\n" +
             "MemFree:          156752 kB\n" +
@@ -225,10 +225,10 @@ public class LibvirtNetworkElementCommandWrapperTest {
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource() {
             {
-                _linkLocalBridgeName = "cloud0";
-                _guestBridgeName = "guestbr";
-                _publicBridgeName = "publicbr";
-                _privBridgeName = "mgmtbr";
+                linkLocalBridgeName = "cloud0";
+                guestBridgeName = "guestbr";
+                publicBridgeName = "publicbr";
+                privBridgeName = "mgmtbr";
             }
         };
 
@@ -237,8 +237,8 @@ public class LibvirtNetworkElementCommandWrapperTest {
         Connect conn = mock(Connect.class);
         LibvirtUtilitiesHelper helper = mock(LibvirtUtilitiesHelper.class);
 
-        when(_domain.getXMLDesc(0)).thenReturn(fullfile);
-        when(conn.domainLookupByName(nullable(String.class))).thenReturn(_domain);
+        when(domain.getXMLDesc(0)).thenReturn(fullfile);
+        when(conn.domainLookupByName(nullable(String.class))).thenReturn(domain);
         when(helper.getConnectionByVmName(nullable(String.class))).thenReturn(conn);
 
         doReturn(helper).when(res).getLibvirtUtilitiesHelper();

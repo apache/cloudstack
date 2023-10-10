@@ -58,7 +58,6 @@ import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
@@ -121,6 +120,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -138,7 +138,6 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.google.gson.Gson;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
@@ -186,8 +185,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Inject
     private VMInstanceDao vmDao;
     @Inject
-    private CapacityManager capacityManager;
-    @Inject
     private VolumeApiService volumeApiService;
     @Inject
     private DeploymentPlanningManager deploymentPlanningManager;
@@ -205,8 +202,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private GuestOSDao guestOSDao;
     @Inject
     private GuestOSHypervisorDao guestOSHypervisorDao;
-    @Inject
-    private VMSnapshotDao vmSnapshotDao;
     @Inject
     private SnapshotDao snapshotDao;
     @Inject
@@ -335,7 +330,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         String[] split = path.split(" ");
                         path = split[split.length - 1];
                         split = path.split("/");
-                        ;
                         path = split[split.length - 1];
                         split = path.split("\\.");
                         path = split[0];
@@ -387,26 +381,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private ServiceOfferingVO getUnmanagedInstanceServiceOffering(final UnmanagedInstanceTO instance, ServiceOfferingVO serviceOffering, final Account owner, final DataCenter zone, final Map<String, String> details)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (instance == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM is not valid"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cannot find VM to import.");
         }
         if (serviceOffering == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering is not valid"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Cannot find service offering used to import VM [%s].", instance.getName()));
         }
         accountService.checkAccess(owner, serviceOffering, zone);
         final Integer cpu = instance.getCpuCores();
         final Integer memory = instance.getMemory();
         Integer cpuSpeed = instance.getCpuSpeed() == null ? 0 : instance.getCpuSpeed();
+
         if (cpu == null || cpu == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores for VM (%s) not valid", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores [%s] is not valid for importing VM [%s].", cpu, instance.getName()));
         }
         if (memory == null || memory == 0) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory for VM (%s) not valid", instance.getName()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory [%s] is not valid for importing VM [%s].", memory, instance.getName()));
         }
+
         if (serviceOffering.isDynamic()) {
             if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
                 try {
                     cpuSpeed = Integer.parseInt(details.get(VmDetailConstants.CPU_SPEED));
                 } catch (Exception e) {
+                    LOGGER.error(String.format("Failed to get CPU speed for importing VM [%s] due to [%s].", instance.getName(), e.getMessage()), e);
                 }
             }
             Map<String, String> parameters = new HashMap<>();
@@ -429,8 +426,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMHz CPU speed does not match VM CPU speed %dMHz and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getSpeed(), cpuSpeed, instance.getPowerState()));
             }
         }
-        resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.cpu, new Long(serviceOffering.getCpu()));
-        resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.memory, new Long(serviceOffering.getRamSize()));
+        resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.cpu, Long.valueOf(serviceOffering.getCpu()));
+        resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.memory, Long.valueOf(serviceOffering.getRamSize()));
         return serviceOffering;
     }
 
@@ -520,10 +517,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return new Pair<>(rootDisk, dataDisks);
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(String instanceName, UnmanagedInstanceTO.Disk disk, DiskOffering diskOffering, ServiceOffering serviceOffering, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (serviceOffering == null && diskOffering == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import", disk.getDiskId()));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID [%s] not found during VM [%s] import.", disk.getDiskId(), instanceName));
         }
         if (diskOffering != null) {
             accountService.checkAccess(owner, diskOffering, zone);
@@ -544,15 +541,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void checkUnmanagedDiskAndOfferingForImport(List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
+    private void checkUnmanagedDiskAndOfferingForImport(String intanceName, List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> diskOfferingMap, final Account owner, final DataCenter zone, final Cluster cluster, final boolean migrateAllowed)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         String diskController = null;
         for (UnmanagedInstanceTO.Disk disk : disks) {
             if (disk == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve disk details for VM"));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve disk details for VM [%s].", intanceName));
             }
             if (!diskOfferingMap.containsKey(disk.getDiskId())) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID: %s not found during VM import", disk.getDiskId()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Disk offering for disk ID [%s] not found during VM import.", disk.getDiskId()));
             }
             if (StringUtils.isEmpty(diskController)) {
                 diskController = disk.getController();
@@ -561,17 +558,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Multiple data disk controllers of different type (%s, %s) are not supported for import. Please make sure that all data disk controllers are of the same type", diskController, disk.getController()));
                 }
             }
-            checkUnmanagedDiskAndOfferingForImport(disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(intanceName, disk, diskOfferingDao.findById(diskOfferingMap.get(disk.getDiskId())), null, owner, zone, cluster, migrateAllowed);
         }
     }
 
-    private void checkUnmanagedNicAndNetworkForImport(UnmanagedInstanceTO.Nic nic, Network network, final DataCenter zone, final Account owner, final boolean autoAssign) throws ServerApiException {
-        if (nic == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import"));
-        }
-        if (network == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import", nic.getNicId()));
-        }
+    private void checkUnmanagedNicAndNetworkForImport(String instanceName, UnmanagedInstanceTO.Nic nic, Network network, final DataCenter zone, final Account owner, final boolean autoAssign) throws ServerApiException {
+        basicNetworkChecks(instanceName, nic, network);
         if (network.getDataCenterId() != zone.getId()) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network(ID: %s) for nic(ID: %s) belongs to a different zone than VM to be imported", network.getUuid(), nic.getNicId()));
         }
@@ -588,34 +580,31 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         String pvLanType = nic.getPvlanType() == null ? "" : nic.getPvlanType().toLowerCase().substring(0, 1);
         if (nic.getVlan() != null && nic.getVlan() != 0 && nic.getPvlan() != null && nic.getPvlan() != 0 &&
-                (StringUtils.isEmpty(network.getBroadcastUri().toString()) ||
-                        !networkBroadcastUri.equals(String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan())))) {
+                (StringUtils.isEmpty(networkBroadcastUri) || !String.format("pvlan://%d-%s%d", nic.getVlan(), pvLanType, nic.getPvlan()).equals(networkBroadcastUri))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("PVLAN of network(ID: %s) %s is found different from the VLAN of nic(ID: %s) pvlan://%d-%s%d during VM import", network.getUuid(), networkBroadcastUri, nic.getNicId(), nic.getVlan(), pvLanType, nic.getPvlan()));
         }
     }
 
-    private void checkUnmanagedNicAndNetworkHostnameForImport(UnmanagedInstanceTO.Nic nic, Network network, final String hostName) throws ServerApiException {
+    private void basicNetworkChecks(String instanceName, UnmanagedInstanceTO.Nic nic, Network network) {
         if (nic == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve the NIC details used by VM [%s] from VMware. Please check if this VM have NICs in VMWare.", instanceName));
         }
         if (network == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import", nic.getNicId()));
-        }
-        // Check for duplicate hostname in network, get all vms hostNames in the network
-        List<String> hostNames = vmDao.listDistinctHostNames(network.getId());
-        if (CollectionUtils.isNotEmpty(hostNames) && hostNames.contains(hostName)) {
-            throw new InvalidParameterValueException("The vm with hostName " + hostName + " already exists in the network domain: " + network.getNetworkDomain() + "; network="
-                    + network);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import.", nic.getNicId()));
         }
     }
 
-    private void checkUnmanagedNicIpAndNetworkForImport(UnmanagedInstanceTO.Nic nic, Network network, final Network.IpAddresses ipAddresses) throws ServerApiException {
-        if (nic == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Unable to retrieve NIC details during VM import"));
+    private void checkUnmanagedNicAndNetworkHostnameForImport(String instanceName, UnmanagedInstanceTO.Nic nic, Network network, final String hostName) throws ServerApiException {
+        basicNetworkChecks(instanceName, nic, network);
+        // Check for duplicate hostname in network, get all vms hostNames in the network
+        List<String> hostNames = vmDao.listDistinctHostNames(network.getId());
+        if (CollectionUtils.isNotEmpty(hostNames) && hostNames.contains(hostName)) {
+            throw new InvalidParameterValueException(String.format("VM with Name [%s] already exists in the network [%s] domain [%s]. Cannot import another VM with the same name. Pleasy try again with a different name.", hostName, network, network.getNetworkDomain()));
         }
-        if (network == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Network for nic ID: %s not found during VM import", nic.getNicId()));
-        }
+    }
+
+    private void checkUnmanagedNicIpAndNetworkForImport(String instanceName, UnmanagedInstanceTO.Nic nic, Network network, final Network.IpAddresses ipAddresses) throws ServerApiException {
+        basicNetworkChecks(instanceName, nic, network);
         // Check IP is assigned for non L2 networks
         if (!network.getGuestType().equals(Network.GuestType.L2) && (ipAddresses == null || StringUtils.isEmpty(ipAddresses.getIp4Address()))) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC(ID: %s) needs a valid IP address for it to be associated with network(ID: %s). %s parameter of API can be used for this", nic.getNicId(), network.getUuid(), ApiConstants.NIC_IP_ADDRESS_LIST));
@@ -629,7 +618,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private Map<String, Long> getUnmanagedNicNetworkMap(List<UnmanagedInstanceTO.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
+    private Map<String, Long> getUnmanagedNicNetworkMap(String instanceName, List<UnmanagedInstanceTO.Nic> nics, final Map<String, Long> callerNicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final DataCenter zone, final String hostName, final Account owner) throws ServerApiException {
         Map<String, Long> nicNetworkMap = new HashMap<>();
         String nicAdapter = null;
         for (UnmanagedInstanceTO.Nic nic : nics) {
@@ -654,22 +643,23 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                             continue;
                         }
                         try {
-                            checkUnmanagedNicAndNetworkForImport(nic, networkVO, zone, owner, true);
+                            checkUnmanagedNicAndNetworkForImport(instanceName, nic, networkVO, zone, owner, true);
                             network = networkVO;
                         } catch (Exception e) {
+                            LOGGER.error(String.format("Error when checking NIC [%s] of unmanaged instance to import due to [%s]." , nic.getNicId(), e.getMessage()), e);
                         }
                         if (network != null) {
-                            checkUnmanagedNicAndNetworkHostnameForImport(nic, network, hostName);
-                            checkUnmanagedNicIpAndNetworkForImport(nic, network, ipAddresses);
+                            checkUnmanagedNicAndNetworkHostnameForImport(instanceName, nic, network, hostName);
+                            checkUnmanagedNicIpAndNetworkForImport(instanceName, nic, network, ipAddresses);
                             break;
                         }
                     }
                 }
             } else {
                 network = networkDao.findById(callerNicNetworkMap.get(nic.getNicId()));
-                checkUnmanagedNicAndNetworkForImport(nic, network, zone, owner, false);
-                checkUnmanagedNicAndNetworkHostnameForImport(nic, network, hostName);
-                checkUnmanagedNicIpAndNetworkForImport(nic, network, ipAddresses);
+                checkUnmanagedNicAndNetworkForImport(instanceName, nic, network, zone, owner, false);
+                checkUnmanagedNicAndNetworkHostnameForImport(instanceName, nic, network, hostName);
+                checkUnmanagedNicIpAndNetworkForImport(instanceName, nic, network, ipAddresses);
             }
             if (network == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Suitable network for nic(ID: %s) not found during VM import", nic.getNicId()));
@@ -745,14 +735,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             try {
                 dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
             } catch (Exception e) {
-                LOGGER.warn(String.format("VM import failed for unmanaged vm: %s during vm migration, finding deployment destination", vm.getInstanceName()), e);
+                String errorMsg = String.format("VM import failed for Unmanaged VM [%s] during VM migration, cannot find deployment destination due to [%s].", vm.getInstanceName(), e.getMessage());
+                LOGGER.warn(errorMsg, e);
                 cleanupFailedImportVM(vm);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during vm migration, finding deployment destination", vm.getInstanceName()));
-            }
-            if (dest != null) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(" Found " + dest + " for migrating the vm to");
-                }
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
             }
             if (dest == null) {
                 cleanupFailedImportVM(vm);
@@ -769,9 +755,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 }
                 vm = userVmManager.getUserVm(vm.getId());
             } catch (Exception e) {
-                LOGGER.error(String.format("VM import failed for unmanaged vm: %s during vm migration", vm.getInstanceName()), e);
+                String errorMsg = String.format("VM import failed for Unmanaged VM [%s] during VM migration due to [%s].", vm.getInstanceName(), e.getMessage());
+                LOGGER.error(errorMsg, e);
                 cleanupFailedImportVM(vm);
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during vm migration. %s", userVm.getInstanceName(), e.getMessage()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
             }
         }
         for (Pair<DiskProfile, StoragePool> diskProfileStoragePool : diskProfileStoragePoolList) {
@@ -857,9 +844,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private void publishVMUsageUpdateResourceCount(final UserVm userVm, ServiceOfferingVO serviceOfferingVO) {
         if (userVm == null || serviceOfferingVO == null) {
-            LOGGER.error("Failed to publish usage records during VM import");
+            LOGGER.error(String.format("Failed to publish usage records during VM import because VM [%s] or ServiceOffering [%s] is null.", userVm, serviceOfferingVO));
             cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm during publishing usage records"));
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "VM import failed for Unmanaged VM during publishing Usage Records.");
         }
         try {
             if (!serviceOfferingVO.isDynamic()) {
@@ -874,13 +861,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         userVm.getHypervisorType().toString(), VirtualMachine.class.getName(), userVm.getUuid(), userVm.isDisplayVm());
             }
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to publish usage records during VM import for unmanaged vm %s", userVm.getInstanceName()), e);
+            LOGGER.error(String.format("Failed to publish usage records during VM import for unmanaged VM [%s] due to [%s].", userVm.getInstanceName(), e.getMessage()), e);
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm %s during publishing usage records", userVm.getInstanceName()));
         }
         resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.user_vm, userVm.isDisplayVm());
-        resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.cpu, userVm.isDisplayVm(), new Long(serviceOfferingVO.getCpu()));
-        resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.memory, userVm.isDisplayVm(), new Long(serviceOfferingVO.getRamSize()));
+        resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.cpu, userVm.isDisplayVm(), Long.valueOf(serviceOfferingVO.getCpu()));
+        resourceLimitService.incrementResourceCount(userVm.getAccountId(), Resource.ResourceType.memory, userVm.isDisplayVm(), Long.valueOf(serviceOfferingVO.getRamSize()));
         // Save usage event and update resource count for user vm volumes
         List<VolumeVO> volumes = volumeDao.findByInstance(userVm.getId());
         for (VolumeVO volume : volumes) {
@@ -911,14 +898,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
                                                 final Map<String, String> details, final boolean migrateAllowed, final boolean forced) {
+        LOGGER.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
+                unmanagedInstance, instanceName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
         UserVm userVm = null;
 
         ServiceOfferingVO validatedServiceOffering = null;
         try {
             validatedServiceOffering = getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details);
         } catch (Exception e) {
-            LOGGER.error("Service offering for VM import not compatible", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import VM: %s. %s", unmanagedInstance.getName(), StringUtils.defaultString(e.getMessage())));
+            String errorMsg = String.format("Failed to import Unmanaged VM [%s] because the service offering [%s] is not compatible due to [%s].", unmanagedInstance.getName(), serviceOffering.getUuid(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
+            LOGGER.error(errorMsg, e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
 
         String internalCSName = unmanagedInstance.getInternalCSName();
@@ -950,9 +940,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
         try {
-            checkUnmanagedDiskAndOfferingForImport(rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
+            checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), rootDisk, null, validatedServiceOffering, owner, zone, cluster, migrateAllowed);
             if (CollectionUtils.isNotEmpty(dataDisks)) { // Data disk(s) present
-                checkUnmanagedDiskAndOfferingForImport(dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
+                checkUnmanagedDiskAndOfferingForImport(unmanagedInstance.getName(), dataDisks, dataDiskOfferingMap, owner, zone, cluster, migrateAllowed);
                 allDetails.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDisks.get(0).getController());
             }
             resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.volume, unmanagedInstanceDisks.size());
@@ -962,7 +952,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
+        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner);
         if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
             allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
         }
@@ -976,8 +966,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     validatedServiceOffering, null, hostName,
                     cluster.getHypervisorType(), allDetails, powerState);
         } catch (InsufficientCapacityException ice) {
-            LOGGER.error(String.format("Failed to import vm name: %s", instanceName), ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
+            String errorMsg = String.format("Failed to import VM [%s] due to [%s].", instanceName, ice.getMessage());
+            LOGGER.error(errorMsg, ice);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, errorMsg);
         }
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
@@ -1035,23 +1026,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    @Override
-    public ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd) {
+    private Cluster basicAccessChecks(Long clusterId) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, caller account [%s] is not ROOT Admin.", caller.getUuid()));
         }
-        final Long clusterId = cmd.getClusterId();
         if (clusterId == null) {
-            throw new InvalidParameterValueException(String.format("Cluster ID cannot be null"));
+            throw new InvalidParameterValueException("Cluster ID cannot be null.");
         }
         final Cluster cluster = clusterDao.findById(clusterId);
         if (cluster == null) {
-            throw new InvalidParameterValueException(String.format("Cluster ID: %d cannot be found", clusterId));
+            throw new InvalidParameterValueException(String.format("Cluster with ID [%d] cannot be found.", clusterId));
         }
         if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-            throw new InvalidParameterValueException(String.format("VM ingestion is currently not supported for hypervisor: %s", cluster.getHypervisorType().toString()));
+            throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor [%s].", cluster.getHypervisorType().toString()));
         }
+        return cluster;
+    }
+
+    @Override
+    public ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd) {
+        Long clusterId = cmd.getClusterId();
+        Cluster cluster = basicAccessChecks(clusterId);
+
         String keyword = cmd.getKeyword();
         if (StringUtils.isNotEmpty(keyword)) {
             keyword = keyword.toLowerCase();
@@ -1093,25 +1090,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     public UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd) {
-        final Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.Type.ADMIN) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
-        }
-        final Long clusterId = cmd.getClusterId();
-        if (clusterId == null) {
-            throw new InvalidParameterValueException(String.format("Cluster ID cannot be null"));
-        }
-        final Cluster cluster = clusterDao.findById(clusterId);
-        if (cluster == null) {
-            throw new InvalidParameterValueException(String.format("Cluster ID: %d cannot be found", clusterId));
-        }
-        if (cluster.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-            throw new InvalidParameterValueException(String.format("VM import is currently not supported for hypervisor: %s", cluster.getHypervisorType().toString()));
-        }
+        Long clusterId = cmd.getClusterId();
+        Cluster cluster = basicAccessChecks(clusterId);
+
         final DataCenter zone = dataCenterDao.findById(cluster.getDataCenterId());
         final String instanceName = cmd.getName();
         if (StringUtils.isEmpty(instanceName)) {
-            throw new InvalidParameterValueException(String.format("Instance name cannot be empty"));
+            throw new InvalidParameterValueException("Instance name cannot be empty");
         }
         if (cmd.getDomainId() != null && StringUtils.isEmpty(cmd.getAccountName())) {
             throw new InvalidParameterValueException("domainid parameter must be specified with account parameter");
@@ -1140,7 +1125,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         if (serviceOfferingId == null) {
-            throw new InvalidParameterValueException(String.format("Service offering ID cannot be null"));
+            throw new InvalidParameterValueException("Service offering ID cannot be null");
         }
         final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
         if (serviceOffering == null) {
@@ -1160,7 +1145,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String hostName = cmd.getHostName();
         if (StringUtils.isEmpty(hostName)) {
             if (!NetUtils.verifyDomainNameLabel(instanceName, true)) {
-                throw new InvalidParameterValueException(String.format("Please provide hostname for the VM. VM name contains unsupported characters for it to be used as hostname"));
+                throw new InvalidParameterValueException("Please provide a valid hostname for the VM. VM name contains unsupported characters that cannot be used as hostname.");
             }
             hostName = instanceName;
         }
@@ -1232,7 +1217,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         template.setGuestOSId(guestOSHypervisor.getGuestOsId());
                     }
                     userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
-                            template, displayName, hostName, caller, owner, userId,
+                            template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                             serviceOffering, dataDiskOfferingMap,
                             nicNetworkMap, nicIpAddressMap,
                             details, cmd.getMigrateAllowed(), forced);
@@ -1316,8 +1301,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         if (hostId == null) {
-            throw new CloudRuntimeException("Cannot find a host to verify if the VM to unmanage " +
-                    "with id = " + vmVO.getUuid() + " exists.");
+            throw new CloudRuntimeException(String.format("Cannot find a host to verify if the VM [%s] exists. Thus we are unable to unmanage it.", vmVO.getUuid()));
         }
         return hostId;
     }

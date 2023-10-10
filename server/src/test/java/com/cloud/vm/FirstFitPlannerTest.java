@@ -16,21 +16,44 @@
 // under the License.
 package com.cloud.vm;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.deploy.FirstFitPlanner;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceManager;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -61,43 +84,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.deploy.FirstFitPlanner;
-import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.gpu.dao.HostGpuGroupsDao;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostTagsDao;
-import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.host.dao.HostDetailsDao;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)

@@ -393,8 +393,8 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null">
-      <div v-if="dataView" style="margin-top: -10px">
+    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+      <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
           v-else
@@ -444,7 +444,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive, toRaw, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import { genericCompare } from '@/utils/sort.js'
@@ -860,7 +861,7 @@ export default {
           key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          sorter: function (a, b) { return genericCompare(a[key] || '', b[key] || '') }
+          sorter: (a, b) => genericCompare(a[key] || '', b[key] || '')
         })
         this.selectedColumns.push(key)
       }
@@ -1058,6 +1059,19 @@ export default {
         this.loading = false
         this.searchParams = params
       })
+
+      if ('action' in this.$route.query) {
+        const actionName = this.$route.query.action
+        for (const action of this.actions) {
+          if (action.listView && action.api === actionName) {
+            this.execAction(action, false)
+            const query = Object.assign({}, this.$route.query)
+            delete query.action
+            this.$router.replace({ query })
+            break
+          }
+        }
+      }
     },
     closeAction () {
       this.actionLoading = false
@@ -1301,13 +1315,30 @@ export default {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'success' })
             }
             if (action.response) {
-              const description = action.response(result.jobresult)
-              if (description) {
-                this.$notification.info({
-                  message: this.$t(action.label),
-                  description: (<span v-html={description}></span>),
-                  duration: 0
-                })
+              const response = action.response(result.jobresult)
+              if (response) {
+                if (typeof response === 'object') {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response.message}></span>),
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(response.copytext)
+                      },
+                      () => [this.$t(response.copybuttontext)]
+                    ),
+                    duration: 0
+                  })
+                } else {
+                  this.$notification.info({
+                    message: this.$t(action.label),
+                    description: (<span v-html={response}></span>),
+                    duration: 0
+                  })
+                }
               }
             }
             if ('successMethod' in action) {
@@ -1903,6 +1934,14 @@ export default {
       if (screenWidth <= 768) {
         this.modalWidth = '450px'
       }
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }

@@ -16,27 +16,53 @@
 // under the License.
 package com.cloud.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -75,64 +101,33 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.configuration.Resource;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Grouping;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.server.TaggedResourceService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.Volume.Type;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolTagsDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.management.*")
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
 
     @Spy
@@ -545,9 +540,9 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        when(volumeServiceMock.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
+        when(volumeServiceMock.takeSnapshot(any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
         final TaggedResourceService taggedResourceService = Mockito.mock(TaggedResourceService.class);
-        Mockito.lenient().when(taggedResourceService.createTags(anyObject(), anyObject(), anyObject(), anyObject())).thenReturn(null);
+        Mockito.lenient().when(taggedResourceService.createTags(any(), any(), any(), any())).thenReturn(null);
         ReflectionTestUtils.setField(volumeApiServiceImpl, "taggedResourceService", taggedResourceService);
         volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false, null);
     }
@@ -1320,11 +1315,11 @@ public class VolumeApiServiceImplTest {
 
         ServiceOfferingJoinVO serviceOfferingJoinVO = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinVO.getRootDiskSize()).thenReturn(rootDisk);
-        when(serviceOfferingJoinDao.findById(Mockito.anyLong())).thenReturn(serviceOfferingJoinVO);
+        when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(serviceOfferingJoinVO);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(imageFormat);
-        when(templateDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(template);
+        when(templateDao.findByIdIncludingRemoved(anyLong())).thenReturn(template);
 
         boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
         Assert.assertEquals(expectedIsNotPossibleToResize, result);
@@ -1343,27 +1338,27 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test (expected = PermissionDeniedException.class)
-    @PrepareForTest (CollectionUtils.class)
     public void checkIfVolumeCanBeReassignedTestVolumeWithSnapshots() {
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
-        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(anyLong(), any(), any());
 
-        PowerMockito.mockStatic(CollectionUtils.class);
-        PowerMockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(true);
+        try (MockedStatic<CollectionUtils> ignored = Mockito.mockStatic(CollectionUtils.class)) {
+            Mockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(true);
 
-        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+            volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+        }
     }
 
     @Test
-    @PrepareForTest (CollectionUtils.class)
     public void checkIfVolumeCanBeReassignedTestValidVolume() {
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
-        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(Mockito.anyLong(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(snapshotVOArrayListMock).when(snapshotDaoMock).listByStatusNotIn(anyLong(), any(), any());
 
-        PowerMockito.mockStatic(CollectionUtils.class);
-        PowerMockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(false);
+        try (MockedStatic<CollectionUtils> ignored = Mockito.mockStatic(CollectionUtils.class)) {
+            Mockito.when(CollectionUtils.isNotEmpty(snapshotVOArrayListMock)).thenReturn(false);
 
-        volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+            volumeApiServiceImpl.validateVolume(volumeVoMock.getUuid(), volumeVoMock);
+        }
     }
 
     @Test (expected = InvalidParameterValueException.class)
@@ -1378,13 +1373,11 @@ public class VolumeApiServiceImplTest {
 
     @Test (expected = InvalidParameterValueException.class)
     public void validateAccountsTestDisabledNewAccount() {
-        Mockito.doReturn(Account.State.DISABLED).when(accountMock).getState();
         volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, null, accountMock);
     }
 
     @Test (expected = InvalidParameterValueException.class)
     public void validateAccountsTestLockedNewAccount() {
-        Mockito.doReturn(Account.State.LOCKED).when(accountMock).getState();
         volumeApiServiceImpl.validateAccounts(accountMock.getUuid(), volumeVoMock, null, accountMock);
     }
 
@@ -1400,35 +1393,33 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    @PrepareForTest(UsageEventUtils.class)
     public void updateVolumeAccountTest() {
-        PowerMockito.mockStatic(UsageEventUtils.class);
-        Account newAccountMock = new AccountVO(accountMockId+1);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            Account newAccountMock = new AccountVO(accountMockId + 1);
 
-        Mockito.doReturn(volumeVoMock).when(volumeDaoMock).persist(volumeVoMock);
+            Mockito.doReturn(volumeVoMock).when(volumeDaoMock).persist(volumeVoMock);
 
-        volumeApiServiceImpl.updateVolumeAccount(accountMock, volumeVoMock, newAccountMock);
+            volumeApiServiceImpl.updateVolumeAccount(accountMock, volumeVoMock, newAccountMock);
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
-                volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume());
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
+                    volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume()));
 
-        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
-        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
+            Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+            Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
 
-        Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
-        Mockito.verify(volumeVoMock).setDomainId(newAccountMock.getDomainId());
+            Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
+            Mockito.verify(volumeVoMock).setDomainId(newAccountMock.getDomainId());
 
-        Mockito.verify(volumeDaoMock).persist(volumeVoMock);
+            Mockito.verify(volumeDaoMock).persist(volumeVoMock);
 
-        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
-        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
+            Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+            Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
-                volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume());
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
+                    volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume()));
 
-        Mockito.verify(volumeServiceMock).moveVolumeOnSecondaryStorageToAnotherAccount(volumeVoMock, accountMock, newAccountMock);
+            Mockito.verify(volumeServiceMock).moveVolumeOnSecondaryStorageToAnotherAccount(volumeVoMock, accountMock, newAccountMock);
+        }
     }
 
 
@@ -1463,67 +1454,59 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test
-    @PrepareForTest(UsageEventUtils.class)
     public void publishVolumeCreationUsageEventTestNullDiskOfferingId() {
         Mockito.doReturn(null).when(volumeVoMock).getDiskOfferingId();
-        PowerMockito.mockStatic(UsageEventUtils.class);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
 
-        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+            volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
-
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+        }
     }
 
     @Test
-    @PrepareForTest(UsageEventUtils.class)
     public void publishVolumeCreationUsageEventTestNullDiskOfferingVo() {
         Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
         Mockito.doReturn(null).when(_diskOfferingDao).findById(diskOfferingMockId);
-        PowerMockito.mockStatic(UsageEventUtils.class);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
 
-        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+            volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
-
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+        }
     }
 
     @Test
-    @PrepareForTest(UsageEventUtils.class)
     public void publishVolumeCreationUsageEventTestDiskOfferingVoTypeNotDisk() {
         Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
         Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findById(diskOfferingMockId);
         Mockito.doReturn(true).when(newDiskOfferingMock).isComputeOnly();
 
-        PowerMockito.mockStatic(UsageEventUtils.class);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
 
-        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+            volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
-
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                    null, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+        }
     }
 
     @Test
-    @PrepareForTest(UsageEventUtils.class)
     public void publishVolumeCreationUsageEventTestOfferingIdNotNull() {
         Mockito.doReturn(diskOfferingMockId).when(volumeVoMock).getDiskOfferingId();
         Mockito.doReturn(newDiskOfferingMock).when(_diskOfferingDao).findById(diskOfferingMockId);
         Mockito.doReturn(false).when(newDiskOfferingMock).isComputeOnly();
         Mockito.doReturn(offeringMockId).when(newDiskOfferingMock).getId();
 
-        PowerMockito.mockStatic(UsageEventUtils.class);
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
 
-        volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
+            volumeApiServiceImpl.publishVolumeCreationUsageEvent(volumeVoMock);
 
-        PowerMockito.verifyStatic(UsageEventUtils.class);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
-                offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay());
-
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(), volumeVoMock.getName(),
+                    offeringMockId, volumeVoMock.getTemplateId(), volumeVoMock.getSize(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplay()));
+        }
     }
 
     private void testBaseListOrderedHostsHypervisorVersionInDc(List<String> hwVersions, HypervisorType hypervisorType,
@@ -1603,7 +1586,6 @@ public class VolumeApiServiceImplTest {
             Mockito.when(migrateVolumeCmd.getStoragePoolId()).thenReturn(2L);
             VolumeVO vol = Mockito.mock(VolumeVO.class);
             Mockito.when(volumeDaoMock.findById(1L)).thenReturn(vol);
-            Mockito.when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
             Mockito.when(vol.getState()).thenReturn(Volume.State.Ready);
             Mockito.when(vol.getPoolId()).thenReturn(1L);
             Mockito.when(vol.getInstanceId()).thenReturn(null);
@@ -1619,10 +1601,6 @@ public class VolumeApiServiceImplTest {
             Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(srcStoragePoolVOMock);
             Mockito.when(srcStoragePoolVOMock.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
             Mockito.when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn( dataStore);
-            Mockito.doNothing().when(snapshotHelper).checkKvmVolumeSnapshotsOnlyInPrimaryStorage(vol, HypervisorType.KVM);
-            Mockito.when(destPool.getUuid()).thenReturn("bd525970-3d2a-4230-880d-261892129ef3");
-
-            Mockito.when(storageMgr.storagePoolCompatibleWithVolumePool(destPool, vol)).thenReturn(false);
 
             volumeApiServiceImpl.migrateVolume(migrateVolumeCmd);
         } catch (InvalidParameterValueException e) {

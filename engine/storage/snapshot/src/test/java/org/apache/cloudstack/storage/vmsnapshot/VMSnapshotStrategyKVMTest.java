@@ -49,7 +49,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -163,7 +162,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(),
                                vol.getId(),vol.getDiskOfferingId(), vmUuid + "_" + volUuid,(short) SnapshotVO.MANUAL_POLICY_ID,
                                "MANUAL",vol.getSize(),vol.getMinIops(),vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
-        PowerMockito.whenNew(SnapshotVO.class).withAnyArguments().thenReturn(snapshot);
         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
         when(vol.getUuid()).thenReturn(volUuid);
         when(_snapshotDao.persist(any())).thenReturn(snapshot);
@@ -175,7 +173,6 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
 
         when(strategy.takeSnapshot(any())).thenReturn(snapshotInfo);
         VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
-        PowerMockito.whenNew(VMSnapshotDetailsVO.class).withAnyArguments().thenReturn(vmDetails);
         when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
 
         info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);

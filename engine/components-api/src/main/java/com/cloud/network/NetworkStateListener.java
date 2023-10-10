@@ -94,7 +94,7 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         try {
             s_eventBus.publish(eventMsg);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish state change event on the the event bus.");
+            s_logger.warn("Failed to publish state change event on the event bus.");
         }
     }
 

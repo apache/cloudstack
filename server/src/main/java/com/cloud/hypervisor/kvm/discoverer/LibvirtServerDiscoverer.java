@@ -110,7 +110,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Override
     public void processHostAdded(long hostId) {
         HostVO host = hostDao.findById(hostId);
-        if (host != null) {
+        if (host != null && getHypervisorType().equals(host.getHypervisorType())) {
             directDownloadManager.syncCertificatesToHost(hostId, host.getDataCenterId());
         }
     }

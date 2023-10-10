@@ -60,8 +60,8 @@ public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderIm
         }
     }
 
-    protected MetalinkDirectTemplateDownloader(String url) {
-        this(url, null, null, null, null, null, null, null);
+    protected MetalinkDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null);
     }
 
     public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum,

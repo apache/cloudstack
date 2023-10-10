@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.networkoffering;
 
-import java.io.IOException;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserAccountJoinDaoImpl;
@@ -122,6 +120,8 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
+
+import java.io.IOException;
 
 @Configuration
 @ComponentScan(basePackageClasses = {AccountVlanMapDaoImpl.class, DomainVlanMapDaoImpl.class, VolumeDaoImpl.class, HostPodDaoImpl.class, DomainDaoImpl.class, ServiceOfferingDaoImpl.class,

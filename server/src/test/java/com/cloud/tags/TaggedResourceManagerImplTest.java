@@ -19,12 +19,11 @@
 
 package com.cloud.tags;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.server.ResourceTag;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import junit.framework.TestCase;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,12 +34,11 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ResourceTag;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TaggedResourceManagerImplTest extends TestCase {

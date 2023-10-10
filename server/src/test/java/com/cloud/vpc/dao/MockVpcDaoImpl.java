@@ -16,19 +16,17 @@
 // under the License.
 package com.cloud.vpc.dao;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-
-
-import org.apache.log4j.Logger;
-
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Vpc.State;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import org.apache.log4j.Logger;
+
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
 
 @DB()
 public class MockVpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao {

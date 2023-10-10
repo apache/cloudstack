@@ -19,20 +19,11 @@
 
 package org.apache.cloudstack.ca;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-
-import java.lang.reflect.Field;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.List;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.certificate.CrlVO;
+import com.cloud.certificate.dao.CrlDao;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -46,11 +37,19 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.certificate.CrlVO;
-import com.cloud.certificate.dao.CrlDao;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
+import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CAManagerImplTest {

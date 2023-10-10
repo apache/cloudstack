@@ -15,15 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.backup;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
@@ -40,10 +38,12 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.Pair;
-
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 public class BackupManagerTest {
     @Spy

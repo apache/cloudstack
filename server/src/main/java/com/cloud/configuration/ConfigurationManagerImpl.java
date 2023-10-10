@@ -47,6 +47,7 @@ import javax.naming.ConfigurationException;
 
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -664,7 +665,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public String updateConfiguration(final long userId, final String name, final String category, final String value, final String scope, final Long resourceId) {
+    public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
@@ -677,6 +678,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
+            boolean valueEncrypted = shouldEncryptValue(category);
+            if (valueEncrypted) {
+                value = DBEncryptionUtil.encrypt(value);
+            }
+
             switch (ConfigKey.Scope.valueOf(scope)) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
@@ -767,7 +773,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
-            return value;
+
+            return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
         // Execute all updates in a single transaction
@@ -864,6 +871,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return _configDao.getValue(name);
     }
 
+    private boolean shouldEncryptValue(String category) {
+        return StringUtils.equalsAny(category, "Hidden", "Secure");
+    }
+
     /**
      * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
      */
@@ -890,10 +901,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long imageStoreId = cmd.getImageStoreId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
-        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
-        String catergory = null;
+        String category = null;
+        String eventValue = encryptEventValueIfConfigIsEncrypted(config, value);
+        CallContext.current().setEventDetails(String.format(" Name: %s New Value: %s", name, eventValue));
 
         final Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isDomainAdmin(caller.getId())) {
@@ -912,9 +924,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
                 throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
             }
-            catergory = _configDepot.get(name).category();
+            category = _configDepot.get(name).category();
         } else {
-            catergory = config.getCategory();
+            category = config.getCategory();
         }
 
         validateIpAddressRelatedConfigValues(name, value);
@@ -971,12 +983,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             value = (id == null) ? null : "";
         }
 
-        final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
+        final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    private String encryptEventValueIfConfigIsEncrypted(ConfigurationVO config, String value) {
+        if (config != null && config.isEncrypted()) {
+           return  "*****";
+        }
+        return Objects.requireNonNullElse(value, "");
     }
 
     private ParamCountPair getParamCount(Map<String, Long> scopeMap) {

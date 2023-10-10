@@ -127,7 +127,7 @@ public class VMScheduleManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         return Transaction.execute((TransactionCallback<VMScheduleResponse>) status -> {
             VMScheduleVO vmSchedule = vmScheduleDao.persist(new VMScheduleVO(cmd.getVmId(), finalDescription, cronExpression.toString(), timeZoneId, finalAction, finalStartDate, finalEndDate, cmd.getEnabled()));
-            vmScheduler.scheduleNextJob(vmSchedule);
+            vmScheduler.scheduleNextJob(vmSchedule, new Date());
             CallContext.current().setEventResourceId(vm.getId());
             CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
             return createResponse(vmSchedule);

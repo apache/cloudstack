@@ -189,6 +189,9 @@ export default {
     }
     this.initForm()
     if (store.getters.logoutFlag) {
+      if (store.getters.readyForShutdownPollingJob !== '' || store.getters.readyForShutdownPollingJob !== undefined) {
+        clearInterval(store.getters.readyForShutdownPollingJob)
+      }
       sourceToken.init()
       this.fetchData()
     } else {

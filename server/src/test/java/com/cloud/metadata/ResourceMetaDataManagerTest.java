@@ -17,28 +17,26 @@
 
 package com.cloud.metadata;
 
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.server.ResourceManagerUtil;
+import com.cloud.server.ResourceTag;
+import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import org.apache.commons.collections.map.HashedMap;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.server.ResourceTag;
-import com.cloud.server.TaggedResourceService;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.vm.dao.NicDetailsDao;
+import javax.naming.ConfigurationException;
+import java.util.Map;
+
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 
 public class ResourceMetaDataManagerTest {
 

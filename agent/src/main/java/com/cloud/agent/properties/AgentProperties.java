@@ -503,6 +503,15 @@ public class AgentProperties{
     public static final Property<Integer> HOST_RESERVED_MEM_MB = new Property<>("host.reserved.mem.mb", 1024);
 
     /**
+     * How many host CPUs to reserve for non-allocation.<br>
+     * This can be used to set aside CPU cores on the host for other tasks, such as running hyperconverged storage<br>
+     * processes, etc.
+     * Data type: Integer.<br>
+     * Default value: <code>0</code>
+     */
+    public static final Property<Integer> HOST_RESERVED_CPU_CORE_COUNT = new Property<>("host.reserved.cpu.count", 0);
+
+    /**
      * The model of Watchdog timer to present to the Guest.<br>
      * For all models refer to the libvirt documentation.<br>
      * Data type: String.<br>

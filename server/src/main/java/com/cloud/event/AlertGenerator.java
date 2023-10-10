@@ -109,7 +109,7 @@ public class AlertGenerator {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish alert on the the event bus.");
+            s_logger.warn("Failed to publish alert on the event bus.");
         }
     }
 }

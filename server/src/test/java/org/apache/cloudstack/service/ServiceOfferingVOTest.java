@@ -16,13 +16,12 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.vm.VirtualMachine;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.vm.VirtualMachine;
 
 public class ServiceOfferingVOTest {
     ServiceOfferingVO offeringCustom;

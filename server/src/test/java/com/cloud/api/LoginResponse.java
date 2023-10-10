@@ -16,11 +16,9 @@
 // under the License.
 package com.cloud.api;
 
-import com.google.gson.annotations.SerializedName;
-
-import org.apache.cloudstack.api.BaseResponse;
-
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.BaseResponse;
 
 /**
  * Login Response object

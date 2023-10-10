@@ -17,13 +17,6 @@
 
 package com.cloud.network;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.naming.ConfigurationException;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -50,6 +43,12 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
+
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 

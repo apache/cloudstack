@@ -16,33 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
-import org.apache.cloudstack.auth.UserAuthenticator;
-import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
-import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-import static org.mockito.ArgumentMatchers.nullable;
-
 import com.cloud.acl.DomainChecker;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.domain.Domain;
@@ -60,6 +33,33 @@ import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.nullable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AccountManagerImplTest extends AccountManagetImplTestBase {

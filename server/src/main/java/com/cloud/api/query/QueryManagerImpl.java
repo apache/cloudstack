@@ -3786,6 +3786,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 }
             } else if (templateFilter == TemplateFilter.sharedexecutable || templateFilter == TemplateFilter.shared) {
                 // only show templates shared by others
+                if (permittedAccounts.isEmpty()) {
+                    return new Pair<>(new ArrayList<>(), 0);
+                }
                 sc.addAnd("sharedAccountId", SearchCriteria.Op.IN, permittedAccountIds.toArray());
             } else if (templateFilter == TemplateFilter.executable) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();

@@ -79,7 +79,7 @@ public interface VolumeOrchestrationService {
             Long.class,
             "storage.max.volume.size",
             "2000",
-            "The maximum size for a volume (in GB).",
+            "The maximum size for a volume (in GiB).",
             true);
 
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)

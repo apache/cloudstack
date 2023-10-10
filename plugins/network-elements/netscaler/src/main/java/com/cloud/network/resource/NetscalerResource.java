@@ -248,7 +248,7 @@ public class NetscalerResource implements ServerResource {
             enableLoadBalancingFeature();
             SSL.enableSslFeature(_netscalerService, _isSdx);
 
-            //if the the device is cloud stack provisioned then make it part of the public network
+            //if the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
                 _publicIP = (String)params.get("publicip");
                 _publicIPNetmask = (String)params.get("publicipnetmask");
@@ -1856,7 +1856,7 @@ public class NetscalerResource implements ServerResource {
         public static void linkCerts(final nitro_service ns, final String userCertName, final String caCertName) throws ExecutionException {
             try {
 
-                // the assumption is that that both userCertName and caCertName are present on NS
+                // the assumption is that both userCertName and caCertName are present on NS
 
                 final sslcertkey caCert = sslcertkey.get(ns, caCertName);
                 final sslcertkey userCert = sslcertkey.get(ns, userCertName);

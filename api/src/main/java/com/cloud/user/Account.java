@@ -30,7 +30,7 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
      *  Account states.
      * */
     enum State {
-        DISABLED, ENABLED, LOCKED;
+        DISABLED, ENABLED, LOCKED, REMOVED;
 
         /**
          * The toString method was overridden to maintain consistency in the DB, as the GenericDaoBase uses toString in the enum value to make the sql statements

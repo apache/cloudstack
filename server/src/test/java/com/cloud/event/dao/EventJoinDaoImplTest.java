@@ -17,8 +17,9 @@
 
 package com.cloud.event.dao;
 
-import java.util.UUID;
-
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.junit.Assert;
@@ -27,16 +28,11 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.api.query.vo.EventJoinVO;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.vm.VirtualMachine;
+import java.util.UUID;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class EventJoinDaoImplTest {
 
     @Mock

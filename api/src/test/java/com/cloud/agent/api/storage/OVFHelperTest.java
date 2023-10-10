@@ -488,7 +488,7 @@ public class OVFHelperTest {
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.db.servername\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"\">\n" +
             "        <Label>Database Server</Label>\n" +
-            "        <Description>String naming the the hostname of the server on which the external database is running (ignored when db.type is &apos;embedded&apos;).</Description>\n" +
+            "        <Description>String naming the hostname of the server on which the external database is running (ignored when db.type is &apos;embedded&apos;).</Description>\n" +
             "      </Property>\n" +
             "      <Property ovf:key=\"guestinfo.cis.db.serverport\" ovf:type=\"string\" ovf:userConfigurable=\"false\" ovf:value=\"\">\n" +
             "        <Label>Database Port</Label>\n" +

@@ -54,7 +54,7 @@ public class DirectDownloadHelper {
 
     public static boolean checkUrlExistence(String url) {
         try {
-            DirectTemplateDownloader checker = getCheckerDownloader(url);
+            DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null);
             return checker.checkUrl(url);
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
@@ -62,22 +62,37 @@ public class DirectDownloadHelper {
         }
     }
 
-    private static DirectTemplateDownloader getCheckerDownloader(String url) {
+    public static boolean checkUrlExistence(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
+        try {
+            DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
+            return checker.checkUrl(url);
+        } catch (CloudRuntimeException e) {
+            LOGGER.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
+            return false;
+        }
+    }
+
+    private static DirectTemplateDownloader getCheckerDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
         if (url.toLowerCase().startsWith("https:")) {
-            return new HttpsDirectTemplateDownloader(url);
+            return new HttpsDirectTemplateDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
         } else if (url.toLowerCase().startsWith("http:")) {
-            return new HttpDirectTemplateDownloader(url);
+            return new HttpDirectTemplateDownloader(url, connectTimeout, socketTimeout);
         } else if (url.toLowerCase().startsWith("nfs:")) {
             return new NfsDirectTemplateDownloader(url);
         } else if (url.toLowerCase().endsWith(".metalink")) {
-            return new MetalinkDirectTemplateDownloader(url);
+            return new MetalinkDirectTemplateDownloader(url, connectTimeout, socketTimeout);
         } else {
             throw new CloudRuntimeException(String.format("Cannot find a download checker for url: %s", url));
         }
     }
 
     public static Long getFileSize(String url, String format) {
-        DirectTemplateDownloader checker = getCheckerDownloader(url);
+        DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null);
+        return checker.getRemoteFileSize(url, format);
+    }
+
+    public static Long getFileSize(String url, String format, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
+        DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
         return checker.getRemoteFileSize(url, format);
     }
 }

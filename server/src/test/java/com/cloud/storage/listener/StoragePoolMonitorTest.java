@@ -16,16 +16,6 @@
 // under the License.
 package com.cloud.storage.listener;
 
-import static org.mockito.ArgumentMatchers.nullable;
-
-import java.util.Collections;
-
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
@@ -33,6 +23,15 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.Collections;
+
+import static org.mockito.ArgumentMatchers.nullable;
 
 public class StoragePoolMonitorTest {
 

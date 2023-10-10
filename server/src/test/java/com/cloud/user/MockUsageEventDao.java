@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.utils.Pair;
@@ -31,6 +24,12 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class MockUsageEventDao implements UsageEventDao{
 

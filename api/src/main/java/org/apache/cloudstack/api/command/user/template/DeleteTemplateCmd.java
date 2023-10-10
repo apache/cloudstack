@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -67,8 +68,9 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return (forced != null) ? forced : true;
+        return BooleanUtils.toBooleanDefaultIfNull(forced, false);
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

@@ -50,7 +50,8 @@ const getters = {
   twoFaIssuer: state => state.user.twoFaIssuer,
   loginFlag: state => state.user.loginFlag,
   allProjects: (state) => state.app.allProjects,
-  customHypervisorName: state => state.user.customHypervisorName
+  customHypervisorName: state => state.user.customHypervisorName,
+  readyForShutdownPollingJob: state => state.user.readyForShutdownPollingJob
 }
 
 export default getters

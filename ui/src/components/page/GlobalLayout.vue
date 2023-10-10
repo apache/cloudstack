@@ -199,7 +199,8 @@ export default {
   created () {
     this.menus = this.mainMenu.find((item) => item.path === '/').children
     this.collapsed = !this.sidebarOpened
-    setInterval(this.checkShutdown, 5000)
+    const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
+    this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'
@@ -278,6 +279,11 @@ export default {
   &.dark {
     .ant-drawer-content {
       background-color: rgb(0, 21, 41);
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;;
     }
   }
 
@@ -286,11 +292,16 @@ export default {
 
     .ant-drawer-content {
       background-color: #fff;
+      max-width: 256px;
+    }
+
+    .ant-drawer-content-wrapper {
+      width: 256px !important;
     }
   }
 
   .ant-drawer-body {
-    padding: 0
+    padding: 0;
   }
 }
 

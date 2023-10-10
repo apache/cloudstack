@@ -65,8 +65,8 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
     protected CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    protected HttpsDirectTemplateDownloader(String url) {
-        this(url, null, null, null, null, null, null, null, null);
+    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null);
     }
 
     public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers,

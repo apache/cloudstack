@@ -16,17 +16,13 @@
 // under the License.
 package com.cloud.event;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-
-import java.util.Date;
-import java.util.List;
-
+import com.cloud.event.dao.EventDao;
+import com.cloud.server.ManagementServerImpl;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import junit.framework.TestCase;
-
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -35,13 +31,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import java.util.Date;
+import java.util.List;
 
-import com.cloud.event.dao.EventDao;
-import com.cloud.server.ManagementServerImpl;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 public class EventControlsUnitTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(EventControlsUnitTest.class);

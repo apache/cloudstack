@@ -16,23 +16,17 @@
 // under the License.
 package com.cloud.api;
 
-import static org.mockito.ArgumentMatchers.nullable;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.net.InetAddress;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
+import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.HttpUtils;
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
@@ -46,19 +40,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
-import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.utils.HttpUtils;
-import com.cloud.vm.UserVmManager;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.nullable;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
