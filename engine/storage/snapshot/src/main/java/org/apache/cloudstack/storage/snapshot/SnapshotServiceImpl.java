@@ -373,7 +373,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
-            s_logger.error("An exception occurred while processing an event in delete snapshot callback.", e);
+            s_logger.error("An exception occurred while processing an event in delete snapshot callback.");
+            s_logger.debug("Exception while processing an event in delete snapshot callback.", e);
             res.setResult(e.toString());
         }
         future.complete(res);
@@ -421,7 +422,8 @@ public class SnapshotServiceImpl implements SnapshotService {
             s_logger.debug(String.format("Successfully deleted snapshot [%s] with ID [%s].", snapInfo.getName(), snapInfo.getUuid()));
             return true;
         } catch (InterruptedException | ExecutionException e) {
-            s_logger.error(String.format("Failed to delete snapshot [%s] due to: [%s].", snapInfo.getUuid(), e.getMessage()), e);
+            s_logger.error(String.format("Failed to delete snapshot [%s] due to: [%s].", snapInfo.getUuid(), e.getMessage()));
+            s_logger.debug(String.format("Failed to delete snapshot [%s].", snapInfo.getUuid()), e);
         }
 
         return false;
