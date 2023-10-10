@@ -286,7 +286,7 @@
         <div v-if="form.provider === 'Primera'">
           <a-form-item name="primeraURL" ref="primeraURL">
             <template #label>
-              <tooltip-label :title="$t('label.primera.url')" :tooltip="$t('label.primera.url.tooltip')"/>
+              <tooltip-label :title="$t('label.url')" :tooltip="$t('label.primera.url.tooltip')"/>
             </template>
             <a-input v-model:value="form.primeraURL" :placeholder="$t('label.primera.url.tooltip')"/>
           </a-form-item>
@@ -318,7 +318,7 @@
         <div v-if="form.provider === 'Flash Array'">
           <a-form-item name="flashArrayURL" ref="flashArrayURL">
             <template #label>
-              <tooltip-label :title="$t('label.flashArray.url')" :tooltip="$t('label.flashArray.url.tooltip')"/>
+              <tooltip-label :title="$t('label.url')" :tooltip="$t('label.flashArray.url.tooltip')"/>
             </template>
             <a-input v-model:value="form.flashArrayURL" :placeholder="$t('label.flashArray.url.tooltip')"/>
           </a-form-item>
@@ -488,12 +488,12 @@ export default {
         powerflexStoragePool: [{ required: true, message: this.$t('label.required') }],
         username: [{ required: true, message: this.$t('label.required') }],
         password: [{ required: true, message: this.$t('label.required') }],
-        primeraURL: [{ required: true, message: this.$t('label.primeraURL') }],
-        primeraUsername: [{ required: true, message: this.$t('label.primeraUsername') }],
-        primeraPassword: [{ required: true, message: this.$t('label.primeraPassword') }],
-        flashArrayURL: [{ required: true, message: this.$t('label.flashArrayURL') }],
-        flashArrayUsername: [{ required: true, message: this.$t('label.flashArrayUsername') }],
-        flashArrayPassword: [{ required: true, message: this.$t('label.flashArrayPassword') }]
+        primeraURL: [{ required: true, message: this.$t('label.url') }],
+        primeraUsername: [{ required: true, message: this.$t('label.username') }],
+        primeraPassword: [{ required: true, message: this.$t('label.password') }],
+        flashArrayURL: [{ required: true, message: this.$t('label.url') }],
+        flashArrayUsername: [{ required: true, message: this.$t('label.username') }],
+        flashArrayPassword: [{ required: true, message: this.$t('label.password') }]
       })
     },
     fetchData () {
