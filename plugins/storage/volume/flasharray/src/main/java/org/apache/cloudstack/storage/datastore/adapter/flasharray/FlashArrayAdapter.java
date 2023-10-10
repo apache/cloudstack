@@ -68,7 +68,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Array API
  */
 public class FlashArrayAdapter implements ProviderAdapter {
-    static final Logger logger = Logger.getLogger(FlashArrayAdapter.class);
+    private Logger logger = Logger.getLogger(FlashArrayAdapter.class);
 
     public static final String HOSTGROUP = "hostgroup";
     public static final String STORAGE_POD = "pod";
