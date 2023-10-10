@@ -30,9 +30,9 @@ import java.util.Objects;
 
 public class NsxServiceImpl implements NsxService {
     @Inject
-    private NsxControllerUtils nsxControllerUtils;
+    NsxControllerUtils nsxControllerUtils;
     @Inject
-    private VpcDao vpcDao;
+    VpcDao vpcDao;
 
     public boolean createVpcNetwork(Long zoneId, String zoneName, Long accountId, String accountName, String vpcName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
