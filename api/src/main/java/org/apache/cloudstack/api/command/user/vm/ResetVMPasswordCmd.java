@@ -57,7 +57,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd implements UserCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The new password of the virtual machine. If null, a random password will be generated for the VM.")
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The new password of the virtual machine. If null, a random password will be generated for the VM.", since="4.19.0")
     protected String password;
 
 
