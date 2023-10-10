@@ -16,82 +16,331 @@
 // under the License.
 
 <template>
-  <a-row class="usage-dashboard" :gutter="12">
-    <a-col :xl="16" style="padding-left: 0; padding-right: 0;">
-      <a-row>
-        <a-card style="width: 100%">
-          <a-tabs
-            v-if="showProject"
-            :animated="false"
-            @change="onTabChange">
-            <template v-for="tab in $route.meta.tabs" :key="tab.name">
-              <a-tab-pane
-                v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true"
-                :tab="$t('label.' + tab.name)"
-                :key="tab.name">
-                <keep-alive>
-                  <component
-                    :is="tab.component"
-                    :resource="project"
-                    :loading="loading"
-                    :bordered="false"
-                    :stats="stats" />
-                </keep-alive>
-              </a-tab-pane>
-            </template>
-          </a-tabs>
-          <a-row :gutter="24" v-else>
-            <a-col
-              class="usage-dashboard-chart-tile"
-              :xs="12"
-              :md="8"
-              v-for="stat in stats"
-              :key="stat.type">
-              <a-card
-                class="usage-dashboard-chart-card"
-                :bordered="false"
-                :loading="loading"
-                :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
-                <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
-                  <div
-                    class="usage-dashboard-chart-card-inner">
-                    <h3>{{ stat.name }}</h3>
-                    <h2>
-                      <render-icon :icon="stat.icon" />
-                      {{ stat.count == undefined ? 0 : stat.count }}
-                    </h2>
-                  </div>
-                </router-link>
-              </a-card>
-            </a-col>
-          </a-row>
-        </a-card>
-      </a-row>
-    </a-col>
-    <a-col :xl="8">
-      <chart-card :loading="loading" >
-        <div class="usage-dashboard-chart-card-inner">
-          <a-button>
-            <router-link :to="{ name: 'event' }">
-              {{ $t('label.view') + ' ' + $t('label.events') }}
-            </router-link>
-          </a-button>
-        </div>
-        <template #footer>
-          <div class="usage-dashboard-chart-footer">
-            <a-timeline>
-              <a-timeline-item
-                v-for="event in events"
-                :key="event.id"
-                :color="getEventColour(event)">
-                <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
-                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
-                <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
-              </a-timeline-item>
-            </a-timeline>
+  <a-row class="capacity-dashboard" :gutter="[12,12]">
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3>
+              <dashboard-outlined /> {{ $t('label.resources') }}
+              <span style="float: right" v-if="showProject">
+                <a-dropdown>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item>
+                        <router-link :to="{ path: '/project/' + project.id }">
+                          <project-outlined/>
+                            {{ $t('label.view') }} {{  $t('label.project') }}
+                        </router-link>
+                      </a-menu-item>
+                      <a-menu-item v-if="showProject && ['Admin'].includes($store.getters.userInfo.roletype)">
+                        <router-link :to="{ path: '/project/' + project.id, query: { tab: 'limits.configure' } }">
+                          <setting-outlined/>
+                          {{ $t('label.configure') }} {{ $t('label.project') }} {{ $t('label.limits') }}
+                        </router-link>
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                  <a-button size="small" type="text">
+                    <more-outlined />
+                  </a-button>
+                </a-dropdown>
+              </span>
+            </h3>
           </div>
         </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-row :gutter="[10, 10]">
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm' }">
+              <a-statistic
+                :title="$t('label.instances')"
+                :value="data.instances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <cloud-server-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/kubernetes' }">
+              <a-statistic
+                :title="$t('label.kubernetes.cluster')"
+                :value="data.kubernetes"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <cluster-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/volume' }">
+              <a-statistic
+                :title="$t('label.volumes')"
+                :value="data.volumes"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <hdd-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/snapshot' }">
+              <a-statistic
+                :title="$t('label.snapshots')"
+                :value="data.snapshots"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <build-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/guestnetwork' }">
+              <a-statistic
+                :title="$t('label.guest.networks')"
+                :value="data.networks"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <apartment-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vpc' }">
+              <a-statistic
+                :title="$t('label.vpcs')"
+                :value="data.vpcs"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <deployment-unit-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/publicip' }">
+              <a-statistic
+                :title="$t('label.public.ips')"
+                :value="data.ips"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <environment-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/template', query: { templatefilter: 'self', filter: 'self' } }">
+              <a-statistic
+                :title="$t('label.templates')"
+                :value="data.templates"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <picture-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3>
+              <cloud-outlined /> {{ $t('label.compute') }}
+            </h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-row>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { state: 'running', filter: 'running' } }">
+              <a-statistic
+                :title="$t('label.running') + ' ' + $t('label.instances')"
+                :value="data.running"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <status class="status" text="Running"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { state: 'stopped', filter: 'stopped' } }">
+              <a-statistic
+                :title="$t('label.stopped') + ' ' + $t('label.instances')"
+                :value="data.stopped"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <status class="status" text="Stopped"/>
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
+        </a-row>
+        <a-divider style="margin: 1px 0px; border-width: 0px;"/>
+        <div
+          v-for="usageType in ['vm', 'cpu', 'memory', 'project']"
+          :key="usageType">
+          <div v-if="usageType + 'total' in entity">
+            <div>
+              <strong>
+                {{ $t(getLabel(usageType)) }}
+              </strong>
+              <span style="float: right">
+              {{ getValue(usageType, entity[usageType + 'total']) }} {{ $t('label.used') }}
+              </span>
+            </div>
+            <a-progress
+            status="active"
+            :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            stroke-color="#52c41a"
+            size="small"
+            />
+            <br/>
+            <div style="text-align: center">
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <div
+          v-for="usageType in ['volume', 'snapshot', 'template', 'primarystorage', 'secondarystorage']"
+          :key="usageType">
+          <div>
+            <div>
+              <strong>
+                {{ $t(getLabel(usageType)) }}
+              </strong>
+              <span style="float: right">
+              {{ getValue(usageType, entity[usageType + 'total']) }} {{ $t('label.used') }}
+              </span>
+            </div>
+            <a-progress
+            status="active"
+            :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            stroke-color="#52c41a"
+            size="small"
+            />
+            <br/>
+            <div style="text-align: center">
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><apartment-outlined /> {{ $t('label.network') }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <div
+          v-for="usageType in ['ip', 'network', 'vpc']"
+          :key="usageType">
+          <div>
+            <div>
+              <strong>
+                {{ $t(getLabel(usageType)) }}
+              </strong>
+              <span style="float: right">
+              {{ getValue(usageType, entity[usageType + 'total']) }} {{ $t('label.used') }}
+              </span>
+            </div>
+            <a-progress
+            status="active"
+            :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
+            :format="p => resource[item + 'limit'] !== '-1' && resource[item + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
+            stroke-color="#52c41a"
+            size="small"
+            />
+            <br/>
+            <div style="text-align: center">
+              {{ entity[usageType + 'available'] === 'Unlimited' ? $t('label.unlimited') : getValue(usageType, entity[usageType + 'available']) }} {{ $t('label.available') }}
+              {{ entity[usageType + 'limit'] === 'Unlimited' ? '' : (' | ' + getValue(usageType, entity[usageType + 'limit']) + ' ' + $t('label.limit')) }}
+            </div>
+          </div>
+        </div>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }" class="dashboard-card">
+      <chart-card :loading="loading" class="dashboard-card">
+        <template #title>
+          <div class="center">
+            <h3><render-icon :icon="$config.userCard.icon" /> {{ $t($config.userCard.title) }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-list item-layout="horizontal" :data-source="$config.userCard.links">
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <a-list-item-meta :description="item.text">
+                <template #title>
+                  <a :href="item.link" target="_blank"><h4>{{ item.title }}</h4></a>
+                </template>
+                <template #avatar>
+                  <a-avatar :style="{ backgroundColor: $config.theme['@primary-color'] }">
+                    <template #icon>
+                      <render-icon :icon="item.icon" />
+                    </template>
+                  </a-avatar>
+                </template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </chart-card>
+    </a-col>
+    <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
+      <chart-card :loading="loading" class="dashboard-card dashboard-event">
+        <template #title>
+          <div class="center">
+            <h3><schedule-outlined /> {{ $t('label.events') }}</h3>
+          </div>
+        </template>
+        <a-divider style="margin: 6px 0px; border-width: 0px"/>
+        <a-timeline>
+          <a-timeline-item
+            v-for="event in events"
+            :key="event.id"
+            :color="getEventColour(event)">
+            <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span>&nbsp;
+            <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+            <span>
+              <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
+            </span>
+            <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
+          </a-timeline-item>
+        </a-timeline>
+        <router-link :to="{ path: '/event' }">
+          <a-button>
+            {{ $t('label.view') }} {{ $t('label.events') }}
+          </a-button>
+        </router-link>
       </chart-card>
     </a-col>
   </a-row>
@@ -104,13 +353,15 @@ import store from '@/store'
 import ChartCard from '@/components/widgets/ChartCard'
 import UsageDashboardChart from '@/views/dashboard/UsageDashboardChart'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'UsageDashboard',
   components: {
     ChartCard,
     UsageDashboardChart,
-    ResourceLabel
+    ResourceLabel,
+    Status
   },
   props: {
     resource: {
@@ -129,9 +380,29 @@ export default {
       loading: false,
       showAction: false,
       showAddAccount: false,
+      project: {},
+      account: {},
       events: [],
-      stats: [],
-      project: {}
+      data: {
+        running: 0,
+        stopped: 0,
+        instances: 0,
+        kubernetes: 0,
+        volumes: 0,
+        snapshots: 0,
+        networks: 0,
+        vpcs: 0,
+        ips: 0,
+        templates: 0
+      }
+    }
+  },
+  computed: {
+    entity: function () {
+      if (this.showProject) {
+        return this.project
+      }
+      return this.account
     }
   },
   created () {
@@ -158,6 +429,9 @@ export default {
       deep: true,
       handler (newData, oldData) {
         this.project = newData
+        if (newData.id) {
+          this.fetchData()
+        }
       }
     },
     '$i18n.global.locale' (to, from) {
@@ -168,61 +442,95 @@ export default {
   },
   methods: {
     fetchData () {
-      this.stats = [{}, {}, {}, {}, {}, {}]
-      api('listVirtualMachines', { state: 'Running', listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listvirtualmachinesresponse) {
-          count = json.listvirtualmachinesresponse.count
+      if (store.getters.project.id) {
+        this.listProject()
+      } else {
+        this.listAccount()
+      }
+      this.updateData()
+    },
+    listAccount () {
+      this.loading = true
+      api('listAccounts', { id: this.$store.getters.userInfo.accountid }).then(json => {
+        this.loading = false
+        if (json && json.listaccountsresponse && json.listaccountsresponse.account) {
+          this.account = json.listaccountsresponse.account[0]
         }
-        var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
-        this.stats.splice(0, 1, { name: this.$t('label.running.vms'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
       })
-      api('listVirtualMachines', { state: 'Stopped', listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listvirtualmachinesresponse) {
-          count = json.listvirtualmachinesresponse.count
+    },
+    listProject () {
+      this.loading = true
+      api('listProjects', { id: store.getters.project.id }).then(json => {
+        this.loading = false
+        if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+          this.project = json.listprojectsresponse.project[0]
         }
-        var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
-        this.stats.splice(1, 1, { name: this.$t('label.stopped.vms'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
       })
-      api('listVirtualMachines', { listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listvirtualmachinesresponse) {
-          count = json.listvirtualmachinesresponse.count
-        }
-        var tileColor = this.$config.theme['@dashboard-tile-totalvms-bg'] || '#ffffff'
-        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number-outlined', bgcolor: tileColor, path: '/vm' })
-      })
-      api('listVolumes', { listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listvolumesresponse) {
-          count = json.listvolumesresponse.count
-        }
-        var tileColor = this.$config.theme['@dashboard-tile-totalvolumes-bg'] || '#ffffff'
-        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database-outlined', bgcolor: tileColor, path: '/volume' })
-      })
-      api('listNetworks', { listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listnetworksresponse) {
-          count = json.listnetworksresponse.count
-        }
-        var tileColor = this.$config.theme['@dashboard-tile-totalnetworks-bg'] || '#ffffff'
-        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment-outlined', bgcolor: tileColor, path: '/guestnetwork' })
-      })
-      api('listPublicIpAddresses', { listall: true, retrieveonlyresourcecount: true }).then(json => {
-        var count = 0
-        if (json && json.listpublicipaddressesresponse) {
-          count = json.listpublicipaddressesresponse.count
-        }
-        var tileColor = this.$config.theme['@dashboard-tile-totalips-bg'] || '#ffffff'
-        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment-outlined', bgcolor: tileColor, path: '/publicip' })
-      })
+    },
+    updateData () {
+      this.data = {
+        running: 0,
+        stopped: 0,
+        instances: 0,
+        kubernetes: 0,
+        volumes: 0,
+        snapshots: 0,
+        networks: 0,
+        vpcs: 0,
+        ips: 0,
+        templates: 0
+      }
+      this.listInstances()
       this.listEvents()
+      this.loading = true
+      api('listKubernetesClusters', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.kubernetes = json?.listkubernetesclustersresponse?.count
+      })
+      api('listVolumes', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.volumes = json?.listvolumesresponse?.count
+      })
+      api('listSnapshots', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.snapshots = json?.listsnapshotsresponse?.count
+      })
+      api('listNetworks', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.networks = json?.listnetworksresponse?.count
+      })
+      api('listVPCs', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.vpcs = json?.listvpcsresponse?.count
+      })
+      api('listPublicIpAddresses', { listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.ips = json?.listpublicipaddressesresponse?.count
+      })
+      api('listTemplates', { templatefilter: 'self', listall: true, page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.templates = json?.listtemplatesresponse?.count
+      })
+    },
+    listInstances (zone) {
+      this.loading = true
+      api('listVirtualMachines', { listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.instances = json?.listvirtualmachinesresponse?.count
+      })
+      api('listVirtualMachines', { listall: true, details: 'min', state: 'running', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.running = json?.listvirtualmachinesresponse?.count
+      })
+      api('listVirtualMachines', { listall: true, details: 'min', state: 'stopped', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.stopped = json?.listvirtualmachinesresponse?.count
+      })
     },
     listEvents () {
       const params = {
         page: 1,
-        pagesize: 6,
+        pagesize: 8,
         listall: true
       }
       this.loading = true
@@ -234,6 +542,37 @@ export default {
         }
       })
     },
+    getLabel (usageType) {
+      switch (usageType) {
+        case 'vm':
+          return 'label.instances'
+        case 'cpu':
+          return 'label.cpunumber'
+        case 'memory':
+          return 'label.memory'
+        case 'primarystorage':
+          return 'label.primary.storage'
+        case 'secondarystorage':
+          return 'label.secondary.storage'
+        case 'ip':
+          return 'label.public.ips'
+      }
+      return 'label.' + usageType + 's'
+    },
+    getValue (usageType, value) {
+      switch (usageType) {
+        case 'memory':
+          return parseFloat(value / 1024.0).toFixed(2) + ' GiB'
+        case 'primarystorage':
+          return parseFloat(value).toFixed(2) + ' GiB'
+        case 'secondarystorage':
+          return parseFloat(value).toFixed(2) + ' GiB'
+      }
+      return value
+    },
+    getPercentUsed (total, limit) {
+      return (limit === 'Unlimited') ? 0 : (total / limit) * 100
+    },
     getEventColour (event) {
       if (event.level === 'ERROR') {
         return 'red'
@@ -242,13 +581,6 @@ export default {
         return 'green'
       }
       return 'blue'
-    },
-    onTabChange (key) {
-      this.showAddAccount = false
-
-      if (key !== 'Dashboard') {
-        this.showAddAccount = true
-      }
     }
   }
 }
@@ -274,6 +606,23 @@ export default {
        padding-left: 3px;
        white-space: normal;
     }
+  }
+
+  .dashboard-card {
+    width: 100%;
+    min-height: 420px;
+  }
+
+  .dashboard-event {
+    width: 100%;
+    overflow-x:hidden;
+    overflow-y: scroll;
+    max-height: 420px;
+  }
+
+  .center {
+    display: block;
+    text-align: center;
   }
 
   @media (max-width: 1200px) {

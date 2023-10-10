@@ -16,28 +16,24 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.Date;
-import java.util.Map;
-
+import com.cloud.api.query.vo.TemplateJoinVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
+import com.cloud.template.TemplateManager;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.TemplateJoinVO;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.Storage;
-import com.cloud.template.TemplateManager;
-import com.cloud.user.Account;
+import java.util.Date;
+import java.util.Map;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ApiDBUtils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseTest<TemplateJoinVO, TemplateResponse> {
 
     @InjectMocks
