@@ -143,7 +143,9 @@ export default {
         if (newValue && newValue.id && (!oldValue || newValue.id !== oldValue.id)) {
           this.fetchData()
         } else if (store.getters.userInfo.roletype !== 'Admin') {
-          this.fetchData()
+          if (!store.getters.logoutFlag) {
+            this.fetchData()
+          }
         }
       }
     )
