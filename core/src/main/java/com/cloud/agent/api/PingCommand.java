@@ -24,6 +24,7 @@ import com.cloud.host.Host;
 public class PingCommand extends Command {
     Host.Type hostType;
     long hostId;
+    boolean outOfBand;
 
     protected PingCommand() {
     }
@@ -33,6 +34,12 @@ public class PingCommand extends Command {
         hostId = id;
     }
 
+    public PingCommand(Host.Type type, long id, boolean oob) {
+        hostType = type;
+        hostId = id;
+        outOfBand = oob;
+    }
+
     public Host.Type getHostType() {
         return hostType;
     }
@@ -40,6 +47,10 @@ public class PingCommand extends Command {
     public long getHostId() {
         return hostId;
     }
+
+    public boolean getOutOfBand() { return outOfBand; }
+
+    public void setOutOfBand(boolean oob) { this.outOfBand = oob; }
 
     @Override
     public boolean executeInSequence() {

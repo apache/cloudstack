@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.host;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -117,9 +116,6 @@ public class UpdateHostCmd extends BaseCmd {
         Host result;
         try {
             result = _resourceService.updateHost(this);
-            if(getAnnotation() != null) {
-                annotationService.addAnnotation(getAnnotation(), AnnotationService.EntityType.HOST, result.getUuid(), true);
-            }
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);

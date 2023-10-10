@@ -83,6 +83,7 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
+import org.libvirt.Library;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
@@ -90,12 +91,16 @@ import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.Secret;
 import org.libvirt.VcpuInfo;
+import org.libvirt.event.DomainEvent;
+import org.libvirt.event.DomainEventDetail;
+import org.libvirt.event.StoppedDetail;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -175,6 +180,8 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.AgentStatusUpdater;
+import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.RequestWrapper;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
@@ -224,10 +231,11 @@ import com.google.gson.Gson;
  *         private mac addresses for domrs | mac address | start + 126 || ||
  *         pool | the parent of the storage pool hierarchy * }
  **/
-public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
+public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer, ResourceStatusUpdater {
     protected static Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
     private static final String CONFIG_VALUES_SEPARATOR = ",";
+
 
     private static final String LEGACY = "legacy";
     private static final String SECURE = "secure";
@@ -322,6 +330,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _dcId;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
+    private String hostHealthCheckScriptPath;
 
     private long _hvVersion;
     private Duration _timeout;
@@ -451,11 +460,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _dom0OvercommitMem;
 
+    private int _dom0MinCpuCores;
+
     protected int _cmdsTimeout;
     protected int _stopTimeout;
     protected CPUStat _cpuStat = new CPUStat();
     protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+    private AgentStatusUpdater _agentStatusUpdater;
 
     protected Boolean enableManuallySettingCpuTopologyOnKvmVm = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM);
 
@@ -478,6 +490,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected long getHypervisorQemuVersion() {
         return _hypervisorQemuVersion;
+    }
+
+    @Override
+    public void registerStatusUpdater(AgentStatusUpdater updater) {
+        _agentStatusUpdater = updater;
     }
 
     @Override
@@ -717,6 +734,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         NATIVE, OPENVSWITCH, TUNGSTEN
     }
 
+    protected enum HealthCheckResult {
+        SUCCESS, FAILURE, IGNORE
+    }
+
     protected BridgeType _bridgeType;
 
     protected StorageSubsystemCommandHandler storageHandler;
@@ -943,6 +964,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
         }
 
+        hostHealthCheckScriptPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEALTH_CHECK_SCRIPT_PATH);
+        if (StringUtils.isNotBlank(hostHealthCheckScriptPath) && !new File(hostHealthCheckScriptPath).exists()) {
+            s_logger.info(String.format("Unable to find the host health check script at: %s, " +
+                    "discarding it", hostHealthCheckScriptPath));
+        }
+
         setupTungstenVrouterPath = Script.findScript(tungstenScriptsDir, "setup_tungsten_vrouter.sh");
         if (setupTungstenVrouterPath == null) {
             throw new ConfigurationException("Unable to find the setup_tungsten_vrouter.sh");
@@ -1037,6 +1064,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         // Reserve 1GB unless admin overrides
         _dom0MinMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
+
+        value = (String)params.get("host.reserved.cpu.count");
+        _dom0MinCpuCores = NumbersUtil.parseInt(value, 0);
 
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
@@ -3442,13 +3472,54 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public PingCommand getCurrentStatus(final long id) {
-
+        PingRoutingCommand pingRoutingCommand;
         if (!_canBridgeFirewall) {
-            return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
+            pingRoutingCommand = new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, this.getHostVmStateReport());
         } else {
             final HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
-            return new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
+            pingRoutingCommand = new PingRoutingWithNwGroupsCommand(getType(), id, this.getHostVmStateReport(), nwGrpStates);
         }
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            pingRoutingCommand.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
+        return pingRoutingCommand;
+    }
+
+    /**
+     * The health check result is true, if the script is executed successfully and the exit code is 0
+     * The health check result is false, if the script is executed successfully and the exit code is 1
+     * The health check result is null, if
+     * - Script file is not specified, or
+     * - Script file does not exist, or
+     * - Script file is not accessible by the user of the cloudstack-agent process, or
+     * - Script file is not executable
+     * - There are errors when the script is executed (exit codes other than 0 or 1)
+     */
+    private HealthCheckResult getHostHealthCheckResult() {
+        if (StringUtils.isBlank(hostHealthCheckScriptPath)) {
+            s_logger.debug("Host health check script path is not specified");
+            return HealthCheckResult.IGNORE;
+        }
+        File script = new File(hostHealthCheckScriptPath);
+        if (!script.exists() || !script.isFile() || !script.canExecute()) {
+            s_logger.warn(String.format("The host health check script file set at: %s cannot be executed, " +
+                            "reason: %s", hostHealthCheckScriptPath,
+                    !script.exists() ? "file does not exist" : "please check file permissions to execute this file"));
+            return HealthCheckResult.IGNORE;
+        }
+        int exitCode = executeBashScriptAndRetrieveExitValue(hostHealthCheckScriptPath);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Host health check script exit code: %s", exitCode));
+        }
+        return retrieveHealthCheckResultFromExitCode(exitCode);
+    }
+
+    private HealthCheckResult retrieveHealthCheckResultFromExitCode(int exitCode) {
+        if (exitCode != 0 && exitCode != 1) {
+            return HealthCheckResult.IGNORE;
+        }
+        return exitCode == 0 ? HealthCheckResult.SUCCESS : HealthCheckResult.FAILURE;
     }
 
     @Override
@@ -3470,7 +3541,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed);
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed, _dom0MinCpuCores);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {
@@ -3478,7 +3549,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
+                new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
         cmd.setCpuSockets(info.getCpuSockets());
         fillNetworkInformation(cmd);
@@ -3490,6 +3561,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
         cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
+        HealthCheckResult healthCheckResult = getHostHealthCheckResult();
+        if (healthCheckResult != HealthCheckResult.IGNORE) {
+            cmd.setHostHealthCheckResult(healthCheckResult == HealthCheckResult.SUCCESS);
+        }
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             _hostDistro = cmd.getHostDetails().get("Host.OS");
@@ -3530,7 +3605,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Unable to initialize local storage pool: " + e);
         }
+        setupLibvirtEventListener();
         return sscmd;
+    }
+
+    private void setupLibvirtEventListener() {
+        final Thread libvirtListenerThread = new Thread(() -> {
+            try {
+                Library.runEventLoop();
+            } catch (LibvirtException e) {
+                s_logger.error("LibvirtException was thrown in event loop: ", e);
+            } catch (InterruptedException e) {
+                s_logger.error("Libvirt event loop was interrupted: ", e);
+            }
+        });
+
+        try {
+            libvirtListenerThread.setDaemon(true);
+            libvirtListenerThread.start();
+
+            Connect conn = LibvirtConnection.getConnection();
+            conn.addLifecycleListener(this::onDomainLifecycleChange);
+
+            s_logger.debug("Set up the libvirt domain event lifecycle listener");
+        } catch (LibvirtException e) {
+            s_logger.error("Failed to get libvirt connection for domain event lifecycle", e);
+        }
+    }
+
+    private int onDomainLifecycleChange(Domain domain, DomainEvent domainEvent) {
+        try {
+            s_logger.debug(String.format("Got event lifecycle change on Domain %s, event %s", domain.getName(), domainEvent));
+            if (domainEvent != null) {
+                switch (domainEvent.getType()) {
+                    case STOPPED:
+                        /* libvirt-destroyed VMs have detail StoppedDetail.DESTROYED, self shutdown guests are StoppedDetail.SHUTDOWN
+                         * Checking for this helps us differentiate between events where cloudstack or admin stopped the VM vs guest
+                         * initiated, and avoid pushing extra updates for actions we are initiating without a need for extra tracking */
+                        DomainEventDetail detail = domainEvent.getDetail();
+                        if (StoppedDetail.SHUTDOWN.equals(detail) || StoppedDetail.CRASHED.equals(detail)) {
+                            s_logger.info("Triggering out of band status update due to completed self-shutdown or crash of VM");
+                            _agentStatusUpdater.triggerUpdate();
+                        } else {
+                            s_logger.debug("Event detail: " + detail);
+                        }
+                        break;
+                    default:
+                        s_logger.debug(String.format("No handling for event %s", domainEvent));
+                }
+            }
+        } catch (LibvirtException e) {
+            s_logger.error("Libvirt exception while processing lifecycle event", e);
+        } catch (Throwable e) {
+            s_logger.error("Error during lifecycle", e);
+        }
+        return 0;
     }
 
     public String diskUuidToSerial(String uuid) {

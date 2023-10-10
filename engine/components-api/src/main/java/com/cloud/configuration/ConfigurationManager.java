@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 
 import com.cloud.dc.ClusterVO;
@@ -58,6 +59,10 @@ public interface ConfigurationManager {
     public static final String MESSAGE_DELETE_POD_IP_RANGE_EVENT = "Message.DeletePodIpRange.Event";
     public static final String MESSAGE_CREATE_VLAN_IP_RANGE_EVENT = "Message.CreateVlanIpRange.Event";
     public static final String MESSAGE_DELETE_VLAN_IP_RANGE_EVENT = "Message.DeleteVlanIpRange.Event";
+
+    static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
+    static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
+            "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
 
     /**
      * @param offering

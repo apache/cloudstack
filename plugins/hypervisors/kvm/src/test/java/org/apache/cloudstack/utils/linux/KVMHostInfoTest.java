@@ -78,7 +78,33 @@ public class KVMHostInfoTest {
         PowerMockito.when(conn.close()).thenReturn(0);
         int manualSpeed = 500;
 
-        KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, manualSpeed);
+        KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, manualSpeed, 0);
         Assert.assertEquals(kvmHostInfo.getCpuSpeed(), manualSpeed);
+    }
+
+    @Test
+    public void reservedCpuCoresTest() throws Exception {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
+        PowerMockito.mockStatic(LibvirtConnection.class);
+        Connect conn = Mockito.mock(Connect.class);
+        NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
+        nodeInfo.cpus = 10;
+        String capabilitiesXml = "<capabilities></capabilities>";
+
+        PowerMockito.doReturn(conn).when(LibvirtConnection.class, "getConnection");
+        PowerMockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
+        PowerMockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
+        PowerMockito.when(conn.close()).thenReturn(0);
+
+        KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, 100, 2);
+        Assert.assertEquals("reserve two CPU cores", 8, kvmHostInfo.getAllocatableCpus());
+
+        kvmHostInfo = new KVMHostInfo(10, 10, 100, 0);
+        Assert.assertEquals("no reserve CPU core setting", 10, kvmHostInfo.getAllocatableCpus());
+
+        kvmHostInfo = new KVMHostInfo(10, 10, 100, 12);
+        Assert.assertEquals("Misconfigured/too large CPU reserve", 0, kvmHostInfo.getAllocatableCpus());
     }
 }

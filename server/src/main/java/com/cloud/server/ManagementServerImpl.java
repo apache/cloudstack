@@ -16,12 +16,7 @@
 // under the License.
 package com.cloud.server;
 
-import static com.cloud.configuration.ConfigurationManagerImpl.VM_USERDATA_MAX_LENGTH;
-import static com.cloud.vm.UserVmManager.MAX_USER_DATA_LENGTH_BYTES;
-
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -48,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -56,7 +52,6 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
@@ -610,6 +605,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
@@ -691,7 +687,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
@@ -821,10 +816,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
-
-    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final int NUM_OF_2K_BLOCKS = 512;
-    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
     private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
             HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
 
@@ -976,6 +967,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     protected VMTemplateDao templateDao;
     @Inject
     protected AnnotationDao annotationDao;
+    @Inject
+    UserDataManager userDataManager;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -993,7 +986,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     protected List<DeploymentPlanner> _planners;
 
-    private final List<HypervisorType> supportedHypervisors = new ArrayList<Hypervisor.HypervisorType>();
+    private final List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
 
     public List<DeploymentPlanner> getPlanners() {
         return _planners;
@@ -1266,7 +1259,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            String hypervisorStr = (String) hypervisorType;
+            String hypervisorSearch = HypervisorType.getType(hypervisorStr).toString();
+            sc.setParameters("hypervisorType", hypervisorSearch);
         }
 
         if (clusterType != null) {
@@ -4245,6 +4240,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
         capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
+        capabilities.put("customHypervisorDisplayName", HypervisorGuru.HypervisorCustomDisplayName.value());
         capabilities.put(ApiServiceConfiguration.DefaultUIPageSize.key(), ApiServiceConfiguration.DefaultUIPageSize.value());
         capabilities.put(ApiConstants.INSTANCES_STATS_RETENTION_TIME, StatsCollector.vmStatsMaxRetentionTime.value());
         capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
@@ -4376,7 +4372,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 final List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (final ClusterVO cluster : clustersForZone) {
-                    result.add(cluster.getHypervisorType().toString());
+                    result.add(cluster.getHypervisorType().getHypervisorDisplayName());
                 }
             }
 
@@ -4609,56 +4605,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         String userdata = cmd.getUserData();
         final String params = cmd.getParams();
 
-        userdata = validateUserData(userdata, cmd.getHttpMethod());
+        userdata = userDataManager.validateUserData(userdata, cmd.getHttpMethod());
 
         return createAndSaveUserData(name, userdata, params, owner);
-    }
-
-    private String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod) {
-        byte[] decodedUserData = null;
-        if (userData != null) {
-
-            if (userData.contains("%")) {
-                try {
-                    userData = URLDecoder.decode(userData, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
-                }
-            }
-
-            if (!Base64.isBase64(userData)) {
-                throw new InvalidParameterValueException("User data is not base64 encoded");
-            }
-            // If GET, use 4K. If POST, support up to 1M.
-            if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
-            } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
-                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
-            }
-
-            if (decodedUserData == null || decodedUserData.length < 1) {
-                throw new InvalidParameterValueException("User data is too short");
-            }
-            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
-            return Base64.encodeBase64String(decodedUserData);
-        }
-        return null;
-    }
-
-    private byte[] validateAndDecodeByHTTPmethod(String userData, int maxHTTPlength, BaseCmd.HTTPMethod httpMethod) {
-        byte[] decodedUserData = null;
-
-        if (userData.length() >= maxHTTPlength) {
-            throw new InvalidParameterValueException(String.format("User data is too long for an http %s request", httpMethod.toString()));
-        }
-        if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
-            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
-        }
-        decodedUserData = Base64.decodeBase64(userData.getBytes());
-        if (decodedUserData.length > maxHTTPlength) {
-            throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
-        }
-        return decodedUserData;
     }
 
     /**

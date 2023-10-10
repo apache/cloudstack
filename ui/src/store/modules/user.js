@@ -63,7 +63,8 @@ const user = {
     customColumns: {},
     twoFaEnabled: false,
     twoFaProvider: '',
-    twoFaIssuer: ''
+    twoFaIssuer: '',
+    customHypervisorName: 'Custom'
   },
 
   mutations: {
@@ -147,6 +148,9 @@ const user = {
     },
     SET_LOGIN_FLAG: (state, flag) => {
       state.loginFlag = flag
+    },
+    SET_CUSTOM_HYPERVISOR_NAME (state, name) {
+      state.customHypervisorName = name
     }
   },
 
@@ -278,6 +282,9 @@ const user = {
           if (result && result.defaultuipagesize) {
             commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
           }
+          if (result && result.customhypervisordisplayname) {
+            commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+          }
         }).catch(error => {
           reject(error)
         })
@@ -391,6 +398,15 @@ const user = {
         }).catch(error => {
           reject(error)
         })
+
+        api('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+          if (json.listconfigurationsresponse.configuration !== null) {
+            const config = json.listconfigurationsresponse.configuration[0]
+            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+          }
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
     UpdateConfiguration ({ commit }) {
@@ -411,6 +427,9 @@ const user = {
     },
     SetLoginFlag ({ commit }, loggedIn) {
       commit('SET_LOGIN_FLAG', loggedIn)
+    },
+    SetCustomHypervisorName ({ commit }, name) {
+      commit('SET_CUSTOM_HYPERVISOR_NAME', name)
     }
   }
 }

@@ -19,23 +19,13 @@
 
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.configuration.Config;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.VMInstanceDao;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -62,12 +52,23 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Optional;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.configuration.Config;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(RemoteHostEndPoint.class)

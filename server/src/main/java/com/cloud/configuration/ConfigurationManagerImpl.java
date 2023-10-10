@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -458,7 +459,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected Set<String> configValuesForValidation;
     private Set<String> weightBasedParametersForValidation;
     private Set<String> overprovisioningFactorsForValidation;
-    public static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
@@ -489,8 +489,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
       + "MB for vm service offering. If 0 - no limitation", true);
 
-    public static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<Integer>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
-            "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
             "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
@@ -774,6 +772,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
+        String previousValue = _configDao.getValue(name);
         if (!_configDao.update(name, category, value)) {
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
@@ -854,11 +853,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to clean up download URLs in template_store_ref or volume_store_ref due to exception ", e);
             }
+        } else if (HypervisorGuru.HypervisorCustomDisplayName.key().equals(name)) {
+            updateCustomDisplayNameOnHypervisorsList(previousValue, value);
         }
 
         txn.commit();
         messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
         return _configDao.getValue(name);
+    }
+
+    /**
+     * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
+     */
+    private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
+        String hypervisorListConfigName = Config.HypervisorList.key();
+        String hypervisors = _configDao.getValue(hypervisorListConfigName);
+        if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
+            hypervisors = hypervisors.replace(previousValue, newValue);
+            s_logger.info(String.format("Updating the hypervisor list configuration '%s' " +
+                    "to match the new custom hypervisor display name", hypervisorListConfigName));
+            _configDao.update(hypervisorListConfigName, hypervisors);
+        }
     }
 
     @Override
