@@ -34,14 +34,14 @@
                 </a-button>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px; min-height: 25px; margin-bottom: 3px"
+                  style="margin-left: 8px; min-height: 22px; margin-bottom: 3px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px; min-height: 25px; margin-bottom: 3px"
+                  style="margin-left: 8px; min-height: 22px; margin-bottom: 3px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
@@ -1962,25 +1962,10 @@ export default {
   vertical-align: text-bottom;
 }
 
-:deep(.ant-switch-handle) {
-  height: 14px;
-  left: 7px;
-  top: 5px;
-  width: 14px;
-}
-
 :deep(.ant-switch-inner) {
-  color: #fff;
   display: block;
   font-size: 14px;
-  margin: 0px 13px 0 25px;
-  transition: margin .2s;
-}
-
-:deep(element) {
-  min-width: 120px;
-  margin-left: 10px;
-  margin-top: -4px;
+  margin: 0px 14px 0px 28px;
 }
 
 :deep(.ant-alert-message) {
