@@ -2852,7 +2852,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeService.revokeAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
                 handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
             } catch (Throwable e) {
-                LOGGER.warn("During cleanup post-migration and exception occured: " + e, e);
+                LOGGER.warn("During cleanup post-migration and exception occured: " + e);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Exception during post-migration cleanup.", e);
+                }
             }
         }
     }
