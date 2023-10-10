@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.service;
+package org.apache.cloudstack.utils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+
+import static java.util.Objects.isNull;
 
 @Component
 public class NsxControllerUtils {
@@ -52,5 +54,25 @@ public class NsxControllerUtils {
         }
 
         return (NsxAnswer) answer;
+    }
+
+    public static String getTier1GatewayName(String zoneName, String accountName, String vpcName) {
+        return String.format("%s-%s-%s", zoneName, accountName, vpcName);
+    }
+
+    public static String getNsxSegmentId(String accountName, String vpcName, String tierNetworkName) {
+        String segmentName = accountName + "-";
+        if (isNull(vpcName)) {
+            return segmentName + tierNetworkName;
+        }
+        return segmentName + vpcName + "-" + tierNetworkName;
+    }
+
+    public static String getNsxDhcpRelayConfigId(String zoneName, String accountName, String vpcName, String networkName) {
+        String suffix = "-Relay";
+        if (isNull(vpcName)) {
+            return zoneName + "-" + accountName + "-" + networkName + suffix;
+        }
+        return String.format("%s-%s-%s-%s%s", zoneName, accountName, vpcName, networkName, suffix);
     }
 }

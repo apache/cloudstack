@@ -16,21 +16,8 @@
 // under the License.
 package org.apache.cloudstack.utils;
 
-import com.vmware.vapi.bindings.StubConfiguration;
-import com.vmware.vapi.cis.authn.SecurityContextFactory;
-import com.vmware.vapi.client.ApiClient;
-import com.vmware.vapi.client.ApiClients;
-import com.vmware.vapi.client.Configuration;
-import com.vmware.vapi.core.ExecutionContext.SecurityContext;
-import com.vmware.vapi.internal.protocol.RestProtocol;
-import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAppender;
-import com.vmware.vapi.protocol.HttpConfiguration;
-import org.apache.log4j.Logger;
-
 public class NsxApiClientUtils {
-    private static final Logger S_LOGGER = Logger.getLogger(NsxApiClientUtils.class);
-    public static ApiClient apiClient = null;
-    public static final int RESPONSE_TIMEOUT_SECONDS = 60;
+
 
     public enum PoolAllocation {
         ROUTING,
@@ -73,31 +60,5 @@ public class NsxApiClientUtils {
         TIER1_LB_SNAT,
         TIER1_DNS_FORWARDER_IP,
         TIER1_IPSEC_LOCAL_ENDPOINT
-    }
-    public static ApiClient createApiClient(String hostname, String port, String username, char[] password) {
-        String controllerUrl = String.format("https://%s:%s", hostname, port);
-        HttpConfiguration.SslConfiguration.Builder sslConfigBuilder = new HttpConfiguration.SslConfiguration.Builder();
-        sslConfigBuilder
-                .disableCertificateValidation()
-                .disableHostnameVerification();
-        HttpConfiguration.SslConfiguration sslConfig = sslConfigBuilder.getConfig();
-
-        HttpConfiguration httpConfig = new HttpConfiguration.Builder()
-                .setSoTimeout(RESPONSE_TIMEOUT_SECONDS * 1000)
-                .setSslConfiguration(sslConfig).getConfig();
-
-        StubConfiguration stubConfig = new StubConfiguration();
-        SecurityContext securityContext = SecurityContextFactory
-                .createUserPassSecurityContext(username, password);
-        stubConfig.setSecurityContext(securityContext);
-
-        Configuration.Builder configBuilder = new Configuration.Builder()
-                .register(Configuration.HTTP_CONFIG_CFG, httpConfig)
-                .register(Configuration.STUB_CONFIG_CFG, stubConfig)
-                .register(RestProtocol.REST_REQUEST_AUTHENTICATOR_CFG, new BasicAuthenticationAppender());
-        Configuration config = configBuilder.build();
-        apiClient = ApiClients.newRestClient(controllerUrl, config);
-
-        return apiClient;
     }
 }

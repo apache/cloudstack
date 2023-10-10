@@ -43,12 +43,17 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
+import java.util.Objects;
 
 public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder  {
     private static final Logger LOGGER = Logger.getLogger(NsxGuestNetworkGuru.class);
@@ -168,6 +173,47 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         }
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
         return implemented;
+    }
+
+    @Override
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+        NicProfile nicProfile = super.allocate(network, nic, vm);
+
+        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+            final DataCenter zone = _dcDao.findById(network.getDataCenterId());
+            long zoneId = network.getDataCenterId();
+            if (Objects.isNull(zone)) {
+                String msg = String.format("Unable to find zone with id: %s", zoneId);
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            Account account = accountDao.findById(network.getAccountId());
+            if (Objects.isNull(account)) {
+                String msg = String.format("Unable to find account with id: %s", network.getAccountId());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            VpcVO vpc = _vpcDao.findById(network.getVpcId());
+            if (Objects.isNull(vpc)) {
+                String msg = String.format("Unable to find VPC with id: %s", network.getVpcId());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+
+            // Create the DHCP relay config for the segment
+            String iPv4Address = nicProfile.getIPv4Address();
+            List<String> addresses = List.of(iPv4Address);
+            CreateNsxDhcpRelayConfigCommand command = new CreateNsxDhcpRelayConfigCommand(zone.getName(), zone.getId(),
+                    account.getAccountName(), network.getAccountId(),
+                    vpc.getName(), network.getName(), addresses);
+            NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
+            if (!answer.getResult()) {
+                String msg = String.format("Error creating DHCP relay config for network %s and nic %s: %s", network.getName(), nic.getName(), answer.getDetails());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+        return nicProfile;
     }
 
     @Override

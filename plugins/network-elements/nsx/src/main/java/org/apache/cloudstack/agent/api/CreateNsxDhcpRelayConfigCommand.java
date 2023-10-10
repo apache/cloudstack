@@ -14,19 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.service;
+package org.apache.cloudstack.agent.api;
 
-import com.vmware.vapi.client.ApiClient;
+import java.util.List;
 
-public class NsxApi {
+public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
 
-    ApiClient apiClient;
+    private String vpcName;
+    private String networkName;
+    private List<String> addresses;
 
-    public ApiClient getApiClient() {
-        return apiClient;
+    public CreateNsxDhcpRelayConfigCommand(String zoneName, Long zoneId, String accountName, Long accountId,
+                                           String vpcName, String networkName, List<String> addresses) {
+        super(zoneName, zoneId, accountName, accountId);
+        this.vpcName = vpcName;
+        this.networkName = networkName;
+        this.addresses = addresses;
     }
 
-    public void setApiClient(ApiClient apiClient) {
-        this.apiClient = apiClient;
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    public List<String> getAddresses() {
+        return addresses;
     }
 }
