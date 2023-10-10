@@ -417,9 +417,12 @@ public class NsxResource implements ServerResource {
             Thread.sleep(30*1000);
             String segmentName = getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName());
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            dhcpRelayConfig.delete(getDhcpRelayId(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName()));
+            String dhcpRelayId = getDhcpRelayId(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName());
+            LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayId));
+            dhcpRelayConfig.delete(dhcpRelayId);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName())));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

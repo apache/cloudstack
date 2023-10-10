@@ -59,6 +59,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -195,7 +196,13 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         Account account = accountMgr.getAccount(network.getAccountId());
         NetworkVO networkVO = networkDao.findById(network.getId());
-        return nsxService.deleteNetwork(account.getAccountName(), networkVO);
+        DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
+        if (Objects.isNull(zone)) {
+            String msg = String.format("Cannot fing zone with ID %s", network.getDataCenterId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return nsxService.deleteNetwork(zone.getName(), account.getAccountName(), networkVO);
     }
 
     @Override
