@@ -94,19 +94,13 @@ public class PrimeraHostset {
         this.uuid = uuid;
     }
 
-
-
     public Map<String, Object> getAdditionalProperties() {
         return additionalProperties;
     }
 
-
-
     public void setAdditionalProperties(Map<String, Object> additionalProperties) {
         this.additionalProperties = additionalProperties;
     }
-
-
 
     // adds members to a hostset
     public static class PrimeraHostsetVLUNRequest {
