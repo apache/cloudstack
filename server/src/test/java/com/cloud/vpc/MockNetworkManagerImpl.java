@@ -16,34 +16,6 @@
 // under the License.
 package com.cloud.vpc;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
-import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
-import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
-import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
-import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
-import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
-import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -94,6 +66,32 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
+import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrchestrationService, NetworkService {

@@ -14,28 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.dhcp;
+package com.cloud.resource;
 
-import java.net.InetAddress;
-import java.util.List;
-import java.util.Map;
-
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapter;
-
-public interface DhcpSnooper extends Adapter {
-
-    public InetAddress getIPAddr(String macAddr, String vmName);
-
-    public InetAddress getDhcpServerIP();
-
-    public void cleanup(String macAddr, String vmName);
-
-    public Map<String, InetAddress> syncIpAddr();
-
-    @Override
-    public boolean stop();
-
-    public void initializeMacTable(List<Pair<String, String>> macVmNameList);
-
+/**
+ * AgentStatusUpdater is an agent with triggerable update functionality
+ */
+public interface AgentStatusUpdater {
+    /**
+     * Trigger the sending of an update (Ping).
+     */
+    void triggerUpdate();
 }

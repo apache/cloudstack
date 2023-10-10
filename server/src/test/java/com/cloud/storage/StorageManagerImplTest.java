@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.host.Host;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,11 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.host.Host;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {

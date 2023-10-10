@@ -428,6 +428,19 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private void resizeResource(DevelopersApi api, String resourceName, long sizeByte) throws ApiException {
+        VolumeDefinitionModify dfm = new VolumeDefinitionModify();
+        dfm.setSizeKib(sizeByte / 1024);
+
+        ApiCallRcList answers = api.volumeDefinitionModify(resourceName, 0, dfm);
+        if (answers.hasError()) {
+            s_logger.error("Resize error: " + answers.get(0).getMessage());
+            throw new CloudRuntimeException(answers.get(0).getMessage());
+        } else {
+            s_logger.info(String.format("Successfully resized %s to %d kib", resourceName, dfm.getSizeKib()));
+        }
+    }
+
     private String cloneResource(long csCloneId, VolumeInfo volumeInfo, StoragePoolVO storagePoolVO) {
         // get the cached template on this storage
         VMTemplateStoragePoolVO tmplPoolRef = _vmTemplatePoolDao.findByPoolTemplate(
@@ -452,6 +465,11 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 }
 
                 s_logger.info("Clone resource definition " + cloneRes + " to " + rscName + " finished");
+
+                if (volumeInfo.getSize() != null && volumeInfo.getSize() > 0) {
+                    resizeResource(linstorApi, rscName, volumeInfo.getSize());
+                }
+
                 applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
                 applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
 
@@ -738,26 +756,16 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         dfm.setSizeKib(resizeParameter.newSize / 1024);
         try
         {
+            resizeResource(api, rscName, resizeParameter.newSize);
+
             applyQoSSettings(pool, api, rscName, resizeParameter.newMaxIops);
             {
                 final VolumeVO volume = _volumeDao.findById(vol.getId());
                 volume.setMinIops(resizeParameter.newMinIops);
                 volume.setMaxIops(resizeParameter.newMaxIops);
+                volume.setSize(resizeParameter.newSize);
                 _volumeDao.update(volume.getId(), volume);
             }
-
-            ApiCallRcList answers = api.volumeDefinitionModify(rscName, 0, dfm);
-            if (answers.hasError())
-            {
-                s_logger.error("Resize error: " + answers.get(0).getMessage());
-                errMsg = answers.get(0).getMessage();
-            } else
-            {
-                s_logger.info(String.format("Successfully resized %s to %d kib", rscName, dfm.getSizeKib()));
-                vol.setSize(resizeParameter.newSize);
-                vol.update();
-            }
-
         } catch (ApiException apiExc)
         {
             s_logger.error(apiExc);
@@ -765,12 +773,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
 
         CreateCmdResult result;
-        if (errMsg != null)
-        {
+        if (errMsg != null) {
             result = new CreateCmdResult(null, new Answer(null, false, errMsg));
             result.setResult(errMsg);
-        } else
-        {
+        } else {
             // notify guests
             result = notifyResize(vol, oldSize, resizeParameter);
         }
