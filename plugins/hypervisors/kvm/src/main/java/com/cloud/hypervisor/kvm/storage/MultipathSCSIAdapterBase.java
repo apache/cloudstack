@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-//import java.util.TimerTask;
 import java.util.UUID;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
