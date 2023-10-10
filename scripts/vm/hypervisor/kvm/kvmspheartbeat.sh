@@ -64,5 +64,3 @@ then
   echo b > /proc/sysrq-trigger
   exit $?
 fi
-
-
