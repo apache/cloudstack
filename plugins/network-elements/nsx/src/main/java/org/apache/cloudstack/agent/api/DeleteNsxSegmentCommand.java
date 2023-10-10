@@ -19,7 +19,7 @@ package org.apache.cloudstack.agent.api;
 import com.cloud.network.dao.NetworkVO;
 
 public class DeleteNsxSegmentCommand extends CreateNsxSegmentCommand {
-    public DeleteNsxSegmentCommand(String accountName, String vpcName, NetworkVO network) {
-        super(null, network.getDataCenterId(), accountName, network.getAccountId(), vpcName, network);
+    public DeleteNsxSegmentCommand(String zoneName, String accountName, String vpcName, NetworkVO network) {
+        super(zoneName, network.getDataCenterId(), accountName, network.getAccountId(), vpcName, network);
     }
 }
