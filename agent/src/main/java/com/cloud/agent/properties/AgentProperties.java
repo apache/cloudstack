@@ -540,9 +540,9 @@ public class AgentProperties{
      * Heartbeat update timeout (in ms).<br>
      * Depending on the use case, this timeout might need increasing/decreasing.<br>
      * Data type: Long.<br>
-     * Default value: <code>60000l</code>
+     * Default value: <code>60000L</code>
      */
-    public static final Property<Long> HEARTBEAT_UPDATE_TIMEOUT = new Property<>("heartbeat.update.timeout", 60000l);
+    public static final Property<Long> HEARTBEAT_UPDATE_TIMEOUT = new Property<>("heartbeat.update.timeout", 60000L);
 
     /**
      * The timeout (in seconds) to retrieve the target's domain ID when migrating a VM with KVM. <br>
@@ -746,7 +746,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>60000l</code>
      */
-    public static final Property<Long> KVM_HEARTBEAT_UPDATE_FREQUENCY = new Property<>("kvm.heartbeat.update.frequency", 60000l);
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_FREQUENCY = new Property<>("kvm.heartbeat.update.frequency", 60000L);
 
     /**
      * Number of maximum tries to KVM heartbeats. <br>
@@ -754,7 +754,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>5l</code>
      */
-    public static final Property<Long> KVM_HEARTBEAT_UPDATE_MAX_TRIES = new Property<>("kvm.heartbeat.update.max.tries", 5l);
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_MAX_TRIES = new Property<>("kvm.heartbeat.update.max.tries", 5L);
 
     /**
      * Time amount (in milliseconds) for the KVM heartbeat retry sleep. <br>
@@ -762,7 +762,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>10000l</code>
      */
-    public static final Property<Long> KVM_HEARTBEAT_UPDATE_RETRY_SLEEP = new Property<>("kvm.heartbeat.update.retry.sleep", 10000l);
+    public static final Property<Long> KVM_HEARTBEAT_UPDATE_RETRY_SLEEP = new Property<>("kvm.heartbeat.update.retry.sleep", 10000L);
 
     /**
      * Timeout (in milliseconds) of the KVM heartbeat checker. <br>
