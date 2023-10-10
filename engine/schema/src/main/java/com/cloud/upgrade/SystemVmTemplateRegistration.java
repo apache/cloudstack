@@ -509,13 +509,12 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    public void updateTemplateDetails(SystemVMTemplateDetails details, boolean updateTemplateDetails) {
+    public void updateTemplateDetails(SystemVMTemplateDetails details) {
         VMTemplateVO template = vmTemplateDao.findById(details.getId());
-        if (updateTemplateDetails) {
-            template.setSize(details.getSize());
-            template.setState(VirtualMachineTemplate.State.Active);
-            vmTemplateDao.update(template.getId(), template);
-        }
+        template.setSize(details.getSize());
+        template.setState(VirtualMachineTemplate.State.Active);
+        vmTemplateDao.update(template.getId(), template);
+
         TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(details.getStoreId(), template.getId());
         templateDataStoreVO.setSize(details.getSize());
         templateDataStoreVO.setPhysicalSize(details.getPhysicalSize());
@@ -613,7 +612,7 @@ public class SystemVmTemplateRegistration {
 
     private Long performTemplateRegistrationOperations(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
                                                        String url, String checksum, ImageFormat format, long guestOsId,
-                                                       Long storeId, Long templateId, String filePath, boolean updateTmpltDetails) {
+                                                       Long storeId, Long templateId, String filePath, TemplateDataStoreVO templateDataStoreVO) {
         Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
         String templateName = UUID.randomUUID().toString();
         Date created = new Date(DateUtil.currentGMTTime().getTime());
@@ -631,21 +630,24 @@ public class SystemVmTemplateRegistration {
         String destTempFolderName = String.valueOf(templateId);
         String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
         details.setInstallPath(PARTIAL_TEMPLATE_FOLDER + destTempFolderName + File.separator + templateName + "." + hypervisorImageFormat.get(hypervisor).getFileExtension());
-        createTemplateStoreRefEntry(details);
+        if (templateDataStoreVO == null) {
+            createTemplateStoreRefEntry(details);
+        }
         setupTemplate(templateName, hypervisorAndTemplateName, destTempFolder);
         readTemplateProperties(destTempFolder + "/template.properties", details);
         details.setUpdated(new Date(DateUtil.currentGMTTime().getTime()));
-        updateTemplateDetails(details, updateTmpltDetails);
+        updateTemplateDetails(details);
         return templateId;
     }
 
     public void registerTemplate(Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName,
-                                 Pair<String, Long> storeUrlAndId, VMTemplateVO templateVO, String filePath) {
+                                 Pair<String, Long> storeUrlAndId, VMTemplateVO templateVO,
+                                 TemplateDataStoreVO templateDataStoreVO, String filePath) {
         Long templateId = null;
         try {
             templateId = templateVO.getId();
             performTemplateRegistrationOperations(hypervisorAndTemplateName, templateVO.getUrl(), templateVO.getChecksum(),
-                    templateVO.getFormat(), templateVO.getGuestOSId(), storeUrlAndId.second(), templateId, filePath, false);
+                    templateVO.getFormat(), templateVO.getGuestOSId(), storeUrlAndId.second(), templateId, filePath, templateDataStoreVO);
         } catch (Exception e) {
             String errMsg = String.format("Failed to register template for hypervisor: %s", hypervisorAndTemplateName.first());
             LOGGER.error(errMsg, e);
@@ -662,7 +664,7 @@ public class SystemVmTemplateRegistration {
         try {
             Hypervisor.HypervisorType hypervisor = hypervisorAndTemplateName.first();
             templateId = performTemplateRegistrationOperations(hypervisorAndTemplateName, NewTemplateUrl.get(hypervisor), NewTemplateChecksum.get(hypervisor),
-                    hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), storeUrlAndId.second(), null, filePath, true);
+                    hypervisorImageFormat.get(hypervisor), hypervisorGuestOsMap.get(hypervisor), storeUrlAndId.second(), null, filePath, null);
             Map<String, String> configParams = new HashMap<>();
             configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
             configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
@@ -783,7 +785,7 @@ public class SystemVmTemplateRegistration {
                                         if (validateIfSeeded(storeUrlAndId.first(), installPath)) {
                                             continue;
                                         } else if (templateVO != null) {
-                                            registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, filePath);
+                                            registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, templateDataStoreVO, filePath);
                                             continue;
                                         }
                                     }

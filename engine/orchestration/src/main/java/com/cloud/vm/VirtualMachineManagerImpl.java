@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -4804,6 +4805,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
                     + " -> Running) from out-of-context transition. VM network environment may need to be reset");
 
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, vm.getDomainId(),
+                    EventTypes.EVENT_VM_START, "Out of band VM power on", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
             s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Running state according to power-on report from hypervisor");
             break;
 
@@ -4837,6 +4840,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Stopping:
         case Running:
         case Stopped:
+            ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,vm.getDomainId(),
+                    EventTypes.EVENT_VM_STOP, "Out of band VM power off", vm.getId(), ApiCommandResourceType.VirtualMachine.toString());
         case Migrating:
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(

@@ -1906,8 +1906,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                             throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
                         }
                     } else {
-                        // This might impact other managed storages, grant access for PowerFlex storage pool only
-                        if (pool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+                        // This might impact other managed storages, grant access for PowerFlex and Iscsi/Solidfire storage pool only
+                        if (pool.getPoolType() == Storage.StoragePoolType.PowerFlex || pool.getPoolType() == Storage.StoragePoolType.Iscsi) {
                             try {
                                 volService.grantAccess(volFactory.getVolume(vol.getId()), host, (DataStore)pool);
                             } catch (Exception e) {

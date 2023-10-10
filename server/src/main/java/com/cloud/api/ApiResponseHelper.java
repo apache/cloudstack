@@ -901,7 +901,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     Long networkId = vlan.getNetworkId();
                     if (networkId != null) {
                         Network network = _ntwkModel.getNetwork(networkId);
-                        if (network != null) {
+                        if (network != null && TrafficType.Guest.equals(network.getTrafficType())) {
                             Long accountId = network.getAccountId();
                             populateAccount(vlanResponse, accountId);
                             populateDomain(vlanResponse, ApiDBUtils.findAccountById(accountId).getDomainId());

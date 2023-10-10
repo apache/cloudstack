@@ -315,8 +315,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
-        if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
-            customparameterMap.put("rootdisksize", rootdisksize.toString());
+        if (rootdisksize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            customparameterMap.put(VmDetailConstants.ROOT_DISK_SIZE, rootdisksize.toString());
         }
 
         IoDriverPolicy ioPolicy = getIoDriverPolicy();

@@ -1789,11 +1789,17 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.defaultBootType)
-          this.defaultBootMode = this.template?.details?.UEFI
-          this.updateTemplateLinkedUserData(this.template.userdataid)
-          this.userdataDefaultOverridePolicy = this.template.userdatapolicy
+          this.updateTemplateLinkedUserData(template.userdataid)
+          this.userdataDefaultOverridePolicy = template.userdatapolicy
+          this.form.dynamicscalingenabled = template.isdynamicallyscalable
+          this.defaultBootType = template.details?.UEFI ? 'UEFI' : 'BIOS'
+          this.form.boottype = this.defaultBootType
+          this.fetchBootModes(this.form.boottype)
+          this.defaultBootMode = template.details?.UEFI || this.options.bootModes?.[0]?.id || undefined
+          this.form.bootmode = this.defaultBootMode
+          this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
+          this.form.iodriverpolicy = template.details?.['io.policy']
+          this.form.keyboard = template.details?.keyboard
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
