@@ -106,7 +106,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private String displayName;
 
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
-            since="4.18.0.0")
+            since="4.19.0.0")
     protected String password;
 
     //Owner information
