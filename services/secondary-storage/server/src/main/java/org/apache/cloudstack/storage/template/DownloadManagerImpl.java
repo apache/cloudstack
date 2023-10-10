@@ -401,7 +401,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return name;
         }
         String parentDir = items[items.length - 2];
-        if (name.startsWith(parentDir)) {
+        if (!parentDir.matches("\\d+") && name.startsWith(parentDir)) {
             return parentDir + File.separator + name;
         }
         return name;
