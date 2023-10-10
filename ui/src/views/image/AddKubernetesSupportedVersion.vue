@@ -154,7 +154,7 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         mincpunumber: 2,
-        minmemory: 2048
+        minmemory: 2048,
         directdownload: false
       })
       this.rules = reactive({
