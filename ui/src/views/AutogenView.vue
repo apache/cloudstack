@@ -893,6 +893,7 @@ export default {
 
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
+        delete params.isvnf
       }
 
       this.loading = true

@@ -35,6 +35,7 @@ export default {
         if (store.getters.metrics) {
           params = { details: 'servoff,tmpl,nics,stats' }
         }
+        params.isvnf = false
         return params
       },
       filters: () => {
