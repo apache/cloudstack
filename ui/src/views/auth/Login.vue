@@ -153,7 +153,9 @@
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
     <translation-menu/>
-    <br><br>
+    <div class="content" v-if="socialLogin">
+      <p class="or">or</p>
+    </div>
     <div class="center">
       <div class="social-auth" v-if="githubprovider">
         <a-button
@@ -162,12 +164,11 @@
           color="primary"
           :href="getGitHubUrl(from)"
           class="auth-btn github-auth"
-          style="height: 38px; width: 185px; padding: 0" >
+          style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
           <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
           <a-text>Sign in with Github</a-text>
         </a-button>
       </div>
-      <br>
       <div class="social-auth" v-if="googleprovider">
         <a-button
           @click="handleGoogleProviderAndDomain"
@@ -206,6 +207,7 @@ export default {
       email: '',
       secretcode: '',
       oauthexclude: '',
+      socialLogin: false,
       googleprovider: false,
       githubprovider: false,
       googleredirecturi: '',
@@ -287,6 +289,7 @@ export default {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
+            this.socialLogin = true
             if (item.provider === 'google') {
               this.googleprovider = item.enabled
               this.googleclientid = item.clientid
@@ -512,6 +515,21 @@ export default {
      justify-content: center;
      align-items: center;
      height: 100px;
+    }
+
+    .content {
+      margin: 10px auto;
+      width: 300px;
+    }
+
+    .or {
+      text-align: center;
+      font-size: 16px;
+      background:
+        linear-gradient(#CCC 0 0) left,
+        linear-gradient(#CCC 0 0) right;
+      background-size: 40% 1px;
+      background-repeat: no-repeat;
     }
 }
 </style>
