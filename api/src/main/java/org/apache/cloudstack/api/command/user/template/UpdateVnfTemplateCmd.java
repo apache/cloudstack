@@ -56,8 +56,13 @@ public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.CLEAN_UP_VNF_DETAILS,
             type = CommandType.BOOLEAN,
-            description = "optional boolean field, which indicates if VNF details should be cleaned up or not")
+            description = "optional boolean field, which indicates if VNF details will be cleaned up or not")
     private Boolean cleanupVnfDetails = null;
+
+    @Parameter(name = ApiConstants.CLEAN_UP_VNF_NICS,
+            type = CommandType.BOOLEAN,
+            description = "optional boolean field, which indicates if VNF nics will be cleaned up or not")
+    private Boolean cleanupVnfNics = null;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -74,5 +79,9 @@ public class UpdateVnfTemplateCmd extends UpdateTemplateCmd implements UserCmd {
 
     public boolean isCleanupVnfDetails(){
         return cleanupVnfDetails == null ? false : cleanupVnfDetails.booleanValue();
+    }
+
+    public boolean isCleanupVnfNics(){
+        return cleanupVnfNics == null ? false : cleanupVnfNics.booleanValue();
     }
 }

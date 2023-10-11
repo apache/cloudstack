@@ -704,6 +704,9 @@ export default {
 
       if (areNicsChanged) {
         let i = 0
+        if (this.vnfNics.length === 0) {
+          params.cleanupvnfnics = true
+        }
         for (var index = 0; index < this.vnfNics.length; index++) {
           var nic = this.vnfNics[index]
           params['vnfnics[' + i + '].deviceid'] = nic.deviceid

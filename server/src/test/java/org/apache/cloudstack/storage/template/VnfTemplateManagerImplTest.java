@@ -129,9 +129,11 @@ public class VnfTemplateManagerImplTest {
     public void testPersistVnfTemplateUpdateWithoutNics() {
         UpdateVnfTemplateCmd cmd = new UpdateVnfTemplateCmd();
         ReflectionTestUtils.setField(cmd,"vnfDetails", vnfDetails);
+        ReflectionTestUtils.setField(cmd,"cleanupVnfNics", true);
 
         vnfTemplateManagerImpl.updateVnfTemplate(templateId, cmd);
 
+        Mockito.verify(vnfTemplateNicDao, Mockito.times(1)).deleteByTemplateId(templateId);
         Mockito.verify(vnfTemplateNicDao, Mockito.times(0)).persist(any(VnfTemplateNicVO.class));
         Mockito.verify(vnfTemplateDetailsDao, Mockito.times(1)).removeDetails(templateId);
         Mockito.verify(vnfTemplateDetailsDao, Mockito.times(5)).addDetail(eq(templateId), anyString(), anyString(), eq(true));

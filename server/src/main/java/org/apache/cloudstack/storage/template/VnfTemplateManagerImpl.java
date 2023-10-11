@@ -119,12 +119,13 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
     }
 
     private void updateVnfTemplateNics(long templateId, UpdateVnfTemplateCmd cmd) {
-        List<VNF.VnfNic> nics = cmd.getVnfNics();
-        if (CollectionUtils.isEmpty(nics)) {
-            return;
+        boolean cleanupVnfNics = cmd.isCleanupVnfNics();
+        if (cleanupVnfNics) {
+            vnfTemplateNicDao.deleteByTemplateId(templateId);
+        } else if (CollectionUtils.isNotEmpty(cmd.getVnfNics())) {
+            vnfTemplateNicDao.deleteByTemplateId(templateId);
+            persistVnfTemplateNics(templateId, cmd.getVnfNics());
         }
-        vnfTemplateNicDao.deleteByTemplateId(templateId);
-        persistVnfTemplateNics(templateId, nics);
     }
 
     @Override

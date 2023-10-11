@@ -1047,6 +1047,7 @@ public class ApiConstants {
     public static final String VNF_NICS = "vnfnics";
     public static final String VNF_DETAILS = "vnfdetails";
     public static final String CLEAN_UP_VNF_DETAILS = "cleanupvnfdetails";
+    public static final String CLEAN_UP_VNF_NICS = "cleanupvnfnics";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
