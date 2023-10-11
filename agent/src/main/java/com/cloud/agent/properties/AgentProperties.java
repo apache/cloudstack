@@ -770,7 +770,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>360000l</code>
      */
-    public static final Property<Long> KVM_HEARTBEAT_CHECKER_TIMEOUT = new Property<>("kvm.heartbeat.checker.timeout", 360000l);
+    public static final Property<Long> KVM_HEARTBEAT_CHECKER_TIMEOUT = new Property<>("kvm.heartbeat.checker.timeout", 360000L);
 
     public static class Property <T>{
         private String name;
