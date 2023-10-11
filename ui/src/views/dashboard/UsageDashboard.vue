@@ -142,10 +142,8 @@ export default {
       (newValue, oldValue) => {
         if (newValue && newValue.id && (!oldValue || newValue.id !== oldValue.id)) {
           this.fetchData()
-        } else if (store.getters.userInfo.roletype !== 'Admin') {
-          if (!store.getters.logoutFlag) {
-            this.fetchData()
-          }
+        } else if (store.getters.userInfo.roletype !== 'Admin' && !store.getters.logoutFlag) {
+          this.fetchData()
         }
       }
     )
