@@ -346,6 +346,7 @@
                         :value="networkOfferingIds"
                         :loading="loading.networks"
                         :zoneId="zoneId"
+                        :vnf="true"
                         :preFillContent="dataPreFill"
                         @select-network-item="($event) => updateNetworks($event)"
                         @handle-search-filter="($event) => handleSearchFilter('networks', $event)"
