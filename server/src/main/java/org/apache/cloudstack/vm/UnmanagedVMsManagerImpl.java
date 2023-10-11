@@ -56,7 +56,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -1234,13 +1233,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private UnmanagedInstanceTO getSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
+    private UnmanagedInstanceTO cloneSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username, String password, String clusterName, String sourceHostName, String sourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
 
         Map<String, String> params = createParamsForTemplateFromVmwareVmMigration(vcenter, datacenterName,
                 username, password, clusterName, sourceHostName, sourceVM);
 
-        return vmwareGuru.getUnmanagedInstanceInformation(sourceHostName, sourceVM, true, params);
+        return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, true, params);
     }
 
     private UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, Account caller,
@@ -1282,16 +1281,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             password = existingDC.getPassword();
         }
 
-        UnmanagedInstanceTO sourceInstance = null;
+        UnmanagedInstanceTO clonedInstance = null;
         boolean isSourceVMRestoreNeeded = false;
         try {
-            sourceInstance = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
+            clonedInstance = cloneSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password,
                     clusterName, sourceHostName, sourceVM);
-            isSourceVMRestoreNeeded = sourceInstance.getCloneSourcePowerState() == UnmanagedInstanceTO.PowerState.PowerOn;
-            checkSourceInstanceMacAddresses(sourceInstance, nicNetworkMap, forced);
+            isSourceVMRestoreNeeded = clonedInstance.getCloneSourcePowerState() == UnmanagedInstanceTO.PowerState.PowerOn;
+            checkClonedInstanceMacAddresses(clonedInstance, nicNetworkMap, forced);
             UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
-                    sourceHostName, sourceInstance, destinationCluster);
-            sanitizeConvertedInstance(convertedInstance, sourceInstance);
+                    sourceHostName, clonedInstance, destinationCluster);
+            sanitizeConvertedInstance(convertedInstance, clonedInstance);
             String instanceName = getGeneratedInstanceName(owner);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
@@ -1311,18 +1310,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
-            if (isSourceVMRestoreNeeded) {
-                restoreSourceInstanceIfNeeded(vcenter, datacenterName, username, password, sourceHostName, sourceVM);
-            }
+            removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, isSourceVMRestoreNeeded);
         }
     }
 
-    private void checkSourceInstanceMacAddresses(UnmanagedInstanceTO sourceInstance, Map<String, Long> nicNetworkMap, boolean forced) {
-        List<UnmanagedInstanceTO.Nic> nics = sourceInstance.getNics();
+    private void checkClonedInstanceMacAddresses(UnmanagedInstanceTO clonedInstance, Map<String, Long> nicNetworkMap, boolean forced) {
+        List<UnmanagedInstanceTO.Nic> nics = clonedInstance.getNics();
         List<Long> networkIds = new ArrayList<>(nicNetworkMap.values());
         if (nics.size() != networkIds.size()) {
             String msg = String.format("Different number of nics found on instance %s: %s vs %s nics provided",
-                    sourceInstance.getName(), nics.size(), networkIds.size());
+                    clonedInstance.getName(), nics.size(), networkIds.size());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -1368,29 +1365,33 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void restoreSourceInstanceIfNeeded(String vcenter, String datacenterName,
-                                               String username, String password,
-                                               String sourceHostName, String sourceVM) {
+    private void removeClonedInstance(String vcenter, String datacenterName,
+                                      String username, String password,
+                                      String sourceHostName, String clonedInstanceName,
+                                      String sourceVM, boolean powerOnSourceVM) {
         HypervisorGuru vmwareGuru = hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware);
-        Map<String, String> params = createParamsForRemoveClonedInstance(vcenter, datacenterName, username, password, sourceVM);
-        boolean result = vmwareGuru.applyOperationToOutOfBandInstance(sourceHostName, sourceVM, OutOfBandManagement.PowerOperation.ON, params);
+        Map<String, String> params = createParamsForRemoveClonedInstance(vcenter, datacenterName, username, password, sourceVM, powerOnSourceVM);
+        boolean result = vmwareGuru.removeClonedHypervisorVMOutOfBand(sourceHostName, clonedInstanceName, powerOnSourceVM, params);
         if (!result) {
-            String msg = String.format("Could not properly restore the source instance %s from VMware datacenter %s:%s to Running state",
-                    sourceVM, vcenter, datacenterName);
+            String msg = String.format("Could not properly remove the cloned instance %s from VMware datacenter %s:%s",
+                    clonedInstanceName, vcenter, datacenterName);
             LOGGER.warn(msg);
             return;
         }
-        LOGGER.debug(String.format("Restored the source instance %s from VMWare datacenter %s:%s to Running state",
-                sourceVM, vcenter, datacenterName));
+        LOGGER.debug(String.format("Removed the cloned instance %s from VMWare datacenter %s:%s",
+                clonedInstanceName, vcenter, datacenterName));
     }
 
     private Map<String, String> createParamsForRemoveClonedInstance(String vcenter, String datacenterName, String username,
-                                                                    String password, String sourceVM) {
+                                                                    String password, String sourceVM, boolean powerOnSourceVM) {
         Map<String, String> params = new HashMap<>();
         params.put(VmDetailConstants.VMWARE_VCENTER_HOST, vcenter);
         params.put(VmDetailConstants.VMWARE_DATACENTER_NAME, datacenterName);
         params.put(VmDetailConstants.VMWARE_VCENTER_USERNAME, username);
         params.put(VmDetailConstants.VMWARE_VCENTER_PASSWORD, password);
+        if (powerOnSourceVM) {
+            params.put(VmDetailConstants.VMWARE_VM_NAME, sourceVM);
+        }
         return params;
     }
 

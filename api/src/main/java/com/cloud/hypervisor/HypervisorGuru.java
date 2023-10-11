@@ -33,7 +33,6 @@ import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public interface HypervisorGuru extends Adapter {
@@ -116,8 +115,8 @@ public interface HypervisorGuru extends Adapter {
      * @param params hypervisor specific additional parameters
      * @return a reference to the cloned VM
      */
-    UnmanagedInstanceTO getUnmanagedInstanceInformation(String hostIp, String vmName,
-                                                        boolean forced, Map<String, String> params);
+    UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+                                                   boolean forced, Map<String, String> params);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
@@ -127,7 +126,6 @@ public interface HypervisorGuru extends Adapter {
      * @param params hypervisor specific additional parameters
      * @return true if the operation succeeds, false if not
      */
-    boolean applyOperationToOutOfBandInstance(String hostIp, String vmName,
-                                              OutOfBandManagement.PowerOperation operation,
-                                              Map<String, String> params);
+    boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName,
+                                              boolean powerUpSourceVM, Map<String, String> params);
 }
