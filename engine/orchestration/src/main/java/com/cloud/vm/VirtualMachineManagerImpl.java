@@ -1443,6 +1443,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 if (canRetry) {
                     try {
+                        // Setting pod id to null will result in migration of Volumes across pods
+                        // We set it to null only if migration of volumes across cluster is enabled
+                        // Or volumes are still in allocated state for that VM (in case of failure during deployment)
+                        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || checkForNonAllocatedVolumes(vm.getId())) {
+                            vm.setPodIdToDeployIn(null);
+                        }
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
                     } catch (final NoTransitionException e) {
                         throw new ConcurrentOperationException(e.getMessage());
@@ -1458,6 +1464,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
         }
+    }
+
+    private boolean checkForNonAllocatedVolumes(long vmId) {
+        final List<VolumeVO> vols = _volsDao.findByInstance(vmId);
+        return CollectionUtils.isEmpty(vols) || vols.stream().allMatch(v -> Volume.State.Allocated.equals(v.getState()));
     }
 
     private void logBootModeParameters(Map<VirtualMachineProfile.Param, Object> params) {
