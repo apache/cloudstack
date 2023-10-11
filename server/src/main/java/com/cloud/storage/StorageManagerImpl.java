@@ -1317,26 +1317,39 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     //destroy snapshots in destroying state in snapshot_store_ref
                     List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
                     for (SnapshotDataStoreVO ssSnapshotVO : ssSnapshots) {
-                        SnapshotVO snapshot = _snapshotDao.findById(ssSnapshotVO.getSnapshotId());
-                        if (snapshot == null) {
-                            s_logger.warn(String.format("Did not find snapshot [%s] in destroying state; therefore, it cannot be destroyed.", ssSnapshotVO.getSnapshotId()));
-                            continue;
+                        String snapshotUuid = null;
+                        SnapshotVO snapshot = null;
+
+                        if (s_logger.isDebugEnabled()) {
+                            snapshot = _snapshotDao.findById(ssSnapshotVO.getSnapshotId());
+                            if (snapshot == null) {
+                                s_logger.warn(String.format("Did not find snapshot [%s] in destroying state; therefore, it cannot be destroyed.", ssSnapshotVO.getSnapshotId()));
+                                continue;
+                            }
+
+                            snapshotUuid = snapshot.getUuid();
                         }
 
-                        String snapshotUuid = snapshot.getUuid();
                         try {
-                            s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in any image data store.", snapshotUuid));
-                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in any image data store.", snapshotUuid));
+                            }
+
+                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image);
 
                             if (snapshotInfo != null) {
-                                s_logger.debug(String.format("Snapshot [%s] in destroying state found in image data store [%s]; therefore, it will be destroyed.", snapshotUuid, snapshotInfo.getDataStore().getUuid()));
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug(String.format("Snapshot [%s] in destroying state found in image data store [%s]; therefore, it will be destroyed.", snapshotUuid, snapshotInfo.getDataStore().getUuid()));
+                                }
                                 _snapshotService.deleteSnapshot(snapshotInfo);
-                            } else {
+                            } else if (s_logger.isDebugEnabled()) {
                                 s_logger.debug(String.format("Did not find snapshot [%s] in destroying state in any image data store.", snapshotUuid));
                             }
                         } catch (Exception e) {
-                            s_logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", snapshotUuid, e.getMessage()));
-                            s_logger.debug(String.format("Failed to delete snapshot [%s] from storage.", snapshotUuid), e);
+                            s_logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", ssSnapshotVO.getSnapshotId(), e.getMessage()));
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("Failed to delete snapshot [%s] from storage.", snapshotUuid), e);
+                            }
                         }
                     }
                     cleanupSecondaryStorage(recurring);
@@ -1373,7 +1386,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 s_logger.debug(String.format("Volume [%s] is already destroyed.", vol.getUuid()));
                             }
                         } catch (Exception e) {
-                            s_logger.error(String.format("Unable to destroy volume [%s] due to: [%s].", vol.getUuid(), e.getMessage()), e);
+                            s_logger.error(String.format("Unable to destroy volume [%s] due to: [%s].", vol.getUuid(), e.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy volume [%s].", vol.getUuid()), e);
                         }
                     }
 
