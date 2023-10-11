@@ -29,6 +29,7 @@ import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.ListOAuthProvidersCmd;
 import org.apache.cloudstack.oauth2.api.command.OauthLoginAPIAuthenticatorCmd;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
+import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.VerifyOAuthCodeAndGetUserCmd;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -88,6 +89,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(RegisterOAuthProviderCmd.class);
         cmdList.add(DeleteOAuthProviderCmd.class);
+        cmdList.add(UpdateOAuthProviderCmd.class);
 
         return cmdList;
     }
@@ -162,6 +164,37 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             providers = _oauthProviderDao.listAll();
         }
         return providers;
+    }
+
+    @Override
+    public OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd) {
+        Long id = cmd.getId();
+        String description = cmd.getDescription();
+        String clientId = cmd.getClientId();
+        String redirectUri = cmd.getRedirectUri();
+        String secretKey = cmd.getSecretKey();
+
+        OauthProviderVO providerVO = _oauthProviderDao.findById(id);
+        if (providerVO == null) {
+            throw new CloudRuntimeException("Provider with the given id is not there");
+        }
+
+        if (StringUtils.isNotEmpty(description)) {
+            providerVO.setDescription(description);
+        }
+        if (StringUtils.isNotEmpty(clientId)) {
+            providerVO.setClientId(clientId);
+        }
+        if (StringUtils.isNotEmpty(redirectUri)) {
+            providerVO.setRedirectUri(redirectUri);
+        }
+        if (StringUtils.isNotEmpty(secretKey)) {
+            providerVO.setSecretKey(secretKey);
+        }
+
+        _oauthProviderDao.update(id, providerVO);
+
+        return _oauthProviderDao.findById(id);
     }
 
     private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri) {

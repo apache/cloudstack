@@ -38,7 +38,7 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <template v-if="column.key === 'name'">
+      <template v-if="['name', 'provider'].includes(column.key) ">
         <span v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
@@ -50,7 +50,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
+            :enabled="quickViewEnabled() && actions.length > 0 && columns && ['name', 'provider'].includes(columns[0].dataIndex)"
             @exec-action="$parent.execAction"/>
           <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
             <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
@@ -202,12 +202,6 @@
     </template>
     <template v-if="column.key === 'osname'">
       <span v-if="$route.name === 'guestos'">
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      </span>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-if="column.key === 'provider'">
-      <span v-if="$route.name === 'oauthsetting'">
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else>{{ text }}</span>

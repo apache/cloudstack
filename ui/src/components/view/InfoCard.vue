@@ -54,6 +54,11 @@
                 </h4>
               </div>
             </slot>
+            <slot name="provider">
+              <h4 class="name">
+                {{ resource.provider }}
+              </h4>
+            </slot>
           </div>
           <slot name="actions">
             <div class="tags">

@@ -19,6 +19,7 @@ package org.apache.cloudstack.oauth2.api.command;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
+import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -27,22 +28,33 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteOauthProvider", description = "Deletes the registered OAuth provider", responseObject = SuccessResponse.class,
+@APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
-public class DeleteOAuthProviderCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteOAuthProviderCmd.class.getName());
+public final class UpdateOAuthProviderCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateOAuthProviderCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OauthProviderResponse.class, required = true, description = "id of the OAuth provider to be deleted")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OauthProviderResponse.class, required = true, description = "id of the OAuth provider to be updated")
     private Long id;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the OAuth Provider")
+    private String description;
+
+    @Parameter(name = ApiConstants.CLIENT_ID, type = CommandType.STRING, description = "Client ID pre-registered in the specific OAuth provider")
+    private String clientId;
+
+    @Parameter(name = ApiConstants.OAUTH_SECRET_KEY, type = CommandType.STRING, description = "Secret Key pre-registered in the specific OAuth provider")
+    private String secretKey;
+
+    @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider")
+    private String redirectUri;
 
     @Inject
     OAuth2AuthManager _oauthMgr;
@@ -54,6 +66,23 @@ public class DeleteOAuthProviderCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -76,12 +105,15 @@ public class DeleteOAuthProviderCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        boolean result = _oauthMgr.deleteOauthProvider(getId());
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
+        OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
+        if (result != null) {
+            OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+            r.setObjectName(ApiConstants.OAUTH_PROVIDER);
+            r.setResponseName(getCommandName());
+            this.setResponseObject(r);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete the OAuth provider");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update OAuth provider");
         }
     }
 }

@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
+import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
 import java.util.List;
@@ -55,4 +56,6 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     List<OauthProviderVO> listOauthProviders(String provider, String uuid);
 
     boolean deleteOauthProvider(Long id);
+
+    OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd);
 }

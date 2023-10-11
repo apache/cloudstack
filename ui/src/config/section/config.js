@@ -95,6 +95,14 @@ export default {
           }
         },
         {
+          api: 'updateOauthProvider',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['description', 'clientid', 'redirecturi', 'secretkey']
+        },
+        {
           api: 'deleteOauthProvider',
           icon: 'delete-outlined',
           label: 'label.action.delete.oauth.provider',
