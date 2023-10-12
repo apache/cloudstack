@@ -34,8 +34,8 @@ public class NsxHelper {
                 vpc.getName(), network.getName(), addresses);
     }
 
-    public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, VpcVO vpc, NetworkVO networkVO) {
+    public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO) {
         return new CreateNsxSegmentCommand(domain.getName(), account.getAccountName(), zone.getName(),
-                vpc.getName(), networkVO.getName(), networkVO.getGateway(), networkVO.getNetworkCidr());
+                vpcName, networkVO.getName(), networkVO.getGateway(), networkVO.getNetworkCidr());
     }
 }

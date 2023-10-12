@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
@@ -275,11 +276,14 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
-        VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
-        if (isNull(vpc)) {
-            throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
+        String vpcName = null;
+        if (nonNull(networkVO.getVpcId())) {
+            VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
+            if (isNull(vpc)) {
+                throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
+            }
+            vpcName = vpc.getName();
         }
-        String vpcName = vpc.getName();
         Account account = accountDao.findById(networkVO.getAccountId());
         if (isNull(account)) {
             throw new CloudRuntimeException(String.format("Unable to find account with id: %s", networkVO.getAccountId()));
@@ -290,7 +294,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpc, networkVO);
+        CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpcName, networkVO);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
         if (!answer.getResult()) {
             throw new CloudRuntimeException("can not create NSX network");
