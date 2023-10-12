@@ -197,6 +197,19 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return deleteStoragePool(pool.getUuid());
     }
 
+    private void makeResourceAvailable(DevelopersApi api, String rscName, boolean diskfull) throws ApiException
+    {
+        ResourceMakeAvailable rma = new ResourceMakeAvailable();
+        rma.diskful(diskfull);
+        ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
+        handleLinstorApiAnswers(answers,
+            String.format("Linstor: Unable to make resource %s available on node: %s", rscName, localNodeName));
+    }
+
+    /**
+     * createPhysicalDisk will check if the resource wasn't yet created and do so, also it will make sure
+     * it is accessible from this node (MakeAvailable).
+     */
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
                                               Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
@@ -214,7 +227,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 rgSpawn.setResourceDefinitionName(rscName);
                 rgSpawn.addVolumeSizesItem(size / 1024); // linstor uses KiB
 
-                s_logger.debug("Linstor: Spawn resource " + rscName);
+                s_logger.info("Linstor: Spawn resource " + rscName);
                 ApiCallRcList answers = api.resourceGroupSpawn(lpool.getResourceGroup(), rgSpawn);
                 handleLinstorApiAnswers(answers, "Linstor: Unable to spawn resource.");
             }
@@ -228,7 +241,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 null,
                 null);
 
-            // TODO make available on node
+            makeResourceAvailable(api, rscName, true);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
                 final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
@@ -418,7 +431,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final QemuImgFile srcFile = new QemuImgFile(sourcePath, sourceFormat);
 
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
-            name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.FAT, disk.getVirtualSize(), null);
+            name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
