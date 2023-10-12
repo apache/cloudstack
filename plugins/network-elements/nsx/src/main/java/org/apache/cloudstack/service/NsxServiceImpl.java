@@ -48,13 +48,13 @@ public class NsxServiceImpl implements NsxService {
         return result.getResult();
     }
 
-    public boolean deleteNetwork(String accountName, NetworkVO network) {
+    public boolean deleteNetwork(String zoneName, String accountName, NetworkVO network) {
         String vpcName = null;
         if (Objects.nonNull(network.getVpcId())) {
             VpcVO vpc = vpcDao.findById(network.getVpcId());
             vpcName = Objects.nonNull(vpc) ? vpc.getName() : null;
         }
-        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(accountName, vpcName, network);
+        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(zoneName, accountName, vpcName, network);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         return result.getResult();
     }

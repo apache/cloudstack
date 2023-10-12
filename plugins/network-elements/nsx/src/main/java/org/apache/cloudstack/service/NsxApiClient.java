@@ -268,9 +268,12 @@ public class NsxApiClient {
     public void deleteSegment(String zoneName, String accountName, String vpcName, String networkName, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            dhcpRelayConfig.delete(NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, accountName, vpcName, networkName));
+            String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, accountName, vpcName, networkName);
+            LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
+            dhcpRelayConfig.delete(dhcpRelayConfigId);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());
