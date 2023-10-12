@@ -92,7 +92,13 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createVolume',

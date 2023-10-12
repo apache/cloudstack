@@ -42,6 +42,7 @@
 "label.acquire.new.ip": "Acquire new IP",
 "label.acquire.new.secondary.ip": "Acquire new secondary IP",
 "label.acquiring.ip": "Acquiring IP",
+"label.associated.resource": "Associated resource",
 "label.action": "Action",
 "label.action.attach.disk": "Attach disk",
 "label.action.attach.iso": "Attach ISO",

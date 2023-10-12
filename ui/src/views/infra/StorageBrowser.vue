@@ -124,24 +124,27 @@
           <template v-if="column.key == 'lastupdated'">
             {{ $toLocaleDate(record.lastupdated) }}
           </template>
-          <template v-if="column.key == 'related'">
+          <template v-if="column.key == 'associatedResource'">
             <template v-if="record.snapshotid">
               <router-link :to="{ path: '/snapshot/' + record.snapshotid }" target='_blank' >
-                {{  $t('label.snapshot') }}
+                {{ $t('label.snapshot') }}
               </router-link>
             </template>
             <template v-if="record.volumeid">
               <router-link :to="{ path: '/volume/' + record.volumeid }" target='_blank' >
-                {{  $t('label.volume') }}
+                {{ $t('label.volume') }}
               </router-link>
             </template>
             <template v-else-if="record.templateid">
               <router-link v-if="record.format === 'ISO'" :to="{ path: '/iso/' + record.templateid }" target='_blank' >
-                {{  $t('label.iso') }}
+                {{ $t('label.iso') }}
               </router-link>
               <router-link v-else :to="{ path: '/template/' + record.templateid }" target='_blank'>
-                {{  $t('label.templatename') }}
+                {{ $t('label.templatename') }}
               </router-link>
+            </template>
+            <template v-else>
+              {{ $t('label.unknown') }}
             </template>
           </template>
           <template v-else-if="column.key === 'actions' && (record.templateid || record.snapshotid)">
@@ -197,8 +200,8 @@ export default {
         title: this.$t('label.last.updated')
       },
       {
-        key: 'related',
-        title: this.$t('label.related')
+        key: 'associatedResource',
+        title: this.$t('label.associated.resource')
       }
     ]
     if (this.resourceType === 'ImageStore') {

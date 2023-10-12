@@ -39,6 +39,16 @@ export default {
     name: 'volume',
     title: 'label.volumes',
     param: 'storageid'
+  },
+  {
+    name: 'template',
+    title: 'label.templates',
+    param: 'storageid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'storageid'
   }],
   resourceType: 'PrimaryStorage',
   filters: () => {

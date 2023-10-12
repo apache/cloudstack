@@ -788,6 +788,10 @@ export default {
         this.filters = this.filters()
       }
 
+      if (typeof this.searchFilters === 'function') {
+        this.searchFilters = this.searchFilters()
+      }
+
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
 
