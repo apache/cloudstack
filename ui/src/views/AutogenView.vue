@@ -1104,7 +1104,7 @@ export default {
       this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         const query = {}
-        if (this.$route.path.startsWith('/vm')) {
+        if (this.$route.path.startsWith('/vm') || this.$route.path.startsWith('/vnfapp')) {
           switch (true) {
             case ('templateid' in this.$route.query):
               query.templateid = this.$route.query.templateid

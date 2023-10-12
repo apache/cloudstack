@@ -320,6 +320,7 @@ export default {
       name: 'vnftemplate',
       title: 'label.vnf.templates',
       icon: 'gateway-outlined',
+      docHelp: 'adminguide/networking/vnf_templates_appliances.html',
       permission: ['listVnfTemplates'],
       params: { templatefilter: 'self', showunique: 'true' },
       filters: ['self', 'shared', 'featured', 'community'],
@@ -504,7 +505,7 @@ export default {
           api: 'deployVnfAppliance',
           icon: 'plus-outlined',
           label: 'label.vnf.appliance.add',
-          docHelp: 'adminguide/virtual_machines.html#creating-vms',
+          docHelp: 'adminguide/networking/vnf_templates_appliances.html#deploying-vnf-appliances',
           listView: true,
           component: () => import('@/views/compute/DeployVnfAppliance.vue')
         },
