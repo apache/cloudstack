@@ -284,7 +284,7 @@
                 </template>
               </a-step>
               <a-step
-                v-else-if="template.templatetype !== 'VNF'"
+                v-else-if="vm.templateid && template.templatetype !== 'VNF'"
                 :title="tabKey === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
