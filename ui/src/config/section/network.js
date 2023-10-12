@@ -74,6 +74,10 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
         show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis && isAdmin() }
       }, {
+        name: 'vnf.appliances',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/VnfAppliancesTab.vue'))),
+        show: () => { return 'deployVnfAppliance' in store.getters.apis }
+      }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
