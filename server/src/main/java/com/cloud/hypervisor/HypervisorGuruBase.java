@@ -23,6 +23,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.Account;
@@ -85,6 +89,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected VpcDao vpcDao;
     @Inject
     protected AccountManager accountManager;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private DataCenterDao dcDao;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
@@ -160,11 +168,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
         Account account = accountManager.getAccount(network.getAccountId());
+        Domain domain = domainDao.findById(network.getDomainId());
+        DataCenter zone = dcDao.findById(network.getDataCenterId());
         VpcVO vpc = null;
         if (Objects.nonNull(network) && Objects.nonNull(network.getVpcId())) {
             vpc = vpcDao.findById(network.getVpcId());
         }
-        to.setNetworkSegmentName(getNetworkName(account.getAccountName(), vpc, network.getName()));
+        to.setNetworkSegmentName(getNetworkName(zone.getName(), domain.getName(), account.getAccountName(), vpc, network.getName()));
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
         NicVO nicVO = nicDao.findById(profile.getId());
@@ -193,11 +203,12 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
-    private String getNetworkName(String accountName, VpcVO vpc, String networkName) {
+    private String getNetworkName(String zoneName, String domainName, String accountName, VpcVO vpc, String networkName) {
+        String prefix = String.format("%s-%s-%s", domainName, accountName, zoneName);
         if (Objects.isNull(vpc)) {
-            return accountName + "-" + networkName;
+            return prefix + "-" + networkName;
         }
-        return accountName + "-" + vpc.getName() + "-" + networkName;
+        return prefix + "-" + vpc.getName() + "-" + networkName;
     }
 
 
