@@ -285,7 +285,8 @@ export default {
       uploadDirectory: this.$route.query.browserPath || '',
       uploadMetaData: {},
       record: {},
-      showObjectDetails: false
+      showObjectDetails: false,
+      fetching: false
     }
   },
   created () {
@@ -358,7 +359,18 @@ export default {
       return null
     },
     listObjects () {
-      const that = this
+      if (this.objectStore.providername === 'Simulator') {
+        this.loading = false
+        this.fetching = false
+        return
+      }
+      while (this.fetching) {
+        // sleep for 500ms
+        setTimeout(() => {
+          console.log('waiting for previous request to complete')
+        }, 500)
+      }
+      this.fetching = true
       this.records = []
       var stream = this.client.extensions.listObjectsV2WithMetadata(this.resource.name, this.browserPath + this.searchPrefix, false, this.pageStartAfterMap[this.page])
       stream.on('data', obj => {
@@ -369,7 +381,7 @@ export default {
       })
       stream.on('end', obj => {
         var total = 0
-        if (that.records.length > 0) {
+        if (this.records.length > 0) {
           if (this.records.length >= 1000) {
             total = (this.page + 1) * 1000
             if (total > this.total) {
@@ -384,17 +396,21 @@ export default {
           this.total = total
         }
         this.loading = false
+        this.fetching = false
       })
       stream.on('error', err => {
         console.log(err)
         this.loading = false
+        this.fetching = false
       })
     },
     removeObjects () {
+      this.loading = true
       this.page = 1
       this.pageStartAfterMap = { 1: '' }
       const objectsToDelete = this.selectedRows.filter((row) => row.name).map((row) => row.name)
       const directoriesToDelete = this.selectedRows.filter((row) => row.prefix).map((row) => row.prefix)
+      this.selectedRows = []
       this.removeDirectories(directoriesToDelete)
       if (objectsToDelete.length > 0) {
         this.client.removeObjects(this.resource.name, objectsToDelete, err => {
@@ -406,7 +422,7 @@ export default {
           }
           this.$notification.success({
             message: this.$t('label.delete'),
-            description: this.$t('message.success.remove.objectstore.objects') + objectsToDelete.join(', ')
+            description: this.$t('message.success.remove.objectstore.objects') + '\n' + objectsToDelete.join('\n ')
           })
           this.listObjects()
         })
@@ -466,6 +482,9 @@ export default {
       return false
     },
     uploadFiles () {
+      if (this.objectStore?.providername === 'Simulator') {
+        this.uploadFileList = []
+      }
       while (this.uploadFileList.length > 0) {
         const file = this.uploadFileList.pop()
         if (!this.uploadDirectory.endsWith('/')) {
@@ -482,7 +501,7 @@ export default {
             }
             this.$notification.success({
               message: this.$t('message.success.upload'),
-              description: objectName
+              description: objectName.split('/').pop()
             })
             this.listObjects()
           })
