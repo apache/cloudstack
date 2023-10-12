@@ -40,6 +40,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -801,46 +802,56 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected boolean handleDisconnectWithoutInvestigation(final AgentAttache attache, final Status.Event event, final boolean transitState, final boolean removeAgent) {
         final long hostId = attache.getId();
 
-        s_logger.info("Host " + hostId + " is disconnecting with event " + event);
-        Status nextStatus = null;
-        final HostVO host = _hostDao.findById(hostId);
-        if (host == null) {
-            s_logger.warn("Can't find host with " + hostId);
-            nextStatus = Status.Removed;
-        } else {
-            final Status currentStatus = host.getStatus();
-            if (currentStatus == Status.Down || currentStatus == Status.Alert || currentStatus == Status.Removed) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host " + hostId + " is already " + currentStatus);
-                }
-                nextStatus = currentStatus;
-            } else {
-                try {
-                    nextStatus = currentStatus.getNextStatus(event);
-                } catch (final NoTransitionException e) {
-                    final String err = "Cannot find next status for " + event + " as current status is " + currentStatus + " for agent " + hostId;
-                    s_logger.debug(err);
-                    throw new CloudRuntimeException(err);
+        boolean result = false;
+        GlobalLock joinLock = getHostJoinLock(hostId);
+        if (joinLock.lock(60)) {
+            try {
+                s_logger.info("Host " + hostId + " is disconnecting with event " + event);
+                Status nextStatus = null;
+                final HostVO host = _hostDao.findById(hostId);
+                if (host == null) {
+                    s_logger.warn("Can't find host with " + hostId);
+                    nextStatus = Status.Removed;
+                } else {
+                    final Status currentStatus = host.getStatus();
+                    if (currentStatus == Status.Down || currentStatus == Status.Alert || currentStatus == Status.Removed) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Host " + hostId + " is already " + currentStatus);
+                        }
+                        nextStatus = currentStatus;
+                    } else {
+                        try {
+                            nextStatus = currentStatus.getNextStatus(event);
+                        } catch (final NoTransitionException e) {
+                            final String err = "Cannot find next status for " + event + " as current status is " + currentStatus + " for agent " + hostId;
+                            s_logger.debug(err);
+                            throw new CloudRuntimeException(err);
+                        }
+
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                        }
+                    }
+                    caService.purgeHostCertificate(host);
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                    s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
                 }
+
+                removeAgent(attache, nextStatus);
+
+                // update the DB
+                if (host != null && transitState) {
+                    disconnectAgent(host, event, _nodeId);
+                }
+            } finally {
+                joinLock.unlock();
             }
-            caService.purgeHostCertificate(host);
+            result = true;
         }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
-        }
-
-        removeAgent(attache, nextStatus);
-        // update the DB
-        if (host != null && transitState) {
-            disconnectAgent(host, event, _nodeId);
-        }
-
-        return true;
+        joinLock.releaseRef();
+        return result;
     }
 
     protected boolean handleDisconnectWithInvestigation(final AgentAttache attache, Status.Event event) {
@@ -1120,18 +1131,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             final HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
             if (host != null) {
-                ready = new ReadyCommand(host.getDataCenterId(), host.getId(), NumbersUtil.enableHumanReadableSizes);
+                GlobalLock joinLock = getHostJoinLock(host.getId());
+                if (joinLock.lock(60)) {
+                    try {
+                        ready = new ReadyCommand(host.getDataCenterId(), host.getId(), NumbersUtil.enableHumanReadableSizes);
 
-                if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
-                    final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
-                    ready.setMsHostList(newMSList);
-                    ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
-                    ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
-                    s_logger.debug("Agent's management server host list is not up to date, sending list update:" + newMSList);
+                        if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
+                            final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
+                            ready.setMsHostList(newMSList);
+                            ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
+                            ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
+                            s_logger.debug("Agent's management server host list is not up to date, sending list update:" + newMSList);
+                        }
+
+                        attache = createAttacheForConnect(host, link);
+                        attache = notifyMonitorsOfConnection(attache, startup, false);
+                    } finally {
+                        joinLock.unlock();
+                    }
                 }
-
-                attache = createAttacheForConnect(host, link);
-                attache = notifyMonitorsOfConnection(attache, startup, false);
+                joinLock.releaseRef();
             }
         } catch (final Exception e) {
             s_logger.debug("Failed to handle host connection: ", e);
@@ -1324,7 +1343,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             if (cmd instanceof PingRoutingCommand) {
                                 final boolean gatewayAccessible = ((PingRoutingCommand)cmd).isGatewayAccessible();
                                 final HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
-
                                 if (host != null) {
                                     if (!gatewayAccessible) {
                                         // alert that host lost connection to
@@ -1863,5 +1881,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
         }
+    }
+
+    private GlobalLock getHostJoinLock(Long hostId) {
+        return GlobalLock.getInternLock(String.format("%s-%s", "Host-Join", hostId));
     }
 }
