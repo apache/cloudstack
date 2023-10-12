@@ -27,6 +27,8 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -97,6 +99,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     PhysicalNetworkDao physicalNetworkDao;
     @Inject
     NetworkModel networkModel;
+    @Inject
+    private DomainDao domainDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -197,12 +201,13 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         Account account = accountMgr.getAccount(network.getAccountId());
         NetworkVO networkVO = networkDao.findById(network.getId());
         DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
+        DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(zone)) {
             String msg = String.format("Cannot fing zone with ID %s", network.getDataCenterId());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        return nsxService.deleteNetwork(zone.getName(), account.getAccountName(), networkVO);
+        return nsxService.deleteNetwork(zone.getName(), account.getAccountName(), domain.getName(), networkVO);
     }
 
     @Override
@@ -261,6 +266,16 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         return null;
     }
 
+    private DomainVO getDomainFromAccount(Account account) {
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(domain)) {
+            String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return domain;
+    }
+
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
@@ -272,7 +287,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
-        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DomainVO domain = getDomainFromAccount(account);
+        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
     }
 
     @Override
@@ -286,8 +302,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
-
-        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DomainVO domain = getDomainFromAccount(account);
+        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
     }
 
     private Pair<Boolean, Account> validateVpcConfigurationAndGetAccount(DataCenterVO zone, Vpc vpc) {

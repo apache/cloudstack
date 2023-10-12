@@ -275,8 +275,9 @@ public class NsxResource implements ServerResource {
         try {
             SiteListResult sites = nsxApiClient.getSites();
             String errorMsg;
+            String networkName = cmd.getNetworkName();
             if (CollectionUtils.isEmpty(sites.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no sites are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                errorMsg = String.format("Failed to create network: %s as no sites are found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
@@ -284,7 +285,7 @@ public class NsxResource implements ServerResource {
 
             EnforcementPointListResult epList = nsxApiClient.getEnforcementPoints(siteId);
             if (CollectionUtils.isEmpty(epList.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no enforcement points are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                errorMsg = String.format("Failed to create network: %s as no enforcement points are found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
@@ -292,24 +293,24 @@ public class NsxResource implements ServerResource {
 
             TransportZoneListResult transportZoneListResult = nsxApiClient.getTransportZones();
             if (CollectionUtils.isEmpty(transportZoneListResult.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+                errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
             List<TransportZone> transportZones = transportZoneListResult.getResults().stream().filter(tz -> tz.getDisplayName().equals(transportZone)).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(transportZones)) {
-                errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", cmd.getTierNetwork().getName(), transportZone);
+                errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", networkName, transportZone);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
 
-            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName());
-            String gatewayAddress = cmd.getTierNetwork().getGateway() + "/" + cmd.getTierNetwork().getCidr().split("/")[1];
+            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), networkName);
+            String gatewayAddress = cmd.getNetworkGateway() + "/" + cmd.getNetworkCidr().split("/")[1];
 
             nsxApiClient.createSegment(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(),
                     segmentName, gatewayAddress, tier0Gateway, enforcementPointPath, transportZones);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create network: %s", cmd.getTierNetwork().getName()));
+            LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
@@ -318,10 +319,10 @@ public class NsxResource implements ServerResource {
     private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
         try {
             Thread.sleep(30*1000);
-            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName());
-            nsxApiClient.deleteSegment(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName(), segmentName);
+            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), cmd.getNetworkName());
+            nsxApiClient.deleteSegment(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getNetworkName(), segmentName);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to delete NSX segment: %s", NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName())));
+            LOGGER.error(String.format("Failed to delete NSX segment: %s", NsxControllerUtils.getNsxSegmentId(cmd.getAccountName(), cmd.getVpcName(), cmd.getNetworkName())));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

@@ -22,48 +22,27 @@ import java.util.Objects;
 
 public class NsxCommand extends Command {
     private String zoneName;
-    private Long zoneId;
     private String accountName;
-    private Long accountId;
+    private String domainName;
 
-    public NsxCommand(String zoneName, Long zoneId, String accountName, Long accountId) {
+    public NsxCommand(String domainName, String accountName, String zoneName) {
         this.zoneName = zoneName;
-        this.zoneId = zoneId;
         this.accountName = accountName;
-        this.accountId = accountId;
+        this.domainName = domainName;
     }
 
     public String getZoneName() {
         return zoneName;
     }
 
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
-    }
-
     public String getAccountName() {
         return accountName;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
+    public String getDomainName() {
+        return domainName;
     }
 
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
     @Override
     public boolean executeInSequence() {
         return false;
@@ -75,11 +54,11 @@ public class NsxCommand extends Command {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         NsxCommand that = (NsxCommand) o;
-        return Objects.equals(zoneName, that.zoneName) && Objects.equals(zoneId, that.zoneId) && Objects.equals(accountName, that.accountName) && Objects.equals(accountId, that.accountId);
+        return Objects.equals(zoneName, that.zoneName) && Objects.equals(accountName, that.accountName) && Objects.equals(domainName, that.domainName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), zoneName, zoneId, accountName, accountId);
+        return Objects.hash(super.hashCode(), zoneName, accountName, domainName);
     }
 }
