@@ -769,6 +769,18 @@
                         :filterOption="filterOption"
                       ></a-select>
                     </a-form-item>
+                    <a-form-item name="vnfconfiguremanagement" ref="vnfconfiguremanagement">
+                      <template #label>
+                        <tooltip-label :title="$t('label.vnf.configure.management')" :tooltip="$t('label.vnf.configure.management.tooltip')"/>
+                      </template>
+                      <a-switch v-model:checked="form.vnfconfiguremanagement" />
+                    </a-form-item>
+                    <a-form-item name="vnfcidrlist" ref="vnfcidrlist" v-if="form.vnfconfiguremanagement === true">
+                      <template #label>
+                        <tooltip-label :title="$t('label.vnf.cidr.list')" :tooltip="$t('label.vnf.cidr.list.tooltip')"/>
+                      </template>
+                      <a-input v-model:value="form.vnfcidrlist" />
+                    </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
@@ -1516,6 +1528,7 @@ export default {
 
       if (this.zoneSelected) {
         this.form.startvm = true
+        this.form.vnfconfiguremanagement = true
       }
 
       if (this.zone && this.zone.networktype !== 'Basic') {
@@ -2084,6 +2097,8 @@ export default {
         }
 
         createVnfAppData.startvm = values.startvm
+        createVnfAppData.vnfconfiguremanagement = values.vnfconfiguremanagement
+        createVnfAppData.vnfcidrlist = values.vnfcidrlist
 
         // step 3: select service offering
         createVnfAppData.serviceofferingid = values.computeofferingid
@@ -2496,6 +2511,8 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
       this.form.startvm = true
+      this.form.vnfconfiguremanagement = true
+      this.form.vnfcidrlist = ''
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
       this.form.clusterid = undefined

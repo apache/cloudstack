@@ -16,9 +16,17 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.security.SecurityGroup;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import java.util.List;
 
@@ -35,4 +43,10 @@ public interface VnfTemplateManager {
     void updateVnfTemplate(long templateId, UpdateVnfTemplateCmd cmd);
 
     void validateVnfApplianceNics(VirtualMachineTemplate template, List<Long> networkIds);
+
+    SecurityGroup createSecurityGroupForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner, DeployVnfApplianceCmd cmd);
+
+    void createIsolatedNetworkRulesForVnfAppliance(DataCenter zone, VirtualMachineTemplate template, Account owner,
+                                                   UserVm vm, DeployVnfApplianceCmd cmd)
+            throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException;
 }

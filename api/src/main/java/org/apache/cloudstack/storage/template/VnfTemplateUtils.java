@@ -20,10 +20,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.VNF;
 import com.cloud.storage.Storage;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +111,7 @@ public class VnfTemplateUtils {
                 throw new InvalidParameterValueException(String.format("deviceid must be consecutive and start from 0. Nic deviceid should be %s but actual is %s.", deviceId, nic.getDeviceId()));
             }
             if (!required && nic.isRequired()) {
-                throw new InvalidParameterValueException(String.format("required cannot be true if a precedent nic is optional. Nic with deviceid %s should be required but actual is optional.", deviceId));
+                throw new InvalidParameterValueException(String.format("required cannot be true if a preceding nic is optional. Nic with deviceid %s should be required but actual is optional.", deviceId));
             }
             deviceId ++;
             required = nic.isRequired();
@@ -130,6 +132,17 @@ public class VnfTemplateUtils {
             if (!Storage.TemplateType.VNF.equals(template.getTemplateType())) {
                 DeleteVnfTemplateCmd deleteCmd = (DeleteVnfTemplateCmd) cmd;
                 throw new InvalidParameterValueException(String.format("Cannot delete as Template %s is not a VNF template. The template type is %s.", deleteCmd.getId(), template.getTemplateType()));
+            }
+        }
+    }
+
+    public static void validateVnfCidrList(List<String> cidrList) {
+        if (CollectionUtils.isEmpty(cidrList)) {
+            return;
+        }
+        for (String cidr : cidrList) {
+            if (!NetUtils.isValidIp4Cidr(cidr)) {
+                throw new InvalidParameterValueException(String.format("Invalid cidr for VNF appliance: %s", cidr));
             }
         }
     }

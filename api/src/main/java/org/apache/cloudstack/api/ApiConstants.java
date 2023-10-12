@@ -1048,6 +1048,8 @@ public class ApiConstants {
     public static final String VNF_DETAILS = "vnfdetails";
     public static final String CLEAN_UP_VNF_DETAILS = "cleanupvnfdetails";
     public static final String CLEAN_UP_VNF_NICS = "cleanupvnfnics";
+    public static final String VNF_CONFIGURE_MANAGEMENT = "vnfconfiguremanagement";
+    public static final String VNF_CIDR_LIST = "vnfcidrlist";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
