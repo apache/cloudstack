@@ -1190,13 +1190,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             GlobalLock lock = GlobalLock.getInternLock("ResourceCheckTask");
             try {
                 if (lock.lock(30)) {
-                    ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
-                    if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
-                        s_logger.debug("Skipping the resource counters recalculation task on this management server");
-                        lock.unlock();
-                        return;
-                    }
                     try {
+                        ManagementServerHostVO msHost = managementServerHostDao.findOneByLongestRuntime();
+                        if (msHost == null || (msHost.getMsid() != ManagementServerNode.getManagementServerId())) {
+                            s_logger.trace("Skipping the resource counters recalculation task on this management server");
+                            return;
+                        }
                         runResourceCheckTaskInternal();
                     } finally {
                         lock.unlock();
