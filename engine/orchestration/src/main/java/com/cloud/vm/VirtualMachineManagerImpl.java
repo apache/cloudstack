@@ -48,6 +48,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.dao.AccountDao;
@@ -392,6 +394,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AccountDao accountDao;
     @Inject
     private VpcDao vpcDao;
+    @Inject
+    private DomainDao domainDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1478,7 +1482,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
                     NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
                     Account acc = accountDao.findById(networkVO.getAccountId());
-                    String networkName = acc.getAccountName() + "-" ;
+                    Domain domain = domainDao.findById(networkVO.getDomainId());
+                    DataCenter zone = _dcDao.findById(vm.getDataCenterId());
+                    String networkName = domain.getName() + "-" + acc.getAccountName() + "-" + zone.getName() + "-";
                     if (Objects.isNull(networkVO.getVpcId())) {
                         networkName += networkVO.getName();
                     } else {
