@@ -1443,10 +1443,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 if (canRetry) {
                     try {
-                        // Setting pod id to null will result in migration of Volumes across pods
-                        // We set it to null only if migration of volumes across cluster is enabled
-                        // Or volumes are still in allocated state for that VM (in case of failure during deployment)
-                        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || checkForNonAllocatedVolumes(vm.getId())) {
+                        // Setting pod id to null can result in migration of Volumes across pods. This is not desirable for VMs which
+                        // have a volume in Ready state (happens when a VM is shutdown and started again).
+                        //
+                        // So, we set it to null only when
+                        //   migration of volumes across cluster is enabled
+                        //   Or, volumes are still in allocated state for that VM (happens when VM is Starting/deployed for the first time)
+                        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || checkThatAllVolumesAreAllocated(vm.getId())) {
                             vm.setPodIdToDeployIn(null);
                         }
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
@@ -1466,7 +1469,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private boolean checkForNonAllocatedVolumes(long vmId) {
+    private boolean checkThatAllVolumesAreAllocated(long vmId) {
         final List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         return CollectionUtils.isEmpty(vols) || vols.stream().allMatch(v -> Volume.State.Allocated.equals(v.getState()));
     }
