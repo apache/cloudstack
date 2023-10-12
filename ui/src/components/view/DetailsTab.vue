@@ -165,7 +165,7 @@ export default {
       return ['ip6routes', 'privatemtu', 'publicmtu']
     },
     vnfAccessMethods () {
-      if (this.resource.templatetype === 'VNF' && ['vm'].includes(this.$route.meta.name)) {
+      if (this.resource.templatetype === 'VNF' && ['vm', 'vnfapp'].includes(this.$route.meta.name)) {
         const accessMethodsDescription = []
         const accessMethods = this.resource.vnfdetails?.access_methods || null
         const username = this.resource.vnfdetails?.username || null

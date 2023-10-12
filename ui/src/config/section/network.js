@@ -354,8 +354,8 @@ export default {
       },
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
-        name: 'vm',
-        title: 'label.instances',
+        name: 'vnfapp',
+        title: 'label.vnf.appliances',
         param: 'templateid'
       }],
       tabs: [{
