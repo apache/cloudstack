@@ -265,8 +265,10 @@ export default {
       })
     },
     generateDrsPlan () {
+      this.loading = true
       api('generateClusterDrsPlan', { id: this.resource.id, migrations: this.maxMigrations }).then(json => {
         this.generatedMigrations = json?.generateclusterdrsplanresponse?.generateclusterdrsplanresponse?.migrations || []
+        this.loading = false
         this.showModal = true
       })
     },
