@@ -1284,6 +1284,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     connectAgent(link, cmds, request);
                 }
                 return;
+            } else if (cmd instanceof StartupCommand) {
+                connectAgent(link, cmds, request);
             }
 
             final long hostId = attache.getId();
@@ -1337,12 +1339,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         handleCommands(attache, request.getSequence(), new Command[] {cmd});
                         if (cmd instanceof PingCommand) {
                             final long cmdHostId = ((PingCommand)cmd).getHostId();
+                            boolean requestStartupCommand = false;
 
+                            final HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
                             // if the router is sending a ping, verify the
                             // gateway was pingable
                             if (cmd instanceof PingRoutingCommand) {
                                 final boolean gatewayAccessible = ((PingRoutingCommand)cmd).isGatewayAccessible();
-                                final HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
                                 if (host != null) {
                                     if (!gatewayAccessible) {
                                         // alert that host lost connection to
@@ -1355,12 +1358,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                                 "Host [" + hostDesc + "] lost connection to gateway (default route) and is possibly having network connection issues.");
                                     } else {
                                         _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                        if (host.getStatus() != Status.Up) {
+                                            // Only transit state when the status is not Up to avoid unnecessary db calls
+                                            requestStartupCommand = true;
+                                        }
                                     }
                                 } else {
                                     s_logger.debug("Not processing " + PingRoutingCommand.class.getSimpleName() + " for agent id=" + cmdHostId + "; can't find the host in the DB");
                                 }
+                            } else if (host != null && host.getStatus() != Status.Up) {
+                                // Only transit state when the status is not Up to avoid unnecessary db calls
+                                requestStartupCommand = true;
                             }
-                            answer = new PingAnswer((PingCommand)cmd);
+                            answer = new PingAnswer((PingCommand)cmd, requestStartupCommand);
                         } else if (cmd instanceof ReadyAnswer) {
                             final HostVO host = _hostDao.findById(attache.getId());
                             if (host == null) {
