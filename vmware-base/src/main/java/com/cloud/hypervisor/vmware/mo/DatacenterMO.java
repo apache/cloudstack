@@ -169,10 +169,14 @@ public class DatacenterMO extends BaseMO {
                 ManagedObjectReference vmMor = oc.getObj();
                 if (vmMor != null) {
                     VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
-                    if (!vmMo.isTemplate()) {
-                        HostMO hostMO = vmMo.getRunningHost();
-                        UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
-                        vms.add(unmanagedInstance);
+                    try {
+                        if (!vmMo.isTemplate()) {
+                            HostMO hostMO = vmMo.getRunningHost();
+                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
+                            vms.add(unmanagedInstance);
+                        }
+                    } catch (Exception e) {
+                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
                     }
                 }
             }

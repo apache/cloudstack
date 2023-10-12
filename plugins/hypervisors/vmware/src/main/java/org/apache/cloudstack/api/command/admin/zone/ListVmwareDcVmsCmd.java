@@ -103,8 +103,11 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
                 }
             }
             List<BaseResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
+            if (CollectionUtils.isEmpty(pagingList)) {
+                pagingList = baseResponseList;
+            }
             ListResponse<BaseResponse> response = new ListResponse<>();
-            response.setResponses(pagingList, pagingList.size());
+            response.setResponses(pagingList, baseResponseList.size());
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {

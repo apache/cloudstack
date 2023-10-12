@@ -441,7 +441,8 @@ export default {
       clusterId: undefined,
       listInstancesApi: {
         unmanaged: 'listUnmanagedInstances',
-        managed: 'listVirtualMachines'
+        managed: 'listVirtualMachines',
+        migratefromvmware: 'listVmwareDcVms'
       },
       unmanagedInstancesColumns,
       unmanagedInstancesLoading: false,
@@ -757,11 +758,9 @@ export default {
       this.fetchInstances()
     },
     fetchInstances () {
+      this.fetchUnmanagedInstances()
       if (this.isUnmanaged) {
-        this.fetchUnmanagedInstances()
         this.fetchManagedInstances()
-      } else if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
-        this.fetchVmwareDatacenterInstances()
       }
     },
     fetchUnmanagedInstances (page, pageSize) {
@@ -784,23 +783,34 @@ export default {
       }
       this.unmanagedInstancesLoading = true
       this.searchParams.unmanaged = params
-      api(this.listInstancesApi.unmanaged, params).then(json => {
-        const listUnmanagedInstances = json.listunmanagedinstancesresponse.unmanagedinstance
+
+      let apiName = this.listInstancesApi.unmanaged
+      if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
+        apiName = this.listInstancesApi.migratefromvmware
+        if (this.selectedVmwareVcenter.vcenter) {
+          params.datacentername = this.selectedVmwareVcenter.datacentername
+          params.vcenter = this.selectedVmwareVcenter.vcenter
+          params.username = this.selectedVmwareVcenter.username
+          params.password = this.selectedVmwareVcenter.password
+        } else {
+          params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
+        }
+      }
+
+      api(apiName, params).then(json => {
+        const response = this.isMigrateFromVmware ? json.listvmwaredcvmsresponse : json.listunmanagedinstancesresponse
+        const listUnmanagedInstances = response.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
         }
-        this.itemCount.unmanaged = json.listunmanagedinstancesresponse.count
+        this.itemCount.unmanaged = response.count
       }).finally(() => {
         this.unmanagedInstancesLoading = false
       })
     },
     searchUnmanagedInstances (params) {
       this.searchParams.unmanaged.keyword = params.searchQuery
-      if (this.isUnmanaged) {
-        this.fetchUnmanagedInstances()
-      } else if (this.isMigrateFromVmware && this.selectedVmwareVcenter) {
-        this.fetchVmwareDatacenterInstances()
-      }
+      this.fetchUnmanagedInstances()
     },
     fetchManagedInstances (page, pageSize) {
       const params = {
@@ -921,38 +931,6 @@ export default {
       this.unmanagedInstances = obj.response.unmanagedinstance
       this.itemCount.unmanaged = obj.response.count
       this.unmanagedInstancesLoading = false
-    },
-    fetchVmwareDatacenterInstances (page, pageSize) {
-      const params = {}
-      const query = Object.assign({}, this.$route.query)
-      this.page.unmanaged = page || parseInt(query.unmanagedpage) || this.page.unmanaged
-      this.updateQuery('unmanagedpage', this.page.unmanaged)
-      params.page = this.page.unmanaged
-      this.pageSize.unmanaged = pageSize || this.pageSize.unmanaged
-      params.pagesize = this.pageSize.unmanaged
-      this.unmanagedInstances = []
-      this.unmanagedInstancesSelectedRowKeys = []
-      if (this.searchParams.unmanaged.keyword) {
-        params.keyword = this.searchParams.unmanaged.keyword
-      }
-      if (this.selectedVmwareVcenter.vcenter) {
-        params.datacentername = this.selectedVmwareVcenter.datacenter
-        params.vcenter = this.selectedVmwareVcenter.vcenter
-        params.username = this.selectedVmwareVcenter.username
-        params.password = this.selectedVmwareVcenter.password
-      } else {
-        params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
-      }
-      this.unmanagedInstancesLoading = true
-      api('listVmwareDcVms', params).then(json => {
-        const response = json.listvmwaredcvmsresponse
-        this.unmanagedInstances = response.unmanagedinstance
-        this.itemCount.unmanaged = response.count
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.unmanagedInstancesLoading = false
-      })
     }
   }
 }

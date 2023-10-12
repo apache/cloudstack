@@ -237,11 +237,11 @@
               </div>
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
-                  <a-form-item name="migrateallowed" ref="migrateallowed">
+                  <a-form-item name="migrateallowed" ref="migrateallowed" v-if="!selectedVmwareVcenter">
                     <template #label>
                       <tooltip-label :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
                     </template>
-                    <a-switch v-model:checked="form.migrateallowed" :disabled="selectedVmwareVcenter" @change="val => { switches.migrateAllowed = val }" />
+                    <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
                 <a-col :md="24" :lg="12">

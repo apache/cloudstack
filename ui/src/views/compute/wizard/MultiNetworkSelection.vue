@@ -229,6 +229,8 @@ export default {
     },
     setIpAddressEnabled (nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
+      this.ipAddresses[nic.id] = (!network || network.type === 'L2') ? null : 'auto'
+      this.values[nic.id] = network ? network.id : null
       this.indexNum = (this.indexNum % 2) + 1
     },
     setIpAddress (nicId, autoAssign, ipAddress) {
