@@ -270,9 +270,9 @@ public class OVFHelperTest {
 
     private String eulaSections =
             "<VirtualSystem xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-            "<EulaSection>\n" +
-            "      <Info>end-user license agreement</Info>\n" +
-            "      <License>END USER LICENSE AGREEMENT\n" +
+            "<ovf:EulaSection>\n" +
+            "      <ovf:Info>end-user license agreement</ovf:Info>\n" +
+            "      <ovf:License>END USER LICENSE AGREEMENT\n" +
             "\n" +
             "IMPORTANT: PLEASE READ THIS END USER LICENSE AGREEMENT CAREFULLY. IT IS VERY IMPORTANT THAT YOU CHECK THAT YOU ARE PURCHASING CISCO SOFTWARE OR EQUIPMENT FROM AN APPROVED SOURCE AND THAT YOU, OR THE ENTITY YOU REPRESENT (COLLECTIVELY, THE \"CUSTOMER\") HAVE BEEN REGISTERED AS THE END USER FOR THE PURPOSES OF THIS CISCO END USER LICENSE AGREEMENT. IF YOU ARE NOT REGISTERED AS THE END USER YOU HAVE NO LICENSE TO USE THE SOFTWARE AND THE LIMITED WARRANTY IN THIS END USER LICENSE AGREEMENT DOES NOT APPLY. ASSUMING YOU HAVE PURCHASED FROM AN APPROVED SOURCE, DOWNLOADING, INSTALLING OR USING CISCO OR CISCO-SUPPLIED SOFTWARE CONSTITUTES ACCEPTANCE OF THIS AGREEMENT.\n" +
             "\n" +
@@ -361,8 +361,8 @@ public class OVFHelperTest {
             "\n" +
             "Cisco and the Cisco logo are trademarks or registered trademarks of Cisco and/or its affiliates in the U.S. and other countries. To view a list of Cisco trademarks, go to this URL: www.cisco.com/go/trademarks. Third-party trademarks mentioned are the property of their respective owners. The use of the word partner does not imply a partnership relationship between Cisco and any other company. (1110R)\n" +
             "\n" +
-            "© 1998, 2001, 2003, 2008-2014 Cisco Systems, Inc. All rights reserved.</License>\n" +
-            "</EulaSection>\n" +
+            "© 1998, 2001, 2003, 2008-2014 Cisco Systems, Inc. All rights reserved.</ovf:License>\n" +
+            "</ovf:EulaSection>\n" +
             "<EulaSection>\n" +
             "      <Info>supplemental end-user license agreement</Info>\n" +
             "      <License>SUPPLEMENTAL END USER LICENSE AGREEMENT FOR VIRTUAL SOFTWARE PRODUCTS\n" +
