@@ -162,6 +162,7 @@ known_categories = {
     'deleteOauthProvider': 'Oauth',
     'listOauthProvider': 'Oauth',
     'registerOauthProvider': 'Oauth',
+    'updateOauthProvider': 'Oauth',
     'quota': 'Quota',
     'emailTemplate': 'Quota',
     'Capacity': 'System Capacity',
