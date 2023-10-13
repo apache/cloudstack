@@ -22,6 +22,7 @@ import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
@@ -32,6 +33,7 @@ import javax.annotation.Nonnull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
@@ -61,6 +63,18 @@ public class LinstorUtil {
                 .findFirst()
                 .map(ApiCallRc::getMessage)
                 .orElse((answers.get(0)).getMessage()) : null;
+    }
+
+    public static List<String> getLinstorNodeNames(@Nonnull DevelopersApi api) throws ApiException
+    {
+        List<Node> nodes = api.nodeList(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            null,
+            null
+        );
+
+        return nodes.stream().map(Node::getName).collect(Collectors.toList());
     }
 
     public static com.linbit.linstor.api.model.StoragePool
