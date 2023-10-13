@@ -32,6 +32,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UriUtils;
 
 public final class QCOW2Utils {
     public static final Logger LOGGER = Logger.getLogger(QCOW2Utils.class.getName());
@@ -114,7 +115,7 @@ public final class QCOW2Utils {
     public static long getVirtualSize(String urlStr) {
         try {
             URL url = new URL(urlStr);
-            boolean isCompressed = !urlStr.endsWith("qcow2");
+            boolean isCompressed = UriUtils.COMMPRESSION_FORMATS.stream().anyMatch(f -> !urlStr.toLowerCase().endsWith(f));
             return getVirtualSize(url.openStream(), isCompressed);
         } catch (MalformedURLException e) {
             LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
