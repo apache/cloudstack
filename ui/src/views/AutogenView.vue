@@ -64,7 +64,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'vnftemplate'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -294,7 +294,7 @@
                   <a-select-option key="" label="">{{ }}</a-select-option>
                   <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
                     <div>
-                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso') || field.name.startsWith('vnftemplate'))">
+                      <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
                         <span v-if="opt.icon">
                           <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                         </span>
@@ -681,7 +681,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'vnftemplate'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -762,7 +762,7 @@ export default {
         }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
-        'templatefilter' in params && (['template', 'vnftemplate'].includes(this.routeName))) {
+        'templatefilter' in params && (['template'].includes(this.routeName))) {
         params.templatefilter = 'all'
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
@@ -791,7 +791,7 @@ export default {
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
-        'autoscalevmgroup', 'vnfapp', 'vnftemplate'].includes(this.$route.name)
+        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -1674,7 +1674,7 @@ export default {
       delete query.domainid
       delete query.state
       delete query.annotationfilter
-      if (this.$route.name === 'template' || this.$route.name === 'vnftemplate') {
+      if (this.$route.name === 'template') {
         query.templatefilter = filter
       } else if (this.$route.name === 'iso') {
         query.isofilter = filter

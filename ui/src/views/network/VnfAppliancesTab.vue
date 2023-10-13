@@ -36,7 +36,7 @@
         <status class="status" :text="record.vmip" displayText />
       </template>
       <template v-if="column.key === 'templatename'">
-        <router-link :to="{ path: '/vnftemplate/' + record.templateid }" >{{ record.templatename || record.templateid }}</router-link>
+        <router-link :to="{ path: '/template/' + record.templateid }" >{{ record.templatename || record.templateid }}</router-link>
       </template>
       <template v-if="column.key === 'osdisplayname'">
         <status class="status" :text="record.osdisplayname" displayText />

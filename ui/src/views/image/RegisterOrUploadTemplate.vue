@@ -518,9 +518,6 @@ export default {
     isAdminRole () {
       return this.$store.getters.userInfo.roletype === 'Admin'
     },
-    isVnf () {
-      return this.$route.meta.name === 'vnftemplate'
-    },
     filteredZones () {
       let zoneList = this.zones.opts
       if (zoneList && zoneList.length > 0 && this.currentForm === 'Upload') {
@@ -703,34 +700,27 @@ export default {
     fetchTemplateTypes () {
       this.templateTypes.opts = []
       const templatetypes = []
-      if (this.isVnf) {
+      templatetypes.push({
+        id: 'USER',
+        description: 'USER'
+      })
+      templatetypes.push({
+        id: 'VNF',
+        description: 'VNF'
+      })
+      if (this.isAdminRole) {
         templatetypes.push({
-          id: 'VNF',
-          description: 'VNF'
-        })
-      } else {
-        templatetypes.push({
-          id: 'USER',
-          description: 'USER'
+          id: 'SYSTEM',
+          description: 'SYSTEM'
         })
         templatetypes.push({
-          id: 'VNF',
-          description: 'VNF'
+          id: 'BUILTIN',
+          description: 'BUILTIN'
         })
-        if (this.isAdminRole) {
-          templatetypes.push({
-            id: 'SYSTEM',
-            description: 'SYSTEM'
-          })
-          templatetypes.push({
-            id: 'BUILTIN',
-            description: 'BUILTIN'
-          })
-          templatetypes.push({
-            id: 'ROUTING',
-            description: 'ROUTING'
-          })
-        }
+        templatetypes.push({
+          id: 'ROUTING',
+          description: 'ROUTING'
+        })
       }
       this.templateTypes.opts = templatetypes
     },
@@ -1082,8 +1072,7 @@ export default {
         }
         if (this.currentForm === 'Create') {
           this.loading = true
-          const apiName = this.isVnf ? 'registerVnfTemplate' : 'registerTemplate'
-          api(apiName, params).then(json => {
+          api('registerTemplate', params).then(json => {
             if (this.userdataid !== null) {
               this.linkUserdataToTemplate(this.userdataid, json.registertemplateresponse.template[0].id, this.userdatapolicy)
             }
