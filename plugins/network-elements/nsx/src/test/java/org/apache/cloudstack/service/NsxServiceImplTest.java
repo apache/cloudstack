@@ -67,7 +67,7 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxTier1GatewayCommand.class), anyLong())).thenReturn(createNsxTier1GatewayAnswer);
         when(createNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.createVpcNetwork(1L, "ZoneNSX", "testAcc", "testAcc", "VPC01"));
+        assertTrue(nsxService.createVpcNetwork(1L, 3L, 2L, 5L, "VPC01"));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxTier1GatewayCommand.class), anyLong())).thenReturn(deleteNsxTier1GatewayAnswer);
         when(deleteNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.deleteVpcNetwork(1L, "ZoneNSX", "testAcc", "testAcc", "VPC01"));
+        assertTrue(nsxService.deleteVpcNetwork(1L, 2L, 3L, 10L, "VPC01"));
     }
 
     @Test
@@ -89,6 +89,6 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxSegmentCommand.class), anyLong())).thenReturn(deleteNsxSegmentAnswer);
         when(deleteNsxSegmentAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.deleteNetwork("ZoneNSX", "testAcc", "testDomain", network));
+        assertTrue(nsxService.deleteNetwork(1L, 3L, 5L, network));
     }
 }

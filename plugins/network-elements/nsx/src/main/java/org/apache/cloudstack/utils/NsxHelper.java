@@ -30,12 +30,12 @@ import java.util.List;
 public class NsxHelper {
 
     public static CreateNsxDhcpRelayConfigCommand createNsxDhcpRelayConfigCommand(DomainVO domain, Account account, DataCenter zone, VpcVO vpc, Network network, List<String> addresses) {
-        return new CreateNsxDhcpRelayConfigCommand(domain.getName(), account.getAccountName(), zone.getName(),
-                vpc.getName(), network.getName(), addresses);
+        return new CreateNsxDhcpRelayConfigCommand(domain.getId(), account.getId(), zone.getId(),
+                vpc.getId(), vpc.getName(), network.getId(), network.getName(), addresses);
     }
 
     public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO) {
-        return new CreateNsxSegmentCommand(domain.getName(), account.getAccountName(), zone.getName(),
-                vpcName, networkVO.getName(), networkVO.getGateway(), networkVO.getCidr());
+        return new CreateNsxSegmentCommand(domain.getId(), account.getId(), zone.getId(),
+                networkVO.getVpcId(), vpcName, networkVO.getId(), networkVO.getName(), networkVO.getGateway(), networkVO.getCidr());
     }
 }
