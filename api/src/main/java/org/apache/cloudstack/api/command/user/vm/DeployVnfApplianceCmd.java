@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.storage.template.VnfTemplateUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,7 @@ public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {
     }
 
     public List<String> getVnfCidrlist() {
-        if (vnfCidrlist != null) {
+        if (CollectionUtils.isNotEmpty(vnfCidrlist)) {
             return vnfCidrlist;
         } else {
             List<String> defaultCidrList = new ArrayList<String>();
