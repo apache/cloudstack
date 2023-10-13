@@ -331,7 +331,7 @@
               <a-auto-complete
                 v-else
                 style="width: 100%"
-                v-model:value="item.value"
+                v-model:value="item.displayvalue"
                 :options="getEditDetailOptions(vnfDetailOptions[item.name])"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateVnfDetail(index)" />
@@ -350,7 +350,7 @@
                 iconType="check-circle-two-tone"
                 iconTwoToneColor="#52c41a" />
             </div>
-            <span v-else style="word-break: break-all">{{ item.value }}</span>
+            <span v-else style="word-break: break-all">{{ item.displayvalue }}</span>
           </template>
         </a-list-item-meta>
         <template #actions>
@@ -527,6 +527,7 @@ export default {
           return {
             name: k,
             value: this.resource.vnfdetails[k],
+            displayvalue: this.getDisplayValue(k, this.resource.vnfdetails[k]),
             values: k === 'access_methods' ? this.resource.vnfdetails[k].split(',') : null,
             edit: false
           }
@@ -725,6 +726,7 @@ export default {
           return {
             name: k,
             value: details[k],
+            displayvalue: this.getDisplayValue(k, details[k]),
             values: k === 'access_methods' ? details[k].split(',') : null,
             edit: false
           }
@@ -738,6 +740,9 @@ export default {
         this.fetchData()
       }).finally(f => {
       })
+    },
+    getDisplayValue (name, value) {
+      return name.includes('password') ? '********' : value
     },
     showEditVnfDetail (index) {
       this.vnfDetails[index].edit = true
@@ -754,6 +759,8 @@ export default {
       if (Array.isArray(this.vnfDetails[index].values) && this.vnfDetails[index].values.length > 0) {
         this.vnfDetails[index].value = this.vnfDetails[index].values.join(',')
       }
+      this.vnfDetails[index].value = this.vnfDetails[index].displayvalue
+      this.vnfDetails[index].displayvalue = this.getDisplayValue(this.vnfDetails[index].name, this.vnfDetails[index].value)
       this.updateVnfTemplateDetails()
     },
     onShowAddVnfDetail () {
