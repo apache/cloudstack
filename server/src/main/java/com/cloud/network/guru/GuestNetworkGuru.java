@@ -148,6 +148,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         _isolationMethods = null;
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     private void updateNicIpv6(Network network, NicProfile nic, VirtualMachineProfile vm, DataCenter dc, boolean isGateway) throws InsufficientAddressCapacityException {
         boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (!isIpv6Supported || nic.getIPv6Address() != null || network.getIp6Cidr() == null || network.getIp6Gateway() == null) {

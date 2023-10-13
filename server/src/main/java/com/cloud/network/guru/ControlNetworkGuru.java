@@ -104,6 +104,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         return config;
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     protected ControlNetworkGuru() {
         super();
     }
