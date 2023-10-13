@@ -370,7 +370,7 @@ export default {
         {
           api: 'updateVirtualMachine',
           icon: 'edit-outlined',
-          label: 'label.action.edit.instance',
+          label: 'label.vnf.app.action.edit',
           docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
           dataView: true,
           popup: true,
@@ -379,7 +379,7 @@ export default {
         {
           api: 'startVirtualMachine',
           icon: 'caret-right-outlined',
-          label: 'label.action.start.instance',
+          label: 'label.vnf.app.action.start',
           message: 'message.action.start.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
@@ -393,7 +393,7 @@ export default {
         {
           api: 'stopVirtualMachine',
           icon: 'poweroff-outlined',
-          label: 'label.action.stop.instance',
+          label: 'label.vnf.app.action.stop',
           message: 'message.action.stop.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
@@ -405,7 +405,7 @@ export default {
         {
           api: 'rebootVirtualMachine',
           icon: 'reload-outlined',
-          label: 'label.action.reboot.instance',
+          label: 'label.vnf.app.action.reboot',
           message: 'message.action.reboot.instance',
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
@@ -428,7 +428,7 @@ export default {
         {
           api: 'restoreVirtualMachine',
           icon: 'sync-outlined',
-          label: 'label.reinstall.vm',
+          label: 'label.vnf.app.action.reinstall',
           message: 'message.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
@@ -525,7 +525,7 @@ export default {
         {
           api: 'createBackupSchedule',
           icon: 'schedule-outlined',
-          label: 'Configure Backup Schedule',
+          label: 'label.backup.configure.schedule',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,
@@ -601,7 +601,7 @@ export default {
         {
           api: 'scaleVirtualMachine',
           icon: 'arrows-alt-outlined',
-          label: 'label.scale.vm',
+          label: 'label.vnf.app.action.scale',
           docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC') },
@@ -612,7 +612,7 @@ export default {
         {
           api: 'migrateVirtualMachine',
           icon: 'drag-outlined',
-          label: 'label.migrate.instance.to.host',
+          label: 'label.vnf.app.action.migrate.to.host',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
           show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
@@ -623,7 +623,7 @@ export default {
         {
           api: 'migrateVirtualMachine',
           icon: 'drag-outlined',
-          label: 'label.migrate.instance.to.ps',
+          label: 'label.vnf.app.action.migrate.to.ps',
           message: 'message.migrate.instance.to.ps',
           docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
           dataView: true,
@@ -681,7 +681,7 @@ export default {
         {
           api: 'recoverVirtualMachine',
           icon: 'medicine-box-outlined',
-          label: 'label.recover.vm',
+          label: 'label.vnf.app.action.recover',
           message: 'message.recover.vm',
           dataView: true,
           show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm }
@@ -697,7 +697,7 @@ export default {
         {
           api: 'expungeVirtualMachine',
           icon: 'delete-outlined',
-          label: 'label.action.expunge.instance',
+          label: 'label.vnf.app.action.expunge',
           message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
@@ -706,7 +706,7 @@ export default {
         {
           api: 'destroyVirtualMachine',
           icon: 'delete-outlined',
-          label: 'label.action.destroy.instance',
+          label: 'label.vnf.app.action.destroy',
           message: 'message.action.destroy.instance',
           docHelp: 'adminguide/virtual_machines.html#deleting-vms',
           dataView: true,
