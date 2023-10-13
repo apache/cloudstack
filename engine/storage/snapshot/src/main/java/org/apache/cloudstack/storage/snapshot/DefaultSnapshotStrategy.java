@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.snapshot;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -575,7 +576,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             long volumeId = snapshot.getVolumeId();
             VolumeVO volumeVO = volumeDao.findById(volumeId);
 
-            if (volumeVO != null && ImageFormat.QCOW2.equals(volumeVO.getFormat())) {
+            if (isSnapshotStoredOnSameZoneStoreForQCOW2Volume(snapshot, volumeVO)) {
                 return StrategyPriority.DEFAULT;
             }
 
@@ -585,6 +586,16 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             s_logger.debug(String.format("canHandle for zone ID: %d, operation: %s - %s", zoneId, op, StrategyPriority.DEFAULT));
         }
         return StrategyPriority.DEFAULT;
+    }
+
+    protected boolean isSnapshotStoredOnSameZoneStoreForQCOW2Volume(Snapshot snapshot, VolumeVO volumeVO) {
+        if (volumeVO == null || !ImageFormat.QCOW2.equals(volumeVO.getFormat())) {
+            return false;
+        }
+        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listBySnapshotIdAndState(snapshot.getId(), State.Ready);
+        return CollectionUtils.isNotEmpty(snapshotStores) &&
+                snapshotStores.stream().anyMatch(s -> Objects.equals(
+                        dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
     }
 
 }

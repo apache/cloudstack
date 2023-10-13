@@ -195,6 +195,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public List<SnapshotDataStoreVO> listBySnapshotIdAndState(long id, ObjectInDataStoreStateMachine.State state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, id);
+        sc.setParameters(STATE, state);
+        return listBy(sc);
+    }
+
+    @Override
     public void deletePrimaryRecordsForStore(long id, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq.create();
         sc.setParameters(STORE_ID, id);
