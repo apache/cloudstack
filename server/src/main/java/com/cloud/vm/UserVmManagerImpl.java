@@ -5455,19 +5455,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (template.isEnablePassword()) {
             if (vm.getDetail("password") != null) {
-                s_logger.debug(String.format("Decrypting VM [%s] current password.", vm));
+                logger.debug(String.format("Decrypting VM [%s] current password.", vm));
                 password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
             } else if (StringUtils.isNotBlank(newPassword)) {
-                s_logger.debug(String.format("A password for VM [%s] was informed. Setting VM password to value defined by user.", vm));
+                logger.debug(String.format("A password for VM [%s] was informed. Setting VM password to value defined by user.", vm));
                 password = newPassword;
                 vm.setPassword(password);
             } else {
-                s_logger.debug(String.format("Setting VM [%s] password to a randomly generated password.", vm));
+                logger.debug(String.format("Setting VM [%s] password to a randomly generated password.", vm));
                 password = _mgr.generateRandomPassword();
                 vm.setPassword(password);
             }
         } else if (StringUtils.isNotBlank(newPassword)) {
-            s_logger.debug(String.format("A password was informed; however, the template [%s] is not password enabled. Ignoring the parameter.", template));
+            logger.debug(String.format("A password was informed; however, the template [%s] is not password enabled. Ignoring the parameter.", template));
         }
 
         return password;
