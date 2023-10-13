@@ -20,7 +20,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
@@ -68,7 +67,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Inject
     AccountDao accountDao;
     @Inject
-    private DomainDao domainDao;
+    DomainDao domainDao;
 
     public NsxGuestNetworkGuru() {
         super();

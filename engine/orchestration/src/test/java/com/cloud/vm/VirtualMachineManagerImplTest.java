@@ -37,6 +37,10 @@ import java.util.stream.Collectors;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
@@ -167,6 +171,10 @@ public class VirtualMachineManagerImplTest {
     private NetworkDao networkDao;
     @Mock
     private AccountDao accountDao;
+    @Mock
+    private DomainDao domainDao;
+    @Mock
+    private DataCenterDao dcDao;
     @Mock
     private VpcDao vpcDao;
 
@@ -920,6 +928,9 @@ public class VirtualMachineManagerImplTest {
         UserVmJoinVO userVm = new UserVmJoinVO();
         NetworkVO networkVO = new NetworkVO();
         AccountVO accountVO = new AccountVO();
+        DomainVO domainVO = new DomainVO();
+        domainVO.setName("testDomain");
+        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
         VpcVO vpcVO = new VpcVO();
 
         networkVO.setAccountId(1L);
@@ -935,9 +946,12 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(userVmJoinDaoMock.searchByIds(anyLong())).thenReturn(userVms);
         Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
         Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
+        Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
+        Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+        Mockito.when(dataCenterVO.getName()).thenReturn("testZone");
         virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
         assertEquals(vmTO.getNetworkIdToNetworkNameMap().size(), 1);
-        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(0L), "testAcc-VPC1-testNet");
+        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(0L), "testDomain-testAcc-testZone-VPC1-testNet");
     }
 }

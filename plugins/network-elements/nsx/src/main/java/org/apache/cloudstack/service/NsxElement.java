@@ -100,7 +100,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Inject
     NetworkModel networkModel;
     @Inject
-    private DomainDao domainDao;
+    DomainDao domainDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 

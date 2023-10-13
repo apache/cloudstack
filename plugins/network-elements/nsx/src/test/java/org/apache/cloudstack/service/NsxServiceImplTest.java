@@ -31,10 +31,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +67,7 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxTier1GatewayCommand.class), anyLong())).thenReturn(createNsxTier1GatewayAnswer);
         when(createNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.createVpcNetwork(1L, "ZoneNSX", 1L, "testAcc", "VPC01"));
+        assertTrue(nsxService.createVpcNetwork(1L, "ZoneNSX", "testAcc", "testAcc", "VPC01"));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxTier1GatewayCommand.class), anyLong())).thenReturn(deleteNsxTier1GatewayAnswer);
         when(deleteNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.deleteVpcNetwork(1L, "ZoneNSX", 1L, "testAcc", "VPC01"));
+        assertTrue(nsxService.deleteVpcNetwork(1L, "ZoneNSX", "testAcc", "testAcc", "VPC01"));
     }
 
     @Test
@@ -89,6 +89,6 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxSegmentCommand.class), anyLong())).thenReturn(deleteNsxSegmentAnswer);
         when(deleteNsxSegmentAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.deleteNetwork("testAcc", network));
+        assertTrue(nsxService.deleteNetwork("ZoneNSX", "testAcc", "testDomain", network));
     }
 }

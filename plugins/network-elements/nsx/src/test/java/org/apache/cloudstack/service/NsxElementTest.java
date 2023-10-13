@@ -19,6 +19,8 @@ package org.apache.cloudstack.service;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
@@ -65,13 +67,19 @@ public class NsxElementTest {
     @Mock
     Vpc vpc;
     @Mock
+    DataCenterVO zone;
+    @Mock
     DataCenterVO dataCenterVO;
     @Mock
     Account account;
+    @Mock
+    DomainVO domain;
 
     NsxElement nsxElement;
     ReservationContext reservationContext;
     DeployDestination deployDestination;
+    @Mock
+    DomainDao domainDao;
 
     @Before
     public void setup() {
@@ -83,6 +91,7 @@ public class NsxElementTest {
         nsxElement.networkDao = networkDao;
         nsxElement.resourceManager = resourceManager;
         nsxElement.physicalNetworkDao = physicalNetworkDao;
+        nsxElement.domainDao = domainDao;
         nsxElement.networkModel = networkModel;
         reservationContext = mock(ReservationContext.class);
         deployDestination = mock(DeployDestination.class);
@@ -90,12 +99,15 @@ public class NsxElementTest {
         when(vpc.getZoneId()).thenReturn(1L);
         when(vpc.getAccountId()).thenReturn(2L);
         when(dataCenterVO.getId()).thenReturn(1L);
-        when(dataCenterVO.getName()).thenReturn("zone-NSX");
-        when(account.getAccountId()).thenReturn(1L);
+        when(dataCenterVO.getName()).thenReturn("zoneNSX");
         when(account.getName()).thenReturn("testAcc");
         when(vpc.getName()).thenReturn("VPC01");
         when(accountManager.getAccount(2L)).thenReturn(account);
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+        when(domainDao.findById(anyLong())).thenReturn(domain);
+        when(vpc.getZoneId()).thenReturn(1L);
+        when(domain.getName()).thenReturn("testDomain");
+        when(vpc.getName()).thenReturn("testVPC");
 
         PhysicalNetworkVO physicalNetworkVO = new PhysicalNetworkVO();
         physicalNetworkVO.setIsolationMethods(List.of("NSX"));
@@ -106,14 +118,14 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        when(nsxService.createVpcNetwork(anyLong(), anyString(), anyLong(), anyString(), anyString())).thenReturn(true);
+        when(nsxService.createVpcNetwork(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
 
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 
     @Test
     public void testShutdownVpc() {
-        when(nsxService.deleteVpcNetwork(anyLong(), anyString(), anyLong(), anyString(), anyString())).thenReturn(true);
+        when(nsxService.deleteVpcNetwork(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
 
         assertTrue(nsxElement.shutdownVpc(vpc, reservationContext));
     }

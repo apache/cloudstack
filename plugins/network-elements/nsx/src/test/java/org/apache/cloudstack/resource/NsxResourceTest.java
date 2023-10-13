@@ -105,8 +105,8 @@ public class NsxResourceTest {
 
     @Test
     public void testCreateNsxTier1Gateway() {
-        NsxCommand command = new CreateNsxTier1GatewayCommand("ZoneA", 1L,
-                "testAcc", 1L, "VPC01");
+        NsxCommand command = new CreateNsxTier1GatewayCommand("testDomain", "testAcc",
+                "ZoneNSX", "VPC01");
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
@@ -114,8 +114,8 @@ public class NsxResourceTest {
 
     @Test
     public void testDeleteTier1Gateway() {
-        NsxCommand command = new DeleteNsxTier1GatewayCommand("ZoneA", 1L,
-                "testAcc", 1L, "VPC01");
+        NsxCommand command = new DeleteNsxTier1GatewayCommand("testDomain", "testAcc",
+                "ZoneNSX", "VPC01");
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
@@ -133,8 +133,8 @@ public class NsxResourceTest {
         List<EnforcementPoint> enforcementPointList = List.of(enforcementPoint);
         List<TransportZone> transportZoneList = List.of(new TransportZone.Builder().setDisplayName("Overlay").build());
 
-        NsxCommand command = new CreateNsxSegmentCommand("ZoneA", 1L,
-                "testAcc", 1L, "VPC01", tierNetwork);
+        NsxCommand command = new CreateNsxSegmentCommand("testDomain", "testAcc",
+                "ZoneNSX", "VPC01", "Web", "10.10.10.1", "10.10.10.0/24");
 
         when(nsxApi.getSites()).thenReturn(siteListResult);
         when(siteListResult.getResults()).thenReturn(siteList);
@@ -155,7 +155,7 @@ public class NsxResourceTest {
     public void testDeleteNsxSegment() {
         NetworkVO tierNetwork = new NetworkVO();
         tierNetwork.setName("tier1");
-        DeleteNsxSegmentCommand command = new DeleteNsxSegmentCommand("testAcc", "VPC01", tierNetwork);
+        DeleteNsxSegmentCommand command = new DeleteNsxSegmentCommand("testDomain", "testAcc", "ZoneA", "VPC01", "Web");
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());

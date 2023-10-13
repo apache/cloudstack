@@ -21,6 +21,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -51,10 +53,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.lenient;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NsxGuestNetworkGuruTest {
@@ -89,6 +99,8 @@ public class NsxGuestNetworkGuruTest {
     VpcVO vpcVO;
     @Mock
     NetworkModel networkModel;
+    @Mock
+    DomainDao domainDao;
 
     NsxGuestNetworkGuru guru;
     AutoCloseable closeable;
@@ -105,6 +117,7 @@ public class NsxGuestNetworkGuruTest {
         guru.networkOfferingServiceMapDao = networkOfferingServiceMapDao;
         guru.nsxControllerUtils = nsxControllerUtils;
         guru.accountDao = accountDao;
+        guru.domainDao = domainDao;
 
         Mockito.when(dataCenterVO.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
 
@@ -123,6 +136,7 @@ public class NsxGuestNetworkGuruTest {
 
         when(account.getAccountId()).thenReturn(1L);
         when(accountDao.findById(anyLong())).thenReturn(mock(AccountVO.class));
+        when(domainDao.findById(anyLong())).thenReturn(mock(DomainVO.class));
 
         Mockito.when(networkOfferingServiceMapDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.Nsx)).thenReturn(
                 true);
