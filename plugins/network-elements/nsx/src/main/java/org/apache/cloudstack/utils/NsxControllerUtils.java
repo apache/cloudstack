@@ -56,23 +56,24 @@ public class NsxControllerUtils {
         return (NsxAnswer) answer;
     }
 
-    public static String getTier1GatewayName(String zoneName, String accountName, String vpcName) {
-        return String.format("%s-%s-%s", zoneName, accountName, vpcName);
+    public static String getTier1GatewayName(String domainName, String accountName, String zoneName, String vpcName) {
+        return String.format("%s-%s-%s-%s",  domainName, accountName, zoneName, vpcName);
     }
 
-    public static String getNsxSegmentId(String accountName, String vpcName, String tierNetworkName) {
-        String segmentName = accountName + "-";
+    public static String getNsxSegmentId(String domainName, String accountName, String zoneName, String vpcName, String tierNetworkName) {
+        String segmentName = String.format("%s-%s-%s-",  domainName, accountName, zoneName);
         if (isNull(vpcName)) {
             return segmentName + tierNetworkName;
         }
         return segmentName + vpcName + "-" + tierNetworkName;
     }
 
-    public static String getNsxDhcpRelayConfigId(String zoneName, String accountName, String vpcName, String networkName) {
+
+    public static String getNsxDhcpRelayConfigId(String zoneName, String domainName, String accountName, String vpcName, String networkName) {
         String suffix = "-Relay";
         if (isNull(vpcName)) {
-            return zoneName + "-" + accountName + "-" + networkName + suffix;
+            return domainName + "-" + accountName + "-" + zoneName + "-" +networkName + suffix;
         }
-        return String.format("%s-%s-%s-%s%s", zoneName, accountName, vpcName, networkName, suffix);
+        return String.format("%s-%s-%s-%s-%s%s", domainName, accountName, zoneName, vpcName, networkName, suffix);
     }
 }

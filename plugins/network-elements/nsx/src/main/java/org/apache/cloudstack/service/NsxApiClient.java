@@ -45,7 +45,6 @@ import com.vmware.vapi.internal.protocol.RestProtocol;
 import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAppender;
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
-import org.apache.cloudstack.utils.NsxApiClientUtils;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.log4j.Logger;
 
@@ -53,12 +52,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Objects.isNull;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.FailoverMode.PREEMPTIVE;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_CONNECTED;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.TransportType.OVERLAY;
 
 public class NsxApiClient {
 
@@ -73,6 +66,22 @@ public class NsxApiClient {
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
+
+    private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
+
+    private enum TYPE { ROUTED, NATTED }
+
+    private enum HAMode { ACTIVE_STANDBY, ACTIVE_ACTIVE }
+
+    private enum FailoverMode { PREEMPTIVE, NON_PREEMPTIVE }
+
+    private enum AdminState { UP, DOWN }
+
+    private enum TransportType { OVERLAY, VLAN }
+
+    public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
+        TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
+    }
 
     public NsxApiClient(String hostname, String port, String username, char[] password) {
         String controllerUrl = String.format("https://%s:%s", hostname, port);
@@ -187,10 +196,10 @@ public class NsxApiClient {
         tier1 = new Tier1.Builder()
                 .setTier0Path(tier0GatewayPath)
                 .setResourceType(TIER_1_RESOURCE_TYPE)
-                .setPoolAllocation(ROUTING.name())
-                .setHaMode(ACTIVE_STANDBY.name())
-                .setFailoverMode(PREEMPTIVE.name())
-                .setRouteAdvertisementTypes(List.of(TIER1_CONNECTED.name(), TIER1_IPSEC_LOCAL_ENDPOINT.name()))
+                .setPoolAllocation(PoolAllocation.ROUTING.name())
+                .setHaMode(HAMode.ACTIVE_STANDBY.name())
+                .setFailoverMode(FailoverMode.PREEMPTIVE.name())
+                .setRouteAdvertisementTypes(List.of(RouteAdvertisementType.TIER1_CONNECTED.name(), RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT.name()))
                 .setId(name)
                 .setDisplayName(name)
                 .build();
@@ -234,13 +243,13 @@ public class NsxApiClient {
     public TransportZoneListResult getTransportZones() {
         try {
             com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
-            return transportZones.list(null, null, true, null, true, null, null, null, OVERLAY.name(), null);
+            return transportZones.list(null, null, true, null, true, null, null, null, TransportType.OVERLAY.name(), null);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }
     }
 
-    public void createSegment(String zoneName, String accountName, String vpcName, String segmentName, String gatewayAddress, String tier0Gateway, String enforcementPointPath, List<TransportZone> transportZones) {
+    public void createSegment(String zoneName, String domainName, String accountName, String vpcName, String segmentName, String gatewayAddress, String tier0Gateway, String enforcementPointPath, List<TransportZone> transportZones) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
@@ -251,8 +260,8 @@ public class NsxApiClient {
                     .setId(segmentName)
                     .setDisplayName(segmentName)
                     .setConnectivityPath(isNull(vpcName) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
-                            : TIER_1_GATEWAY_PATH_PREFIX + NsxControllerUtils.getTier1GatewayName(zoneName, accountName, vpcName))
-                    .setAdminState(NsxApiClientUtils.AdminState.UP.name())
+                            : TIER_1_GATEWAY_PATH_PREFIX + NsxControllerUtils.getTier1GatewayName(domainName, accountName, zoneName, vpcName))
+                    .setAdminState(AdminState.UP.name())
                     .setSubnets(List.of(subnet))
                     .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
                     .build();
@@ -265,12 +274,15 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteSegment(String zoneName, String accountName, String vpcName, String networkName, String segmentName) {
+    public void deleteSegment(String zoneName, String domainName, String accountName, String vpcName, String networkName, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            dhcpRelayConfig.delete(NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, accountName, vpcName, networkName));
+            String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, domainName, accountName, vpcName, networkName);
+            LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
+            dhcpRelayConfig.delete(dhcpRelayConfigId);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());

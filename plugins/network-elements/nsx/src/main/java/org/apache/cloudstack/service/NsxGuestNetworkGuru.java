@@ -20,9 +20,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -49,6 +50,8 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+
+import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -63,9 +66,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     @Inject
     NsxControllerUtils nsxControllerUtils;
     @Inject
-    DataCenterDao zoneDao;
-    @Inject
     AccountDao accountDao;
+    @Inject
+    DomainDao domainDao;
 
     public NsxGuestNetworkGuru() {
         super();
@@ -133,7 +136,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
         try {
             long zoneId = network.getDataCenterId();
-            DataCenter zone = zoneDao.findById(zoneId);
+            DataCenter zone = _dcDao.findById(zoneId);
             if (isNull(zone)) {
                 throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
             }
@@ -174,16 +177,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             implemented.setName(network.getName());
         }
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
-//        try {
-//            long zoneId = network.getDataCenterId();
-//            DataCenter zone = zoneDao.findById(zoneId);
-//            if (isNull(zone)) {
-//                throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
-//            }
-//            createNsxSegment(implemented, zone);
-//        } catch (Exception ex) {
-//            throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
-//        }
         return implemented;
     }
 
@@ -212,12 +205,17 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
                 throw new CloudRuntimeException(msg);
             }
 
+            DomainVO domain = domainDao.findById(account.getDomainId());
+            if (Objects.isNull(domain)) {
+                String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+
             // Create the DHCP relay config for the segment
             String iPv4Address = nicProfile.getIPv4Address();
             List<String> addresses = List.of(iPv4Address);
-            CreateNsxDhcpRelayConfigCommand command = new CreateNsxDhcpRelayConfigCommand(zone.getName(), zone.getId(),
-                    account.getAccountName(), network.getAccountId(),
-                    vpc.getName(), network.getName(), addresses);
+            CreateNsxDhcpRelayConfigCommand command = NsxHelper.createNsxDhcpRelayConfigCommand(domain, account, zone, vpc, network, addresses);
             NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
             if (!answer.getResult()) {
                 String msg = String.format("Error creating DHCP relay config for network %s and nic %s: %s", network.getName(), nic.getName(), answer.getDetails());
@@ -266,7 +264,7 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
-            String vpcName = null;
+        String vpcName = null;
         if (nonNull(networkVO.getVpcId())) {
             VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
             if (isNull(vpc)) {
@@ -278,8 +276,13 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
         if (isNull(account)) {
             throw new CloudRuntimeException(String.format("Unable to find account with id: %s", networkVO.getAccountId()));
         }
-        CreateNsxSegmentCommand command = new CreateNsxSegmentCommand(zone.getName(), zone.getId(),
-                account.getAccountName(), networkVO.getAccountId(), vpcName, networkVO);
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(domain)) {
+            String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpcName, networkVO);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
         if (!answer.getResult()) {
             throw new CloudRuntimeException("can not create NSX network");

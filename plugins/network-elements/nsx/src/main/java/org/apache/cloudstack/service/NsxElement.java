@@ -27,6 +27,8 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -59,6 +61,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -96,6 +99,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     PhysicalNetworkDao physicalNetworkDao;
     @Inject
     NetworkModel networkModel;
+    @Inject
+    DomainDao domainDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -112,7 +117,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         dnsCapabilities.put(Network.Capability.AllowDnsSuffixModification, "true");
         capabilities.put(Network.Service.Dns, dnsCapabilities);
 
-//        capabilities.put(Network.Service.Connectivity, null);
         capabilities.put(Network.Service.StaticNat, null);
 
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
@@ -195,7 +199,14 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         Account account = accountMgr.getAccount(network.getAccountId());
         NetworkVO networkVO = networkDao.findById(network.getId());
-        return nsxService.deleteNetwork(account.getAccountName(), networkVO);
+        DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(zone)) {
+            String msg = String.format("Cannot fing zone with ID %s", network.getDataCenterId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return nsxService.deleteNetwork(zone.getName(), account.getAccountName(), domain.getName(), networkVO);
     }
 
     @Override
@@ -222,7 +233,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         agentManager.registerForHostEvents(this, true, true, true);
         resourceManager.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-        return false;
+        return true;
     }
 
     @Override
@@ -254,6 +265,16 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         return null;
     }
 
+    private DomainVO getDomainFromAccount(Account account) {
+        DomainVO domain = domainDao.findById(account.getDomainId());
+        if (Objects.isNull(domain)) {
+            String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        return domain;
+    }
+
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         DataCenterVO zone = zoneFunction.apply(vpc.getZoneId());
@@ -265,7 +286,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
-        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DomainVO domain = getDomainFromAccount(account);
+        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
     }
 
     @Override
@@ -279,8 +301,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
         Account account = isNsxAndAccount.second();
-
-        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getAccountId(), account.getName(), vpc.getName());
+        DomainVO domain = getDomainFromAccount(account);
+        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
     }
 
     private Pair<Boolean, Account> validateVpcConfigurationAndGetAccount(DataCenterVO zone, Vpc vpc) {

@@ -16,9 +16,16 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
-public class DeleteNsxTier1GatewayCommand extends CreateNsxTier1GatewayCommand {
+public class DeleteNsxTier1GatewayCommand extends NsxCommand {
 
-    public DeleteNsxTier1GatewayCommand(String zoneName, Long zoneId, String accountName, Long accountId, String vpcName) {
-        super(zoneName, zoneId, accountName, accountId, vpcName);
+    private String vpcName;
+
+    public DeleteNsxTier1GatewayCommand(String domainName, String accountName, String zoneName, String vpcName) {
+        super(domainName, accountName, zoneName);
+        this.vpcName = vpcName;
+    }
+
+    public String getVpcName() {
+        return vpcName;
     }
 }
