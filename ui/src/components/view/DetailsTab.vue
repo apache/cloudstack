@@ -216,10 +216,10 @@ export default {
         for (const nic of this.resource.nic) {
           if (managementDeviceIds.includes(parseInt(nic.deviceid)) && nic.ipaddress) {
             managementIps.push(nic.ipaddress)
+            if (nic.publicip) {
+              managementIps.push(nic.publicip)
+            }
           }
-        }
-        if (this.resource.publicip && managementDeviceIds.includes(0)) {
-          managementIps.push(this.resource.publicip)
         }
 
         if (accessMethods) {

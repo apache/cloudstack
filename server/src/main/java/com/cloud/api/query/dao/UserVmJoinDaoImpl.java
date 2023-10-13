@@ -52,6 +52,7 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
+import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -331,6 +332,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     }
                     nicResponse.setSecondaryIps(ipList);
                 }
+                IpAddress publicIp = ApiDBUtils.findIpByAssociatedVmIdAndNetworkId(userVm.getId(), userVm.getNetworkId());
+                if (publicIp != null) {
+                    nicResponse.setPublicIpId(publicIp.getUuid());
+                    nicResponse.setPublicIp(publicIp.getAddress().toString());
+                }
+
                 nicResponse.setObjectName("nic");
 
                 List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id).stream()
@@ -545,6 +552,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     ipList.add(ipRes);
                 }
                 nicResponse.setSecondaryIps(ipList);
+            }
+            IpAddress publicIp = ApiDBUtils.findIpByAssociatedVmIdAndNetworkId(uvo.getId(), uvo.getNetworkId());
+            if (publicIp != null) {
+                nicResponse.setPublicIpId(publicIp.getUuid());
+                nicResponse.setPublicIp(publicIp.getAddress().toString());
             }
 
             /* 18: extra dhcp options */
