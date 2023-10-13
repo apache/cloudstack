@@ -1637,7 +1637,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
             List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
             return StringUtils.isBlank(keyword) ? instances :
-                    instances.stream().filter(x -> x.getName().contains(keyword)).collect(Collectors.toList());
+                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
         } catch (Exception e) {
             String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());
