@@ -100,7 +100,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Inject
     NetworkModel networkModel;
     @Inject
-    private DomainDao domainDao;
+    DomainDao domainDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -117,7 +117,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         dnsCapabilities.put(Network.Capability.AllowDnsSuffixModification, "true");
         capabilities.put(Network.Service.Dns, dnsCapabilities);
 
-//        capabilities.put(Network.Service.Connectivity, null);
         capabilities.put(Network.Service.StaticNat, null);
 
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
@@ -234,7 +233,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         agentManager.registerForHostEvents(this, true, true, true);
         resourceManager.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
-        return false;
+        return true;
     }
 
     @Override

@@ -25,6 +25,9 @@ public class NsxCommand extends Command {
     private String accountName;
     private String domainName;
 
+    public NsxCommand() {
+    }
+
     public NsxCommand(String domainName, String accountName, String zoneName) {
         this.zoneName = zoneName;
         this.accountName = accountName;

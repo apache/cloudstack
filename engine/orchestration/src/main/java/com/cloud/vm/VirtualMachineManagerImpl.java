@@ -1474,7 +1474,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
+    public void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
         if (VirtualMachine.Type.User.equals(vm.getType())) {
             List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
             Map<Long, String> networkToNetworkNameMap = new HashMap<>();
