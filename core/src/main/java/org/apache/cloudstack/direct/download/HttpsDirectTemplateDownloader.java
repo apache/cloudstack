@@ -186,8 +186,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
                 SSLContext context = getSSLContext();
                 urlConnection.setSSLSocketFactory(context.getSocketFactory());
                 urlConnection.connect();
-                boolean isCompressed = UriUtils.COMMPRESSION_FORMATS.stream().anyMatch(f -> !url.toLowerCase().endsWith(f));
-                return QCOW2Utils.getVirtualSize(urlObj.openStream(), isCompressed);
+                return QCOW2Utils.getVirtualSize(urlObj.openStream(), UriUtils.isUrlForCompressedFile(url));
             } catch (IOException e) {
                 throw new CloudRuntimeException(String.format("Cannot obtain qcow2 virtual size due to: %s", e.getMessage()), e);
             }

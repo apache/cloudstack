@@ -115,8 +115,7 @@ public final class QCOW2Utils {
     public static long getVirtualSize(String urlStr) {
         try {
             URL url = new URL(urlStr);
-            boolean isCompressed = UriUtils.COMMPRESSION_FORMATS.stream().anyMatch(f -> !urlStr.toLowerCase().endsWith(f));
-            return getVirtualSize(url.openStream(), isCompressed);
+            return getVirtualSize(url.openStream(), UriUtils.isUrlForCompressedFile(urlStr));
         } catch (MalformedURLException e) {
             LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
             throw new IllegalArgumentException("Invalid URL: " + urlStr);
