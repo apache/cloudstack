@@ -34,6 +34,7 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.io.IOUtils;
@@ -94,13 +95,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertPath = String.format("%s/%s", secondaryPool.getLocalPath(), temporaryConvertFolder);
 
         try {
-            Pair<Boolean, String> conversionResultPair = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
+            boolean result = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
                     temporaryConvertPath, temporaryConvertUuid, timeout);
-            boolean result = conversionResultPair.first();
-            String output = conversionResultPair.second();
             if (!result) {
-                String err = String.format("The virt-v2v conversion of the instance %s failed due to: %s",
-                        sourceInstanceName, output);
+                String err = String.format("The virt-v2v conversion of the instance %s failed. " +
+                                "Please check the agent logs for the virt-v2v output", sourceInstanceName);
                 s_logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
@@ -237,7 +236,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    private Pair<Boolean, String> performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
+    private boolean performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
                                            String temporaryPasswordFilePath,
                                            String temporaryConvertFolder,
                                            String temporaryConvertUuid,
@@ -251,9 +250,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         script.add("-os", temporaryConvertFolder);
         script.add("-of", "qcow2");
         script.add("-on", temporaryConvertUuid);
-        String result = script.execute();
+
+        String logPrefix = String.format("virt-v2v source: %s %s progress", convertInstanceUrl, sourceInstanceName);
+        OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
+        script.execute(outputLogger);
         int exitValue = script.getExitValue();
-        return new Pair<>(exitValue == 0, result);
+        return exitValue == 0;
     }
 
     private String createTemporaryPasswordFileAndRetrievePath(RemoteInstanceTO sourceInstance) {

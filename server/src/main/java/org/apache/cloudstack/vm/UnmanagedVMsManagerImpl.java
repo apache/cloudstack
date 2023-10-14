@@ -1462,8 +1462,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         if (!convertAnswer.getResult()) {
-            String err = String.format("The convert process failed for instance %s from Vmware to KVM due to: %s",
-                    vmName, convertAnswer.getDetails());
+            String err = String.format("The convert process failed for instance %s from Vmware to KVM on host %s: %s",
+                    vmName, convertHost.getName(), convertAnswer.getDetails());
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
