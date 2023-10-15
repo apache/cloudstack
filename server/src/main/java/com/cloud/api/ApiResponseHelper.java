@@ -2572,6 +2572,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
+
+                    StringBuilder domainPath = new StringBuilder("ROOT");
+                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                    response.setDomainPath(domainPath.toString());
                 }
             }
             response.setSubdomainAccess(domainNetworkDetails.second());
