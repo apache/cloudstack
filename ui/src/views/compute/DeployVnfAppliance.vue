@@ -853,8 +853,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick, h } from 'vue'
-import { Button } from 'ant-design-vue'
+import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -2236,9 +2235,8 @@ export default {
           createVnfAppData.bootintosetup = values.bootintosetup
         }
 
-        const title = this.$t('label.launch.vm')
+        const title = this.$t('label.launch.vnf.appliance')
         const description = values.name || ''
-        const password = this.$t('label.password')
 
         createVnfAppData = Object.fromEntries(
           Object.entries(createVnfAppData).filter(([key, value]) => value !== undefined))
@@ -2271,22 +2269,40 @@ export default {
               successMethod: result => {
                 const vm = result.jobresult.virtualmachine
                 const name = vm.displayname || vm.name || vm.id
-                if (vm.password) {
-                  this.$notification.success({
-                    message: password + ` ${this.$t('label.for')} ` + name,
-                    description: vm.password,
-                    btn: () => h(
-                      Button,
-                      {
-                        type: 'primary',
-                        size: 'small',
-                        onClick: () => this.copyToClipboard(vm.password)
-                      },
-                      () => [this.$t('label.copy.password')]
-                    ),
-                    duration: 0
-                  })
+                const username = vm.vnfdetails?.username || null
+                const password = vm.vnfdetails?.password || null
+                const sshUsername = vm.vnfdetails?.ssh_user || null
+                const sshPassword = vm.vnfdetails?.ssh_password || null
+                const webUsername = vm.vnfdetails?.web_user || null
+                const webPassword = vm.vnfdetails?.web_password || null
+                const credentials = []
+                if (username) {
+                  credentials.push(this.$t('label.username') + ' : ' + username)
                 }
+                if (password) {
+                  credentials.push(this.$t('label.password.default') + ' : ' + password)
+                }
+                if (webUsername) {
+                  credentials.push('Web ' + this.$t('label.username') + ' : ' + webUsername)
+                }
+                if (webPassword) {
+                  credentials.push('Web ' + this.$t('label.password.default') + ' : ' + webPassword)
+                }
+                if (sshUsername) {
+                  credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
+                }
+                if (sshPassword) {
+                  credentials.push('SSH ' + this.$t('label.password.default') + ' : ' + sshPassword)
+                }
+                if (vm.password) {
+                  credentials.push('New password : ' + vm.password)
+                }
+                credentials.push(this.$t('message.vnf.credentials.change'))
+                this.$notification.success({
+                  message: `${this.$t('message.vnf.credentials.default')} ` + name,
+                  description: (<span v-html={credentials.join('<br>')}></span>),
+                  duration: 0
+                })
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,

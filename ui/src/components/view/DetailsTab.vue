@@ -191,19 +191,19 @@ export default {
           credentials.push(this.$t('label.username') + ' : ' + username)
         }
         if (password) {
-          credentials.push(this.$t('label.password') + ' : ' + password)
+          credentials.push(this.$t('label.password.default') + ' : ' + password)
         }
         if (webUsername) {
           credentials.push('Web ' + this.$t('label.username') + ' : ' + webUsername)
         }
         if (webPassword) {
-          credentials.push('Web ' + this.$t('label.password') + ' : ' + webPassword)
+          credentials.push('Web ' + this.$t('label.password.default') + ' : ' + webPassword)
         }
         if (sshUsername) {
           credentials.push('SSH ' + this.$t('label.username') + ' : ' + sshUsername)
         }
         if (sshPassword) {
-          credentials.push('SSH ' + this.$t('label.password') + ' : ' + sshPassword)
+          credentials.push('SSH ' + this.$t('label.password.default') + ' : ' + sshPassword)
         }
 
         const managementDeviceIds = []
