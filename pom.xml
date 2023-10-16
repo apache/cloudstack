@@ -170,7 +170,7 @@
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
         <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
-        <cs.reflections.version>0.9.12</cs.reflections.version>
+        <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
         <cs.tink.version>1.7.0</cs.tink.version>
