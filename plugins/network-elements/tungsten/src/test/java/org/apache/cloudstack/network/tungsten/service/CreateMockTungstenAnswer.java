@@ -30,7 +30,10 @@ public class CreateMockTungstenAnswer {
         when(tungstenAnswer.getResult()).thenReturn(Result);
     }
     CreateMockTungstenAnswer(){
-        when(tungstenAnswer.getResult()).thenReturn(true);
+        this(true);
     }
-    TungstenAnswer get(){return tungstenAnswer;}
+    TungstenAnswer get() {
+        return tungstenAnswer;
+    }
+
 }
