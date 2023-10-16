@@ -1353,7 +1353,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(snapshot.getDataCenterId());
 
             if (backupSnapToSecondary) {
-                backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
+                backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds());
             } else {
                 s_logger.debug("skipping backup of snapshot [uuid=" + snapshot.getUuid() + "] to secondary due to configuration");
                 snapshotOnPrimary.markBackedUp();
@@ -1376,7 +1376,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 // Correct the resource count of snapshot in case of delta snapshots.
                 _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getPhysicalSize()));
 
-                if (backupSnapToSecondary) {
+                if (!payload.getAsyncBackup() && backupSnapToSecondary) {
                     copyNewSnapshotToZones(snapshotId, snapshot.getDataCenterId(), payload.getZoneIds());
                 }
             } catch (Exception e) {
@@ -1400,9 +1400,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return snapshot;
     }
 
-    protected void backupSnapshotToSecondary(boolean asyncBackup, SnapshotStrategy snapshotStrategy, SnapshotInfo snapshotOnPrimary) {
+    protected void backupSnapshotToSecondary(boolean asyncBackup, SnapshotStrategy snapshotStrategy, SnapshotInfo snapshotOnPrimary, List<Long> zoneIds) {
         if (asyncBackup) {
-            backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
+            backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy, zoneIds), 0, TimeUnit.SECONDS);
         } else {
             SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
             if (backupedSnapshot != null) {
@@ -1416,10 +1416,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         int attempts;
         SnapshotStrategy snapshotStrategy;
 
-        public BackupSnapshotTask(SnapshotInfo snap, int maxRetries, SnapshotStrategy strategy) {
+        List<Long> zoneIds;
+
+        public BackupSnapshotTask(SnapshotInfo snap, int maxRetries, SnapshotStrategy strategy, List<Long> zoneIds) {
             snapshot = snap;
             attempts = maxRetries;
             snapshotStrategy = strategy;
+            this.zoneIds = zoneIds;
         }
 
         @Override
@@ -1431,11 +1434,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
                 if (backupedSnapshot != null) {
                     snapshotStrategy.postSnapshotCreation(snapshot);
+                    copyNewSnapshotToZones(snapshot.getId(), snapshot.getDataCenterId(), zoneIds);
                 }
             } catch (final Exception e) {
                 if (attempts >= 0) {
                     s_logger.debug("Backing up of snapshot failed, for snapshot with ID " + snapshot.getSnapshotId() + ", left with " + attempts + " more attempts");
-                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshot, --attempts, snapshotStrategy), snapshotBackupRetryInterval, TimeUnit.SECONDS);
+                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshot, --attempts, snapshotStrategy, zoneIds), snapshotBackupRetryInterval, TimeUnit.SECONDS);
                 } else {
                     s_logger.debug("Done with " + snapshotBackupRetries + " attempts in  backing up of snapshot with ID " + snapshot.getSnapshotId());
                     snapshotSrv.cleanupOnSnapshotBackupFailure(snapshot);
