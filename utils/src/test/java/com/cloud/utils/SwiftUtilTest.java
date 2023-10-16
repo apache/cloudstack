@@ -182,7 +182,7 @@ public class SwiftUtilTest {
     }
 
     private SwiftClientCfg CreateMockSwiftClientCfg(String policy){
-        SwiftClientCfg cfg = mock(SwiftClientCfg.class);//
+        SwiftClientCfg cfg = mock(SwiftClientCfg.class);
         given(cfg.getEndPoint()).willReturn("swift.endpoint");
         given(cfg.getAccount()).willReturn("cs");
         given(cfg.getUserName()).willReturn("sec-storage");
