@@ -1316,7 +1316,6 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
         Deploy a VM from a Direct Download registered template with wrong checksum
         """
         self.template["checksum"]="{MD5}" + ("X" * 32)
-        print(self.template)
         tmpl = Template.register(self.apiclient, self.template, zoneid=self.zone.id, hypervisor=self.hypervisor, randomize_name=False)
         self.cleanup.append(tmpl)
 
@@ -1341,7 +1340,6 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
             )
             if type(list_virtual_machine_response) == list and len(list_virtual_machine_response) > 0:
                 for virtual_machine_response in list_virtual_machine_response:
-                    print(virtual_machine_response)
                     VirtualMachine.delete(virtual_machine_response, self.apiclient, expunge=True)
 
         if failed == True:
