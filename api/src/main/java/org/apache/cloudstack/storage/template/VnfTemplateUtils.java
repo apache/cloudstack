@@ -42,6 +42,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class VnfTemplateUtils {
+    private VnfTemplateUtils() {
+    }
+
     public static List<VNF.VnfNic> getVnfNicsList(Map vnfNics) {
         List<VNF.VnfNic> nicsList = new ArrayList<>();
         if (MapUtils.isNotEmpty(vnfNics)) {

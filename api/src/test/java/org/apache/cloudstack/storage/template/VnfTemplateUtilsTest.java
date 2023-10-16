@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -240,5 +241,26 @@ public class VnfTemplateUtilsTest {
         UpdateVnfTemplateCmd cmd = Mockito.mock(UpdateVnfTemplateCmd.class);
 
         VnfTemplateUtils.validateApiCommandParams(cmd, template);
+    }
+
+    @Test
+    public void testValidateVnfCidrList() {
+        List<String> cidrList = new ArrayList<>();
+        cidrList.add("10.10.10.0/24");
+        VnfTemplateUtils.validateVnfCidrList(cidrList);
+    }
+
+    @Test
+    public void testValidateVnfCidrListWithEmptyList() {
+        List<String> cidrList = new ArrayList<>();
+        VnfTemplateUtils.validateVnfCidrList(cidrList);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateVnfCidrListwithInvalidList() {
+        List<String> cidrList = new ArrayList<>();
+        cidrList.add("10.10.10.0/24");
+        cidrList.add("10.10.10.0/33");
+        VnfTemplateUtils.validateVnfCidrList(cidrList);
     }
 }
