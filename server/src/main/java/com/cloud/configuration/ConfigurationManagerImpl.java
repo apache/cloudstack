@@ -935,6 +935,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long imageStoreId = cmd.getImageStoreId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
+        final Long networkId = cmd.getNetworkId();
+        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
         String category = null;
@@ -1006,11 +1008,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             id = imageStoreId;
             paramCountCheck++;
         }
-//        if (networkId != null) {
-//            scope = ConfigKey.Scope.Network.toString();
-//            id = networkId;
-//            paramCountCheck++;
-//        }
+        if (networkId != null) {
+            scope = ConfigKey.Scope.Network.toString();
+            id = networkId;
+            paramCountCheck++;
+        }
 
         if (paramCountCheck > 1) {
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
