@@ -52,7 +52,7 @@ public class TungstenFabricUtilsTest {
     @Test
     public void sendTungstenCommandSuccessTest() {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer tungstenAnswer = new CreateMockTungstenAnswer(true).get();
+        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
 
         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
@@ -81,7 +81,7 @@ public class TungstenFabricUtilsTest {
     @Test(expected = InvalidParameterValueException.class)
     public void sendTungstenCommandWithFalseAnswer() {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer tungstenAnswer = new CreateMockTungstenAnswer(false).get();
+        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(false).get();
         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
 
         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
