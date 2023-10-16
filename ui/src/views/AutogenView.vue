@@ -55,6 +55,7 @@
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
                     style="min-width: 100px; margin-left: 10px; margin-top: -4px"
+                    size=small
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"

@@ -702,7 +702,7 @@ export default {
 
   :deep(.ant-input-group) {
     .ant-input-affix-wrapper {
-      width: calc(100% - 10px);
+      width: calc(100%);
     }
   }
 }
