@@ -466,8 +466,11 @@ public class PrimeraAdapter implements ProviderAdapter {
             }
 
             // member has long name but cloudstack had shortname
-            if (member.substring(0, (member.indexOf('.'))).equals(shortname)) {
-                return true;
+            int index = member.indexOf(".");
+            if (index > 0) {
+                if (member.substring(0, (member.indexOf('.'))).equals(shortname)) {
+                    return true;
+                }
             }
         }
 
