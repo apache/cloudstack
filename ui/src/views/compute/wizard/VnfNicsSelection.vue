@@ -108,7 +108,7 @@ export default {
         },
         {
           dataIndex: 'management',
-          title: this.$t('label.management'),
+          title: this.$t('label.vnf.nic.management'),
           width: '15%',
           slots: { customRender: 'management' }
         },

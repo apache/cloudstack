@@ -1546,6 +1546,7 @@ export default {
       if (this.zoneSelected) {
         this.form.startvm = true
         this.form.vnfconfiguremanagement = false
+        this.form.vnfcidrlist = '0.0.0.0/0'
       }
 
       if (this.zone && this.zone.networktype !== 'Basic') {
@@ -2546,7 +2547,7 @@ export default {
       this.zoneSelected = true
       this.form.startvm = true
       this.form.vnfconfiguremanagement = false
-      this.form.vnfcidrlist = ''
+      this.form.vnfcidrlist = '0.0.0.0/0'
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
       this.form.clusterid = undefined
