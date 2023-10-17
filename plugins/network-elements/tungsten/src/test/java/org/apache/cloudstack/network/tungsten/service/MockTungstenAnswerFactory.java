@@ -24,9 +24,9 @@ import static org.mockito.Mockito.when;
 public class MockTungstenAnswerFactory {
 
     TungstenAnswer tungstenAnswer;
-    MockTungstenAnswerFactory(boolean Result){
+    MockTungstenAnswerFactory(boolean returnResult){
         tungstenAnswer=mock(TungstenAnswer.class);
-        when(tungstenAnswer.getResult()).thenReturn(Result);
+        when(tungstenAnswer.getResult()).thenReturn(returnResult);
     }
     MockTungstenAnswerFactory(){
         this(true);
