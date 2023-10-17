@@ -41,6 +41,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -218,6 +219,12 @@ public class UserVmManagerImplTest {
 
     @Mock
     AccountVO account;
+
+    @Mock
+    VMTemplateVO vmTemplateVoMock;
+
+    @Mock
+    ManagementService managementServiceMock;
 
     @Mock
     private ServiceOfferingVO serviceOffering;
@@ -1138,5 +1145,59 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(cmd);
         Mockito.verify(vnfTemplateManager).createSecurityGroupForVnfAppliance(any(), any(), any(), any(DeployVnfApplianceCmd.class));
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestTemplateIsNotPasswordEnabledReturnPreDefinedString() {
+        String expected = "saved_password";
+
+        Mockito.doReturn(false).when(vmTemplateVoMock).isEnablePassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestVmHasPasswordReturnCurrentPassword() {
+        String expected = "current_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(expected).when(userVmVoMock).getDetail("password");
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestUserDefinedPasswordReturnNewPasswordAndSetVmPassword() {
+        String expected = "new_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(null).when(userVmVoMock).getDetail("password");
+        Mockito.doCallRealMethod().when(userVmVoMock).setPassword(Mockito.any());
+        Mockito.doCallRealMethod().when(userVmVoMock).getPassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword(expected, userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+        Assert.assertEquals(expected, userVmVoMock.getPassword());
+    }
+
+    @Test
+    public void getCurrentVmPasswordOrDefineNewPasswordTestUserDefinedPasswordReturnRandomPasswordAndSetVmPassword() {
+        String expected = "random_password";
+
+        Mockito.doReturn(true).when(vmTemplateVoMock).isEnablePassword();
+        Mockito.doReturn(null).when(userVmVoMock).getDetail("password");
+        Mockito.doReturn(expected).when(managementServiceMock).generateRandomPassword();
+        Mockito.doCallRealMethod().when(userVmVoMock).setPassword(Mockito.any());
+        Mockito.doCallRealMethod().when(userVmVoMock).getPassword();
+
+        String result = userVmManagerImpl.getCurrentVmPasswordOrDefineNewPassword("", userVmVoMock, vmTemplateVoMock);
+
+        Assert.assertEquals(expected, result);
+        Assert.assertEquals(expected, userVmVoMock.getPassword());
     }
 }
