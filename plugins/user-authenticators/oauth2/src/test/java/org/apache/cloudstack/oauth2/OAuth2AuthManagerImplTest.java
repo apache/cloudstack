@@ -20,7 +20,9 @@
 package org.apache.cloudstack.oauth2;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
+import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.junit.After;
@@ -33,9 +35,13 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 public class OAuth2AuthManagerImplTest {
@@ -66,7 +72,7 @@ public class OAuth2AuthManagerImplTest {
             _authManager.registerOauthProvider(cmd);
             Assert.fail("Expected CloudRuntimeException was not thrown");
         } catch (CloudRuntimeException e) {
-            Assert.assertEquals("OAuth is not enabled, please enable to register", e.getMessage());
+            assertEquals("OAuth is not enabled, please enable to register", e.getMessage());
         }
 
         // Test when provider is already registered
@@ -80,7 +86,7 @@ public class OAuth2AuthManagerImplTest {
             _authManager.registerOauthProvider(cmd);
             Assert.fail("Expected CloudRuntimeException was not thrown");
         } catch (CloudRuntimeException e) {
-            Assert.assertEquals("Provider with the name testProvider is already registered", e.getMessage());
+            assertEquals("Provider with the name testProvider is already registered", e.getMessage());
         }
 
         // Test when provider is github and secret key is not null
@@ -91,8 +97,47 @@ public class OAuth2AuthManagerImplTest {
         when(cmd.getProvider()).thenReturn("github");
         when(_authManager._oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenReturn(savedProviderVO);
         OauthProviderVO result = _authManager.registerOauthProvider(cmd);
-        Assert.assertEquals("github", result.getProvider());
-        Assert.assertEquals("testSecretKey", result.getSecretKey());
+        assertEquals("github", result.getProvider());
+        assertEquals("testSecretKey", result.getSecretKey());
+    }
+
+    @Test
+    public void testUpdateOauthProvider() {
+        Long id = 1L;
+        String description = "updated description";
+        String clientId = "updated client id";
+        String redirectUri = "updated redirect uri";
+        String secretKey = "updated secret key";
+
+        UpdateOAuthProviderCmd cmd = Mockito.mock(UpdateOAuthProviderCmd.class);
+        when(cmd.getId()).thenReturn(id);
+        when(cmd.getDescription()).thenReturn(description);
+        when(cmd.getClientId()).thenReturn(clientId);
+        when(cmd.getRedirectUri()).thenReturn(redirectUri);
+        when(cmd.getSecretKey()).thenReturn(secretKey);
+
+        OauthProviderVO providerVO = new OauthProviderVO();
+        providerVO.setDescription("old description");
+        providerVO.setClientId("old client id");
+        providerVO.setRedirectUri("old redirect uri");
+        providerVO.setSecretKey("old secret key");
+
+        when(_oauthProviderDao.findById(id)).thenReturn(providerVO);
+
+        OauthProviderVO updatedProviderVO = new OauthProviderVO();
+        updatedProviderVO.setDescription(description);
+        updatedProviderVO.setClientId(clientId);
+        updatedProviderVO.setRedirectUri(redirectUri);
+        updatedProviderVO.setSecretKey(secretKey);
+
+        when(_oauthProviderDao.update(id, providerVO)).thenReturn(true);
+
+        OauthProviderVO result = _authManager.updateOauthProvider(cmd);
+
+        assertEquals(description, result.getDescription());
+        assertEquals(clientId, result.getClientId());
+        assertEquals(redirectUri, result.getRedirectUri());
+        assertEquals(secretKey, result.getSecretKey());
     }
 
     @Test
@@ -106,16 +151,41 @@ public class OAuth2AuthManagerImplTest {
         // Test when uuid is not null
         when(_oauthProviderDao.findByUuid(uuid)).thenReturn(providerVO);
         List<OauthProviderVO> result = _authManager.listOauthProviders(null, uuid);
-        Assert.assertEquals(providerList, result);
+        assertEquals(providerList, result);
 
         // Test when provider is not blank
         when(_oauthProviderDao.findByProvider(provider)).thenReturn(providerVO);
         result = _authManager.listOauthProviders(provider, null);
-        Assert.assertEquals(providerList, result);
+        assertEquals(providerList, result);
 
         // Test when both uuid and provider are null
         when(_oauthProviderDao.listAll()).thenReturn(providerList);
         result = _authManager.listOauthProviders(null, null);
-        Assert.assertEquals(providerList, result);
+        assertEquals(providerList, result);
     }
+
+    @Test
+    public void testGetCommands() {
+        List<Class<?>> expectedCmdList = new ArrayList<>();
+        expectedCmdList.add(RegisterOAuthProviderCmd.class);
+        expectedCmdList.add(DeleteOAuthProviderCmd.class);
+        expectedCmdList.add(UpdateOAuthProviderCmd.class);
+
+        List<Class<?>> cmdList = _authManager.getCommands();
+
+        assertEquals(expectedCmdList, cmdList);
+    }
+
+    @Test
+    public void testStart() {
+        when(_authManager.isOAuthPluginEnabled()).thenReturn(true);
+        doNothing().when(_authManager).initializeUserOAuth2AuthenticationProvidersMap();
+        boolean result = _authManager.start();
+        assertTrue(result);
+
+        when(_authManager.isOAuthPluginEnabled()).thenReturn(false);
+        result = _authManager.start();
+        assertTrue(result);
+    }
+
 }

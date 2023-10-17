@@ -42,8 +42,8 @@ import java.util.List;
 public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
     private static final Logger s_logger = Logger.getLogger(GoogleOAuth2Provider.class);
 
-    private String accessToken = null;
-    private String refreshToken = null;
+    protected String accessToken = null;
+    protected String refreshToken = null;
 
     @Inject
     OauthProviderDao _oauthProviderDao;
@@ -129,7 +129,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return userinfo.getEmail();
     }
 
-    private void clearAccessAndRefreshTokens() {
+    protected void clearAccessAndRefreshTokens() {
         accessToken = null;
         refreshToken = null;
     }
