@@ -135,6 +135,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.w3c.dom.Document;
@@ -1174,9 +1175,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm forceRebootVirtualMachine(long vmId, long hostId, boolean enterSetup) {
         try {
             if (stopVirtualMachine(vmId, false) != null) {
-                Map<VirtualMachineProfile.Param,Object> params = null;
+                Map<VirtualMachineProfile.Param,Object> params = new HashMap<>();
                 if (enterSetup) {
-                    params = new HashMap();
                     params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
                 }
                 return startVirtualMachine(vmId, null, null, hostId, params, null, false).first();
@@ -4878,6 +4878,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.getBootIntoSetup() != null) {
             additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
         }
+
+        if (StringUtils.isNotBlank(cmd.getPassword())) {
+            additionalParams.put(VirtualMachineProfile.Param.VmPassword, cmd.getPassword());
+        }
+
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
     }
 
@@ -5268,21 +5273,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+    public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams,
+            String deploymentPlannerToUse) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         return startVirtualMachine(vmId, null, null, hostId, additionalParams, deploymentPlannerToUse);
     }
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
-            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         return startVirtualMachine(vmId, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, true);
     }
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
-            Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
+            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         // Input validation
         final Account callerAccount = CallContext.current().getCallingAccount();
@@ -5381,15 +5386,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check that the password was passed in and is valid
             template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
-            String password = "saved_password";
-            if (template.isEnablePassword()) {
-                if (vm.getDetail("password") != null) {
-                    password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
-                } else {
-                    password = _mgr.generateRandomPassword();
-                    vm.setPassword(password);
-                }
-            }
+            String password = getCurrentVmPasswordOrDefineNewPassword(String.valueOf(additionalParams.getOrDefault(VirtualMachineProfile.Param.VmPassword, "")), vm, template);
 
             if (!validPassword(password)) {
                 throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
@@ -5402,7 +5399,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
         }
 
-        if(null != additionalParams && additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
+        if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
             if (! HypervisorType.VMware.equals(vm.getHypervisorType())) {
                 throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
             }
@@ -5443,6 +5440,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return vmParamPair;
+    }
+
+    /**
+     * If the template is password enabled and the VM already has a password, returns it.
+     * If the template is password enabled and the VM does not have a password, sets the password to the password defined by the user and returns it. If no password is informed,
+     * sets it to a random password and returns it.
+     * If the template is not password enabled, returns saved_password.
+     * @param newPassword The new password informed by the user in order to set the password of the VM.
+     * @param vm The VM to retrieve the password from.
+     * @param template The template to be checked if the password is enabled or not.
+     * @return The password of the VM or saved_password.
+     */
+    protected String getCurrentVmPasswordOrDefineNewPassword(String newPassword, UserVmVO vm, VMTemplateVO template) {
+        String password = "saved_password";
+
+        if (template.isEnablePassword()) {
+            if (vm.getDetail("password") != null) {
+                s_logger.debug(String.format("Decrypting VM [%s] current password.", vm));
+                password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
+            } else if (StringUtils.isNotBlank(newPassword)) {
+                s_logger.debug(String.format("A password for VM [%s] was informed. Setting VM password to value defined by user.", vm));
+                password = newPassword;
+                vm.setPassword(password);
+            } else {
+                s_logger.debug(String.format("Setting VM [%s] password to a randomly generated password.", vm));
+                password = _mgr.generateRandomPassword();
+                vm.setPassword(password);
+            }
+        } else if (StringUtils.isNotBlank(newPassword)) {
+            s_logger.debug(String.format("A password was informed; however, the template [%s] is not password enabled. Ignoring the parameter.", template));
+        }
+
+        return password;
     }
 
     private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(Map<VirtualMachineProfile.Param, Object> params, Map<VirtualMachineProfile.Param, Object> parameterMap, VirtualMachineProfile.Param parameter,
