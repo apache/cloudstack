@@ -24,7 +24,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.cloud.network.Network;
+import com.cloud.network.VirtualRouterProvider;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
@@ -126,6 +129,16 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = "true if network offering is meant to be used for VPC, false otherwise.")
     private Boolean forVpc;
+
+    @Parameter(name = ApiConstants.FOR_NSX,
+            type = CommandType.BOOLEAN,
+            description = "true if network offering is meant to be used for NSX, false otherwise.")
+    private Boolean forNsx;
+
+    @Parameter(name = ApiConstants.MODE,
+            type = CommandType.STRING,
+            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route")
+    private String mode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
@@ -241,6 +254,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
+    public Boolean getForNsx() {
+        return forNsx;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
     public Boolean getForTungsten() {
         return forTungsten;
     }
@@ -263,25 +284,48 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = null;
         if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            serviceProviderMap = new HashMap<String, List<String>>();
-            Collection servicesCollection = serviceProviderList.values();
-            Iterator iter = servicesCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>) iter.next();
-                String service = services.get("service");
-                String provider = services.get("provider");
-                List<String> providerList = null;
-                if (serviceProviderMap.containsKey(service)) {
-                    providerList = serviceProviderMap.get(service);
-                } else {
-                    providerList = new ArrayList<String>();
+            if (!getForNsx()) {
+                serviceProviderMap = new HashMap<String, List<String>>();
+                Collection servicesCollection = serviceProviderList.values();
+                Iterator iter = servicesCollection.iterator();
+                while (iter.hasNext()) {
+                    HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                    String service = services.get("service");
+                    String provider = services.get("provider");
+                    List<String> providerList = null;
+                    if (serviceProviderMap.containsKey(service)) {
+                        providerList = serviceProviderMap.get(service);
+                    } else {
+                        providerList = new ArrayList<String>();
+                    }
+                    providerList.add(provider);
+                    serviceProviderMap.put(service, providerList);
                 }
-                providerList.add(provider);
-                serviceProviderMap.put(service, providerList);
+            }
+            else {
+                getServiceProviderMapForNsx(serviceProviderMap);
             }
         }
 
         return serviceProviderMap;
+    }
+
+    private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
+        String routerProvider = getForVpc() ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
+                VirtualRouterProvider.Type.VirtualRouter.name();
+        List<String> unsupportedServices = List.of("Vpn", "SecurityGroup", "Connectivity",
+                "Gateway", "Firewall", "StaticNat",
+                "PortForwarding", "NetworkACL");
+        List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
+        List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
+        for (String service : allServices) {
+            if (unsupportedServices.contains(service))
+                continue;
+            if (routerSupported.contains(service))
+                serviceProviderMap.put(service, List.of(routerProvider));
+            else
+                serviceProviderMap.put(service, List.of(Network.Provider.Nsx.getName()));
+        }
     }
 
     public Map<Capability, String> getServiceCapabilities(Service service) {

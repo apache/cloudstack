@@ -21,6 +21,7 @@
       <a-col :md="24" :lg="layout === 'horizontal' ? 10 : 24">
         <a-checkbox
           :checked="checked"
+          :disabled="forNsx"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
         </a-checkbox>
@@ -30,7 +31,8 @@
           v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-model:value="selectedOption"
+            v-model:value="selected"
+            :disabled="forNsx"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -83,9 +85,14 @@ export default {
     reversed: {
       type: Boolean,
       default: false
+    },
+    forNsx: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
+    console.log(this.forNsx)
     return {
       checked: false,
       selectedOption: null,
@@ -93,6 +100,7 @@ export default {
     }
   },
   created () {
+    console.log(this.defaultCheckBoxValue)
     this.checked = this.defaultCheckBoxValue
   },
   watch: {
@@ -112,6 +120,19 @@ export default {
         }
         return option
       })
+    },
+    selected () {
+      return this.option || this.selectedOption
+    },
+    option () {
+      console.log('option')
+      if (this.forNsx) {
+        return this.selectOptions[0]?.name || null
+      }
+      return null
+      // else {
+      //   return this.handleCheckChange({ target: { checked: true } })
+      // }
     }
   },
   methods: {

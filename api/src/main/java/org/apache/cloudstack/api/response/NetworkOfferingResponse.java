@@ -107,6 +107,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if network offering can be used by Tungsten-Fabric networks only")
     private Boolean forTungsten;
 
+    @SerializedName(ApiConstants.MODE)
+    @Param(description = "Mode in which the network will operate. This parameter is only relevant for NSX offerings")
+    private String mode;
+
     @SerializedName(ApiConstants.IS_PERSISTENT)
     @Param(description = "true if network offering supports persistent networks, false otherwise")
     private Boolean isPersistent;
@@ -225,6 +229,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setForTungsten(Boolean forTungsten) {
         this.forTungsten = forTungsten;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public void setIsPersistent(Boolean isPersistent) {

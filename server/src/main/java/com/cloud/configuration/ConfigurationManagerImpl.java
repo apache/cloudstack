@@ -132,6 +132,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -5926,7 +5927,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
+        Boolean forNsx = cmd.getForNsx();
         Boolean forTungsten = cmd.getForTungsten();
+        String mode = cmd.getMode();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -5957,6 +5960,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (item.getValue().size() != 1 || !(item.getValue().contains("Tungsten") || item.getValue().contains("ConfigDrive"))) {
                     throw new InvalidParameterValueException("Please specify Tungsten-Fabric provider for the " + item.getKey() + " service provider.");
                 }
+            }
+        }
+
+        if (Boolean.TRUE.equals(forNsx) && Boolean.TRUE.equals(forTungsten)) {
+            throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
+        }
+
+        if (Boolean.TRUE.equals(forNsx)) {
+            if (Objects.isNull(mode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
+            }
+            if (!EnumUtils.isValidEnum(NetworkOffering.Mode.class, mode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
             }
         }
 
@@ -6224,7 +6240,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, false, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, mode, domainIds, zoneIds, enable, internetProtocol);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
@@ -6369,7 +6385,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, Boolean forNsx, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, Boolean forNsx, String mode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;
