@@ -39,6 +39,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -74,6 +75,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -1118,5 +1120,23 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, newPassword, virtualMachineProfile);
         Mockito.verify(userVmDao).findById(vmId);
         Mockito.verify(userVmDao).update(vmId, userVmVoMock);
+    }
+
+    @Test
+    public void testGetSecurityGroupIdList() {
+        DeployVnfApplianceCmd cmd = Mockito.mock(DeployVnfApplianceCmd.class);
+        Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(cmd);
+        SecurityGroupVO securityGroupVO = Mockito.mock(SecurityGroupVO.class);
+        long securityGroupId = 100L;
+        when(securityGroupVO.getId()).thenReturn(securityGroupId);
+        Mockito.doReturn(securityGroupVO).when(vnfTemplateManager).createSecurityGroupForVnfAppliance(any(), any(), any(), any(DeployVnfApplianceCmd.class));
+
+        List<Long> securityGroupIds = userVmManagerImpl.getSecurityGroupIdList(cmd, null, null, null);
+
+        Assert.assertEquals(1, securityGroupIds.size());
+        Assert.assertEquals(securityGroupId, securityGroupIds.get(0).longValue());
+
+        Mockito.verify(userVmManagerImpl).getSecurityGroupIdList(cmd);
+        Mockito.verify(vnfTemplateManager).createSecurityGroupForVnfAppliance(any(), any(), any(), any(DeployVnfApplianceCmd.class));
     }
 }

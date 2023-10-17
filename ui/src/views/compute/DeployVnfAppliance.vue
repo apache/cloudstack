@@ -375,6 +375,20 @@
                       :networks="networks"
                       @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
                   </div>
+                  <div style="margin-top: 15px" v-if="showVnfConfigureManagement">
+                    <a-form-item name="vnfconfiguremanagement" ref="vnfconfiguremanagement">
+                      <template #label>
+                        <tooltip-label :title="$t('label.vnf.configure.management')" :tooltip="$t('label.vnf.configure.management.tooltip')"/>
+                      </template>
+                      <a-switch v-model:checked="form.vnfconfiguremanagement" />
+                    </a-form-item>
+                    <a-form-item name="vnfcidrlist" ref="vnfcidrlist" v-if="form.vnfconfiguremanagement === true">
+                      <template #label>
+                        <tooltip-label :title="$t('label.vnf.cidr.list')" :tooltip="$t('label.vnf.cidr.list.tooltip')"/>
+                      </template>
+                      <a-input v-model:value="form.vnfcidrlist" />
+                    </a-form-item>
+                  </div>
                 </template>
               </a-step>
               <a-step
@@ -768,18 +782,6 @@
                         optionFilterProp="label"
                         :filterOption="filterOption"
                       ></a-select>
-                    </a-form-item>
-                    <a-form-item name="vnfconfiguremanagement" ref="vnfconfiguremanagement">
-                      <template #label>
-                        <tooltip-label :title="$t('label.vnf.configure.management')" :tooltip="$t('label.vnf.configure.management.tooltip')"/>
-                      </template>
-                      <a-switch v-model:checked="form.vnfconfiguremanagement" />
-                    </a-form-item>
-                    <a-form-item name="vnfcidrlist" ref="vnfcidrlist" v-if="form.vnfconfiguremanagement === true">
-                      <template #label>
-                        <tooltip-label :title="$t('label.vnf.cidr.list')" :tooltip="$t('label.vnf.cidr.list.tooltip')"/>
-                      </template>
-                      <a-input v-model:value="form.vnfcidrlist" />
                     </a-form-item>
                     <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
                       <a-switch v-model:checked="form.startvm" />
@@ -1304,6 +1306,22 @@ export default {
     showVnfNicsSection () {
       return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
+    showVnfConfigureManagement () {
+      const managementDeviceIds = []
+      for (const templateVnfNic of this.templateVnfNics) {
+        if (templateVnfNic.management) {
+          managementDeviceIds.push(templateVnfNic.deviceid)
+        }
+      }
+      for (const deviceId of managementDeviceIds) {
+        if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
+          ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+          return true
+        }
+      }
+      return false
+    },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
@@ -1527,7 +1545,7 @@ export default {
 
       if (this.zoneSelected) {
         this.form.startvm = true
-        this.form.vnfconfiguremanagement = true
+        this.form.vnfconfiguremanagement = false
       }
 
       if (this.zone && this.zone.networktype !== 'Basic') {
@@ -2014,7 +2032,7 @@ export default {
               })
               return
             }
-            const networkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)]
+            const networkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)]?.id || null
             if (networkId) {
               if (templateVnfNic.deviceid !== nextDeviceId) {
                 this.$notification.error({
@@ -2163,7 +2181,7 @@ export default {
             if (networkIds.length > 0) {
               if (this.templateVnfNics && this.templateVnfNics.length > 0) {
                 for (const templateVnfNic of this.templateVnfNics) {
-                  const vnfNicNetworkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)] || null
+                  const vnfNicNetworkId = this.vnfNicNetworks[String(templateVnfNic.deviceid)]?.id || null
                   if (vnfNicNetworkId) {
                     const ipToNetwork = {
                       networkid: vnfNicNetworkId
@@ -2527,7 +2545,7 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
       this.form.startvm = true
-      this.form.vnfconfiguremanagement = true
+      this.form.vnfconfiguremanagement = false
       this.form.vnfcidrlist = ''
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId

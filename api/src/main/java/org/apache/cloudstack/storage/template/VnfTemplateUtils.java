@@ -70,8 +70,8 @@ public class VnfTemplateUtils {
                 boolean management = StringUtils.isBlank(managementString) || Boolean.parseBoolean(managementString);
                 nicsList.add(new VNF.VnfNic(deviceId, name, required, management, description));
             }
+            Collections.sort(nicsList, Comparator.comparing(VNF.VnfNic::getDeviceId));
         }
-        Collections.sort(nicsList, Comparator.comparing(VNF.VnfNic::getDeviceId));
         return nicsList;
     }
 

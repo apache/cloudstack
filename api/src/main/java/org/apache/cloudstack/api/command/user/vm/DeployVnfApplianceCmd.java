@@ -43,15 +43,16 @@ import java.util.List;
 public class DeployVnfApplianceCmd extends DeployVMCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.VNF_CONFIGURE_MANAGEMENT, type = CommandType.BOOLEAN, required = false,
-            description = "True by default, security group or network rules (source nat and firewall rules) will be configured for VNF management interfaces. False otherwise.")
+            description = "True by default, security group or network rules (source nat and firewall rules) will be configured for VNF management interfaces. False otherwise. " +
+                    "Network rules are configured if management network is an isolated network or shared network with security groups.")
     private Boolean vnfConfigureManagement;
 
     @Parameter(name = ApiConstants.VNF_CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
-            description = "the CIDR list to forward traffic from to the VNF management interface. Multiple entries must be separated by a single comma character (,).")
+            description = "the CIDR list to forward traffic from to the VNF management interface. Multiple entries must be separated by a single comma character (,). The default value is 0.0.0.0/0.")
     private List<String> vnfCidrlist;
 
     public Boolean getVnfConfigureManagement() {
-        return vnfConfigureManagement == null || vnfConfigureManagement;
+        return vnfConfigureManagement != null && vnfConfigureManagement;
     }
 
     public List<String> getVnfCidrlist() {

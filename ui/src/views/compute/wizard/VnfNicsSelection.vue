@@ -40,6 +40,10 @@
         <span v-if="record.required">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
       </template>
+      <template #management="{ record }">
+        <span v-if="record.management">{{ $t('label.yes') }}</span>
+        <span v-else>{{ $t('label.no') }}</span>
+      </template>
       <template #description="{record}">
         <span> {{ record.description }} </span>
       </template>
@@ -103,6 +107,12 @@ export default {
           slots: { customRender: 'required' }
         },
         {
+          dataIndex: 'management',
+          title: this.$t('label.management'),
+          width: '15%',
+          slots: { customRender: 'management' }
+        },
+        {
           dataIndex: 'description',
           title: this.$t('label.description'),
           width: '35%',
@@ -132,8 +142,8 @@ export default {
       this.form = reactive(form)
       this.rules = reactive(rules)
     },
-    updateNicNetworkValue (value, networkid) {
-      this.values[networkid] = value
+    updateNicNetworkValue (value, deviceid) {
+      this.values[deviceid] = this.networks.filter(network => network.id === value)?.[0] || null
       this.$emit('update-vnf-nic-networks', this.values)
     }
   }

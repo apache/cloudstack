@@ -25,6 +25,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine,
                              Network,
                              NetworkOffering,
+                             VnfAppliance,
                              VnfTemplate,
                              Zone)
 from marvin.lib.common import get_zone, get_template
@@ -308,7 +309,7 @@ class TestVnfTemplates(cloudstackTestCase):
             pass
 
         # success deployment
-        self.virtual_machine = VirtualMachine.create(
+        self.vnf_appliance = VnfAppliance.create(
             self.user_apiclient,
             self.services["virtual_machine"],
             zoneid=self.zone.id,
@@ -316,9 +317,10 @@ class TestVnfTemplates(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.service_offering.id,
-            networkids=[isolated_network.id, l2_network_1.id, l2_network_2.id]
+            networkids=[isolated_network.id, l2_network_1.id, l2_network_2.id],
+            vnfconfiguremanagement='true'
         )
-        self.cleanup.append(self.virtual_machine)
+        self.cleanup.append(self.vnf_appliance)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_05_delete_vnf_template(self):

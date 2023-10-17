@@ -274,7 +274,12 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
                             "skipping this network configuration for VNF appliance", network.getUuid()));
                     continue;
                 }
-                if (network.getVpcId() == null && !networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.Firewall)) {
+                if (network.getVpcId() != null) {
+                    LOGGER.info(String.format("Network ID: %s is a VPC tier, " +
+                            "skipping this network configuration for VNF appliance", network.getUuid()));
+                    continue;
+                }
+                if (!networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.Firewall)) {
                     LOGGER.info(String.format("Network ID: %s does not support firewall, " +
                             "skipping this network configuration for VNF appliance", network.getUuid()));
                     continue;
@@ -296,6 +301,10 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
         LOGGER.debug("Creating security group and rules for VNF appliance");
         Set<Integer> ports = getOpenPortsForVnfAppliance(template);
+        if (ports.size() == 0) {
+            LOGGER.debug("No need to create security group and rules for VNF appliance as there is no ports to be open");
+            return null;
+        }
         String securityGroupName = VNF_SECURITY_GROUP_NAME.concat(Long.toHexString(System.currentTimeMillis()));
         SecurityGroupVO securityGroupVO = securityGroupManager.createSecurityGroup(securityGroupName,
                 "Security group for VNF appliance", owner.getDomainId(), owner.getId(), owner.getAccountName());
@@ -327,10 +336,15 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
             if (publicIp == null) {
                 continue;
             }
-            if (network.getVpcId() != null) {
-                publicIp = vpcService.associateIPToVpc(publicIp.getId(), network.getVpcId());
-            }
             publicIp = ipAddressManager.associateIPToGuestNetwork(publicIp.getId(), network.getId(), false);
+            if (publicIp.isSourceNat()) {
+                // If isolated network is not implemented, the first acquired Public IP will be Source NAT IP
+                publicIp = networkService.allocateIP(owner, zone.getId(), network.getId(), null, null);
+                if (publicIp == null) {
+                    continue;
+                }
+                publicIp = ipAddressManager.associateIPToGuestNetwork(publicIp.getId(), network.getId(), false);
+            }
             final IpAddress publicIpFinal = publicIp;
             final List<String> cidrList = cmd.getVnfCidrlist();
             try {
