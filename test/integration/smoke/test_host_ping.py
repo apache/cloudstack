@@ -19,19 +19,18 @@
 
 # Import Local Modules
 from marvin.cloudstackTestCase import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
 from marvin.lib.common import *
+from marvin.lib.utils import *
 from nose.plugins.attrib import attr
 
 _multiprocess_shared_ = False
 
 
-class TestHostHA(cloudstackTestCase):
+class TestHostPing(cloudstackTestCase):
 
-    def setUp(self):
+    def setUp(self, handler=logging.StreamHandler()):
         self.logger = logging.getLogger('TestHM')
-        self.stream_handler = logging.StreamHandler()
+        self.stream_handler = handler
         self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(self.stream_handler)
         self.apiclient = self.testClient.getApiClient()
@@ -44,35 +43,28 @@ class TestHostHA(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestHostPing, self).tearDown()
 
     def checkHostStateInCloudstack(self, state, host_id):
         try:
             listHost = Host.list(
-                   self.apiclient,
-                   type='Routing',
-                   zoneid=self.zone.id,
-                   podid=self.pod.id,
-                   id=host_id
-               )
+                self.apiclient,
+                type='Routing',
+                zoneid=self.zone.id,
+                podid=self.pod.id,
+                id=host_id
+            )
             self.assertEqual(
-                           isinstance(listHost, list),
-                           True,
-                           "Check if listHost returns a valid response"
-                           )
+                isinstance(listHost, list),
+                True,
+                "Check if listHost returns a valid response"
+            )
 
             self.assertEqual(
-                           len(listHost),
-                           1,
-                           "Check if listHost returns a host"
-                           )
+                len(listHost),
+                1,
+                "Check if listHost returns a host"
+            )
             self.logger.debug(" Host state is %s " % listHost[0].state)
             if listHost[0].state == state:
                 return True, 1
@@ -81,7 +73,6 @@ class TestHostHA(cloudstackTestCase):
         except Exception as e:
             self.logger.debug("Got exception %s" % e)
             return False, 1
-
 
     @attr(
         tags=[
@@ -100,13 +91,12 @@ class TestHostHA(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
-
         hostToTest = listHost[0]
         sql_query = "UPDATE host SET status = 'Alert' WHERE uuid = '" + hostToTest.id + "'"
         self.dbConnection.execute(sql_query)
 
-        hostUpInCloudstack = wait_until(40, 10, self.checkHostStateInCloudstack, "Up", hostToTest.id)
+        hostUpInCloudstack = wait_until(30, 8, self.checkHostStateInCloudstack, "Up", hostToTest.id)
 
-        if not(hostUpInCloudstack):
+        if not (hostUpInCloudstack):
             raise self.fail("Host is not up %s, in cloudstack so failing test " % (hostToTest.ipaddress))
         return
