@@ -50,7 +50,6 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.network.vpc.VpcService;
 import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
@@ -112,8 +111,6 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
     NetworkDao networkDao;
     @Inject
     NetworkService networkService;
-    @Inject
-    VpcService vpcService;
     @Inject
     RulesService rulesService;
     @Inject
@@ -215,7 +212,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         }
     }
 
-    private Set<Integer> getOpenPortsForVnfAppliance(VirtualMachineTemplate template) {
+    protected Set<Integer> getOpenPortsForVnfAppliance(VirtualMachineTemplate template) {
         Set<Integer> ports = new HashSet<>();
         VnfTemplateDetailVO accessMethodsDetail = vnfTemplateDetailsDao.findDetail(template.getId(), VNF.AccessDetail.ACCESS_METHODS.name().toLowerCase());
         if (accessMethodsDetail == null || accessMethodsDetail.getValue() == null) {
@@ -260,7 +257,7 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
         return deviceIds;
     }
 
-    private Map<Network, String> getManagementNetworkAndIp(VirtualMachineTemplate template, UserVm vm) {
+    protected Map<Network, String> getManagementNetworkAndIp(VirtualMachineTemplate template, UserVm vm) {
         Map<Network, String> networkAndIpMap = new HashMap<>();
         Set<Long> managementDeviceIds = getDeviceIdsOfVnfManagementNics(template);
         for (NicVO nic : nicDao.listByVmId(vm.getId())) {
@@ -316,8 +313,6 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
             securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO, port, port,
                     null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
         }
-        securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO,
-                null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
         return securityGroupVO;
     }
 

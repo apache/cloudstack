@@ -16,14 +16,43 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddressManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.VNF;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.RulesService;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupRuleVO;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,12 +66,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VnfTemplateManagerImplTest {
@@ -59,7 +93,46 @@ public class VnfTemplateManagerImplTest {
     @Mock
     VirtualMachineTemplate template;
 
-    static long templateId = 100L;
+    @Mock
+    NicDao nicDao;
+
+    @Mock
+    NetworkDao networkDao;
+
+    @Mock
+    NetworkModel networkModel;
+
+    @Mock
+    SecurityGroupManager securityGroupManager;
+
+    @Mock
+    SecurityGroupService securityGroupService;
+
+    @Mock
+    NetworkService networkService;
+
+    @Mock
+    IpAddressManager ipAddressManager;
+
+    @Mock
+    RulesService rulesService;
+
+    @Mock
+    FirewallRulesDao firewallRulesDao;
+
+    @Mock
+    FirewallService firewallService;
+
+    final static long templateId = 100L;
+    final static long vmId = 101L;
+    final static long networkId = 101L;
+    final static long securityGroupId = 102L;
+    final static long zoneId = 103L;
+    final static long publicIpId = 104L;
+    final static String ipAddress = "10.10.10.10";
+    final static Integer sshPort = 2222;
+    final static Integer httpPort = 8080;
+    final static Integer httpsPort = 8443;
     final Map<String, Object> vnfNics = new HashMap<>();
     final Map<String, Object> vnfDetails = new HashMap<>();
 
@@ -93,10 +166,10 @@ public class VnfTemplateManagerImplTest {
 
         VnfTemplateNicVO vnfNic1 = new VnfTemplateNicVO(templateId, 0L, "eth0", true, true, "first");
         VnfTemplateNicVO vnfNic2 = new VnfTemplateNicVO(templateId, 1L, "eth1", true, true, "second");
-        VnfTemplateNicVO vnfNic3 = new VnfTemplateNicVO(templateId, 2L, "eth2", false, true, "second");
+        VnfTemplateNicVO vnfNic3 = new VnfTemplateNicVO(templateId, 2L, "eth2", false, true, "third");
         Mockito.doReturn(Arrays.asList(vnfNic1, vnfNic2, vnfNic3)).when(vnfTemplateNicDao).listByTemplateId(templateId);
 
-        Mockito.when(template.getId()).thenReturn(templateId);
+        when(template.getId()).thenReturn(templateId);
     }
 
     @Test
@@ -174,5 +247,143 @@ public class VnfTemplateManagerImplTest {
     public void testValidateVnfApplianceNicsWithMissingNetworkId() {
         List<Long> networkIds = Arrays.asList(200L);
         vnfTemplateManagerImpl.validateVnfApplianceNics(template, networkIds);
+    }
+
+    @Test
+    public void testGetManagementNetworkAndIp() {
+        when(template.getId()).thenReturn(templateId);
+        VnfTemplateNicVO vnfNic1 = new VnfTemplateNicVO(templateId, 0L, "eth0", true, true, "first");
+        VnfTemplateNicVO vnfNic2 = new VnfTemplateNicVO(templateId, 1L, "eth1", true, false, "second");
+        VnfTemplateNicVO vnfNic3 = new VnfTemplateNicVO(templateId, 2L, "eth2", false, false, "third");
+        Mockito.doReturn(Arrays.asList(vnfNic1, vnfNic2, vnfNic3)).when(vnfTemplateNicDao).listByTemplateId(templateId);
+
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getId()).thenReturn(vmId);
+        NicVO nic1 = Mockito.mock(NicVO.class);
+        NicVO nic2 = Mockito.mock(NicVO.class);
+        NicVO nic3 = Mockito.mock(NicVO.class);
+        when(nic1.getDeviceId()).thenReturn(0);
+        when(nic1.getIPv4Address()).thenReturn(ipAddress);
+        when(nic1.getNetworkId()).thenReturn(networkId);
+        when(nic2.getDeviceId()).thenReturn(1);
+        when(nic3.getDeviceId()).thenReturn(2);
+        Mockito.doReturn(Arrays.asList(nic1, nic2, nic3)).when(nicDao).listByVmId(vmId);
+
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(network.getId()).thenReturn(networkId);
+        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(network.getVpcId()).thenReturn(null);
+        Mockito.doReturn(network).when(networkDao).findById(networkId);
+        when(networkModel.areServicesSupportedInNetwork(networkId, Network.Service.StaticNat)).thenReturn(true);
+        when(networkModel.areServicesSupportedInNetwork(networkId, Network.Service.Firewall)).thenReturn(true);
+
+        Map<Network, String> networkAndIpMap = vnfTemplateManagerImpl.getManagementNetworkAndIp(template, vm);
+
+        Assert.assertEquals(1, networkAndIpMap.size());
+        Assert.assertTrue(networkAndIpMap.containsKey(network));
+        Assert.assertTrue(networkAndIpMap.containsValue(ipAddress));
+    }
+
+    @Test
+    public void testGetOpenPortsForVnfAppliance() {
+        when(template.getId()).thenReturn(templateId);
+        VnfTemplateDetailVO accessMethodsDetail = Mockito.mock(VnfTemplateDetailVO.class);
+        when(accessMethodsDetail.getValue()).thenReturn("console,ssh-password,http,https");
+        when(vnfTemplateDetailsDao.findDetail(templateId, VNF.AccessDetail.ACCESS_METHODS.name().toLowerCase())).thenReturn(accessMethodsDetail);
+
+        VnfTemplateDetailVO sshPortDetail = Mockito.mock(VnfTemplateDetailVO.class);
+        when(sshPortDetail.getValue()).thenReturn(String.valueOf(sshPort));
+        when(vnfTemplateDetailsDao.findDetail(templateId, VNF.AccessDetail.SSH_PORT.name().toLowerCase())).thenReturn(sshPortDetail);
+
+        VnfTemplateDetailVO httpPortDetail = Mockito.mock(VnfTemplateDetailVO.class);
+        when(httpPortDetail.getValue()).thenReturn(String.valueOf(httpPort));
+        when(vnfTemplateDetailsDao.findDetail(templateId, VNF.AccessDetail.HTTP_PORT.name().toLowerCase())).thenReturn(httpPortDetail);
+
+        VnfTemplateDetailVO httpsPortDetail = Mockito.mock(VnfTemplateDetailVO.class);
+        when(httpsPortDetail.getValue()).thenReturn(String.valueOf(httpsPort));
+        when(vnfTemplateDetailsDao.findDetail(templateId, VNF.AccessDetail.HTTPS_PORT.name().toLowerCase())).thenReturn(httpsPortDetail);
+
+        Set<Integer> ports = vnfTemplateManagerImpl.getOpenPortsForVnfAppliance(template);
+
+        Assert.assertEquals(3, ports.size());
+        Assert.assertTrue(ports.contains(sshPort));
+        Assert.assertTrue(ports.contains(httpPort));
+        Assert.assertTrue(ports.contains(httpsPort));
+    }
+
+    @Test
+    public void testCreateSecurityGroupForVnfAppliance() {
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        when(zone.isSecurityGroupEnabled()).thenReturn(true);
+
+        DeployVnfApplianceCmd cmd = Mockito.mock(DeployVnfApplianceCmd.class);
+        when(cmd.getVnfConfigureManagement()).thenReturn(true);
+        when(cmd.getVnfCidrlist()).thenReturn(Arrays.asList("0.0.0.0/0"));
+
+        Set<Integer> ports = new HashSet<>();
+        ports.add(sshPort);
+        ports.add(httpPort);
+        ports.add(httpsPort);
+        Mockito.doReturn(ports).when(vnfTemplateManagerImpl).getOpenPortsForVnfAppliance(template);
+
+        Account owner = Mockito.mock(Account.class);
+        when(owner.getDomainId()).thenReturn(1L);
+        when(owner.getAccountName()).thenReturn("admin");
+
+        SecurityGroupVO securityGroupVO = Mockito.mock(SecurityGroupVO.class);
+        when(securityGroupVO.getId()).thenReturn(securityGroupId);
+        Mockito.doReturn(securityGroupVO).when(securityGroupManager).createSecurityGroup(anyString(), anyString(), anyLong(), anyLong(), anyString());
+        SecurityGroupRuleVO securityGroupRuleVO = Mockito.mock(SecurityGroupRuleVO.class);
+        Mockito.doReturn(Arrays.asList(securityGroupRuleVO)).when(securityGroupService).authorizeSecurityGroupRule(anyLong(), anyString(), anyInt(), anyInt(),
+                any(), any(), any(), any(), any());
+
+        SecurityGroup result = vnfTemplateManagerImpl.createSecurityGroupForVnfAppliance(zone, template, owner, cmd);
+
+        Assert.assertEquals(result, securityGroupVO);
+        Mockito.verify(securityGroupService, Mockito.times(3)).authorizeSecurityGroupRule(anyLong(), anyString(), anyInt(), anyInt(),
+                any(), any(), any(), any(), any());
+    }
+
+    @Test
+    public void testCreateIsolatedNetworkRulesForVnfAppliance() throws InsufficientAddressCapacityException, ResourceUnavailableException,
+            ResourceAllocationException, NetworkRuleConflictException {
+        DataCenter zone = Mockito.mock(DataCenter.class);
+        when(zone.getId()).thenReturn(zoneId);
+        Account owner = Mockito.mock(Account.class);
+        UserVm vm = Mockito.mock(UserVm.class);
+        when(vm.getId()).thenReturn(vmId);
+        DeployVnfApplianceCmd cmd = Mockito.mock(DeployVnfApplianceCmd.class);
+
+        Map<Network, String> networkAndIpMap = new HashMap<>();
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        when(network.getId()).thenReturn(networkId);
+        when(network.getVpcId()).thenReturn(null);
+        networkAndIpMap.put(network, ipAddress);
+        Mockito.doReturn(networkAndIpMap).when(vnfTemplateManagerImpl).getManagementNetworkAndIp(template, vm);
+
+        Set<Integer> ports = new HashSet<>();
+        ports.add(sshPort);
+        ports.add(httpPort);
+        ports.add(httpsPort);
+        Mockito.doReturn(ports).when(vnfTemplateManagerImpl).getOpenPortsForVnfAppliance(template);
+
+        FirewallRuleVO firewallRuleVO = Mockito.mock(FirewallRuleVO.class);
+
+        IPAddressVO publicIp = Mockito.mock(IPAddressVO.class);
+        when(publicIp.getId()).thenReturn(publicIpId);
+        when(publicIp.isSourceNat()).thenReturn(true).thenReturn(false);
+        Mockito.doReturn(publicIp).when(networkService).allocateIP(owner, zoneId, networkId, null, null);
+        Mockito.doReturn(publicIp).when(ipAddressManager).associateIPToGuestNetwork(publicIpId, networkId, false);
+        Mockito.doReturn(true).when(rulesService).enableStaticNat(publicIpId, vmId, networkId, ipAddress);
+        when(firewallRulesDao.persist(any())).thenReturn(firewallRuleVO);
+        Mockito.doReturn(true).when(firewallService).applyIngressFwRules(publicIpId, owner);
+
+        vnfTemplateManagerImpl.createIsolatedNetworkRulesForVnfAppliance(zone, template, owner, vm, cmd);
+
+        Mockito.verify(networkService, Mockito.times(2)).allocateIP(owner, zoneId, networkId, null, null);
+        Mockito.verify(ipAddressManager, Mockito.times(2)).associateIPToGuestNetwork(publicIpId, networkId, false);
+        Mockito.verify(rulesService, Mockito.times(1)).enableStaticNat(publicIpId, vmId, networkId, ipAddress);
+        Mockito.verify(firewallRulesDao, Mockito.times(3)).persist(any());
+        Mockito.verify(firewallService, Mockito.times(1)).applyIngressFwRules(publicIpId, owner);
     }
 }
