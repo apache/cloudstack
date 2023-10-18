@@ -665,9 +665,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             // Remove template details
             templateDetailsDao.removeDetails(template.getId());
 
-            // Remove deploy-as-is details (if any)
-            templateDeployAsIsDetailsDao.removeDetails(template.getId());
-
             // Remove comments (if any)
             AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
                     AnnotationService.EntityType.ISO : AnnotationService.EntityType.TEMPLATE;
