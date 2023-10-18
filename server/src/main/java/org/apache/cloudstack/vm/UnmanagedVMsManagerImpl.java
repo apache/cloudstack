@@ -1435,8 +1435,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException(err);
         }
         List<HostVO> filteredHosts = hosts.stream()
-                .filter(x -> x.getResourceState() == ResourceState.Enabled ||
-                        x.getResourceState() == ResourceState.Disabled)
+                .filter(x -> x.getResourceState() == ResourceState.Enabled)
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(filteredHosts)) {
             String err = String.format("Could not find a %s host in cluster %s to perform the instance conversion",
