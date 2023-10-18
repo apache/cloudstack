@@ -28,7 +28,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.api.ApiDBUtils;
@@ -110,24 +109,24 @@ import org.apache.cloudstack.network.tungsten.agent.api.ReleaseTungstenFloatingI
 import org.apache.cloudstack.network.tungsten.agent.api.SetupTungstenVRouterCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerHealthMonitorCommand;
-import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerListenerCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerMemberCommand;
 import org.apache.cloudstack.network.tungsten.agent.api.UpdateTungstenLoadBalancerPoolCommand;
 import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorDao;
 import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorVO;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ApiDBUtils.class, EncryptionUtil.class})
+@RunWith(MockitoJUnitRunner.class)
 public class TungstenElementTest {
     @Mock
     TungstenFabricUtils tungstenFabricUtils;
@@ -182,9 +181,15 @@ public class TungstenElementTest {
 
     TungstenElement tungstenElement;
 
+    MockedStatic<ApiDBUtils> apiDBUtilsMocked;
+
+    MockedStatic<EncryptionUtil> encryptionUtilMocked;
+
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         tungstenElement = new TungstenElement();
         tungstenElement.tungstenFabricUtils = tungstenFabricUtils;
         tungstenElement.networkModel = networkModel;
@@ -212,10 +217,17 @@ public class TungstenElementTest {
         tungstenElement.tungstenFabricLBHealthMonitorDao = tungstenFabricLBHealthMonitorDao;
         tungstenElement.loadBalancerCertMapDao = loadBalancerCertMapDao;
 
-        mockStatic(ApiDBUtils.class);
-        mockStatic(EncryptionUtil.class);
+        apiDBUtilsMocked = Mockito.mockStatic(ApiDBUtils.class);
+        encryptionUtilMocked = Mockito.mockStatic(EncryptionUtil.class);
 
         when(tungstenService.getTungstenProjectFqn(any())).thenReturn("default-domain:default-project");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        apiDBUtilsMocked.close();
+        encryptionUtilMocked.close();
+        closeable.close();
     }
 
     @Test
@@ -250,7 +262,6 @@ public class TungstenElementTest {
         List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(false);
-
         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
@@ -272,7 +283,6 @@ public class TungstenElementTest {
         List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(false);
-
         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
@@ -294,7 +304,6 @@ public class TungstenElementTest {
         List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(true);
-
         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
@@ -316,7 +325,6 @@ public class TungstenElementTest {
         List<StaticNatImpl> staticNatList = List.of(staticNat);
 
         when(staticNat.isForRevoke()).thenReturn(true);
-
         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
@@ -352,9 +360,6 @@ public class TungstenElementTest {
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
         List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
 
-        when(accountMgr.getActiveUser(anyLong())).thenReturn(caller);
-        when(caller.getApiKey()).thenReturn("apikey");
-        when(caller.getSecretKey()).thenReturn("secreatekey");
         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
         when(loadBalancingRule1.getId()).thenReturn(1L);
         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
@@ -363,8 +368,6 @@ public class TungstenElementTest {
         when(loadBalancingRule1.getDefaultPortStart()).thenReturn(443);
         when(loadBalancingRule1.getStickinessPolicies()).thenReturn(lbStickinessPolicyList);
         when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
-        when(loadBalancingRule1.getLbSslCert()).thenReturn(lbSslCert);
-        when(loadBalancingRule1.getUuid()).thenReturn("loadbalancingruleuuid");
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
         when(ipAddressVO.getAddress()).thenReturn(ip);
@@ -372,15 +375,11 @@ public class TungstenElementTest {
         when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
         when(ip.addr()).thenReturn("10.10.10.10");
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
-        when(ipAddressMgr.acquireGuestIpAddress(any(), any())).thenReturn("192.168.100.100");
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
-        when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerListenerAnswer);
-
         when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
-        when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
@@ -405,7 +404,7 @@ public class TungstenElementTest {
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = new MockTungstenAnswerFactory(true).get();
         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerMemberAnswer =new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer updateTungstenLoadBalancerMemberAnswer = new MockTungstenAnswerFactory(true).get();
         TungstenAnswer updateTungstenHealthMonitorAnswer = new MockTungstenAnswerFactory(true).get();
         List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
@@ -423,18 +422,13 @@ public class TungstenElementTest {
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
         when(ipAddressVO.getAddress()).thenReturn(ip);
         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
-        when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
         when(ip.addr()).thenReturn("10.10.10.10");
         when(ipAddressMgr.acquireGuestIpAddress(any(), any())).thenReturn("192.168.100.100");
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
-
         when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("disabled");
-        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(false);
-        when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
-
         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
 
         assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
@@ -460,10 +454,7 @@ public class TungstenElementTest {
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
         when(ipAddressVO.getAddress()).thenReturn(ip1);
         when(ip1.addr()).thenReturn("10.10.10.10");
-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerListenerAnswer);
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
-
-        when(tungstenService.updateLoadBalancerSsl(any(), any())).thenReturn(false);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList1);
         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
         when(tungstenGuestNetworkIpAddressDao.remove(anyLong())).thenReturn(false);
@@ -490,14 +481,10 @@ public class TungstenElementTest {
         when(loadBalancingRule.getSourceIp()).thenReturn(ip);
         when(loadBalancingRule.getState()).thenReturn(FirewallRule.State.Revoke);
         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
-        when(ipAddressVO.getAddress()).thenReturn(ip);
         when(ip.addr()).thenReturn("10.10.10.10");
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerListenerAnswer);
-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
-
         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
-        when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
 
         assertTrue(tungstenElement.applyLBRules(network, loadBalancingRuleList));
     }
@@ -670,10 +657,10 @@ public class TungstenElementTest {
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO host = mock(HostVO.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
-        TungstenAnswer deleteTungstenVRouterPortAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteVmiAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteVmAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteTungstenNetworkPolicyAnswer = mock(TungstenAnswer.class);
 
         when(nicProfile.getIPv4Address()).thenReturn("192.168.100.100");
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
@@ -697,11 +684,10 @@ public class TungstenElementTest {
         ReservationContext reservationContext = mock(ReservationContext.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO host = mock(HostVO.class);
-        TungstenAnswer deleteTungstenVRouterPortAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteVmiAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteVmAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
 
-        when(nicProfile.getIPv4Address()).thenReturn("192.168.100.100");
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
         when(hostDao.findById(anyLong())).thenReturn(host);
@@ -721,10 +707,9 @@ public class TungstenElementTest {
         ReservationContext reservationContext = mock(ReservationContext.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO host = mock(HostVO.class);
-        TungstenAnswer deleteTungstenVRouterPortAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteVmiAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+        TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
 
-        when(nicProfile.getIPv4Address()).thenReturn("192.168.100.100");
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
         when(hostDao.findById(anyLong())).thenReturn(host);
@@ -934,7 +919,7 @@ public class TungstenElementTest {
         Network network = mock(Network.class);
         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer deleteNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteNetworkPolicyAnswer = mock(TungstenAnswer.class);
 
         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Revoke);
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);

@@ -28,9 +28,6 @@ public class MockTungstenAnswerFactory {
         tungstenAnswer=mock(TungstenAnswer.class);
         when(tungstenAnswer.getResult()).thenReturn(returnResult);
     }
-    MockTungstenAnswerFactory(){
-        this(true);
-    }
     TungstenAnswer get() {
         return tungstenAnswer;
     }
