@@ -1014,9 +1014,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
+
+                descName = UUID.randomUUID().toString();
+
                 command.add("-t", descName);
                 final String result = command.execute();
                 if (result != null) {
@@ -1042,9 +1042,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
             } else if (primaryPool.getType() != StoragePoolType.RBD) {
                 String snapshotPath = snapshot.getPath();
-                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+                String backupSnapshotAfterTakingSnapshot = null;
+                boolean deleteSnapshotOnPrimary = true;
+                if (cmd.getOptions() != null) {
+                    backupSnapshotAfterTakingSnapshot = cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+                    deleteSnapshotOnPrimary = cmd.getOptions().get("typeDescription") == null;
+                }
 
-                if (backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) {
+                if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
                     try {
                         Files.deleteIfExists(Paths.get(snapshotPath));
                     } catch (IOException ex) {
