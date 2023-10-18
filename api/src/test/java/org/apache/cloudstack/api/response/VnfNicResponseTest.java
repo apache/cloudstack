@@ -18,7 +18,10 @@ package org.apache.cloudstack.api.response;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public final class VnfNicResponseTest {
 
     static long deviceId = 0L;
