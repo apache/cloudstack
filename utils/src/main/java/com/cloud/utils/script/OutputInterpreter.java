@@ -161,7 +161,7 @@ public abstract class OutputInterpreter {
         public String interpret(BufferedReader reader) throws IOException {
             String line;
             while ((line = reader.readLine()) != null) {
-                logger.debug(StringUtils.isNotBlank(logPrefix) ? String.format("(%s) %s", logPrefix, line) : line);
+                logger.info(StringUtils.isNotBlank(logPrefix) ? String.format("(%s) %s", logPrefix, line) : line);
             }
             return null;
         }

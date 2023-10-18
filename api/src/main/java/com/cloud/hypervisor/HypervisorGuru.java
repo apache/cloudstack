@@ -111,21 +111,19 @@ public interface HypervisorGuru extends Adapter {
      * Will perform a clone of a VM on an external host (if the guru can handle)
      * @param hostIp VM's source host IP
      * @param vmName name of the source VM to clone from
-     * @param forced if set to true, stop the VM before cloning the source VM with name 'vmName'
      * @param params hypervisor specific additional parameters
      * @return a reference to the cloned VM
      */
     UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
-                                                   boolean forced, Map<String, String> params);
+                                                   Map<String, String> params);
 
     /**
      * Removes a VM created as a clone of a VM on an external host
      * @param hostIp VM's source host IP
      * @param vmName name of the VM to remove
-     * @param powerUpSource if set to true, poweron the source VM
      * @param params hypervisor specific additional parameters
      * @return true if the operation succeeds, false if not
      */
     boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName,
-                                              boolean powerUpSourceVM, Map<String, String> params);
+                                              Map<String, String> params);
 }

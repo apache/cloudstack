@@ -34,12 +34,6 @@
               :rules="rules"
               @finish="handleSubmit"
               layout="vertical">
-              <a-alert
-                v-if="selectedVmwareVcenter && isVmRunning"
-                type="warning"
-                :showIcon="true"
-                :message="$t('message.import.running.instance.warning')"
-              />
               <a-form-item name="displayname" ref="displayname">
                 <template #label>
                   <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
@@ -255,16 +249,7 @@
               </a-row>
               <div :span="24" class="action-button">
                 <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-                <a-popconfirm
-                  v-if="selectedVmwareVcenter && isVmRunning"
-                  :title="$t('message.import.running.instance.confirm')"
-                  @confirm="handleSubmit"
-                  :okText="$t('label.yes')"
-                  :cancelText="$t('label.no')"
-                >
-                  <a-button :loading="loading" type="primary">{{ $t('label.ok') }}</a-button>
-                </a-popconfirm>
-                <a-button v-else :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+                <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
               </div>
             </a-form>
           </a-card>

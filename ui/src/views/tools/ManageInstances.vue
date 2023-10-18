@@ -327,6 +327,7 @@
 </template>
 
 <script>
+import { message } from 'ant-design-vue'
 import { ref, reactive } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
@@ -873,7 +874,18 @@ export default {
         this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
         this.selectedUnmanagedInstance.state = this.selectedUnmanagedInstance.powerstate
       }
-      this.showUnmanageForm = true
+      if (this.isMigrateFromVmware && this.selectedUnmanagedInstance.state === 'PowerOn' && this.selectedUnmanagedInstance.ostypename.toLowerCase().includes('windows')) {
+        message.error({
+          content: () => 'Cannot import Running Windows VMs, please gracefully shutdown the source VM before importing',
+          style: {
+            marginTop: '20vh',
+            color: 'red'
+          }
+        })
+        this.showUnmanageForm = false
+      } else {
+        this.showUnmanageForm = true
+      }
     },
     closeImportUnmanagedInstanceForm () {
       this.selectedUnmanagedInstance = {}
