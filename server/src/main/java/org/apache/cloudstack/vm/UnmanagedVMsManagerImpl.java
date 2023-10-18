@@ -33,6 +33,8 @@ import com.cloud.agent.api.ConvertInstanceCommand;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.dc.dao.VmwareDatacenterDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.hypervisor.HypervisorGuru;
@@ -40,6 +42,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.StorageManager;
 import com.cloud.vm.VirtualMachineName;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -1156,6 +1159,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> managedVms = new ArrayList<>(additionalNameFilters);
         managedVms.addAll(getHostsManagedVms(hosts));
 
+        ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
+                cmd.getEventDescription(), null, null, true, 0);
+
         if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
             userVm = importUnmanagedInstanceFromVmwareToVmware(zone, cluster, hosts, additionalNameFilters,
                     template, instanceName, displayName, hostName, caller, owner, userId,
@@ -1171,8 +1177,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         if (userVm == null) {
+            ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
+                    cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to find unmanaged vm with name: %s in cluster: %s", instanceName, cluster.getUuid()));
         }
+        ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_IMPORT,
+                cmd.getEventDescription(), userVm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
     }
 
@@ -1305,6 +1315,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (isSourceVMRestoreNeeded) {
                 LOGGER.debug(String.format("VM %s import failed and was originally running, starting it again after the failure", sourceVM));
             }
+            ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_IMPORT,
+                    cmd.getEventDescription(), null, null, 0);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } finally {
             removeClonedInstance(vcenter, datacenterName, username, password, sourceHostName, clonedInstance.getName(), sourceVM, isSourceVMRestoreNeeded);

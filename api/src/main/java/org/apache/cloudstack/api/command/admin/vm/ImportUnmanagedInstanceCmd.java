@@ -42,6 +42,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -315,7 +316,14 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing unmanaged VM";
+        String vmName = this.name;
+        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
+            String msg = StringUtils.isNotBlank(vcenter) ?
+                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
+                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
+            return String.format("Importing unmanaged VM: %s from %s - VM: %s", displayName, msg, vmName);
+        }
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     public boolean isForced() {
