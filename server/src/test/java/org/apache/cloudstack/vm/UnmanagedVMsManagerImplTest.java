@@ -27,6 +27,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -90,6 +91,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -104,6 +106,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -178,9 +183,16 @@ public class UnmanagedVMsManagerImplTest {
 
     private AutoCloseable closeable;
 
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+
     @Before
     public void setUp() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+        BDDMockito.given(ActionEventUtils.onStartedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString(), anyBoolean(), anyLong()))
+                .willReturn(1L);
+        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
+                .willReturn(1L);
 
         AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
@@ -303,6 +315,7 @@ public class UnmanagedVMsManagerImplTest {
     @After
     public void tearDown() throws Exception {
         closeable.close();
+        actionEventUtilsMocked.close();
         CallContext.unregister();
     }
 
