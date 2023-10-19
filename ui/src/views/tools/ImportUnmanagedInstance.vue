@@ -105,7 +105,7 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item name="templateid" ref="templateid" v-if="hypervisor === 'KVM' && !selectedVmwareVcenter">
+              <a-form-item name="templateid" ref="templateid" v-if="cluster.hypervisortype === 'KVM' && !selectedVmwareVcenter">
                 <template #label>
                   <tooltip-label :title="$t('label.templatename')" :tooltip="apiParams.templateid.description + '. ' + $t('message.template.import.vm.temporary')"/>
                 </template>
@@ -145,6 +145,18 @@
                     </a-col>
                   </a-row>
                 </a-radio-group>
+              </a-form-item>
+              <a-form-item name="converthostid" ref="converthostid">
+                <check-box-select-pair
+                  layout="vertical"
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
+                  :resourceKey="cluster.id"
+                  :selectOptions="kvmHostsForConversion"
+                  :checkBoxLabel="'Select a KVM host in the cluster to perform the instance conversion through virt-v2v'"
+                  :defaultCheckBoxValue="false"
+                  :reversed="false"
+                  @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
+                />
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -271,6 +283,7 @@ import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
 import MultiNetworkSelection from '@views/compute/wizard/MultiNetworkSelection'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
   name: 'ImportUnmanagedInstances',
@@ -282,7 +295,8 @@ export default {
     MultiDiskSelection,
     MultiNetworkSelection,
     OsLogo,
-    ResourceIcon
+    ResourceIcon,
+    CheckBoxSelectPair
   },
   props: {
     cluster: {
@@ -334,7 +348,9 @@ export default {
       minIopsKey: 'minIops',
       maxIopsKey: 'maxIops',
       switches: {},
-      loading: false
+      loading: false,
+      kvmHostsForConversion: [],
+      selectedKvmHostForConversion: null
     }
   },
   beforeCreate () {
@@ -499,6 +515,7 @@ export default {
         pageSize: 10,
         page: 1
       })
+      this.fetchKvmHostsForConversion()
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -673,6 +690,24 @@ export default {
         }
       }
     },
+    fetchKvmHostsForConversion () {
+      api('listHosts', {
+        clusterid: this.cluster.id,
+        hypervisor: this.cluster.hypervisortype,
+        type: 'Routing',
+        state: 'Up',
+        resourcestate: 'Enabled'
+      }).then(json => {
+        this.kvmHostsForConversion = json.listhostsresponse.host || []
+      })
+    },
+    updateSelectedKvmHostForConversion (clusterid, checked, value) {
+      if (checked) {
+        this.selectedKvmHostForConversion = value
+      } else {
+        this.selectedKvmHostForConversion = null
+      }
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -736,6 +771,9 @@ export default {
           }
           params.hostip = this.resource.hostname
           params.clustername = this.resource.clustername
+          if (this.selectedKvmHostForConversion) {
+            params.convertinstacehostid = this.selectedKvmHostForConversion
+          }
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']
         if (this.templateType !== 'auto') {
@@ -790,11 +828,16 @@ export default {
         return new Promise((resolve, reject) => {
           api('importUnmanagedInstance', params).then(response => {
             const jobId = response.importunmanagedinstanceresponse.jobid
+            let msgLoading = this.$t('label.import.instance') + ' ' + name + ' ' + this.$t('label.in.progress')
+            if (this.selectedKvmHostForConversion) {
+              const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
+              msgLoading += ' on host ' + kvmHost.name
+            }
             this.$pollJob({
               jobId,
               title: this.$t('label.import.instance'),
               description: name,
-              loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
+              loadingMessage: msgLoading,
               catchMessage: this.$t('error.fetching.async.job.result'),
               successMessage: this.$t('message.success.import.instance') + ' ' + name,
               successMethod: result => {

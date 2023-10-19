@@ -37,6 +37,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.resource.ResourceState;
@@ -1265,6 +1266,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String password = cmd.getPassword();
         String clusterName = cmd.getClusterName();
         String sourceHostName = cmd.getHost();
+        Long convertInstanceHostId = cmd.getConvertInstanceHostId();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1295,7 +1297,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     clusterName, sourceHostName, sourceVM);
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, instanceName, hostName, clonedInstance, nicNetworkMap, nicIpAddressMap, forced);
             UnmanagedInstanceTO convertedInstance = convertVmwareInstanceToKVM(vcenter, datacenterName, clusterName, username, password,
-                    sourceHostName, clonedInstance, destinationCluster);
+                    sourceHostName, clonedInstance, destinationCluster, convertInstanceHostId);
             sanitizeConvertedInstance(convertedInstance, clonedInstance);
             UserVm userVm = importVirtualMachineInternal(convertedInstance, instanceName, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
@@ -1414,7 +1416,22 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return params;
     }
 
-    private HostVO selectInstanceConvertionKVMHostInCluster(Cluster destinationCluster) {
+    private HostVO selectInstanceConvertionKVMHostInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+        if (convertInstanceHostId != null) {
+            HostVO selectedHost = hostDao.findById(convertInstanceHostId);
+            if (selectedHost == null) {
+                String msg = String.format("Cannot find host with ID %s", convertInstanceHostId);
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            if (selectedHost.getResourceState() != ResourceState.Enabled ||
+                    selectedHost.getState() != Status.Up || selectedHost.getType() != Host.Type.Routing) {
+                String msg = String.format("Cannot perform the conversion on the host %s as it is not a running and Enabled host", selectedHost.getName());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            return selectedHost;
+        }
         List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
         if (CollectionUtils.isEmpty(hosts)) {
             String err = String.format("Could not find any running %s host in cluster %s",
@@ -1436,8 +1453,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private UnmanagedInstanceTO convertVmwareInstanceToKVM(String vcenter, String datacenterName, String clusterName,
                                                            String username, String password, String hostName,
-                                                           UnmanagedInstanceTO clonedInstance, Cluster destinationCluster) {
-        HostVO convertHost = selectInstanceConvertionKVMHostInCluster(destinationCluster);
+                                                           UnmanagedInstanceTO clonedInstance, Cluster destinationCluster, Long convertInstanceHostId) {
+        HostVO convertHost = selectInstanceConvertionKVMHostInCluster(destinationCluster, convertInstanceHostId);
         String vmName = clonedInstance.getName();
         LOGGER.debug(String.format("The host %s (%s) is selected to execute the conversion of the instance %s" +
                 " from VMware to KVM ", convertHost.getId(), convertHost.getName(), vmName));

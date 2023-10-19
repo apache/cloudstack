@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -160,39 +161,45 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "VM is imported despite some of its NIC's MAC addresses are already present")
     private Boolean forced;
 
+    // Import from Vmware to KVM migration parameters
+
     @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
             type = CommandType.UUID,
             entityType = VmwareDatacenterResponse.class,
-            description = "UUID of a linked existing vCenter")
+            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
     private Long existingVcenterId;
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
             required = true,
-            description = "VMware ESXi host IP/Name.")
+            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
     private String host;
 
     @Parameter(name = ApiConstants.VCENTER,
             type = CommandType.STRING,
-            description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
     @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
-            description = "Name of VMware datacenter.")
+            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
             required = true,
-            description = "Name of VMware cluster.")
+            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
     private String clusterName;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
-            description = "The Username required to connect to resource.")
+            description = "(only for importing migrated VMs from Vmware to KVM) The Username required to connect to resource.")
     private String username;
 
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
-            description = "The password for the specified username.")
+            description = "(only for importing migrated VMs from Vmware to KVM) The password for the specified username.")
     private String password;
+
+    @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
+            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+    private Long convertInstanceHostId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -356,6 +363,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public Long getConvertInstanceHostId() {
+        return convertInstanceHostId;
     }
 
     /////////////////////////////////////////////////////
