@@ -1424,11 +1424,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             if (clusterId != null) {
                 List<HostJoinVO> hosts = hostJoinDao.findByClusterId(clusterId, Host.Type.Routing);
-                if (CollectionUtils.isNotEmpty(hosts)) {
-                    List<Long> hostIds = hosts.stream().map(HostJoinVO::getId).collect(Collectors.toList());
-                    userVmSearchCriteria.setParameters("hostIdIn", hostIds.toArray());
-                    userVmSearchCriteria.setParameters("lastHostIdIn", hostIds.toArray());
+                if (CollectionUtils.isEmpty(hosts)) {
+                    // cluster has no hosts, so we cannot find VMs, cancel search.
+                    return new Pair<>(new ArrayList<>(), 0);
                 }
+                List<Long> hostIds = hosts.stream().map(HostJoinVO::getId).collect(Collectors.toList());
+                userVmSearchCriteria.setParameters("hostIdIn", hostIds.toArray());
+                userVmSearchCriteria.setParameters("lastHostIdIn", hostIds.toArray());
             }
 
             if (hostId != null) {
