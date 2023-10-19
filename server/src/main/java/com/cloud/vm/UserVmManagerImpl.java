@@ -6271,6 +6271,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd instanceof DeployVnfApplianceCmd) {
             SecurityGroup securityGroup = vnfTemplateManager.createSecurityGroupForVnfAppliance(zone, template, owner, (DeployVnfApplianceCmd) cmd);
             if (securityGroup != null) {
+                if (securityGroupIdList == null) {
+                    securityGroupIdList = new ArrayList<>();
+                }
                 securityGroupIdList.add(securityGroup.getId());
             }
         }
