@@ -734,6 +734,13 @@ public class AgentProperties{
     public static final Property<Integer> IOTHREADS = new Property<>("iothreads", 1);
 
     /**
+     * Enable verbose mode for virt-v2v Instance Conversion from Vmware to KVM
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VIRTV2V_VERBOSE_ENABLED = new Property<>("virtv2v.verbose.enabled", false);
+
+    /**
      * BGP controll CIDR
      * Data type: String.<br>
      * Default value: <code>169.254.0.0/16</code>

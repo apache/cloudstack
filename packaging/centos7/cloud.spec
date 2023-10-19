@@ -124,7 +124,6 @@ Requires: qemu-img
 Requires: qemu-kvm
 Requires: cryptsetup
 Requires: rng-tools
-Requires: virt-v2v
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

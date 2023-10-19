@@ -63,8 +63,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
-        s_logger.info("Attempting to convert the instance %s from %s to KVM");
-
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();
@@ -72,6 +70,13 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         String secondaryStorageUrl = cmd.getConversionTemporaryPath();
         long timeout = (long) cmd.getWait() * 1000;
+
+        if (!isInstanceConversionSupportedOnHost()) {
+            String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
+                    "Please install virt-v2v on the host before attempting the instance conversion", sourceInstanceName);
+            s_logger.info(msg);
+            return new ConvertInstanceAnswer(cmd, false, msg);
+        }
 
         if (destinationHypervisorType != Hypervisor.HypervisorType.KVM ||
                 !supportedInstanceConvertSourceHypervisors.contains(sourceHypervisorType)) {
@@ -93,10 +98,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertFolder = String.format("vmw-to-kvm-%s", temporaryConvertUuid);
         secondaryPool.createFolder(temporaryConvertFolder);
         final String temporaryConvertPath = String.format("%s/%s", secondaryPool.getLocalPath(), temporaryConvertFolder);
+        boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
             boolean result = performInstanceConversion(convertInstanceUrl, sourceInstanceName, temporaryPasswordFilePath,
-                    temporaryConvertPath, temporaryConvertUuid, timeout);
+                    temporaryConvertPath, temporaryConvertUuid, timeout, verboseModeEnabled);
             if (!result) {
                 String err = String.format("The virt-v2v conversion of the instance %s failed. " +
                                 "Please check the agent logs for the virt-v2v output", sourceInstanceName);
@@ -136,6 +142,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryConvertPath));
         }
+    }
+
+    private boolean isInstanceConversionSupportedOnHost() {
+        int exitValue = Script.runSimpleBashScriptForExitValue("which virt-v2v");
+        return exitValue == 0;
     }
 
     private void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
@@ -237,10 +248,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     }
 
     private boolean performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
-                                           String temporaryPasswordFilePath,
-                                           String temporaryConvertFolder,
-                                           String temporaryConvertUuid,
-                                           long timeout) {
+                                              String temporaryPasswordFilePath,
+                                              String temporaryConvertFolder,
+                                              String temporaryConvertUuid,
+                                              long timeout, boolean verboseModeEnabled) {
         Script script = new Script("virt-v2v", timeout, s_logger);
         script.add("--root", "first");
         script.add("-ic", convertInstanceUrl);
@@ -250,6 +261,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         script.add("-os", temporaryConvertFolder);
         script.add("-of", "qcow2");
         script.add("-on", temporaryConvertUuid);
+        if (verboseModeEnabled) {
+            script.add("-v");
+        }
 
         String logPrefix = String.format("virt-v2v source: %s %s progress", convertInstanceUrl, sourceInstanceName);
         OutputInterpreter.LineByLineOutputLogger outputLogger = new OutputInterpreter.LineByLineOutputLogger(s_logger, logPrefix);
