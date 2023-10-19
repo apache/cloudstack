@@ -2572,6 +2572,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
+
+                    StringBuilder domainPath = new StringBuilder("ROOT");
+                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                    response.setDomainPath(domainPath.toString());
                 }
             }
             response.setSubdomainAccess(domainNetworkDetails.second());
@@ -3357,10 +3361,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
+    public PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result) {
         PrivateGatewayResponse response = new PrivateGatewayResponse();
         response.setId(result.getUuid());
-        response.setBroadcastUri(result.getBroadcastUri());
+        if (view == ResponseView.Full) {
+            response.setBroadcastUri(result.getBroadcastUri());
+        }
         response.setGateway(result.getGateway());
         response.setNetmask(result.getNetmask());
         if (result.getVpcId() != null) {
