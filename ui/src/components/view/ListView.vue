@@ -200,7 +200,7 @@
     </template>
     <template #physicalsize="{ text }">
       <span v-if="text">
-        {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+        {{ isNaN(text) ? text : (parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) + ' GiB') }}
       </span>
     </template>
     <template #physicalnetworkname="{ text, record }">
