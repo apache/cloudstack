@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
