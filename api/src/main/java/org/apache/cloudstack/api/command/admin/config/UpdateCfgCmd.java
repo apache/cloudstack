@@ -92,7 +92,8 @@ public class UpdateCfgCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NETWORK_ID,
                type = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "the ID of the Network to update the parameter value for corresponding network")
+               description = "the ID of the Network to update the parameter value for corresponding network",
+               since = "4.18.0")
     private Long networkId;
 
     /////////////////////////////////////////////////////
