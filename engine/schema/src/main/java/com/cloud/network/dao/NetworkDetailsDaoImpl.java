@@ -60,18 +60,6 @@ public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailV
     }
 
     @Override
-    public Map<String, String> findDetails(long networkId) {
-        QueryBuilder<NetworkDetailVO> sc = QueryBuilder.create(NetworkDetailVO.class);
-        sc.and(sc.entity().getResourceId(), Op.EQ, networkId);
-        List<NetworkDetailVO> results = sc.list();
-        Map<String, String> details = new HashMap<String, String>(results.size());
-        for (NetworkDetailVO r : results) {
-            details.put(r.getName(), r.getValue());
-        }
-        return details;
-    }
-
-    @Override
     public void persist(long networkId, Map<String, String> details) {
         try(TransactionLegacy txn = TransactionLegacy.currentTxn()) {
           txn.start();
@@ -113,7 +101,7 @@ public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailV
 
     @Override
     public void update(long networkId, Map<String, String> details) {
-        Map<String, String> oldDetails = findDetails(networkId);
+        Map<String, String> oldDetails = listDetailsKeyPairs(networkId);
         oldDetails.putAll(details);
         persist(networkId, oldDetails);
     }

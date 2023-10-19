@@ -27,8 +27,6 @@ public interface NetworkDetailsDao extends GenericDao<NetworkDetailVO, Long>, Re
 
     boolean isNetworkUsageHidden(long networkId);
 
-    Map<String, String> findDetails(long networkId);
-
     void persist(long networkId, Map<String, String> details);
 
     NetworkDetailVO findDetail(long networkId, String name);

@@ -1516,7 +1516,7 @@ public class ApiDBUtils {
     }
 
     public static Map<String, String> getNetworkDetails(long networkId) {
-        Map<String, String> details = s_networkDetailsDao.findDetails(networkId);
+        Map<String, String> details = s_networkDetailsDao.listDetailsKeyPairs(networkId);
         return details.isEmpty() ? null : details;
     }
 
