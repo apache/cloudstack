@@ -118,7 +118,9 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         capabilities.put(Network.Service.Dns, dnsCapabilities);
 
         capabilities.put(Network.Service.StaticNat, null);
-
+        capabilities.put(Network.Service.Lb, null);
+        capabilities.put(Network.Service.PortForwarding, null);
+        capabilities.put(Network.Service.NetworkACL, null);
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
@@ -226,7 +228,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean verifyServicesCombination(Set<Network.Service> services) {
-        return false;
+        return true;
     }
 
     @Override

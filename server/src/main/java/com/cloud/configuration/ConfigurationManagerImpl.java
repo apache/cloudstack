@@ -6611,7 +6611,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 s_logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
                             }
 
-                            if (vpcOff) {
+                            if (vpcOff && !forNsx) {
                                 final List<Service> supportedSvcs = new ArrayList<Service>();
                                 supportedSvcs.addAll(serviceProviderMap.keySet());
                                 _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);

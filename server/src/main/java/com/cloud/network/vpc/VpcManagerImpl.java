@@ -385,7 +385,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.NAT.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.NATTED.name());
 
                 }
 
@@ -403,7 +403,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.Route.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.ROUTED.name());
 
                 }
             }

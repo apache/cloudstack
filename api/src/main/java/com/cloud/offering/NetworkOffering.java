@@ -44,8 +44,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Mode {
-        NAT,
-        Route
+        NATTED,
+        ROUTED
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";

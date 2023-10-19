@@ -575,11 +575,11 @@ export default {
       modes: [
         {
           id: 0,
-          name: 'NAT'
+          name: 'NATTED'
         },
         {
           id: 1,
-          name: 'Route'
+          name: 'ROUTED'
         }
       ],
       VPCVR: {
@@ -845,19 +845,13 @@ export default {
           self.supportedServiceLoading = false
         }, 50)
       } else {
-        console.log(supportedServices)
         supportedServices = supportedServices.filter(svc => {
-          console.log(self.nsxSupportedServicesMap)
-          console.log(Object.keys(self.nsxSupportedServicesMap))
-          console.log(svc.name)
           return Object.keys(this.nsxSupportedServicesMap).includes(svc.name)
         })
-        console.log(supportedServices)
         supportedServices.forEach(function (svc, index) {
           svc.provider = [self.nsxSupportedServicesMap[svc.name]]
           supportedServices[index] = svc
         })
-        console.log(supportedServices)
         self.supportedServices = supportedServices
         self.supportedServiceLoading = false
       }

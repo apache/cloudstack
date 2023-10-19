@@ -50,6 +50,15 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.user.Account;
 
+import static com.cloud.network.Network.Service.Dhcp;
+import static com.cloud.network.Network.Service.Dns;
+import static com.cloud.network.Network.Service.Lb;
+import static com.cloud.network.Network.Service.StaticNat;
+import static com.cloud.network.Network.Service.SourceNat;
+import static com.cloud.network.Network.Service.PortForwarding;
+import static com.cloud.network.Network.Service.NetworkACL;
+import static com.cloud.network.Network.Service.UserData;
+
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
@@ -132,12 +141,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.FOR_NSX,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for NSX, false otherwise.")
+            description = "true if network offering is meant to be used for NSX, false otherwise.",
+            since = "4.20.0")
     private Boolean forNsx;
 
     @Parameter(name = ApiConstants.MODE,
             type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route")
+            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route",
+            since = "4.20.0")
     private String mode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
@@ -224,7 +235,24 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<String> getSupportedServices() {
-        return supportedServices == null ? new ArrayList<String>() : supportedServices;
+        if (!forNsx) {
+            return supportedServices == null ? new ArrayList<String>() : supportedServices;
+        } else {
+            List<String> services = new ArrayList<>(List.of(
+                    Dhcp.getName(),
+                    Dns.getName(),
+                    StaticNat.getName(),
+                    SourceNat.getName(),
+                    PortForwarding.getName(),
+                    UserData.getName(),
+                    Lb.getName()
+            ));
+            if (Boolean.TRUE.equals(forVpc)) {
+                services.add(NetworkACL.getName());
+                return services;
+            }
+            return services;
+        }
     }
 
     public String getGuestIpType() {
@@ -282,40 +310,34 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = null;
-        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            if (!getForNsx()) {
-                serviceProviderMap = new HashMap<String, List<String>>();
-                Collection servicesCollection = serviceProviderList.values();
-                Iterator iter = servicesCollection.iterator();
-                while (iter.hasNext()) {
-                    HashMap<String, String> services = (HashMap<String, String>) iter.next();
-                    String service = services.get("service");
-                    String provider = services.get("provider");
-                    List<String> providerList = null;
-                    if (serviceProviderMap.containsKey(service)) {
-                        providerList = serviceProviderMap.get(service);
-                    } else {
-                        providerList = new ArrayList<String>();
-                    }
-                    providerList.add(provider);
-                    serviceProviderMap.put(service, providerList);
+        Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !getForNsx()) {
+            Collection servicesCollection = serviceProviderList.values();
+            Iterator iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                String service = services.get("service");
+                String provider = services.get("provider");
+                List<String> providerList = null;
+                if (serviceProviderMap.containsKey(service)) {
+                    providerList = serviceProviderMap.get(service);
+                } else {
+                    providerList = new ArrayList<String>();
                 }
+                providerList.add(provider);
+                serviceProviderMap.put(service, providerList);
             }
-            else {
-                getServiceProviderMapForNsx(serviceProviderMap);
-            }
+        } else {
+            getServiceProviderMapForNsx(serviceProviderMap);
         }
-
         return serviceProviderMap;
     }
 
     private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
-        String routerProvider = getForVpc() ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
+        String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
         List<String> unsupportedServices = List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "Firewall", "StaticNat",
-                "PortForwarding", "NetworkACL");
+                "Gateway", "Firewall", "BaremetalPxeService");
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
         for (String service : allServices) {

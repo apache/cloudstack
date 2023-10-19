@@ -1211,7 +1211,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultNatNSXNetworkOffering.setForNsx(true);
-                defaultNatNSXNetworkOffering.setMode(NetworkOffering.Mode.NAT.name());
+                defaultNatNSXNetworkOffering.setMode(NetworkOffering.Mode.NATTED.name());
                 defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNatNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatNSXNetworkOffering);
 
@@ -1227,7 +1227,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultRouteNSXNetworkOffering.setForNsx(true);
-                defaultRouteNSXNetworkOffering.setMode(NetworkOffering.Mode.Route.name());
+                defaultRouteNSXNetworkOffering.setMode(NetworkOffering.Mode.ROUTED.name());
                 defaultRouteNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultRouteNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultRouteNSXNetworkOffering);
 

@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.VirtualRouterProvider;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -49,6 +50,15 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
+import static com.cloud.network.Network.Service.Dhcp;
+import static com.cloud.network.Network.Service.Dns;
+import static com.cloud.network.Network.Service.Lb;
+import static com.cloud.network.Network.Service.StaticNat;
+import static com.cloud.network.Network.Service.SourceNat;
+import static com.cloud.network.Network.Service.PortForwarding;
+import static com.cloud.network.Network.Service.NetworkACL;
+import static com.cloud.network.Network.Service.UserData;
+
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
@@ -66,7 +76,6 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
                type = CommandType.LIST,
-               required = true,
                collectionType = CommandType.STRING,
                description = "services supported by the vpc offering")
     private List<String> supportedServices;
@@ -107,12 +116,14 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.FOR_NSX,
             type = CommandType.BOOLEAN,
-            description = "true if network offering is meant to be used for NSX, false otherwise.")
+            description = "true if network offering is meant to be used for NSX, false otherwise.",
+            since = "4.20.0")
     private Boolean forNsx;
 
     @Parameter(name = ApiConstants.MODE,
             type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route")
+            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route",
+            since = "4.20.0")
     private String mode;
 
     @Parameter(name = ApiConstants.ENABLE,
@@ -134,6 +145,21 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSupportedServices() {
+        if (!forNsx && CollectionUtils.isEmpty(supportedServices)) {
+            throw new InvalidParameterValueException("Supported services needs to be provided");
+        }
+        if (forNsx) {
+            return List.of(
+                    Dhcp.getName(),
+                    Dns.getName(),
+                    Lb.getName(),
+                    StaticNat.getName(),
+                    SourceNat.getName(),
+                    NetworkACL.getName(),
+                    PortForwarding.getName(),
+                    UserData.getName()
+                    );
+        }
         return supportedServices;
     }
 
@@ -146,41 +172,37 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public Map<String, List<String>> getServiceProviders() {
-        Map<String, List<String>> serviceProviderMap = null;
-        if (serviceProviderList != null && !serviceProviderList.isEmpty()) {
-            if (!getForNsx()) {
-                serviceProviderMap = new HashMap<String, List<String>>();
-                Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
-                Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
-                while (iter.hasNext()) {
-                    Map<String, String> obj = iter.next();
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("service provider entry specified: " + obj);
-                    }
-                    HashMap<String, String> services = (HashMap<String, String>) obj;
-                    String service = services.get("service");
-                    String provider = services.get("provider");
-                    List<String> providerList = null;
-                    if (serviceProviderMap.containsKey(service)) {
-                        providerList = serviceProviderMap.get(service);
-                    } else {
-                        providerList = new ArrayList<String>();
-                    }
-                    providerList.add(provider);
-                    serviceProviderMap.put(service, providerList);
+        Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();;
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !getForNsx()) {
+            Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
+            Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                Map<String, String> obj = iter.next();
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("service provider entry specified: " + obj);
                 }
-            } else {
-                getServiceProviderMapForNsx(serviceProviderMap);
+                HashMap<String, String> services = (HashMap<String, String>) obj;
+                String service = services.get("service");
+                String provider = services.get("provider");
+                List<String> providerList = null;
+                if (serviceProviderMap.containsKey(service)) {
+                    providerList = serviceProviderMap.get(service);
+                } else {
+                    providerList = new ArrayList<String>();
+                }
+                providerList.add(provider);
+                serviceProviderMap.put(service, providerList);
             }
+        } else {
+            getServiceProviderMapForNsx(serviceProviderMap);
         }
 
         return serviceProviderMap;
     }
 
     private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
-        List<String> unsupportedServices = List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "Firewall", "StaticNat",
-                "PortForwarding", "NetworkACL");
+        List<String> unsupportedServices = List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity",
+                "Gateway", "Firewall");
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Network.Service.listAllServices().stream().map(Network.Service::getName).collect(Collectors.toList());
         for (String service : allServices) {

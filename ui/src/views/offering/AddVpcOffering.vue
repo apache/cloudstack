@@ -253,11 +253,11 @@ export default {
       modes: [
         {
           id: 0,
-          name: 'NAT'
+          name: 'NATTED'
         },
         {
           id: 1,
-          name: 'Route'
+          name: 'ROUTED'
         }
       ],
       VPCVR: {
@@ -310,7 +310,6 @@ export default {
       })
     },
     fetchData () {
-      console.log('fetch data')
       this.fetchDomainData()
       this.fetchZoneData()
       this.fetchSupportedServiceData()
@@ -352,149 +351,138 @@ export default {
       })
     },
     fetchSupportedServiceData () {
-      console.log('supported services')
-      this.supportedServices = []
-      this.supportedServices.push({
-        name: 'Dhcp',
-        provider: [
-          { name: 'VpcVirtualRouter' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'Dns',
-        provider: [{ name: 'VpcVirtualRouter' }]
-      })
-      this.supportedServices.push({
-        name: 'Lb',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'InternalLbVm' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'Gateway',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'BigSwitchBcf' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'StaticNat',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'BigSwitchBcf' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'SourceNat',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'BigSwitchBcf' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'NetworkACL',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'BigSwitchBcf' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'PortForwarding',
-        provider: [{ name: 'VpcVirtualRouter' }]
-      })
-      this.supportedServices.push({
-        name: 'UserData',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'ConfigDrive' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'Vpn',
-        provider: [
-          { name: 'VpcVirtualRouter' },
-          { name: 'BigSwitchBcf' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'Connectivity',
-        provider: [
-          { name: 'BigSwitchBcf' },
-          { name: 'NiciraNvp' },
-          { name: 'Ovs' },
-          { name: 'JuniperContrailVpcRouter' }
-        ]
-      })
-      for (var i in this.supportedServices) {
-        var serviceName = this.supportedServices[i].name
-        var serviceDisplayName = serviceName
-        // Sanitize names
-        this.supportedServices[i].description = serviceDisplayName
+      var services = []
+      if (this.forNsx) {
+        services.push({
+          name: 'Dhcp',
+          enabled: true,
+          provider: [
+            { name: 'VpcVirtualRouter' }
+          ]
+        })
+        services.push({
+          name: 'Dns',
+          enabled: true,
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
+        services.push({
+          name: 'Lb',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+        services.push({
+          name: 'StaticNat',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+        services.push({
+          name: 'SourceNat',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+        services.push({
+          name: 'NetworkACL',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+        services.push({
+          name: 'PortForwarding',
+          enabled: true,
+          provider: [{ name: 'Nsx' }]
+        })
+        services.push({
+          name: 'UserData',
+          enabled: true,
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
+      } else {
+        services.push({
+          name: 'Dhcp',
+          provider: [
+            { name: 'VpcVirtualRouter' }
+          ]
+        })
+        services.push({
+          name: 'Dns',
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
+        services.push({
+          name: 'Lb',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'InternalLbVm' }
+          ]
+        })
+        services.push({
+          name: 'Gateway',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'BigSwitchBcf' }
+          ]
+        })
+        services.push({
+          name: 'StaticNat',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'BigSwitchBcf' }
+          ]
+        })
+        services.push({
+          name: 'SourceNat',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'BigSwitchBcf' }
+          ]
+        })
+        services.push({
+          name: 'NetworkACL',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'BigSwitchBcf' }
+          ]
+        })
+        services.push({
+          name: 'PortForwarding',
+          provider: [{ name: 'VpcVirtualRouter' }]
+        })
+        services.push({
+          name: 'UserData',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'ConfigDrive' }
+          ]
+        })
+        services.push({
+          name: 'Vpn',
+          provider: [
+            { name: 'VpcVirtualRouter' },
+            { name: 'BigSwitchBcf' }
+          ]
+        })
+        services.push({
+          name: 'Connectivity',
+          provider: [
+            { name: 'BigSwitchBcf' },
+            { name: 'NiciraNvp' },
+            { name: 'Ovs' },
+            { name: 'JuniperContrailVpcRouter' }
+          ]
+        })
       }
-      console.log(this.supportedServices)
-    },
-    updateNsxSupportedServices () {
-      console.log('update nsx services')
       this.supportedServices = []
-      this.supportedServices.push({
-        name: 'Dhcp',
-        enabled: true,
-        provider: [
-          { name: 'VpcVirtualRouter' }
-        ]
-      })
-      this.supportedServices.push({
-        name: 'Dns',
-        enabled: true,
-        provider: [{ name: 'VpcVirtualRouter' }]
-      })
-      this.supportedServices.push({
-        name: 'Lb',
-        enabled: true,
-        provider: [{ name: 'Nsx' }]
-      })
-      this.supportedServices.push({
-        name: 'StaticNat',
-        enabled: true,
-        provider: [{ name: 'Nsx' }]
-      })
-      this.supportedServices.push({
-        name: 'SourceNat',
-        enabled: true,
-        provider: [{ name: 'Nsx' }]
-      })
-      this.supportedServices.push({
-        name: 'NetworkACL',
-        enabled: true,
-        provider: [{ name: 'Nsx' }]
-      })
-      this.supportedServices.push({
-        name: 'PortForwarding',
-        enabled: true,
-        provider: [{ name: 'Nsx' }]
-      })
-      this.supportedServices.push({
-        name: 'UserData',
-        enabled: true,
-        provider: [{ name: 'VpcVirtualRouter' }]
-      })
-      for (var i in this.supportedServices) {
-        var serviceName = this.supportedServices[i].name
-        var serviceDisplayName = serviceName
-        console.log(serviceDisplayName)
-        // Sanitize names
-        this.supportedServices[i].description = serviceDisplayName
+      for (var i in services) {
+        services[i].description = services[i].name
       }
+      var self = this
+      setTimeout(() => {
+        self.supportedServices = services
+        self.supportedServiceLoading = false
+      }, 50)
     },
     async handleForNsxChange (forNsx) {
       this.forNsx = forNsx
       this.showMode = forNsx
-      if (this.forNsx === true) {
-        this.updateNsxSupportedServices()
-      } else {
-        this.fetchSupportedServiceData()
-      }
+      this.fetchSupportedServiceData()
     },
     handleSupportedServiceChange (service, checked, provider) {
       if (service === 'Connectivity') {
@@ -576,7 +564,10 @@ export default {
         }
         if (this.selectedServiceProviderMap != null) {
           var supportedServices = Object.keys(this.selectedServiceProviderMap)
-          params.supportedservices = supportedServices.join(',')
+          params.supportedservices = []
+          if (!this.forNsx) {
+            params.supportedservices = supportedServices.join(',')
+          }
           for (var k in supportedServices) {
             params['serviceProviderList[' + k + '].service'] = supportedServices[k]
             params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
@@ -606,7 +597,7 @@ export default {
             params.serviceofferingid = values.serviceofferingid
           }
         } else {
-          params.supportedservices = ''
+          params.supportedservices = []
         }
         if (values.enable) {
           params.enable = values.enable

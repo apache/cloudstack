@@ -92,7 +92,6 @@ export default {
     }
   },
   data () {
-    console.log(this.forNsx)
     return {
       checked: false,
       selectedOption: null,
@@ -100,7 +99,6 @@ export default {
     }
   },
   created () {
-    console.log(this.defaultCheckBoxValue)
     this.checked = this.defaultCheckBoxValue
   },
   watch: {
@@ -125,14 +123,10 @@ export default {
       return this.option || this.selectedOption
     },
     option () {
-      console.log('option')
       if (this.forNsx) {
         return this.selectOptions[0]?.name || null
       }
       return null
-      // else {
-      //   return this.handleCheckChange({ target: { checked: true } })
-      // }
     }
   },
   methods: {
