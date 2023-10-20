@@ -20,7 +20,7 @@
 package com.cloud.network.nicira;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.http.HttpEntity;
@@ -83,7 +83,6 @@ public class NiciraRestClient extends BasicRestClient {
         counter.incrementExecutionCounter();
         s_logger.debug("Executing " + request.getMethod() + " request [execution count = " + counter.getValue() + "]");
         final CloseableHttpResponse response = super.execute(request);
-
         final StatusLine statusLine = response.getStatusLine();
         final int statusCode = statusLine.getStatusCode();
         s_logger.debug("Status of last request: " + statusLine.toString());
@@ -120,7 +119,7 @@ public class NiciraRestClient extends BasicRestClient {
     }
 
     private HttpUriRequest createAuthenticationRequest() {
-        final Map<String, String> parameters = new HashMap<>();
+        final Map<String, String> parameters = new LinkedHashMap<>();
         parameters.put("username", username);
         parameters.put("password", password);
         return HttpUriRequestBuilder.create()
