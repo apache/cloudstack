@@ -905,6 +905,8 @@ export default {
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
+        console.log(this.prefillContent['public-ipranges'])
+        console.log('pir')
         for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
           const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
           let isExisting = false
@@ -927,6 +929,8 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
+          } else if (publicVlanIpRange.fornsx) {
+            params.vlan = null
           } else {
             params.vlan = 'untagged'
           }
@@ -934,6 +938,8 @@ export default {
           params.netmask = publicVlanIpRange.netmask
           params.startip = publicVlanIpRange.startIp
           params.endip = publicVlanIpRange.endIp
+          params.fornsx = publicVlanIpRange.fornsx
+          params.forsystemvms = publicVlanIpRange.forsystemvms
 
           if (this.isBasicZone) {
             params.forVirtualNetwork = true
@@ -947,9 +953,10 @@ export default {
 
           try {
             console.log('is nsx zone: ', this.stepData.isNsxZone)
-            console.log('value of this.stepData.stepMove.includes(createPublicVlanIpRange)', this.stepData.stepMove.includes('createPublicVlanIpRange' + index))
             // for not add vlan ; next phase add the check: && this.stepData.isNsxZone
             if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
+              console.log('create vlan ip range:')
+              console.log(params)
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
               console.log('create public vlan ip range')
@@ -2065,6 +2072,8 @@ export default {
     createVlanIpRange (args) {
       return new Promise((resolve, reject) => {
         let message = ''
+        console.log('args:')
+        console.log(args)
 
         api('createVlanIpRange', args).then(json => {
           const item = json.createvlaniprangeresponse.vlan

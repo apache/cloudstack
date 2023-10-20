@@ -285,3 +285,5 @@ GROUP BY
 
 -- Set removed state for all removed accounts
 UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
+
+--

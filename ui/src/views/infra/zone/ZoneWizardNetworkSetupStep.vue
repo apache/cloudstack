@@ -51,7 +51,7 @@
       :isFixError="isFixError"
     />
     <ip-address-range-form
-      v-if="steps && steps[currentStep].formKey === 'publicTraffic'"
+      v-if="steps && ['publicTraffic', 'nsxPublicTraffic'].includes(steps[currentStep].formKey)"
       @nextPressed="nextPressed"
       @backPressed="handleBack"
       @fieldsChanged="fieldsChanged"
@@ -60,6 +60,8 @@
       :description="publicTrafficDescription[zoneType.toLowerCase()]"
       :prefillContent="prefillContent"
       :isFixError="isFixError"
+      :forNsx="steps[currentStep].formKey === 'nsxPublicTraffic'"
+      :isNsxZone="isNsxZone"
     />
 
     <static-inputs-form
@@ -242,6 +244,13 @@ export default {
         formKey: 'publicTraffic',
         trafficType: 'public'
       })
+      if (this.isNsxZone) {
+        steps.push({
+          title: 'label.public.traffic.nsx',
+          formKey: 'nsxPublicTraffic',
+          trafficType: 'public'
+        })
+      }
       steps.push({
         title: 'label.pod',
         formKey: 'pod'
@@ -544,7 +553,6 @@ export default {
   created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
-    console.log(this.isNsxZone)
     this.currentStep = this.prefillContent?.networkStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.formKey === this.stepChild)

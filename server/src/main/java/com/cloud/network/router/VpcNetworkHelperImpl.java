@@ -87,7 +87,7 @@ public class VpcNetworkHelperImpl extends NetworkHelperImpl {
         final TreeSet<String> publicVlans = new TreeSet<String>();
         if (vpcRouterDeploymentDefinition.isPublicNetwork()) {
             publicVlans.add(vpcRouterDeploymentDefinition.getSourceNatIP()
-                                                         .getVlanTag());
+                                                         .getVlanTag()+"");
         }
 
         //1) allocate nic for control and source nat public ip

@@ -42,7 +42,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "createVlanIpRange", description = "Creates a VLAN IP range.", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVlanIpRangeCmd extends BaseCmd {
+    public class CreateVlanIpRangeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
 
@@ -114,6 +114,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
     private Boolean forSystemVms;
 
+    @Parameter(name = ApiConstants.FOR_NSX, type = CommandType.BOOLEAN, description = "true if the IP range is used for NSX resource", since = "4.20.0")
+    private boolean forNsx;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -154,8 +157,12 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return startIp;
     }
 
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
     public String getVlan() {
-        if (vlan == null || vlan.isEmpty()) {
+        if ((vlan == null || vlan.isEmpty()) && !forNsx) {
             vlan = "untagged";
         }
         return vlan;

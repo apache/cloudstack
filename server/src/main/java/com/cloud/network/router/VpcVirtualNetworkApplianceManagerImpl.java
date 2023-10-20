@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -351,7 +352,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 } else if (network.getTrafficType() == TrafficType.Public) {
                     final Pair<Nic, Network> publicNic = new Pair<Nic, Network>(routerNic, network);
                     publicNics.add(publicNic);
-                    final String vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    String vlanTag = null;
+                    if (Objects.nonNull(routerNic.getBroadcastUri())) {
+                        vlanTag = BroadcastDomainType.getValue(routerNic.getBroadcastUri());
+                    } else {
+                        vlanTag = "nsx-"+routerNic.getIPv4Address();
+                    }
                     vlanMacAddress.put(vlanTag, routerNic.getMacAddress());
                 }
             }

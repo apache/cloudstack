@@ -46,6 +46,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -346,6 +348,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     VlanDao _vlanDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
     @Inject
     IPAddressDao _publicIpAddressDao;
     @Inject
@@ -4451,7 +4455,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 } else {
                     network = _networkModel.getNetworkWithSecurityGroupEnabled(zoneId);
                     if (network == null) {
-                        throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
+                        throw new InvalidParameterValueException("Network id is required for Direct vlan creation ");
                     }
                     networkId = network.getId();
                     zoneId = network.getDataCenterId();
@@ -4516,12 +4520,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, forSystemVms, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
-                ip6Cidr, domain, vlanOwner, network, sameSubnet);
+                ip6Cidr, domain, vlanOwner, network, sameSubnet, cmd.isForNsx());
     }
 
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
             final String vlanId, final Boolean forVirtualNetwork, final Boolean forSystemVms, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
-            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet) {
+            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet, boolean forNsx) {
         final GlobalLock commitVlanLock = GlobalLock.getInternLock("CommitVlan");
         commitVlanLock.lock(5);
         s_logger.debug("Acquiring lock for committing vlan");
@@ -4549,7 +4553,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         newVlanNetmask = sameSubnet.second().second();
                     }
                     final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, forSystemVms, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
-                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr, forNsx);
                     // create an entry in the nic_secondary table. This will be the new
                     // gateway that will be configured on the corresponding routervm.
                     return vlan;
@@ -4673,7 +4677,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final boolean forSystemVms, final Long podId, final String startIP, final String endIP,
-            final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr) {
+                                           final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr, boolean forNsx) {
         final Network network = _networkModel.getNetwork(networkId);
 
         boolean ipv4 = false, ipv6 = false;
@@ -4755,11 +4759,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else {
                 vlanId = networkVlanId;
             }
-        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null) {
+        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null && !forNsx) {
             throw new InvalidParameterValueException("Unable to determine vlan id or untagged vlan for public network");
         }
 
-        if (vlanId == null) {
+        if (vlanId == null && !forNsx) {
             vlanId = Vlan.UNTAGGED;
         }
 
@@ -4856,7 +4860,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (isSharedNetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
-        if (!bypassVlanOverlapCheck && _zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).size() > 0) {
+        if (!bypassVlanOverlapCheck && !forNsx && _zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
         }
@@ -4872,7 +4876,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Everything was fine, so persist the VLAN
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
-                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms);
+                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, forNsx);
 
         return vlan;
     }
@@ -4894,9 +4898,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 continue;
             }
             // from here, subnet overlaps
-            if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
+            VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlan.getId(), ApiConstants.nsxDetail);
+            if ((Objects.isNull(vlanId) && Objects.nonNull(vlanDetail) && vlanDetail.getValue().equals("true")) || Objects.nonNull(vlanId) &&
+                    (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
                     BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
-                    BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
+                    BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag()))))) {
                 // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
                 final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
                 final String otherVlanStartIP = otherVlanIpRange[0];
@@ -4941,13 +4947,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId, final String startIP, final String endIP,
             final String vlanGateway, final String vlanNetmask, final String vlanId, final Domain domain, final Account vlanOwner, final String vlanIp6Gateway, final String vlanIp6Cidr,
-            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms) {
+            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms, final boolean forNsx) {
         return Transaction.execute(new TransactionCallback<VlanVO>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
                 s_logger.debug("Saving vlan range " + vlan);
                 vlan = _vlanDao.persist(vlan);
+                vlanDetailsDao.addDetail(vlan.getId(), ApiConstants.nsxDetail, String.valueOf(forNsx), true);
 
                 // IPv6 use a used ip map, is different from ipv4, no need to save
                 // public ip range
