@@ -29,7 +29,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -3823,9 +3822,60 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        applyPublicTemplateSharingRestrictions(sc, caller);
+
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
                 showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
 
+    }
+
+    /**
+     * If the caller is not a root admin, restricts the search to return only public templates from the domain which
+     * the caller belongs to and domains with the setting 'share.public.templates.with.other.domains' enabled.
+     */
+    protected void applyPublicTemplateSharingRestrictions(SearchCriteria<TemplateJoinVO> sc, Account caller) {
+        if (caller.getType() == Account.Type.ADMIN) {
+            s_logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
+            return;
+        }
+
+        List<TemplateJoinVO> publicTemplates = _templateJoinDao.listPublicTemplates();
+
+        Set<Long> unsharableDomainIds = new HashSet<>();
+        for (TemplateJoinVO template : publicTemplates) {
+            addDomainIdToSetIfDomainDoesNotShareTemplates(template.getDomainId(), caller, unsharableDomainIds);
+        }
+
+        if (!unsharableDomainIds.isEmpty()) {
+            s_logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            sc.addAnd("domainId", SearchCriteria.Op.NOTIN, unsharableDomainIds.toArray());
+        }
+    }
+
+    /**
+     * Adds the provided domain ID to the set if the domain does not share templates with the account. That is, if:
+     * (1) the template does not belong to the domain of the account AND
+     * (2) the domain of the template has the setting 'share.public.templates.with.other.domains' disabled.
+     */
+    protected void addDomainIdToSetIfDomainDoesNotShareTemplates(long domainId, Account account, Set<Long> unsharableDomainIds) {
+        if (domainId == account.getDomainId()) {
+            s_logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
+            return;
+        }
+
+        if (unsharableDomainIds.contains(domainId)) {
+            s_logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
+            return;
+        }
+
+        if (!checkIfDomainSharesTemplates(domainId)) {
+            s_logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            unsharableDomainIds.add(domainId);
+        }
+    }
+
+    protected boolean checkIfDomainSharesTemplates(Long domainId) {
+        return QueryService.SharePublicTemplatesWithOtherDomains.valueIn(domainId);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
@@ -3957,25 +4007,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
         }
 
-        if(caller.getType() != Account.Type.ADMIN) {
-            templates = applyPublicTemplateRestriction(templates, caller);
-            count = templates.size();
-        }
-
         return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
-    }
-
-    private List<TemplateJoinVO> applyPublicTemplateRestriction(List<TemplateJoinVO> templates, Account caller){
-        List<Long> unsharableDomainIds = templates.stream()
-                .map(TemplateJoinVO::getDomainId)
-                .distinct()
-                .filter(domainId -> domainId != caller.getDomainId())
-                .filter(Predicate.not(QueryService.SharePublicTemplatesWithOtherDomains::valueIn))
-                .collect(Collectors.toList());
-
-        return templates.stream()
-                .filter(Predicate.not(t -> unsharableDomainIds.contains(t.getDomainId())))
-                .collect(Collectors.toList());
     }
 
     @Override
