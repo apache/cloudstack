@@ -62,6 +62,7 @@
 
         <module>backup/dummy</module>
         <module>backup/networker</module>
+        <module>backup/veeam</module>
 
         <module>ca/root-ca</module>
 
