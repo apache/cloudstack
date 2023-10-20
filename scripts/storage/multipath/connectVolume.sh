@@ -31,12 +31,23 @@ WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
 echo "$(date): Looking for ${WWID} on lun ${LUN}"
 
-# first we need to check if any stray references are left from a previous use of this lun
-lingering_devs=$(lsscsi -w "*:*:*:${LUN}" | grep /dev | awk '{printf("%s:%s ", $NF, $NF-1); }')
+# get vendor OUI.  we will only delete a device on the designated lun if it matches the
+# incoming WWN OUI value.  This is because multiple storage arrays may be mapped to the
+# host on different fiber channel hosts with the same LUN
+INCOMING_OUI=$(echo ${WWID} | cut -c2-7)
+echo "$(date): Incoming OUI: ${INCOMING_OUI}"
 
-if [ ! -z "${lingering_devs}" ]; then
-    for dev in ${lingering_devs}; do
-       LSSCSI_WWID=$(echo $dev | awk -F: '{print $2}')
+# first we need to check if any stray references are left from a previous use of this lun
+for fchost in $(ls /sys/class/fc_host | sed -e 's/host//g'); do
+   lingering_devs=$(lsscsi -w "${fchost}:*:*:${LUN}" | grep /dev | awk '{if (NF > 6) { printf("%s:%s ", $NF, $(NF-1));} }' | sed -e 's/0x/3/g')
+
+   if [ ! -z "${lingering_devs}" ]; then
+     for dev in ${lingering_devs}; do
+       LSSCSI_WWID=$(echo $dev | awk -F: '{print $2}' | sed -e 's/0x/3/g')
+       FOUND_OUI=$(echo ${LSSCSI_WWID} | cut -c3-8)
+       if [ "${INCOMING_OUI}" != "${FOUND_OUI}" ]; then
+           continue;
+       fi
        dev=$(echo $dev | awk -F: '{ print $1}')
        logger -t "CS_SCSI_VOL_FIND" "${WWID} processing identified a lingering device ${dev} from previous lun use, attempting to clean up"
        MP_WWID=$(multipath -l ${dev} | head -1 | awk '{print $1}')
@@ -49,10 +60,10 @@ if [ ! -z "${lingering_devs}" ]; then
        elif [ "${LSSCSI_WWID}" != "${WWID}" ]; then
            echo "1" > /sys/block/$(echo ${dev} | awk -F'/' '{print $NF}')/device/delete
        fi
-    done
-
-    sleep 3
-fi
+     done
+     sleep 3
+   fi
+done
 
 logger -t "CS_SCSI_VOL_FIND" "${WWID} awaiting disk path at /dev/mapper/3${WWID}"
 
