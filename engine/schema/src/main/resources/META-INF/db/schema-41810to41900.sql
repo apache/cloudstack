@@ -582,6 +582,5 @@ CREATE TABLE `cloud`.`oauth_provider` (
   `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY (`provider`, `client_id`)
+  PRIMARY KEY (`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
