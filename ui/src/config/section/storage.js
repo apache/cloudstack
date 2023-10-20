@@ -42,11 +42,7 @@ export default {
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
-          metricsFields.push({
-            physicalsize: (record) => {
-              return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
-            }
-          })
+          metricsFields.push('physicalsize')
         }
         metricsFields.push('utilization')
 
