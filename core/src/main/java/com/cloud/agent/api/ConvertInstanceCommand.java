@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.hypervisor.Hypervisor;
 
@@ -26,17 +27,17 @@ public class ConvertInstanceCommand extends Command {
     private RemoteInstanceTO sourceInstance;
     private Hypervisor.HypervisorType destinationHypervisorType;
     private List<String> destinationStoragePools;
-    private String conversionTemporaryPath;
+    private DataStoreTO conversionTemporaryLocation;
 
     public ConvertInstanceCommand() {
     }
 
     public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
-                                  List<String> destinationStoragePools, String conversionTemporaryPath) {
+                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
         this.destinationStoragePools = destinationStoragePools;
-        this.conversionTemporaryPath = conversionTemporaryPath;
+        this.conversionTemporaryLocation = conversionTemporaryLocation;
     }
 
     public RemoteInstanceTO getSourceInstance() {
@@ -51,8 +52,8 @@ public class ConvertInstanceCommand extends Command {
         return destinationStoragePools;
     }
 
-    public String getConversionTemporaryPath() {
-        return conversionTemporaryPath;
+    public DataStoreTO getConversionTemporaryLocation() {
+        return conversionTemporaryLocation;
     }
 
     @Override

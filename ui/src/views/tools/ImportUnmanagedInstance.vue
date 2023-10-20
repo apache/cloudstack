@@ -152,11 +152,38 @@
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="kvmHostsForConversion"
-                  :checkBoxLabel="'Select a KVM host in the cluster to perform the instance conversion through virt-v2v'"
+                  :checkBoxLabel="'(Optional) Select a KVM host in the cluster to perform the instance conversion through virt-v2v'"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
+              </a-form-item>
+              <a-form-item name="convertstorageoption" ref="convertstorageoption">
+                <check-box-select-pair
+                  layout="vertical"
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
+                  :resourceKey="cluster.id"
+                  :selectOptions="storageOptionsForConversion"
+                  :checkBoxLabel="'(Optional) Select a Storage temporary destination for the converted disks through virt-v2v'"
+                  :defaultCheckBoxValue="false"
+                  :reversed="false"
+                  @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
+                />
+              </a-form-item>
+              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+                <a-select
+                  v-model:value="form.convertstoragepoolid"
+                  defaultActiveFirstOption
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  @change="val => { selectedStoragePoolForConversion = val }">
+                  <a-select-option v-for="(pool) in storagePoolsForConversion" :key="pool.id" :label="pool.name">
+                    {{ pool.name }}
+                  </a-select-option>
+                </a-select>
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -350,7 +377,20 @@ export default {
       switches: {},
       loading: false,
       kvmHostsForConversion: [],
-      selectedKvmHostForConversion: null
+      selectedKvmHostForConversion: null,
+      storageOptionsForConversion: [
+        {
+          id: 'secondary',
+          name: 'Secondary Storage'
+        }, {
+          id: 'primary',
+          name: 'Primary Storage'
+        }
+      ],
+      storagePoolsForConversion: [],
+      selectedStorageOptionForConversion: null,
+      selectedStoragePoolForConversion: null,
+      showStoragePoolsForConversion: false
     }
   },
   beforeCreate () {
@@ -701,12 +741,62 @@ export default {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
       })
     },
+    fetchStoragePoolsForConversion () {
+      if (this.selectedStorageOptionForConversion === 'primary') {
+        api('listStoragePools', {
+          zoneid: this.cluster.zoneid,
+          state: 'Up'
+        }).then(json => {
+          this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+        })
+      } else if (this.selectedStorageOptionForConversion === 'local') {
+        const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
+        api('listStoragePools', {
+          scope: 'HOST',
+          ipaddress: kvmHost.ipaddress,
+          state: 'Up'
+        }).then(json => {
+          this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+        })
+      }
+    },
     updateSelectedKvmHostForConversion (clusterid, checked, value) {
       if (checked) {
         this.selectedKvmHostForConversion = value
+        const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
+        if (kvmHost.islocalstorageactive) {
+          this.storageOptionsForConversion.push({
+            id: 'local',
+            name: 'Host Local Storage'
+          })
+        } else {
+          this.resetStorageOptionsForConversion()
+        }
       } else {
         this.selectedKvmHostForConversion = null
+        this.resetStorageOptionsForConversion()
       }
+    },
+    updateSelectedStorageOptionForConversion (clusterid, checked, value) {
+      if (checked) {
+        this.selectedStorageOptionForConversion = value
+        this.fetchStoragePoolsForConversion()
+        this.showStoragePoolsForConversion = value !== 'secondary'
+      } else {
+        this.showStoragePoolsForConversion = false
+        this.selectedStoragePoolForConversion = null
+      }
+    },
+    resetStorageOptionsForConversion () {
+      this.storageOptionsForConversion = [
+        {
+          id: 'secondary',
+          name: 'Secondary Storage'
+        }, {
+          id: 'primary',
+          name: 'Primary Storage'
+        }
+      ]
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -772,7 +862,10 @@ export default {
           params.hostip = this.resource.hostname
           params.clustername = this.resource.clustername
           if (this.selectedKvmHostForConversion) {
-            params.convertinstacehostid = this.selectedKvmHostForConversion
+            params.convertinstancehostid = this.selectedKvmHostForConversion
+          }
+          if (this.selectedStoragePoolForConversion) {
+            params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
         }
         var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']

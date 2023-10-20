@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
@@ -200,6 +201,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
             description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
     private Long convertInstanceHostId;
+
+    @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
+            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+    private Long convertStoragePoolId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -367,6 +372,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     public Long getConvertInstanceHostId() {
         return convertInstanceHostId;
+    }
+
+    public Long getConvertStoragePoolId() {
+        return convertStoragePoolId;
     }
 
     /////////////////////////////////////////////////////

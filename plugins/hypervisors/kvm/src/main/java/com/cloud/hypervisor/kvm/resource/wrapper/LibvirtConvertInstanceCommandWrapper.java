@@ -21,6 +21,8 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConvertInstanceAnswer;
 import com.cloud.agent.api.ConvertInstanceCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -36,6 +38,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,7 +71,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String sourceInstanceName = sourceInstance.getInstanceName();
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
-        String secondaryStorageUrl = cmd.getConversionTemporaryPath();
+        DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         long timeout = (long) cmd.getWait() * 1000;
 
         if (!isInstanceConversionSupportedOnHost()) {
@@ -88,7 +91,14 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
-        KVMStoragePool secondaryPool = storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl);
+        KVMStoragePool temporaryStoragePool;
+        if (conversionTemporaryLocation instanceof NfsTO) {
+            NfsTO nfsTO = (NfsTO) conversionTemporaryLocation;
+            temporaryStoragePool = storagePoolMgr.getStoragePoolByURI(nfsTO.getUrl());
+        } else {
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) conversionTemporaryLocation;
+            temporaryStoragePool = storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        }
 
         s_logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
                 sourceInstanceName, sourceHypervisorType));
@@ -96,8 +106,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         final String temporaryPasswordFilePath = createTemporaryPasswordFileAndRetrievePath(sourceInstance);
         final String temporaryConvertFolder = String.format("vmw-to-kvm-%s", temporaryConvertUuid);
-        secondaryPool.createFolder(temporaryConvertFolder);
-        final String temporaryConvertPath = String.format("%s/%s", secondaryPool.getLocalPath(), temporaryConvertFolder);
+        temporaryStoragePool.createFolder(temporaryConvertFolder);
+        final String temporaryConvertPath = String.format("%s/%s", temporaryStoragePool.getLocalPath(), temporaryConvertFolder);
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
@@ -123,10 +133,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             }
             sanitizeDisksPath(disks);
 
-            storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
-            secondaryPool = storagePoolMgr.getStoragePoolByURI(secondaryStorageUrl + File.separator + temporaryConvertFolder);
+            storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
+            temporaryStoragePool = storagePoolMgr.getStoragePoolByURI(conversionTemporaryLocation + File.separator + temporaryConvertFolder);
 
-            List<KVMPhysicalDisk> destinationDisks = moveConvertedInstanceFromTemporaryLocaltionToDestination(disks, secondaryPool,
+            List<KVMPhysicalDisk> destinationDisks = moveConvertedInstanceFromTemporaryLocaltionToDestination(disks, temporaryStoragePool,
                     destinationStoragePools, storagePoolMgr);
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
