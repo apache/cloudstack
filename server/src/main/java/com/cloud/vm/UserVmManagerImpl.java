@@ -3630,8 +3630,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     isSecurityGroupEnabledNetworkUsed = true;
                 }
 
-                if (!(network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Shared)) {
-                    throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
+                if (network.getTrafficType() != TrafficType.Guest || !Arrays.asList(GuestType.Shared, GuestType.L2).contains(network.getGuestType())) {
+                    throw new InvalidParameterValueException("Can specify only Shared or L2 Guest networks when deploy vm in Advance Security Group enabled zone");
                 }
 
                 _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
