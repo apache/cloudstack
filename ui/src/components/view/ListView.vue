@@ -176,7 +176,7 @@
       </template>
       <template v-if="column.key === 'physicalsize'">
         <span v-if="text">
-          {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
+          {{ isNaN(text) ? text : (parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) + ' GiB') }}
         </span>
       </template>
       <template v-if="column.key === 'physicalnetworkname'">
