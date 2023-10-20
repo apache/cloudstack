@@ -3079,6 +3079,7 @@
 "message.vr.alert.upon.network.offering.creation.l2": "As virtual routers are not created for L2 networks, the compute offering will not be used.",
 "message.vr.alert.upon.network.offering.creation.others": "As none of the obligatory services for creating a virtual router (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) are enabled, the virtual router will not be created and the compute offering will not be used.",
 "message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats.",
+"message.warn.importing.instance.without.nic": "WARNING: this instance is being imported without NICs and many network resources will not be available. Consider creating a NIC via VCenter before importing or as soon as the instance is imported.",
 "message.warn.zone.mtu.update": "Please note that this limit won't affect pre-existing network’s MTU settings",
 "message.zone.creation.complete": "Zone creation complete.",
 "message.zone.detail.description": "Populate zone details.",
