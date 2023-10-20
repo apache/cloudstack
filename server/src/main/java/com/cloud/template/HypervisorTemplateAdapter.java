@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.domain.Domain;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -142,6 +144,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
 
     @Override
     public String getName() {
@@ -664,6 +668,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             // Remove template details
             templateDetailsDao.removeDetails(template.getId());
+
+            // Remove deploy-as-is details (if any and if there are no VMs using it)
+            if (template.isDeployAsIs()) {
+                List<VMInstanceVO> vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(template.getId());
+                if (CollectionUtils.isEmpty(vmInstanceVOList)) {
+                    templateDeployAsIsDetailsDao.removeDetails(template.getId());
+                }
+            }
 
             // Remove comments (if any)
             AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
