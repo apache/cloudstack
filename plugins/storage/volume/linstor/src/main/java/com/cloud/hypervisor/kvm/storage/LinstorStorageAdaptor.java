@@ -215,6 +215,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
                                               Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
+        s_logger.debug(String.format("Linstor.createPhysicalDisk: %s;%s", name, format));
         final String rscName = getLinstorRscName(name);
         LinstorStoragePool lpool = (LinstorStoragePool) pool;
         final DevelopersApi api = getLinstorAPI(pool);
@@ -255,6 +256,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
             }
         } catch (ApiException apiEx) {
+            s_logger.error(String.format("Linstor.createPhysicalDisk: ApiException: %s", apiEx.getBestMessage()));
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
     }
@@ -425,7 +427,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
-        s_logger.debug("Linstor: copyPhysicalDisk");
+        s_logger.debug(String.format("Linstor.copyPhysicalDisk: %s -> %s", disk.getPath(), name));
         final QemuImg.PhysicalDiskFormat sourceFormat = disk.getFormat();
         final String sourcePath = disk.getPath();
 
@@ -434,6 +436,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
+        s_logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
