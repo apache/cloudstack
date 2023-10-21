@@ -34,6 +34,12 @@
               :rules="rules"
               @finish="handleSubmit"
               layout="vertical">
+              <a-alert
+                v-if="selectedVmwareVcenter && isVmRunning"
+                type="warning"
+                :showIcon="true"
+                :message="$t('message.import.running.instance.warning')"
+              />
               <a-form-item name="displayname" ref="displayname">
                 <template #label>
                   <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
