@@ -4575,22 +4575,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
                 NicVO existingNic = _nicDao.findByNetworkIdAndMacAddress(network.getId(), macAddress);
-                if (existingNic != null && !forced) {
-                    throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
-                            " and forced flag is disabled");
-                }
                 String macAddressToPersist = macAddress;
-                if (forced) {
-                    try {
-                        s_logger.debug(String.format("Generating a new mac address on network %s as the mac address %s already exists", network.getName(), macAddress));
-                        String newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
-                        s_logger.debug(String.format("Successfully generated the mac address %s, using it instead of the conflicting address %s", newMacAddress, macAddress));
-                        macAddressToPersist = newMacAddress;
-                    } catch (InsufficientAddressCapacityException e) {
-                        String msg = String.format("Could not generate a new mac address on network %s", network.getName());
-                        s_logger.error(msg);
-                        throw new CloudRuntimeException(msg);
-                    }
+                if (existingNic != null) {
+                    macAddressToPersist = generateNewMacAddressIfForced(network, macAddress, forced);
                 }
                 NicVO vo = new NicVO(network.getGuruName(), vm.getId(), network.getId(), vm.getType());
                 vo.setMacAddress(macAddressToPersist);
@@ -4635,6 +4622,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    private String generateNewMacAddressIfForced(Network network, String macAddress, boolean forced) {
+        if (!forced) {
+            throw new CloudRuntimeException("NIC with MAC address = " + macAddress + " exists on network with ID = " + network.getId() +
+                    " and forced flag is disabled");
+        }
+        try {
+            s_logger.debug(String.format("Generating a new mac address on network %s as the mac address %s already exists", network.getName(), macAddress));
+            String newMacAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+            s_logger.debug(String.format("Successfully generated the mac address %s, using it instead of the conflicting address %s", newMacAddress, macAddress));
+            return newMacAddress;
+        } catch (InsufficientAddressCapacityException e) {
+            String msg = String.format("Could not generate a new mac address on network %s", network.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     @Override
