@@ -125,60 +125,55 @@ class TestImageStoreObjectMigration(cloudstackTestCase):
         """
         Test storage browser and template migration to another secondary storage
         """
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
+        list_template_response=Template.list(
+            self.apiclient,
+            id=template.id,
+            templatefilter="all",
+            zoneid=self.zone.id)
+
+        datastoreid = list_template_response[0].downloaddetails[0].datastoreId
+
+        qresultset = self.dbclient.execute(
+            "select account_id, id from vm_template where uuid = '%s';"
+            % template.id
+        )
+
+        account_id = qresultset[0][0]
+        template_id = qresultset[0][1]
+
+        originalSecondaryStore = ImageStore({"id": datastoreid})
+
+        storeObjects = originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
+
+        self.assertEqual(len(storeObjects), 2, "Check template is uploaded on secondary storage")
+
+        # Migrate template to another secondary storage
+        secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
+
+        if len(secondaryStores) < 2:
+            self.skipTest("Only one secondary storage available hence skipping")
+
+        for store in secondaryStores:
+            if store.id != datastoreid:
+                destSecondaryStore = ImageStore({"id": store.id})
+                break
+
+        originalSecondaryStore.migrateResources(self.apiclient, destSecondaryStore.id, templateIdList=[template.id])
+
         try:
-            template = self.registerTemplate(self.test_template)
-            self.download(self.apiclient, template.id)
+            originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
+        except Exception as exc:
+            self.assertTrue("template/tmpl/" + str(account_id) + "/" + str(template_id) + " doesn't exist in store" in str(exc),
+                            "Check template is deleted from original secondary storage")
+        else:
+            self.fail("Template is not deleted from original secondary storage")
 
-            list_template_response=Template.list(
-                self.apiclient,
-                id=template.id,
-                templatefilter="all",
-                zoneid=self.zone.id)
+        storeObjects = destSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
 
-            datastoreid = list_template_response[0].downloaddetails[0].datastoreId
-
-            qresultset = self.dbclient.execute(
-                "select account_id, id from vm_template where uuid = '%s';"
-                % template.id
-            )
-
-            account_id = qresultset[0][0]
-            template_id = qresultset[0][1]
-
-            originalSecondaryStore = ImageStore({"id": datastoreid})
-
-            storeObjects = originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
-
-            self.assertEqual(len(storeObjects), 2, "Check template is uploaded on secondary storage")
-
-            # Migrate template to another secondary storage
-            secondaryStores = ImageStore.list(self.apiclient, zoneid=self.zone.id)
-
-            if len(secondaryStores) < 2:
-                self.skipTest("Only one secondary storage available hence skipping")
-
-            for store in secondaryStores:
-                if store.id != datastoreid:
-                    destSecondaryStore = ImageStore({"id": store.id})
-                    break
-
-            originalSecondaryStore.migrateResources(self.apiclient, destSecondaryStore.id, templateIdList=[template.id])
-
-            try:
-                originalSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
-            except Exception as exc:
-                self.assertTrue("template/tmpl/" + str(account_id) + "/" + str(template_id) + " doesn't exist in store" in str(exc),
-                                "Check template is deleted from original secondary storage")
-            else:
-                self.fail("Template is not deleted from original secondary storage")
-
-            storeObjects = destSecondaryStore.listObjects(self.apiclient, path="template/tmpl/" + str(account_id) + "/" + str(template_id))
-
-            self.assertEqual(len(storeObjects), 2, "Check template is uploaded on destination secondary storage")
-
-        except Exception as e:
-            self.fail("Exceptione occurred  : %s" % e)
-        return
+        self.assertEqual(len(storeObjects), 2, "Check template is uploaded on destination secondary storage")
 
     def registerTemplate(self, cmd):
         temp = self.apiclient.registerTemplate(cmd)[0]
