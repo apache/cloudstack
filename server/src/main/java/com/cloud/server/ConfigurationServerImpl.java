@@ -1206,12 +1206,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
-                // Offering #9 - network offering for nsx provider - NAT mode
+                // Offering #9 - network offering for nsx provider - NATTED mode
                 NetworkOfferingVO defaultNatNSXNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultNatNSXNetworkOffering.setForNsx(true);
-                defaultNatNSXNetworkOffering.setMode(NetworkOffering.Mode.NATTED.name());
+                defaultNatNSXNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
                 defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultNatNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatNSXNetworkOffering);
 
@@ -1222,12 +1222,12 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     s_logger.trace("Added service for the network offering: " + offService);
                 }
 
-                // Offering #10 - network offering for nsx provider - Route mode
+                // Offering #10 - network offering for nsx provider - ROUTED mode
                 NetworkOfferingVO defaultRouteNSXNetworkOffering =
                         new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultRouteNSXNetworkOffering.setForNsx(true);
-                defaultRouteNSXNetworkOffering.setMode(NetworkOffering.Mode.ROUTED.name());
+                defaultRouteNSXNetworkOffering.setNsxMode(NetworkOffering.NsxMode.ROUTED.name());
                 defaultRouteNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
                 defaultRouteNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultRouteNSXNetworkOffering);
 

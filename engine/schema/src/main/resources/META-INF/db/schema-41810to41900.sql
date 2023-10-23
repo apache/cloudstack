@@ -214,9 +214,9 @@ BEGIN
 
 -- NSX Plugin --
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','for_nsx', 'int(1) unsigned DEFAULT "0" COMMENT "is nsx enabled for the resource"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','nsx_mode', 'varchar(32) COMMENT "mode in which the network would route traffic"');
 
 -- Network offering with NSX related columns
 DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
@@ -262,7 +262,7 @@ SELECT
     `network_offerings`.`for_vpc` AS `for_vpc`,
     `network_offerings`.`for_tungsten` AS `for_tungsten`,
     `network_offerings`.`for_nsx` AS `for_nsx`,
-    `network_offerings`.`mode` AS `mode`,
+    `network_offerings`.`nsx_mode` AS `nsx_mode`,
     `network_offerings`.`service_package_id` AS `service_package_id`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
@@ -302,7 +302,7 @@ SELECT
     `vpc_offerings`.`state` AS `state`,
     `vpc_offerings`.`default` AS `default`,
     `vpc_offerings`.`for_nsx` AS `for_nsx`,
-    `vpc_offerings`.`mode` AS `mode`,
+    `vpc_offerings`.`nsx_mode` AS `nsx_mode`,
     `vpc_offerings`.`created` AS `created`,
     `vpc_offerings`.`removed` AS `removed`,
     `vpc_offerings`.`service_offering_id` AS `service_offering_id`,

@@ -160,8 +160,8 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "for_nsx")
     boolean forNsx;
 
-    @Column(name = "mode")
-    String mode;
+    @Column(name = "nsx_mode")
+    String nsxMode;
 
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
@@ -365,12 +365,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     }
 
     @Override
-    public String getMode() {
-        return mode;
+    public String getNsxMode() {
+        return nsxMode;
     }
 
-    public void setMode(String mode) {
-        this.mode = mode;
+    public void setNsxMode(String nsxMode) {
+        this.nsxMode = nsxMode;
     }
 
     public String getServicePackage() {

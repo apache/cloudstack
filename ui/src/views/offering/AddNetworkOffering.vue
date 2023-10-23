@@ -129,18 +129,18 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item name="mode" ref="mode" v-if="forNsx">
+        <a-form-item name="nsxmode" ref="nsxmode" v-if="forNsx">
           <template #label>
-            <tooltip-label :title="$t('label.mode')" :tooltip="apiParams.mode.description"/>
+            <tooltip-label :title="$t('label.nsx.mode')" :tooltip="apiParams.nsxmode.description"/>
           </template>
           <a-select
             v-if="showMode"
             optionFilterProp="label"
-            v-model:value="form.mode"
+            v-model:value="form.nsxmode"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="apiParams.mode.description">
+            :placeholder="apiParams.nsxmode.description">
             <a-select-option v-for="(opt) in modes" :key="opt.name" :label="opt.name">
               {{ opt.name }}
             </a-select-option>
@@ -987,7 +987,7 @@ export default {
         }
         if (values.fornsx === true) {
           params.fornsx = true
-          params.mode = values.mode
+          params.nsxmode = values.nsxmode
         }
         if (values.guestiptype === 'shared' || values.guestiptype === 'isolated') {
           if (values.conservemode !== true) {

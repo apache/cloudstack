@@ -1380,6 +1380,7 @@
 "label.not.suitable": "Not suitable",
 "label.notifications": "Notifications",
 "label.nsx": "NSX",
+"label.nsx.mode": "NSX Mode",
 "label.nsx.provider": "NSX Provider",
 "label.nsx.provider.name": "NSX provider name",
 "label.nsx.provider.hostname": "NSX provider hostname",

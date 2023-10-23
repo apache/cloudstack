@@ -145,11 +145,11 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.MODE,
+    @Parameter(name = ApiConstants.NSX_MODE,
             type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route",
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
             since = "4.20.0")
-    private String mode;
+    private String nsxMode;
 
     @Parameter(name = ApiConstants.FOR_TUNGSTEN,
             type = CommandType.BOOLEAN,
@@ -282,12 +282,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         return forVpc;
     }
 
-    public Boolean getForNsx() {
+    public Boolean isForNsx() {
         return forNsx;
     }
 
-    public String getMode() {
-        return mode;
+    public String getNsxMode() {
+        return nsxMode;
     }
 
     public Boolean getForTungsten() {
@@ -311,7 +311,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();
-        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !getForNsx()) {
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection servicesCollection = serviceProviderList.values();
             Iterator iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -327,7 +327,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
-        } else {
+        } else if (Boolean.TRUE.equals(forNsx)) {
             getServiceProviderMapForNsx(serviceProviderMap);
         }
         return serviceProviderMap;

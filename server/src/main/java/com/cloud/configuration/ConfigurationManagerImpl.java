@@ -5927,9 +5927,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
-        Boolean forNsx = cmd.getForNsx();
+        Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
-        String mode = cmd.getMode();
+        String nsxMode = cmd.getNsxMode();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -5968,11 +5968,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(mode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.Mode.class, mode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
             }
         }
 
@@ -6240,7 +6247,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, mode, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;

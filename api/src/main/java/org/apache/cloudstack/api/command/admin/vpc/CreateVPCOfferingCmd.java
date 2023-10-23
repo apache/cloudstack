@@ -120,11 +120,11 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             since = "4.20.0")
     private Boolean forNsx;
 
-    @Parameter(name = ApiConstants.MODE,
+    @Parameter(name = ApiConstants.NSX_MODE,
             type = CommandType.STRING,
-            description = "Indicates the mode with which the network will operate. Valid option: NAT or Route",
+            description = "Indicates the mode with which the network will operate. Valid option: NATTED or ROUTED",
             since = "4.20.0")
-    private String mode;
+    private String nsxMode;
 
     @Parameter(name = ApiConstants.ENABLE,
             type = CommandType.BOOLEAN,
@@ -163,17 +163,17 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
         return supportedServices;
     }
 
-    public Boolean getForNsx() {
+    public Boolean isForNsx() {
         return !Objects.isNull(forNsx) && forNsx;
     }
 
-    public String getMode() {
-        return mode;
+    public String getNsxMode() {
+        return nsxMode;
     }
 
     public Map<String, List<String>> getServiceProviders() {
         Map<String, List<String>> serviceProviderMap = new HashMap<String, List<String>>();;
-        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !getForNsx()) {
+        if (serviceProviderList != null && !serviceProviderList.isEmpty() && !isForNsx()) {
             Collection<? extends Map<String, String>> servicesCollection = serviceProviderList.values();
             Iterator<? extends Map<String, String>> iter = servicesCollection.iterator();
             while (iter.hasNext()) {
@@ -193,7 +193,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 providerList.add(provider);
                 serviceProviderMap.put(service, providerList);
             }
-        } else {
+        } else if (Boolean.TRUE.equals(forNsx)) {
             getServiceProviderMapForNsx(serviceProviderMap);
         }
 

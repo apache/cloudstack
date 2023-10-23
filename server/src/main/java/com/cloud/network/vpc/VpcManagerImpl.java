@@ -385,7 +385,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.NATTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.NATTED.name());
 
                 }
 
@@ -403,7 +403,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, true, NetworkOffering.Mode.ROUTED.name());
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.ROUTED.name());
 
                 }
             }
@@ -463,16 +463,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-        final Boolean forNsx = cmd.getForNsx();
-        final String mode = cmd.getMode();
+        final Boolean forNsx = cmd.isForNsx();
+        String nsxMode = cmd.getNsxMode();
         final boolean enable = cmd.getEnable();
 
         if (Boolean.TRUE.equals(forNsx)) {
-            if (Objects.isNull(mode)) {
-                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
             }
-            if (!EnumUtils.isValidEnum(NetworkOffering.Mode.class, mode)) {
-                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.Mode.values()));
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
             }
         }
         // check if valid domain
@@ -497,7 +504,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, mode,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, nsxMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
