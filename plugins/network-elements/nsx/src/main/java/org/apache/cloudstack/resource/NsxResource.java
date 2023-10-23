@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
-import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -24,29 +23,15 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
-import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
-import com.vmware.nsx_policy.infra.Segments;
-import com.vmware.nsx_policy.infra.Sites;
-import com.vmware.nsx_policy.infra.Tier1s;
-import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
-import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
-import com.vmware.nsx_policy.model.ApiError;
-import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
-import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.Segment;
-import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.SiteListResult;
-import com.vmware.nsx_policy.model.Tier1;
-import com.vmware.vapi.bindings.Service;
-import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
@@ -54,35 +39,20 @@ import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
-import org.apache.cloudstack.service.NsxApi;
-import org.apache.cloudstack.utils.NsxApiClientUtils;
+import org.apache.cloudstack.service.NsxApiClient;
+import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.isNull;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_CONNECTED;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.HAMode.ACTIVE_STANDBY;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.FailoverMode.PREEMPTIVE;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.PoolAllocation.ROUTING;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.TransportType.OVERLAY;
-import static org.apache.cloudstack.utils.NsxApiClientUtils.createApiClient;
 
 public class NsxResource implements ServerResource {
     private static final Logger LOGGER = Logger.getLogger(NsxResource.class);
-    private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
-    private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
     private static final String DHCP_RELAY_CONFIGS_PATH_PREFIX = "/infra/dhcp-relay-configs";
-
-    private static final String Tier_1_LOCALE_SERVICE_ID = "default";
-    private static final String TIER_1_RESOURCE_TYPE = "Tier1";
-    private static final String SEGMENT_RESOURCE_TYPE = "Segment";
 
     private String name;
     protected String hostname;
@@ -95,13 +65,12 @@ public class NsxResource implements ServerResource {
     protected String transportZone;
     protected String zoneId;
 
-    protected NsxApi nsxApi;
+    protected NsxApiClient nsxApiClient;
 
     @Override
     public Host.Type getType() {
         return Host.Type.Routing;
     }
-
     @Override
     public StartupCommand[] initialize() {
         StartupNsxCommand sc = new StartupNsxCommand();
@@ -236,56 +205,44 @@ public class NsxResource implements ServerResource {
             throw new ConfigurationException("Missing NSX transportZone");
         }
 
-        nsxApi = new NsxApi();
-        nsxApi.setApiClient(createApiClient(hostname, port, username, password.toCharArray()));
+        nsxApiClient = new NsxApiClient(hostname, port, username, password.toCharArray());
         return true;
     }
 
-    private String getDhcpRelayConfig(String zoneName, String accountName, String vpcName, String networkName) {
-        return String.format("%s-%s-%s-%s-Relay", zoneName, accountName, vpcName, networkName);
-    }
-
     private Answer executeRequest(CreateNsxDhcpRelayConfigCommand cmd) {
-        String zoneName = cmd.getZoneName();
-        String accountName = cmd.getAccountName();
+        long zoneId = cmd.getZoneId();
+        long domainId = cmd.getDomainId();
+        long accountId = cmd.getAccountId();
+        long vpcId = cmd.getVpcId();
+        long networkId = cmd.getNetworkId();
         String vpcName = cmd.getVpcName();
         String networkName = cmd.getNetworkName();
         List<String> addresses = cmd.getAddresses();
 
-        String dhcpRelayConfigName = getDhcpRelayConfig(zoneName, accountName, vpcName, networkName);
+        String dhcpRelayConfigName = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
 
         String msg = String.format("Creating DHCP relay config with name %s on network %s of VPC %s",
                 dhcpRelayConfigName, networkName, vpcName);
         LOGGER.debug(msg);
 
         try {
-            DhcpRelayConfigs service = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            DhcpRelayConfig config = new DhcpRelayConfig.Builder()
-                    .setServerAddresses(addresses)
-                    .setId(dhcpRelayConfigName)
-                    .setDisplayName(dhcpRelayConfigName)
-                    .build();
-            service.patch(dhcpRelayConfigName, config);
-        } catch (Error error) {
-            ApiError ae = error.getData()._convertTo(ApiError.class);
-            msg = String.format("Error creating the DHCP relay config with name %s: %s", dhcpRelayConfigName, ae.getErrorMessage());
-            LOGGER.error(msg);
-            return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
+            nsxApiClient.createDhcpRelayConfig(dhcpRelayConfigName, addresses);
+        } catch (CloudRuntimeException e) {
+            msg = String.format("Error creating the DHCP relay config with name %s: %s", dhcpRelayConfigName, e.getMessage());
+            LOGGER.error(msg, e);
+            return new NsxAnswer(cmd, e);
         }
 
-        String segmentName = String.format("%s-%s-%s", accountName, vpcName, networkName);
+        String segmentName = NsxControllerUtils.getNsxSegmentId(domainId, accountId, zoneId, vpcId, networkId);
         String dhcpConfigPath = String.format("%s/%s", DHCP_RELAY_CONFIGS_PATH_PREFIX, dhcpRelayConfigName);
         try {
-            LOGGER.debug(String.format("Adding the creating DHCP relay config %s to the segment %s", dhcpConfigPath, segmentName));
-            Segments segmentService = (Segments) nsxService.apply(Segments.class);
-            Segment segment = segmentService.get(segmentName);
+            Segment segment = nsxApiClient.getSegmentById(segmentName);
             segment.setDhcpConfigPath(dhcpConfigPath);
-            segmentService.patch(segmentName, segment);
-        } catch (Error error) {
-            ApiError ae = error.getData()._convertTo(ApiError.class);
-            msg = String.format("Error adding the DHCP relay config with name %s to the segment %s: %s", dhcpRelayConfigName, segmentName, ae.getErrorMessage());
+            nsxApiClient.updateSegment(segmentName, segment);
+        } catch (CloudRuntimeException e) {
+            msg = String.format("Error adding the DHCP relay config with name %s to the segment %s: %s", dhcpRelayConfigName, segmentName, e.getMessage());
             LOGGER.error(msg);
-            return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
+            return new NsxAnswer(cmd, e);
         }
 
         return new NsxAnswer(cmd, true, "");
@@ -295,63 +252,21 @@ public class NsxResource implements ServerResource {
         return new ReadyAnswer(cmd);
     }
 
-    private Function<Class<? extends Service>, Service> nsxService = svcClass -> nsxApi.getApiClient().createStub(svcClass);
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
-        String name = getTier1GatewayName(cmd);
-        Tier1 tier1 = getTier1Gateway(name);
-        if (tier1 != null) {
-            throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone: %s and account %s", name, cmd.getZoneName(), cmd.getAccountName()));
-        }
-
-
-        String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
-
-        Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
-        tier1 = new Tier1.Builder()
-                .setTier0Path(tier0GatewayPath)
-                .setResourceType(TIER_1_RESOURCE_TYPE)
-                .setPoolAllocation(ROUTING.name())
-                .setHaMode(ACTIVE_STANDBY.name())
-                .setFailoverMode(PREEMPTIVE.name())
-                .setRouteAdvertisementTypes(List.of(TIER1_CONNECTED.name(), TIER1_IPSEC_LOCAL_ENDPOINT.name()))
-                .setId(name)
-                .setDisplayName(name)
-                .build();
+        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
         try {
-            tier1service.patch(name, tier1);
-            createTier1LocaleServices(name, edgeCluster);
-        } catch (Error error) {
-            ApiError ae = error.getData()._convertTo(ApiError.class);
-            return new NsxAnswer(cmd, new CloudRuntimeException(ae.getErrorMessage()));
-        }
-        return new NsxAnswer(cmd, true, "");
-    }
-
-    /**
-     * To instantiate Tier-1 in Edge Cluster
-     * @return
-     */
-    private boolean createTier1LocaleServices(String tier1Id, String edgeCluster) {
-        try {
-            List<com.vmware.nsx_policy.model.LocaleServices> localeServices = getTier0LocalServices(tier0Gateway);
-            com.vmware.nsx_policy.infra.tier_1s.LocaleServices tier1LocalService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices) nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
-            com.vmware.nsx_policy.model.LocaleServices localeService = new com.vmware.nsx_policy.model.LocaleServices.Builder()
-                    .setEdgeClusterPath(localeServices.get(0).getEdgeClusterPath()).build();
-            tier1LocalService.patch(tier1Id, Tier_1_LOCALE_SERVICE_ID, localeService);
-            return true;
-        } catch (Error error) {
-            throw new CloudRuntimeException(String.format("Failed to instantiate tier-1 gateway %s in edge cluster %s", tier1Id, edgeCluster));
+            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster);
+            return new NsxAnswer(cmd, true, "");
+        } catch (CloudRuntimeException e) {
+            LOGGER.error(String.format("Cannot create tier 1 gateway %s (VPC: %s): %s", name, cmd.getVpcName(), e.getMessage()));
+            return new NsxAnswer(cmd, e);
         }
     }
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
+        String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
         try {
-            String tier1Id = getTier1GatewayName(cmd);
-            com.vmware.nsx_policy.infra.tier_1s.LocaleServices localeService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices)
-                    nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
-            localeService.delete(tier1Id, Tier_1_LOCALE_SERVICE_ID);
-            Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
-            tier1service.delete(tier1Id);
+            nsxApiClient.deleteTier1Gateway(tier1Id);
         } catch (Exception e) {
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
@@ -360,138 +275,60 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(CreateNsxSegmentCommand cmd) {
         try {
-            SiteListResult sites = getSites();
-            String errorMsg = null;
-            if (CollectionUtils.isNullOrEmpty(sites.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no sites are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+            SiteListResult sites = nsxApiClient.getSites();
+            String errorMsg;
+            String networkName = cmd.getNetworkName();
+            if (CollectionUtils.isEmpty(sites.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no sites are found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
             String siteId = sites.getResults().get(0).getId();
 
-            EnforcementPointListResult epList = getEnforcementPoints(siteId);
-            if (CollectionUtils.isNullOrEmpty(epList.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no enforcement points are found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+            EnforcementPointListResult epList = nsxApiClient.getEnforcementPoints(siteId);
+            if (CollectionUtils.isEmpty(epList.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no enforcement points are found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
             String enforcementPointPath = epList.getResults().get(0).getPath();
 
-            TransportZoneListResult transportZoneListResult = getTransportZones();
-            if (CollectionUtils.isNullOrEmpty(transportZoneListResult.getResults())) {
-                errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", cmd.getTierNetwork().getName());
+            TransportZoneListResult transportZoneListResult = nsxApiClient.getTransportZones();
+            if (CollectionUtils.isEmpty(transportZoneListResult.getResults())) {
+                errorMsg = String.format("Failed to create network: %s as no transport zones were found in the linked NSX infrastructure", networkName);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
             List<TransportZone> transportZones = transportZoneListResult.getResults().stream().filter(tz -> tz.getDisplayName().equals(transportZone)).collect(Collectors.toList());
-            if (CollectionUtils.isNullOrEmpty(transportZones)) {
-                errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", cmd.getTierNetwork().getName(), transportZone);
+            if (CollectionUtils.isEmpty(transportZones)) {
+                errorMsg = String.format("Failed to create network: %s as no transport zone of name %s was found in the linked NSX infrastructure", networkName, transportZone);
                 LOGGER.error(errorMsg);
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
 
-            String segmentName = getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName());
-            Segments segmentService = (Segments) nsxService.apply(Segments.class);
-            SegmentSubnet subnet = new SegmentSubnet.Builder()
-                    .setGatewayAddress(cmd.getTierNetwork().getGateway() + "/" + cmd.getTierNetwork().getCidr().split("/")[1]).build();
-            Segment segment = new Segment.Builder()
-                    .setResourceType(SEGMENT_RESOURCE_TYPE)
-                    .setId(segmentName)
-                    .setDisplayName(segmentName)
-                    .setConnectivityPath(isNull(cmd.getVpcName()) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
-                            : TIER_1_GATEWAY_PATH_PREFIX + getTier1GatewayName(cmd))
-                    .setAdminState(NsxApiClientUtils.AdminState.UP.name())
-                    .setSubnets(List.of(subnet))
-                    .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
-                    .build();
-            segmentService.patch(segmentName, segment);
+            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId(), cmd.getNetworkId());
+            String gatewayAddress = cmd.getNetworkGateway() + "/" + cmd.getNetworkCidr().split("/")[1];
+
+            nsxApiClient.createSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(),
+                    segmentName, gatewayAddress, tier0Gateway, enforcementPointPath, transportZones);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to create network: %s", cmd.getTierNetwork().getName()));
+            LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
     }
 
     private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
+        String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId(), cmd.getNetworkId());
         try {
             Thread.sleep(30*1000);
-            String segmentName = getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName());
-            Segments segmentService = (Segments) nsxService.apply(Segments.class);
-            segmentService.delete(segmentName);
-            DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            dhcpRelayConfig.delete(getDhcpRelayId(cmd.getZoneName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getTierNetwork().getName()));
+            nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
         } catch (Exception e) {
-            LOGGER.error(String.format("Failed to delete NSX segment: %s", getSegmentName(cmd.getAccountName(), cmd.getTierNetwork().getName(), cmd.getVpcName())));
+            LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
-    }
-
-    private List<com.vmware.nsx_policy.model.LocaleServices> getTier0LocalServices(String tier0Gateway) {
-        try {
-            LocaleServices tier0LocaleServices = (LocaleServices) nsxService.apply(LocaleServices.class);
-            LocaleServicesListResult result = tier0LocaleServices.list(tier0Gateway, null, false, null, null, null, null);
-            return result.getResults();
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch locale services for tier gateway %s due to %s", tier0Gateway, e.getMessage()));
-        }
-    }
-
-    private Tier1 getTier1Gateway(String tier1GatewayId) {
-        try {
-            Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
-            return tier1service.get(tier1GatewayId);
-        } catch (Exception e) {
-            LOGGER.debug(String.format("NSX Tier-1 gateway with name: %s not found", tier1GatewayId));
-        }
-        return null;
-    }
-
-    private SiteListResult getSites() {
-        try {
-            Sites sites = (Sites) nsxService.apply(Sites.class);
-            return sites.list(null, false, null, null, null, null);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
-        }
-    }
-
-    private EnforcementPointListResult getEnforcementPoints(String siteId) {
-        try {
-            EnforcementPoints enforcementPoints = (EnforcementPoints) nsxService.apply(EnforcementPoints.class);
-            return enforcementPoints.list(siteId, null, false, null, null, null, null);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
-        }
-    }
-
-    private TransportZoneListResult getTransportZones() {
-        try {
-            com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
-            return transportZones.list(null, null, true, null, true, null, null, null, OVERLAY.name(), null);
-        } catch (Exception e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
-        }
-    }
-
-    private String getTier1GatewayName(CreateNsxTier1GatewayCommand cmd) {
-        return cmd.getZoneName() + "-" + cmd.getAccountName() + "-" + cmd.getVpcName();
-    }
-
-    private String getSegmentName(String accountName, String tierNetworkName, String vpcName) {
-        String segmentName = accountName + "-";
-        if (isNull(vpcName)) {
-            return segmentName + tierNetworkName;
-        }
-         return segmentName + vpcName + "-" + tierNetworkName;
-    }
-
-    private String getDhcpRelayId(String zoneName, String accountName, String vpcName, String networkName) {
-        String suffix = "-Relay";
-        if (isNull(vpcName)) {
-            return zoneName + "-" + accountName + "-" + networkName + suffix;
-        }
-        return String.format("%s-%s-%s-%s%s", zoneName, accountName, vpcName, networkName, suffix);
     }
 
     @Override

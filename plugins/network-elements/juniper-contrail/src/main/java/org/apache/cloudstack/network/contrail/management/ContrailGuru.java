@@ -139,6 +139,11 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
+    @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException {
         s_logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());

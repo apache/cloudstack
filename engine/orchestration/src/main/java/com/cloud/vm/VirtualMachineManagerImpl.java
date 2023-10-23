@@ -48,6 +48,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.dao.AccountDao;
@@ -392,6 +394,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private AccountDao accountDao;
     @Inject
     private VpcDao vpcDao;
+    @Inject
+    private DomainDao domainDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1470,7 +1474,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
+    public void setVmNetworkDetails(VMInstanceVO vm, VirtualMachineTO vmTO) {
         if (VirtualMachine.Type.User.equals(vm.getType())) {
             List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
             Map<Long, String> networkToNetworkNameMap = new HashMap<>();
@@ -1478,12 +1482,26 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
                     NetworkVO networkVO = _networkDao.findById(userVmJoinVO.getNetworkId());
                     Account acc = accountDao.findById(networkVO.getAccountId());
-                    String networkName = acc.getAccountName() + "-" ;
+                    Domain domain = domainDao.findById(networkVO.getDomainId());
+                    DataCenter zone = _dcDao.findById(vm.getDataCenterId());
+                    if (Objects.isNull(zone)) {
+                        throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", vm.getDataCenterId()));
+                    }
+                    if (Objects.isNull(acc)) {
+                        throw new CloudRuntimeException(String.format("Failed to find account with ID: %s", networkVO.getAccountId()));
+                    }
+                    if (Objects.isNull(domain)) {
+                        throw new CloudRuntimeException(String.format("Failed to find domain with ID: %s", networkVO.getDomainId()));
+                    }
+                    String networkName = String.format("D%s-A%s-Z%s", domain.getId(), acc.getId(), zone.getId());
                     if (Objects.isNull(networkVO.getVpcId())) {
-                        networkName += networkVO.getName();
+                        networkName += "-S"+networkVO.getId();
                     } else {
                         VpcVO vpc = vpcDao.findById(networkVO.getVpcId());
-                        networkName += (vpc.getName() + "-" + networkVO.getName());
+                        if (Objects.isNull(vpc)) {
+                            throw new CloudRuntimeException(String.format("Failed to find VPC with ID: %s", networkVO.getVpcId()));
+                        }
+                        networkName = String.format("%s-V%s-S%s", networkName, vpc.getId(), networkVO.getId());
                     }
                     networkToNetworkNameMap.put(networkVO.getId(), networkName);
                 }

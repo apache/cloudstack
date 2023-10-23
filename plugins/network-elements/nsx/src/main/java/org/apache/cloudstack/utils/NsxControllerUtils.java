@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.service;
+package org.apache.cloudstack.utils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+
+import static java.util.Objects.isNull;
 
 @Component
 public class NsxControllerUtils {
@@ -52,5 +54,25 @@ public class NsxControllerUtils {
         }
 
         return (NsxAnswer) answer;
+    }
+
+    public static String getTier1GatewayName(long domainId, long accountId, long zoneId, long vpcId) {
+        return String.format("D%s-A%s-Z%s-V%s",  domainId, accountId, zoneId, vpcId);
+    }
+
+    public static String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
+        String segmentName = String.format("D%s-A%s-Z%s",  domainId, accountId, zoneId);
+        if (isNull(vpcId)) {
+            return String.format("%s-S%s", segmentName, networkId);
+        }
+        return String.format("%s-V%s-S%s",segmentName, vpcId, networkId);
+    }
+
+    public static String getNsxDhcpRelayConfigId(long zoneId, long domainId, long accountId, Long vpcId, long networkId) {
+        String suffix = "Relay";
+        if (isNull(vpcId)) {
+            return String.format("D%s-A%s-Z%s-S%s-%s", domainId, accountId, zoneId, networkId, suffix);
+        }
+        return String.format("D%s-A%s-Z%s-V%s-S%s-%s", domainId, accountId, zoneId, vpcId, networkId, suffix);
     }
 }

@@ -20,20 +20,33 @@ import java.util.List;
 
 public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
 
+    private Long vpcId;
     private String vpcName;
+    private long networkId;
     private String networkName;
     private List<String> addresses;
 
-    public CreateNsxDhcpRelayConfigCommand(String zoneName, Long zoneId, String accountName, Long accountId,
-                                           String vpcName, String networkName, List<String> addresses) {
-        super(zoneName, zoneId, accountName, accountId);
+    public CreateNsxDhcpRelayConfigCommand(long domainId, long accountId, long zoneId,
+                                           Long vpcId, String vpcName, long networkId, String networkName,
+                                           List<String> addresses) {
+        super(domainId, accountId, zoneId);
+        this.vpcId = vpcId;
         this.vpcName = vpcName;
+        this.networkId = networkId;
         this.networkName = networkName;
         this.addresses = addresses;
     }
 
+    public Long getVpcId() {
+        return vpcId;
+    }
+
     public String getVpcName() {
         return vpcName;
+    }
+
+    public long getNetworkId() {
+        return networkId;
     }
 
     public String getNetworkName() {

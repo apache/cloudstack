@@ -1206,17 +1206,34 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 }
 
                 _networkOfferingDao.persistDefaultL2NetworkOfferings();
-                // Offering #9 - network offering for nsx provider
-                NetworkOfferingVO defaultNSXNetworkOffering =
-                        new NetworkOfferingVO(NetworkOffering.DEFAULT_NSX_OFFERING, "Offering for NSX enabled networks",
+                // Offering #9 - network offering for nsx provider - NATTED mode
+                NetworkOfferingVO defaultNatNSXNetworkOffering =
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
-                defaultNSXNetworkOffering.setForNsx(true);
-                defaultNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
-                defaultNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNSXNetworkOffering);
+                defaultNatNSXNetworkOffering.setForNsx(true);
+                defaultNatNSXNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
+                defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultNatNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatNSXNetworkOffering);
 
                 for (Map.Entry<Network.Service, Network.Provider> service : defaultNSXNetworkOfferingProviders.entrySet()) {
                     NetworkOfferingServiceMapVO offService =
-                            new NetworkOfferingServiceMapVO(defaultNSXNetworkOffering.getId(), service.getKey(), service.getValue());
+                            new NetworkOfferingServiceMapVO(defaultNatNSXNetworkOffering.getId(), service.getKey(), service.getValue());
+                    _ntwkOfferingServiceMapDao.persist(offService);
+                    s_logger.trace("Added service for the network offering: " + offService);
+                }
+
+                // Offering #10 - network offering for nsx provider - ROUTED mode
+                NetworkOfferingVO defaultRouteNSXNetworkOffering =
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
+                                TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
+                defaultRouteNSXNetworkOffering.setForNsx(true);
+                defaultRouteNSXNetworkOffering.setNsxMode(NetworkOffering.NsxMode.ROUTED.name());
+                defaultRouteNSXNetworkOffering.setState(NetworkOffering.State.Enabled);
+                defaultRouteNSXNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultRouteNSXNetworkOffering);
+
+                for (Map.Entry<Network.Service, Network.Provider> service : defaultNSXNetworkOfferingProviders.entrySet()) {
+                    NetworkOfferingServiceMapVO offService =
+                            new NetworkOfferingServiceMapVO(defaultRouteNSXNetworkOffering.getId(), service.getKey(), service.getValue());
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }

@@ -16,23 +16,51 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
-import com.cloud.network.dao.NetworkVO;
-
 import java.util.Objects;
 
-public class CreateNsxSegmentCommand extends CreateNsxTier1GatewayCommand {
-    private NetworkVO tierNetwork;
-    public CreateNsxSegmentCommand(String zoneName, Long zoneId, String accountName, Long accountId, String vpcName, NetworkVO tierNetwork) {
-        super(zoneName, zoneId, accountName, accountId, vpcName);
-        this.tierNetwork = tierNetwork;
+public class CreateNsxSegmentCommand extends NsxCommand {
+
+    private Long vpcId;
+    private String vpcName;
+    private long networkId;
+    private String networkName;
+    private String networkGateway;
+    private String networkCidr;
+
+    public CreateNsxSegmentCommand(long domainId, long accountId, long zoneId,
+                                   Long vpcId, String vpcName, long networkId, String networkName,
+                                   String networkGateway, String networkCidr) {
+        super(domainId, accountId, zoneId);
+        this.vpcId = vpcId;
+        this.vpcName = vpcName;
+        this.networkId = networkId;
+        this.networkName = networkName;
+        this.networkGateway = networkGateway;
+        this.networkCidr = networkCidr;
     }
 
-    public NetworkVO getTierNetwork() {
-        return tierNetwork;
+    public Long getVpcId() {
+        return vpcId;
     }
 
-    public void setTierNetwork(NetworkVO tierNetwork) {
-        this.tierNetwork = tierNetwork;
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public long getNetworkId() {
+        return networkId;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    public String getNetworkGateway() {
+        return networkGateway;
+    }
+
+    public String getNetworkCidr() {
+        return networkCidr;
     }
 
     @Override
@@ -41,11 +69,11 @@ public class CreateNsxSegmentCommand extends CreateNsxTier1GatewayCommand {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CreateNsxSegmentCommand command = (CreateNsxSegmentCommand) o;
-        return Objects.equals(tierNetwork, command.tierNetwork);
+        return Objects.equals(networkName, command.networkName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), tierNetwork);
+        return Objects.hash(super.hashCode(), networkName);
     }
 }
