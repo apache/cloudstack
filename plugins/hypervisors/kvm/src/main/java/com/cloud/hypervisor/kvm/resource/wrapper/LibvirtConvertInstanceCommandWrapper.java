@@ -45,7 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,9 +104,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String convertInstanceUrl = getConvertInstanceUrl(sourceInstance);
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         final String temporaryPasswordFilePath = createTemporaryPasswordFileAndRetrievePath(sourceInstance);
-        final String temporaryConvertFolder = String.format("vmw-to-kvm-%s", temporaryConvertUuid);
-        temporaryStoragePool.createFolder(temporaryConvertFolder);
-        final String temporaryConvertPath = String.format("%s/%s", temporaryStoragePool.getLocalPath(), temporaryConvertFolder);
+        final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         try {
@@ -133,11 +130,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             }
             sanitizeDisksPath(disks);
 
-            storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
-            temporaryStoragePool = storagePoolMgr.getStoragePoolByURI(conversionTemporaryLocation + File.separator + temporaryConvertFolder);
-
             List<KVMPhysicalDisk> destinationDisks = moveConvertedInstanceFromTemporaryLocaltionToDestination(disks, temporaryStoragePool,
                     destinationStoragePools, storagePoolMgr);
+
+            cleanupDisksAndDomainFromTemporaryLocation(disks, temporaryStoragePool, temporaryConvertUuid);
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
                     destinationDisks, disks, interfaces, xmlParser);
@@ -148,10 +144,24 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             s_logger.error(error, e);
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
-            s_logger.debug("Cleaning up instance conversion temporary files");
+            s_logger.debug("Cleaning up instance conversion temporary password file");
             Script.runSimpleBashScript(String.format("rm -rf %s", temporaryPasswordFilePath));
-            Script.runSimpleBashScript(String.format("rm -rf %s", temporaryConvertPath));
+            if (conversionTemporaryLocation instanceof NfsTO) {
+                s_logger.debug("Cleaning up secondary storage temporary location");
+                storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
+            }
         }
+    }
+
+    private void cleanupDisksAndDomainFromTemporaryLocation(List<LibvirtVMDef.DiskDef> disks,
+                                                            KVMStoragePool temporaryStoragePool,
+                                                            String temporaryConvertUuid) {
+        for (LibvirtVMDef.DiskDef diskDef : disks) {
+            s_logger.info(String.format("Cleaning up temporary disk %s after conversion from temporary location", diskDef.getDiskPath()));
+            temporaryStoragePool.deletePhysicalDisk(diskDef.getDiskPath(), Storage.ImageFormat.QCOW2);
+        }
+        s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
+        Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
     }
 
     private boolean isInstanceConversionSupportedOnHost() {
