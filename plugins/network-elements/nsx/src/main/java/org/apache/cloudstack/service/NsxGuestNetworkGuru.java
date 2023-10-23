@@ -50,6 +50,7 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+
 import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.log4j.Logger;
 
