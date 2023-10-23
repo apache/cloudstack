@@ -18,17 +18,31 @@ package org.apache.cloudstack.agent.api;
 
 public class DeleteNsxSegmentCommand extends NsxCommand {
 
+    private Long vpcId;
     private String vpcName;
+
+    private long networkId;
     private String networkName;
 
-    public DeleteNsxSegmentCommand(String domainName, String accountName, String zoneName, String vpcName, String networkName) {
-        super(domainName, accountName, zoneName);
+    public DeleteNsxSegmentCommand(long domainId, long accountId, long zoneId, Long vpcId,
+                                   String vpcName, long networkId, String networkName) {
+        super(domainId, accountId, zoneId);
+        this.vpcId = vpcId;
         this.vpcName = vpcName;
+        this.networkId = networkId;
         this.networkName = networkName;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     public String getVpcName() {
         return vpcName;
+    }
+
+    public long getNetworkId() {
+        return networkId;
     }
 
     public String getNetworkName() {

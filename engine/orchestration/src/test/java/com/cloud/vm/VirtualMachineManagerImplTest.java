@@ -926,12 +926,12 @@ public class VirtualMachineManagerImplTest {
 
         VirtualMachineTO vmTO = new VirtualMachineTO() {};
         UserVmJoinVO userVm = new UserVmJoinVO();
-        NetworkVO networkVO = new NetworkVO();
-        AccountVO accountVO = new AccountVO();
-        DomainVO domainVO = new DomainVO();
+        NetworkVO networkVO = mock(NetworkVO.class);
+        AccountVO accountVO = mock(AccountVO.class);
+        DomainVO domainVO = mock(DomainVO.class);
         domainVO.setName("testDomain");
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
-        VpcVO vpcVO = new VpcVO();
+        VpcVO vpcVO = mock(VpcVO.class);
 
         networkVO.setAccountId(1L);
         networkVO.setName("testNet");
@@ -949,9 +949,13 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
         Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
-        Mockito.when(dataCenterVO.getName()).thenReturn("testZone");
+        Mockito.when(dataCenterVO.getId()).thenReturn(1L);
+        when(accountVO.getId()).thenReturn(2L);
+        Mockito.when(domainVO.getId()).thenReturn(3L);
+        Mockito.when(vpcVO.getId()).thenReturn(4L);
+        Mockito.when(networkVO.getId()).thenReturn(5L);
         virtualMachineManagerImpl.setVmNetworkDetails(vm, vmTO);
         assertEquals(vmTO.getNetworkIdToNetworkNameMap().size(), 1);
-        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(0L), "testDomain-testAcc-testZone-VPC1-testNet");
+        assertEquals(vmTO.getNetworkIdToNetworkNameMap().get(5L), "D3-A2-Z1-V4-S5");
     }
 }

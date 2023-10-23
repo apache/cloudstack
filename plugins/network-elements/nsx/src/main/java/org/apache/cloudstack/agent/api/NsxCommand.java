@@ -21,29 +21,29 @@ import com.cloud.agent.api.Command;
 import java.util.Objects;
 
 public class NsxCommand extends Command {
-    private String zoneName;
-    private String accountName;
-    private String domainName;
+    private long zoneId;
+    private long accountId;
+    private long domainId;
 
     public NsxCommand() {
     }
 
-    public NsxCommand(String domainName, String accountName, String zoneName) {
-        this.zoneName = zoneName;
-        this.accountName = accountName;
-        this.domainName = domainName;
+    public NsxCommand(long domainId, long accountId, long zoneId) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
-    public String getZoneName() {
-        return zoneName;
+    public long getZoneId() {
+        return zoneId;
     }
 
-    public String getAccountName() {
-        return accountName;
+    public long getAccountId() {
+        return accountId;
     }
 
-    public String getDomainName() {
-        return domainName;
+    public long getDomainId() {
+        return domainId;
     }
 
     @Override
@@ -57,11 +57,11 @@ public class NsxCommand extends Command {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         NsxCommand that = (NsxCommand) o;
-        return Objects.equals(zoneName, that.zoneName) && Objects.equals(accountName, that.accountName) && Objects.equals(domainName, that.domainName);
+        return Objects.equals(zoneId, that.zoneId) && Objects.equals(accountId, that.accountId) && Objects.equals(domainId, that.domainId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), zoneName, accountName, domainName);
+        return Objects.hash(super.hashCode(), zoneId, accountId, domainId);
     }
 }

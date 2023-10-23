@@ -20,22 +20,35 @@ import java.util.Objects;
 
 public class CreateNsxSegmentCommand extends NsxCommand {
 
+    private Long vpcId;
     private String vpcName;
+    private long networkId;
     private String networkName;
     private String networkGateway;
     private String networkCidr;
 
-    public CreateNsxSegmentCommand(String domainName, String accountName, String zoneName,
-                                   String vpcName, String networkName, String networkGateway, String networkCidr) {
-        super(domainName, accountName, zoneName);
+    public CreateNsxSegmentCommand(long domainId, long accountId, long zoneId,
+                                   Long vpcId, String vpcName, long networkId, String networkName,
+                                   String networkGateway, String networkCidr) {
+        super(domainId, accountId, zoneId);
+        this.vpcId = vpcId;
         this.vpcName = vpcName;
+        this.networkId = networkId;
         this.networkName = networkName;
         this.networkGateway = networkGateway;
         this.networkCidr = networkCidr;
     }
 
+    public Long getVpcId() {
+        return vpcId;
+    }
+
     public String getVpcName() {
         return vpcName;
+    }
+
+    public long getNetworkId() {
+        return networkId;
     }
 
     public String getNetworkName() {
