@@ -825,6 +825,7 @@ public class VmwareHelper {
             UnmanagedInstanceTO.PowerState powerState = UnmanagedInstanceTO.PowerState.PowerUnknown;
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_ON")) {
                 powerState = UnmanagedInstanceTO.PowerState.PowerOn;
+                instance.setCpuSpeed(vmMo.getRuntimeInfo().getMaxCpuUsage() / instance.getCpuCores());
             }
             if (vmMo.getPowerState().toString().equalsIgnoreCase("POWERED_OFF")) {
                 powerState = UnmanagedInstanceTO.PowerState.PowerOff;

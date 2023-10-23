@@ -205,7 +205,6 @@
                 :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
                 :minimumMemory="isVmRunning ? resource.memory : null"
                 size="small"
-                :allowRunningVmsSelection="selectedVmwareVcenter ? true : false"
                 @select-compute-item="($event) => updateComputeOffering($event)"
                 @handle-search-filter="($event) => fetchComputeOfferings($event)" />
               <compute-selection

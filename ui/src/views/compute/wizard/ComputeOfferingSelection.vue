@@ -104,11 +104,6 @@ export default {
     minimumMemory: {
       type: Number,
       default: 0
-    },
-    allowRunningVmsSelection: {
-      type: Boolean,
-      required: false,
-      default: false
     }
   },
   data () {
@@ -182,9 +177,6 @@ export default {
         }
         if (this.autoscale && item.iscustomized) {
           disabled = true
-        }
-        if (this.allowRunningVmsSelection) {
-          disabled = false
         }
         return {
           key: item.id,
