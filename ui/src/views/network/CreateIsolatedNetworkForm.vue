@@ -77,7 +77,7 @@
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="domainLoading"
+              :loading="domain.loading"
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
               <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
@@ -293,11 +293,11 @@
           </div>
           <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat" name="sourcenatipaddress" ref="sourcenatipaddress">
             <template #label>
-              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress.description"/>
+              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress?.description"/>
             </template>
             <a-input
               v-model:value="form.sourcenatipaddress"
-              :placeholder="apiParams.sourcenatipaddress.description"/>
+              :placeholder="apiParams.sourcenatipaddress?.description"/>
           </a-form-item>
           <a-form-item
             ref="networkdomain"
@@ -375,7 +375,7 @@ export default {
     return {
       actionLoading: false,
       domains: [],
-      domainLoading: false,
+      domain: { loading: false },
       selectedDomain: {},
       accountVisible: isAdminOrDomainAdmin(),
       accounts: [],
@@ -497,15 +497,26 @@ export default {
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
     fetchDomainData () {
+      this.domain.loading = true
+      this.loadMore('listDomains', 1, this.domain)
+    },
+    loadMore (apiToCall, page, sema) {
       const params = {}
       params.listAll = true
       params.details = 'min'
-      this.domainLoading = true
-      api('listDomains', params).then(json => {
+      params.pagesize = 100
+      params.page = page
+      var count
+      api(apiToCall, params).then(json => {
         const listDomains = json.listdomainsresponse.domain
+        count = json.listdomainsresponse.count
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
-        this.domainLoading = false
+        if (count <= this.domains.length) {
+          sema.loading = false
+        } else {
+          this.loadMore(apiToCall, page + 1, sema)
+        }
         this.form.domainid = 0
         this.handleDomainChange(this.domains[0])
       })

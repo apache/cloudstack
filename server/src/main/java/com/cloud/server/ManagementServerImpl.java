@@ -43,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -312,6 +313,7 @@ import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.DeletePrivateGatewayCmd;
 import org.apache.cloudstack.api.command.admin.vpc.DeleteVPCOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vpc.ListPrivateGatewaysCmdByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.ListVPCsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
@@ -471,6 +473,7 @@ import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupE
 import org.apache.cloudstack.api.command.user.securitygroup.RevokeSecurityGroupIngressCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.UpdateSecurityGroupCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ArchiveSnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotFromVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotPolicyCmd;
@@ -777,7 +780,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -1268,7 +1270,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (hypervisorType != null) {
-            sc.setParameters("hypervisorType", hypervisorType);
+            String hypervisorStr = (String) hypervisorType;
+            String hypervisorSearch = HypervisorType.getType(hypervisorStr).toString();
+            sc.setParameters("hypervisorType", hypervisorSearch);
         }
 
         if (clusterType != null) {
@@ -2325,6 +2329,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 isAllocated = Boolean.TRUE;
             }
         }
+        boolean isAllocatedTemp = isAllocated;
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
@@ -2335,6 +2340,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Account caller = getCaller();
         List<IPAddressVO> addrs = new ArrayList<>();
+        NetworkVO network = null;   // shared network
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
             if (caller.getType() != Account.Type.ADMIN) {
@@ -2343,7 +2349,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         } else if (vlanType == VlanType.DirectAttached) {
             // list public ip address on shared network
             // access control. admin: all Ips, domain admin/user: all Ips in shared network in the domain/sub-domain/user
-            NetworkVO network = null;
             if (networkId == null) {
                 IPAddressVO ip = _publicIpAddressDao.findById(ipId);
                 if (ip == null) {
@@ -2477,7 +2482,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             for (IPAddressVO addr: freeAddrs) {
                 freeAddrIds.add(addr.getId());
             }
+        } else if (vlanType == VlanType.DirectAttached && network != null && !isAllocatedTemp && isAllocated) {
+            if (caller.getType() != Account.Type.ADMIN && !IpAddressManager.AllowUserListAvailableIpsOnSharedNetwork.value()) {
+                s_logger.debug("Non-admin users are not allowed to list available IPs on shared networks");
+            } else {
+                final SearchBuilder<IPAddressVO> searchBuilder = _publicIpAddressDao.createSearchBuilder();
+                buildParameters(searchBuilder, cmd, false);
+
+                SearchCriteria<IPAddressVO> searchCriteria = searchBuilder.create();
+                setParameters(searchCriteria, cmd, vlanType, false);
+                searchCriteria.setParameters("state", IpAddress.State.Free.name());
+                addrs.addAll(_publicIpAddressDao.search(searchCriteria, searchFilter)); // Free IPs on shared network
+            }
         }
+
         if (freeAddrIds.size() > 0) {
             final SearchBuilder<IPAddressVO> sb2 = _publicIpAddressDao.createSearchBuilder();
             buildParameters(sb2, cmd, false);
@@ -2627,43 +2645,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final Long id = cmd.getId();
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
+        final Long startIndex = cmd.getStartIndex();
+        final Long pageSize = cmd.getPageSizeVal();
+        Boolean forDisplay = cmd.getDisplay();
 
-        final SearchCriteria<GuestOSVO> sc = _guestOSDao.createSearchCriteria();
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        } else {
-            GenericSearchBuilder<GuestOSVO, Long> sb = _guestOSDao.createSearchBuilder(Long.class);
-            sb.select(null, SearchCriteria.Func.MAX, sb.entity().getId());
-            sb.groupBy(sb.entity().getCategoryId(), sb.entity().getDisplayName());
-            sb.done();
-
-            final SearchCriteria<Long> scGuestOs = sb.create();
-            final List<Long> guestOSVOList = _guestOSDao.customSearch(scGuestOs, null);
-            if (CollectionUtils.isNotEmpty(guestOSVOList)) {
-                sc.addAnd("id", SearchCriteria.Op.IN, guestOSVOList.toArray());
-            }
-        }
-
-        if (osCategoryId != null) {
-            sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
-        }
-
-        if (description != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
-        }
-
-        if (keyword != null) {
-            sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-        }
-
-        final Pair<List<GuestOSVO>, Integer> result = _guestOSDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends GuestOS>, Integer>(result.first(), result.second());
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override
@@ -2882,16 +2872,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsVo.setDisplayName(displayName);
         guestOsVo.setName(name);
         guestOsVo.setIsUserDefined(true);
+        guestOsVo.setDisplay(cmd.getForDisplay() == null ? true : cmd.getForDisplay());
         final GuestOS guestOsPersisted = _guestOSDao.persist(guestOsVo);
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(), (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), guestOsPersisted.getId());
 
         return guestOsPersisted;
+    }
+
+    private void persistGuestOsDetails(Map<String, String> details, long guestOsPersistedId) {
+        for (Object key : details.keySet()) {
+            _guestOsDetailsDao.addDetail(guestOsPersistedId, (String)key, details.get(key), false);
+        }
     }
 
     @Override
@@ -2917,12 +2909,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
-        if (cmd.getDetails() != null && !cmd.getDetails().isEmpty()) {
-            Map<String, String> detailsMap = cmd.getDetails();
-            for (Object key : detailsMap.keySet()) {
-                _guestOsDetailsDao.addDetail(id, (String)key, detailsMap.get(key), false);
-            }
-        }
+        persistGuestOsDetails(cmd.getDetails(), id);
 
         //Check if update is needed
         if (displayName.equals(guestOsHandle.getDisplayName())) {
@@ -2936,6 +2923,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         final GuestOSVO guestOs = _guestOSDao.createForUpdate(id);
         guestOs.setDisplayName(displayName);
+        if (cmd.getForDisplay() != null) {
+            guestOs.setDisplay(cmd.getForDisplay());
+        }
         if (_guestOSDao.update(id, guestOs)) {
             return _guestOSDao.findById(id);
         } else {
@@ -3634,6 +3624,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateSecurityGroupCmd.class);
         cmdList.add(CreateSnapshotCmd.class);
         cmdList.add(CreateSnapshotFromVMSnapshotCmd.class);
+        cmdList.add(CopySnapshotCmd.class);
         cmdList.add(DeleteSnapshotCmd.class);
         cmdList.add(ArchiveSnapshotCmd.class);
         cmdList.add(CreateSnapshotPolicyCmd.class);
@@ -3850,6 +3841,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListVPCsCmdByAdmin.class);
         cmdList.add(UpdateVPCCmdByAdmin.class);
         cmdList.add(CreatePrivateGatewayByAdminCmd.class);
+        cmdList.add(ListPrivateGatewaysCmdByAdminCmd.class);
         cmdList.add(UpdateLBStickinessPolicyCmd.class);
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
         cmdList.add(GetUploadParamsForTemplateCmd.class);
@@ -4348,6 +4340,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         capabilities.put("kubernetesServiceEnabled", kubernetesServiceEnabled);
         capabilities.put("kubernetesClusterExperimentalFeaturesEnabled", kubernetesClusterExperimentalFeaturesEnabled);
+        capabilities.put("customHypervisorDisplayName", HypervisorGuru.HypervisorCustomDisplayName.value());
         capabilities.put(ApiServiceConfiguration.DefaultUIPageSize.key(), ApiServiceConfiguration.DefaultUIPageSize.value());
         capabilities.put(ApiConstants.INSTANCES_STATS_RETENTION_TIME, StatsCollector.vmStatsMaxRetentionTime.value());
         capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
@@ -4479,7 +4472,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 final List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
                 for (final ClusterVO cluster : clustersForZone) {
-                    result.add(cluster.getHypervisorType().toString());
+                    result.add(cluster.getHypervisorType().getHypervisorDisplayName());
                 }
             }
 

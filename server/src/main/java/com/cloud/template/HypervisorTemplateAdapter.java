@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -152,26 +153,30 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     /**
-     * Validate on random running KVM host that URL is reachable
+     * Validate on random running host that URL is reachable
      * @param url url
      */
-    private Long performDirectDownloadUrlValidation(final String format, final String url, final List<Long> zoneIds) {
+    private Long performDirectDownloadUrlValidation(final String format, final Hypervisor.HypervisorType hypervisor,
+                                                    final String url, final List<Long> zoneIds) {
         HostVO host = null;
         if (zoneIds != null && !zoneIds.isEmpty()) {
             for (Long zoneId : zoneIds) {
-                host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+                host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, zoneId);
                 if (host != null) {
                     break;
                 }
             }
         } else {
-            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, null);
+            host = resourceManager.findOneRandomRunningHostByHypervisor(hypervisor, null);
         }
 
         if (host == null) {
             throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
         }
-        CheckUrlCommand cmd = new CheckUrlCommand(format, url);
+        Integer socketTimeout = DirectDownloadManager.DirectDownloadSocketTimeout.value();
+        Integer connectRequestTimeout = DirectDownloadManager.DirectDownloadConnectionRequestTimeout.value();
+        Integer connectTimeout = DirectDownloadManager.DirectDownloadConnectTimeout.value();
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -202,7 +207,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 zoneIds =  new ArrayList<>();
                 zoneIds.add(cmd.getZoneId());
             }
-            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(), url, zoneIds);
+            Long templateSize = performDirectDownloadUrlValidation(ImageFormat.ISO.getFileExtension(),
+                    Hypervisor.HypervisorType.KVM, url, zoneIds);
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
@@ -225,9 +231,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
+        Hypervisor.HypervisorType hypervisor = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
-            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
+            Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(),
+                    hypervisor, url, cmd.getZoneIds());
             profile.setSize(templateSize);
         }
         profile.setUrl(url);

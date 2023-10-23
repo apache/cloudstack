@@ -18,30 +18,25 @@
 
 package com.cloud.template;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
-
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.org.Grouping;
 import com.cloud.server.StatsCollector;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.test.TestAppender;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -61,39 +56,42 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.log4j.Level;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.component.ComponentContext;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class HypervisorTemplateAdapterTest {
     @Mock
     EventBus _bus;
@@ -149,9 +147,21 @@ public class HypervisorTemplateAdapterTest {
     private Map<String, Object> oldFields = new HashMap<>();
     private List<UsageEventVO> usageEvents = new ArrayList<>();
 
+    private MockedStatic<ComponentContext> componentContextMocked;
+
+    private AutoCloseable closeable;
+
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (componentContextMocked != null) {
+            componentContextMocked.close();
+        }
+        closeable.close();
     }
 
     public UsageEventUtils setupUsageUtils() throws EventBusException {
@@ -174,7 +184,7 @@ public class HypervisorTemplateAdapterTest {
             }
         }).when(_bus).publish(any(Event.class));
 
-        PowerMockito.mockStatic(ComponentContext.class);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
         when(ComponentContext.getComponent(eq(EventBus.class))).thenReturn(_bus);
 
         UsageEventUtils utils = new UsageEventUtils();
@@ -475,7 +485,6 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataStoreMock.getId()).thenReturn(2L);
 
-
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Zone [%s] is disabled. Skip downloading template to its image store [%s].", zoneId, dataStoreMock.getId())));
         TestAppender testLogAppender = appenderBuilder.build();
@@ -500,7 +509,6 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(false);
 
-
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Image store doesn't have enough capacity. Skip downloading template to this image store [%s].",
                 dataStoreMock.getId())));
@@ -523,9 +531,7 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
-
 
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage " +
@@ -549,9 +555,7 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
-
 
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; " +
@@ -575,9 +579,7 @@ public class HypervisorTemplateAdapterTest {
 
         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
         Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
-        Mockito.when(dataStoreMock.getId()).thenReturn(2L);
         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
-
 
         TestAppender.TestAppenderBuilder appenderBuilder = new TestAppender.TestAppenderBuilder();
         appenderBuilder.addExpectedPattern(Level.INFO, Pattern.quote(String.format("Private template will be allocated in image store [%s] in zone [%s].",

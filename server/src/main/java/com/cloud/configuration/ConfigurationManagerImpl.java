@@ -46,6 +46,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -663,7 +665,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public String updateConfiguration(final long userId, final String name, final String category, final String value, final String scope, final Long resourceId) {
+    public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
         final String validationMsg = validateConfigurationValue(name, value, scope);
 
         if (validationMsg != null) {
@@ -676,6 +678,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // if scope is mentioned as global or not mentioned then it is normal
         // global parameter updation
         if (scope != null && !scope.isEmpty() && !ConfigKey.Scope.Global.toString().equalsIgnoreCase(scope)) {
+            boolean valueEncrypted = shouldEncryptValue(category);
+            if (valueEncrypted) {
+                value = DBEncryptionUtil.encrypt(value);
+            }
+
             switch (ConfigKey.Scope.valueOf(scope)) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(resourceId);
@@ -766,13 +773,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
-            return value;
+
+            return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
         }
 
         // Execute all updates in a single transaction
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
 
+        String previousValue = _configDao.getValue(name);
         if (!_configDao.update(name, category, value)) {
             s_logger.error("Failed to update configuration option, name: " + name + ", value:" + value);
             throw new CloudRuntimeException("Failed to update configuration value. Please contact Cloud Support.");
@@ -853,11 +862,31 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } catch (final Throwable e) {
                 throw new CloudRuntimeException("Failed to clean up download URLs in template_store_ref or volume_store_ref due to exception ", e);
             }
+        } else if (HypervisorGuru.HypervisorCustomDisplayName.key().equals(name)) {
+            updateCustomDisplayNameOnHypervisorsList(previousValue, value);
         }
 
         txn.commit();
         messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
         return _configDao.getValue(name);
+    }
+
+    private boolean shouldEncryptValue(String category) {
+        return StringUtils.equalsAny(category, "Hidden", "Secure");
+    }
+
+    /**
+     * Updates the 'hypervisor.list' value to match the new custom hypervisor name set as newValue if the previous value was set
+     */
+    private void updateCustomDisplayNameOnHypervisorsList(String previousValue, String newValue) {
+        String hypervisorListConfigName = Config.HypervisorList.key();
+        String hypervisors = _configDao.getValue(hypervisorListConfigName);
+        if (Arrays.asList(hypervisors.split(",")).contains(previousValue)) {
+            hypervisors = hypervisors.replace(previousValue, newValue);
+            s_logger.info(String.format("Updating the hypervisor list configuration '%s' " +
+                    "to match the new custom hypervisor display name", hypervisorListConfigName));
+            _configDao.update(hypervisorListConfigName, hypervisors);
+        }
     }
 
     @Override
@@ -872,10 +901,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long imageStoreId = cmd.getImageStoreId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
-        CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
-        String catergory = null;
+        String category = null;
+        String eventValue = encryptEventValueIfConfigIsEncrypted(config, value);
+        CallContext.current().setEventDetails(String.format(" Name: %s New Value: %s", name, eventValue));
 
         final Account caller = CallContext.current().getCallingAccount();
         if (_accountMgr.isDomainAdmin(caller.getId())) {
@@ -894,9 +924,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
                 throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
             }
-            catergory = _configDepot.get(name).category();
+            category = _configDepot.get(name).category();
         } else {
-            catergory = config.getCategory();
+            category = config.getCategory();
         }
 
         validateIpAddressRelatedConfigValues(name, value);
@@ -953,12 +983,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             value = (id == null) ? null : "";
         }
 
-        final String updatedValue = updateConfiguration(userId, name, catergory, value, scope, id);
+        final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
         }
+    }
+
+    private String encryptEventValueIfConfigIsEncrypted(ConfigurationVO config, String value) {
+        if (config != null && config.isEncrypted()) {
+           return  "*****";
+        }
+        return Objects.requireNonNullElse(value, "");
     }
 
     private ParamCountPair getParamCount(Map<String, Long> scopeMap) {
@@ -5396,10 +5433,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if any of the Public IP addresses is allocated to another
         // account
-        boolean forSystemVms = false;
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         for (final IPAddressVO ip : ips) {
-            forSystemVms = ip.isForSystemVms();
+            if (ip.isForSystemVms()) {
+                throw new InvalidParameterValueException(ip.getAddress() + " Public IP address in range is dedicated to system vms ");
+            }
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
                 if (vlanOwner != null && allocatedToAccountId != vlanOwner.getId()) {
@@ -5424,7 +5462,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
                         vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
             }
-        } else if (domain != null && !forSystemVms) {
+        } else if (domain != null) {
             // Create an DomainVlanMapVO entry
             DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
             _domainVlanMapDao.persist(domainVlanMapVO);
@@ -7258,7 +7296,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Domain getVlanDomain(long vlanId) {
         Vlan vlan = _vlanDao.findById(vlanId);
-        Long domainId = null;
 
         // if vlan is Virtual Domain specific, get vlan information from the
         // accountVlanMap; otherwise get account information

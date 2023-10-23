@@ -55,11 +55,9 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.CreateSnapshotPayload;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -360,10 +358,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        //This check could be removed when PR #5297 is merged
-        if (vmHasNFSOrLocalVolumes(vmId)) {
-            return StrategyPriority.CANT_HANDLE;
-        }
         if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm.getState() == VirtualMachine.State.Running) {
@@ -395,7 +389,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         //The snapshot could not be deleted separately, that's why we set snapshot state to BackedUp for operation delete VM snapshots and rollback
         SnapshotStrategy strategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
         if (strategy != null) {
-            boolean snapshotForDelete = strategy.deleteSnapshot(snapshot.getId());
+            boolean snapshotForDelete = strategy.deleteSnapshot(snapshot.getId(), null);
             if (!snapshotForDelete) {
                 throw new CloudRuntimeException("Failed to delete snapshot");
             }
@@ -420,7 +414,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     protected void revertDiskSnapshot(VMSnapshot vmSnapshot) {
         List<VMSnapshotDetailsVO> listSnapshots = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), STORAGE_SNAPSHOT);
         for (VMSnapshotDetailsVO vmSnapshotDetailsVO : listSnapshots) {
-            SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+            SnapshotInfo sInfo = snapshotDataFactory.getSnapshotOnPrimaryStore(Long.parseLong(vmSnapshotDetailsVO.getValue()));
             SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(sInfo, SnapshotOperation.REVERT);
             if (snapshotStrategy == null) {
                 throw new CloudRuntimeException(String.format("Could not find strategy for snapshot uuid [%s]", sInfo.getId()));
@@ -464,18 +458,5 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         payload.setAsyncBackup(false);
         payload.setQuiescevm(false);
         return payload;
-    }
-
-    private boolean vmHasNFSOrLocalVolumes(long vmId) {
-        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmId);
-
-        for (VolumeObjectTO volumeTO : volumeTOs) {
-            Long poolId = volumeTO.getPoolId();
-            Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
-            if (poolType == Storage.StoragePoolType.NetworkFilesystem || poolType == Storage.StoragePoolType.Filesystem) {
-                return true;
-            }
-        }
-        return false;
     }
 }

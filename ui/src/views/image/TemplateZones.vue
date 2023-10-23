@@ -75,6 +75,23 @@
           :rowKey="record => record.zoneid">
         </a-table>
       </template>
+      <template #action="{ record }">
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+          :title="$t('label.action.copy.template')"
+          icon="copy-outlined"
+          :loading="copyLoading"
+          @onClick="showCopyTemplate(record)" />
+        <tooltip-button
+          style="margin-right: 5px"
+          :disabled="!('deleteTemplate' in $store.getters.apis) || record.status.startsWith('Installing')"
+          :title="$t('label.action.delete.template')"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
+      </template>
     </a-table>
     <a-pagination
       class="row-element"
@@ -183,7 +200,7 @@
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+            <a-button type="primary" ref="submit" @click="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)">{{ $t('label.ok') }}</a-button>
           </div>
         </a-spin>
       </div>

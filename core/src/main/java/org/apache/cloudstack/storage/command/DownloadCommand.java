@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
@@ -33,7 +34,7 @@ import com.cloud.storage.Storage.ImageFormat;
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
 
     public static enum ResourceType {
-        VOLUME, TEMPLATE
+        VOLUME, TEMPLATE, SNAPSHOT
     }
 
     private boolean hvm;
@@ -94,6 +95,18 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         _store = volume.getDataStore();
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         resourceType = ResourceType.VOLUME;
+    }
+
+    public DownloadCommand(SnapshotObjectTO snapshot, Long maxDownloadSizeInBytes, String url) {
+        super(snapshot.getName(), url, null, snapshot.getAccountId());
+        _store = snapshot.getDataStore();
+        installPath = snapshot.getPath();
+        id = snapshot.getId();
+        if (_store instanceof NfsTO) {
+            setSecUrl(((NfsTO)_store).getUrl());
+        }
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.resourceType = ResourceType.SNAPSHOT;
     }
 
     @Override

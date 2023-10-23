@@ -17,10 +17,12 @@
 package org.apache.cloudstack.quota;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +38,8 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +51,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import java.util.HashSet;
@@ -208,8 +213,14 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 userNames = userNames.substring(0, userNames.length() - 1);
             }
 
-            final Map<String, String> subjectOptionMap = generateOptionMap(account, userNames, accountDomain, balance, usage, emailType, false);
-            final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balance, usage, emailType, true);
+            String currencySymbol = ObjectUtils.defaultIfNull(_configDao.getValue(QuotaConfig.QuotaCurrencySymbol.key()), QuotaConfig.QuotaCurrencySymbol.defaultValue());
+            NumberFormat localeFormat = getLocaleFormatIfCurrencyLocaleNotNull();
+
+            String balanceStr = String.format("%s %s", currencySymbol, NumbersUtil.formatBigDecimalAccordingToNumberFormat(balance, localeFormat));
+            String usageStr = String.format("%s %s", currencySymbol, NumbersUtil.formatBigDecimalAccordingToNumberFormat(usage, localeFormat));
+
+            final Map<String, String> subjectOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, false);
+            final Map<String, String> bodyOptionMap = generateOptionMap(account, userNames, accountDomain, balanceStr, usageStr, emailType, true);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("Sending quota alert with values: accountName [%s], accountID [%s], accountUsers [%s], domainName [%s], domainID [%s].",
@@ -223,7 +234,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final String body = bodySubstitutor.replace(emailTemplate.getTemplateBody());
 
             try {
-                sendQuotaAlert(account.getUuid(), emailRecipients, subject, body);
+                sendQuotaAlert(account, emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
                 s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
@@ -237,19 +248,29 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     }
 
+    private NumberFormat getLocaleFormatIfCurrencyLocaleNotNull() {
+        String currencyLocale = _configDao.getValue(QuotaConfig.QuotaCurrencyLocale.key());
+        NumberFormat localeFormat = null;
+        if (currencyLocale != null) {
+            Locale locale = Locale.forLanguageTag(currencyLocale);
+            localeFormat = NumberFormat.getNumberInstance(locale);
+        }
+        return localeFormat;
+    }
+
     /*
     *
     *
      */
-    public Map<String, String> generateOptionMap(AccountVO accountVO, String userNames, DomainVO domainVO, final BigDecimal balance, final BigDecimal usage,
+    public Map<String, String> generateOptionMap(AccountVO accountVO, String userNames, DomainVO domainVO, final String balance, final String usage,
                                                  final QuotaConfig.QuotaEmailTemplateTypes emailType, boolean escapeHtml) {
         final Map<String, String> optionMap = new HashMap<>();
         optionMap.put("accountID", accountVO.getUuid());
         optionMap.put("domainID", domainVO.getUuid());
-        optionMap.put("quotaBalance", QuotaConfig.QuotaCurrencySymbol.value() + " " + balance.toString());
+        optionMap.put("quotaBalance", balance);
 
         if (emailType == QuotaEmailTemplateTypes.QUOTA_STATEMENT) {
-            optionMap.put("quotaUsage", QuotaConfig.QuotaCurrencySymbol.value() + " " + usage.toString());
+            optionMap.put("quotaUsage",  usage);
         }
 
         if (escapeHtml) {
@@ -354,17 +375,20 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     };
 
-    protected void sendQuotaAlert(String accountUuid, List<String> emails, String subject, String body) {
+    protected void sendQuotaAlert(Account account, List<String> emails, String subject, String body) {
         SMTPMailProperties mailProperties = new SMTPMailProperties();
 
         mailProperties.setSender(new MailAddress(senderAddress));
+
+        body = addHeaderAndFooter(body, QuotaConfig.QuotaEmailHeader.valueIn(account.getDomainId()), QuotaConfig.QuotaEmailFooter.valueIn(account.getDomainId()));
+
         mailProperties.setSubject(subject);
         mailProperties.setContent(body);
         mailProperties.setContentType("text/html; charset=utf-8");
 
         if (CollectionUtils.isEmpty(emails)) {
             s_logger.warn(String.format("Account [%s] does not have users with email registered, "
-                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", accountUuid, subject, body));
+                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", account.getUuid(), subject, body));
             return;
         }
 
@@ -376,6 +400,18 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         mailProperties.setRecipients(addresses);
 
         mailSender.sendMail(mailProperties);
+    }
+
+    protected String addHeaderAndFooter(String body, String header, String footer) {
+
+        if (StringUtils.isNotEmpty(header)) {
+            body = String.format("%s%s", header, body);
+        }
+        if (StringUtils.isNotEmpty(footer)) {
+            body = String.format("%s%s", body, footer);
+        }
+
+        return body;
     }
 
 }

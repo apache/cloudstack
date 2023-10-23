@@ -543,7 +543,7 @@ for example:
 
     This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
 
-    If the the --deploy-as option is present, this command will also connect to the database using the administrative credentials specified as the value for the --deploy-as argument, construct the database environment needed to run the CloudStack Management Server, and alter the password specified for the user in the first argument.  In this case, the user name specified in --deploy-as= cannot be the same as the user name specified for the connection credentials that the CloudStack Management Server will be set up with.
+    If the --deploy-as option is present, this command will also connect to the database using the administrative credentials specified as the value for the --deploy-as argument, construct the database environment needed to run the CloudStack Management Server, and alter the password specified for the user in the first argument.  In this case, the user name specified in --deploy-as= cannot be the same as the user name specified for the connection credentials that the CloudStack Management Server will be set up with.
 
     If a server-setup.xml cloud setup information file is specified with the --auto option, this command will also construct a customized database environment according to the cloud setup information in the file.
 

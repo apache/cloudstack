@@ -53,5 +53,6 @@ jobs:
         with:
           files: ./client/target/site/jacoco-aggregate/jacoco.xml
           fail_ci_if_error: true
+          flags: unit-tests
           verbose: true
           name: codecov

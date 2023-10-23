@@ -949,6 +949,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, VmwareResource.getDatastoreName(iScsiName));
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
 
+                if (path.startsWith("[-iqn.")) {
+                    // Rescan 1:1 LUN that VMware may not know the LUN was recently resized
+                    _storageProcessor.rescanAllHosts(context, lstHosts, true, true);
+                }
+
                 _storageProcessor.expandDatastore(hostDatastoreSystem, dsMo);
             }
 
@@ -2636,7 +2641,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             //
             // Power-on VM
             //
-            if (!vmMo.powerOn()) {
+            if (powerOnVM(vmMo, vmInternalCSName, vmNameOnVcenter)) {
+                s_logger.debug(String.format("VM %s has been started successfully with hostname %s.", vmInternalCSName, vmNameOnVcenter));
+            } else {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
             }
 
@@ -2706,6 +2713,23 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
             return startAnswer;
         }
+    }
+
+    private boolean powerOnVM(final VirtualMachineMO vmMo, final String vmInternalCSName, final String vmNameOnVcenter) throws Exception {
+        int retry = 20;
+        while (retry-- > 0) {
+            try {
+                return vmMo.powerOn();
+            } catch (Exception e) {
+                s_logger.info(String.format("Got exception while power on VM %s with hostname %s", vmInternalCSName, vmNameOnVcenter), e);
+                if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                    s_logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean multipleIsosAtached(DiskTO[] sortedDisks) {
@@ -5195,7 +5219,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                    if (uuid == null) {
+                    if (uuid == null || !uuid.contains("-")) {
                         uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);

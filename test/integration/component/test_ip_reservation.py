@@ -1069,7 +1069,7 @@ class TestFailureScnarios(cloudstackTestCase):
         # 1. update guestvmcidr of isolated network (non persistent)
         #
         # validation
-        # should throw exception as network is not in implemented state as no vm is created
+        # should succeed although network is not in implemented state
 
         networkOffering = self.isolated_network_offering
         resultSet = createIsolatedNetwork(self, networkOffering.id)
@@ -1078,9 +1078,7 @@ class TestFailureScnarios(cloudstackTestCase):
         else:
             isolated_network = resultSet[1]
 
-        with self.assertRaises(Exception):
-            isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
-        return
+        isolated_network.update(self.apiclient, guestvmcidr="10.1.1.0/26")
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_vm_create_after_reservation(self):

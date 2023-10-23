@@ -105,11 +105,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DISPLAY_NAME, type = CommandType.STRING, description = "an optional user generated name for the virtual machine")
     private String displayName;
 
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description="The password of the virtual machine. If null, a random password will be generated for the VM.",
+            since="4.19.0.0")
+    protected String password;
+
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the virtual machine. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. If account is NOT provided then virtual machine will be assigned to the caller account and domain.")
     private Long domainId;
 
     //Network information
@@ -317,23 +321,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (details != null && details.size() != 0) {
-            Collection parameterCollection = details.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    customparameterMap.put(entry.getKey(),entry.getValue());
-                }
-            }
-        }
+        Map<String, String> customparameterMap = convertDetailsToMap(details);
+
         if (getBootType() != null) {
             customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
-        if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
-            customparameterMap.put("rootdisksize", rootdisksize.toString());
+        if (rootdisksize != null && !customparameterMap.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+            customparameterMap.put(VmDetailConstants.ROOT_DISK_SIZE, rootdisksize.toString());
         }
 
         IoDriverPolicy ioPolicy = getIoDriverPolicy();
@@ -466,22 +461,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public Map<String, String> getUserdataDetails() {
-        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
-        if (userdataDetails != null && userdataDetails.size() != 0) {
-            Collection parameterCollection = userdataDetails.values();
-            Iterator iter = parameterCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>)iter.next();
-                for (Map.Entry<String,String> entry: value.entrySet()) {
-                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
-                }
-            }
-        }
-        return userdataDetailsMap;
+        return convertDetailsToMap(userdataDetails);
     }
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public List<Long> getNetworkIds() {

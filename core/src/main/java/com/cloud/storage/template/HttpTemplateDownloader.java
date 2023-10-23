@@ -19,6 +19,8 @@
 
 package com.cloud.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +29,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.Header;
@@ -44,15 +47,11 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * Download a template file using HTTP
@@ -247,7 +246,9 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         while (!done && status != Status.ABORTED && offset <= remoteSize) {
             if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
                 offset = writeBlock(bytes, out, block, offset);
-                if (!verifyFormat.isVerifiedFormat() && (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
+                if (!ResourceType.SNAPSHOT.equals(resourceType) &&
+                        !verifyFormat.isVerifiedFormat() &&
+                        (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
                     verifyFormat.invoke();
                 }
             } else {

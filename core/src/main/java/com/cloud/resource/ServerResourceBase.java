@@ -46,18 +46,18 @@ import com.cloud.utils.script.Script;
 
 public abstract class ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(ServerResourceBase.class);
-    protected String _name;
-    private ArrayList<String> _warnings = new ArrayList<String>();
-    private ArrayList<String> _errors = new ArrayList<String>();
-    protected NetworkInterface _publicNic;
-    protected NetworkInterface _privateNic;
-    protected NetworkInterface _storageNic;
-    protected NetworkInterface _storageNic2;
-    protected IAgentControl _agentControl;
+    protected String name;
+    private ArrayList<String> warnings = new ArrayList<String>();
+    private ArrayList<String> errors = new ArrayList<String>();
+    protected NetworkInterface publicNic;
+    protected NetworkInterface privateNic;
+    protected NetworkInterface storageNic;
+    protected NetworkInterface storageNic2;
+    protected IAgentControl agentControl;
 
     @Override
     public String getName() {
-        return _name;
+        return name;
     }
 
     protected String findScript(String script) {
@@ -68,15 +68,15 @@ public abstract class ServerResourceBase implements ServerResource {
 
     @Override
     public boolean configure(final String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
+        this.name = name;
 
         defineResourceNetworkInterfaces(params);
 
-        if (_privateNic == null) {
+        if (privateNic == null) {
             tryToAutoDiscoverResourcePrivateNetworkInterface();
         }
 
-        String infos[] = NetUtils.getNetworkParams(_privateNic);
+        String infos[] = NetUtils.getNetworkParams(privateNic);
         if (infos == null) {
             s_logger.warn("Incorrect details for private Nic during initialization of ServerResourceBase");
             return false;
@@ -97,10 +97,10 @@ public abstract class ServerResourceBase implements ServerResource {
         String storageNic = (String) params.get("storage.network.device");
         String storageNic2 = (String) params.get("storage.network.device.2");
 
-        _privateNic = NetUtils.getNetworkInterface(privateNic);
-        _publicNic = NetUtils.getNetworkInterface(publicNic);
-        _storageNic = NetUtils.getNetworkInterface(storageNic);
-        _storageNic2 = NetUtils.getNetworkInterface(storageNic2);
+        this.privateNic = NetUtils.getNetworkInterface(privateNic);
+        this.publicNic = NetUtils.getNetworkInterface(publicNic);
+        this.storageNic = NetUtils.getNetworkInterface(storageNic);
+        this.storageNic2 = NetUtils.getNetworkInterface(storageNic2);
     }
 
     protected void tryToAutoDiscoverResourcePrivateNetworkInterface() throws ConfigurationException {
@@ -121,7 +121,7 @@ public abstract class ServerResourceBase implements ServerResource {
         for (NetworkInterface nic : nics) {
             if (isValidNicToUseAsPrivateNic(nic))  {
                 s_logger.info(String.format("Using NIC [%s] as private NIC.", nic));
-                _privateNic = nic;
+                privateNic = nic;
                 return;
             }
         }
@@ -152,8 +152,8 @@ public abstract class ServerResourceBase implements ServerResource {
 
     protected void fillNetworkInformation(final StartupCommand cmd) {
         String[] info = null;
-        if (_privateNic != null) {
-            info = NetUtils.getNetworkParams(_privateNic);
+        if (privateNic != null) {
+            info = NetUtils.getNetworkParams(privateNic);
             if (info != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Parameters for private nic: " + info[0] + " - " + info[1] + "-" + info[2]);
@@ -164,11 +164,11 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
 
-        if (_storageNic != null) {
+        if (storageNic != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Storage has its now nic: " + _storageNic.getName());
+                s_logger.debug("Storage has its now nic: " + storageNic.getName());
             }
-            info = NetUtils.getNetworkParams(_storageNic);
+            info = NetUtils.getNetworkParams(storageNic);
         }
 
         // NOTE: In case you're wondering, this is not here by mistake.
@@ -181,8 +181,8 @@ public abstract class ServerResourceBase implements ServerResource {
             cmd.setStorageNetmask(info[2]);
         }
 
-        if (_publicNic != null) {
-            info = NetUtils.getNetworkParams(_publicNic);
+        if (publicNic != null) {
+            info = NetUtils.getNetworkParams(publicNic);
             if (info != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Parameters for public nic: " + info[0] + " - " + info[1] + "-" + info[2]);
@@ -193,8 +193,8 @@ public abstract class ServerResourceBase implements ServerResource {
             }
         }
 
-        if (_storageNic2 != null) {
-            info = NetUtils.getNetworkParams(_storageNic2);
+        if (storageNic2 != null) {
+            info = NetUtils.getNetworkParams(storageNic2);
             if (info != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Parameters for storage nic 2: " + info[0] + " - " + info[1] + "-" + info[2]);
@@ -212,18 +212,18 @@ public abstract class ServerResourceBase implements ServerResource {
 
     @Override
     public IAgentControl getAgentControl() {
-        return _agentControl;
+        return agentControl;
     }
 
     @Override
     public void setAgentControl(IAgentControl agentControl) {
-        _agentControl = agentControl;
+        this.agentControl = agentControl;
     }
 
     protected void recordWarning(final String msg, final Throwable th) {
         final String str = getLogStr(msg, th);
-        synchronized (_warnings) {
-            _warnings.add(str);
+        synchronized (warnings) {
+            warnings.add(str);
         }
     }
 
@@ -232,25 +232,25 @@ public abstract class ServerResourceBase implements ServerResource {
     }
 
     protected List<String> getWarnings() {
-        synchronized (_warnings) {
-            final List<String> results = new LinkedList<String>(_warnings);
-            _warnings.clear();
+        synchronized (warnings) {
+            final List<String> results = new LinkedList<String>(warnings);
+            warnings.clear();
             return results;
         }
     }
 
     protected List<String> getErrors() {
-        synchronized (_errors) {
-            final List<String> result = new LinkedList<String>(_errors);
-            _errors.clear();
+        synchronized (errors) {
+            final List<String> result = new LinkedList<String>(errors);
+            errors.clear();
             return result;
         }
     }
 
     protected void recordError(final String msg, final Throwable th) {
         final String str = getLogStr(msg, th);
-        synchronized (_errors) {
-            _errors.add(str);
+        synchronized (errors) {
+            errors.add(str);
         }
     }
 

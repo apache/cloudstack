@@ -840,7 +840,8 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw, nextTick, h } from 'vue'
+import { Button } from 'ant-design-vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -1815,11 +1816,17 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.defaultBootType)
-          this.defaultBootMode = this.template?.details?.UEFI
-          this.updateTemplateLinkedUserData(this.template.userdataid)
-          this.userdataDefaultOverridePolicy = this.template.userdatapolicy
+          this.updateTemplateLinkedUserData(template.userdataid)
+          this.userdataDefaultOverridePolicy = template.userdatapolicy
+          this.form.dynamicscalingenabled = template.isdynamicallyscalable
+          this.defaultBootType = template.details?.UEFI ? 'UEFI' : 'BIOS'
+          this.form.boottype = this.defaultBootType
+          this.fetchBootModes(this.form.boottype)
+          this.defaultBootMode = template.details?.UEFI || this.options.bootModes?.[0]?.id || undefined
+          this.form.bootmode = this.defaultBootMode
+          this.form.iothreadsenabled = template.details && Object.prototype.hasOwnProperty.call(template.details, 'iothreads')
+          this.form.iodriverpolicy = template.details?.['io.policy']
+          this.form.keyboard = template.details?.keyboard
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2185,6 +2192,15 @@ export default {
                   this.$notification.success({
                     message: password + ` ${this.$t('label.for')} ` + name,
                     description: vm.password,
+                    btn: () => h(
+                      Button,
+                      {
+                        type: 'primary',
+                        size: 'small',
+                        onClick: () => this.copyToClipboard(vm.password)
+                      },
+                      () => [this.$t('label.copy.password')]
+                    ),
                     duration: 0
                   })
                 }
@@ -2684,6 +2700,14 @@ export default {
         }
       }
       return networks
+    },
+    copyToClipboard (txt) {
+      const parent = this
+      this.$copyText(txt, document.body, function (err) {
+        if (!err) {
+          parent.$message.success(parent.$t('label.copied.clipboard'))
+        }
+      })
     }
   }
 }

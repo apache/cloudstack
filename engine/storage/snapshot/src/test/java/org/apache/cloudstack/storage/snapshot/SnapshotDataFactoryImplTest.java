@@ -31,18 +31,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.component.ComponentContext;
 
-@RunWith(PowerMockRunner.class)
+
+@RunWith(MockitoJUnitRunner.class)
 public class SnapshotDataFactoryImplTest {
 
     @Spy
@@ -62,49 +62,44 @@ public class SnapshotDataFactoryImplTest {
     public void getSnapshotsByVolumeAndDataStoreTestNoSnapshotDataStoreVOFound() {
         Mockito.doReturn(new ArrayList<>()).when(snapshotStoreDaoMock).listAllByVolumeAndDataStore(volumeMockId, DataStoreRole.Primary);
 
-        List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshots(volumeMockId, DataStoreRole.Primary);
+        List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshotsForVolumeAndStoreRole(volumeMockId, DataStoreRole.Primary);
 
         Assert.assertTrue(snapshots.isEmpty());
     }
 
     @Test
-    @PrepareForTest({ComponentContext.class})
     public void getSnapshotsByVolumeAndDataStoreTest() {
-        PowerMockito.mockStatic(ComponentContext.class);
-        PowerMockito.when(ComponentContext.inject(SnapshotObject.class)).thenReturn(new SnapshotObject());
+        try (MockedStatic<ComponentContext> componentContextMockedStatic = Mockito.mockStatic(ComponentContext.class)) {
+            Mockito.when(ComponentContext.inject(SnapshotObject.class)).thenReturn(new SnapshotObject());
 
-        SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.doReturn(volumeMockId).when(snapshotDataStoreVoMock).getVolumeId();
+            SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
-        long snapshotId = 1223;
-        long dataStoreId = 34567;
-        Mockito.doReturn(snapshotId).when(snapshotDataStoreVoMock).getSnapshotId();
-        Mockito.doReturn(dataStoreId).when(snapshotDataStoreVoMock).getDataStoreId();
+            long snapshotId = 1223;
+            long dataStoreId = 34567;
+            Mockito.doReturn(snapshotId).when(snapshotDataStoreVoMock).getSnapshotId();
+            Mockito.doReturn(dataStoreId).when(snapshotDataStoreVoMock).getDataStoreId();
 
-        SnapshotVO snapshotVoMock  = Mockito.mock(SnapshotVO.class);
-        Mockito.doReturn(snapshotId).when(snapshotVoMock).getId();
+            SnapshotVO snapshotVoMock = Mockito.mock(SnapshotVO.class);
 
-        DataStoreRole dataStoreRole = DataStoreRole.Primary;
-        DataStore dataStoreMock = Mockito.mock(DataStore.class);
-        Mockito.doReturn(dataStoreId).when(dataStoreMock).getId();
-        Mockito.doReturn(dataStoreRole).when(dataStoreMock).getRole();
+            DataStoreRole dataStoreRole = DataStoreRole.Primary;
+            DataStore dataStoreMock = Mockito.mock(DataStore.class);
 
-        List<SnapshotDataStoreVO> snapshotDataStoreVOs = new ArrayList<>();
-        snapshotDataStoreVOs.add(snapshotDataStoreVoMock);
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = new ArrayList<>();
+            snapshotDataStoreVOs.add(snapshotDataStoreVoMock);
 
-        Mockito.doReturn(snapshotDataStoreVOs).when(snapshotStoreDaoMock).listAllByVolumeAndDataStore(volumeMockId, dataStoreRole);
-        Mockito.doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(dataStoreId, dataStoreRole);
-        Mockito.doReturn(snapshotVoMock).when(snapshotDaoMock).findById(snapshotId);
+            Mockito.doReturn(snapshotDataStoreVOs).when(snapshotStoreDaoMock).listAllByVolumeAndDataStore(volumeMockId, dataStoreRole);
+            Mockito.doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(dataStoreId, dataStoreRole);
+            Mockito.doReturn(snapshotVoMock).when(snapshotDaoMock).findById(snapshotId);
 
-        List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshots(volumeMockId, dataStoreRole);
+            List<SnapshotInfo> snapshots = snapshotDataFactoryImpl.getSnapshotsForVolumeAndStoreRole(volumeMockId, dataStoreRole);
 
-        Assert.assertEquals(1, snapshots.size());
+            Assert.assertEquals(1, snapshots.size());
 
-        SnapshotInfo snapshotInfo = snapshots.get(0);
-        Assert.assertEquals(dataStoreMock, snapshotInfo.getDataStore());
-        Assert.assertEquals(snapshotVoMock, ((SnapshotObject)snapshotInfo).getSnapshotVO());
+            SnapshotInfo snapshotInfo = snapshots.get(0);
+            Assert.assertEquals(dataStoreMock, snapshotInfo.getDataStore());
+            Assert.assertEquals(snapshotVoMock, ((SnapshotObject) snapshotInfo).getSnapshotVO());
 
-        PowerMockito.verifyStatic(ComponentContext.class);
-        ComponentContext.inject(SnapshotObject.class);
+            componentContextMockedStatic.verify(() -> ComponentContext.inject(SnapshotObject.class), Mockito.times(1));
+        }
     }
 }

@@ -58,4 +58,6 @@ public interface DataStoreManager {
     boolean isRegionStore(DataStore store);
 
     DataStore getImageStoreByUuid(String uuid);
+
+    Long getStoreZoneId(long storeId, DataStoreRole role);
 }
