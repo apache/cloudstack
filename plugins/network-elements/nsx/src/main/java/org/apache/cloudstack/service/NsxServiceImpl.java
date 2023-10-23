@@ -34,9 +34,9 @@ public class NsxServiceImpl implements NsxService {
     @Inject
     VpcDao vpcDao;
 
-    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, long vpcId, String vpcName) {
+    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, long vpcId, String vpcName, boolean sourceNatEnabled) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName);
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, sourceNatEnabled);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }

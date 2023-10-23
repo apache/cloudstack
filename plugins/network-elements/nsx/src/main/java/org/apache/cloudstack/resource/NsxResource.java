@@ -254,8 +254,9 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
         String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
+        boolean sourceNatEnabled = cmd.isSourceNatEnabled();
         try {
-            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster);
+            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster, sourceNatEnabled);
             return new NsxAnswer(cmd, true, "");
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Cannot create tier 1 gateway %s (VPC: %s): %s", name, cmd.getVpcName(), e.getMessage()));

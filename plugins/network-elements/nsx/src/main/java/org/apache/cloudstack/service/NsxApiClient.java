@@ -48,6 +48,7 @@ import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -185,12 +186,24 @@ public class NsxApiClient {
         }
     }
 
-    public void createTier1Gateway(String name, String tier0Gateway, String edgeCluster) {
+    private List<String> getRouterAdvertisementTypeList(boolean sourceNatEnabled) {
+        List<String> types = new ArrayList<>();
+        types.add(RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT.name());
+        types.add(RouteAdvertisementType.TIER1_NAT.name());
+        if (!sourceNatEnabled) {
+            types.add(RouteAdvertisementType.TIER1_CONNECTED.name());
+        }
+        return types;
+    }
+
+    public void createTier1Gateway(String name, String tier0Gateway, String edgeCluster, boolean sourceNatEnabled) {
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
         Tier1 tier1 = getTier1Gateway(name);
         if (tier1 != null) {
             throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone", name));
         }
+
+        List<String> routeAdvertisementTypes = getRouterAdvertisementTypeList(sourceNatEnabled);
 
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
         tier1 = new Tier1.Builder()
@@ -199,7 +212,7 @@ public class NsxApiClient {
                 .setPoolAllocation(PoolAllocation.ROUTING.name())
                 .setHaMode(HAMode.ACTIVE_STANDBY.name())
                 .setFailoverMode(FailoverMode.PREEMPTIVE.name())
-                .setRouteAdvertisementTypes(List.of(RouteAdvertisementType.TIER1_CONNECTED.name(), RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT.name()))
+                .setRouteAdvertisementTypes(routeAdvertisementTypes)
                 .setId(name)
                 .setDisplayName(name)
                 .build();

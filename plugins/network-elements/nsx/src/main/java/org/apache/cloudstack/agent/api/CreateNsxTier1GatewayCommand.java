@@ -21,11 +21,13 @@ import java.util.Objects;
 public class CreateNsxTier1GatewayCommand extends NsxCommand {
     private long vpcId;
     private String vpcName;
+    private boolean sourceNatEnabled;
 
-    public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId, long vpcId, String vpcName) {
+    public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId, long vpcId, String vpcName, boolean sourceNatEnabled) {
         super(domainId, accountId, zoneId);
         this.vpcId = vpcId;
         this.vpcName = vpcName;
+        this.sourceNatEnabled = sourceNatEnabled;
     }
 
     public long getVpcId() {
@@ -34,6 +36,10 @@ public class CreateNsxTier1GatewayCommand extends NsxCommand {
 
     public String getVpcName() {
         return vpcName;
+    }
+
+    public boolean isSourceNatEnabled() {
+        return sourceNatEnabled;
     }
 
     @Override
