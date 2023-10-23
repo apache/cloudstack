@@ -113,7 +113,7 @@
               <tooltip-label :title="value" bold />
             </a-col>
             <a-col>
-              {{  value }}
+              {{ value }}
             </a-col>
           </a-row>
         </template>
@@ -213,7 +213,7 @@
             {{ convertBytes(record.size) }}
           </template>
           <template v-else-if="column.key == 'lastModified' && record.lastModified">
-            {{ $toLocalDate(record.lastModified) }}
+            {{ $toLocaleDate(record.lastModified) }}
           </template>
         </template>
       </a-table>
