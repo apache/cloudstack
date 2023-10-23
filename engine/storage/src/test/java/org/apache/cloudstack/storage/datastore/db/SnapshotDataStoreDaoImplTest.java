@@ -19,12 +19,6 @@
 
 package org.apache.cloudstack.storage.datastore.db;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +26,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotDataStoreDaoImplTest {
@@ -61,17 +62,15 @@ public class SnapshotDataStoreDaoImplTest {
 
     @Test
     public void validateExpungeReferenceBySnapshotIdAndDataStoreRoleNullReference(){
-        Mockito.doReturn(searchCriteriaMock).when(snapshotDataStoreDaoImplSpy).createSearchCriteriaBySnapshotIdAndStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(null).when(snapshotDataStoreDaoImplSpy).findOneBy(searchCriteriaMock);
-        Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(0, DataStoreRole.Image));
+        Mockito.doReturn(null).when(snapshotDataStoreDaoImplSpy).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+        Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(0, 1L, DataStoreRole.Image));
     }
 
     @Test
     public void validateExpungeReferenceBySnapshotIdAndDataStoreRole(){
-        Mockito.doReturn(searchCriteriaMock).when(snapshotDataStoreDaoImplSpy).createSearchCriteriaBySnapshotIdAndStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findOneBy(searchCriteriaMock);
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(true).when(snapshotDataStoreDaoImplSpy).expunge(Mockito.anyLong());
-        Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(0, DataStoreRole.Image));
+        Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(0, 1L, DataStoreRole.Image));
     }
 
     @Test
@@ -112,33 +111,30 @@ public class SnapshotDataStoreDaoImplTest {
 
     @Test
     public void expungeReferenceBySnapshotIdAndDataStoreRoleTestSnapshotDataStoreIsNullReturnTrue() {
-        Mockito.doReturn(searchCriteriaMock).when(snapshotDataStoreDaoImplSpy).createSearchCriteriaBySnapshotIdAndStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(null).when(snapshotDataStoreDaoImplSpy).findOneBy(Mockito.any());
+        Mockito.doReturn(null).when(snapshotDataStoreDaoImplSpy).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
 
         for (DataStoreRole value : DataStoreRole.values()) {
-            Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, value));
+            Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, 1, value));
         }
     }
 
     @Test
     public void expungeReferenceBySnapshotIdAndDataStoreRoleTestSnapshotDataStoreIsNotNullAndExpungeIsTrueReturnTrue() {
-        Mockito.doReturn(searchCriteriaMock).when(snapshotDataStoreDaoImplSpy).createSearchCriteriaBySnapshotIdAndStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findOneBy(Mockito.any());
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(true).when(snapshotDataStoreDaoImplSpy).expunge(Mockito.anyLong());
 
         for (DataStoreRole value : DataStoreRole.values()) {
-            Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, value));
+            Assert.assertTrue(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, 1, value));
         }
     }
 
     @Test
     public void expungeReferenceBySnapshotIdAndDataStoreRoleTestSnapshotDataStoreIsNotNullAndExpungeIsFalseReturnTrue() {
-        Mockito.doReturn(searchCriteriaMock).when(snapshotDataStoreDaoImplSpy).createSearchCriteriaBySnapshotIdAndStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findOneBy(Mockito.any());
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoImplSpy).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(false).when(snapshotDataStoreDaoImplSpy).expunge(Mockito.anyLong());
 
         for (DataStoreRole value : DataStoreRole.values()) {
-            Assert.assertFalse(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, value));
+            Assert.assertFalse(snapshotDataStoreDaoImplSpy.expungeReferenceBySnapshotIdAndDataStoreRole(1, 1, value));
         }
     }
 
