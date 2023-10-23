@@ -14,28 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.dhcp;
 
-import java.net.InetAddress;
+package com.cloud.storage.dao;
+
 import java.util.List;
-import java.util.Map;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapter;
+import com.cloud.storage.SnapshotZoneVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface DhcpSnooper extends Adapter {
-
-    public InetAddress getIPAddr(String macAddr, String vmName);
-
-    public InetAddress getDhcpServerIP();
-
-    public void cleanup(String macAddr, String vmName);
-
-    public Map<String, InetAddress> syncIpAddr();
-
-    @Override
-    public boolean stop();
-
-    public void initializeMacTable(List<Pair<String, String>> macVmNameList);
-
+public interface SnapshotZoneDao extends GenericDao<SnapshotZoneVO, Long> {
+    SnapshotZoneVO findByZoneSnapshot(long zoneId, long templateId);
+    void addSnapshotToZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZones(long snapshotId);
+    List<SnapshotZoneVO> listBySnapshot(long snapshotId);
 }

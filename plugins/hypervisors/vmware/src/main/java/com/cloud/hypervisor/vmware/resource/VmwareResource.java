@@ -5219,7 +5219,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                    if (uuid == null) {
+                    if (uuid == null || !uuid.contains("-")) {
                         uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);

@@ -79,7 +79,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || ''),
           width: '40%'
         },
         {
