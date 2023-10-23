@@ -319,6 +319,16 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'zones',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SnapshotZones.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'Snapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
@@ -331,12 +341,8 @@ export default {
           label: 'label.create.template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
-          mapping: {
-            snapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
         },
         {
           api: 'createVolume',
