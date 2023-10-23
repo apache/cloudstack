@@ -974,7 +974,7 @@ public class HypervisorHostHelperTest {
 
     @Test
     public void testPrepareNetwork() throws Exception {
-        String networkName = "testAcc-VPC1-tier1";
+        String networkName = "D1-A2-Z2-V8-S3";
         DynamicProperty property = new DynamicProperty();
         property.setVal(networkName);
 

@@ -34,27 +34,28 @@ public class NsxServiceImpl implements NsxService {
     @Inject
     VpcDao vpcDao;
 
-    public boolean createVpcNetwork(Long zoneId, String zoneName, String accountName, String domainName, String vpcName) {
+    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, long vpcId, String vpcName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(domainName, accountName, zoneName, vpcName);
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
-    public boolean deleteVpcNetwork(Long zoneId, String zoneName, String accountName, String domainName, String vpcName) {
+    public boolean deleteVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName) {
         DeleteNsxTier1GatewayCommand deleteNsxTier1GatewayCommand =
-                new DeleteNsxTier1GatewayCommand(domainName, accountName, zoneName, vpcName);
+                new DeleteNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
-    public boolean deleteNetwork(String zoneName, String accountName, String domainName, NetworkVO network) {
+    public boolean deleteNetwork(long zoneId, long accountId, long domainId, NetworkVO network) {
         String vpcName = null;
         if (Objects.nonNull(network.getVpcId())) {
             VpcVO vpc = vpcDao.findById(network.getVpcId());
             vpcName = Objects.nonNull(vpc) ? vpc.getName() : null;
         }
-        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(domainName, accountName, zoneName, vpcName, network.getName());
+        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(domainId, accountId, zoneId,
+                network.getVpcId(), vpcName, network.getId(), network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         return result.getResult();
     }

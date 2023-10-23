@@ -56,23 +56,23 @@ public class NsxControllerUtils {
         return (NsxAnswer) answer;
     }
 
-    public static String getTier1GatewayName(String domainName, String accountName, String zoneName, String vpcName) {
-        return String.format("%s-%s-%s-%s",  domainName, accountName, zoneName, vpcName);
+    public static String getTier1GatewayName(long domainId, long accountId, long zoneId, long vpcId) {
+        return String.format("D%s-A%s-Z%s-V%s",  domainId, accountId, zoneId, vpcId);
     }
 
-    public static String getNsxSegmentId(String domainName, String accountName, String zoneName, String vpcName, String tierNetworkName) {
-        String segmentName = String.format("%s-%s-%s-",  domainName, accountName, zoneName);
-        if (isNull(vpcName)) {
-            return segmentName + tierNetworkName;
+    public static String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
+        String segmentName = String.format("D%s-A%s-Z%s",  domainId, accountId, zoneId);
+        if (isNull(vpcId)) {
+            return String.format("%s-S%s", segmentName, networkId);
         }
-        return segmentName + vpcName + "-" + tierNetworkName;
+        return String.format("%s-V%s-S%s",segmentName, vpcId, networkId);
     }
 
-    public static String getNsxDhcpRelayConfigId(String zoneName, String domainName, String accountName, String vpcName, String networkName) {
-        String suffix = "-Relay";
-        if (isNull(vpcName)) {
-            return domainName + "-" + accountName + "-" + zoneName + "-" +networkName + suffix;
+    public static String getNsxDhcpRelayConfigId(long zoneId, long domainId, long accountId, Long vpcId, long networkId) {
+        String suffix = "Relay";
+        if (isNull(vpcId)) {
+            return String.format("D%s-A%s-Z%s-S%s-%s", domainId, accountId, zoneId, networkId, suffix);
         }
-        return String.format("%s-%s-%s-%s-%s%s", domainName, accountName, zoneName, vpcName, networkName, suffix);
+        return String.format("D%s-A%s-Z%s-V%s-S%s-%s", domainId, accountId, zoneId, vpcId, networkId, suffix);
     }
 }

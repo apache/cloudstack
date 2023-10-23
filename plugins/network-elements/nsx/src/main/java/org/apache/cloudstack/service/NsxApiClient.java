@@ -249,7 +249,7 @@ public class NsxApiClient {
         }
     }
 
-    public void createSegment(String zoneName, String domainName, String accountName, String vpcName, String segmentName, String gatewayAddress, String tier0Gateway, String enforcementPointPath, List<TransportZone> transportZones) {
+    public void createSegment(long zoneId, long domainId, long accountId, Long vpcId, String segmentName, String gatewayAddress, String tier0Gateway, String enforcementPointPath, List<TransportZone> transportZones) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
@@ -259,8 +259,8 @@ public class NsxApiClient {
                     .setResourceType(SEGMENT_RESOURCE_TYPE)
                     .setId(segmentName)
                     .setDisplayName(segmentName)
-                    .setConnectivityPath(isNull(vpcName) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
-                            : TIER_1_GATEWAY_PATH_PREFIX + NsxControllerUtils.getTier1GatewayName(domainName, accountName, zoneName, vpcName))
+                    .setConnectivityPath(isNull(vpcId) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
+                            : TIER_1_GATEWAY_PATH_PREFIX + NsxControllerUtils.getTier1GatewayName(domainId, accountId, zoneId, vpcId))
                     .setAdminState(AdminState.UP.name())
                     .setSubnets(List.of(subnet))
                     .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())
@@ -274,13 +274,13 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteSegment(String zoneName, String domainName, String accountName, String vpcName, String networkName, String segmentName) {
+    public void deleteSegment(long zoneId, long domainId, long accountId, long vpcId, long networkId, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
-            String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, domainName, accountName, vpcName, networkName);
+            String dhcpRelayConfigId = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
             LOGGER.debug(String.format("Removing the DHCP relay config with ID %s", dhcpRelayConfigId));
             dhcpRelayConfig.delete(dhcpRelayConfigId);
         } catch (Error error) {

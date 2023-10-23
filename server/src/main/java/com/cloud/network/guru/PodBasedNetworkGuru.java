@@ -89,6 +89,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         return config;
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     protected PodBasedNetworkGuru() {
         super();
     }
