@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -32,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Snapshot;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
-        Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        Snapshot.class }, responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
@@ -108,6 +109,14 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         if (!isShowUnique()) {
             return locationType;
         }
+        return null;
+    }
+
+    public Long getImageStoreId() {
+        return null;
+    }
+
+    public Long getStoragePoolId() {
         return null;
     }
 

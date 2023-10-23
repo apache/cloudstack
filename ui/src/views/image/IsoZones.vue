@@ -34,7 +34,8 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">

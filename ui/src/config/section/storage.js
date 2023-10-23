@@ -339,7 +339,14 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'domainid', 'account', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createTemplate',
@@ -366,17 +373,6 @@ export default {
           message: 'message.action.revert.snapshot',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' && record.revertable }
-        },
-        {
-          api: 'migrateResourceToAnotherSecondaryStorage',
-          icon: 'arrows-alt-outlined',
-          label: 'label.action.migrate.snapshot',
-          message: 'message.action.migrate.snapshot',
-          dataView: true,
-          args: ['srcpool', 'destpool', 'snapshots'],
-          popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/MigrateImageStoreResource.vue'))),
-          show: (record) => { return record.state === 'BackedUp' }
         },
         {
           api: 'deleteSnapshot',

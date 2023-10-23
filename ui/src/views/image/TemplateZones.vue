@@ -34,7 +34,8 @@
       :dataSource="dataSource"
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-      :rowKey="record => record.zoneid">
+      :rowKey="record => record.zoneid"
+      :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
           <span v-if="fetchZoneIcon(record.zoneid)">
@@ -70,6 +71,7 @@
           style="margin: 10px 0;"
           :columns="storagePoolInnerColumns"
           :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole === 'Primary').length > 0"
           :pagination="false"
           :bordered="true"
           :rowKey="record => record.datastoreId">
@@ -84,7 +86,8 @@
         <a-table
           style="margin: 10px 0;"
           :columns="imageStoreInnerColumns"
-          :data-source="record.downloaddetails.filter((row) => row.datastoreRole === 'Image')"
+          :data-source="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary')"
+          v-if="record.downloaddetails.filter((row) => row.datastoreRole !== 'Primary').length > 0"
           :pagination="false"
           :bordered="true"
           :rowKey="record => record.datastoreId">

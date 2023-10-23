@@ -205,6 +205,7 @@ import org.apache.cloudstack.api.command.admin.router.StartRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.StopRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
+import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
@@ -3795,6 +3796,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CopyTemplateCmdByAdmin.class);
         cmdList.add(RegisterTemplateCmdByAdmin.class);
         cmdList.add(ListTemplatePermissionsCmdByAdmin.class);
+        cmdList.add(ListSnapshotsCmdByAdmin.class);
         cmdList.add(RegisterIsoCmdByAdmin.class);
         cmdList.add(CopyIsoCmdByAdmin.class);
         cmdList.add(ListIsosCmdByAdmin.class);

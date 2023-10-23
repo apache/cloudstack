@@ -130,7 +130,7 @@
                 {{ $t('label.snapshot') }}
               </router-link>
             </template>
-            <template v-if="record.volumeid">
+            <template v-else-if="record.volumeid">
               <router-link :to="{ path: '/volume/' + record.volumeid }" target='_blank' >
                 {{ $t('label.volume') }}
               </router-link>
