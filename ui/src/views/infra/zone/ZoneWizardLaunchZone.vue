@@ -905,8 +905,6 @@ export default {
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
-        console.log(this.prefillContent['public-ipranges'])
-        console.log('pir')
         for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
           const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
           let isExisting = false
@@ -952,40 +950,29 @@ export default {
           }
 
           try {
-            console.log('is nsx zone: ', this.stepData.isNsxZone)
-            // for not add vlan ; next phase add the check: && this.stepData.isNsxZone
             if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
-              console.log('create vlan ip range:')
-              console.log(params)
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
-              console.log('create public vlan ip range')
               this.stepData.stepMove.push('createPublicVlanIpRange' + index)
             }
           } catch (e) {
-            console.log('error')
             this.messageError = e
             this.processStatus = STATUS_FAILED
             this.setStepStatus(STATUS_FAILED)
             stopNow = true
           }
-          console.log('added public vlan range')
-
           if (stopNow) {
-            console.log('stop now - break')
             break
           }
         }
 
         if (stopNow) {
-          console.log('stop now - return')
           return
         }
 
         if (this.stepData.isTungstenZone) {
           await this.stepCreateTungstenFabricPublicNetwork()
         } else if (this.stepData.isNsxZone) {
-          console.log('added nsx controller')
           await this.stepAddNsxController()
         } else {
           await this.stepConfigureStorageTraffic()
@@ -1002,7 +989,6 @@ export default {
           if (storageExists && storageExists.length > 0) {
             await this.stepConfigureStorageTraffic()
           } else {
-            console.log('conf guest traffic')
             await this.stepConfigureGuestTraffic()
           }
         }
@@ -2072,8 +2058,6 @@ export default {
     createVlanIpRange (args) {
       return new Promise((resolve, reject) => {
         let message = ''
-        console.log('args:')
-        console.log(args)
 
         api('createVlanIpRange', args).then(json => {
           const item = json.createvlaniprangeresponse.vlan

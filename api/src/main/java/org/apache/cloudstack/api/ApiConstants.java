@@ -1054,7 +1054,7 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
 
-    public static final String nsxDetail = "forNsx";
+    public static final String NSX_DETAIL_KEY = "forNsx";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

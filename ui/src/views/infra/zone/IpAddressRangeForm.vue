@@ -226,7 +226,6 @@ export default {
     const prefilledIpRangesKey = this.traffic + '-ipranges'
     if (this.prefillContent[prefilledIpRangesKey]) {
       this.ipRanges = this.prefillContent[prefilledIpRangesKey]
-      console.log(this.ipRanges)
     }
   },
   created () {
