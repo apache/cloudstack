@@ -114,6 +114,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
     private final SearchBuilder<TemplateJoinVO> activeTmpltSearch;
 
+    private final SearchBuilder<TemplateJoinVO> publicTmpltSearch;
+
     protected TemplateJoinDaoImpl() {
 
         tmpltIdPairSearch = createSearchBuilder();
@@ -146,6 +148,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.cp();
         activeTmpltSearch.cp();
         activeTmpltSearch.done();
+
+        publicTmpltSearch = createSearchBuilder();
+        publicTmpltSearch.and("public", publicTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
+        publicTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
         _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
@@ -640,6 +646,13 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("public", Boolean.FALSE);
         sc.setParameters("publicNoUrl",Boolean.TRUE);
         return searchIncludingRemoved(sc, null, null, false);
+    }
+
+    @Override
+    public List<TemplateJoinVO> listPublicTemplates() {
+        SearchCriteria<TemplateJoinVO> sc = publicTmpltSearch.create();
+        sc.setParameters("public", Boolean.TRUE);
+        return listBy(sc);
     }
 
     @Override

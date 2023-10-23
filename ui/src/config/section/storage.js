@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'storage',
   title: 'label.storage',
-  icon: 'database-outlined',
+  icon: 'hdd-outlined',
   children: [
     {
       name: 'volume',
@@ -42,11 +42,7 @@ export default {
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
-          metricsFields.push({
-            physicalsize: (record) => {
-              return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
-            }
-          })
+          metricsFields.push('physicalsize')
         }
         metricsFields.push('utilization')
 

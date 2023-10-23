@@ -48,6 +48,8 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
 
+    List<TemplateJoinVO> listPublicTemplates();
+
     Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
     List<TemplateJoinVO> findByDistinctIds(Long... ids);
