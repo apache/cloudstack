@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.vm.schedule.VMSchedule;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -84,7 +85,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.vm.schedule.VMSchedule;
 
 public class EventTypes {
 
@@ -320,6 +320,7 @@ public class EventTypes {
     public static final String EVENT_DOMAIN_UPDATE = "DOMAIN.UPDATE";
 
     // Snapshots
+    public static final String EVENT_SNAPSHOT_COPY = "SNAPSHOT.COPY";
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
     public static final String EVENT_SNAPSHOT_ON_PRIMARY = "SNAPSHOT.ON_PRIMARY";
     public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";

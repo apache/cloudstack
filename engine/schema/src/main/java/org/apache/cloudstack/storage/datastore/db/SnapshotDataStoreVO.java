@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -94,6 +95,22 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
+
+    @Column(name = "download_pct")
+    private int downloadPercent;
+
+    @Column(name = "download_state")
+    @Enumerated(EnumType.STRING)
+    private VMTemplateStorageResourceAssoc.Status downloadState;
+
+    @Column(name = "local_path")
+    private String localDownloadPath;
+
+    @Column(name = "error_str")
+    private String errorString;
+
+    @Column(name = "display")
+    private boolean display = true;
 
     @Column(name = "ref_cnt")
     Long refCnt = 0L;
@@ -294,5 +311,45 @@ public class SnapshotDataStoreVO implements StateObject<ObjectInDataStoreStateMa
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public int getDownloadPercent() {
+        return downloadPercent;
+    }
+
+    public void setDownloadPercent(int downloadPercent) {
+        this.downloadPercent = downloadPercent;
+    }
+
+    public VMTemplateStorageResourceAssoc.Status getDownloadState() {
+        return downloadState;
+    }
+
+    public void setDownloadState(VMTemplateStorageResourceAssoc.Status downloadState) {
+        this.downloadState = downloadState;
+    }
+
+    public void setLocalDownloadPath(String localPath) {
+        localDownloadPath = localPath;
+    }
+
+    public String getLocalDownloadPath() {
+        return localDownloadPath;
+    }
+
+    public void setErrorString(String errorString) {
+        this.errorString = errorString;
+    }
+
+    public String getErrorString() {
+        return errorString;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 }
