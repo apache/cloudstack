@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.image;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -225,6 +226,7 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
         List<StoragePoolVO> pools = new ArrayList<>();
         if (clusterId != null) {
             List<StoragePoolVO> clusterPools = primaryDataStoreDao.listPoolsByCluster(clusterId);
+            clusterPools = clusterPools.stream().filter(p -> !p.isLocal()).collect(Collectors.toList());
             pools.addAll(clusterPools);
         }
         List<StoragePoolVO> zonePools = primaryDataStoreDao.findZoneWideStoragePoolsByHypervisor(dataCenterId, hypervisorType);
