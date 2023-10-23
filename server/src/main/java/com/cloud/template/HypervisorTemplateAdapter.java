@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -168,7 +169,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (host == null) {
             throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
         }
-        CheckUrlCommand cmd = new CheckUrlCommand(format, url);
+        Integer socketTimeout = DirectDownloadManager.DirectDownloadSocketTimeout.value();
+        Integer connectRequestTimeout = DirectDownloadManager.DirectDownloadConnectionRequestTimeout.value();
+        Integer connectTimeout = DirectDownloadManager.DirectDownloadConnectTimeout.value();
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {

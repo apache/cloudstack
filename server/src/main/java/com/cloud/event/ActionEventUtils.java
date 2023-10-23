@@ -318,7 +318,6 @@ public class ActionEventUtils {
             return details;
         }
         HashMap<String, Pair<ApiCommandResourceType, String>> typeParentMethodMap = new HashMap<>();
-        typeParentMethodMap.put(ApiCommandResourceType.Snapshot.toString(), new Pair<>(ApiCommandResourceType.Volume, "getVolumeId"));
         typeParentMethodMap.put(ApiCommandResourceType.VmSnapshot.toString(), new Pair<>(ApiCommandResourceType.VirtualMachine, "getVmId"));
         if (!typeParentMethodMap.containsKey(details.third())) {
             return details;

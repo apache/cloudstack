@@ -106,7 +106,8 @@ export default {
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      console.log(this.resource)
+      if (this.$route.name === 'deployVirtualMachine' && this.resource.zoneid) {
         params.id = this.resource.zoneid
       }
       this.actionZoneLoading = true

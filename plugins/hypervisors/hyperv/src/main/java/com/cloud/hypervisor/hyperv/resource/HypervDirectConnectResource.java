@@ -166,34 +166,34 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private static final Logger s_logger = Logger.getLogger(HypervDirectConnectResource.class.getName());
 
     private static final Gson s_gson = GsonHelper.getGson();
-    private String _zoneId;
-    private String _podId;
-    private String _clusterId;
-    private String _guid;
-    private String _agentIp;
-    private final int _port = DEFAULT_AGENT_PORT;
-    protected final long _opsTimeout = 900000;  // 15 minutes time out to time
+    private String zoneId;
+    private String podId;
+    private String clusterId;
+    private String guid;
+    private String agentIp;
+    private final int port = DEFAULT_AGENT_PORT;
+    protected final long opsTimeout = 900000;  // 15 minutes time out to time
 
-    protected final int _retry = 24;
-    protected final int _sleep = 10000;
+    protected final int retry = 24;
+    protected final int sleep = 10000;
     protected static final int DEFAULT_DOMR_SSHPORT = 3922;
-    private String _clusterGuid;
+    private String clusterGuid;
 
     // Used by initialize to assert object configured before
     // initialize called.
-    private boolean _configureCalled = false;
+    private boolean configureCalled = false;
 
-    private String _username;
-    private String _password;
+    private String username;
+    private String password;
 
     private static HypervManager s_hypervMgr;
     @Inject
-    HypervManager _hypervMgr;
-    protected VirtualRoutingResource _vrResource;
+    HypervManager hypervManager;
+    protected VirtualRoutingResource vrResource;
 
     @PostConstruct
     void init() {
-        s_hypervMgr = _hypervMgr;
+        s_hypervMgr = hypervManager;
     }
 
     @Override
@@ -204,7 +204,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     @Override
     public final StartupCommand[] initialize() {
         // assert
-        if (!_configureCalled) {
+        if (!configureCalled) {
             final String errMsg = this.getClass().getName() + " requires configure() be called before" + " initialize()";
             s_logger.error(errMsg);
         }
@@ -215,16 +215,16 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         // Identity within the data centre is decided by CloudStack kernel,
         // and passed via ServerResource.configure()
-        defaultStartRoutCmd.setDataCenter(_zoneId);
-        defaultStartRoutCmd.setPod(_podId);
-        defaultStartRoutCmd.setCluster(_clusterId);
-        defaultStartRoutCmd.setGuid(_guid);
-        defaultStartRoutCmd.setName(_name);
-        defaultStartRoutCmd.setPrivateIpAddress(_agentIp);
-        defaultStartRoutCmd.setStorageIpAddress(_agentIp);
-        defaultStartRoutCmd.setPool(_clusterGuid);
+        defaultStartRoutCmd.setDataCenter(zoneId);
+        defaultStartRoutCmd.setPod(podId);
+        defaultStartRoutCmd.setCluster(clusterId);
+        defaultStartRoutCmd.setGuid(guid);
+        defaultStartRoutCmd.setName(name);
+        defaultStartRoutCmd.setPrivateIpAddress(agentIp);
+        defaultStartRoutCmd.setStorageIpAddress(agentIp);
+        defaultStartRoutCmd.setPool(clusterGuid);
 
-        s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
+        s_logger.debug("Generated StartupRoutingCommand for agentIp \"" + agentIp + "\"");
 
         defaultStartRoutCmd.setVersion(this.getClass().getPackage().getImplementationVersion());
 
@@ -239,48 +239,48 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         // Assert that host identity is consistent with existing values.
         if (startCmd == null) {
-            final String errMsg = String.format("Host %s (IP %s)" + "did not return a StartupRoutingCommand", _name, _agentIp);
+            final String errMsg = String.format("Host %s (IP %s)" + "did not return a StartupRoutingCommand", name, agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getDataCenter().equals(defaultStartRoutCmd.getDataCenter())) {
             final String errMsg =
-                    String.format("Host %s (IP %s) changed zone/data center.  Was " + defaultStartRoutCmd.getDataCenter() + " NOW its " + startCmd.getDataCenter(), _name,
-                            _agentIp);
+                    String.format("Host %s (IP %s) changed zone/data center.  Was " + defaultStartRoutCmd.getDataCenter() + " NOW its " + startCmd.getDataCenter(), name,
+                            agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getPod().equals(defaultStartRoutCmd.getPod())) {
-            final String errMsg = String.format("Host %s (IP %s) changed pod.  Was " + defaultStartRoutCmd.getPod() + " NOW its " + startCmd.getPod(), _name, _agentIp);
+            final String errMsg = String.format("Host %s (IP %s) changed pod.  Was " + defaultStartRoutCmd.getPod() + " NOW its " + startCmd.getPod(), name, agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getCluster().equals(defaultStartRoutCmd.getCluster())) {
             final String errMsg =
-                    String.format("Host %s (IP %s) changed cluster.  Was " + defaultStartRoutCmd.getCluster() + " NOW its " + startCmd.getCluster(), _name, _agentIp);
+                    String.format("Host %s (IP %s) changed cluster.  Was " + defaultStartRoutCmd.getCluster() + " NOW its " + startCmd.getCluster(), name, agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getGuid().equals(defaultStartRoutCmd.getGuid())) {
-            final String errMsg = String.format("Host %s (IP %s) changed guid.  Was " + defaultStartRoutCmd.getGuid() + " NOW its " + startCmd.getGuid(), _name, _agentIp);
+            final String errMsg = String.format("Host %s (IP %s) changed guid.  Was " + defaultStartRoutCmd.getGuid() + " NOW its " + startCmd.getGuid(), name, agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getPrivateIpAddress().equals(defaultStartRoutCmd.getPrivateIpAddress())) {
             final String errMsg =
-                    String.format("Host %s (IP %s) IP address.  Was " + defaultStartRoutCmd.getPrivateIpAddress() + " NOW its " + startCmd.getPrivateIpAddress(), _name,
-                            _agentIp);
+                    String.format("Host %s (IP %s) IP address.  Was " + defaultStartRoutCmd.getPrivateIpAddress() + " NOW its " + startCmd.getPrivateIpAddress(), name,
+                            agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
         }
         if (!startCmd.getName().equals(defaultStartRoutCmd.getName())) {
-            final String errMsg = String.format("Host %s (IP %s) name.  Was " + startCmd.getName() + " NOW its " + defaultStartRoutCmd.getName(), _name, _agentIp);
+            final String errMsg = String.format("Host %s (IP %s) name.  Was " + startCmd.getName() + " NOW its " + defaultStartRoutCmd.getName(), name, agentIp);
             s_logger.error(errMsg);
             // TODO: valid to return null, or should we throw?
             return null;
@@ -300,14 +300,14 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             // TODO: is this assertion required?
             if (storePoolCmd == null) {
                 final String frmtStr = "Host %s (IP %s) sent incorrect Command, " + "second parameter should be a " + "StartupStorageCommand";
-                final String errMsg = String.format(frmtStr, _name, _agentIp);
+                final String errMsg = String.format(frmtStr, name, agentIp);
                 s_logger.error(errMsg);
                 // TODO: valid to return null, or should we throw?
                 return null;
             }
-            s_logger.info("Host " + _name + " (IP " + _agentIp + ") already configured with a storeage pool, details " + s_gson.toJson(startCmds[1]));
+            s_logger.info("Host " + name + " (IP " + agentIp + ") already configured with a storeage pool, details " + s_gson.toJson(startCmds[1]));
         } else {
-            s_logger.info("Host " + _name + " (IP " + _agentIp + ") already configured with a storeage pool, details ");
+            s_logger.info("Host " + name + " (IP " + agentIp + ") already configured with a storeage pool, details ");
         }
         return new StartupCommand[] {startCmd, storePoolCmd};
     }
@@ -317,13 +317,13 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         final PingCommand pingCmd = new PingRoutingCommand(getType(), id, getHostVmStateReport());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Ping host " + _name + " (IP " + _agentIp + ")");
+            s_logger.debug("Ping host " + name + " (IP " + agentIp + ")");
         }
 
         final Answer pingAns = executeRequest(pingCmd);
 
         if (pingAns == null || !pingAns.getResult()) {
-            s_logger.info("Cannot ping host " + _name + " (IP " + _agentIp + "), pingAns (blank means null) is:" + pingAns);
+            s_logger.info("Cannot ping host " + name + " (IP " + agentIp + "), pingAns (blank means null) is:" + pingAns);
             return null;
         }
         return pingCmd;
@@ -332,7 +332,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     public final ArrayList<Map<String, String>> requestHostVmStateReport() {
         URI agentUri = null;
         try {
-            agentUri = new URI("https", null, _agentIp, _port, "/api/HypervResource/" + HOST_VM_STATE_REPORT_COMMAND, null, null);
+            agentUri = new URI("https", null, agentIp, port, "/api/HypervResource/" + HOST_VM_STATE_REPORT_COMMAND, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
             s_logger.error(errMsg, e);
@@ -372,7 +372,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         for (final Map<String, String> vmMap : vmList) {
             final String name = (String)vmMap.keySet().toArray()[0];
-            vmStates.put(name, new HostVmStateReportEntry(PowerState.valueOf(vmMap.get(name)), _guid));
+            vmStates.put(name, new HostVmStateReportEntry(PowerState.valueOf(vmMap.get(name)), guid));
         }
         return vmStates;
     }
@@ -388,7 +388,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = StartupCommand.class.getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             // TODO add proper logging
@@ -427,7 +427,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = cmd.getClass().getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             // TODO add proper logging
@@ -436,7 +436,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             return null;
         }
         if (cmd instanceof NetworkElementCommand) {
-            return _vrResource.executeRequest((NetworkElementCommand)cmd);
+            return vrResource.executeRequest((NetworkElementCommand)cmd);
         }if (clazz == CheckSshCommand.class) {
             answer = execute((CheckSshCommand)cmd);
         } else if (cmd instanceof NetworkUsageCommand) {
@@ -455,7 +455,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 final VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
                     if (s_hypervMgr != null) {
-                        final String secondary = s_hypervMgr.prepareSecondaryStorageStore(Long.parseLong(_zoneId));
+                        final String secondary = s_hypervMgr.prepareSecondaryStorageStore(Long.parseLong(zoneId));
                         if (secondary != null) {
                             ((StartCommand)cmd).setSecondaryStorage(secondary);
                         }
@@ -487,7 +487,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = cmd.getClass().getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
@@ -1803,7 +1803,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = GetVmConfigCommand.class.getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
@@ -1836,7 +1836,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = GetVmConfigCommand.class.getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
@@ -1865,7 +1865,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = ModifyVmNicConfigCommand.class.getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
@@ -1886,7 +1886,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             final String cmdName = ModifyVmNicConfigCommand.class.getName();
             agentUri =
-                    new URI("https", null, _agentIp, _port,
+                    new URI("https", null, agentIp, port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (final URISyntaxException e) {
             final String errMsg = "Could not generate URI for Hyper-V agent";
@@ -2298,22 +2298,22 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         /* todo: update, make consistent with the xen server equivalent. */
 
         if (params != null) {
-            _guid = (String)params.get("guid");
-            _zoneId = (String)params.get("zone");
-            _podId = (String)params.get("pod");
-            _clusterId = (String)params.get("cluster");
-            _agentIp = (String)params.get("ipaddress"); // was agentIp
-            _name = name;
+            guid = (String)params.get("guid");
+            zoneId = (String)params.get("zone");
+            podId = (String)params.get("pod");
+            clusterId = (String)params.get("cluster");
+            agentIp = (String)params.get("ipaddress"); // was agentIp
+            this.name = name;
 
-            _clusterGuid = (String)params.get("cluster.guid");
-            _username = (String)params.get("url");
-            _password = (String)params.get("password");
-            _username = (String)params.get("username");
-            _configureCalled = true;
+            clusterGuid = (String)params.get("cluster.guid");
+            username = (String)params.get("url");
+            password = (String)params.get("password");
+            username = (String)params.get("username");
+            configureCalled = true;
         }
 
-        _vrResource = new VirtualRoutingResource(this);
-        if (!_vrResource.configure(name, new HashMap<String, Object>())) {
+        vrResource = new VirtualRoutingResource(this);
+        if (!vrResource.configure(name, new HashMap<String, Object>())) {
             throw new ConfigurationException("Unable to configure VirtualRoutingResource");
         }
         return true;
@@ -2349,11 +2349,11 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     protected String connect(final String vmName, final String ipAddress, final int port) {
         final long startTick = System.currentTimeMillis();
 
-        // wait until we have at least been waiting for _ops_timeout time or
-        // at least have tried _retry times, this is to coordinate with system
+        // wait until we have at least been waiting for ops_timeout time or
+        // at least have tried retry times, this is to coordinate with system
         // VM patching/rebooting time that may need
-        int retry = _retry;
-        while (System.currentTimeMillis() - startTick <= _opsTimeout || --retry > 0) {
+        int retry = this.retry;
+        while (System.currentTimeMillis() - startTick <= opsTimeout || --retry > 0) {
             s_logger.info("Trying to connect to " + ipAddress);
             try (SocketChannel sch = SocketChannel.open();) {
                 sch.configureBlocking(true);

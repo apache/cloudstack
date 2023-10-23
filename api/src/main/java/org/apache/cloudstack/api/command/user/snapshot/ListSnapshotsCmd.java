@@ -16,10 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -30,9 +27,9 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.Snapshot;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -65,6 +62,13 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to false, list templates across zones and their storages", since = "4.19.0")
+    private Boolean showUnique;
+
+    @Parameter(name = ApiConstants.LOCATION_TYPE, type = CommandType.STRING, description = "list snapshots by location type. Used only when showunique=false. " +
+            "Valid location types: 'primary', 'secondary'. Default is empty", since = "4.19.0")
+    private String locationType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +97,20 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
+    public boolean isShowUnique() {
+        if (Boolean.FALSE.equals(showUnique)) {
+            return false;
+        }
+        return true;
+    }
+
+    public String getLocationType() {
+        if (!isShowUnique()) {
+            return locationType;
+        }
+        return null;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -104,15 +122,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends Snapshot>, Integer> result = _snapshotService.listSnapshots(this);
-        ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
-        List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
-        for (Snapshot snapshot : result.first()) {
-            SnapshotResponse snapshotResponse = _responseGenerator.createSnapshotResponse(snapshot);
-            snapshotResponse.setObjectName("snapshot");
-            snapshotResponses.add(snapshotResponse);
-        }
-        response.setResponses(snapshotResponses, result.second());
+        ListResponse<SnapshotResponse> response = _queryService.listSnapshots(this);
         response.setResponseName(getCommandName());
 
         setResponseObject(response);

@@ -269,7 +269,7 @@ public class LibvirtComputingResourceTest {
 
     @Before
     public void setup() throws Exception {
-        libvirtComputingResourceSpy._qemuSocketsPath = new File("/var/run/qemu");
+        libvirtComputingResourceSpy.qemuSocketsPath = new File("/var/run/qemu");
         libvirtComputingResourceSpy.parser = parserMock;
         LibvirtComputingResource.s_logger = loggerMock;
     }
@@ -466,8 +466,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testConfigureGuestAndSystemVMToUseKVM() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 100;
-        libvirtComputingResourceSpy._hypervisorQemuVersion = 10;
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 100;
+        libvirtComputingResourceSpy.hypervisorQemuVersion = 10;
         LibvirtVMDef vm = new LibvirtVMDef();
 
         GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
@@ -478,7 +478,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testConfigureGuestAndUserVMToUseLXC() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorType = HypervisorType.LXC;
+        libvirtComputingResourceSpy.hypervisorType = HypervisorType.LXC;
         LibvirtVMDef vm = new LibvirtVMDef();
 
         GuestDef guestFromSpec = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
@@ -545,7 +545,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreateClockDefKvmclock() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._hypervisorLibvirtVersion = 9020;
+        libvirtComputingResourceSpy.hypervisorLibvirtVersion = 9020;
 
         ClockDef clockDef = libvirtComputingResourceSpy.createClockDef(to);
         Document domainDoc = parse(clockDef.toString());
@@ -652,8 +652,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCreateVideoDef() {
         VirtualMachineTO to = createDefaultVM(false);
-        libvirtComputingResourceSpy._videoRam = 200;
-        libvirtComputingResourceSpy._videoHw = "vGPU";
+        libvirtComputingResourceSpy.videoRam = 200;
+        libvirtComputingResourceSpy.videoHw = "vGPU";
 
         VideoDef videoDef = libvirtComputingResourceSpy.createVideoDef(to);
         Document domainDoc = parse(videoDef.toString());
@@ -5665,7 +5665,7 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO vmTo = Mockito.mock(VirtualMachineTO.class);
         Mockito.when(vmTo.getType()).thenReturn(Type.User);
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
-        libvirtComputingResource._noMemBalloon = true;
+        libvirtComputingResource.noMemBalloon = true;
         long maxMemory = 2048;
 
         long currentMemory = libvirtComputingResource.getCurrentMemAccordingToMemBallooning(vmTo, maxMemory);
@@ -5676,7 +5676,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void validateGetCurrentMemAccordingToMemBallooningWithtMemBalooning(){
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
-        libvirtComputingResource._noMemBalloon = false;
+        libvirtComputingResource.noMemBalloon = false;
 
         long maxMemory = 2048;
         long minMemory = ByteScaleUtils.mebibytesToBytes(64);
@@ -5893,8 +5893,8 @@ public class LibvirtComputingResourceTest {
             Assert.assertEquals("cloudbr15", keys.get(0));
             Assert.assertEquals("cloudbr28", keys.get(1));
 
-            Assert.assertEquals("cloudbr15", libvirtComputingResourceSpy._privBridgeName);
-            Assert.assertEquals("cloudbr28", libvirtComputingResourceSpy._publicBridgeName);
+            Assert.assertEquals("cloudbr15", libvirtComputingResourceSpy.privBridgeName);
+            Assert.assertEquals("cloudbr28", libvirtComputingResourceSpy.publicBridgeName);
 
             Assert.assertEquals(networkInterfaceMock1, libvirtComputingResourceSpy.getPrivateNic());
             Assert.assertEquals(networkInterfaceMock2, libvirtComputingResourceSpy.getPublicNic());
