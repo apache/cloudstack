@@ -85,4 +85,13 @@ public class PrimaryDataStoreProviderManagerImpl implements PrimaryDataStoreProv
     public boolean registerHostListener(String providerName, HypervisorHostListener listener) {
         return storageMgr.registerHostListener(providerName, listener);
     }
+
+    @Override
+    public long getPrimaryDataStoreZoneId(long dataStoreId) {
+        StoragePoolVO dataStoreVO = dataStoreDao.findByIdIncludingRemoved(dataStoreId);
+        if (dataStoreVO == null) {
+            throw new CloudRuntimeException("Unable to locate datastore with id " + dataStoreId);
+        }
+        return dataStoreVO.getDataCenterId();
+    }
 }

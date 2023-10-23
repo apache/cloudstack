@@ -1316,37 +1316,34 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
                     //destroy snapshots in destroying state in snapshot_store_ref
                     List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
-                    for (SnapshotDataStoreVO ssSnapshotVO : ssSnapshots) {
+                    for (SnapshotDataStoreVO snapshotDataStoreVO : ssSnapshots) {
                         String snapshotUuid = null;
                         SnapshotVO snapshot = null;
-
+                        final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
                         if (s_logger.isDebugEnabled()) {
-                            snapshot = _snapshotDao.findById(ssSnapshotVO.getSnapshotId());
+                            snapshot = _snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
                             if (snapshot == null) {
-                                s_logger.warn(String.format("Did not find snapshot [%s] in destroying state; therefore, it cannot be destroyed.", ssSnapshotVO.getSnapshotId()));
+                                s_logger.warn(String.format("Did not find snapshot [ID: %d] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId()));
                                 continue;
                             }
-
                             snapshotUuid = snapshot.getUuid();
                         }
 
                         try {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in any image data store.", snapshotUuid));
+                                s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
                             }
-
-                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image);
-
+                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
                             if (snapshotInfo != null) {
                                 if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug(String.format("Snapshot [%s] in destroying state found in image data store [%s]; therefore, it will be destroyed.", snapshotUuid, snapshotInfo.getDataStore().getUuid()));
+                                    s_logger.debug(String.format("Snapshot [%s] in destroying state found in %s data store [%s]; therefore, it will be destroyed.", snapshotUuid, storeRole, snapshotInfo.getDataStore().getUuid()));
                                 }
                                 _snapshotService.deleteSnapshot(snapshotInfo);
                             } else if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Did not find snapshot [%s] in destroying state in any image data store.", snapshotUuid));
+                                s_logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
                             }
                         } catch (Exception e) {
-                            s_logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", ssSnapshotVO.getSnapshotId(), e.getMessage()));
+                            s_logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", snapshotDataStoreVO.getSnapshotId(), e.getMessage()));
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug(String.format("Failed to delete snapshot [%s] from storage.", snapshotUuid), e);
                             }
@@ -1668,7 +1665,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
-                        _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
+                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
+                        if (imageStoreRefs.size() <= 1) {
+                            _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
+                        }
                         SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findDestroyedReferenceBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Primary);
                         if (snapshotOnPrimary != null) {
                             if (s_logger.isDebugEnabled()) {

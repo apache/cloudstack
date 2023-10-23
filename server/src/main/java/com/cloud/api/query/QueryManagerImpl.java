@@ -29,7 +29,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,6 +96,8 @@ import org.apache.cloudstack.api.command.user.project.ListProjectInvitationsCmd;
 import org.apache.cloudstack.api.command.user.project.ListProjectsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.securitygroup.ListSecurityGroupsCmd;
+import org.apache.cloudstack.api.command.user.snapshot.CopySnapshotCmd;
+import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
@@ -126,6 +127,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
@@ -174,6 +176,7 @@ import com.cloud.api.query.dao.ProjectJoinDao;
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.dao.UserAccountJoinDao;
@@ -198,6 +201,7 @@ import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.SecurityGroupJoinVO;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.SnapshotJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
@@ -247,6 +251,8 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -255,6 +261,7 @@ import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -510,6 +517,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
+
+    @Inject
+    private SnapshotJoinDao snapshotJoinDao;
 
     @Inject
     EntityManager entityManager;
@@ -3517,6 +3527,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Account account = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long id = cmd.getId();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String keyword = cmd.getKeyword();
         String name = cmd.getName();
         String networkType = cmd.getNetworkType();
@@ -3541,6 +3552,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (networkType != null) {
             sc.addAnd("networkType", SearchCriteria.Op.EQ, networkType);
+        }
+
+        if (CollectionUtils.isNotEmpty(ids)) {
+            sc.addAnd("id", SearchCriteria.Op.IN, ids.toArray());
         }
 
         if (id != null) {
@@ -3947,9 +3962,60 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        applyPublicTemplateSharingRestrictions(sc, caller);
+
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
                 showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
 
+    }
+
+    /**
+     * If the caller is not a root admin, restricts the search to return only public templates from the domain which
+     * the caller belongs to and domains with the setting 'share.public.templates.with.other.domains' enabled.
+     */
+    protected void applyPublicTemplateSharingRestrictions(SearchCriteria<TemplateJoinVO> sc, Account caller) {
+        if (caller.getType() == Account.Type.ADMIN) {
+            s_logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
+            return;
+        }
+
+        List<TemplateJoinVO> publicTemplates = _templateJoinDao.listPublicTemplates();
+
+        Set<Long> unsharableDomainIds = new HashSet<>();
+        for (TemplateJoinVO template : publicTemplates) {
+            addDomainIdToSetIfDomainDoesNotShareTemplates(template.getDomainId(), caller, unsharableDomainIds);
+        }
+
+        if (!unsharableDomainIds.isEmpty()) {
+            s_logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            sc.addAnd("domainId", SearchCriteria.Op.NOTIN, unsharableDomainIds.toArray());
+        }
+    }
+
+    /**
+     * Adds the provided domain ID to the set if the domain does not share templates with the account. That is, if:
+     * (1) the template does not belong to the domain of the account AND
+     * (2) the domain of the template has the setting 'share.public.templates.with.other.domains' disabled.
+     */
+    protected void addDomainIdToSetIfDomainDoesNotShareTemplates(long domainId, Account account, Set<Long> unsharableDomainIds) {
+        if (domainId == account.getDomainId()) {
+            s_logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
+            return;
+        }
+
+        if (unsharableDomainIds.contains(domainId)) {
+            s_logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
+            return;
+        }
+
+        if (!checkIfDomainSharesTemplates(domainId)) {
+            s_logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            unsharableDomainIds.add(domainId);
+        }
+    }
+
+    protected boolean checkIfDomainSharesTemplates(Long domainId) {
+        return QueryService.SharePublicTemplatesWithOtherDomains.valueIn(domainId);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
@@ -4081,25 +4147,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
         }
 
-        if(caller.getType() != Account.Type.ADMIN) {
-            templates = applyPublicTemplateRestriction(templates, caller);
-            count = templates.size();
-        }
-
         return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
-    }
-
-    private List<TemplateJoinVO> applyPublicTemplateRestriction(List<TemplateJoinVO> templates, Account caller){
-        List<Long> unsharableDomainIds = templates.stream()
-                .map(TemplateJoinVO::getDomainId)
-                .distinct()
-                .filter(domainId -> domainId != caller.getDomainId())
-                .filter(Predicate.not(QueryService.SharePublicTemplatesWithOtherDomains::valueIn))
-                .collect(Collectors.toList());
-
-        return templates.stream()
-                .filter(Predicate.not(t -> unsharableDomainIds.contains(t.getDomainId())))
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -4587,6 +4635,190 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return responseGenerator.createHealthCheckResponse(_routerDao.findById(routerId), result);
+    }
+
+    @Override
+    public ListResponse<SnapshotResponse> listSnapshots(ListSnapshotsCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), cmd.getIds(),
+                cmd.getVolumeId(), cmd.getSnapshotName(), cmd.getKeyword(), cmd.getTags(),
+                cmd.getSnapshotType(), cmd.getIntervalType(), cmd.getZoneId(), cmd.getLocationType(),
+                cmd.isShowUnique(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId(),
+                cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);
+        ListResponse<SnapshotResponse> response = new ListResponse<>();
+        ResponseView respView = ResponseView.Restricted;
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            respView = ResponseView.Full;
+        }
+        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, cmd.isShowUnique(), result.first().toArray(new SnapshotJoinVO[result.first().size()]));
+        response.setResponses(templateResponses, result.second());
+        return response;
+    }
+
+    @Override
+    public SnapshotResponse listSnapshot(CopySnapshotCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> zoneIds = cmd.getDestinationZoneIds();
+        Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), null,
+                null, null, null, null,
+                null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
+                false, null, null, null,
+                null, null, true, false, caller);
+        ResponseView respView = ResponseView.Restricted;
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            respView = ResponseView.Full;
+        }
+        List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, false, result.first().get(0));
+        return templateResponses.get(0);
+    }
+
+
+
+    private Pair<List<SnapshotJoinVO>, Integer> searchForSnapshotsWithParams(final Long id, List<Long> ids,
+            final Long volumeId, final String name, final String keyword, final Map<String, String> tags,
+            final String snapshotTypeStr, final String intervalTypeStr, final Long zoneId, final String locationTypeStr,
+            final boolean isShowUnique, final String accountName, Long domainId, final Long projectId,
+            final Long startIndex, final Long pageSize,final boolean listAll, boolean isRecursive, final Account caller) {
+        ids = getIdsListFromCmd(id, ids);
+        Snapshot.LocationType locationType = null;
+        if (locationTypeStr != null) {
+            try {
+                locationType = Snapshot.LocationType.valueOf(locationTypeStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException(String.format("Invalid %s specified, %s", ApiConstants.LOCATION_TYPE, locationTypeStr));
+            }
+        }
+
+        Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", SortKeyAscending.value(), startIndex, pageSize);
+
+        List<Long> permittedAccountIds = new ArrayList<>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        // Verify parameters
+        if (volumeId != null) {
+            VolumeVO volume = volumeDao.findById(volumeId);
+            if (volume != null) {
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+            }
+        }
+
+        SearchBuilder<SnapshotJoinVO> sb = snapshotJoinDao.createSearchBuilder();
+        if (isShowUnique) {
+            sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct snapshotId
+        } else {
+            sb.select(null, Func.DISTINCT, sb.entity().getSnapshotStorePair()); // select distinct (snapshotId, store_role, store_id) key
+        }
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
+        sb.and("statusNEQ", sb.entity().getStatus(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
+        sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NIN);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("locationType", sb.entity().getStoreRole(), SearchCriteria.Op.EQ);
+
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count = 0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<SnapshotJoinVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
+
+        sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
+
+        if (volumeId != null) {
+            sc.setParameters("volumeId", volumeId);
+        }
+
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", ResourceObjectType.Snapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
+
+        if (zoneId != null) {
+            sc.setParameters("dataCenterId", zoneId);
+        }
+
+        setIdsListToSearchCriteria(sc, ids);
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (locationType != null) {
+            sc.setParameters("locationType", Snapshot.LocationType.PRIMARY.equals(locationType) ? locationType.name() : DataStoreRole.Image.name());
+        }
+
+        if (keyword != null) {
+            SearchCriteria<SnapshotJoinVO> ssc = snapshotJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (snapshotTypeStr != null) {
+            Snapshot.Type snapshotType = SnapshotVO.getSnapshotType(snapshotTypeStr);
+            if (snapshotType == null) {
+                throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
+            }
+            if (snapshotType == Snapshot.Type.RECURRING) {
+                sc.setParameters("snapshotTypeEQ", Snapshot.Type.HOURLY.ordinal(), Snapshot.Type.DAILY.ordinal(), Snapshot.Type.WEEKLY.ordinal(), Snapshot.Type.MONTHLY.ordinal());
+            } else {
+                sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
+            }
+        } else if (intervalTypeStr != null && volumeId != null) {
+            Snapshot.Type type = SnapshotVO.getSnapshotType(intervalTypeStr);
+            if (type == null) {
+                throw new InvalidParameterValueException("Unsupported snapshot interval type " + intervalTypeStr);
+            }
+            sc.setParameters("snapshotTypeEQ", type.ordinal());
+        } else {
+            // Show only MANUAL and RECURRING snapshot types
+            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal(), Snapshot.Type.GROUP.ordinal());
+        }
+
+        Pair<List<SnapshotJoinVO>, Integer> snapshotDataPair;
+        if (isShowUnique) {
+            snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.id"});
+        } else {
+            snapshotDataPair = snapshotJoinDao.searchAndDistinctCount(sc, searchFilter, new String[]{"snapshot_view.snapshot_store_pair"});
+        }
+
+        Integer count = snapshotDataPair.second();
+        if (count == 0) {
+            // empty result
+            return snapshotDataPair;
+        }
+        List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
+        List<SnapshotJoinVO> snapshots;
+        if (isShowUnique) {
+            snapshots = snapshotJoinDao.findByDistinctIds(zoneId, snapshotData.stream().map(SnapshotJoinVO::getId).toArray(Long[]::new));
+        } else {
+            snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
+        }
+
+        return new Pair<>(snapshots, count);
     }
 
     @Override

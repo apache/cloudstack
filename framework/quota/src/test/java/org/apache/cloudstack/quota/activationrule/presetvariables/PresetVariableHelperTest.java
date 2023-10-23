@@ -863,7 +863,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(snapshotVoMock).getName();
         Mockito.doReturn(expected.getSize()).when(snapshotVoMock).getSize();
         Mockito.doReturn((short) 3).when(snapshotVoMock).getSnapshotType();
-        Mockito.doReturn(1l).when(presetVariableHelperSpy).getSnapshotDataStoreId(Mockito.anyLong());
+        Mockito.doReturn(1l).when(presetVariableHelperSpy).getSnapshotDataStoreId(Mockito.anyLong(), Mockito.anyLong());
         Mockito.doReturn(expected.getStorage()).when(presetVariableHelperSpy).getPresetVariableValueStorage(Mockito.anyLong(), Mockito.anyInt());
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
 
@@ -891,19 +891,19 @@ public class PresetVariableHelperTest {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
         Long expected = 1l;
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
+        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = false;
 
-        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(1l);
+        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(1l, 1l);
 
         Assert.assertEquals(expected, result);
 
         Arrays.asList(DataStoreRole.values()).forEach(role -> {
             if (role == DataStoreRole.Primary) {
-                Mockito.verify(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             } else {
-                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.eq(role));
             }
         });
     }
@@ -913,19 +913,22 @@ public class PresetVariableHelperTest {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
         Long expected = 2l;
-        Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
+        ImageStoreVO imageStore = Mockito.mock(ImageStoreVO.class);
+        Mockito.when(imageStoreDaoMock.findById(Mockito.anyLong())).thenReturn(imageStore);
+        Mockito.when(imageStore.getDataCenterId()).thenReturn(1L);
+        Mockito.when(snapshotDataStoreDaoMock.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(snapshotDataStoreVoMock));
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
 
-        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(2l);
+        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(2l, 1L);
 
         Assert.assertEquals(expected, result);
 
         Arrays.asList(DataStoreRole.values()).forEach(role -> {
             if (role == DataStoreRole.Image) {
-                Mockito.verify(snapshotDataStoreDaoMock).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock).listReadyBySnapshot(Mockito.anyLong(), Mockito.eq(role));
             } else {
-                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).findBySnapshot(Mockito.anyLong(), Mockito.eq(role));
+                Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).listReadyBySnapshot(Mockito.anyLong(), Mockito.eq(role));
             }
         });
     }
@@ -1147,5 +1150,27 @@ public class PresetVariableHelperTest {
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getExternalId(), result.getExternalId());
         validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "externalId"), result);
+    }
+
+    @Test
+    public void testGetSnapshotImageStoreRefNull() {
+        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
+        Mockito.when(snapshotDataStoreDaoMock.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
+        ImageStoreVO store = Mockito.mock(ImageStoreVO.class);
+        Mockito.when(store.getDataCenterId()).thenReturn(2L);
+        Mockito.when(imageStoreDaoMock.findById(1L)).thenReturn(store);
+        Assert.assertNull(presetVariableHelperSpy.getSnapshotImageStoreRef(1L, 1L));
+    }
+
+    @Test
+    public void testGetSnapshotImageStoreRefNotNull() {
+        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
+        Mockito.when(snapshotDataStoreDaoMock.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
+        ImageStoreVO store = Mockito.mock(ImageStoreVO.class);
+        Mockito.when(store.getDataCenterId()).thenReturn(1L);
+        Mockito.when(imageStoreDaoMock.findById(1L)).thenReturn(store);
+        Assert.assertNotNull(presetVariableHelperSpy.getSnapshotImageStoreRef(1L, 1L));
     }
 }

@@ -55,7 +55,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.CreateSnapshotPayload;
-import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -390,7 +389,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         //The snapshot could not be deleted separately, that's why we set snapshot state to BackedUp for operation delete VM snapshots and rollback
         SnapshotStrategy strategy = storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.DELETE);
         if (strategy != null) {
-            boolean snapshotForDelete = strategy.deleteSnapshot(snapshot.getId());
+            boolean snapshotForDelete = strategy.deleteSnapshot(snapshot.getId(), null);
             if (!snapshotForDelete) {
                 throw new CloudRuntimeException("Failed to delete snapshot");
             }
@@ -415,7 +414,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
     protected void revertDiskSnapshot(VMSnapshot vmSnapshot) {
         List<VMSnapshotDetailsVO> listSnapshots = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), STORAGE_SNAPSHOT);
         for (VMSnapshotDetailsVO vmSnapshotDetailsVO : listSnapshots) {
-            SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+            SnapshotInfo sInfo = snapshotDataFactory.getSnapshotOnPrimaryStore(Long.parseLong(vmSnapshotDetailsVO.getValue()));
             SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(sInfo, SnapshotOperation.REVERT);
             if (snapshotStrategy == null) {
                 throw new CloudRuntimeException(String.format("Could not find strategy for snapshot uuid [%s]", sInfo.getId()));
