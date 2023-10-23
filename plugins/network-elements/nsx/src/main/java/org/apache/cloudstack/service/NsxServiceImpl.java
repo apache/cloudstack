@@ -19,9 +19,12 @@ package org.apache.cloudstack.service;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 
@@ -57,6 +60,29 @@ public class NsxServiceImpl implements NsxService {
         DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(domainId, accountId, zoneId,
                 network.getVpcId(), vpcName, network.getId(), network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
+        return result.getResult();
+    }
+
+    public boolean createStaticNatRule(long zoneId, long accountId, long domainId, long vpcId,
+                                       long vmId, String publicIp, String vmIp) {
+        VpcVO vpc = vpcDao.findById(vpcId);
+        if (Objects.isNull(vpc)) {
+            throw new CloudRuntimeException(String.format("Failed to find VPC with id: %s", vpcId));
+        }
+        CreateNsxStaticNatCommand createNsxStaticNatCommand = new CreateNsxStaticNatCommand(domainId, accountId, zoneId,
+                vpcId, vpc.getName(), vmId, publicIp, vmIp);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxStaticNatCommand, zoneId);
+        return result.getResult();
+    }
+
+    public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, long vpcId) {
+        VpcVO vpc = vpcDao.findById(vpcId);
+        if (Objects.isNull(vpc)) {
+            throw new CloudRuntimeException(String.format("Failed to find VPC with id: %s", vpcId));
+        }
+        DeleteNsxStaticNatCommand deleteNsxStaticNatCommand = new DeleteNsxStaticNatCommand(domainId, accountId, zoneId,
+                vpcId, vpc.getName());
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxStaticNatCommand, zoneId);
         return result.getResult();
     }
 }

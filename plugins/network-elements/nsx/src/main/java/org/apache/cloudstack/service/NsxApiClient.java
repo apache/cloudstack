@@ -26,10 +26,14 @@ import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
+import com.vmware.nsx_policy.infra.tier_1s.Nat;
+import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.PolicyNat;
+import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.SiteListResult;
@@ -78,6 +82,16 @@ public class NsxApiClient {
     private enum AdminState { UP, DOWN }
 
     private enum TransportType { OVERLAY, VLAN }
+
+    private enum NatId { USER, INTERNAL, DEFAULT }
+
+    private enum NatAction {SNAT, DNAT, REFLEXIVE}
+
+    private enum FirewallMatch {
+        MATCH_INTERNAL_ADDRESS,
+        MATCH_EXTERNAL_ADDRESS,
+        BYPASS
+    }
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -286,6 +300,45 @@ public class NsxApiClient {
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Error deleting segment %s: %s", segmentName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void createStaticNatRule(String vpcName, String tier1GatewayName,
+                                    String ruleName, String publicIp, String vmIp) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            PolicyNatRule rule = new PolicyNatRule.Builder()
+                    .setId(ruleName)
+                    .setDisplayName(ruleName)
+                    .setAction(NatAction.DNAT.name())
+                    .setFirewallMatch(FirewallMatch.MATCH_INTERNAL_ADDRESS.name())
+                    .setDestinationNetwork(publicIp)
+                    .setTranslatedNetwork(vmIp)
+                    .setEnabled(true)
+                    .build();
+
+            LOGGER.debug(String.format("Creating NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
+            natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Error creating NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
+                    ruleName, tier1GatewayName, vpcName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void deleteStaticNatRule(String vpcName, String tier1GatewayName, String ruleName) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
+            natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
+                    ruleName, tier1GatewayName, vpcName, ae.getErrorMessage());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }

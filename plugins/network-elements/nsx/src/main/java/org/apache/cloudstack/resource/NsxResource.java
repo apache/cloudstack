@@ -36,8 +36,10 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.cloudstack.utils.NsxControllerUtils;
@@ -103,6 +105,10 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else if (cmd instanceof CreateNsxDhcpRelayConfigCommand) {
             return executeRequest((CreateNsxDhcpRelayConfigCommand) cmd);
+        } else if (cmd instanceof CreateNsxStaticNatCommand) {
+            return executeRequest((CreateNsxStaticNatCommand) cmd);
+        } else if (cmd instanceof DeleteNsxStaticNatCommand) {
+            return executeRequest((DeleteNsxStaticNatCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -326,6 +332,34 @@ public class NsxResource implements ServerResource {
             nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxStaticNatCommand cmd) {
+        String staticNatRuleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId());
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId());
+        try {
+            nsxApiClient.createStaticNatRule(cmd.getVpcName(), tier1GatewayName, staticNatRuleName, cmd.getPublicIp(), cmd.getVmIp());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", staticNatRuleName, cmd.getVpcName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxStaticNatCommand cmd) {
+        String staticNatRuleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId());
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId());
+        try {
+            nsxApiClient.deleteStaticNatRule(cmd.getVpcName(), tier1GatewayName, staticNatRuleName);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", staticNatRuleName, cmd.getVpcName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

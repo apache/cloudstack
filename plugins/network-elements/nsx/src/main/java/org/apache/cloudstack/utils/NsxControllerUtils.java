@@ -75,4 +75,9 @@ public class NsxControllerUtils {
         }
         return String.format("D%s-A%s-Z%s-V%s-S%s-%s", domainId, accountId, zoneId, vpcId, networkId, suffix);
     }
+
+    public static String getStaticNatRuleName(long zoneId, long domainId, long accountId, Long vpcId) {
+        String suffix = "-STATICNAT";
+       return getTier1GatewayName(domainId, accountId, zoneId, vpcId) + suffix;
+    }
 }

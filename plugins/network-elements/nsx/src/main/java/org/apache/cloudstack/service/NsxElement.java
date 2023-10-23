@@ -41,13 +41,19 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -62,9 +68,12 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.log4j.Logger;
@@ -81,7 +90,7 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        ResourceStateAdapter, Listener {
+        StaticNatServiceProvider, IpDeployer, ResourceStateAdapter, Listener {
 
     @Inject
     AccountManager accountMgr;
@@ -101,6 +110,10 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     NetworkModel networkModel;
     @Inject
     DomainDao domainDao;
+    @Inject
+    IPAddressDao ipAddressDao;
+    @Inject
+    VMInstanceDao vmInstanceDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -170,6 +183,11 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Override
     public Map<Network.Service, Map<Network.Capability, String>> getCapabilities() {
         return capabilities;
+    }
+
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Network.Service> services) throws ResourceUnavailableException {
+        return true;
     }
 
     @Override
@@ -412,4 +430,32 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     }
 
     private final LongFunction<DataCenterVO> zoneFunction = zoneId -> dataCenterDao.findById(zoneId);
+
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
+
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        for(StaticNat staticNat : rules) {
+            long sourceIpAddressId = staticNat.getSourceIpAddressId();
+            IPAddressVO ipAddressVO = ipAddressDao.findByIdIncludingRemoved(sourceIpAddressId);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(ipAddressVO.getAssociatedWithVmId());
+            // floating ip is released when nic was deleted
+            if (vm == null || networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId()) == null) {
+                continue;
+            }
+            Nic nic = networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId());
+            Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(config.getDataCenterId(), Networks.TrafficType.Public);
+            if (!staticNat.isForRevoke()) {
+                return nsxService.createStaticNatRule(config.getDataCenterId(), config.getDomainId(), config.getAccountId(),
+                        config.getVpcId(), vm.getId(), ipAddressVO.getAddress().addr(), staticNat.getDestIpAddress());
+            } else {
+                return nsxService.deleteStaticNatRule(config.getDataCenterId(), config.getDomainId(), config.getAccountId(),
+                        config.getVpcId());
+            }
+        }
+        return false;
+    }
 }
