@@ -41,7 +41,6 @@ import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.dao.SSHKeyPairDao;
@@ -4693,7 +4692,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> permittedAccountIds = new ArrayList<>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -4701,7 +4700,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (volumeId != null) {
             VolumeVO volume = volumeDao.findById(volumeId);
             if (volume != null) {
-                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
+                accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
             }
         }
 
@@ -4711,7 +4710,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         } else {
             sb.select(null, Func.DISTINCT, sb.entity().getSnapshotStorePair()); // select distinct (snapshotId, store_role, store_id) key
         }
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
         sb.and("statusNEQ", sb.entity().getStatus(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
@@ -4723,7 +4722,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("locationType", sb.entity().getStoreRole(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
-            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            SearchBuilder<ResourceTagVO> tagSearch = resourceTagDao.createSearchBuilder();
             for (int count = 0; count < tags.size(); count++) {
                 tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
                 tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
@@ -4735,7 +4734,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         SearchCriteria<SnapshotJoinVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
 
         sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
 
