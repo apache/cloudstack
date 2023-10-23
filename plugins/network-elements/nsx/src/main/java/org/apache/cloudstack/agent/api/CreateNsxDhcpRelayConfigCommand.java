@@ -24,9 +24,9 @@ public class CreateNsxDhcpRelayConfigCommand extends NsxCommand {
     private String networkName;
     private List<String> addresses;
 
-    public CreateNsxDhcpRelayConfigCommand(String zoneName, Long zoneId, String accountName, Long accountId,
+    public CreateNsxDhcpRelayConfigCommand(String domainName, String accountName, String zoneName,
                                            String vpcName, String networkName, List<String> addresses) {
-        super(zoneName, zoneId, accountName, accountId);
+        super(domainName, accountName, zoneName);
         this.vpcName = vpcName;
         this.networkName = networkName;
         this.addresses = addresses;

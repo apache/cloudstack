@@ -23,37 +23,38 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
+import org.apache.cloudstack.utils.NsxControllerUtils;
 
 import javax.inject.Inject;
 import java.util.Objects;
 
 public class NsxServiceImpl implements NsxService {
     @Inject
-    private NsxControllerUtils nsxControllerUtils;
+    NsxControllerUtils nsxControllerUtils;
     @Inject
-    private VpcDao vpcDao;
+    VpcDao vpcDao;
 
-    public boolean createVpcNetwork(Long zoneId, String zoneName, Long accountId, String accountName, String vpcName) {
+    public boolean createVpcNetwork(Long zoneId, String zoneName, String accountName, String domainName, String vpcName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(zoneName, zoneId, accountName, accountId, vpcName);
+                new CreateNsxTier1GatewayCommand(domainName, accountName, zoneName, vpcName);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
-    public boolean deleteVpcNetwork(Long zoneId, String zoneName, Long accountId, String accountName, String vpcName) {
+    public boolean deleteVpcNetwork(Long zoneId, String zoneName, String accountName, String domainName, String vpcName) {
         DeleteNsxTier1GatewayCommand deleteNsxTier1GatewayCommand =
-                new DeleteNsxTier1GatewayCommand(zoneName, zoneId, accountName, accountId, vpcName);
+                new DeleteNsxTier1GatewayCommand(domainName, accountName, zoneName, vpcName);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
-    public boolean deleteNetwork(String accountName, NetworkVO network) {
+    public boolean deleteNetwork(String zoneName, String accountName, String domainName, NetworkVO network) {
         String vpcName = null;
         if (Objects.nonNull(network.getVpcId())) {
             VpcVO vpc = vpcDao.findById(network.getVpcId());
             vpcName = Objects.nonNull(vpc) ? vpc.getName() : null;
         }
-        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(accountName, vpcName, network);
+        DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(domainName, accountName, zoneName, vpcName, network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
         return result.getResult();
     }

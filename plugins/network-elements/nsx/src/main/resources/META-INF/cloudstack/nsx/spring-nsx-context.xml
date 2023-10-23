@@ -33,6 +33,6 @@
     </bean>
     <bean id="nsxProviderService" class="org.apache.cloudstack.service.NsxProviderServiceImpl"/>
     <bean id="nsxService" class="org.apache.cloudstack.service.NsxServiceImpl"/>
-    <bean id="nsxControllerUtils" class="org.apache.cloudstack.service.NsxControllerUtils" />
+    <bean id="nsxControllerUtils" class="org.apache.cloudstack.utils.NsxControllerUtils" />
 
 </beans>
