@@ -134,17 +134,23 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             implemented.setName(name);
         }
         implemented.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
+
+        return network;
+    }
+
+    @Override
+    public void setup(Network network, long networkId) {
         try {
+            NetworkVO designedNetwork  = _networkDao.findById(networkId);
             long zoneId = network.getDataCenterId();
             DataCenter zone = _dcDao.findById(zoneId);
             if (isNull(zone)) {
                 throw new CloudRuntimeException(String.format("Failed to find zone with id: %s", zoneId));
             }
-            createNsxSegment(implemented, zone);
+            createNsxSegment(designedNetwork, zone);
         } catch (Exception ex) {
             throw new CloudRuntimeException("unable to create NSX network " + network.getUuid() + "due to: " + ex.getMessage());
         }
-        return network;
     }
 
     @Override

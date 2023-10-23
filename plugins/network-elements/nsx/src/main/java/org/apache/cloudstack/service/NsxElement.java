@@ -204,11 +204,11 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         DataCenterVO zone = dataCenterDao.findById(network.getDataCenterId());
         DomainVO domain = domainDao.findById(account.getDomainId());
         if (Objects.isNull(zone)) {
-            String msg = String.format("Cannot fing zone with ID %s", network.getDataCenterId());
+            String msg = String.format("Cannot find zone with ID %s", network.getDataCenterId());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        return nsxService.deleteNetwork(zone.getName(), account.getAccountName(), domain.getName(), networkVO);
+        return nsxService.deleteNetwork(zone.getId(), account.getId(), domain.getId(), networkVO);
     }
 
     @Override
@@ -289,7 +289,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         }
         Account account = isNsxAndAccount.second();
         DomainVO domain = getDomainFromAccount(account);
-        return nsxService.createVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
+        return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName());
     }
 
     @Override
@@ -304,7 +304,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         }
         Account account = isNsxAndAccount.second();
         DomainVO domain = getDomainFromAccount(account);
-        return nsxService.deleteVpcNetwork(vpc.getZoneId(), zone.getName(), account.getName(), domain.getName(), vpc.getName());
+        return nsxService.deleteVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName());
     }
 
     private Pair<Boolean, Account> validateVpcConfigurationAndGetAccount(DataCenterVO zone, Vpc vpc) {

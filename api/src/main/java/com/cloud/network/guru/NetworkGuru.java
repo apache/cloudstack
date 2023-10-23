@@ -96,6 +96,8 @@ public interface NetworkGuru extends Adapter {
      */
     Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, String name, Long vpcId, Account owner);
 
+    void setup(Network network, long networkId);
+
     /**
      * For guest networks that are in Allocated state after the design stage,
      * resources are allocated when the guest network is actually being used

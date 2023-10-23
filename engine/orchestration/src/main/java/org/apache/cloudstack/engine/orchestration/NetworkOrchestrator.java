@@ -812,6 +812,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                     }
                 });
+                guru.setup(network, relatedFile);
             }
 
             if (networks.size() < 1) {

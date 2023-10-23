@@ -210,14 +210,16 @@ public class NsxResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNsxDhcpRelayConfigCommand cmd) {
-        String zoneName = cmd.getZoneName();
-        String domainName = cmd.getDomainName();
-        String accountName = cmd.getAccountName();
+        long zoneId = cmd.getZoneId();
+        long domainId = cmd.getDomainId();
+        long accountId = cmd.getAccountId();
+        long vpcId = cmd.getVpcId();
+        long networkId = cmd.getNetworkId();
         String vpcName = cmd.getVpcName();
         String networkName = cmd.getNetworkName();
         List<String> addresses = cmd.getAddresses();
 
-        String dhcpRelayConfigName = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneName, domainName, accountName, vpcName, networkName);
+        String dhcpRelayConfigName = NsxControllerUtils.getNsxDhcpRelayConfigId(zoneId, domainId, accountId, vpcId, networkId);
 
         String msg = String.format("Creating DHCP relay config with name %s on network %s of VPC %s",
                 dhcpRelayConfigName, networkName, vpcName);
@@ -231,8 +233,7 @@ public class NsxResource implements ServerResource {
             return new NsxAnswer(cmd, e);
         }
 
-
-        String segmentName = NsxControllerUtils.getNsxSegmentId(domainName, accountName, zoneName, vpcName, networkName);
+        String segmentName = NsxControllerUtils.getNsxSegmentId(domainId, accountId, zoneId, vpcId, networkId);
         String dhcpConfigPath = String.format("%s/%s", DHCP_RELAY_CONFIGS_PATH_PREFIX, dhcpRelayConfigName);
         try {
             Segment segment = nsxApiClient.getSegmentById(segmentName);
@@ -252,18 +253,18 @@ public class NsxResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
-        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainName(), cmd.getAccountName(), cmd.getZoneName(), cmd.getVpcName());
+        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
         try {
             nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster);
             return new NsxAnswer(cmd, true, "");
         } catch (CloudRuntimeException e) {
-            LOGGER.error(String.format("Cannot create tier 1 gateway %s: %s", name, e.getMessage()));
+            LOGGER.error(String.format("Cannot create tier 1 gateway %s (VPC: %s): %s", name, cmd.getVpcName(), e.getMessage()));
             return new NsxAnswer(cmd, e);
         }
     }
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
-        String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainName(), cmd.getAccountName(), cmd.getZoneName(), cmd.getVpcName());
+        String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
         try {
             nsxApiClient.deleteTier1Gateway(tier1Id);
         } catch (Exception e) {
@@ -305,10 +306,10 @@ public class NsxResource implements ServerResource {
                 return new NsxAnswer(cmd, new CloudRuntimeException(errorMsg));
             }
 
-            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainName(), cmd.getAccountName(), cmd.getZoneName(), cmd.getVpcName(), networkName);
+            String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId(), cmd.getNetworkId());
             String gatewayAddress = cmd.getNetworkGateway() + "/" + cmd.getNetworkCidr().split("/")[1];
 
-            nsxApiClient.createSegment(cmd.getZoneName(), cmd.getDomainName(), cmd.getAccountName(), cmd.getVpcName(),
+            nsxApiClient.createSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(),
                     segmentName, gatewayAddress, tier0Gateway, enforcementPointPath, transportZones);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
@@ -318,10 +319,11 @@ public class NsxResource implements ServerResource {
     }
 
     private NsxAnswer executeRequest(DeleteNsxSegmentCommand cmd) {
-        String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainName(), cmd.getAccountName(), cmd.getZoneName(), cmd.getVpcName(), cmd.getNetworkName());
+        String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getVpcId(), cmd.getNetworkId());
         try {
             Thread.sleep(30*1000);
-            nsxApiClient.deleteSegment(cmd.getZoneName(), cmd.getDomainName(), cmd.getAccountName(), cmd.getVpcName(), cmd.getNetworkName(), segmentName);
+            nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

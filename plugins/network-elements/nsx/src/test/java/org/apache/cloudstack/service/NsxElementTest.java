@@ -99,14 +99,11 @@ public class NsxElementTest {
         when(vpc.getZoneId()).thenReturn(1L);
         when(vpc.getAccountId()).thenReturn(2L);
         when(dataCenterVO.getId()).thenReturn(1L);
-        when(dataCenterVO.getName()).thenReturn("zoneNSX");
-        when(account.getName()).thenReturn("testAcc");
         when(vpc.getName()).thenReturn("VPC01");
         when(accountManager.getAccount(2L)).thenReturn(account);
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(domainDao.findById(anyLong())).thenReturn(domain);
         when(vpc.getZoneId()).thenReturn(1L);
-        when(domain.getName()).thenReturn("testDomain");
         when(vpc.getName()).thenReturn("testVPC");
 
         PhysicalNetworkVO physicalNetworkVO = new PhysicalNetworkVO();
@@ -118,14 +115,14 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        when(nsxService.createVpcNetwork(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString())).thenReturn(true);
 
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 
     @Test
     public void testShutdownVpc() {
-        when(nsxService.deleteVpcNetwork(anyLong(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(nsxService.deleteVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString())).thenReturn(true);
 
         assertTrue(nsxElement.shutdownVpc(vpc, reservationContext));
     }

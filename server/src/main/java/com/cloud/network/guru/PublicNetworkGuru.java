@@ -115,6 +115,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     protected PublicNetworkGuru() {
         super();
     }

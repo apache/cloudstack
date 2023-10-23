@@ -26,6 +26,8 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.VpcVO;
@@ -80,8 +82,6 @@ public class NsxGuestNetworkGuruTest {
     @Mock
     NsxControllerUtils nsxControllerUtils;
     @Mock
-    DataCenterDao zoneDao;
-    @Mock
     AccountDao accountDao;
     @Mock
     PhysicalNetworkVO physicalNetwork;
@@ -101,6 +101,8 @@ public class NsxGuestNetworkGuruTest {
     NetworkModel networkModel;
     @Mock
     DomainDao domainDao;
+    @Mock
+    NetworkDao networkDao;
 
     NsxGuestNetworkGuru guru;
     AutoCloseable closeable;
@@ -111,6 +113,7 @@ public class NsxGuestNetworkGuruTest {
         guru = new NsxGuestNetworkGuru();
         ReflectionTestUtils.setField(guru, "_physicalNetworkDao", physicalNetworkDao);
         ReflectionTestUtils.setField(guru, "_dcDao", dcDao);
+        ReflectionTestUtils.setField(guru, "_networkDao", networkDao);
         ReflectionTestUtils.setField(guru, "_networkModel", networkModel);
         ReflectionTestUtils.setField(guru, "_vpcDao", vpcDao);
 
@@ -161,14 +164,22 @@ public class NsxGuestNetworkGuruTest {
     public void testNsxNetworkDesign() {
         when(physicalNetworkDao.findById(ArgumentMatchers.anyLong())).thenReturn(physicalNetwork);
         when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dataCenterVO);
-        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong())).thenReturn(
-                new NsxAnswer(new NsxCommand(), true, ""));
 
         Network designedNetwork = guru.design(offering,  plan, network, "", 1L, account);
-        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong());
         assertNotNull(designedNetwork);
         assertSame(Networks.BroadcastDomainType.NSX, designedNetwork.getBroadcastDomainType());
         assertSame(Network.State.Allocated, designedNetwork.getState());
+    }
+
+    @Test
+    public void testNsxNetworkSetup() {
+        when(dcDao.findById(ArgumentMatchers.anyLong())).thenReturn(dataCenterVO);
+        when(networkDao.findById(ArgumentMatchers.anyLong())).thenReturn(mock(NetworkVO.class));
+        when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong())).thenReturn(
+                new NsxAnswer(new NsxCommand(), true, ""));
+
+        guru.setup(network, 1L);
+        verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class), anyLong());
     }
 
     @Test
