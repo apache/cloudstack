@@ -637,7 +637,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     offering.setState(state);
                 }
                 offering.setForNsx(forNsx);
-                offering.setMode(mode);
+                offering.setNsxMode(mode);
                 s_logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers
