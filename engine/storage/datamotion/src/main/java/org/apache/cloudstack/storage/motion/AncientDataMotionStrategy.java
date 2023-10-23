@@ -589,12 +589,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         Map<String, String> options = new HashMap<String, String>();
 
-        SnapshotVO snap = snapshotDao.findById(snapshotInfo.getSnapshotId());
-        if (snap != null && Type.FROM_GROUP.name().equals(snap.getTypeDescription())) {
-            options.put("typeDescription", snap.getTypeDescription());
-        }
-        options.put("fullSnapshot", fullSnapshot.toString());
-        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
+        addCommandOptions(snapshotInfo, fullSnapshot, options);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
 
         Answer answer = null;
@@ -639,6 +634,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             throw new CloudRuntimeException(e.toString());
         }
 
+    }
+
+    private void addCommandOptions(SnapshotInfo snapshotInfo, Boolean fullSnapshot, Map<String, String> options) {
+        SnapshotVO snap = snapshotDao.findById(snapshotInfo.getSnapshotId());
+        if (snap != null && Type.FROM_GROUP.name().equals(snap.getTypeDescription())) {
+            options.put("typeDescription", snap.getTypeDescription());
+        }
+        options.put("fullSnapshot", fullSnapshot.toString());
+        options.put(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value()));
     }
 
     @Override

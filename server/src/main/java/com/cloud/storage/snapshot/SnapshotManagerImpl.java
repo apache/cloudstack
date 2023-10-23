@@ -506,23 +506,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotDataStoreVO snapshotOnPrimaryStore = this._snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
 
         StoragePoolVO storagePool = _storagePoolDao.findById(store.getId());
-        if ((storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.Filesystem) && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
-            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmStorageSnapshot");
-            for (VMSnapshotDetailsVO vmSnapshotDetailsVO : vmSnapshotDetails) {
-                SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
-                if (sInfo.getVolumeId() == volumeId) {
-                    snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
-                    snapshotOnPrimaryStore.setInstallPath(sInfo.getPath());
-                    _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
-                    snapshot.setTypeDescription(Type.FROM_GROUP.name());
-                    snapshot.setSnapshotType((short)Type.FROM_GROUP.ordinal());
-                }
-            }
-        } else {
-            snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
-            snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
-            _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
-        }
+        updateSnapshotInfo(volumeId, vmSnapshotId, vmSnapshot, snapshot, snapshotOnPrimaryStore, storagePool);
 
         snapshot.setState(Snapshot.State.CreatedOnPrimary);
         _snapshotDao.update(snapshot.getId(), snapshot);
@@ -548,6 +532,27 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
         return snapshotInfo;
+    }
+
+    private void updateSnapshotInfo(Long volumeId, Long vmSnapshotId, VMSnapshotVO vmSnapshot, SnapshotVO snapshot,
+            SnapshotDataStoreVO snapshotOnPrimaryStore, StoragePoolVO storagePool) {
+        if ((storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.Filesystem) && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmStorageSnapshot");
+            for (VMSnapshotDetailsVO vmSnapshotDetailsVO : vmSnapshotDetails) {
+                SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+                if (sInfo.getVolumeId() == volumeId) {
+                    snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+                    snapshotOnPrimaryStore.setInstallPath(sInfo.getPath());
+                    _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+                    snapshot.setTypeDescription(Type.FROM_GROUP.name());
+                    snapshot.setSnapshotType((short)Type.FROM_GROUP.ordinal());
+                }
+            }
+        } else {
+            snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+            snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
+            _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+        }
     }
 
     @Override
