@@ -2113,17 +2113,12 @@ public class ApiDBUtils {
         return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
-
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr, ResponseView view) {
         return s_templateJoinDao.newIsoResponse(vr, view);
     }
 
     public static SnapshotResponse newSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO vr) {
         return s_snapshotJoinDao.newSnapshotResponse(view, isShowUnique, vr);
-    }
-
-    public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
-        return s_templateJoinDao.newIsoResponse(vr);
     }
 
     public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {

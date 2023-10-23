@@ -288,7 +288,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (!CollectionUtils.isEmpty(migratedSnapshotIdList)) {
             List<SnapshotDataStoreVO> snaps = snapshotDataStoreDao.findSnapshots(srcImgStoreId, start, end);
             snaps.forEach(snap -> {
-                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snap.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snap.getSnapshotId(), snap.getDataStoreId(), DataStoreRole.Image);
                 SnapshotInfo parentSnapshot = snapshotInfo.getParent();
                 if (snapshotInfo.getDataStore().getId() == srcImgStoreId && parentSnapshot != null && migratedSnapshotIdList.contains(parentSnapshot.getSnapshotId())) {
                     futures.add(executor.submit(new MigrateDataTask(snapshotInfo, srcDatastore, dataStoreManager.getDataStore(destImgStoreId, DataStoreRole.Image))));
