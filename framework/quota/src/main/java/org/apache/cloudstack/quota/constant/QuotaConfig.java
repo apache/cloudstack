@@ -30,6 +30,9 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaCurrencySymbol = new ConfigKey<String>("Advanced", String.class, "quota.currency.symbol", "$",
             "The symbol for the currency in use to measure usage.", true);
 
+    public static final ConfigKey<String> QuotaCurrencyLocale = new ConfigKey<String>("Advanced", String.class, "quota.currency.locale", null,
+            "The location used for formatting the value (e.g. \"en-US\" for English or \"pt-BR\" for Brazilian Portuguese)", true);
+
     public static final ConfigKey<Integer> QuotaStatementPeriod = new ConfigKey<Integer>("Advanced", Integer.class, "quota.statement.period", "1",
             "This variables define the statement generation interval. Values correspond to bimonthly=0, monthly=1, quarterly=2, half-yearly=3 and yearly=4.", true);
 

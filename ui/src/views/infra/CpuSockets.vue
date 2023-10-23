@@ -135,18 +135,18 @@ export default {
       this.columns.push({
         dataIndex: 'name',
         title: this.$t('label.hypervisor'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.name || '', b?.name || '')
       })
 
       this.columns.push({
         dataIndex: 'hosts',
         title: this.$t('label.hosts'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.hosts || '', b?.hosts || '')
       })
       this.columns.push({
         dataIndex: 'cpusockets',
         title: this.$t('label.cpu.sockets'),
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        sorter: (a, b) => genericCompare(a?.cpusockets || '', b?.cpusockets || '')
       })
 
       this.items = []

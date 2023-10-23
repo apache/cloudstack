@@ -368,6 +368,7 @@ export default {
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
+          args: ['password'],
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
           response: (result) => {
             return {
