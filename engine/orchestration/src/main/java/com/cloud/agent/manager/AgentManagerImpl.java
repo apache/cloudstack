@@ -804,20 +804,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         Status nextStatus;
         if (currentStatus == Status.Down || currentStatus == Status.Alert || currentStatus == Status.Removed) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host " + host.getId() + " is already " + currentStatus);
+                s_logger.debug(String.format("Host %s is already %s", host.getUuid(), currentStatus));
             }
             nextStatus = currentStatus;
         } else {
             try {
                 nextStatus = currentStatus.getNextStatus(event);
             } catch (final NoTransitionException e) {
-                final String err = "Cannot find next status for " + event + " as current status is " + currentStatus + " for agent " + host.getId();
+                final String err = String.format("Cannot find next status for %s as current status is %s for agent %s", event, currentStatus, host.getUuid());
                 s_logger.debug(err);
                 throw new CloudRuntimeException(err);
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("The next status of agent " + host.getId() + "is " + nextStatus + ", current status is " + currentStatus);
+                s_logger.debug(String.format("The next status of agent %s is %s, current status is %s", host.getUuid(), nextStatus, currentStatus));
             }
         }
         return nextStatus;
@@ -830,11 +830,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         GlobalLock joinLock = getHostJoinLock(hostId);
         if (joinLock.lock(60)) {
             try {
-                s_logger.info("Host " + hostId + " is disconnecting with event " + event);
+                s_logger.info(String.format("Host %d is disconnecting with event %s", hostId, event));
                 Status nextStatus = null;
                 final HostVO host = _hostDao.findById(hostId);
                 if (host == null) {
-                    s_logger.warn("Can't find host with " + hostId);
+                    s_logger.warn(String.format("Can't find host with %d", hostId));
                     nextStatus = Status.Removed;
                 } else {
                     nextStatus = getNextStatusOnDisconnection(host, event);
@@ -842,13 +842,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
+                    s_logger.debug(String.format("Deregistering link for %d with state %s", hostId, nextStatus));
                 }
 
                 removeAgent(attache, nextStatus);
 
-                // update the DB
                 if (host != null && transitState) {
+                    // update the state for host in DB as per the event
                     disconnectAgent(host, event, _nodeId);
                 }
             } finally {
