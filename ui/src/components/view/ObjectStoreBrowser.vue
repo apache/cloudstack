@@ -494,10 +494,11 @@ export default {
         const objectName = this.uploadDirectory + file.name
         promises.push(this.asyncUploadFile(file, objectName))
       }
-      Promise.all(promises).then(() => {
+      Promise.allSettled(promises).then(() => {
         this.uploadDirectory = this.browserPath
         this.uploadMetaData = {}
         this.uploadFileList = []
+        this.listObjects()
       })
       this.showUploadModal = false
     },
@@ -511,7 +512,6 @@ export default {
                 description: err.message
               }))
             }
-            this.listObjects()
             return resolve(this.$notification.success({
               message: this.$t('message.success.upload'),
               description: objectName.split('/').pop()
