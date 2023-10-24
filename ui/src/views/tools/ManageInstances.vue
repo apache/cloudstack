@@ -406,7 +406,8 @@
             :cluster="selectedCluster"
             :host="selectedHost"
             :pool="selectedPool"
-            :importsource="this.kvmOption"
+            :importsource="selectedSource"
+            :zoneid="this.zoneId"
             :hypervisor="this.hypervisor"
             :hostname="this.values.hostname"
             :username="this.values.username"
@@ -752,6 +753,10 @@ export default {
         return _.find(this.options.pools, (option) => option.id === this.poolId)
       }
       return {}
+    },
+    selectedSource () {
+      console.log(this.kvmOption)
+      return this.kvmOption
     }
   },
   methods: {
@@ -987,7 +992,7 @@ export default {
     },
     fetchExternalInstances (page, pageSize) {
       const params = {
-        clusterid: this.clusterId
+        zoneid: this.zoneid
       }
       const query = Object.assign({}, this.$route.query)
       this.page.unmanaged = page || parseInt(query.unmanagedpage) || this.page.unmanaged
@@ -999,9 +1004,6 @@ export default {
       this.unmanagedInstancesSelectedRowKeys = []
       if (this.searchParams.unmanaged.keyword) {
         params.keyword = this.searchParams.unmanaged.keyword
-      }
-      if (!this.clusterId) {
-        return
       }
       this.values = toRaw(this.form)
       this.unmanagedInstancesLoading = true
@@ -1017,6 +1019,8 @@ export default {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
         }
         this.itemCount.unmanaged = json.listvmsforimportresponse.count
+      }).catch(error => {
+        this.$notifyError(error)
       }).finally(() => {
         this.unmanagedInstancesLoading = false
       })

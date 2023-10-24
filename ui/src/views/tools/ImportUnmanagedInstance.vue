@@ -212,19 +212,17 @@
                   :autoSelectLabel="$t('label.auto.assign.diskoffering.disk.size')"
                   @select-multi-disk-offering="updateMultiDiskOffering" />
               </div>
-              <div v-if="resource.nic && resource.nic.length > 0">
+              <div>
                 <a-form-item name="networkselection" ref="networkselection">
                   <template #label>
                     <tooltip-label :title="$t('label.network.selection')" :tooltip="apiParams.nicnetworklist.description"/>
                   </template>
-                  <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
                 <multi-network-selection
                   :items="nics"
-                  :zoneId="cluster.zoneid"
+                  :zoneId="zoneid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
-                  filterMatchKey="broadcasturi"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
               <a-row v-else style="margin: 12px 0">
@@ -309,6 +307,38 @@ export default {
     isOpen: {
       type: Boolean,
       required: false
+    },
+    zoneid: {
+      type: String,
+      required: false
+    },
+    importsource: {
+      type: String,
+      required: false
+    },
+    hypervisor: {
+      type: String,
+      required: false
+    },
+    hostname: {
+      type: String,
+      required: false
+    },
+    username: {
+      type: String,
+      required: false
+    },
+    password: {
+      type: String,
+      required: false
+    },
+    tmppath: {
+      type: String,
+      required: false
+    },
+    diskpath: {
+      type: String,
+      required: false
     }
   },
   data () {
@@ -343,8 +373,7 @@ export default {
       minIopsKey: 'minIops',
       maxIopsKey: 'maxIops',
       switches: {},
-      loading: false,
-      diskpath: ''
+      loading: false
     }
   },
   beforeCreate () {
@@ -514,10 +543,6 @@ export default {
         }
       }
       return meta
-    },
-    isLocal () {
-      // return this.option !== 'local'
-      return false
     },
     getMinCpu () {
       if (this.isVmRunning) {
@@ -691,8 +716,8 @@ export default {
         const params = {
           name: this.resource.name,
           clusterid: this.cluster.id,
-          displayname: this.values.displayname,
-          zoneid: this.cluster.zoneid,
+          displayname: values.displayname,
+          zoneid: this.zoneid,
           importsource: this.importsource,
           hypervisor: this.hypervisor,
           url: this.hostname,
@@ -700,12 +725,13 @@ export default {
           password: this.password,
           hostid: this.host.id,
           storageid: this.pool.id,
-          diskpath: this.diskpath
+          diskpath: this.diskpath,
+          tmppath: this.tmppath
         }
-        api = 'importUnmanagedInstance'
-        if (this.importsource === 'extrenal' || this.importsource === 'local' || this.importsource === 'shared') {
-          api = 'importVm'
-          params.name = this.values.displayname
+        console.log(params)
+        var importapi = 'importUnmanagedInstance'
+        if (this.importsource === 'external' || this.importsource === 'local' || this.importsource === 'shared') {
+          importapi = 'importVm'
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
@@ -773,6 +799,7 @@ export default {
         }
         var nicNetworkIndex = 0
         var nicIpIndex = 0
+        console.log(this.nicsNetworksMapping)
         for (var nicId in this.nicsNetworksMapping) {
           if (!this.nicsNetworksMapping[nicId].network) {
             this.$notification.error({
@@ -799,8 +826,8 @@ export default {
         }
         this.updateLoading(true)
         const name = this.resource.name
-        api('importVm', params).then(json => {
-          const jobId = json.importunmanagedinstanceresponse.jobid
+        api(importapi, params).then(json => {
+          const jobId = json.importvmresponse.jobid
           this.$pollJob({
             jobId,
             title: this.$t('label.import.instance'),
@@ -819,6 +846,7 @@ export default {
           this.updateLoading(false)
         })
       }).catch((error) => {
+        console.log(error)
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },

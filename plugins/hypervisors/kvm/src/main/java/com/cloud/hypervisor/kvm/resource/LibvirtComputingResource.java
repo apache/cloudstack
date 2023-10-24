@@ -68,7 +68,6 @@ import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -2271,7 +2270,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new Pair<Map<String, Integer>, Integer>(macAddressToNicNum, devNum);
     }
 
-    protected PowerState convertToPowerState(final DomainState ps) {
+    public PowerState convertToPowerState(final DomainState ps) {
         final PowerState state = POWER_STATES_TABLE.get(ps);
         return state == null ? PowerState.PowerUnknown : state;
     }
@@ -5283,81 +5282,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 s_logger.warn(String.format("VM details %s is not a valid Boolean value %s", VmDetailConstants.NIC_PACKED_VIRTQUEUES_ENABLED, nicPackedEnabled));
             }
         }
-    }
-
-    public HashMap<String, UnmanagedInstanceTO> getStoppedVms(final Connect conn) {
-        final List<String> stoppedVms = new ArrayList<>();
-
-        String[] vms;
-
-        try {
-            vms = conn.listDefinedDomains();
-        } catch (final LibvirtException e) {
-            s_logger.warn("Unable to listDomains", e);
-            return null;
-        }
-
-        HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
-        Domain dm = null;
-        for (String vm : vms) {
-            try {
-                dm = conn.domainLookupByName(vm);
-
-                final DomainState ps = dm.getInfo().state;
-
-                final PowerState state = convertToPowerState(ps);
-
-                s_logger.debug("VM " + dm.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
-                final String vmName = dm.getName();
-
-                if (state == PowerState.PowerOff) {
-                    UnmanagedInstanceTO unmanagedInstanceTO = new UnmanagedInstanceTO();
-                    unmanagedInstanceTO.setName(vmName);
-                    unmanagedInstanceTO.setPowerState(UnmanagedInstanceTO.PowerState.PowerOff);
-                    unmanagedInstanceTO.setCpuCores(getCpuShares(dm));
-                    //unmanagedInstanceTO.setMemory(new Long(dm.getMaxMemory()).intValue());
-                    unmanagedInstanceTO.setMemory(131072);
-                    unmanagedInstanceTO.setOperatingSystem(dm.getOSType());
-                    List<DiskDef> disks = getDisks(conn, vmName);
-                    List<UnmanagedInstanceTO.Disk> disksTO = new ArrayList<>();
-                    for(DiskDef disk : disks) {
-                        UnmanagedInstanceTO.Disk diskTO = new UnmanagedInstanceTO.Disk();
-                        diskTO.setImagePath(disk.getDiskPath());
-                        diskTO.setLabel(disk.getDiskLabel());
-                        diskTO.setDatastoreType(disk.getDeviceType().toString());
-                        s_logger.debug("DiskDef: "+disk);
-                        disksTO.add(diskTO);
-                    }
-                    unmanagedInstanceTO.setDisks(disksTO);
-                    List<InterfaceDef> interfaces = getInterfaces(conn, vmName);
-                    List<UnmanagedInstanceTO.Nic> nicsTO = new ArrayList<>();
-                    for(InterfaceDef interfaceDef : interfaces) {
-                        UnmanagedInstanceTO.Nic nic = new UnmanagedInstanceTO.Nic();
-                        nic.setAdapterType(interfaceDef.getModel().toString());
-                        nic.setMacAddress(interfaceDef.getMacAddress());
-                        nic.setPciSlot(interfaceDef.getSlot().toString());
-                        nic.setVlan(interfaceDef.getVlanTag());
-                        nic.setNetwork(interfaceDef.getBrName());
-                        s_logger.debug("InterfaceDef: "+interfaceDef);
-                        nicsTO.add(nic);
-                    }
-                    unmanagedInstanceTO.setNics(nicsTO);
-                    unmanagedInstances.put(vmName, unmanagedInstanceTO);
-                }
-            } catch (final LibvirtException e) {
-                s_logger.warn("Unable to get vms", e);
-            } finally {
-                try {
-                    if (dm != null) {
-                        dm.free();
-                    }
-                } catch (final LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-        }
-
-        return unmanagedInstances;
     }
 
     /*

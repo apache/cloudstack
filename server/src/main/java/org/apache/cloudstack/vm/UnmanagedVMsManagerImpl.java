@@ -55,10 +55,15 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.serializer.GsonHelper;
@@ -92,6 +97,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
@@ -109,6 +115,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -140,6 +147,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -211,6 +219,14 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private SnapshotDao snapshotDao;
     @Inject
     private UserVmDao userVmDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    EntityManager entityMgr;
+    @Inject
+    private NetworkOrchestrationService networkMgr;
+    @Inject
+    private PhysicalNetworkDao physicalNetworkDao;
 
     protected Gson gson;
 
@@ -672,8 +688,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 checkUnmanagedNicAndNetworkHostnameForImport(instanceName, nic, network, hostName);
                 checkUnmanagedNicIpAndNetworkForImport(instanceName, nic, network, ipAddresses);
             }
-            network = networkDao.findById(204l);
-            nic.setVlan(0);
             if (network == null) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Suitable network for nic(ID: %s) not found during VM import", nic.getNicId()));
             }
@@ -1045,7 +1059,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     validatedServiceOffering, null, hostName,
-                    cluster.getHypervisorType(), allDetails, powerState);
+                    cluster.getHypervisorType(), allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             String errorMsg = String.format("Failed to import VM [%s] due to [%s].", instanceName, ice.getMessage());
             LOGGER.error(errorMsg, ice);
@@ -1557,11 +1571,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     serviceOffering, dataDiskOfferingMap,
                     nicNetworkMap, nicIpAddressMap, remoteUrl, username, password, tmpPath, details);
         } else if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
-            userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
-                    template, displayName, hostName, caller, owner, userId,
-                    serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap, hostId, poolId, diskPath,
-                    details);
+            try {
+                userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
+                        template, displayName, hostName, caller, owner, userId,
+                        serviceOffering, dataDiskOfferingMap,
+                        nicNetworkMap, nicIpAddressMap, hostId, poolId, diskPath,
+                        details);
+            } catch (InsufficientCapacityException e) {
+                throw new RuntimeException(e);
+            } catch (ResourceAllocationException e) {
+                throw new RuntimeException(e);
+            }
         }
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import Vm with name: %s ", instanceName));
@@ -1596,7 +1616,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed. Unable to retrieve root disk details for VM: %s ", instanceName));
         }
         allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDisk.getController());
-        allDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER,"0");
 
         // Check NICs and supplied networks
         Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
@@ -1610,7 +1629,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             userVm = userVmManager.importVM(zone, null, template, "internalCSName", displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     serviceOffering, null, hostName,
-                    Hypervisor.HypervisorType.KVM, allDetails, powerState);
+                    Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             LOGGER.error(String.format("Failed to import vm name: %s", instanceName), ice);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
@@ -1684,7 +1703,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                    final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
                                                    final Map<String, Long> allNicNetworkMap, final Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                   final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) {
+                                                   final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) throws InsufficientCapacityException, ResourceAllocationException {
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
@@ -1695,12 +1714,65 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
+        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        List<Long> networkIdList = new ArrayList<>();
+        if (networkIdList == null || networkIdList.isEmpty()) {
+            NetworkVO defaultNetwork = getDefaultNetwork(zone, owner, false);
+            if (defaultNetwork != null) {
+                networkList.add(defaultNetwork);
+            }
+        } else {
+            for (Long networkId : networkIdList) {
+                NetworkVO network = networkDao.findById(networkId);
+                if (network == null) {
+                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
+                }
+
+                networkModel.checkNetworkPermissions(owner, network);
+
+                // don't allow to use system networks
+                NetworkOffering networkOffering = entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+                if (networkOffering.isSystemOnly()) {
+                    throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
+                }
+                networkList.add(network);
+            }
+        }
+        LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
+
+        short defaultNetworkNumber = 0;
+        boolean securityGroupEnabled = false;
+        int networkIndex = 0;
+        for (NetworkVO network : networkList) {
+            if ((network.getDataCenterId() != zone.getId())) {
+                if (!network.isStrechedL2Network()) {
+                    throw new InvalidParameterValueException("Network id=" + network.getId() +
+                            " doesn't belong to zone " + zone.getId());
+                }
+            }
+
+            Network.IpAddresses requestedIpPair = new Network.IpAddresses(null, null);
+
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
+            profile.setOrderIndex(networkIndex);
+
+            if (networkModel.isSecurityGroupSupportedInNetwork(network)) {
+                securityGroupEnabled = true;
+            }
+            List<NicProfile> profiles = networkNicMap.get(network.getUuid());
+            if (CollectionUtils.isEmpty(profiles)) {
+                profiles = new ArrayList<>();
+            }
+            profiles.add(profile);
+            networkNicMap.put(network.getUuid(), profiles);
+            networkIndex++;
+        }
 
         try {
             userVm = userVmManager.importVM(zone, null, template, "internalCSName", displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     serviceOffering, null, hostName,
-                    Hypervisor.HypervisorType.KVM, allDetails, powerState);
+                    Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
         } catch (InsufficientCapacityException ice) {
             LOGGER.error(String.format("Failed to import vm name: %s", instanceName), ice);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
@@ -1742,23 +1814,66 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
-        try {
-            for(int nicIndex = 0; nicIndex < allNicNetworkMap.size(); nicIndex++) {
-                Network network = networkDao.findById(allNicNetworkMap.get(nicIndex));
-                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nicIndex);
-                String macAddress = networkModel.getNextAvailableMacAddressInNetwork(network.getId());
-                Pair<NicProfile, Integer> result = networkOrchestrationService.importNic(macAddress, nicIndex, network, nicIndex==0, userVm, ipAddresses, true);
-                if (result == null) {
-                    throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("NIC ID: import failed"));
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
         publishVMUsageUpdateResourceCount(userVm, serviceOffering);
         return userVm;
+    }
+
+
+    private NetworkVO getDefaultNetwork(DataCenter zone, Account owner, boolean selectAny) throws InsufficientCapacityException, ResourceAllocationException {
+        NetworkVO defaultNetwork = null;
+
+        // if no network is passed in
+        // Check if default virtual network offering has
+        // Availability=Required. If it's true, search for corresponding
+        // network
+        // * if network is found, use it. If more than 1 virtual network is
+        // found, throw an error
+        // * if network is not found, create a new one and use it
+
+        List<NetworkOfferingVO> requiredOfferings = networkOfferingDao.listByAvailability(NetworkOffering.Availability.Required, false);
+        if (requiredOfferings.size() < 1) {
+            throw new InvalidParameterValueException("Unable to find network offering with availability=" + NetworkOffering.Availability.Required
+                    + " to automatically create the network as a part of vm creation");
+        }
+
+        if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
+            // get Virtual networks
+            List<? extends Network> virtualNetworks = networkModel.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
+            if (virtualNetworks == null) {
+                throw new InvalidParameterValueException("No (virtual) networks are found for account " + owner);
+            }
+            if (virtualNetworks.isEmpty()) {
+                defaultNetwork = createDefaultNetworkForAccount(zone, owner, requiredOfferings);
+            } else if (virtualNetworks.size() > 1 && !selectAny) {
+                throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
+            } else {
+                defaultNetwork = networkDao.findById(virtualNetworks.get(0).getId());
+            }
+        } else {
+            throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled);
+        }
+
+        return defaultNetwork;
+    }
+
+    private NetworkVO createDefaultNetworkForAccount(DataCenter zone, Account owner, List<NetworkOfferingVO> requiredOfferings)
+            throws InsufficientCapacityException, ResourceAllocationException {
+        NetworkVO defaultNetwork = null;
+        long physicalNetworkId = networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+        // Validate physical network
+        PhysicalNetwork physicalNetwork = physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork == null) {
+            throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: "
+                    + requiredOfferings.get(0).getTags());
+        }
+        LOGGER.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
+        Network newNetwork = networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
+                null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ControlledEntity.ACLType.Account, null, null, null, null, true, null, null,
+                null, null, null, null, null, null, null, null);
+        if (newNetwork != null) {
+            defaultNetwork = networkDao.findById(newNetwork.getId());
+        }
+        return defaultNetwork;
     }
 
     //generate unit test

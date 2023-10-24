@@ -38,6 +38,7 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
 import org.libvirt.LibvirtException;
 
 import java.util.ArrayList;
@@ -53,30 +54,29 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
     @Override
     public Answer execute(final GetRemoteVmsCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String result = null;
-        StringBuilder sb = new StringBuilder("qemu+ssh://");
-        sb.append(command.getUsername());
-        sb.append("@");
-        sb.append(command.getRemoteIp());
-        sb.append("/system");
-        String hypervisorURI = sb.toString();
+        String hypervisorURI = "qemu+tcp://" + command.getRemoteIp() +
+                "/system";
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
             Connect conn = LibvirtConnection.getConnection(hypervisorURI);
-            final List<Domain> domains = new ArrayList<>();
             final List<String> allVmNames = libvirtComputingResource.getAllVmNames(conn);
             for (String name : allVmNames) {
                 final Domain domain = libvirtComputingResource.getDomain(conn, name);
-                domains.add(domain);
-            }
 
-            for (Domain domain : domains) {
-                UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
-                unmanagedInstances.put(instance.getName(), instance);
+                final DomainInfo.DomainState ps = domain.getInfo().state;
+
+                final VirtualMachine.PowerState state = libvirtComputingResource.convertToPowerState(ps);
+
+                s_logger.debug("VM " + domain.getName() + ": powerstate = " + ps + "; vm state=" + state.toString());
+
+                if (state == VirtualMachine.PowerState.PowerOff) {
+                    UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
+                    unmanagedInstances.put(instance.getName(), instance);
+                }
                 domain.free();
             }
-            HashMap<String, UnmanagedInstanceTO> vmMap = libvirtComputingResource.getStoppedVms(conn);
-            s_logger.debug("Found Vms: "+ vmMap.size());
-            return  new GetRemoteVmsAnswer(command, "", vmMap);
+            s_logger.debug("Found Vms: "+ unmanagedInstances.size());
+            return  new GetRemoteVmsAnswer(command, "", unmanagedInstances);
         } catch (final LibvirtException e) {
             s_logger.error("Error while listing stopped Vms on remote host: "+ e.getMessage());
             return new Answer(command, false, result);
@@ -93,7 +93,11 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
-            instance.setCpuSpeed(parser.getCpuTuneDef().getShares());
+            Long memory = domain.getMaxMemory();
+            instance.setMemory(memory.intValue());
+            if (parser.getCpuTuneDef() !=null) {
+                instance.setCpuSpeed(parser.getCpuTuneDef().getShares());
+            }
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setNics(getUnmanagedInstanceNics(parser.getInterfaces()));
             instance.setDisks(getUnmanagedInstanceDisks(parser.getDisks(),libvirtComputingResource));
