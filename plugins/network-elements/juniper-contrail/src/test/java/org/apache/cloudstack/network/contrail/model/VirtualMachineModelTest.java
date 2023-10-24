@@ -80,14 +80,7 @@ public class VirtualMachineModelTest extends TestCase {
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("testnetwork");
-        when(network.getState()).thenReturn(Network.State.Allocated);
-        when(network.getGateway()).thenReturn("10.1.1.1");
-        when(network.getCidr()).thenReturn("10.1.1.0/24");
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
-        when(network.getDomainId()).thenReturn(10L);
-        when(network.getAccountId()).thenReturn(42L);
+        NetworkVO network =  new MockNetworkVO(Network.State.Allocated).getNetwork();
 
         when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
