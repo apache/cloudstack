@@ -123,7 +123,7 @@
         <cs.assertj.version>3.23.1</cs.assertj.version>
 
         <!-- Dependencies versions -->
-        <cs.amqp-client.version>5.17.0</cs.amqp-client.version>
+        <cs.amqp-client.version>5.18.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
         <cs.aspectjrt.version>1.9.19</cs.aspectjrt.version>
         <cs.aws.sdk.version>1.12.439</cs.aws.sdk.version>
