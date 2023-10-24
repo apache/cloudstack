@@ -207,9 +207,8 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             }
             VpcVO vpc = _vpcDao.findById(network.getVpcId());
             if (Objects.isNull(vpc)) {
-                String msg = String.format("Unable to find VPC with id: %s", network.getVpcId());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
+                String msg = String.format("Unable to find VPC with id: %s, allocating for network %s", network.getVpcId(), network.getName());
+                LOGGER.debug(msg);
             }
 
             DomainVO domain = domainDao.findById(account.getDomainId());

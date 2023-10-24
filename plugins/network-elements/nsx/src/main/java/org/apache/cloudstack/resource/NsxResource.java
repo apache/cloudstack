@@ -214,7 +214,7 @@ public class NsxResource implements ServerResource {
         long zoneId = cmd.getZoneId();
         long domainId = cmd.getDomainId();
         long accountId = cmd.getAccountId();
-        long vpcId = cmd.getVpcId();
+        Long vpcId = cmd.getVpcId();
         long networkId = cmd.getNetworkId();
         String vpcName = cmd.getVpcName();
         String networkName = cmd.getNetworkName();

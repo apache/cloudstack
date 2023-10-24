@@ -31,8 +31,10 @@ import java.util.List;
 public class NsxHelper {
 
     public static CreateNsxDhcpRelayConfigCommand createNsxDhcpRelayConfigCommand(DomainVO domain, Account account, DataCenter zone, VpcVO vpc, Network network, List<String> addresses) {
+        Long vpcId = vpc != null ? vpc.getId() : null;
+        String vpcName = vpc != null ? vpc.getName() : null;
         return new CreateNsxDhcpRelayConfigCommand(domain.getId(), account.getId(), zone.getId(),
-                vpc.getId(), vpc.getName(), network.getId(), network.getName(), addresses);
+                vpcId, vpcName, network.getId(), network.getName(), addresses);
     }
 
     public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO) {
