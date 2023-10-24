@@ -422,7 +422,7 @@ export default {
           }
           this.$notification.success({
             message: this.$t('label.delete'),
-            description: this.$t('message.success.remove.objectstore.objects') + '\n' + objectsToDelete.join('\n ')
+            description: this.$t('message.success.remove.objectstore.objects') + ' ' + objectsToDelete.length
           })
           this.listObjects()
         })

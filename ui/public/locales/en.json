@@ -3139,7 +3139,7 @@
 "message.success.register.user.data": "Successfully registered Userdata",
 "message.success.release.ip": "Successfully released IP",
 "message.success.remove.egress.rule": "Successfully removed egress rule",
-"message.success.remove.objectstore.objects": "Successfully removed selected object(s):",
+"message.success.remove.objectstore.objects": "Successfully removed selected object(s)",
 "message.success.remove.objectstore.directory": "Successfully removed selected directory",
 "message.success.remove.firewall.rule": "Successfully removed firewall rule",
 "message.success.remove.instance.rule": "Successfully removed Instance from rule",
