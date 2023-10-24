@@ -18,20 +18,27 @@ package org.apache.cloudstack.agent.api;
 
 public class DeleteNsxTier1GatewayCommand extends NsxCommand {
 
-    private Long vpcId;
-    private String vpcName;
+    private Long networkResourceId;
+    private String networkResourceName;
+    private boolean isResourceVpc;
 
-    public DeleteNsxTier1GatewayCommand(long domainId, long accountId, long zoneId, Long vpcId, String vpcName) {
+    public DeleteNsxTier1GatewayCommand(long domainId, long accountId, long zoneId,
+                                        Long networkResourceId, String networkResourceName, boolean isResourceVpc) {
         super(domainId, accountId, zoneId);
-        this.vpcId = vpcId;
-        this.vpcName = vpcName;
+        this.networkResourceId = networkResourceId;
+        this.networkResourceName = networkResourceName;
+        this.isResourceVpc = isResourceVpc;
     }
 
-    public Long getVpcId() {
-        return vpcId;
+    public Long getNetworkResourceId() {
+        return networkResourceId;
     }
 
-    public String getVpcName() {
-        return vpcName;
+    public String getNetworkResourceName() {
+        return networkResourceName;
+    }
+
+    public boolean isResourceVpc() {
+        return isResourceVpc;
     }
 }
