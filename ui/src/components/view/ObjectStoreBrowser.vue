@@ -485,29 +485,40 @@ export default {
       if (this.objectStore?.providername === 'Simulator') {
         this.uploadFileList = []
       }
+      if (!this.uploadDirectory.endsWith('/')) {
+        this.uploadDirectory = this.uploadDirectory + '/'
+      }
+      var promises = []
       while (this.uploadFileList.length > 0) {
         const file = this.uploadFileList.pop()
-        if (!this.uploadDirectory.endsWith('/')) {
-          this.uploadDirectory = this.uploadDirectory + '/'
-        }
         const objectName = this.uploadDirectory + file.name
+        promises.push(this.asyncUploadFile(file, objectName))
+      }
+      Promise.all(promises).then(() => {
+        this.uploadDirectory = this.browserPath
+        this.uploadMetaData = {}
+        this.uploadFileList = []
+      })
+      this.showUploadModal = false
+    },
+    asyncUploadFile (file, objectName) {
+      return new Promise((resolve, reject) => {
         file.arrayBuffer().then((buffer) => {
           this.client.putObject(this.resource.name, objectName, Buffer.from(buffer), file.size, this.uploadMetaData, err => {
             if (err) {
-              return this.$notification.error({
+              return reject(this.$notification.error({
                 message: this.$t('message.upload.failed'),
                 description: err.message
-              })
+              }))
             }
-            this.$notification.success({
+            this.listObjects()
+            return resolve(this.$notification.success({
               message: this.$t('message.success.upload'),
               description: objectName.split('/').pop()
-            })
-            this.listObjects()
+            }))
           })
         })
-      }
-      this.showUploadModal = false
+      })
     },
     showObjectDescription (record) {
       this.record = { ...record }
