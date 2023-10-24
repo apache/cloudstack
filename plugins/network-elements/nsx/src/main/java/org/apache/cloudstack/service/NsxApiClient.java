@@ -52,8 +52,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import static java.util.Objects.isNull;
-
 public class NsxApiClient {
 
     private final Function<Class<? extends Service>, Service> nsxService;
@@ -262,7 +260,8 @@ public class NsxApiClient {
         }
     }
 
-    public void createSegment(long zoneId, long domainId, long accountId, Long vpcId, String segmentName, String gatewayAddress, String tier0Gateway, String enforcementPointPath, List<TransportZone> transportZones) {
+    public void createSegment(String segmentName, String tier1GatewayName, String gatewayAddress, String enforcementPointPath,
+                              List<TransportZone> transportZones) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             SegmentSubnet subnet = new SegmentSubnet.Builder()
@@ -272,8 +271,7 @@ public class NsxApiClient {
                     .setResourceType(SEGMENT_RESOURCE_TYPE)
                     .setId(segmentName)
                     .setDisplayName(segmentName)
-                    .setConnectivityPath(isNull(vpcId) ? TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway
-                            : TIER_1_GATEWAY_PATH_PREFIX + NsxControllerUtils.getTier1GatewayName(domainId, accountId, zoneId, vpcId))
+                    .setConnectivityPath(TIER_1_GATEWAY_PATH_PREFIX + tier1GatewayName)
                     .setAdminState(AdminState.UP.name())
                     .setSubnets(List.of(subnet))
                     .setTransportZonePath(enforcementPointPath + "/transport-zones/" + transportZones.get(0).getId())

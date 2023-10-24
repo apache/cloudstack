@@ -56,8 +56,13 @@ public class NsxControllerUtils {
         return (NsxAnswer) answer;
     }
 
-    public static String getTier1GatewayName(long domainId, long accountId, long zoneId, long vpcId) {
-        return String.format("D%s-A%s-Z%s-V%s",  domainId, accountId, zoneId, vpcId);
+    /**
+     * Generates the Tier 1 Gateway name and identifier for the resource on the NSX manager
+     */
+    public static String getTier1GatewayName(long domainId, long accountId, long zoneId,
+                                             Long networkResourceId, boolean isResourceVpc) {
+        String resourcePrefix = isResourceVpc ? "V" : "N";
+        return String.format("D%s-A%s-Z%s-%s%s", domainId, accountId, zoneId, resourcePrefix, networkResourceId);
     }
 
     public static String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId) {
