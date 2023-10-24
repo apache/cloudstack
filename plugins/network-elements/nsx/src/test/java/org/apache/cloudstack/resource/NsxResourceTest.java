@@ -106,7 +106,7 @@ public class NsxResourceTest {
     @Test
     public void testCreateNsxTier1Gateway() {
         NsxCommand command = new CreateNsxTier1GatewayCommand(1L, 2L,
-                1L, 3L, "VPC01");
+                1L, 3L, "VPC01", true);
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());
@@ -115,7 +115,7 @@ public class NsxResourceTest {
     @Test
     public void testDeleteTier1Gateway() {
         NsxCommand command = new DeleteNsxTier1GatewayCommand(1L, 1L,
-                1L, 2L, "VPC01");
+                1L, 2L, "VPC01", true);
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());

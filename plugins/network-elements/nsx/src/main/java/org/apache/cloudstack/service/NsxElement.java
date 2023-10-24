@@ -197,6 +197,10 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+//        Account account = accountMgr.getAccount(network.getAccountId());
+//        DomainVO domain = domainDao.findById(network.getDomainId());
+//        return nsxService.createNetwork(network.getDataCenterId(), account.getId(), domain.getId(), network.getId(), network.getName());
+        // TODO: Check if the network is NSX based (was already implemented as part of the guru.setup()
         return true;
     }
 

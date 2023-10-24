@@ -27,6 +27,7 @@ import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Objects;
@@ -37,16 +38,25 @@ public class NsxServiceImpl implements NsxService {
     @Inject
     VpcDao vpcDao;
 
-    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, long vpcId, String vpcName) {
+    private static final Logger LOGGER = Logger.getLogger(NsxServiceImpl.class);
+
+    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName);
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, true);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
+        return result.getResult();
+    }
+
+    public boolean createNetwork(Long zoneId, long accountId, long domainId, Long networkId, String networkName) {
+        CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, networkId, networkName, false);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
     public boolean deleteVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName) {
         DeleteNsxTier1GatewayCommand deleteNsxTier1GatewayCommand =
-                new DeleteNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName);
+                new DeleteNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, true);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
@@ -60,6 +70,16 @@ public class NsxServiceImpl implements NsxService {
         DeleteNsxSegmentCommand deleteNsxSegmentCommand = new DeleteNsxSegmentCommand(domainId, accountId, zoneId,
                 network.getVpcId(), vpcName, network.getId(), network.getName());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteNsxSegmentCommand, network.getDataCenterId());
+        if (!result.getResult()) {
+            String msg = String.format("Could not remove the NSX segment for network %s", network.getName());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        if (Objects.isNull(network.getVpcId())) {
+            DeleteNsxTier1GatewayCommand deleteNsxTier1GatewayCommand = new DeleteNsxTier1GatewayCommand(domainId, accountId, zoneId, network.getId(), network.getName(), false);
+            result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
+        }
         return result.getResult();
     }
 

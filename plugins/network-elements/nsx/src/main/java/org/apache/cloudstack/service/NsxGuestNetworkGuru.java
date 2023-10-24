@@ -49,6 +49,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 
 import org.apache.cloudstack.utils.NsxHelper;
@@ -206,9 +207,8 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             }
             VpcVO vpc = _vpcDao.findById(network.getVpcId());
             if (Objects.isNull(vpc)) {
-                String msg = String.format("Unable to find VPC with id: %s", network.getVpcId());
-                LOGGER.error(msg);
-                throw new CloudRuntimeException(msg);
+                String msg = String.format("Unable to find VPC with id: %s, allocating for network %s", network.getVpcId(), network.getName());
+                LOGGER.debug(msg);
             }
 
             DomainVO domain = domainDao.findById(account.getDomainId());
@@ -270,14 +270,6 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     private void createNsxSegment(NetworkVO networkVO, DataCenter zone) {
-        String vpcName = null;
-        if (nonNull(networkVO.getVpcId())) {
-            VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
-            if (isNull(vpc)) {
-                throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
-            }
-            vpcName = vpc.getName();
-        }
         Account account = accountDao.findById(networkVO.getAccountId());
         if (isNull(account)) {
             throw new CloudRuntimeException(String.format("Unable to find account with id: %s", networkVO.getAccountId()));
@@ -287,6 +279,23 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
             String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
+        }
+        String vpcName = null;
+        if (nonNull(networkVO.getVpcId())) {
+            VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
+            if (isNull(vpc)) {
+                throw new CloudRuntimeException(String.format("Failed to find VPC network with id: %s", networkVO.getVpcId()));
+            }
+            vpcName = vpc.getName();
+        } else {
+            LOGGER.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
+            CreateNsxTier1GatewayCommand nsxTier1GatewayCommand = NsxHelper.createNsxTier1GatewayCommand(domain, account, zone, networkVO.getId(), networkVO.getName(), false);
+            NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(nsxTier1GatewayCommand, zone.getId());
+            if (!nsxAnswer.getResult()) {
+                String msg = String.format("Could not create a Tier 1 Gateway for network %s: %s", networkVO.getName(), nsxAnswer.getDetails());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
         }
         CreateNsxSegmentCommand command = NsxHelper.createNsxSegmentCommand(domain, account, zone, vpcName, networkVO);
         NsxAnswer answer = nsxControllerUtils.sendNsxCommand(command, zone.getId());
