@@ -212,7 +212,7 @@
                   :autoSelectLabel="$t('label.auto.assign.diskoffering.disk.size')"
                   @select-multi-disk-offering="updateMultiDiskOffering" />
               </div>
-              <div>
+              <div v-if="resource.nic && resource.nic.length > 0">
                 <a-form-item name="networkselection" ref="networkselection">
                   <template #label>
                     <tooltip-label :title="$t('label.network.selection')" :tooltip="apiParams.nicnetworklist.description"/>
