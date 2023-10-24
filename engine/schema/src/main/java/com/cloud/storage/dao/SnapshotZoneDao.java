@@ -14,19 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.service;
 
-import com.vmware.vapi.client.ApiClient;
+package com.cloud.storage.dao;
 
-public class NsxApi {
+import java.util.List;
 
-    ApiClient apiClient;
+import com.cloud.storage.SnapshotZoneVO;
+import com.cloud.utils.db.GenericDao;
 
-    public ApiClient getApiClient() {
-        return apiClient;
-    }
-
-    public void setApiClient(ApiClient apiClient) {
-        this.apiClient = apiClient;
-    }
+public interface SnapshotZoneDao extends GenericDao<SnapshotZoneVO, Long> {
+    SnapshotZoneVO findByZoneSnapshot(long zoneId, long templateId);
+    void addSnapshotToZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZone(long snapshotId, long zoneId);
+    void removeSnapshotFromZones(long snapshotId);
+    List<SnapshotZoneVO> listBySnapshot(long snapshotId);
 }

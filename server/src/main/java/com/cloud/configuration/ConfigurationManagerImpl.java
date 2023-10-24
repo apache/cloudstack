@@ -134,6 +134,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -5933,7 +5934,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
+        Boolean forNsx = cmd.isForNsx();
         Boolean forTungsten = cmd.getForTungsten();
+        String nsxMode = cmd.getNsxMode();
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -5964,6 +5967,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (item.getValue().size() != 1 || !(item.getValue().contains("Tungsten") || item.getValue().contains("ConfigDrive"))) {
                     throw new InvalidParameterValueException("Please specify Tungsten-Fabric provider for the " + item.getKey() + " service provider.");
                 }
+            }
+        }
+
+        if (Boolean.TRUE.equals(forNsx) && Boolean.TRUE.equals(forTungsten)) {
+            throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
+        }
+
+        if (Boolean.TRUE.equals(forNsx)) {
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
             }
         }
 
@@ -6231,7 +6254,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, false, domainIds, zoneIds, enable, internetProtocol);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, nsxMode, domainIds, zoneIds, enable, internetProtocol);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
@@ -6376,7 +6399,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, Boolean forNsx, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
+                                                   Boolean forTungsten, Boolean forNsx, String mode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -6602,7 +6625,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 s_logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
                             }
 
-                            if (vpcOff) {
+                            if (vpcOff && !forNsx) {
                                 final List<Service> supportedSvcs = new ArrayList<Service>();
                                 supportedSvcs.addAll(serviceProviderMap.keySet());
                                 _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);

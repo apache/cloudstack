@@ -251,6 +251,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return config;
     }
 
+    @Override
+    public void setup(Network network, long networkId) {
+        // do nothing
+    }
+
     protected DirectNetworkGuru() {
         super();
         _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN"), new IsolationMethod("VXLAN") };

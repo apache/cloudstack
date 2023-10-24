@@ -19,19 +19,21 @@ package org.apache.cloudstack.agent.api;
 import java.util.Objects;
 
 public class CreateNsxTier1GatewayCommand extends NsxCommand {
+    private long vpcId;
     private String vpcName;
 
-    public CreateNsxTier1GatewayCommand(String zoneName, Long zoneId, String accountName, Long accountId, String vpcName) {
-        super(zoneName, zoneId, accountName, accountId);
+    public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId, long vpcId, String vpcName) {
+        super(domainId, accountId, zoneId);
+        this.vpcId = vpcId;
         this.vpcName = vpcName;
+    }
+
+    public long getVpcId() {
+        return vpcId;
     }
 
     public String getVpcName() {
         return vpcName;
-    }
-
-    public void setVpcName(String vpcName) {
-        this.vpcName = vpcName;
     }
 
     @Override

@@ -21,49 +21,31 @@ import com.cloud.agent.api.Command;
 import java.util.Objects;
 
 public class NsxCommand extends Command {
-    private String zoneName;
-    private Long zoneId;
-    private String accountName;
-    private Long accountId;
+    private long zoneId;
+    private long accountId;
+    private long domainId;
 
-    public NsxCommand(String zoneName, Long zoneId, String accountName, Long accountId) {
-        this.zoneName = zoneName;
+    public NsxCommand() {
+    }
+
+    public NsxCommand(long domainId, long accountId, long zoneId) {
         this.zoneId = zoneId;
-        this.accountName = accountName;
         this.accountId = accountId;
+        this.domainId = domainId;
     }
 
-    public String getZoneName() {
-        return zoneName;
-    }
-
-    public void setZoneName(String zoneName) {
-        this.zoneName = zoneName;
-    }
-
-    public Long getZoneId() {
+    public long getZoneId() {
         return zoneId;
     }
 
-    public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+    public long getDomainId() {
+        return domainId;
     }
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -75,11 +57,11 @@ public class NsxCommand extends Command {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         NsxCommand that = (NsxCommand) o;
-        return Objects.equals(zoneName, that.zoneName) && Objects.equals(zoneId, that.zoneId) && Objects.equals(accountName, that.accountName) && Objects.equals(accountId, that.accountId);
+        return Objects.equals(zoneId, that.zoneId) && Objects.equals(accountId, that.accountId) && Objects.equals(domainId, that.domainId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), zoneName, zoneId, accountName, accountId);
+        return Objects.hash(super.hashCode(), zoneId, accountId, domainId);
     }
 }

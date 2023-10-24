@@ -62,6 +62,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -325,7 +326,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
+                            true, State.Enabled, null, false,
+                            false, false, false, null);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -344,7 +347,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false, false, null);
 
                 }
 
@@ -364,12 +367,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, true);
+                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
+                            null, false, false, true, false, null);
                 }
 
-                // configure default vpc offering with NSX as network service provider
-                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME) == null) {
-                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME);
+                // configure default vpc offering with NSX as network service provider in NAT mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME) == null) {
+                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME);
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
@@ -380,7 +384,26 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NSX_OFFERING_NAME, svcProviderMap, false, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.NATTED.name());
+
+                }
+
+                // configure default vpc offering with NSX as network service provider in Route mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME) == null) {
+                    s_logger.debug("Creating default VPC offering with NSX as network service provider" + VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME);
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, true, NetworkOffering.NsxMode.ROUTED.name());
 
                 }
             }
@@ -440,7 +463,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+        final Boolean forNsx = cmd.isForNsx();
+        String nsxMode = cmd.getNsxMode();
         final boolean enable = cmd.getEnable();
+
+        if (Boolean.TRUE.equals(forNsx)) {
+            if (Objects.isNull(nsxMode)) {
+                throw new InvalidParameterValueException("Mode for an NSX offering needs to be specified.Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+            if (!EnumUtils.isValidEnum(NetworkOffering.NsxMode.class, nsxMode)) {
+                throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NsxMode.values()));
+            }
+        } else {
+            if (Objects.nonNull(nsxMode)) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("nsxMode has is ignored for non-NSX enabled zones");
+                }
+                nsxMode = null;
+            }
+        }
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
             for (final Long domainId: cmd.getDomainIds()) {
@@ -463,14 +504,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, nsxMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-                                         final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
+                                         final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
+                                         final Boolean forNsx, final String mode, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
@@ -555,7 +597,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter);
+                redundantRouter, forNsx, mode);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -583,7 +625,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter) {
+                                              final boolean redundantRouter, Boolean forNsx, String mode) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -594,6 +636,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (state != null) {
                     offering.setState(state);
                 }
+                offering.setForNsx(forNsx);
+                offering.setNsxMode(mode);
                 s_logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
                 // populate services and providers

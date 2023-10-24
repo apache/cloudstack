@@ -14,28 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.dhcp;
+package org.apache.cloudstack.api.command.user.snapshot;
 
-import java.net.InetAddress;
-import java.util.List;
-import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.Adapter;
+public class DeleteSnapshotCmdTest {
 
-public interface DhcpSnooper extends Adapter {
-
-    public InetAddress getIPAddr(String macAddr, String vmName);
-
-    public InetAddress getDhcpServerIP();
-
-    public void cleanup(String macAddr, String vmName);
-
-    public Map<String, InetAddress> syncIpAddr();
-
-    @Override
-    public boolean stop();
-
-    public void initializeMacTable(List<Pair<String, String>> macVmNameList);
-
+    @Test
+    public void testGetZoneId() {
+        final DeleteSnapshotCmd cmd = new DeleteSnapshotCmd();
+        Long id = 400L;
+        ReflectionTestUtils.setField(cmd, "zoneId", id);
+        Assert.assertEquals(id, cmd.getZoneId());
+    }
 }

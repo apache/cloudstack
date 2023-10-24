@@ -43,6 +43,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
         InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RelatedNetworkOffering, domainid, zoneid, pvlanType, internetProtocol
     }
 
+    public enum NsxMode {
+        NATTED,
+        ROUTED
+    }
+
     public final static String SystemPublicNetwork = "System-Public-Network";
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
@@ -52,7 +57,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     public final static String DefaultSharedNetworkOfferingWithSGService = "DefaultSharedNetworkOfferingWithSGService";
     public static final String DEFAULT_TUNGSTEN_SHARED_NETWORK_OFFERING_WITH_SGSERVICE = "DefaultTungstenSharedNetworkOfferingWithSGService";
-    public static final String DEFAULT_NSX_OFFERING = "DefaultNSXNetworkOffering";
+    public static final String DEFAULT_NAT_NSX_OFFERING = "DefaultNATNSXNetworkOffering";
+    public static final String DEFAULT_ROUTER_NSX_OFFERING = "DefaultRouteNSXNetworkOffering";
     public final static String QuickCloudNoServices = "QuickCloudNoServices";
     public final static String DefaultIsolatedNetworkOfferingWithSourceNatService = "DefaultIsolatedNetworkOfferingWithSourceNatService";
     public final static String OvsIsolatedNetworkOfferingWithSourceNatService = "OvsIsolatedNetworkOfferingWithSourceNatService";
@@ -92,6 +98,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isForTungsten();
 
     boolean isForNsx();
+
+    String getNsxMode();
 
     TrafficType getTrafficType();
 
