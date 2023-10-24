@@ -63,7 +63,7 @@ public class NsxServiceImpl implements NsxService {
         return result.getResult();
     }
 
-    public boolean createStaticNatRule(long zoneId, long accountId, long domainId, long vpcId,
+    public boolean createStaticNatRule(long zoneId, long domainId, long accountId, long vpcId,
                                        long vmId, String publicIp, String vmIp) {
         VpcVO vpc = vpcDao.findById(vpcId);
         if (Objects.isNull(vpc)) {
@@ -75,7 +75,7 @@ public class NsxServiceImpl implements NsxService {
         return result.getResult();
     }
 
-    public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, long vpcId) {
+    public boolean deleteStaticNatRule(long zoneId, long domainId, long accountId, long vpcId) {
         VpcVO vpc = vpcDao.findById(vpcId);
         if (Objects.isNull(vpc)) {
             throw new CloudRuntimeException(String.format("Failed to find VPC with id: %s", vpcId));

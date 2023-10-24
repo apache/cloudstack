@@ -1003,6 +1003,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         defaultNSXNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
         defaultNSXNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter );
         defaultNSXNetworkOfferingProviders.put(Service.SourceNat, Provider.Nsx);
+        defaultNSXNetworkOfferingProviders.put(Service.StaticNat, Provider.Nsx);
         defaultNSXNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
 
         final Map<Network.Service, Network.Provider> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
@@ -1224,7 +1225,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 // Offering #10 - network offering for nsx provider - ROUTED mode
                 NetworkOfferingVO defaultRouteNSXNetworkOffering =
-                        new NetworkOfferingVO(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
+                        new NetworkOfferingVO(NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING, "Offering for NSX enabled networks - Route mode",
                                 TrafficType.Guest, false, false, null, null, true, Availability.Optional, null, GuestType.Isolated, false, false, false, false, false, true);
                 defaultRouteNSXNetworkOffering.setForNsx(true);
                 defaultRouteNSXNetworkOffering.setNsxMode(NetworkOffering.NsxMode.ROUTED.name());
