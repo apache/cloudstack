@@ -24,6 +24,7 @@ import com.cloud.network.vpc.VpcVO;
 import com.cloud.user.Account;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 
 import java.util.List;
 
@@ -37,5 +38,10 @@ public class NsxHelper {
     public static CreateNsxSegmentCommand createNsxSegmentCommand(DomainVO domain, Account account, DataCenter zone, String vpcName, NetworkVO networkVO) {
         return new CreateNsxSegmentCommand(domain.getId(), account.getId(), zone.getId(),
                 networkVO.getVpcId(), vpcName, networkVO.getId(), networkVO.getName(), networkVO.getGateway(), networkVO.getCidr());
+    }
+
+    public static CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand(DomainVO domain, Account account, DataCenter zone,
+                                                                            Long networkResourceId, String networkResourceName, boolean isResourceVpc) {
+        return new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkResourceId, networkResourceName, isResourceVpc);
     }
 }

@@ -48,6 +48,7 @@ import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class NsxResource implements ServerResource {
@@ -253,18 +254,20 @@ public class NsxResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
-        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
+        String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
         try {
             nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster);
             return new NsxAnswer(cmd, true, "");
         } catch (CloudRuntimeException e) {
-            LOGGER.error(String.format("Cannot create tier 1 gateway %s (VPC: %s): %s", name, cmd.getVpcName(), e.getMessage()));
+            String msg = String.format("Cannot create tier 1 gateway %s (%s: %s): %s", name,
+                    (cmd.isResourceVpc() ? "VPC" : "NETWORK"), cmd.getNetworkResourceName(), e.getMessage());
+            LOGGER.error(msg);
             return new NsxAnswer(cmd, e);
         }
     }
 
     private Answer executeRequest(DeleteNsxTier1GatewayCommand cmd) {
-        String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId());
+        String tier1Id = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
         try {
             nsxApiClient.deleteTier1Gateway(tier1Id);
         } catch (Exception e) {
@@ -309,8 +312,11 @@ public class NsxResource implements ServerResource {
             String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getVpcId(), cmd.getNetworkId());
             String gatewayAddress = cmd.getNetworkGateway() + "/" + cmd.getNetworkCidr().split("/")[1];
 
-            nsxApiClient.createSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(),
-                    segmentName, gatewayAddress, tier0Gateway, enforcementPointPath, transportZones);
+            Long networkResourceId = Objects.isNull(cmd.getVpcId()) ? cmd.getNetworkId() : cmd.getVpcId();
+            boolean isResourceVpc = !Objects.isNull(cmd.getVpcId());
+            String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
+                    cmd.getZoneId(), networkResourceId, isResourceVpc);
+            nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

@@ -19,21 +19,28 @@ package org.apache.cloudstack.agent.api;
 import java.util.Objects;
 
 public class CreateNsxTier1GatewayCommand extends NsxCommand {
-    private long vpcId;
-    private String vpcName;
+    private Long networkResourceId;
+    private String networkResourceName;
+    private boolean isResourceVpc;
 
-    public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId, long vpcId, String vpcName) {
+    public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId,
+                                        Long networkResourceId, String networkResourceName, boolean isResourceVpc) {
         super(domainId, accountId, zoneId);
-        this.vpcId = vpcId;
-        this.vpcName = vpcName;
+        this.networkResourceId = networkResourceId;
+        this.networkResourceName = networkResourceName;
+        this.isResourceVpc = isResourceVpc;
     }
 
-    public long getVpcId() {
-        return vpcId;
+    public Long getNetworkResourceId() {
+        return networkResourceId;
     }
 
-    public String getVpcName() {
-        return vpcName;
+    public boolean isResourceVpc() {
+        return isResourceVpc;
+    }
+
+    public String getNetworkResourceName() {
+        return networkResourceName;
     }
 
     @Override
@@ -42,11 +49,11 @@ public class CreateNsxTier1GatewayCommand extends NsxCommand {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CreateNsxTier1GatewayCommand that = (CreateNsxTier1GatewayCommand) o;
-        return Objects.equals(vpcName, that.vpcName);
+        return Objects.equals(networkResourceName, that.networkResourceName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), vpcName);
+        return Objects.hash(super.hashCode(), networkResourceName);
     }
 }
