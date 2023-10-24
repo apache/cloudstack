@@ -49,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
@@ -60,6 +62,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.MoveVolumeCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
@@ -318,6 +322,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CreateDatadiskTemplateCommand)cmd);
         } else if (cmd instanceof MoveVolumeCommand) {
             return execute((MoveVolumeCommand)cmd);
+        } else if (cmd instanceof QuerySnapshotZoneCopyCommand) {
+            return execute((QuerySnapshotZoneCopyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -3586,6 +3592,34 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.error("exception while decoding and deserialising metadata", ex);
         }
         return cmd;
+    }
+
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
+        SnapshotObjectTO snapshot = cmd.getSnapshot();
+        String parentPath = getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
+        String path = snapshot.getPath();
+        File snapFile = new File(parentPath + File.separator + path);
+        if (snapFile.exists() && !snapFile.isDirectory()) {
+            return new QuerySnapshotZoneCopyAnswer(cmd, List.of(path));
+        }
+        int index = path.lastIndexOf(File.separator);
+        String snapDir = path.substring(0, index);
+        List<String> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
+            List<String> fileNames = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            for (String file : fileNames) {
+                file = snapDir + "/" + file;
+                s_logger.debug(String.format("Found snapshot file %s", file));
+                files.add(file);
+            }
+        } catch (IOException ioe) {
+            s_logger.error("Error preparing file list for snapshot copy", ioe);
+        }
+        return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }
 
 }

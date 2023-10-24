@@ -115,4 +115,6 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     List<DataCenterVO> findByKeyword(String keyword);
 
     List<DataCenterVO> listAllZones();
+
+    List<DataCenterVO> listByIds(List<Long> ids);
 }

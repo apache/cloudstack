@@ -16,12 +16,18 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,55 +43,54 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.to.OVFInformationTO;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.TemplateDownloader;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.MetalinkTemplateDownloader;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.VmdkProcessor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.TemplateConstants;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.cloudstack.utils.security.ChecksumValue;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.net.Proxy;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.OVFInformationTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.SimpleHttpMultiFileDownloader;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.MetalinkTemplateDownloader;
+import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.S3TemplateDownloader;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TARProcessor;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
-import org.apache.cloudstack.utils.security.ChecksumValue;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang3.StringUtils;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
@@ -186,17 +191,31 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return installPathPrefix;
         }
 
+        private void cleanupFileWithDirectory(String path, boolean deleteDir) {
+            if (StringUtils.isEmpty(path)) {
+                return;
+            }
+            LOGGER.debug(String.format("Cleaning-up temporary download file %s", path));
+            File f = new File(path);
+            File dir = f.getParentFile();
+            f.delete();
+            if (deleteDir && dir != null) {
+                LOGGER.debug(String.format("Deleting directory %s, if empty, as part of cleanup", dir.getAbsolutePath()));
+                dir.delete();
+            }
+        }
+
         public void cleanup() {
             if (td != null) {
-                String dnldPath = td.getDownloadLocalPath();
-                if (dnldPath != null) {
-                    File f = new File(dnldPath);
-                    File dir = f.getParentFile();
-                    f.delete();
-                    if (dir != null) {
-                        dir.delete();
+                if (td instanceof SimpleHttpMultiFileDownloader) {
+                    SimpleHttpMultiFileDownloader httpMultiFileDownloader = (SimpleHttpMultiFileDownloader)td;
+                    List<String> files = new ArrayList<>(httpMultiFileDownloader.getDownloadedFilesMap().values());
+                    for (int i = 0; i < files.size(); ++i) {
+                        cleanupFileWithDirectory(files.get(i), i == files.size() - 1);
                     }
+                    return;
                 }
+                cleanupFileWithDirectory(td.getDownloadLocalPath(), true);
             }
 
         }
@@ -304,8 +323,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
-            }
-            else {
+            } else {
                 // For other TemplateDownloaders where files are locally available,
                 // we run the postLocalDownload() method.
                 td.setDownloadError("Download success, starting install ");
@@ -366,6 +384,98 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return result;
     }
 
+    protected String getSnapshotInstallNameFromDownloadUrl(String url) {
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException ignored) {
+            return null;
+        }
+        String name = uri.getPath();
+        if (StringUtils.isEmpty(name) || !name.contains("/")) {
+            return null;
+        }
+        String[] items = uri.getPath().split("/");
+        name = items[items.length - 1];
+        if (items.length < 2) {
+            return name;
+        }
+        String parentDir = items[items.length - 2];
+        if (!parentDir.matches("\\d+") && name.startsWith(parentDir)) {
+            return parentDir + File.separator + name;
+        }
+        return name;
+    }
+
+    private String postLocalSnapshotSingleFileDownload(DownloadJob job, HttpTemplateDownloader td) {
+        String name = getSnapshotInstallNameFromDownloadUrl(td.getDownloadUrl());
+        final String downloadedFile = td.getDownloadLocalPath();
+        final String resourcePath = job.getInstallPathPrefix();
+        final String relativeResourcePath = job.getTmpltPath();
+        if (StringUtils.isEmpty(name)) {
+            name = UUID.randomUUID().toString();
+            LOGGER.warn(String.format("Unable to retrieve install filename for snapshot download %s, using a random UUID", downloadedFile));
+        }
+        Path srcPath = Paths.get(downloadedFile);
+        Path destPath = Paths.get(resourcePath + File.separator + name);
+        try {
+            LOGGER.debug(String.format("Trying to create missing directories (if any) to move snapshot %s.", destPath));
+            Files.createDirectories(destPath.getParent());
+            LOGGER.debug(String.format("Trying to move downloaded snapshot [%s] to [%s].", srcPath, destPath));
+            Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", resourcePath), e);
+            return "Unable process post snapshot download due to " + e.getMessage();
+        }
+        String installedPath = relativeResourcePath + File.separator + name;
+        job.setTmpltPath(installedPath);
+        job.setTemplatePhysicalSize(td.getDownloadedBytes());
+        return null;
+    }
+
+    private String postLocalSnapshotMultiFileDownload(DownloadJob job, SimpleHttpMultiFileDownloader td) {
+        Map<String, String> downloads = td.getDownloadedFilesMap();
+        String installDir = null;
+        try {
+            for (Map.Entry<String, String> entry : downloads.entrySet()) {
+                final String url = entry.getKey();
+                final String downloadedFile = entry.getValue();
+                final String name = url.substring(url.lastIndexOf("/"));
+                if (StringUtils.isEmpty(installDir)) {
+                    installDir = url.substring(0, url.lastIndexOf("/"));
+                    installDir = installDir.substring(installDir.lastIndexOf("/"));
+                    job.setTmpltPath(job.getTmpltPath() + installDir);
+                    installDir = job.getInstallPathPrefix() + installDir;
+                    Path installPath = Paths.get(installDir);
+                    LOGGER.debug(String.format("Trying to create missing directories (if any) to move snapshot files at %s.", installDir));
+                    Files.createDirectories(installPath);
+                }
+                final String filePath = installDir + name;
+                if (name.endsWith(".ovf")) {
+                    job.setTmpltPath(job.getTmpltPath() + name.replace(".ovf", ""));
+                }
+                Path srcPath = Paths.get(downloadedFile);
+                Path destPath = Paths.get(filePath);
+                LOGGER.debug(String.format("Trying to move downloaded snapshot file [%s] to [%s].", srcPath, destPath));
+                Files.move(srcPath, destPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+            job.setTemplatePhysicalSize(td.getDownloadedBytes());
+        } catch (IOException e) {
+            LOGGER.warn(String.format("Something is wrong while processing post snapshot download %s", job.getTmpltPath()), e);
+            return "Unable process post snapshot download due to " + e.getMessage();
+        }
+        return null;
+    }
+
+    private String postLocalSnapshotDownload(DownloadJob job, TemplateDownloader td) {
+        if (td instanceof HttpTemplateDownloader) {
+            return postLocalSnapshotSingleFileDownload(job, (HttpTemplateDownloader)td);
+        } else if(td instanceof SimpleHttpMultiFileDownloader) {
+            return postLocalSnapshotMultiFileDownload(job, (SimpleHttpMultiFileDownloader)td);
+        }
+        return null;
+    }
+
     /**
      * Post local download activity (install and cleanup). Executed in context of
      * downloader thread
@@ -376,13 +486,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String postLocalDownload(String jobId) {
         DownloadJob dnld = jobs.get(jobId);
         TemplateDownloader td = dnld.getTemplateDownloader();
-        String resourcePath = dnld.getInstallPathPrefix(); // path with mount
-        // directory
-        String finalResourcePath = dnld.getTmpltPath(); // template download
-        // path on secondary
-        // storage
         ResourceType resourceType = dnld.getResourceType();
-
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return postLocalSnapshotDownload(dnld, td);
+        }
+        String resourcePath = dnld.getInstallPathPrefix(); // path with mount directory
+        String finalResourcePath = dnld.getTmpltPath(); // template download path on secondary storage
         File originalTemplate = new File(td.getDownloadLocalPath());
         if(StringUtils.isBlank(dnld.getChecksum())) {
             if (LOGGER.isInfoEnabled()) {
@@ -409,7 +518,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
 
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
-        setPermissionsForTheDownloadedTemplate(dnld, resourcePath, resourceType);
+        setPermissionsForTheDownloadedTemplate(resourcePath, resourceType);
 
         TemplateLocation loc = new TemplateLocation(_storage, resourcePath);
         try {
@@ -468,7 +577,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return templateName;
     }
 
-    private void setPermissionsForTheDownloadedTemplate(DownloadJob dnld, String resourcePath, ResourceType resourceType) {
+    private void setPermissionsForTheDownloadedTemplate(String resourcePath, ResourceType resourceType) {
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return;
+        }
         // Set permissions for template/volume.properties
         String propertiesFile = resourcePath;
         if (resourceType == ResourceType.TEMPLATE) {
@@ -578,6 +690,32 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         return jobId;
     }
 
+    private String createTempDirAndPropertiesFile(ResourceType resourceType, String tmpDir) throws IOException {
+        if (!_storage.mkdirs(tmpDir)) {
+            LOGGER.warn("Unable to create " + tmpDir);
+            return "Unable to create " + tmpDir;
+        }
+        if (ResourceType.SNAPSHOT.equals(resourceType)) {
+            return null;
+        }
+        // TO DO - define constant for volume properties.
+        File file =
+                ResourceType.TEMPLATE == resourceType ?
+                        _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) :
+                        _storage.getFile(tmpDir + File.separator + "volume.properties");
+        if (file.exists()) {
+            if(! file.delete()) {
+                LOGGER.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
+            }
+        }
+
+        if (!file.createNewFile()) {
+            LOGGER.warn("Unable to create new file: " + file.getAbsolutePath());
+            return "Unable to create new file: " + file.getAbsolutePath();
+        }
+        return null;
+    }
+
     @Override
     public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
             String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
@@ -586,63 +724,58 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String tmpDir = installPathPrefix;
 
         try {
-
-            if (!_storage.mkdirs(tmpDir)) {
-                LOGGER.warn("Unable to create " + tmpDir);
-                return "Unable to create " + tmpDir;
+            String filesError = createTempDirAndPropertiesFile(resourceType, tmpDir);
+            if (StringUtils.isNotEmpty(filesError)) {
+                return filesError;
             }
-            // TO DO - define constant for volume properties.
-            File file =
-                    ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : _storage.getFile(tmpDir + File.separator +
-                            "volume.properties");
-                    if (file.exists()) {
-                        if(! file.delete()) {
-                            LOGGER.warn("Deletion of file '" + file.getAbsolutePath() + "' failed.");
-                        }
-                    }
 
-                    if (!file.createNewFile()) {
-                        LOGGER.warn("Unable to create new file: " + file.getAbsolutePath());
-                        return "Unable to create new file: " + file.getAbsolutePath();
-                    }
-
-                    URI uri;
-                    try {
-                        uri = new URI(url);
-                    } catch (URISyntaxException e) {
-                        throw new CloudRuntimeException("URI is incorrect: " + url);
-                    }
-                    TemplateDownloader td;
-                    if ((uri != null) && (uri.getScheme() != null)) {
-                        if (uri.getPath().endsWith(".metalink")) {
-                            td = new MetalinkTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes);
-                        } else if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                            td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
-                        } else if (uri.getScheme().equalsIgnoreCase("file")) {
-                            td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
-                        } else if (uri.getScheme().equalsIgnoreCase("scp")) {
-                            td = new ScpTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
-                        } else if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("cifs")) {
-                            td = null;
-                            // TODO: implement this.
-                            throw new CloudRuntimeException("Scheme is not supported " + url);
-                        } else {
-                            throw new CloudRuntimeException("Scheme is not supported " + url);
-                        }
+            URI uri;
+            String checkUrl = url;
+            if (ResourceType.SNAPSHOT.equals(resourceType) && url.contains("\n")) {
+                checkUrl = url.substring(0, url.indexOf("\n") - 1);
+            }
+            try {
+                uri = new URI(checkUrl);
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("URI is incorrect: " + url);
+            }
+            TemplateDownloader td;
+            if (ResourceType.SNAPSHOT.equals(resourceType) && url.contains("\n") &&
+                    ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))) {
+                String[] urls = url.split("\n");
+                td = new SimpleHttpMultiFileDownloader(_storage, urls, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, resourceType);
+            } else {
+                if ((uri != null) && (uri.getScheme() != null)) {
+                    if (uri.getPath().endsWith(".metalink")) {
+                        td = new MetalinkTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes);
+                    } else if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                        td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
+                    } else if (uri.getScheme().equalsIgnoreCase("file")) {
+                        td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
+                    } else if (uri.getScheme().equalsIgnoreCase("scp")) {
+                        td = new ScpTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
+                    } else if (uri.getScheme().equalsIgnoreCase("nfs") || uri.getScheme().equalsIgnoreCase("cifs")) {
+                        td = null;
+                        // TODO: implement this.
+                        throw new CloudRuntimeException("Scheme is not supported " + url);
                     } else {
-                        throw new CloudRuntimeException("Unable to download from URL: " + url);
+                        throw new CloudRuntimeException("Scheme is not supported " + url);
                     }
-                    // NOTE the difference between installPathPrefix and templatePath
-                    // here. instalPathPrefix is the absolute path for template
-                    // including mount directory
-                    // on ssvm, while templatePath is the final relative path on
-                    // secondary storage.
-                    DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
-                    dj.setTmpltPath(templatePath);
-                    jobs.put(jobId, dj);
-                    threadPool.execute(td);
+                } else {
+                    throw new CloudRuntimeException("Unable to download from URL: " + url);
+                }
+            }
+            // NOTE the difference between installPathPrefix and templatePath
+            // here. instalPathPrefix is the absolute path for template
+            // including mount directory
+            // on ssvm, while templatePath is the final relative path on
+            // secondary storage.
+            DownloadJob dj = new DownloadJob(td, jobId, id, name, format, hvm, accountId, descr, cksum, installPathPrefix, resourceType);
+            dj.setTmpltPath(templatePath);
+            jobs.put(jobId, dj);
+            threadPool.execute(td);
 
-                    return jobId;
+            return jobId;
         } catch (IOException e) {
             LOGGER.warn("Unable to download to " + tmpDir, e);
             return null;
