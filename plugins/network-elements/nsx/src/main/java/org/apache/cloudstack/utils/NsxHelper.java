@@ -44,6 +44,6 @@ public class NsxHelper {
 
     public static CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand(DomainVO domain, Account account, DataCenter zone,
                                                                             Long networkResourceId, String networkResourceName, boolean isResourceVpc) {
-        return new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkResourceId, networkResourceName, isResourceVpc);
+        return new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkResourceId, networkResourceName, isResourceVpc, false);
     }
 }
