@@ -326,7 +326,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
-            "0", "The duration (in hours) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
+            "0", "The duration (in minutes) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -2459,10 +2459,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Date currentDate = new Date();
         Calendar quarantineEndDate = Calendar.getInstance();
         quarantineEndDate.setTime(currentDate);
-        quarantineEndDate.add(Calendar.HOUR, quarantineDuration);
+        quarantineEndDate.add(Calendar.MINUTE, quarantineDuration);
 
         PublicIpQuarantineVO publicIpQuarantine = new PublicIpQuarantineVO(ipId, accountId, currentDate, quarantineEndDate.getTime());
-        s_logger.debug(String.format("Adding public IP Address [%s] to quarantine for the duration of [%s] hour(s).", publicIpAddress.getAddress(), quarantineDuration));
+        s_logger.debug(String.format("Adding public IP Address [%s] to quarantine for the duration of [%s] minute(s).", publicIpAddress.getAddress(), quarantineDuration));
         return publicIpQuarantineDao.persist(publicIpQuarantine);
     }
 
