@@ -44,6 +44,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -150,7 +151,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public boolean deleteSnapshot(Long snapshotId) {
+    public boolean deleteSnapshot(Long snapshotId, Long zoneId) {
         Preconditions.checkArgument(snapshotId != null, "'snapshotId' cannot be 'null'.");
 
         SnapshotVO snapshotVO = snapshotDao.findById(snapshotId);
@@ -181,7 +182,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
      */
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, eventDescription = "deleting snapshot", async = true)
     private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
-        SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshotOnPrimaryStore(snapshotId);
 
         if (snapshotObj == null) {
             s_logger.debug("Can't find snapshot; deleting it in DB");
@@ -293,7 +294,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         verifySnapshotType(snapshotInfo);
 
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotInfo.getId(), DataStoreRole.Primary);
+        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshotInfo.getId(), DataStoreRole.Primary);
 
         if (snapshotStore != null) {
             long snapshotStoragePoolId = snapshotStore.getDataStoreId();
@@ -911,7 +912,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     @Override
-    public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
+    public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         Snapshot.LocationType locationType = snapshot.getLocationType();
 
         // If the snapshot exists on Secondary Storage, we can't delete it.
@@ -920,20 +921,26 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 return StrategyPriority.CANT_HANDLE;
             }
 
-            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
+            List<SnapshotDataStoreVO> snapshotOnImageStores = snapshotStoreDao.listReadyBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
             // If the snapshot exists on Secondary Storage, we can't delete it.
-            if (snapshotStore != null) {
+            if (CollectionUtils.isNotEmpty(snapshotOnImageStores)) {
                 return StrategyPriority.CANT_HANDLE;
             }
 
-            snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+            SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
 
             if (snapshotStore == null) {
                 return StrategyPriority.CANT_HANDLE;
             }
 
             long snapshotStoragePoolId = snapshotStore.getDataStoreId();
+            if (zoneId != null) { // If zoneId is present, then it should be same as the zoneId of primary store
+                StoragePoolVO storagePoolVO = storagePoolDao.findById(snapshotStoragePoolId);
+                if (!zoneId.equals(storagePoolVO.getDataCenterId())) {
+                    return StrategyPriority.CANT_HANDLE;
+                }
+            }
 
             boolean storageSystemSupportsCapability = storageSystemSupportsCapability(snapshotStoragePoolId, DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
 
@@ -953,7 +960,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 boolean acceptableFormat = isAcceptableRevertFormat(volumeVO);
 
                 if (acceptableFormat) {
-                    SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+                    SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findOneBySnapshotAndDatastoreRole(snapshot.getId(), DataStoreRole.Primary);
 
                     boolean usingBackendSnapshot = usingBackendSnapshotFor(snapshot.getId());
 
