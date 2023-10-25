@@ -18,6 +18,7 @@
 package org.apache.cloudstack.networkoffering;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.event.dao.UsageEventDetailsDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -100,6 +101,8 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Inject
     AnnotationDao annotationDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Override
     @Before
