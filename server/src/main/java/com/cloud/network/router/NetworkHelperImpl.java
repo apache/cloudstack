@@ -711,8 +711,8 @@ public class NetworkHelperImpl implements NetworkHelper {
                 defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
             } else {
                 defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setBroadcastUri(sourceNatIp.getVlanTag() != null ? BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
+                defaultNic.setIsolationUri(sourceNatIp.getVlanTag() != null ?  IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()) : null);
             }
 
             //If guest nic has already been added we will have 2 devices in the list.
