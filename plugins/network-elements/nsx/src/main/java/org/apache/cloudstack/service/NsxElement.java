@@ -103,7 +103,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Inject
     DomainDao domainDao;
     @Inject
-    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
