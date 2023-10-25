@@ -81,8 +81,13 @@ public class NsxControllerUtils {
         return String.format("D%s-A%s-Z%s-V%s-S%s-%s", domainId, accountId, zoneId, vpcId, networkId, suffix);
     }
 
-    public static String getStaticNatRuleName(long domainId, long accountId, long zoneId, Long vpcId) {
+    public static String getStaticNatRuleName(long domainId, long accountId, long zoneId, Long networkResourceId, boolean isVpcResource) {
         String suffix = "-STATICNAT";
-       return getTier1GatewayName(domainId, accountId, zoneId, vpcId) + suffix;
+       return getTier1GatewayName(domainId, accountId, zoneId, networkResourceId, isVpcResource) + suffix;
+    }
+
+    public static String getPortForwardRuleName(long domainId, long accountId, long zoneId, Long networkResourceId, long ruleId, boolean isVpcResource) {
+        String suffix = "-PF";
+        return getTier1GatewayName(domainId, accountId, zoneId, networkResourceId, isVpcResource) + suffix + ruleId;
     }
 }

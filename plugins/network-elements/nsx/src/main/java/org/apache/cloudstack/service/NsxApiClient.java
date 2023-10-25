@@ -22,6 +22,7 @@ import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
 import com.vmware.nsx_policy.infra.Segments;
+import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
@@ -30,10 +31,12 @@ import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
+import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
+import com.vmware.nsx_policy.model.ServiceListResult;
 import com.vmware.nsx_policy.model.SiteListResult;
 import com.vmware.nsx_policy.model.Tier1;
 import com.vmware.vapi.bindings.Service;
@@ -48,10 +51,13 @@ import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAp
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class NsxApiClient {
 
@@ -326,17 +332,120 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteStaticNatRule(String vpcName, String tier1GatewayName, String ruleName) {
+    public void deleteNatRule(String networkName, String tier1GatewayName, String ruleName) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
-            LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
+            LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
             natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
-                    ruleName, tier1GatewayName, vpcName, ae.getErrorMessage());
+                    ruleName, tier1GatewayName, networkName, ae.getErrorMessage());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    public void createPortForwardingRule(String ruleName, String tier1GatewayName, String networkName, String publicIp,
+                                         String vmIp, String publicPort, String service) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            LOGGER.debug(String.format("Creating NSX Port-Forwarding NAT %s for network %s", ruleName, networkName));
+            PolicyNatRule rule = new PolicyNatRule.Builder()
+                    .setId(ruleName)
+                    .setDisplayName(ruleName)
+                    .setAction(NatAction.DNAT.name())
+                    .setFirewallMatch(FirewallMatch.MATCH_INTERNAL_ADDRESS.name())
+                    .setDestinationNetwork(publicIp)
+                    .setTranslatedNetwork(vmIp)
+                    .setTranslatedPorts(String.valueOf(publicPort))
+                    .setService(service)
+                    .setEnabled(true)
+                    .build();
+            natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to delete NSX Port-forward rule %s for network: %s, due to %s",
+                    ruleName, networkName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public String getNsxInfraServices(String ruleName, String port, String protocol) {
+        try {
+            Services service = (Services) nsxService.apply(Services.class);
+
+            // Find default service if present
+            ServiceListResult serviceList = service.list(null, true, false, null, null, null, null);
+
+            List<com.vmware.nsx_policy.model.Service> services = serviceList.getResults();
+            List<String> matchedDefaultSvc = services.parallelStream().filter(svc ->
+                            (svc.getServiceEntries().get(0) instanceof L4PortSetServiceEntry) &&
+                                    ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0).equals(port)
+                    && (((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getL4Protocol().equals(protocol)))
+                    .map(svc -> ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0))
+                    .collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(matchedDefaultSvc)) {
+                return matchedDefaultSvc.get(0);
+            }
+
+            // Else, find if there's a service matching the rule name
+            String servicePath = getServiceById(ruleName);
+            if (Objects.nonNull(servicePath)) {
+                return servicePath;
+            }
+
+            // Else, create a service entry
+            return createNsxInfraService(ruleName, port, protocol);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to list NSX infra service, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public String createNsxInfraService(String ruleName, String port, String protocol) {
+        try {
+            String serviceEntryName = ruleName + "-SE-" + port;
+            String serviceName = ruleName + "-SVC-" + port;
+            Services service = (Services) nsxService.apply(Services.class);
+            com.vmware.nsx_policy.model.Service infraService = new com.vmware.nsx_policy.model.Service.Builder()
+                    .setServiceEntries(List.of(
+                            new L4PortSetServiceEntry.Builder()
+                                    .setId(serviceEntryName)
+                                    .setDisplayName(serviceEntryName)
+                                    .setDestinationPorts(List.of(port))
+                                    .setL4Protocol(protocol)
+                                    .build()
+                    ))
+                    .setId(serviceName)
+                    .setDisplayName(serviceName)
+                    .build();
+            service.patch(serviceName, infraService);
+
+            com.vmware.nsx_policy.model.Service svc = service.get(serviceName);
+            return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
+
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getServiceById(String ruleName) {
+        try {
+            Services service = (Services) nsxService.apply(Services.class);
+            com.vmware.nsx_policy.model.Service svc1 = service.get(ruleName);
+            if (Objects.nonNull(svc1)) {
+                return ((L4PortSetServiceEntry) svc1.getServiceEntries().get(0)).getParentPath();
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
     }
 }
