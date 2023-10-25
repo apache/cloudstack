@@ -1472,7 +1472,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> destinationStoragePools = selectInstanceConvertionStoragePools(destinationCluster, clonedInstance.getDisks());
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, destinationStoragePools, temporaryConvertLocation);
-        cmd.setWait(StorageManager.ConvertInstanceProcessTimeout.value());
+        int timeoutSeconds = StorageManager.ConvertVmwareInstanceToKvmTimeout.value() * 60 * 60;
+        cmd.setWait(timeoutSeconds);
 
         Answer convertAnswer;
         try {
