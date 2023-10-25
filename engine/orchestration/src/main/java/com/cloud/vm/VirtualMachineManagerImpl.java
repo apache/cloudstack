@@ -1443,15 +1443,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 if (canRetry) {
                     try {
-                        // Setting pod id to null can result in migration of Volumes across pods. This is not desirable for VMs which
-                        // have a volume in Ready state (happens when a VM is shutdown and started again).
-                        //
-                        // So, we set it to null only when
-                        //   migration of volumes across cluster is enabled
-                        //   Or, volumes are still in allocated state for that VM (happens when VM is Starting/deployed for the first time)
-                        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || areAllVolumesAllocated(vm.getId())) {
-                            vm.setPodIdToDeployIn(null);
-                        }
+                        isMigratingAllocatedVolumesAcrossClusters(vm);
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
                     } catch (final NoTransitionException e) {
                         throw new ConcurrentOperationException(e.getMessage());
@@ -1466,6 +1458,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    /**
+     * Setting pod id to null can result in migration of Volumes across pods. This is not desirable for VMs which
+     * have a volume in Ready state (happens when a VM is shutdown and started again).
+     * So, we set it to null only when
+     * migration of VM across cluster is enabled
+     * Or, volumes are still in allocated state for that VM (happens when VM is Starting/deployed for the first time)
+     */
+    private void isMigratingAllocatedVolumesAcrossClusters(VMInstanceVO vm) {
+        if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || areAllVolumesAllocated(vm.getId())) {
+            vm.setPodIdToDeployIn(null);
         }
     }
 
