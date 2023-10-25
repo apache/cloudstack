@@ -285,7 +285,7 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteSegment(long zoneId, long domainId, long accountId, long vpcId, long networkId, String segmentName) {
+    public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
