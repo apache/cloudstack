@@ -259,7 +259,7 @@ public class XenServer610WrapperTest {
         final Connection conn = Mockito.mock(Connection.class);
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
 
-        final VolumeTO volume1 =MockVolumeTO(path);
+        final VolumeTO volume1 = MockVolumeTO(path);
         final VolumeTO volume2 = MockVolumeTO(path);
 
         final SR sr1 = Mockito.mock(SR.class);
@@ -475,6 +475,7 @@ public class XenServer610WrapperTest {
 
         assertFalse(answer.getResult());
     }
+
     VolumeTO MockVolumeTO(String path){
         VolumeTO vol = Mockito.mock(VolumeTO.class);
         when(vol.getPath()).thenReturn(path);
