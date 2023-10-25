@@ -112,7 +112,8 @@
                 :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
                   <database-outlined/>
-                  <status class="status" text="Alert" style="margin-left: -10px"/>
+                  <status class="status" text="Alert" style="margin-left: -10px" v-if="data.alertHosts > 0"/>
+                  <span v-else>!</span>
                 </template>
               </a-statistic>
             </router-link>
