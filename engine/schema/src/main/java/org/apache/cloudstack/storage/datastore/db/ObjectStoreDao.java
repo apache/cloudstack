@@ -28,6 +28,8 @@ public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
 
     List<ObjectStoreVO> findByProvider(String provider);
 
+    ObjectStoreVO findByUrl(String url);
+
     List<ObjectStoreVO> listObjectStores();
 
     List<ObjectStoreVO> searchByIds(Long[] osIds);

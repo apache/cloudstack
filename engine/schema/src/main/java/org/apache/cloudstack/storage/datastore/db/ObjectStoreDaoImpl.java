@@ -39,6 +39,8 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
     private ConfigurationDao _configDao;
     private final SearchBuilder<ObjectStoreVO> osSearch;
 
+    private SearchBuilder<ObjectStoreVO> urlSearch;
+
     protected ObjectStoreDaoImpl() {
         osSearch = createSearchBuilder();
         osSearch.and("idIN", osSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -57,6 +59,10 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
         providerSearch.and("providerName", providerSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
         providerSearch.done();
 
+        urlSearch = createSearchBuilder();
+        urlSearch.and("url", urlSearch.entity().getUrl(), SearchCriteria.Op.EQ);
+        urlSearch.done();
+
         return true;
     }
 
@@ -72,6 +78,13 @@ public class ObjectStoreDaoImpl extends GenericDaoBase<ObjectStoreVO, Long> impl
         SearchCriteria<ObjectStoreVO> sc = providerSearch.create();
         sc.setParameters("providerName", provider);
         return listBy(sc);
+    }
+
+    @Override
+    public ObjectStoreVO findByUrl(String url) {
+        SearchCriteria<ObjectStoreVO> sc = urlSearch.create();
+        sc.setParameters("url", url);
+        return findOneBy(sc);
     }
 
     @Override

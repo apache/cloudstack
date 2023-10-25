@@ -3672,6 +3672,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(url + " is not a valid URL");
         }
 
+        // Check Unique object store url
+        ObjectStoreVO objectStoreUrl = _objectStoreDao.findByUrl(url);
+        if (objectStoreUrl != null) {
+            throw new InvalidParameterValueException("The object store with url " + url + " already exists");
+        }
+
+
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
         params.put("name", name);
