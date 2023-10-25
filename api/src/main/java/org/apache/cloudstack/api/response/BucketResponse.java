@@ -102,6 +102,10 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Bucket Secret Key")
     private String secretKey;
 
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "Object storage provider")
+    private String provider;
+
     public BucketResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -277,5 +281,13 @@ public class BucketResponse extends BaseResponseWithTagInformation implements Co
 
     public String getObjectStoragePool() {
         return objectStoragePool;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 }
