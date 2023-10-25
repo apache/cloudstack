@@ -1149,8 +1149,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             } finally {
                 joinLock.unlock();
             }
-            joinLock.releaseRef();
+        } else {
+            throw new ConnectionException(true, "Unable to acquire lock on host " + host.getUuid());
         }
+        joinLock.releaseRef();
         return attache;
     }
 
