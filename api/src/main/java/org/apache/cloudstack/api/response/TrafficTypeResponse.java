@@ -56,6 +56,15 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "The network name label of the physical device dedicated to this traffic on a HyperV host")
     private String hypervNetworkLabel;
 
+    // why not VLAN_ID
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "The VLAN id to be used for Management traffic by VMware host")
+    private String vlan;
+
+    @SerializedName(ApiConstants.ISOLATION_METHOD)
+    @Param(description = "The isolation method for the traffic")
+    private String isolationMethod;
+
     @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
     @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
     private String ovm3NetworkLabel;
@@ -127,5 +136,21 @@ public class TrafficTypeResponse extends BaseResponse {
 
     public void setOvm3Label(String ovm3Label) {
         this.ovm3NetworkLabel = ovm3Label;
+    }
+
+    public String getIsolationMethod() {
+        return isolationMethod;
+    }
+
+    public void setIsolationMethod(String isolationMethod) {
+        this.isolationMethod = isolationMethod;
+    }
+
+    public String getVlan() {
+        return vlan;
+    }
+
+    public void setVlan(String vlan) {
+        this.vlan = vlan;
     }
 }
