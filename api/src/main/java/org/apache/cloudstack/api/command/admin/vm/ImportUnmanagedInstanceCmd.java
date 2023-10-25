@@ -172,7 +172,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.HOST_IP,
             type = BaseCmd.CommandType.STRING,
-            required = true,
             description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
     private String host;
 
@@ -186,7 +185,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     private String datacenterName;
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
-            required = true,
             description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
     private String clusterName;
 
