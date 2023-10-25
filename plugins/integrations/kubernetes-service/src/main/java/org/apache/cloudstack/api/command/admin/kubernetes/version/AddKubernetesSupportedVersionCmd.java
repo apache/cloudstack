@@ -84,7 +84,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
             description = "the minimum RAM size in MB to be set with the Kubernetes version")
     private Integer minimumRamSize;
 
-    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.1",
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
             description = "true if the Kubernetes supported version ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
