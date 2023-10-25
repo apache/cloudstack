@@ -553,7 +553,7 @@ public class VeeamClient {
      */
     protected String transformPowerShellCommandList(List<String> cmds) {
         StringJoiner joiner = new StringJoiner(";");
-        joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell");
+        joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
         for (String cmd : cmds) {
             joiner.add(cmd);
         }
