@@ -1518,6 +1518,8 @@ class Template:
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
+        if "checksum" in services:
+            cmd.checksum = services["checksum"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
