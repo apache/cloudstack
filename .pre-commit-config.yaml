@@ -52,7 +52,7 @@ repos:
         exclude: \.vhd$
       #- id: fix-byte-order-marker
       - id: mixed-line-ending
-        files: \.(java|md|py|txt|yaml|yml)$
+        exclude: \.(cs|xml)$
       # - id: trailing-whitespace
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0

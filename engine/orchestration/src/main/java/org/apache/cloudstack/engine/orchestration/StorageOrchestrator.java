@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.engine.orchestration;
 
-import com.cloud.capacity.CapacityManager;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,6 +57,7 @@ import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
@@ -305,7 +305,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (!snaps.isEmpty()) {
             for (SnapshotDataStoreVO snap : snaps) {
                 SnapshotVO snapshotVO = snapshotDao.findById(snap.getSnapshotId());
-                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), DataStoreRole.Image);
+                SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snap.getDataStoreId(), DataStoreRole.Image);
                 SnapshotInfo parentSnapshot = snapshotInfo.getParent();
 
                 if (parentSnapshot == null && policy == MigrationPolicy.COMPLETE) {

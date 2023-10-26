@@ -95,7 +95,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("securitygroupsenabled")
     @Param(description = "true if security groups support is enabled, false otherwise")
-    private boolean securityGroupsEnabled;
+    private Boolean securityGroupsEnabled;
 
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the cluster")
@@ -115,7 +115,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
     @Param(description = "true if local storage offering enabled, false otherwise")
-    private boolean localStorageEnabled;
+    private Boolean localStorageEnabled;
 
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
@@ -131,7 +131,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName(ApiConstants.ALLOW_USER_SPECIFY_VR_MTU)
     @Param(description = "Allow end users to specify VR MTU", since = "4.18.0")
-    private boolean allowUserSpecifyVRMtu;
+    private Boolean allowUserSpecifyVRMtu;
 
     @SerializedName(ApiConstants.ROUTER_PRIVATE_INTERFACE_MAX_MTU)
     @Param(description = "The maximum value the MTU can have on the VR's private interfaces", since = "4.18.0")
@@ -197,7 +197,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.networkType = networkType;
     }
 
-    public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
+    public void setSecurityGroupsEnabled(Boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
@@ -221,7 +221,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         this.domainName = domainName;
     }
 
-    public void setLocalStorageEnabled(boolean localStorageEnabled) {
+    public void setLocalStorageEnabled(Boolean localStorageEnabled) {
         this.localStorageEnabled = localStorageEnabled;
     }
 
@@ -239,6 +239,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void addTag(ResourceTagResponse tag) {
@@ -345,7 +349,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
         return resourceIconResponse;
     }
 
-    public void setAllowUserSpecifyVRMtu(boolean allowUserSpecifyVRMtu) {
+    public void setAllowUserSpecifyVRMtu(Boolean allowUserSpecifyVRMtu) {
         this.allowUserSpecifyVRMtu = allowUserSpecifyVRMtu;
     }
 

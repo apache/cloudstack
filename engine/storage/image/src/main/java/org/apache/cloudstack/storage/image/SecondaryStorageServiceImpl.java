@@ -218,7 +218,7 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
     private void updateDataObject(DataObject srcData, DataObject destData) {
         if (destData instanceof SnapshotInfo) {
             SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySourceSnapshot(srcData.getId(), DataStoreRole.Image);
-            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findBySnapshot(srcData.getId(), DataStoreRole.Image);
+            SnapshotDataStoreVO destSnapshotStore = snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Image, srcData.getDataStore().getId(), srcData.getId());
             if (snapshotStore != null && destSnapshotStore != null) {
                 destSnapshotStore.setPhysicalSize(snapshotStore.getPhysicalSize());
                 destSnapshotStore.setCreated(snapshotStore.getCreated());

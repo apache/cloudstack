@@ -16,9 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.GenericDao;
-import com.google.gson.annotations.Expose;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,8 +31,9 @@ import javax.persistence.Table;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-import java.util.Date;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.GenericDao;
+import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name = "snapshots")
