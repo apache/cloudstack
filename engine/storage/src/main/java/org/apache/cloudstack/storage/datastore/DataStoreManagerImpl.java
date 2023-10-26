@@ -170,4 +170,16 @@ public class DataStoreManagerImpl implements DataStoreManager {
     public void setImageDataStoreMgr(ImageStoreProviderManager imageDataStoreMgr) {
         this.imageDataStoreMgr = imageDataStoreMgr;
     }
+
+    @Override
+    public Long getStoreZoneId(long storeId, DataStoreRole role) {
+        try {
+            if (role == DataStoreRole.Primary) {
+                return primaryStoreMgr.getPrimaryDataStoreZoneId(storeId);
+            } else  {
+                return imageDataStoreMgr.getImageStoreZoneId(storeId);
+            }
+        } catch (CloudRuntimeException ignored) {}
+        return null;
+    }
 }

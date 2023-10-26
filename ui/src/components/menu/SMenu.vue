@@ -41,6 +41,11 @@
               <render-icon
                 v-if="children.meta.icon && typeof (children.meta.icon) === 'string'"
                 :icon="children.meta.icon" />
+              <font-awesome-icon
+                v-else-if="children.meta.icon && Array.isArray(children.meta.icon)"
+                :icon="children.meta.icon"
+                class="anticon"
+                :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
               <render-icon v-else :svgIcon="children.meta.icon" />
               <span>{{ $t(children.meta.title) }}</span>
             </router-link>

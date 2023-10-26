@@ -73,6 +73,9 @@
         <module>deployment-planners/user-concentrated-pod</module>
         <module>deployment-planners/user-dispersing</module>
 
+        <module>drs/cluster/balanced</module>
+        <module>drs/cluster/condensed</module>
+
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>

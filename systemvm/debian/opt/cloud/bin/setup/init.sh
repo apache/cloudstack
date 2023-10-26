@@ -209,8 +209,7 @@ setup_interface_sshd() {
   fi
 
   systemctl restart systemd-journald
-  # Patch known systemd/sshd memory leak - https://github.com/systemd/systemd/issues/8015#issuecomment-476160981
-  echo '@include null' >> /etc/pam.d/systemd-user
+
   # Enable and Start SSH
   systemctl enable --now --no-block ssh
 }

@@ -1014,9 +1014,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
+
+                descName = UUID.randomUUID().toString();
+
                 command.add("-t", descName);
                 final String result = command.execute();
                 if (result != null) {
@@ -1041,18 +1041,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (isCreatedFromVmSnapshot) {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
             } else if (primaryPool.getType() != StoragePoolType.RBD) {
-                String snapshotPath = snapshot.getPath();
-                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
-
-                if (backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) {
-                    try {
-                        Files.deleteIfExists(Paths.get(snapshotPath));
-                    } catch (IOException ex) {
-                        s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
-                    }
-                } else {
-                    s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
-                }
+                deleteSnapshotOnPrimary(cmd, snapshot, primaryPool);
             }
 
             try {
@@ -1062,6 +1051,27 @@ public class KVMStorageProcessor implements StorageProcessor {
             } catch (final Exception ex) {
                 s_logger.debug("Failed to delete secondary storage", ex);
             }
+        }
+    }
+
+    private void deleteSnapshotOnPrimary(final CopyCommand cmd, final SnapshotObjectTO snapshot,
+            KVMStoragePool primaryPool) {
+        String snapshotPath = snapshot.getPath();
+        String backupSnapshotAfterTakingSnapshot = null;
+        boolean deleteSnapshotOnPrimary = true;
+        if (cmd.getOptions() != null) {
+            backupSnapshotAfterTakingSnapshot = cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+            deleteSnapshotOnPrimary = cmd.getOptions().get("typeDescription") == null;
+        }
+
+        if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
+            try {
+                Files.deleteIfExists(Paths.get(snapshotPath));
+            } catch (IOException ex) {
+                s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
+            }
+        } else {
+            s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
         }
     }
     protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws
@@ -1715,11 +1725,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
 
                     String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
-                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
+                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume, cmd.getWait());
 
                     mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
 
-                    validateCopyResult(copyResult, snapshotPath);
+                    validateConvertResult(convertResult, snapshotPath);
                 } catch (LibvirtException e) {
                     if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
                         throw e;
@@ -1784,8 +1794,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 } else {
                     snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
-                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
-                    validateCopyResult(copyResult, snapshotPath);
+                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume, cmd.getWait());
+                    validateConvertResult(convertResult, snapshotPath);
                 }
             }
 
@@ -1838,13 +1848,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         s_logger.debug(String.format("Full VM Snapshot [%s] of VM [%s] took [%s] seconds to finish.", snapshotName, vmName, (System.currentTimeMillis() - start)/1000));
     }
 
-    protected void validateCopyResult(String copyResult, String snapshotPath) throws CloudRuntimeException, IOException {
-        if (copyResult == null) {
+    protected void validateConvertResult(String convertResult, String snapshotPath) throws CloudRuntimeException, IOException {
+        if (convertResult == null) {
             return;
         }
 
         Files.deleteIfExists(Paths.get(snapshotPath));
-        throw new CloudRuntimeException(copyResult);
+        throw new CloudRuntimeException(convertResult);
     }
 
     /**
@@ -1901,20 +1911,31 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Creates the snapshot directory in the primary storage, if it does not exist; then copies the base file (VM's old writing file) to the snapshot dir..
+     * Creates the snapshot directory in the primary storage, if it does not exist; then, converts the base file (VM's old writing file) to the snapshot directory.
      * @param primaryPool Storage to create folder, if not exists;
-     * @param baseFile Base file of VM, which will be copied;
-     * @param snapshotPath Path to copy the base file;
-     * @return null if copies successfully or a error message.
+     * @param baseFile Base file of VM, which will be converted;
+     * @param snapshotPath Path to convert the base file;
+     * @return null if the conversion occurs successfully or an error message that must be handled.
      */
-    protected String copySnapshotToPrimaryStorageDir(KVMStoragePool primaryPool, String baseFile, String snapshotPath, VolumeObjectTO volume) {
+    protected String convertBaseFileToSnapshotFileInPrimaryStorageDir(KVMStoragePool primaryPool, String baseFile, String snapshotPath, VolumeObjectTO volume, int wait) {
         try {
+            s_logger.debug(String.format("Trying to convert volume [%s] (%s) to snapshot [%s].", volume, baseFile, snapshotPath));
+
             primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
-            Files.copy(Paths.get(baseFile), Paths.get(snapshotPath));
-            s_logger.debug(String.format("Copied %s snapshot from [%s] to [%s].", volume, baseFile, snapshotPath));
+
+            QemuImgFile srcFile = new QemuImgFile(baseFile);
+            srcFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+            QemuImgFile destFile = new QemuImgFile(snapshotPath);
+            destFile.setFormat(PhysicalDiskFormat.QCOW2);
+
+            QemuImg q = new QemuImg(wait);
+            q.convert(srcFile, destFile);
+
+            s_logger.debug(String.format("Converted volume [%s] (from path \"%s\") to snapshot [%s].", volume, baseFile, snapshotPath));
             return null;
-        } catch (IOException ex) {
-            return String.format("Unable to copy %s snapshot [%s] to [%s] due to [%s].", volume, baseFile, snapshotPath, ex.getMessage());
+        } catch (QemuImgException | LibvirtException ex) {
+            return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile, snapshotPath, ex.getMessage());
         }
     }
 
