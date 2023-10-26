@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
@@ -332,11 +333,18 @@ public class NsxApiClient {
         }
     }
 
-    public void deleteNatRule(String networkName, String tier1GatewayName, String ruleName) {
+    public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
         try {
             NatRules natService = (NatRules) nsxService.apply(NatRules.class);
             LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
+            // delete NAT rule
             natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
+            if (service == Network.Service.PortForwarding) {
+                String svcName = getServiceName(ruleName, privatePort, protocol);
+                // Delete service
+                Services services = (Services) nsxService.apply(Services.class);
+                services.delete(svcName);
+            }
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
@@ -408,8 +416,8 @@ public class NsxApiClient {
 
     public String createNsxInfraService(String ruleName, String port, String protocol) {
         try {
-            String serviceEntryName = ruleName + "-SE-" + port;
-            String serviceName = ruleName + "-SVC-" + port;
+            String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
+            String serviceName = getServiceName(ruleName, port, protocol);
             Services service = (Services) nsxService.apply(Services.class);
             com.vmware.nsx_policy.model.Service infraService = new com.vmware.nsx_policy.model.Service.Builder()
                     .setServiceEntries(List.of(
@@ -447,5 +455,13 @@ public class NsxApiClient {
             return null;
         }
         return null;
+    }
+
+    private String getServiceName(String ruleName, String port, String protocol) {
+        return ruleName + "-SVC-" + port + "-" +protocol;
+    }
+
+    private String getServiceEntryName(String ruleName, String port, String protocol) {
+        return ruleName + "-SE-" + port + "-" + protocol;
     }
 }

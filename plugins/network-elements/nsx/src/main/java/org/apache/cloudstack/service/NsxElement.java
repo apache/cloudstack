@@ -523,7 +523,7 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
                     .build();
             if (rule.getState() == FirewallRule.State.Add) {
                 return nsxService.createPortForwardRule(networkRule);
-            } else {
+            } else if (rule.getState() == FirewallRule.State.Revoke) {
                 return nsxService.deletePortForwardRule(networkRule);
             }
         }

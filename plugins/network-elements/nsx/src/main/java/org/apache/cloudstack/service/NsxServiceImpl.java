@@ -119,7 +119,7 @@ public class NsxServiceImpl implements NsxService {
     public boolean deletePortForwardRule(NsxNetworkRule netRule) {
         DeleteNsxNatRuleCommand deleteCmd = new DeleteNsxNatRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
-                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getVmId(), netRule.getRuleId(), null, null);
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getVmId(), netRule.getRuleId(), netRule.getPrivatePort(), netRule.getPublicPort());
         deleteCmd.setService(Network.Service.PortForwarding);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteCmd, netRule.getZoneId());
         return result.getResult();

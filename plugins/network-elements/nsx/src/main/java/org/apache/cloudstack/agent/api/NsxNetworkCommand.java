@@ -37,6 +37,15 @@ public class NsxNetworkCommand extends NsxCommand {
         this.vmIp = vmIp;
     }
 
+    public NsxNetworkCommand(long domainId, long accountId, long zoneId, Long networkResourceId, String networkResourceName,
+                            boolean isResourceVpc, Long vmId) {
+        super(domainId, accountId, zoneId);
+        this.networkResourceId = networkResourceId;
+        this.networkResourceName = networkResourceName;
+        this.isResourceVpc = isResourceVpc;
+        this.vmId = vmId;
+    }
+
     public Long getNetworkResourceId() {
         return networkResourceId;
     }

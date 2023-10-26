@@ -361,26 +361,6 @@ public class NsxResource implements ServerResource {
         return new NsxAnswer(cmd, true, null);
     }
 
-    private NsxAnswer executeRequest(DeleteNsxNatRuleCommand cmd) {
-        String ruleName = null;
-        if (cmd.getService() == Network.Service.StaticNat) {
-            ruleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
-                    cmd.getNetworkResourceId(), cmd.isResourceVpc());
-        } else if (cmd.getService() == Network.Service.PortForwarding) {
-            ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
-                    cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
-        }
-        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
-                cmd.getNetworkResourceId(), cmd.isResourceVpc());
-        try {
-            nsxApiClient.deleteNatRule(cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
-        } catch (Exception e) {
-            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
-            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
-        }
-        return new NsxAnswer(cmd, true, null);
-    }
-
     private NsxAnswer executeRequest(CreateNsxPortForwardRuleCommand cmd) {
         String ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
                 cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
@@ -395,6 +375,27 @@ public class NsxResource implements ServerResource {
                     cmd.getVmIp(), cmd.getPublicPort(), service);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to add NSX port forward rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxNatRuleCommand cmd) {
+        String ruleName = null;
+        if (cmd.getService() == Network.Service.StaticNat) {
+            ruleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                    cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        } else if (cmd.getService() == Network.Service.PortForwarding) {
+            ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                    cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
+        }
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        try {
+            nsxApiClient.deleteNatRule(cmd.getService(), cmd.getPrivatePort(), cmd.getProtocol(),
+                    cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

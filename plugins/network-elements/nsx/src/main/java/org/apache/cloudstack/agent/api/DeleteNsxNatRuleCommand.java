@@ -21,10 +21,15 @@ import com.cloud.network.Network;
 public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
     private Long ruleId;
     private Network.Service service;
+
+    private String privatePort;
+    private String protocol;
     public DeleteNsxNatRuleCommand(long domainId, long accountId, long zoneId, Long networkResourceId, String networkResourceName,
-                                   boolean isResourceVpc, Long vmId, Long ruleId, String publicIp, String vmIp) {
-        super(domainId, accountId, zoneId, networkResourceId, networkResourceName, isResourceVpc, vmId, publicIp, vmIp);
+                                   boolean isResourceVpc, Long vmId, Long ruleId, String privatePort, String protocol) {
+        super(domainId, accountId, zoneId, networkResourceId, networkResourceName, isResourceVpc, vmId);
         this.ruleId = ruleId;
+        this.privatePort = privatePort;
+        this.protocol = protocol;
     }
 
     public Long getRuleId() {
@@ -37,5 +42,13 @@ public class DeleteNsxNatRuleCommand extends NsxNetworkCommand {
 
     public void setService(Network.Service service) {
         this.service = service;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
+    }
+
+    public String getProtocol() {
+        return protocol;
     }
 }
