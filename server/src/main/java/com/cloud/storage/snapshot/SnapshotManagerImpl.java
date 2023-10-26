@@ -109,6 +109,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -150,8 +151,10 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
@@ -221,6 +224,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     protected SnapshotHelper snapshotHelper;
     @Inject
     DataCenterDao dataCenterDao;
+    @Inject
+    VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    @Inject
+    SnapshotDataFactory snapshotDataFactory;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -497,12 +504,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         SnapshotInfo snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
         snapshotInfo = (SnapshotInfo)store.create(snapshotInfo);
         SnapshotDataStoreVO snapshotOnPrimaryStore = this._snapshotStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshot.getId());
-        snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
-        snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
-        _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+
+        StoragePoolVO storagePool = _storagePoolDao.findById(store.getId());
+        updateSnapshotInfo(volumeId, vmSnapshotId, vmSnapshot, snapshot, snapshotOnPrimaryStore, storagePool);
+
         snapshot.setState(Snapshot.State.CreatedOnPrimary);
         _snapshotDao.update(snapshot.getId(), snapshot);
-
         snapshotInfo = this.snapshotFactory.getSnapshot(snapshotId, store);
 
         Long snapshotOwnerId = vm.getAccountId();
@@ -519,8 +526,33 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwnerId, ResourceType.secondary_storage, new Long(volume.getSize()));
             throw new CloudRuntimeException("Failed to backup snapshot from vm snapshot", e);
+        } finally {
+            if (snapshotOnPrimaryStore != null) {
+                _snapshotStoreDao.remove(snapshotOnPrimaryStore.getId());
+            }
         }
         return snapshotInfo;
+    }
+
+    private void updateSnapshotInfo(Long volumeId, Long vmSnapshotId, VMSnapshotVO vmSnapshot, SnapshotVO snapshot,
+            SnapshotDataStoreVO snapshotOnPrimaryStore, StoragePoolVO storagePool) {
+        if ((storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.Filesystem) && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmStorageSnapshot");
+            for (VMSnapshotDetailsVO vmSnapshotDetailsVO : vmSnapshotDetails) {
+                SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+                if (sInfo.getVolumeId() == volumeId) {
+                    snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+                    snapshotOnPrimaryStore.setInstallPath(sInfo.getPath());
+                    _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+                    snapshot.setTypeDescription(Type.FROM_GROUP.name());
+                    snapshot.setSnapshotType((short)Type.FROM_GROUP.ordinal());
+                }
+            }
+        } else {
+            snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+            snapshotOnPrimaryStore.setInstallPath(vmSnapshot.getName());
+            _snapshotStoreDao.update(snapshotOnPrimaryStore.getId(), snapshotOnPrimaryStore);
+        }
     }
 
     @Override
