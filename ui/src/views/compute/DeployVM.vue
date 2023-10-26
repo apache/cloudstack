@@ -473,13 +473,13 @@
 
                         <span v-if="property.type && property.type==='boolean'">
                           <a-switch
-                            v-model:checked="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:checked="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                           />
                         </span>
                         <span v-else-if="property.type && (property.type==='int' || property.type==='real')">
                           <a-input-number
-                            v-model:value="form['properties.'+ escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :min="getPropertyQualifiers(property.qualifiers, 'number-select').min"
                             :max="getPropertyQualifiers(property.qualifiers, 'number-select').max" />
@@ -487,11 +487,11 @@
                         <span v-else-if="property.type && property.type==='string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')">
                           <a-select
                             showSearch
-                            optionFilterProp="value"
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            optionFilterProp="label"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -501,12 +501,12 @@
                         </span>
                         <span v-else-if="property.type && property.type==='string' && property.password">
                           <a-input-password
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                         <span v-else>
                           <a-input
-                            v-model:value="form['properties.' + escapePropertyKey(property.key)]"
+                            v-model:value="form.properties[escapePropertyKey(property.key)]"
                             :placeholder="property.description" />
                         </span>
                       </a-form-item>
@@ -1536,61 +1536,7 @@ export default {
           })
         }
 
-        if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
-          this.templateProperties.forEach((props, category) => {
-            props.forEach((property, propertyIndex) => {
-              if (property.type && property.type === 'boolean') {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value === 'TRUE'
-              } else if (property.type && (property.type === 'int' || property.type === 'real')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
-                  ? property.value
-                  : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
-              } else if (property.type && property.type === 'string' && property.password) {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-                this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
-                  validator: async (rule, value) => {
-                    if (!property.qualifiers) {
-                      return Promise.resolve()
-                    }
-                    var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
-                    var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
-                    var errorMessage = ''
-                    var isPasswordInvalidLength = function () {
-                      return false
-                    }
-                    if (minlength) {
-                      errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
-                      isPasswordInvalidLength = function () {
-                        return !value || value.length < minlength
-                      }
-                    }
-                    if (maxlength !== Number.MAX_SAFE_INTEGER) {
-                      if (minlength) {
-                        errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || (maxlength < value.length || value.length < minlength)
-                        }
-                      } else {
-                        errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
-                        isPasswordInvalidLength = function () {
-                          return !value || value.length > maxlength
-                        }
-                      }
-                    }
-                    if (isPasswordInvalidLength()) {
-                      return Promise.reject(errorMessage)
-                    }
-                    return Promise.resolve()
-                  }
-                }]
-              } else {
-                this.form['properties.' + this.escapePropertyKey(property.key)] = property.value
-              }
-            })
-          })
-        }
+        this.updateFormProperties()
 
         if (this.vm.templateid && this.templateLicenses && this.templateLicenses.length > 0) {
           this.rules.licensesaccepted = [{
@@ -2620,6 +2566,64 @@ export default {
       this.dataPreFill.memory = params.memory
       this.handleSearchFilter('serviceOfferings', params)
     },
+    updateFormProperties () {
+      if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
+        this.form.properties = {}
+        Object.keys(this.templateProperties).forEach((category, categoryIndex) => {
+          this.templateProperties[category].forEach((property, _) => {
+            if (property.type && property.type === 'boolean') {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value === 'TRUE'
+            } else if (property.type && (property.type === 'int' || property.type === 'real')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            } else if (property.type && property.type === 'string' && property.qualifiers && property.qualifiers.startsWith('ValueMap')) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value && property.value.length > 0
+                ? property.value
+                : this.getPropertyQualifiers(property.qualifiers, 'select')[0]
+            } else if (property.type && property.type === 'string' && property.password) {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+              this.rules['properties.' + this.escapePropertyKey(property.key)] = [{
+                validator: async (rule, value) => {
+                  if (!property.qualifiers) {
+                    return Promise.resolve()
+                  }
+                  var minlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').min
+                  var maxlength = this.getPropertyQualifiers(property.qualifiers, 'number-select').max
+                  var errorMessage = ''
+                  var isPasswordInvalidLength = function () {
+                    return false
+                  }
+                  if (minlength) {
+                    errorMessage = this.$t('message.validate.minlength').replace('{0}', minlength)
+                    isPasswordInvalidLength = function () {
+                      return !value || value.length < minlength
+                    }
+                  }
+                  if (maxlength !== Number.MAX_SAFE_INTEGER) {
+                    if (minlength) {
+                      errorMessage = this.$t('message.validate.range.length').replace('{0}', minlength).replace('{1}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || (maxlength < value.length || value.length < minlength)
+                      }
+                    } else {
+                      errorMessage = this.$t('message.validate.maxlength').replace('{0}', maxlength)
+                      isPasswordInvalidLength = function () {
+                        return !value || value.length > maxlength
+                      }
+                    }
+                  }
+                  if (isPasswordInvalidLength()) {
+                    return Promise.reject(errorMessage)
+                  }
+                  return Promise.resolve()
+                }
+              }]
+            } else {
+              this.form.properties[this.escapePropertyKey(property.key)] = property.value
+            }
+          })
+        })
+      }
+    },
     updateTemplateParameters () {
       if (this.template) {
         this.templateNics = this.fetchTemplateNics(this.template)
@@ -2637,6 +2641,7 @@ export default {
             this.updateComputeOffering(null) // reset as existing selection may be incompatible
           }
         }, 500)
+        this.updateFormProperties()
       }
     },
     onSelectTemplateConfigurationId (value) {

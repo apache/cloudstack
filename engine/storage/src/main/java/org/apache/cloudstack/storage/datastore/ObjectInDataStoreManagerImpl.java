@@ -382,27 +382,4 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
 
     }
 
-    @Override
-    public DataStore findStore(long objId, DataObjectType type, DataStoreRole role) {
-        DataStore store = null;
-        if (role == DataStoreRole.Image) {
-            DataObjectInStore vo = null;
-            switch (type) {
-                case TEMPLATE:
-                    vo = templateDataStoreDao.findByTemplate(objId, role);
-                    break;
-                case SNAPSHOT:
-                    vo = snapshotDataStoreDao.findBySnapshot(objId, role);
-                    break;
-                case VOLUME:
-                    vo = volumeDataStoreDao.findByVolume(objId);
-                    break;
-            }
-            if (vo != null) {
-                store = this.storeMgr.getDataStore(vo.getDataStoreId(), role);
-            }
-        }
-        return store;
-    }
-
 }

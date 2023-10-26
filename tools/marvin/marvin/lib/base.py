@@ -1522,6 +1522,8 @@ class Template:
 
         if "directdownload" in services:
             cmd.directdownload = services["directdownload"]
+        if "checksum" in services:
+            cmd.checksum = services["checksum"]
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
@@ -3128,6 +3130,35 @@ class Cluster:
         cmd = updateCluster.updateClusterCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateCluster(cmd))
+
+    def listDrsPlans(cls, apiclient, **kwargs):
+        """List drs plans for cluster"""
+
+        cmd = listClusterDrsPlan.listClusterDrsPlanCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.listClusterDrsPlan(cmd)
+
+    def generateDrsPlan(cls, apiclient, migrations=None):
+        """Generate a drs plan for cluster"""
+
+        cmd = generateClusterDrsPlan.generateClusterDrsPlanCmd()
+        cmd.id = cls.id
+        cmd.migrations = migrations
+        return apiclient.generateClusterDrsPlan(cmd)
+
+    def executeDrsPlan(cls, apiclient, migrateto=None):
+        """Execute drs plan on cluster"""
+
+        cmd = executeClusterDrsPlan.executeClusterDrsPlanCmd()
+        cmd.id = cls.id
+        if migrateto:
+            cmd.migrateto = []
+            for vm, host in list(migrateto.items()):
+                cmd.migrateto.append({
+                    'vm': vm,
+                    'host': host
+                })
+        return apiclient.executeClusterDrsPlan(cmd)
 
 
 class Host:

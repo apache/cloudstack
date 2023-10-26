@@ -408,14 +408,14 @@ public class UriUtils {
         return urls;
     }
 
-    public static final Set<String> COMMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 
         for (String baseExtension : baseExtensions) {
             builder.add("." + baseExtension);
-            for (String format : COMMPRESSION_FORMATS) {
+            for (String format : COMPRESSION_FORMATS) {
                 builder.add("." + baseExtension + "." + format);
             }
         }
@@ -646,5 +646,9 @@ public class UriUtils {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
         }
+    }
+
+    public static boolean isUrlForCompressedFile(String url) {
+        return UriUtils.COMPRESSION_FORMATS.stream().anyMatch(f -> url.toLowerCase().endsWith(f));
     }
 }
