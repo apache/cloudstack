@@ -74,7 +74,7 @@ public class SnapshotManagerImplTest {
     @Mock
     SnapshotService snapshotService;
     @Mock
-    SnapshotDataFactory snapshotDataFactory;
+    SnapshotDataFactory snapshotFactory;
     @Mock
     ResourceLimitService resourceLimitService;
     @Mock
@@ -269,7 +269,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(store.getId()).thenReturn(storeId);
         Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(store);
         Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
-        Mockito.when(snapshotDataFactory.getSnapshot(Mockito.anyLong(), Mockito.any())).thenReturn(Mockito.mock(SnapshotInfo.class));
+        Mockito.when(snapshotFactory.getSnapshot(Mockito.anyLong(), Mockito.any())).thenReturn(Mockito.mock(SnapshotInfo.class));
         CreateCmdResult result = Mockito.mock(CreateCmdResult.class);
         Mockito.when(result.isFailed()).thenReturn(false);
         Mockito.when(result.getPath()).thenReturn("SOMEPATH");
