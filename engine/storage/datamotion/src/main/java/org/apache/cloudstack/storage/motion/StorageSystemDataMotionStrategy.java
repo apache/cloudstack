@@ -864,7 +864,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeDao.update(volumeVO.getId(), volumeVO);
             }
         } catch (Exception ex) {
-            errMsg = "Primary storage migration failued due to an unexpected error: " +
+            errMsg = "Primary storage migration failed due to an unexpected error: " +
                     ex.getMessage();
             if (ex instanceof CloudRuntimeException) {
                 throw ex;
