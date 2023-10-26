@@ -1443,7 +1443,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 if (canRetry) {
                     try {
-                        isMigratingAllocatedVolumesAcrossClusters(vm);
+                        conditionallySetPodToDeployIn(vm);
                         changeState(vm, Event.OperationFailed, null, work, Step.Done);
                     } catch (final NoTransitionException e) {
                         throw new ConcurrentOperationException(e.getMessage());
@@ -1468,7 +1468,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * migration of VM across cluster is enabled
      * Or, volumes are still in allocated state for that VM (happens when VM is Starting/deployed for the first time)
      */
-    private void isMigratingAllocatedVolumesAcrossClusters(VMInstanceVO vm) {
+    private void conditionallySetPodToDeployIn(VMInstanceVO vm) {
         if (MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId()) || areAllVolumesAllocated(vm.getId())) {
             vm.setPodIdToDeployIn(null);
         }
