@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -39,12 +40,14 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         String username = command.getUsername();
         String password = command.getPassword();
         String srcFile = command.getSrcFile();
-        String dstPath = command.getDstPath();
+        StorageFilerTO storageFilerTO = command.getStorageFilerTO();
+        String dstPath = storageFilerTO.getPath();
         String tmpPath = command.getTmpPath();
+        String poolUuid = storageFilerTO.getUuid();
         try {
             String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
-            s_logger.debug("Volume Copy Successful ");
-            return  new CopyRemoteVolumeAnswer(command, "", filename);
+            s_logger.debug("Volume Copy Successful");
+            return  new CopyRemoteVolumeAnswer(command, "", dstPath +"/"+filename);
         } catch (final Exception e) {
             s_logger.error("Error while copying file from remote host: "+ e.getMessage());
             return new Answer(command, false, result);

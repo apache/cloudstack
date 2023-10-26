@@ -27,6 +27,7 @@ import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceAnswer;
 import com.cloud.agent.api.PrepareUnmanageVMInstanceCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
@@ -699,7 +700,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private Pair<DiskProfile, StoragePool> importExternalDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, DeployDestination dest, DiskOffering diskOffering,
                                                       Volume.Type type, VirtualMachineTemplate template,Long deviceId, String remoteUrl, String username, String password,
                                                       String tmpPath, DiskProfile diskProfile) {
-        final String path = StringUtils.isEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
+        final String path = StringUtils.isEmpty(disk.getDatastorePath()) ? disk.getImagePath() : disk.getDatastorePath();
         String chainInfo = disk.getChainInfo();
         if (StringUtils.isEmpty(chainInfo)) {
             VirtualMachineDiskInfo diskInfo = new VirtualMachineDiskInfo();
@@ -715,9 +716,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         copyRemoteVolumeCommand.setUsername(username);
         copyRemoteVolumeCommand.setPassword(password);
         copyRemoteVolumeCommand.setSrcFile(path);
-        copyRemoteVolumeCommand.setDstPath(storagePool.getPath());
+        StorageFilerTO storageTO = new StorageFilerTO(storagePool);
+        copyRemoteVolumeCommand.setStorageFilerTO(storageTO);
         if(tmpPath == null) {
-            tmpPath = "/tmp";
+            tmpPath = "/tmp/";
         }
         copyRemoteVolumeCommand.setTempPath(tmpPath);
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);

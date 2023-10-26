@@ -282,6 +282,10 @@ public class LibvirtDomainXMLParser {
                 String name = getAttrValue("target", "name", channel);
                 String state = getAttrValue("target", "state", channel);
 
+                if ( ChannelDef.ChannelType.valueOf(type.toUpperCase()).equals(ChannelDef.ChannelType.SPICEVMC)) {
+                    continue;
+                }
+
                 ChannelDef def = null;
                 if (StringUtils.isBlank(state)) {
                     def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), new File(path));

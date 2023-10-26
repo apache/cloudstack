@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+
 @LogLevel(LogLevel.Log4jLevel.Trace)
 public class CopyRemoteVolumeCommand extends Command {
 
@@ -26,9 +28,10 @@ public class CopyRemoteVolumeCommand extends Command {
     String username;
     String password;
     String srcFile;
-    String dstPath;
 
     String tmpPath;
+
+    StorageFilerTO storageFilerTO;
 
     public CopyRemoteVolumeCommand(String remoteIp, String username, String password) {
         this.remoteIp = remoteIp;
@@ -68,14 +71,6 @@ public class CopyRemoteVolumeCommand extends Command {
         this.srcFile = srcFile;
     }
 
-    public String getDstPath() {
-        return dstPath;
-    }
-
-    public void setDstPath(String dstPath) {
-        this.dstPath = dstPath;
-    }
-
     public CopyRemoteVolumeCommand() {
     }
 
@@ -94,5 +89,13 @@ public class CopyRemoteVolumeCommand extends Command {
 
     public String getTmpPath() {
         return tmpPath;
+    }
+
+    public StorageFilerTO getStorageFilerTO() {
+        return storageFilerTO;
+    }
+
+    public void setStorageFilerTO(StorageFilerTO storageFilerTO) {
+        this.storageFilerTO = storageFilerTO;
     }
 }

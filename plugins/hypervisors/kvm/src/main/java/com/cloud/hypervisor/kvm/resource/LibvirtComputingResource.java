@@ -5290,7 +5290,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public String copyVolume(String srcIp, String username, String password, String localDir, String remoteFile, String tmpPath) {
         try {
             String outputFile = UUID.randomUUID().toString();
-            StringBuilder command = new StringBuilder("qemu-img convert ");
+            StringBuilder command = new StringBuilder("qemu-img convert -O qcow2 ");
             command.append(remoteFile);
             command.append(" "+tmpPath);
             command.append(outputFile);
@@ -5299,7 +5299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("Copying remoteFile to: "+localDir);
             SshHelper.scpFrom(srcIp, 22, username, null, password, localDir, tmpPath+outputFile);
             s_logger.debug("Successfully copyied remoteFile to: "+localDir+"/"+outputFile);
-            return localDir+"/"+outputFile;
+            return outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
