@@ -3730,7 +3730,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setName(guestOS.getDisplayName());
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(String.valueOf(guestOS.getIsUserDefined()));
+        response.setIsUserDefined(guestOS.getIsUserDefined());
         response.setForDisplay(guestOS.getForDisplay());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {

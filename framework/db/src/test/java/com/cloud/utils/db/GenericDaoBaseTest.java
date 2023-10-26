@@ -18,6 +18,10 @@ package com.cloud.utils.db;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +40,7 @@ public class GenericDaoBaseTest {
     @Mock
     SQLException mockedSQLException;
 
+    private static final DbTestDao dbTestDao = new DbTestDao();
     private static final String INTEGRITY_CONSTRAINT_VIOLATION = "23000";
     private static final int DUPLICATE_ENTRY_ERRO_CODE = 1062;
 
@@ -213,5 +218,52 @@ public class GenericDaoBaseTest {
         int result = genericDaoBaseMock.checkCountOfRecordsAgainstTheResultSetSize(count, resultSetSize);
 
         Assert.assertEquals(resultSetSize, result);
+    }
+
+    @Test
+    public void addJoinsTest() {
+        StringBuilder joinString = new StringBuilder();
+        Collection<JoinBuilder<SearchCriteria<?>>> joins = new ArrayList<>();
+
+        Attribute attr1 = new Attribute("table1", "column1");
+        Attribute attr2 = new Attribute("table2", "column2");
+        Attribute attr3 = new Attribute("table3", "column1");
+        Attribute attr4 = new Attribute("table4", "column2");
+
+        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), attr1, attr2, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), attr3, attr4, JoinBuilder.JoinType.INNER));
+        dbTestDao.addJoins(joinString, joins);
+
+        Assert.assertEquals(" INNER JOIN table2 ON table1.column1=table2.column2  INNER JOIN table4 ON table3.column1=table4.column2 ", joinString.toString());
+    }
+
+    @Test
+    public void multiJoinSameTableTest() {
+        StringBuilder joinString = new StringBuilder();
+        Collection<JoinBuilder<SearchCriteria<?>>> joins = new ArrayList<>();
+
+        Attribute tAc1 = new Attribute("tableA", "column1");
+        Attribute tAc2 = new Attribute("tableA", "column2");
+        Attribute tAc3 = new Attribute("tableA", "column3");
+        Attribute tBc2 = new Attribute("tableB", "column2");
+        Attribute tCc3 = new Attribute("tableC", "column3");
+        Attribute tDc4 = new Attribute("tableD", "column4");
+
+        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
+        dbTestDao.addJoins(joinString, joins);
+
+        Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1  INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2  INNER JOIN tableA tableA2 ON tableD.column4=tableA2.column3 ", joinString.toString());
+    }
+
+    @Test
+    public void findNextTableNameTest() {
+        Map<String, Integer> usedTables = new HashMap<>();
+
+        Assert.assertEquals("tableA", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
+        Assert.assertEquals("tableA1", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
+        Assert.assertEquals("tableA2", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
+        Assert.assertEquals("tableA3", GenericDaoBase.findNextJoinTableName("tableA", usedTables));
     }
 }
