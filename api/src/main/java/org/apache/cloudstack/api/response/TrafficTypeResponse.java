@@ -25,6 +25,8 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.serializer.Param;
 
+import java.util.List;
+
 @EntityReference(value = PhysicalNetworkTrafficType.class)
 public class TrafficTypeResponse extends BaseResponse {
 
@@ -56,14 +58,13 @@ public class TrafficTypeResponse extends BaseResponse {
     @Param(description = "The network name label of the physical device dedicated to this traffic on a HyperV host")
     private String hypervNetworkLabel;
 
-    // why not VLAN_ID
     @SerializedName(ApiConstants.VLAN)
     @Param(description = "The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
-    @SerializedName(ApiConstants.ISOLATION_METHOD)
-    @Param(description = "The isolation method for the traffic")
-    private String isolationMethod;
+    @SerializedName(ApiConstants.ISOLATION_METHODS)
+    @Param(description = "isolation methods for the physical network traffic")
+    private List<String> isolationMethods;
 
     @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
     @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
@@ -138,14 +139,13 @@ public class TrafficTypeResponse extends BaseResponse {
         this.ovm3NetworkLabel = ovm3Label;
     }
 
-    public String getIsolationMethod() {
-        return isolationMethod;
+    public List<String> getIsolationMethods() {
+        return isolationMethods;
     }
 
-    public void setIsolationMethod(String isolationMethod) {
-        this.isolationMethod = isolationMethod;
+    public void setIsolationMethods(List<String> isolationMethods) {
+        this.isolationMethods = isolationMethods;
     }
-
     public String getVlan() {
         return vlan;
     }
