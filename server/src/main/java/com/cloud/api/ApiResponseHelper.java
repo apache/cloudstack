@@ -271,7 +271,6 @@ import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;

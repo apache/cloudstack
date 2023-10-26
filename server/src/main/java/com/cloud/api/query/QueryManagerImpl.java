@@ -5132,7 +5132,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (id != null) {
             BucketVO bucket = bucketDao.findById(id);
             if (bucket != null) {
-                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, bucket);
+                accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, bucket);
             }
         }
 
@@ -5140,7 +5140,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
                 cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -5148,14 +5148,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(BucketVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         SearchBuilder<BucketVO> sb = bucketDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
         SearchCriteria<BucketVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<BucketVO> ssc = bucketDao.createSearchCriteria();
