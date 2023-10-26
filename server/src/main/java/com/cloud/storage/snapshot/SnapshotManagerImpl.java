@@ -570,7 +570,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if ((storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.Filesystem) && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.findDetails(vmSnapshotId, "kvmStorageSnapshot");
             for (VMSnapshotDetailsVO vmSnapshotDetailsVO : vmSnapshotDetails) {
-                SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), DataStoreRole.Primary);
+                SnapshotInfo sInfo = snapshotDataFactory.getSnapshot(Long.parseLong(vmSnapshotDetailsVO.getValue()), storagePool.getId(), DataStoreRole.Primary);
                 if (sInfo.getVolumeId() == volumeId) {
                     snapshotOnPrimaryStore.setState(ObjectInDataStoreStateMachine.State.Ready);
                     snapshotOnPrimaryStore.setInstallPath(sInfo.getPath());
