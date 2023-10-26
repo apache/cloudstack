@@ -173,9 +173,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
         String msg = String.format("Could not parse correctly the converted XML domain, checking for disks on %s with prefix %s", path, prefix);
         s_logger.info(msg);
+        pool.refresh();
         List<KVMPhysicalDisk> disksWithPrefix = pool.listPhysicalDisks()
                 .stream()
-                .filter(x -> x.getName().startsWith(prefix))
+                .filter(x -> x.getName().startsWith(prefix) && !x.getName().endsWith(".xml"))
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksWithPrefix)) {
             msg = String.format("Could not find any converted disk with prefix %s on temporary location %s", prefix, path);
