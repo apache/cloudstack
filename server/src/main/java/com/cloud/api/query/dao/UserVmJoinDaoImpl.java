@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -617,6 +618,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             }
         }
         return uvms;
+    }
+
+    @Override
+    public List<UserVmJoinVO> newUserVmView(VirtualMachine... vms) {
+
+        Hashtable<Long,VirtualMachine> userVmDataHash = new Hashtable<>();
+        for (VirtualMachine vm : vms) {
+            if (!userVmDataHash.containsKey(vm.getId())) {
+                userVmDataHash.put(vm.getId(), vm);
+            }
+        }
+
+        Set<Long> vmIdSet = userVmDataHash.keySet();
+        return searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
     }
 
 }

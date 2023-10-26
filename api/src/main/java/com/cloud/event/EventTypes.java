@@ -678,6 +678,11 @@ public class EventTypes {
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
 
+    // DRS Events
+    public static final String EVENT_CLUSTER_DRS = "CLUSTER.DRS";
+    public static final String EVENT_CLUSTER_DRS_GENERATE = "CLUSTER.DRS.GENERATE";
+
+
     // Netscaler Service Package events
     public static final String EVENT_NETSCALER_SERVICEPACKAGE_ADD = "NETSCALER.SERVICEPACKAGE.ADD";
     public static final String EVENT_NETSCALER_SERVICEPACKAGE_DELETE = "NETSCALER.SERVICEPACKAGE.DELETE";
