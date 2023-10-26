@@ -1171,16 +1171,33 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return vpc;
     }
 
+    private boolean isVpcForNsx(Vpc vpc) {
+        VpcOfferingServiceMapVO mapVO = _vpcOffSvcMapDao.findByServiceProviderAndOfferingId(Service.SourceNat.getName(), Provider.Nsx.getName(), vpc.getVpcOfferingId());
+        if (mapVO != null) {
+            s_logger.debug(String.format("The VPC %s is NSX-based and supports the %s service", vpc.getName(), Service.SourceNat.getName()));
+        }
+        return mapVO != null;
+    }
+
     private void allocateSourceNatIp(Vpc vpc, String sourceNatIP) {
         Account account = _accountMgr.getAccount(vpc.getAccountId());
         DataCenter zone = _dcDao.findById(vpc.getZoneId());
         // reserve this ip and then
         try {
+            if (isVpcForNsx(vpc) && org.apache.commons.lang3.StringUtils.isBlank(sourceNatIP)) {
+                s_logger.debug(String.format("Reserving a source NAT IP for NSX VPC %s", vpc.getName()));
+                sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone, vpc);
+            }
             IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), zone, null, sourceNatIP);
             this.associateIPToVpc(ip.getId(), vpc.getId());
         } catch (ResourceAllocationException | ResourceUnavailableException | InsufficientAddressCapacityException e){
             throw new CloudRuntimeException("new source NAT address cannot be acquired", e);
         }
+    }
+
+    private String reserveSourceNatIpForNsxVpc(Account account, DataCenter zone, Vpc vpc) throws ResourceAllocationException {
+        IpAddress ipAddress = _ntwkSvc.reserveIpAddressWithVlanDetail(account, zone, true, ApiConstants.NSX_DETAIL_KEY);
+        return ipAddress.getAddress().addr();
     }
 
     @DB
