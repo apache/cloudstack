@@ -518,7 +518,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private void handleVolumeMigrationFromManagedStorageToManagedStorage(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo,
                                                                 AsyncCompletionCallback<CopyCommandResult> callback) {
         if (!HypervisorType.KVM.equals(srcVolumeInfo.getHypervisorType())) {
-            String errMsg = "Currently migrating volumes between managed storage providers is only supported on KVM hypervisor";
+            String errMsg = String.format("Currently migrating volumes between managed storage providers is not supported on %s hypervisor", srcVolumeInfo.getHypervisorType().toString());
             handleError(errMsg, callback);
         } else {
             handleVolumeMigrationForKVM(srcVolumeInfo, destVolumeInfo, callback);
