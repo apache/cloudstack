@@ -168,12 +168,12 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             bucket.setState(Bucket.State.Created);
             _bucketDao.update(bucket.getId(), bucket);
         } catch (Exception e) {
-            s_logger.error("Failed to create bucket with name: "+bucket.getName(), e);
+            s_logger.debug("Failed to create bucket with name: "+bucket.getName(), e);
             if(bucketCreated) {
                 objectStore.deleteBucket(bucket.getName());
             }
             _bucketDao.remove(bucket.getId());
-            throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()  );
+            throw new CloudRuntimeException("Failed to create bucket with name: "+bucket.getName()+". "+e.getMessage());
         }
         return bucket;
     }
@@ -204,34 +204,38 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        if(cmd.getEncryption() != null) {
-            if(cmd.getEncryption()) {
-                objectStore.setBucketEncryption(bucket.getName());
-            } else {
-                objectStore.deleteBucketEncryption(bucket.getName());
+        try {
+            if (cmd.getEncryption() != null) {
+                if (cmd.getEncryption()) {
+                    objectStore.setBucketEncryption(bucket.getName());
+                } else {
+                    objectStore.deleteBucketEncryption(bucket.getName());
+                }
+                bucket.setEncryption(cmd.getEncryption());
             }
-            bucket.setEncryption(cmd.getEncryption());
-        }
 
-        if(cmd.getVersioning() != null) {
-            if(cmd.getVersioning()) {
-                objectStore.setBucketVersioning(bucket.getName());
-            } else {
-                objectStore.deleteBucketVersioning(bucket.getName());
+            if (cmd.getVersioning() != null) {
+                if (cmd.getVersioning()) {
+                    objectStore.setBucketVersioning(bucket.getName());
+                } else {
+                    objectStore.deleteBucketVersioning(bucket.getName());
+                }
+                bucket.setVersioning(cmd.getVersioning());
             }
-            bucket.setVersioning(cmd.getVersioning());
-        }
 
-        if(cmd.getPolicy() != null) {
-            objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
-            bucket.setPolicy(cmd.getPolicy());
-        }
+            if (cmd.getPolicy() != null) {
+                objectStore.setBucketPolicy(bucket.getName(), cmd.getPolicy());
+                bucket.setPolicy(cmd.getPolicy());
+            }
 
-        if(cmd.getQuota() != null) {
-            objectStore.setQuota(bucket.getName(), cmd.getQuota());
-            bucket.setQuota(cmd.getQuota());
+            if (cmd.getQuota() != null) {
+                objectStore.setQuota(bucket.getName(), cmd.getQuota());
+                bucket.setQuota(cmd.getQuota());
+            }
+            _bucketDao.update(bucket.getId(), bucket);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error while updating bucket: " +bucket.getName() +". "+e.getMessage());
         }
-        _bucketDao.update(bucket.getId(), bucket);
 
         return true;
     }

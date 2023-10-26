@@ -149,9 +149,10 @@ export default {
           })
           this.closeModal()
         }).catch(error => {
+          console.log(error)
           this.$notification.error({
-            message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.errorresponse.errortext,
+            message: `${this.$t('label.bucket.update')} ${this.$t('label.error')}`,
+            description: error.response.data.updatebucketresponse.errortext,
             duration: 0
           })
         }).finally(() => {

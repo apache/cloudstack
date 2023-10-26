@@ -185,7 +185,12 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
     public void execute() {
         CallContext.current().setEventDetails("Bucket Id: " + getEntityUuid());
 
-        Bucket bucket = _bucketService.createBucket(this);
+        Bucket bucket;
+        try {
+            bucket = _bucketService.createBucket(this);
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
         if (bucket != null) {
             BucketResponse response = _responseGenerator.createBucketResponse(bucket);
             response.setResponseName(getCommandName());
