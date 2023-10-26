@@ -1388,9 +1388,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         List<UnmanagedInstanceTO.Nic> convertedInstanceNics = convertedInstance.getNics();
         List<UnmanagedInstanceTO.Nic> clonedInstanceNics = clonedInstance.getNics();
-        for (int i = 0; i < convertedInstanceNics.size(); i++) {
-            UnmanagedInstanceTO.Nic nic = convertedInstanceNics.get(i);
-            nic.setNicId(clonedInstanceNics.get(i).getNicId());
+        if (CollectionUtils.isEmpty(convertedInstanceNics) && CollectionUtils.isNotEmpty(clonedInstanceNics)) {
+            convertedInstance.setNics(clonedInstanceNics);
+        } else {
+            for (int i = 0; i < convertedInstanceNics.size(); i++) {
+                UnmanagedInstanceTO.Nic nic = convertedInstanceNics.get(i);
+                nic.setNicId(clonedInstanceNics.get(i).getNicId());
+            }
         }
     }
 
