@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
@@ -204,6 +205,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
         StateSearch = createSearchBuilder();
         StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+        StateSearch.and("runid", StateSearch.entity().getRunid(), SearchCriteria.Op.GT);
         StateSearch.done();
     }
 
@@ -270,6 +272,16 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             return mshosts.get(0);
         }
         return null;
+    }
+
+    @Override
+    public ManagementServerHostVO findOneByLongestRuntime() {
+        SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+        sc.setParameters("state", ManagementServerHost.State.Up);
+        sc.setParameters("runid", 0);
+        Filter filter = new Filter(ManagementServerHostVO.class, "runid", true, 0L, 1L);
+        List<ManagementServerHostVO> msHosts = listBy(sc, filter);
+        return CollectionUtils.isNotEmpty(msHosts) ? msHosts.get(0) : null;
     }
 
 }
