@@ -3816,6 +3816,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
         }
 
+        if (vnetRange != null && zoneType == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Can't add vnet range to the physical network in the Basic zone");
+        }
+
         BroadcastDomainRange broadcastDomainRange = null;
         if (broadcastDomainRangeStr != null && !broadcastDomainRangeStr.isEmpty()) {
             try {
@@ -3934,6 +3938,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         DataCenter zone = _dcDao.findById(network.getDataCenterId());
         if (zone == null) {
             throwInvalidIdException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system", String.valueOf(network.getDataCenterId()), "dataCenterId");
+        }
+
+        if (newVnetRange != null && zone.getNetworkType() == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Can't add vnet range to the physical network in the Basic zone");
         }
 
         if (tags != null && tags.size() > 1) {
