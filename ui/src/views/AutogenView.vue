@@ -762,7 +762,7 @@ export default {
         }
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
-        'templatefilter' in params && this.routeName === 'template') {
+        'templatefilter' in params && (['template'].includes(this.routeName))) {
         params.templatefilter = 'all'
       }
       if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) &&
@@ -793,7 +793,9 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'autoscalevmgroup'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork',
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
+        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -895,6 +897,7 @@ export default {
 
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
+        delete params.isvnf
       }
 
       this.loading = true
@@ -1105,7 +1108,7 @@ export default {
       this.rules = reactive({})
       if (action.component && action.api && !action.popup) {
         const query = {}
-        if (this.$route.path.startsWith('/vm')) {
+        if (this.$route.path.startsWith('/vm') || this.$route.path.startsWith('/vnfapp')) {
           switch (true) {
             case ('templateid' in this.$route.query):
               query.templateid = this.$route.query.templateid

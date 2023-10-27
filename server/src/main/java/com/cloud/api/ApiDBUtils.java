@@ -1533,6 +1533,10 @@ public class ApiDBUtils {
         return s_ipAddressDao.findByAssociatedVmId(vmId);
     }
 
+    public static IpAddress findIpByAssociatedVmIdAndNetworkId(long vmId, long networkId) {
+        return s_ipAddressDao.findByVmIdAndNetworkId(networkId, vmId);
+    }
+
     public static String getHaTag() {
         return s_haMgr.getHaTag();
     }
@@ -1862,6 +1866,10 @@ public class ApiDBUtils {
 
     public static List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
         return s_userVmJoinDao.newUserVmView(userVms);
+    }
+
+    public static List<UserVmJoinVO> newUserVmView(VirtualMachine... vms) {
+        return s_userVmJoinDao.newUserVmView(vms);
     }
 
     public static SecurityGroupResponse newSecurityGroupResponse(SecurityGroupJoinVO vsg, Account caller) {

@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,10 +34,16 @@ import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.dao.VnfTemplateDetailsDao;
+import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.VnfNicResponse;
+import org.apache.cloudstack.api.response.VnfTemplateResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -103,6 +110,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private AnnotationDao annotationDao;
     @Inject
     private UserDataDao userDataDao;
+    @Inject
+    VnfTemplateDetailsDao vnfTemplateDetailsDao;
+    @Inject
+    VnfTemplateNicDao vnfTemplateNicDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -223,7 +234,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             }
         }
 
-        TemplateResponse templateResponse = new TemplateResponse();
+        TemplateResponse templateResponse = initTemplateResponse(template);
         templateResponse.setDownloadProgress(downloadProgressDetails);
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
@@ -338,7 +349,26 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setUserDataParams(template.getUserDataParams());
             templateResponse.setUserDataPolicy(template.getUserDataPolicy());
         }
+
         templateResponse.setObjectName("template");
+        return templateResponse;
+    }
+
+    private TemplateResponse initTemplateResponse(TemplateJoinVO template) {
+        TemplateResponse templateResponse = new TemplateResponse();
+        if (Storage.TemplateType.VNF.equals(template.getTemplateType())) {
+            VnfTemplateResponse vnfTemplateResponse = new VnfTemplateResponse();
+            List<VnfTemplateNicVO> nics = vnfTemplateNicDao.listByTemplateId(template.getId());
+            for (VnfTemplateNicVO nic : nics) {
+                vnfTemplateResponse.addVnfNic(new VnfNicResponse(nic.getDeviceId(), nic.getDeviceName(), nic.isRequired(), nic.isManagement(), nic.getDescription()));
+            }
+            List<VnfTemplateDetailVO> details = vnfTemplateDetailsDao.listDetails(template.getId());
+            Collections.sort(details, (v1, v2) -> v1.getName().compareToIgnoreCase(v2.getName()));
+            for (VnfTemplateDetailVO detail : details) {
+                vnfTemplateResponse.addVnfDetail(detail.getName(), detail.getValue());
+            }
+            templateResponse = vnfTemplateResponse;
+        }
         return templateResponse;
     }
 
@@ -359,7 +389,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     // compared to listTemplates and listIsos.
     @Override
     public TemplateResponse newUpdateResponse(TemplateJoinVO result) {
-        TemplateResponse response = new TemplateResponse();
+        TemplateResponse response = initTemplateResponse(result);
         response.setId(result.getUuid());
         response.setName(result.getName());
         response.setDisplayText(result.getDisplayText());
