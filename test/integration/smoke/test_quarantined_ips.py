@@ -96,6 +96,14 @@ class TestQuarantineIPs(cloudstackTestCase):
         return
 
     def tearDown(self):
+        """
+        Reset public.ip.address.quarantine.duration to 0 minutes
+        """
+        update_configuration_cmd = updateConfiguration.updateConfigurationCmd()
+        update_configuration_cmd.name = "public.ip.address.quarantine.duration"
+        update_configuration_cmd.value = "0"
+        self.apiclient.updateConfiguration(update_configuration_cmd)
+
         super(TestQuarantineIPs, self).tearDown()
 
     def create_vpc(self, api_client, services):
