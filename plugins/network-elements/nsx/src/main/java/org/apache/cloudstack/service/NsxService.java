@@ -17,4 +17,6 @@
 package org.apache.cloudstack.service;
 
 public interface NsxService {
+
+    boolean createNsxPublicNetwork(long zoneId);
 }

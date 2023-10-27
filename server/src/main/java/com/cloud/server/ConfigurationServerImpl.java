@@ -978,6 +978,9 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
         NetworkOfferingVO privateGatewayNetworkOfferingWithoutVlan = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan, GuestType.Isolated, false);
         privateGatewayNetworkOfferingWithoutVlan = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOfferingWithoutVlan);
+        NetworkOfferingVO nsxPublicNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemNsxPublicNetworkOffering, TrafficType.Public, true);
+        nsxPublicNetworkOffering.setForNsx(true);
+        _networkOfferingDao.persistDefaultNetworkOffering(nsxPublicNetworkOffering);
 
         //populate providers
         final Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

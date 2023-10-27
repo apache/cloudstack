@@ -16,25 +16,42 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class NsxServiceImpl implements NsxService {
     @Inject
     NsxControllerUtils nsxControllerUtils;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private NetworkDao networkDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxServiceImpl.class);
 
@@ -79,5 +96,37 @@ public class NsxServiceImpl implements NsxService {
             result = nsxControllerUtils.sendNsxCommand(deleteNsxTier1GatewayCommand, zoneId);
         }
         return result.getResult();
+    }
+
+    @Override
+    public boolean createNsxPublicNetwork(long zoneId) {
+        LOGGER.debug(String.format("Creating a NSX Public Network for zone %s", zoneId));
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
+        if (zone == null) {
+            String err = String.format("Cannot find a zone with ID %s", zoneId);
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        if (zone.getType() != DataCenter.Type.Core || zone.getNetworkType() != DataCenter.NetworkType.Advanced) {
+            String err = String.format("Cannot create an NSX public network on the zone %s as it is not an Advanced Core Zone", zone.getName());
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        NetworkOfferingVO nsxPublicNetworkOffering = networkOfferingDao.findByUniqueName(NetworkOffering.SystemNsxPublicNetworkOffering);
+        if (nsxPublicNetworkOffering == null) {
+            String err = String.format("Cannot find the NSX public network offering with unique name %s", NetworkOffering.SystemNsxPublicNetworkOffering);
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        List<NetworkVO> publicNetworks = networkDao.listByZoneAndTrafficType(zoneId, Networks.TrafficType.Public).stream()
+                .filter(x -> x.getNetworkOfferingId() == nsxPublicNetworkOffering.getId())
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(publicNetworks)) {
+            String err = String.format("An NSX Public Network already exists on the zone %s", zone.getName());
+            LOGGER.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        // TODO: Create NSX Public Network
+        return false;
     }
 }
