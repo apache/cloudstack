@@ -17,7 +17,7 @@
 # under the License.
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources, wait_until)
 from marvin.lib.base import (Account, ServiceOffering, VirtualMachine, BackupOffering, Configurations, Backup)
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
@@ -69,6 +69,17 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             if existing_offering.externalid == provider_offering.externalid:
                 return True
         return False
+
+    def waitForBackUp(self, vm):
+        def checkBackUp():
+            backups = Backup.list(self.apiclient, vm.id)
+            if isinstance(backups, list) and len(backups) != 0:
+                return True, None
+            return False, None
+
+        res, _ = wait_until(10, 60, checkBackUp)
+        if not res:
+            self.fail("Failed to wait for backup of VM %s to be Up" % vm.id)
 
     @classmethod
     def tearDownClass(cls):
@@ -180,13 +191,13 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         Backup.create(self.apiclient, self.vm.id)
 
         # Verify backup is created for the VM
-        time.sleep(600)
+        self.waitForBackUp(self.vm)
         backups = Backup.list(self.apiclient, self.vm.id)
         self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
         backup = backups[0]
 
         # Delete backup
-        Backup.delete(self.apiclient, backup.id)
+        Backup.delete(self.apiclient, backup.id, forced=True)
 
         # Verify backup is deleted
         backups = Backup.list(self.apiclient, self.vm.id)
@@ -194,7 +205,3 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
         # Remove VM from offering
         offering.removeOffering(self.apiclient, self.vm.id)
-
-        # Delete backup offering
-        self.debug("Deleting backup offering %s" % offering.id)
-        offering.delete(self.api_client)

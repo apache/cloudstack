@@ -5994,11 +5994,13 @@ class Backup:
         return (apiclient.createBackup(cmd))
 
     @classmethod
-    def delete(self, apiclient, id):
+    def delete(self, apiclient, id, forced=None):
         """Delete VM backup"""
 
         cmd = deleteBackup.deleteBackupCmd()
         cmd.id = id
+        if forced:
+            cmd.forced = forced
         return (apiclient.deleteBackup(cmd))
 
     @classmethod
