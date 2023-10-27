@@ -39,9 +39,11 @@ import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
+import com.vmware.nsx_policy.model.LBPoolListResult;
 import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBService;
 import com.vmware.nsx_policy.model.LBVirtualServer;
+import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.Segment;
@@ -497,17 +499,21 @@ public class NsxApiClient {
             // Delete associated Virtual servers
             LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
             String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
-            lbVirtualServers.delete(lbVirtualServerName, true);
+            lbVirtualServers.delete(lbVirtualServerName, false);
 
             // Delete LB pool
             LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
-            String lbServerPoolName = getServerPoolName(tier1GatewayName, vmId);
-            lbPools.delete(lbServerPoolName, true);
+            String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
+            lbPools.delete(lbServerPoolName, false);
 
             // Delete load balancer
-            String lbName = getLoadBalancerName(tier1GatewayName);
-            LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
-            lbServices.delete(lbName, true);
+            LBVirtualServerListResult lbVsListResult = lbVirtualServers.list(null, null, null, null, null, null);
+            LBPoolListResult lbPoolListResult = lbPools.list(null, null, null, null, null, null);
+            if (CollectionUtils.isEmpty(lbVsListResult.getResults()) && CollectionUtils.isEmpty(lbPoolListResult.getResults())) {
+                String lbName = getLoadBalancerName(tier1GatewayName);
+                LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+                lbServices.delete(lbName, true);
+            }
 
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
