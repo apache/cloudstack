@@ -114,6 +114,9 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.StatsCollector.AbstractStatsCollector;
+import com.cloud.server.StatsCollector.AutoScaleMonitor;
+import com.cloud.server.StatsCollector.StorageCollector;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -1620,11 +1623,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 for (StoragePoolVO pool : pools) {
                     List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
-                       if (volume.getFormat() != ImageFormat.QCOW2 &&
-                            volume.getFormat() != ImageFormat.VHD &&
-                            volume.getFormat() != ImageFormat.OVA &&
-                            pool.getPoolType() != Storage.StoragePoolType.PowerFlex &&
-                            pool.getPoolType() != Storage.StoragePoolType.FiberChannel) {
+                        if (!List.of(ImageFormat.QCOW2, ImageFormat.VHD, ImageFormat.OVA).contains(volume.getFormat()) &&
+                            !List.of(Storage.StoragePoolType.PowerFlex, Storage.StoragePoolType.FiberChannel).contains(pool.getPoolType())) {
                             LOGGER.warn("Volume stats not implemented for this format type " + volume.getFormat());
                             break;
                         }

@@ -538,10 +538,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             HypervisorType hypervisorType = HypervisorType.KVM;
             VirtualMachine vm = srcVolumeInfo.getAttachedVM();
 
-            if (vm != null && (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Migrating)) {
-                throw new CloudRuntimeException("Currently, if a volume to migrate from managed storage to non-managed storage is attached to " +
-                        "a VM, the VM must be in the Stopped state.");
-            }
+            checkAvailableForMigration(vm);
 
             long destStoragePoolId = destVolumeInfo.getPoolId();
             StoragePoolVO destStoragePoolVO = _storagePoolDao.findById(destStoragePoolId);
@@ -594,8 +591,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (imageFormat != ImageFormat.VHD && imageFormat != ImageFormat.OVA && imageFormat != ImageFormat.QCOW2 &&
                 !(imageFormat == ImageFormat.RAW && (StoragePoolType.PowerFlex == poolType ||
                 StoragePoolType.FiberChannel == poolType))) {
-            throw new CloudRuntimeException("Only the following image types are currently supported: " +
-                    ImageFormat.VHD.toString() + ", " + ImageFormat.OVA.toString() + ", " + ImageFormat.QCOW2.toString() + ", and " + ImageFormat.RAW.toString() + "(for PowerFlex and FiberChannel)");
+            throw new CloudRuntimeException(String.format("Only the following image types are currently supported: %s, %s, %s, %s (for PowerFlex and FiberChannel)",
+                ImageFormat.VHD.toString(), ImageFormat.OVA.toString(), ImageFormat.QCOW2.toString(), ImageFormat.RAW.toString()));
         }
     }
 
@@ -891,7 +888,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private void checkAvailableForMigration(VirtualMachine vm) {
         if (vm != null && (vm.getState() != VirtualMachine.State.Stopped && vm.getState() != VirtualMachine.State.Migrating)) {
             throw new CloudRuntimeException("Currently, if a volume to migrate from non-managed storage to managed storage on KVM is attached to " +
-                    "a VM, the VM must be in the Stopped state.");
+                    "a VM, the VM must be in the Stopped or Migrating state.");
         }
     }
 
@@ -1779,15 +1776,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private void createVolumeFromSnapshot(SnapshotInfo snapshotInfo) {
         if ("true".equalsIgnoreCase(snapshotInfo.getDataStore().getDriver().getCapabilities().get("CAN_CREATE_TEMP_VOLUME_FROM_SNAPSHOT"))) {
             prepTempVolumeForCopyFromSnapshot(snapshotInfo);
-        // fallback to original behavior of sending magic ddata to the create function
-        } else {
-            SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "create");
-            try {
-                snapshotInfo.getDataStore().getDriver().createAsync(snapshotInfo.getDataStore(), snapshotInfo, null);
-            }
-            finally {
-                _snapshotDetailsDao.remove(snapshotDetails.getId());
-            }
+            return;
+
+        }
+
+        SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "create");
+        try {
+            snapshotInfo.getDataStore().getDriver().createAsync(snapshotInfo.getDataStore(), snapshotInfo, null);
+        }
+        finally {
+            _snapshotDetailsDao.remove(snapshotDetails.getId());
         }
     }
 
@@ -1812,17 +1810,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
             _snapshotDetailsDao.remove(tempUuid.getId());
             _snapshotDetailsDao.removeDetail(snapshotInfo.getId(), "TemporaryVolumeCopyUUID");
+            return;
         }
-        // fallback to original behavior of sending magic command to a create function to delete :)
-        else {
-            SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "delete");
 
-            try {
-                snapshotInfo.getDataStore().getDriver().createAsync(snapshotInfo.getDataStore(), snapshotInfo, null);
-            }
-            finally {
-                _snapshotDetailsDao.remove(snapshotDetails.getId());
-            }
+        SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "delete");
+
+        try {
+            snapshotInfo.getDataStore().getDriver().createAsync(snapshotInfo.getDataStore(), snapshotInfo, null);
+        }
+        finally {
+            _snapshotDetailsDao.remove(snapshotDetails.getId());
         }
     }
 

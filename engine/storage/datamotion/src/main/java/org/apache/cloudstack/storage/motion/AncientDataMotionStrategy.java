@@ -471,9 +471,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             s_logger.error(errMsg);
             answer = new Answer(command, false, errMsg);
         } else {
-            s_logger.info("Sending MIGRATE_COPY request to node " + ep);
+            s_logger.debug("Sending MIGRATE_COPY request to node " + ep);
             answer = ep.sendMessage(command);
-            s_logger.info("Received MIGRATE_COPY response from node with answer: " + answer);
+            s_logger.debug("Received MIGRATE_COPY response from node with answer: " + answer);
         }
 
         if (answer == null || !answer.getResult()) {

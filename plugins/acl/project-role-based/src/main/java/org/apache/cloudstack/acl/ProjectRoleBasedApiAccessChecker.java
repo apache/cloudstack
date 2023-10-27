@@ -119,7 +119,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
 
         Account userAccount = accountService.getAccount(user.getAccountId());
         if (accountService.isRootAdmin(userAccount.getId()) || accountService.isDomainAdmin(userAccount.getAccountId())) {
-            LOGGER.trace(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", userAccount.getAccountName()));
+            }
             return true;
         }
 
