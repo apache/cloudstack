@@ -227,11 +227,11 @@
             </a-col>
             <a-col v-if="showDiskPath" :md="24" :lg="8">
               <a-form-item
-                name="diskPath"
-                ref="diskPath"
+                name="diskpath"
+                ref="diskpath"
                 :label="$t('label.disk.path')">
                 <a-input
-                  v-model:value="form.diskPath"
+                  v-model:value="form.diskpath"
                 ></a-input>
               </a-form-item>
             </a-col>

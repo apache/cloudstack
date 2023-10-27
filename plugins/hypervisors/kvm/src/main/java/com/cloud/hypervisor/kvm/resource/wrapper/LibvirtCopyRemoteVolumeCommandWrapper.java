@@ -24,8 +24,11 @@ import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import org.apache.log4j.Logger;
 
 @ResourceWrapper(handles = CopyRemoteVolumeCommand.class)
@@ -41,13 +44,22 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         String password = command.getPassword();
         String srcFile = command.getSrcFile();
         StorageFilerTO storageFilerTO = command.getStorageFilerTO();
-        String dstPath = storageFilerTO.getPath();
-        String tmpPath = command.getTmpPath();
-        String poolUuid = storageFilerTO.getUuid();
+6        String tmpPath = command.getTmpPath();
+        KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
+        KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
+        String dstPath = pool.getLocalPath();
+
         try {
             String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
             s_logger.debug("Volume Copy Successful");
-            return  new CopyRemoteVolumeAnswer(command, "", dstPath +"/"+filename);
+            if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem) {
+                return  new CopyRemoteVolumeAnswer(command, "", dstPath +"/"+filename);
+            } else if(storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
+                return  new CopyRemoteVolumeAnswer(command, "", filename);
+            } else {
+                return new Answer(command, false, "Unsupported Storage Pool");
+            }
+
         } catch (final Exception e) {
             s_logger.error("Error while copying file from remote host: "+ e.getMessage());
             return new Answer(command, false, result);
