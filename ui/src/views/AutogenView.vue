@@ -40,7 +40,7 @@
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
                     :value="filterValue"
-                    style="min-width: 100px; margin-left: 10px; margin-top: -4px"
+                    style="min-width: 100px; margin-left: 10px; margin-bottom: 5px"
                     size=small
                     @change="changeFilter"
                     showSearch
@@ -68,14 +68,14 @@
                 </a-tooltip>
                 <a-switch
                   v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
-                  style="margin-left: 8px; min-height: 23px; margin-bottom: 3.5px"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
                 <a-switch
                   v-if="!projectView && hasProjectId"
-                  style="margin-left: 8px; min-height: 23px; margin-bottom: 3.5px"
+                  style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
