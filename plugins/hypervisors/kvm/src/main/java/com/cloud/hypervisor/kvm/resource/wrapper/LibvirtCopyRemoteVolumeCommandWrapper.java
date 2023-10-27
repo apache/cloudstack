@@ -44,7 +44,7 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         String password = command.getPassword();
         String srcFile = command.getSrcFile();
         StorageFilerTO storageFilerTO = command.getStorageFilerTO();
-6        String tmpPath = command.getTmpPath();
+        String tmpPath = command.getTmpPath();
         KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
         KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
         String dstPath = pool.getLocalPath();
