@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
@@ -53,8 +54,10 @@ import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateVnfTemplateCmd;
 import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -99,6 +102,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.storage.template.VnfTemplateUtils;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -306,6 +311,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+    @Inject
+    VnfTemplateManager vnfTemplateManager;
 
     @Inject
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
@@ -369,6 +376,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (template != null) {
             CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
+            if (cmd instanceof RegisterVnfTemplateCmd) {
+                vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
+            }
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");
@@ -1342,6 +1352,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Please specify a valid template.");
         }
 
+        VnfTemplateUtils.validateApiCommandParams(cmd, template);
+
         TemplateAdapter adapter = getAdapter(template.getHypervisorType());
         TemplateProfile profile = adapter.prepareDelete(cmd);
         return adapter.delete(profile);
@@ -2126,22 +2138,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // update template type
         TemplateType templateType = null;
         if (cmd instanceof UpdateTemplateCmd) {
-            String newType = ((UpdateTemplateCmd)cmd).getTemplateType();
-            if (newType != null) {
-                if (!_accountService.isRootAdmin(account.getId())) {
-                    throw new PermissionDeniedException("Parameter templatetype can only be specified by a Root Admin, permission denied");
-                }
-                try {
-                    templateType = TemplateType.valueOf(newType.toUpperCase());
-                } catch (IllegalArgumentException ex) {
-                   throw new InvalidParameterValueException("Please specify a valid templatetype: ROUTING / SYSTEM / USER / BUILTIN / PERHOST");
-                }
-            }
-            if (templateType != null && cmd.isRoutingType() != null && (TemplateType.ROUTING.equals(templateType) != cmd.isRoutingType())) {
-                throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
-            }
-            if (templateType != null && (templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !template.isCrossZones()) {
-                throw new InvalidParameterValueException("System and Builtin templates must be cross zone");
+            boolean isAdmin = _accountMgr.isAdmin(account.getId());
+            templateType = validateTemplateType(cmd, isAdmin, template.isCrossZones());
+            if (cmd instanceof UpdateVnfTemplateCmd) {
+                VnfTemplateUtils.validateApiCommandParams(cmd, template);
+                vnfTemplateManager.updateVnfTemplate(template.getId(), (UpdateVnfTemplateCmd) cmd);
             }
         }
 
@@ -2261,6 +2262,51 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return _tmpltDao.findById(id);
     }
 
+    @Override
+    public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones) {
+        if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd)) {
+            return null;
+        }
+        TemplateType templateType = null;
+        String newType = null;
+        Boolean isRoutingType = null;
+        if (cmd instanceof UpdateTemplateCmd) {
+            newType = ((UpdateTemplateCmd)cmd).getTemplateType();
+            isRoutingType = ((UpdateTemplateCmd)cmd).isRoutingType();
+        } else if (cmd instanceof RegisterTemplateCmd) {
+            newType = ((RegisterTemplateCmd)cmd).getTemplateType();
+            isRoutingType = ((RegisterTemplateCmd)cmd).isRoutingType();
+        }
+        if (newType != null) {
+            try {
+                templateType = TemplateType.valueOf(newType.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
+                        org.apache.commons.lang3.StringUtils.join(",", TemplateType.values())));
+            }
+        }
+        if (templateType != null) {
+            if (isRoutingType != null && (TemplateType.ROUTING.equals(templateType) != isRoutingType)) {
+                throw new InvalidParameterValueException("Please specify a valid templatetype (consistent with isrouting parameter).");
+            } else if ((templateType == TemplateType.SYSTEM || templateType == TemplateType.BUILTIN) && !isCrossZones) {
+                throw new InvalidParameterValueException("System and Builtin templates must be cross zone.");
+            } else if ((cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
+                throw new InvalidParameterValueException("The template type must be VNF for VNF templates, but the actual type is " + templateType);
+            }
+        } else if (cmd instanceof RegisterTemplateCmd) {
+            boolean isRouting = Boolean.TRUE.equals(isRoutingType);
+            templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
+        }
+        if (templateType != null && !isAdmin && !Arrays.asList(TemplateType.USER, TemplateType.VNF).contains(templateType)) {
+            if (cmd instanceof RegisterTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not register template with template type %s.", templateType));
+            } else if (cmd instanceof UpdateTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not update template to template type %s.", templateType));
+            }
+        }
+        return templateType;
+    }
+
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
         if (MapUtils.isEmpty(details)) {
             return;
@@ -2283,7 +2329,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             String msg = String.format("Invalid %s: %s specified. Valid values are: %s",
                 ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
             s_logger.error(msg);
-            throw new InvalidParameterValueException(msg);        }
+            throw new InvalidParameterValueException(msg);
+        }
     }
 
     void verifyTemplateId(Long id) {

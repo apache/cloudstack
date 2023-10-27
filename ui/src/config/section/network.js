@@ -74,6 +74,10 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
         show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis && isAdmin() }
       }, {
+        name: 'vnf.appliances',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/VnfAppliancesTab.vue'))),
+        show: () => { return 'deployVnfAppliance' in store.getters.apis }
+      }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
@@ -313,6 +317,408 @@ export default {
           message: 'message.action.delete.security.group',
           dataView: true,
           show: (record) => { return record.name !== 'default' }
+        }
+      ]
+    },
+    {
+      name: 'vnfapp',
+      title: 'label.vnf.appliances',
+      icon: 'gateway-outlined',
+      permission: ['listVirtualMachinesMetrics'],
+      params: () => {
+        return { details: 'servoff,tmpl,nics', isvnf: true }
+      },
+      columns: () => {
+        const fields = ['name', 'state', 'ipaddress']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          fields.splice(2, 0, 'instancename')
+          fields.push('account')
+          fields.push('domain')
+          fields.push('hostname')
+        } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
+          fields.push('account')
+        } else {
+          fields.push('serviceofferingname')
+        }
+        fields.push('zonename')
+        return fields
+      },
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
+      details: () => {
+        var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
+        const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
+        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
+          return fields
+        }
+        fields.push('securitygroup')
+        return fields
+      },
+      tabs: [{
+        component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceTab.vue')))
+      }],
+      actions: [
+        {
+          api: 'deployVnfAppliance',
+          icon: 'plus-outlined',
+          label: 'label.vnf.appliance.add',
+          docHelp: 'adminguide/networking/vnf_templates_appliances.html#deploying-vnf-appliances',
+          listView: true,
+          component: () => import('@/views/compute/DeployVnfAppliance.vue')
+        },
+        {
+          api: 'updateVirtualMachine',
+          icon: 'edit-outlined',
+          label: 'label.vnf.app.action.edit',
+          docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/EditVM.vue')))
+        },
+        {
+          api: 'startVirtualMachine',
+          icon: 'caret-right-outlined',
+          label: 'label.vnf.app.action.start',
+          message: 'message.action.start.instance',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          args: ['considerlasthost'],
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
+        },
+        {
+          api: 'stopVirtualMachine',
+          icon: 'poweroff-outlined',
+          label: 'label.vnf.app.action.stop',
+          message: 'message.action.stop.instance',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          args: ['forced'],
+          show: (record) => { return ['Running'].includes(record.state) }
+        },
+        {
+          api: 'rebootVirtualMachine',
+          icon: 'reload-outlined',
+          label: 'label.vnf.app.action.reboot',
+          message: 'message.action.reboot.instance',
+          docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
+          dataView: true,
+          show: (record) => { return ['Running'].includes(record.state) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
+          args: (record, store) => {
+            var fields = []
+            fields.push('forced')
+            if (record.hypervisor === 'VMware') {
+              if (store.apis.rebootVirtualMachine.params.filter(x => x.name === 'bootintosetup').length > 0) {
+                fields.push('bootintosetup')
+              }
+            }
+            return fields
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
+        },
+        {
+          api: 'restoreVirtualMachine',
+          icon: 'sync-outlined',
+          label: 'label.vnf.app.action.reinstall',
+          message: 'message.reinstall.vm',
+          dataView: true,
+          args: ['virtualmachineid', 'templateid'],
+          filters: (record) => {
+            var filters = {}
+            var filterParams = {}
+            filterParams.hypervisortype = record.hypervisor
+            filterParams.zoneid = record.zoneid
+            filters.templateid = filterParams
+            return filters
+          },
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
+          mapping: {
+            virtualmachineid: {
+              value: (record) => { return record.id }
+            }
+          },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
+          successMethod: (obj, result) => {
+            const vm = result.jobresult.virtualmachine || {}
+            if (result.jobstatus === 1 && vm.password) {
+              const name = vm.displayname || vm.name || vm.id
+              obj.$notification.success({
+                message: `${obj.$t('label.reinstall.vm')}: ` + name,
+                description: `${obj.$t('label.password.reset.confirm')}: ` + vm.password,
+                duration: 0
+              })
+            }
+          }
+        },
+        {
+          api: 'createVMSnapshot',
+          icon: 'camera-outlined',
+          label: 'label.action.vmsnapshot.create',
+          docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
+          dataView: true,
+          args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],
+          show: (record) => {
+            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+              (['Stopped'].includes(record.state) && ((record.hypervisor !== 'KVM' && record.hypervisor !== 'LXC') ||
+                (record.hypervisor === 'KVM' && record.pooltype === 'PowerFlex'))))
+          },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'createSnapshot',
+          icon: ['fas', 'camera-retro'],
+          label: 'label.action.vmstoragesnapshot.create',
+          docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
+          dataView: true,
+          popup: true,
+          show: (record) => {
+            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
+              (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
+          },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
+        },
+        {
+          api: 'assignVirtualMachineToBackupOffering',
+          icon: 'folder-add-outlined',
+          label: 'label.backup.offering.assign',
+          message: 'label.backup.offering.assign',
+          docHelp: 'adminguide/virtual_machines.html#backup-offerings',
+          dataView: true,
+          args: ['virtualmachineid', 'backupofferingid'],
+          show: (record) => { return !record.backupofferingid },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'createBackup',
+          icon: 'cloud-upload-outlined',
+          label: 'label.create.backup',
+          message: 'message.backup.create',
+          docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
+          dataView: true,
+          args: ['virtualmachineid'],
+          show: (record) => { return record.backupofferingid },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'createBackupSchedule',
+          icon: 'schedule-outlined',
+          label: 'label.backup.configure.schedule',
+          docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.backupofferingid },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/BackupScheduleWizard.vue'))),
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            },
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'removeVirtualMachineFromBackupOffering',
+          icon: 'scissor-outlined',
+          label: 'label.backup.offering.remove',
+          message: 'label.backup.offering.remove',
+          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          dataView: true,
+          args: ['virtualmachineid', 'forced'],
+          show: (record) => { return record.backupofferingid },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'attachIso',
+          icon: 'paper-clip-outlined',
+          label: 'label.action.attach.iso',
+          docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
+          dataView: true,
+          popup: true,
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && !record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
+        },
+        {
+          api: 'detachIso',
+          icon: 'link-outlined',
+          label: 'label.action.detach.iso',
+          message: 'message.detach.iso.confirm',
+          dataView: true,
+          args: (record, store) => {
+            var args = ['virtualmachineid']
+            if (record && record.hypervisor && record.hypervisor === 'VMware') {
+              args.push('forced')
+            }
+            return args
+          },
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
+          mapping: {
+            virtualmachineid: {
+              value: (record, params) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'updateVMAffinityGroup',
+          icon: 'swap-outlined',
+          label: 'label.change.affinity',
+          docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
+          dataView: true,
+          args: ['affinitygroupids'],
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
+          popup: true
+        },
+        {
+          api: 'scaleVirtualMachine',
+          icon: 'arrows-alt-outlined',
+          label: 'label.vnf.app.action.scale',
+          docHelp: 'adminguide/virtual_machines.html#how-to-dynamically-scale-cpu-and-ram',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) || (['Running'].includes(record.state) && record.hypervisor !== 'LXC') },
+          disabled: (record) => { return record.state === 'Running' && !record.isdynamicallyscalable },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleVM.vue')))
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag-outlined',
+          label: 'label.vnf.app.action.migrate.to.host',
+          docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
+          dataView: true,
+          show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard.vue')))
+        },
+        {
+          api: 'migrateVirtualMachine',
+          icon: 'drag-outlined',
+          label: 'label.vnf.app.action.migrate.to.ps',
+          message: 'message.migrate.instance.to.ps',
+          docHelp: 'adminguide/virtual_machines.html#moving-vms-between-hosts-manual-live-migration',
+          dataView: true,
+          show: (record, store) => { return ['Stopped'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          disabled: (record) => { return record.hostcontrolstate === 'Offline' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
+          popup: true
+        },
+        {
+          api: 'resetPasswordForVirtualMachine',
+          icon: 'key-outlined',
+          label: 'label.action.reset.password',
+          message: 'message.action.instance.reset.password',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
+          response: (result) => {
+            return {
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
+              copytext: result.virtualmachine.password ? result.virtualmachine.password : null
+            }
+          }
+        },
+        {
+          api: 'resetSSHKeyForVirtualMachine',
+          icon: 'lock-outlined',
+          label: 'label.reset.ssh.key.pair',
+          message: 'message.desc.reset.ssh.key.pair',
+          docHelp: 'adminguide/virtual_machines.html#resetting-ssh-keys',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
+        },
+        {
+          api: 'resetUserDataForVirtualMachine',
+          icon: 'solution-outlined',
+          label: 'label.reset.userdata.on.vm',
+          message: 'message.desc.reset.userdata',
+          docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetUserData')))
+        },
+        {
+          api: 'assignVirtualMachine',
+          icon: 'user-add-outlined',
+          label: 'label.assign.instance.another',
+          dataView: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AssignInstance'))),
+          popup: true,
+          show: (record) => { return ['Stopped'].includes(record.state) }
+        },
+        {
+          api: 'recoverVirtualMachine',
+          icon: 'medicine-box-outlined',
+          label: 'label.vnf.app.action.recover',
+          message: 'message.recover.vm',
+          dataView: true,
+          show: (record, store) => { return ['Destroyed'].includes(record.state) && store.features.allowuserexpungerecovervm }
+        },
+        {
+          api: 'unmanageVirtualMachine',
+          icon: 'disconnect-outlined',
+          label: 'label.action.unmanage.virtualmachine',
+          message: 'message.action.unmanage.virtualmachine',
+          dataView: true,
+          show: (record) => { return ['Running', 'Stopped'].includes(record.state) && record.hypervisor === 'VMware' }
+        },
+        {
+          api: 'expungeVirtualMachine',
+          icon: 'delete-outlined',
+          label: 'label.vnf.app.action.expunge',
+          message: (record) => { return record.backupofferingid ? 'message.action.expunge.instance.with.backups' : 'message.action.expunge.instance' },
+          docHelp: 'adminguide/virtual_machines.html#deleting-vms',
+          dataView: true,
+          show: (record, store) => { return ['Destroyed', 'Expunging'].includes(record.state) && store.features.allowuserexpungerecovervm }
+        },
+        {
+          api: 'destroyVirtualMachine',
+          icon: 'delete-outlined',
+          label: 'label.vnf.app.action.destroy',
+          message: 'message.action.destroy.instance',
+          docHelp: 'adminguide/virtual_machines.html#deleting-vms',
+          dataView: true,
+          groupAction: true,
+          args: (record, store, group) => {
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
+              ? ['expunge'] : []
+          },
+          popup: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge } }) },
+          show: (record) => { return ['Running', 'Stopped', 'Error'].includes(record.state) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DestroyVM.vue')))
         }
       ]
     },

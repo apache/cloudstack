@@ -39,7 +39,7 @@
     </template>
     <template #bodyCell="{ column, text, record }">
       <template v-if="column.key === 'name'">
-        <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+        <span v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
@@ -55,7 +55,7 @@
           <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
             <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
           </span>
-          <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+          <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
             <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
             <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="2x" />
             <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
@@ -96,7 +96,7 @@
         <span>{{ text <= 0 ? 'N/A' : text }}</span>
       </template>
       <template v-if="column.key === 'templatetype'">
-        <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
+        <span>{{ text }}</span>
       </template>
       <template v-if="column.key === 'type'">
         <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
@@ -118,7 +118,7 @@
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'username'">
-        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+        <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
           <user-outlined v-else style="font-size: 16px;" />
         </span>
@@ -355,7 +355,7 @@
       <template v-if="['created', 'sent'].includes(column.key)">
         {{ $toLocaleDate(text) }}
       </template>
-      <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm'].includes($route.path.split('/')[1])">
+      <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
       </template>
       <template v-if="column.key === 'order'">
@@ -581,7 +581,7 @@ export default {
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
-        '/guestnetwork', '/vpc', '/vpncustomergateway',
+        '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
         '/template', '/iso',
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
@@ -591,7 +591,7 @@ export default {
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
-        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway',
+        'vmsnapshot', 'guestnetwork', 'vpc', 'publicip', 'vpnuser', 'vpncustomergateway', 'vnfapp',
         'project', 'account', 'systemvm', 'router', 'computeoffering', 'systemoffering',
         'diskoffering', 'backupoffering', 'networkoffering', 'vpcoffering', 'ilbvm', 'kubernetes', 'comment'
       ].includes(this.$route.name)

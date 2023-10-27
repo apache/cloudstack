@@ -50,6 +50,7 @@ known_categories = {
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
     'VM': 'Virtual Machine',
+    'Vnf': 'Virtual Network Functions',
     'Domain': 'Domain',
     'Template': 'Template',
     'Iso': 'ISO',
