@@ -70,7 +70,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
+    protected IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject
@@ -96,7 +96,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering) {
-        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly();
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && !offering.isForNsx();
     }
 
     @Override

@@ -26,10 +26,12 @@ import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
+import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.SiteListResult;
@@ -106,6 +108,16 @@ public class NsxApiClient {
         Configuration config = configBuilder.build();
         ApiClient apiClient = ApiClients.newRestClient(controllerUrl, config);
         nsxService = apiClient::createStub;
+    }
+
+    public void createTier1NatRule(String tier1GatewayName, String natId, String natRuleId,
+                                   String action, String translatedIp) {
+        NatRules natRulesService = (NatRules) nsxService.apply(NatRules.class);
+        PolicyNatRule natPolicy = new PolicyNatRule.Builder()
+                .setAction(action)
+                .setTranslatedNetwork(translatedIp)
+                .build();
+        natRulesService.patch(tier1GatewayName, natId, natRuleId, natPolicy);
     }
 
     public void createDhcpRelayConfig(String dhcpRelayConfigName, List<String> addresses) {

@@ -298,7 +298,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         DomainVO domain = getDomainFromAccount(account);
         Network.Service[] services = { Network.Service.SourceNat };
         boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
-        return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName(), sourceNatEnabled);
+        // return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName(), sourceNatEnabled);
+        return true;
     }
 
     @Override

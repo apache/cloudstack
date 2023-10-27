@@ -37,6 +37,7 @@ import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApiClient;
@@ -104,6 +105,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else if (cmd instanceof CreateNsxDhcpRelayConfigCommand) {
             return executeRequest((CreateNsxDhcpRelayConfigCommand) cmd);
+        } else if (cmd instanceof CreateNsxTier1NatRuleCommand) {
+            return executeRequest((CreateNsxTier1NatRuleCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -208,6 +211,22 @@ public class NsxResource implements ServerResource {
 
         nsxApiClient = new NsxApiClient(hostname, port, username, password.toCharArray());
         return true;
+    }
+
+    private Answer executeRequest(CreateNsxTier1NatRuleCommand cmd) {
+        String tier1GatewayName = cmd.getTier1GatewayName();
+        String action = cmd.getAction();
+        String translatedIpAddress = cmd.getTranslatedIpAddress();
+        String natRuleId = cmd.getNatRuleId();
+        String natId = "USER";
+        try {
+            nsxApiClient.createTier1NatRule(tier1GatewayName, natId, natRuleId, action, translatedIpAddress);
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Error creating the NAT rule with ID %s on Tier1 Gateway %s: %s", natRuleId, tier1GatewayName, e.getMessage());
+            LOGGER.error(msg, e);
+            return new NsxAnswer(cmd, e);
+        }
+        return new NsxAnswer(cmd, true, "");
     }
 
     private Answer executeRequest(CreateNsxDhcpRelayConfigCommand cmd) {
