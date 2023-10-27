@@ -551,6 +551,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private SnapshotJoinDao snapshotJoinDao;
 
+    @Inject
     private ObjectStoreDao objectStoreDao;
 
     @Inject

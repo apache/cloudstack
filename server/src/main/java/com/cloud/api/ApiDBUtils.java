@@ -747,8 +747,9 @@ public class ApiDBUtils {
     private ResourceManagerUtil resourceManagerUtil;
     @Inject
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
-    private ObjectStoreDao objectStoreDao;
 
+    @Inject
+    private ObjectStoreDao objectStoreDao;
     @Inject
     private BucketDao bucketDao;
 
