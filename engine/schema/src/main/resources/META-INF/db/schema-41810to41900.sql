@@ -580,6 +580,7 @@ CREATE TABLE `cloud`.`oauth_provider` (
   `client_id` varchar(255) NOT NULL COMMENT 'client id which is configured in the provider',
   `secret_key` varchar(255) NOT NULL COMMENT 'secret key which is configured in the provider',
   `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
+  `enabled` int(1) NOT NULL DEFAULT 1 COMMENT 'Enabled or disabled',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)

@@ -173,6 +173,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = cmd.getClientId();
         String redirectUri = cmd.getRedirectUri();
         String secretKey = cmd.getSecretKey();
+        Boolean enabled = cmd.getEnabled();
 
         OauthProviderVO providerVO = _oauthProviderDao.findById(id);
         if (providerVO == null) {
@@ -191,6 +192,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         if (StringUtils.isNotEmpty(secretKey)) {
             providerVO.setSecretKey(secretKey);
         }
+        if (enabled != null) {
+            providerVO.setEnabled(enabled);
+        }
 
         _oauthProviderDao.update(id, providerVO);
 
@@ -205,6 +209,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setClientId(clientId);
         oauthProviderVO.setSecretKey(secretKey);
         oauthProviderVO.setRedirectUri(redirectUri);
+        oauthProviderVO.setEnabled(true);
 
         _oauthProviderDao.persist(oauthProviderVO);
 

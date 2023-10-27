@@ -61,6 +61,9 @@ public class OauthProviderVO implements Identity, InternalIdentity {
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name = "enabled")
+    private boolean enabled = true;
+
     public OauthProviderVO () {
         uuid = UUID.randomUUID().toString();
     }
@@ -113,5 +116,13 @@ public class OauthProviderVO implements Identity, InternalIdentity {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

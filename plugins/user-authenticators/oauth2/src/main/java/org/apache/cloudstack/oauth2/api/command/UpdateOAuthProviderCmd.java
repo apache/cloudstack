@@ -17,6 +17,7 @@
 package org.apache.cloudstack.oauth2.api.command;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -31,6 +32,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
@@ -55,6 +58,9 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider")
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "OAuth provider will be enabled or disabled based on this value")
+    private Boolean enabled;
 
     @Inject
     OAuth2AuthManager _oauthMgr;
@@ -83,6 +89,9 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public Boolean getEnabled() {
+        return enabled;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -109,6 +118,19 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
         if (result != null) {
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+
+            List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
+            List<String> authenticatorPluginNames = new ArrayList<>();
+            for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
+                String name = authenticator.getName();
+                authenticatorPluginNames.add(name);
+            }
+            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+                r.setEnabled(true);
+            } else {
+                r.setEnabled(false);
+            }
+
             r.setObjectName(ApiConstants.OAUTH_PROVIDER);
             r.setResponseName(getCommandName());
             this.setResponseObject(r);
