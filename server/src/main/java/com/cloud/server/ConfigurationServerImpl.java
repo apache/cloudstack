@@ -1225,6 +1225,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, false, null,
                         null, true, Availability.Optional, null, GuestType.Isolated, false,
                         false, false, false, false, forVpc);
+        defaultNatNSXNetworkOffering.setPublicLb(true);
         defaultNatNSXNetworkOffering.setForNsx(true);
         defaultNatNSXNetworkOffering.setNsxMode(nsxMode.name());
         defaultNatNSXNetworkOffering.setState(NetworkOffering.State.Enabled);

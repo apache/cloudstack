@@ -36,10 +36,12 @@ import com.vmware.nsx_policy.model.SiteListResult;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
+import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
@@ -114,6 +116,10 @@ public class NsxResource implements ServerResource {
             return executeRequest((DeleteNsxNatRuleCommand) cmd);
         } else if (cmd instanceof CreateNsxPortForwardRuleCommand) {
           return executeRequest((CreateNsxPortForwardRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxLoadBalancerRuleCommand) {
+            return executeRequest((CreateNsxLoadBalancerRuleCommand) cmd);
+        } else if (cmd instanceof DeleteNsxLoadBalancerRuleCommand) {
+            return executeRequest((DeleteNsxLoadBalancerRuleCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -396,6 +402,33 @@ public class NsxResource implements ServerResource {
                     cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxLoadBalancerRuleCommand cmd) {
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
+        try {
+            nsxApiClient.createAndAddNsxLbVirtualServer(tier1GatewayName, cmd.getLbId(), cmd.getPublicIp(), cmd.getPublicPort(),
+                    cmd.getMemberList(), cmd.getAlgorithm(), cmd.getProtocol());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxLoadBalancerRuleCommand cmd) {
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
+                cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
+        try {
+            nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId(), cmd.getVmId());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

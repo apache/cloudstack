@@ -24,6 +24,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -45,6 +46,8 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -52,9 +55,11 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
@@ -83,12 +88,14 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -99,7 +106,8 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, ResourceStateAdapter, Listener {
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider,
+        LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
 
     @Inject
     AccountManager accountMgr;
@@ -125,6 +133,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     VMInstanceDao vmInstanceDao;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    LoadBalancerVMMapDao lbVmMapDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -505,7 +515,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
 
             String privatePort = getPrivatePortRange(rule);
 
-            // TODO: add builder to reduce signature params ; should we pass port range?
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setDomainId(domainId)
                     .setAccountId(accountId)
@@ -522,9 +531,13 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
             if (rule.getState() == FirewallRule.State.Add) {
-                return nsxService.createPortForwardRule(networkRule);
+                if (!nsxService.createPortForwardRule(networkRule)) {
+                    return false;
+                }
             } else if (rule.getState() == FirewallRule.State.Revoke) {
-                return nsxService.deletePortForwardRule(networkRule);
+                if (!nsxService.deletePortForwardRule(networkRule)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -557,5 +570,77 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
                 String.valueOf(rule.getSourcePortStart()) :
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
+    @Override
+    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+        for (LoadBalancingRule loadBalancingRule : rules) {
+            if (loadBalancingRule.getState() == FirewallRule.State.Active) {
+                continue;
+            }
+            IPAddressVO publicIp = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
+                    loadBalancingRule.getSourceIp().addr());
+
+            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
+            VpcVO vpc = vpcOrNetwork.first();
+            NetworkVO networkVO = vpcOrNetwork.second();
+            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : networkVO.getId();
+            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : networkVO.getName();
+            boolean isVpcResource = Objects.nonNull(vpc);
+            long domainId = Objects.nonNull(vpc) ? vpc.getDomainId() : networkVO.getDomainId();
+            long accountId = Objects.nonNull(vpc) ? vpc.getAccountId() : networkVO.getAccountId();
+            long zoneId = Objects.nonNull(vpc) ? vpc.getZoneId() : networkVO.getDataCenterId();
+            List<NsxLoadBalancerMember> lbMembers = getLoadBalancerMembers(loadBalancingRule);
+            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                    .setDomainId(domainId)
+                    .setAccountId(accountId)
+                    .setZoneId(zoneId)
+                    .setNetworkResourceId(networkResourceId)
+                    .setNetworkResourceName(networkResourceName)
+                    .setVpcResource(isVpcResource)
+                    .setMemberList(lbMembers)
+                    .setPublicIp(publicIp.getAddress().addr())
+                    .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
+                    .setRuleId(loadBalancingRule.getId())
+                    .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
+                    .setAlgorithm(loadBalancingRule.getAlgorithm())
+                    .build();
+            if (loadBalancingRule.getState() == FirewallRule.State.Add) {
+                if (!nsxService.createLbRule(networkRule)) {
+                    return false;
+                }
+            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
+                if (!nsxService.deleteLbRule(networkRule)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+        return true;
+    }
+
+    @Override
+    public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return false;
+    }
+
+    private List<NsxLoadBalancerMember> getLoadBalancerMembers(LoadBalancingRule lbRule) {
+        List<LoadBalancerVMMapVO> lbVms = lbVmMapDao.listByLoadBalancerId(lbRule.getId(), false);
+        List<NsxLoadBalancerMember> lbMembers = new ArrayList<>();
+
+        for (LoadBalancerVMMapVO lbVm : lbVms) {
+            NsxLoadBalancerMember member = new NsxLoadBalancerMember(lbVm.getInstanceId(), lbVm.getInstanceIp(), lbRule.getDefaultPortStart());
+            lbMembers.add(member);
+        }
+        return lbMembers;
     }
 }
