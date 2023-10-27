@@ -621,14 +621,19 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     @Override
     public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
         Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
-        ProviderAdapter api = getAPI(storagePool, details);
-        ProviderVolumeStorageStats stats = api.getManagedStorageStats();
-        if (stats == null) {
-            return null;
+        String capacityBytesStr = details.get("capacityBytes");
+        Long capacityBytes = null;
+        if (capacityBytesStr == null) {
+            ProviderAdapter api = getAPI(storagePool, details);
+            ProviderVolumeStorageStats stats = api.getManagedStorageStats();
+            if (stats == null) {
+                return null;
+            }
+            capacityBytes = stats.getCapacityInBytes();
+        } else {
+            capacityBytes = Long.parseLong(capacityBytesStr);
         }
-
-        Long capacityBytes = stats.getCapacityInBytes();
-        Long usedBytes = stats.getActualUsedInBytes();
+        Long usedBytes = this.getUsedBytes(storagePool);
         return new Pair<Long, Long>(capacityBytes, usedBytes);
     }
 
