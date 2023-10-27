@@ -25,8 +25,6 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.serializer.Param;
 
-import java.util.List;
-
 @EntityReference(value = PhysicalNetworkTrafficType.class)
 public class TrafficTypeResponse extends BaseResponse {
 
@@ -64,7 +62,7 @@ public class TrafficTypeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ISOLATION_METHODS)
     @Param(description = "isolation methods for the physical network traffic")
-    private List<String> isolationMethods;
+    private String isolationMethods;
 
     @SerializedName(ApiConstants.OVM3_NETWORK_LABEL)
     @Param(description = "The network name of the physical device dedicated to this traffic on an OVM3 host")
@@ -139,13 +137,14 @@ public class TrafficTypeResponse extends BaseResponse {
         this.ovm3NetworkLabel = ovm3Label;
     }
 
-    public List<String> getIsolationMethods() {
+    public String getIsolationMethods() {
         return isolationMethods;
     }
 
-    public void setIsolationMethods(List<String> isolationMethods) {
+    public void setIsolationMethods(String isolationMethods) {
         this.isolationMethods = isolationMethods;
     }
+
     public String getVlan() {
         return vlan;
     }

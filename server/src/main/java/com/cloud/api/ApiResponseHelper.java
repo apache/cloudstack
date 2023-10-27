@@ -3084,7 +3084,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         PhysicalNetwork pnet = ApiDBUtils.findPhysicalNetworkById(result.getPhysicalNetworkId());
         if (pnet != null) {
             response.setPhysicalNetworkId(pnet.getUuid());
-            response.setIsolationMethods(pnet.getIsolationMethods());
+            // using PhysicalNetworkResponse only to convert isolation methods to string
+            PhysicalNetworkResponse pnetResponse = new PhysicalNetworkResponse();
+            pnetResponse.setIsolationMethods(pnet.getIsolationMethods());
+            response.setIsolationMethods(pnetResponse.getIsolationMethods());
         }
         if (result.getTrafficType() != null) {
             response.setTrafficType(result.getTrafficType().toString());
