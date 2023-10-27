@@ -1014,9 +1014,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
-                if (isCreatedFromVmSnapshot) {
-                    descName = UUID.randomUUID().toString();
-                }
+
+                descName = UUID.randomUUID().toString();
+
                 command.add("-t", descName);
                 final String result = command.execute();
                 if (result != null) {
@@ -1041,18 +1041,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (isCreatedFromVmSnapshot) {
                 s_logger.debug("Ignoring removal of vm snapshot on primary as this snapshot is created from vm snapshot");
             } else if (primaryPool.getType() != StoragePoolType.RBD) {
-                String snapshotPath = snapshot.getPath();
-                String backupSnapshotAfterTakingSnapshot = cmd.getOptions() == null ? null : cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
-
-                if (backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) {
-                    try {
-                        Files.deleteIfExists(Paths.get(snapshotPath));
-                    } catch (IOException ex) {
-                        s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
-                    }
-                } else {
-                    s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
-                }
+                deleteSnapshotOnPrimary(cmd, snapshot, primaryPool);
             }
 
             try {
@@ -1062,6 +1051,27 @@ public class KVMStorageProcessor implements StorageProcessor {
             } catch (final Exception ex) {
                 s_logger.debug("Failed to delete secondary storage", ex);
             }
+        }
+    }
+
+    private void deleteSnapshotOnPrimary(final CopyCommand cmd, final SnapshotObjectTO snapshot,
+            KVMStoragePool primaryPool) {
+        String snapshotPath = snapshot.getPath();
+        String backupSnapshotAfterTakingSnapshot = null;
+        boolean deleteSnapshotOnPrimary = true;
+        if (cmd.getOptions() != null) {
+            backupSnapshotAfterTakingSnapshot = cmd.getOptions().get(SnapshotInfo.BackupSnapshotAfterTakingSnapshot.key());
+            deleteSnapshotOnPrimary = cmd.getOptions().get("typeDescription") == null;
+        }
+
+        if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
+            try {
+                Files.deleteIfExists(Paths.get(snapshotPath));
+            } catch (IOException ex) {
+                s_logger.error(String.format("Failed to delete snapshot [%s] on primary storage [%s].", snapshotPath, primaryPool.getUuid()), ex);
+            }
+        } else {
+            s_logger.debug(String.format("This backup is temporary, not deleting snapshot [%s] on primary storage [%s]", snapshotPath, primaryPool.getUuid()));
         }
     }
     protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws

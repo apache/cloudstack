@@ -48,16 +48,17 @@ export default {
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('templatetype')
           fields.push('order')
         }
         return fields
       },
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
-          'crossZones', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+          'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetype', 'url')
+          fields.push('url')
         }
         return fields
       },
@@ -76,6 +77,10 @@ export default {
       }, {
         name: 'settings',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
+      }, {
+        name: 'vnf.settings',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/image/TemplateVnfSettings.vue'))),
+        show: (record) => { return record.templatetype === 'VNF' }
       },
       {
         name: 'events',
