@@ -1533,6 +1533,10 @@ public class ApiDBUtils {
         return s_ipAddressDao.findByAssociatedVmId(vmId);
     }
 
+    public static IpAddress findIpByAssociatedVmIdAndNetworkId(long vmId, long networkId) {
+        return s_ipAddressDao.findByVmIdAndNetworkId(networkId, vmId);
+    }
+
     public static String getHaTag() {
         return s_haMgr.getHaTag();
     }

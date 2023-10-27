@@ -436,6 +436,7 @@ public class ApiConstants {
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
+    public static final String TEMPLATE_TYPE = "templatetype";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
@@ -1013,7 +1014,6 @@ public class ApiConstants {
     public static final String DEPLOY_AS_IS = "deployasis";
     public static final String DEPLOY_AS_IS_DETAILS = "deployasisdetails";
     public static final String CROSS_ZONES = "crossZones";
-    public static final String TEMPLATETYPE = "templatetype";
     public static final String SOURCETEMPLATEID = "sourcetemplateid";
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
     public static final String IOTHREADS_ENABLED = "iothreadsenabled";
@@ -1046,6 +1046,15 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+
+    public static final String MANAGEMENT = "management";
+    public static final String IS_VNF = "isvnf";
+    public static final String VNF_NICS = "vnfnics";
+    public static final String VNF_DETAILS = "vnfdetails";
+    public static final String CLEAN_UP_VNF_DETAILS = "cleanupvnfdetails";
+    public static final String CLEAN_UP_VNF_NICS = "cleanupvnfnics";
+    public static final String VNF_CONFIGURE_MANAGEMENT = "vnfconfiguremanagement";
+    public static final String VNF_CIDR_LIST = "vnfcidrlist";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
@@ -1092,7 +1101,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp, vnfnics;
     }
 
     public enum DomainDetails {

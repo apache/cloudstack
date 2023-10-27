@@ -24,7 +24,9 @@ import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
+import com.cloud.network.VNF;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -39,6 +41,8 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
+import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
+import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -54,10 +58,13 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.when;
 
@@ -197,6 +204,27 @@ public class QueryManagerImplTest {
         queryManager.searchForEvents(cmd);
     }
 
+    @Test
+    public void listVnfDetailOptionsCmd() {
+        ListDetailOptionsCmd cmd = Mockito.mock(ListDetailOptionsCmd.class);
+        when(cmd.getResourceType()).thenReturn(ResourceTag.ResourceObjectType.VnfTemplate);
+
+        DetailOptionsResponse response = queryManager.listDetailOptions(cmd);
+        Map<String, List<String>> options = response.getDetails();
+
+        int expectedLength = VNF.AccessDetail.values().length + VNF.VnfDetail.values().length;
+        Assert.assertEquals(expectedLength, options.size());
+        Set<String> keys = options.keySet();
+        for (VNF.AccessDetail detail : VNF.AccessDetail.values()) {
+            Assert.assertTrue(keys.contains(detail.name().toLowerCase()));
+        }
+        for (VNF.VnfDetail detail : VNF.VnfDetail.values()) {
+            Assert.assertTrue(keys.contains(detail.name().toLowerCase()));
+        }
+        List<String> expectedAccessMethods = Arrays.stream(VNF.AccessMethod.values()).map(method -> method.toString()).sorted().collect(Collectors.toList());
+        Assert.assertEquals(expectedAccessMethods, options.get(VNF.AccessDetail.ACCESS_METHODS.name().toLowerCase()));
+
+    }
     @Test
     public void applyPublicTemplateRestrictionsTestDoesNotApplyRestrictionsWhenCallerIsRootAdmin() {
         Mockito.when(accountMock.getType()).thenReturn(Account.Type.ADMIN);
