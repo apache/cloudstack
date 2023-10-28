@@ -225,7 +225,6 @@
 <script>
 import { reactive } from 'vue'
 import * as Minio from 'minio'
-import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -270,7 +269,6 @@ export default {
     ]
     return {
       client: null,
-      objectStore: null,
       loading: false,
       records: [],
       browserPath: this.$route.query.browserPath || '',
@@ -310,8 +308,8 @@ export default {
           }
         }
       )
-      if (!this.objectStore) {
-        this.fetchObjectStoragePool(this.resource.objectstorageid)
+      if (!this.client) {
+        this.initMinioClient()
       } else {
         this.listObjects()
       }
@@ -349,21 +347,7 @@ export default {
       this.page = 1
       this.fetchData()
     },
-    fetchObjectStoragePool (id) {
-      api('listObjectStoragePools', {
-        id: id
-      }).then(json => {
-        this.objectStore = json.listobjectstoragepoolsresponse.objectstore[0]
-        this.initMinioClient()
-      })
-      return null
-    },
     listObjects () {
-      if (this.objectStore.providername === 'Simulator') {
-        this.loading = false
-        this.fetching = false
-        return
-      }
       while (this.fetching) {
         // sleep for 500ms
         setTimeout(() => {
@@ -461,9 +445,9 @@ export default {
       }
     },
     initMinioClient () {
-      if (!this.client && this.objectStore) {
-        const url = /https?:\/\/([^/]+)\/?/.exec(this.objectStore.url)[1]
-        const isHttps = /^https/.test(this.objectStore.url)
+      if (!this.client) {
+        const url = /https?:\/\/([^/]+)\/?/.exec(this.resource.url.split(this.resource.name)[0])[1]
+        const isHttps = /^https/.test(url)
         this.client = new Minio.Client({
           endPoint: url.split(':')[0],
           port: url.split(':').length > 1 ? parseInt(url.split(':')[1]) : isHttps ? 443 : 80,
@@ -482,9 +466,6 @@ export default {
       return false
     },
     uploadFiles () {
-      if (this.objectStore?.providername === 'Simulator') {
-        this.uploadFileList = []
-      }
       if (!this.uploadDirectory.endsWith('/')) {
         this.uploadDirectory = this.uploadDirectory + '/'
       }
