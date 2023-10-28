@@ -27,14 +27,13 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
 
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = ProviderResponse.class, since = "3.0.0",
+@APICommand(name = "listTrafficTypes", description = "Lists traffic types of a given physical network.", responseObject = TrafficTypeResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListTrafficTypesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTrafficTypesCmd.class.getName());
