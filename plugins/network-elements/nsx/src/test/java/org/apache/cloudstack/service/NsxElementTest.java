@@ -44,7 +44,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -123,8 +122,7 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
-
+        // when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 
