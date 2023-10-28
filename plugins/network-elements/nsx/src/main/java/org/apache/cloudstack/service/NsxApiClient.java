@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.service;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
@@ -32,6 +31,7 @@ import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
+import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.SiteListResult;
@@ -48,6 +48,7 @@ import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAp
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -210,7 +211,8 @@ public class NsxApiClient {
         String tier0GatewayPath = TIER_0_GATEWAY_PATH_PREFIX + tier0Gateway;
         Tier1 tier1 = getTier1Gateway(name);
         if (tier1 != null) {
-            throw new InvalidParameterValueException(String.format("VPC network with name %s exists in NSX zone", name));
+            LOGGER.info(String.format("VPC network with name %s exists in NSX zone", name));
+            return;
         }
 
         List<String> routeAdvertisementTypes = getRouterAdvertisementTypeList(sourceNatEnabled);
@@ -240,9 +242,26 @@ public class NsxApiClient {
     public void deleteTier1Gateway(String tier1Id) {
         com.vmware.nsx_policy.infra.tier_1s.LocaleServices localeService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices)
                 nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
+        removeTier1GatewayNatRules(tier1Id);
         localeService.delete(tier1Id, Tier_1_LOCALE_SERVICE_ID);
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
         tier1service.delete(tier1Id);
+    }
+
+    private void removeTier1GatewayNatRules(String tier1Id) {
+        NatRules natRulesService = (NatRules) nsxService.apply(NatRules.class);
+        String natId = "USER";
+        PolicyNatRuleListResult result = natRulesService.list(tier1Id, natId, null, false, null, null, null, null);
+        List<PolicyNatRule> natRules = result.getResults();
+        if (CollectionUtils.isEmpty(natRules)) {
+            LOGGER.debug(String.format("Didn't find any NAT rule to remove on the Tier 1 Gateway %s", tier1Id));
+        } else {
+            for (PolicyNatRule natRule : natRules) {
+                LOGGER.debug(String.format("Removing NAT rule %s from Tier 1 Gateway %s", natRule.getId(), tier1Id));
+                natRulesService.delete(tier1Id, natId, natRule.getId());
+            }
+        }
+
     }
 
     public SiteListResult getSites() {
