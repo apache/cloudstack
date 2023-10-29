@@ -138,7 +138,8 @@ public class NsxServiceImpl implements NsxService {
                 Networks.BroadcastDomainType.NSX, nsxPublicNetworkOffering.getId(), domainId, account.getId(),
                 200L, networkName, networkName, null, null, zoneId, null, null,
                 true, null, false);
-        network.setGuruName("NsxPublicNetworkGuru");
+        network.setBroadcastUri(Networks.BroadcastDomainType.NSX.toUri("nsx"));
+        network.setGuruName(NsxPublicNetworkGuru.class.getSimpleName());
         return networkDao.persist(network, false, new HashMap<>());
     }
 }
