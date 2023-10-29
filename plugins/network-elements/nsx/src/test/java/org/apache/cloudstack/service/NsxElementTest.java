@@ -29,6 +29,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -42,6 +43,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -74,6 +76,8 @@ public class NsxElementTest {
     Account account;
     @Mock
     DomainVO domain;
+    @Mock
+    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     NsxElement nsxElement;
     ReservationContext reservationContext;
@@ -93,6 +97,7 @@ public class NsxElementTest {
         nsxElement.physicalNetworkDao = physicalNetworkDao;
         nsxElement.domainDao = domainDao;
         nsxElement.networkModel = networkModel;
+        nsxElement.vpcOfferingServiceMapDao = vpcOfferingServiceMapDao;
         reservationContext = mock(ReservationContext.class);
         deployDestination = mock(DeployDestination.class);
 
@@ -105,6 +110,8 @@ public class NsxElementTest {
         when(domainDao.findById(anyLong())).thenReturn(domain);
         when(vpc.getZoneId()).thenReturn(1L);
         when(vpc.getName()).thenReturn("testVPC");
+        when(vpc.getVpcOfferingId()).thenReturn(1L);
+        when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(false);
 
         PhysicalNetworkVO physicalNetworkVO = new PhysicalNetworkVO();
         physicalNetworkVO.setIsolationMethods(List.of("NSX"));
@@ -115,8 +122,7 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString())).thenReturn(true);
-
+        // when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 

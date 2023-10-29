@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -340,6 +342,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     Ipv6Service ipv6Service;
     @Inject
     RouterNetworkDao routerNetworkDao;
+    @Inject
+    private VlanDetailsDao vlanDetailsDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -1029,6 +1033,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (profile == null) {
             return null;
         }
+        // TODO: Fix with the public network PR
+        if (isNicAllocatedForNsxPublicNetworkOnVR(network, profile, vm)) {
+            String guruName = "NsxPublicNetworkGuru";
+            NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
+            nsxGuru.allocate(network, profile, vm);
+        }
 
         if (isDefaultNic != null) {
             profile.setDefaultNic(isDefaultNic);
@@ -1060,6 +1070,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             setMtuInVRNicProfile(networks, network.getTrafficType(), vmNic);
         }
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    private boolean isNicAllocatedForNsxPublicNetworkOnVR(Network network, NicProfile requested, VirtualMachineProfile vm) {
+        boolean isVirtualRouter = vm.getType() == Type.DomainRouter;
+        boolean isPublicTraffic = network.getTrafficType() == TrafficType.Public;
+        if (!isVirtualRouter || !isPublicTraffic || requested.getIPv4Address() == null) {
+            return false;
+        }
+        IPAddressVO ip = _ipAddressDao.findByIp(requested.getIPv4Address());
+        VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
+        boolean isForNsx = vlanDetail != null && vlanDetail.getValue().equalsIgnoreCase("true");
+        return isForNsx && ip.isSourceNat() && !ip.isForSystemVms();
     }
 
     private void setMtuDetailsInVRNic(final Pair<NetworkVO, VpcVO> networks, Network network, NicVO vo) {

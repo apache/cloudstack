@@ -106,7 +106,7 @@ public class NsxResourceTest {
     @Test
     public void testCreateNsxTier1Gateway() {
         NsxCommand command = new CreateNsxTier1GatewayCommand(1L, 2L,
-                1L, 3L, "VPC01", true);
+                1L, 3L, "VPC01", true, false);
 
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(command);
         assertTrue(answer.getResult());

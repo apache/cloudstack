@@ -21,4 +21,5 @@ import com.cloud.network.dao.NetworkVO;
 public interface NsxService {
 
     NetworkVO createNsxPublicNetwork(long zoneId);
+    boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
 }

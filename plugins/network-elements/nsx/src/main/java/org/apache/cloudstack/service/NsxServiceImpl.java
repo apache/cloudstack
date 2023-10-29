@@ -58,16 +58,16 @@ public class NsxServiceImpl implements NsxService {
 
     private static final Logger LOGGER = Logger.getLogger(NsxServiceImpl.class);
 
-    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName) {
+    public boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, true);
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, true, sourceNatEnabled);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }
 
     public boolean createNetwork(Long zoneId, long accountId, long domainId, Long networkId, String networkName) {
         CreateNsxTier1GatewayCommand createNsxTier1GatewayCommand =
-                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, networkId, networkName, false);
+                new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, networkId, networkName, false, false);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
     }

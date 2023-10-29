@@ -52,6 +52,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -101,6 +102,8 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     NetworkModel networkModel;
     @Inject
     DomainDao domainDao;
+    @Inject
+    protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -293,7 +296,10 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         }
         Account account = isNsxAndAccount.second();
         DomainVO domain = getDomainFromAccount(account);
-        return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName());
+        Network.Service[] services = { Network.Service.SourceNat };
+        boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
+        // return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName(), sourceNatEnabled);
+        return true;
     }
 
     @Override

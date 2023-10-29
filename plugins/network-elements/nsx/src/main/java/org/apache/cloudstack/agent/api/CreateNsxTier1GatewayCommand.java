@@ -19,16 +19,20 @@ package org.apache.cloudstack.agent.api;
 import java.util.Objects;
 
 public class CreateNsxTier1GatewayCommand extends NsxCommand {
+
     private Long networkResourceId;
     private String networkResourceName;
     private boolean isResourceVpc;
+    private boolean sourceNatEnabled;
 
     public CreateNsxTier1GatewayCommand(long domainId, long accountId, long zoneId,
-                                        Long networkResourceId, String networkResourceName, boolean isResourceVpc) {
+                                        Long networkResourceId, String networkResourceName, boolean isResourceVpc,
+                                        boolean sourceNatEnabled) {
         super(domainId, accountId, zoneId);
         this.networkResourceId = networkResourceId;
         this.networkResourceName = networkResourceName;
         this.isResourceVpc = isResourceVpc;
+        this.sourceNatEnabled = sourceNatEnabled;
     }
 
     public Long getNetworkResourceId() {
@@ -41,6 +45,10 @@ public class CreateNsxTier1GatewayCommand extends NsxCommand {
 
     public String getNetworkResourceName() {
         return networkResourceName;
+    }
+
+    public boolean isSourceNatEnabled() {
+        return sourceNatEnabled;
     }
 
     @Override
