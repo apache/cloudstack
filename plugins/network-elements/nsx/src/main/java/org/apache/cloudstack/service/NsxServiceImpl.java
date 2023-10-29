@@ -27,16 +27,19 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -99,7 +102,7 @@ public class NsxServiceImpl implements NsxService {
     }
 
     @Override
-    public boolean createNsxPublicNetwork(long zoneId) {
+    public NetworkVO createNsxPublicNetwork(long zoneId) {
         LOGGER.debug(String.format("Creating a NSX Public Network for zone %s", zoneId));
         DataCenterVO zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
@@ -126,7 +129,16 @@ public class NsxServiceImpl implements NsxService {
             LOGGER.error(err);
             throw new CloudRuntimeException(err);
         }
-        // TODO: Create NSX Public Network
-        return false;
+        Account account = CallContext.current().getCallingAccount();
+        long domainId = account.getDomainId();
+        long id = networkDao.getNextInSequence(Long.class, "id");
+        String networkName = String.format("NSX-Public-Network-%s", zone.getName());
+
+        NetworkVO network = new NetworkVO(id, nsxPublicNetworkOffering.getTrafficType(), Networks.Mode.Static,
+                Networks.BroadcastDomainType.NSX, nsxPublicNetworkOffering.getId(), domainId, account.getId(),
+                200L, networkName, networkName, null, null, zoneId, null, null,
+                true, null, false);
+        network.setGuruName("NsxPublicNetworkGuru");
+        return networkDao.persist(network, false, new HashMap<>());
     }
 }

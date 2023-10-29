@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.network.dao.NetworkVO;
+
 public interface NsxService {
 
-    boolean createNsxPublicNetwork(long zoneId);
+    NetworkVO createNsxPublicNetwork(long zoneId);
 }

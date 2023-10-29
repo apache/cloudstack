@@ -36,6 +36,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.command.CreateNsxPublicNetworkCmd;
 import org.apache.cloudstack.api.command.DeleteNsxControllerCmd;
 import org.apache.cloudstack.api.command.ListNsxControllersCmd;
 import org.apache.cloudstack.api.BaseResponse;
@@ -194,6 +195,7 @@ public class NsxProviderServiceImpl implements NsxProviderService {
         cmdList.add(AddNsxControllerCmd.class);
         cmdList.add(ListNsxControllersCmd.class);
         cmdList.add(DeleteNsxControllerCmd.class);
+        cmdList.add(CreateNsxPublicNetworkCmd.class);
         return cmdList;
     }
 

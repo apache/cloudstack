@@ -21,24 +21,31 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NsxControllerResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.service.NsxService;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 
 @APICommand(name = CreateNsxPublicNetworkCmd.APINAME, description = "Create NSX Public Network for a Zone",
-        responseObject = NsxControllerResponse.class, requestHasSensitiveInfo = false,
+        responseObject = NetworkResponse.class, requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false, since = "4.19.0.0")
 public class CreateNsxPublicNetworkCmd extends BaseCmd {
 
     public static final String APINAME = "createNsxPublicNetwork";
+
+    public static final Logger s_logger = Logger.getLogger(CreateNsxPublicNetworkCmd.class.getName());
 
     @Inject
     private NsxService nsxService;
@@ -49,7 +56,16 @@ public class CreateNsxPublicNetworkCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        nsxService.createNsxPublicNetwork(zoneId);
+        try {
+            NetworkVO network = nsxService.createNsxPublicNetwork(zoneId);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseObject.ResponseView.Restricted, network);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Failed to create NSX Public Network on zone %s: %s", zoneId, e.getMessage());
+            s_logger.error(msg, e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, msg);
+        }
     }
 
     @Override
