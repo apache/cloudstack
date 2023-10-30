@@ -105,9 +105,10 @@ import java.util.Set;
 import java.util.function.LongFunction;
 
 @Component
-public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
+public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
         StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider,
         LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
+
 
     @Inject
     AccountManager accountMgr;

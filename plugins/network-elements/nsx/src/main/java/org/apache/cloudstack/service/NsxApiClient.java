@@ -37,6 +37,7 @@ import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
+<<<<<<< HEAD
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
 import com.vmware.nsx_policy.model.LBPoolListResult;
@@ -44,6 +45,8 @@ import com.vmware.nsx_policy.model.LBPoolMember;
 import com.vmware.nsx_policy.model.LBService;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
+=======
+>>>>>>> ce1659e8fcce61e0a6e7c75190af668f75172c87
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.Segment;
@@ -69,6 +72,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.List;
+<<<<<<< HEAD
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -82,6 +86,11 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getVirtualServerNam
 import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
+=======
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+>>>>>>> ce1659e8fcce61e0a6e7c75190af668f75172c87
 
 public class NsxApiClient {
 
@@ -119,6 +128,7 @@ public class NsxApiClient {
         BYPASS
     }
 
+<<<<<<< HEAD
     public enum LBAlgorithm {
         ROUND_ROBIN,
         LEAST_CONNECTION,
@@ -132,6 +142,8 @@ public class NsxApiClient {
         XLARGE
     }
 
+=======
+>>>>>>> ce1659e8fcce61e0a6e7c75190af668f75172c87
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
     }

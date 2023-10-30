@@ -927,6 +927,8 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
+          } else if (publicVlanIpRange.fornsx) {
+            params.vlan = null
           } else {
             params.vlan = 'untagged'
           }
@@ -934,6 +936,8 @@ export default {
           params.netmask = publicVlanIpRange.netmask
           params.startip = publicVlanIpRange.startIp
           params.endip = publicVlanIpRange.endIp
+          params.fornsx = publicVlanIpRange.fornsx
+          params.forsystemvms = publicVlanIpRange.forsystemvms
 
           if (this.isBasicZone) {
             params.forVirtualNetwork = true
@@ -946,39 +950,29 @@ export default {
           }
 
           try {
-            console.log('is nsx zone: ', this.stepData.isNsxZone)
-            console.log('value of this.stepData.stepMove.includes(createPublicVlanIpRange)', this.stepData.stepMove.includes('createPublicVlanIpRange' + index))
-            // for not add vlan ; next phase add the check: && this.stepData.isNsxZone
             if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
-              console.log('create public vlan ip range')
               this.stepData.stepMove.push('createPublicVlanIpRange' + index)
             }
           } catch (e) {
-            console.log('error')
             this.messageError = e
             this.processStatus = STATUS_FAILED
             this.setStepStatus(STATUS_FAILED)
             stopNow = true
           }
-          console.log('added public vlan range')
-
           if (stopNow) {
-            console.log('stop now - break')
             break
           }
         }
 
         if (stopNow) {
-          console.log('stop now - return')
           return
         }
 
         if (this.stepData.isTungstenZone) {
           await this.stepCreateTungstenFabricPublicNetwork()
         } else if (this.stepData.isNsxZone) {
-          console.log('added nsx controller')
           await this.stepAddNsxController()
         } else {
           await this.stepConfigureStorageTraffic()
@@ -995,7 +989,6 @@ export default {
           if (storageExists && storageExists.length > 0) {
             await this.stepConfigureStorageTraffic()
           } else {
-            console.log('conf guest traffic')
             await this.stepConfigureGuestTraffic()
           }
         }
