@@ -34,6 +34,10 @@ public class OauthProviderResponse extends BaseResponse {
     @Param(description = "Name of the provider")
     private String provider;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the provider")
+    private String name;
+
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "Description of the provider registered")
     private String description;
@@ -57,6 +61,7 @@ public class OauthProviderResponse extends BaseResponse {
     public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri) {
         this.id = id;
         this.provider = provider;
+        this.name = provider;
         this.description = description;
         this.clientId = clientId;
         this.secretKey = secretKey;
