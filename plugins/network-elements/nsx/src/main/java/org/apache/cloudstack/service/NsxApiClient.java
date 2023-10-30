@@ -16,11 +16,18 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.infra.DhcpRelayConfigs;
+import com.vmware.nsx_policy.infra.LbAppProfiles;
+import com.vmware.nsx_policy.infra.LbPools;
+import com.vmware.nsx_policy.infra.LbServices;
+import com.vmware.nsx_policy.infra.LbVirtualServers;
 import com.vmware.nsx_policy.infra.Segments;
+import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
@@ -29,14 +36,24 @@ import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
+import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
+import com.vmware.nsx_policy.model.LBAppProfileListResult;
+import com.vmware.nsx_policy.model.LBPool;
+import com.vmware.nsx_policy.model.LBPoolListResult;
+import com.vmware.nsx_policy.model.LBPoolMember;
+import com.vmware.nsx_policy.model.LBService;
+import com.vmware.nsx_policy.model.LBVirtualServer;
+import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
+import com.vmware.nsx_policy.model.ServiceListResult;
 import com.vmware.nsx_policy.model.SiteListResult;
 import com.vmware.nsx_policy.model.Tier1;
 import com.vmware.vapi.bindings.Service;
+import com.vmware.vapi.bindings.Structure;
 import com.vmware.vapi.bindings.StubConfiguration;
 import com.vmware.vapi.cis.authn.SecurityContextFactory;
 import com.vmware.vapi.client.ApiClient;
@@ -47,13 +64,26 @@ import com.vmware.vapi.internal.protocol.RestProtocol;
 import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAppender;
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
+import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolMemberName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getVirtualServerName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
+import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
 
 public class NsxApiClient {
 
@@ -80,6 +110,30 @@ public class NsxApiClient {
     private enum AdminState { UP, DOWN }
 
     private enum TransportType { OVERLAY, VLAN }
+
+    private enum NatId { USER, INTERNAL, DEFAULT }
+
+    private enum NatAction {SNAT, DNAT, REFLEXIVE}
+
+    private enum FirewallMatch {
+        MATCH_INTERNAL_ADDRESS,
+        MATCH_EXTERNAL_ADDRESS,
+        BYPASS
+    }
+
+    public enum LBAlgorithm {
+        ROUND_ROBIN,
+        LEAST_CONNECTION,
+        IP_HASH
+    }
+
+    private enum LBSize {
+        SMALL,
+        MEDIUM,
+        LARGE,
+        XLARGE
+    }
+
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -331,5 +385,314 @@ public class NsxApiClient {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    public void createStaticNatRule(String vpcName, String tier1GatewayName,
+                                    String ruleName, String publicIp, String vmIp) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            PolicyNatRule rule = new PolicyNatRule.Builder()
+                    .setId(ruleName)
+                    .setDisplayName(ruleName)
+                    .setAction(NatAction.DNAT.name())
+                    .setFirewallMatch(FirewallMatch.MATCH_INTERNAL_ADDRESS.name())
+                    .setDestinationNetwork(publicIp)
+                    .setTranslatedNetwork(vmIp)
+                    .setEnabled(true)
+                    .build();
+
+            LOGGER.debug(String.format("Creating NSX static NAT rule %s for tier-1 gateway %s (VPC: %s)", ruleName, tier1GatewayName, vpcName));
+            natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Error creating NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
+                    ruleName, tier1GatewayName, vpcName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void deleteNatRule(Network.Service service, String privatePort, String protocol, String networkName, String tier1GatewayName, String ruleName) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            LOGGER.debug(String.format("Deleting NSX static NAT rule %s for tier-1 gateway %s (network: %s)", ruleName, tier1GatewayName, networkName));
+            // delete NAT rule
+            natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
+            if (service == Network.Service.PortForwarding) {
+                String svcName = getServiceName(ruleName, privatePort, protocol);
+                // Delete service
+                Services services = (Services) nsxService.apply(Services.class);
+                services.delete(svcName);
+            }
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to delete NSX Static NAT rule %s for tier-1 gateway %s (VPC: %s), due to %s",
+                    ruleName, tier1GatewayName, networkName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void createPortForwardingRule(String ruleName, String tier1GatewayName, String networkName, String publicIp,
+                                         String vmIp, String publicPort, String service) {
+        try {
+            NatRules natService = (NatRules) nsxService.apply(NatRules.class);
+            LOGGER.debug(String.format("Creating NSX Port-Forwarding NAT %s for network %s", ruleName, networkName));
+            PolicyNatRule rule = new PolicyNatRule.Builder()
+                    .setId(ruleName)
+                    .setDisplayName(ruleName)
+                    .setAction(NatAction.DNAT.name())
+                    .setFirewallMatch(FirewallMatch.MATCH_INTERNAL_ADDRESS.name())
+                    .setDestinationNetwork(publicIp)
+                    .setTranslatedNetwork(vmIp)
+                    .setTranslatedPorts(String.valueOf(publicPort))
+                    .setService(service)
+                    .setEnabled(true)
+                    .build();
+            natService.patch(tier1GatewayName, NatId.USER.name(), ruleName, rule);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to delete NSX Port-forward rule %s for network: %s, due to %s",
+                    ruleName, networkName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName, String algorithm) {
+        for (NsxLoadBalancerMember member : memberList) {
+            try {
+                String serverPoolMemberName = getServerPoolMemberName(tier1GatewayName, member.getVmId());
+                LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
+                LBPoolMember lbPoolMember = new LBPoolMember.Builder()
+                        .setDisplayName(serverPoolMemberName)
+                        .setIpAddress(member.getVmIp())
+                        .setPort(String.valueOf(member.getPort()))
+                        .build();
+                LBPool lbPool = new LBPool.Builder()
+                        .setId(lbServerPoolName)
+                        .setDisplayName(lbServerPoolName)
+                        .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
+                        .setMembers(List.of(lbPoolMember))
+                        .build();
+                lbPools.patch(lbServerPoolName, lbPool);
+            } catch (Error error) {
+                ApiError ae = error.getData()._convertTo(ApiError.class);
+                String msg = String.format("Failed to create NSX LB server pool, due to: %s", ae.getErrorMessage());
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+
+    public void createNsxLoadBalancer(String tier1GatewayName, long lbId) {
+        try {
+            String lbName = getLoadBalancerName(tier1GatewayName);
+            LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+            LBService lbService = getLbService(lbName);
+            if (Objects.nonNull(lbService)) {
+                return;
+            }
+            lbService = new LBService.Builder()
+                    .setId(lbName)
+                    .setDisplayName(lbName)
+                    .setEnabled(true)
+                    .setSize(LBSize.SMALL.name())
+                    .setConnectivityPath(TIER_1_GATEWAY_PATH_PREFIX + tier1GatewayName)
+                    .build();
+            lbServices.patch(lbName, lbService);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX load balancer, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void createAndAddNsxLbVirtualServer(String tier1GatewayName, long lbId, String publicIp, String publicPort,
+                                               List<NsxLoadBalancerMember> memberList, String algorithm, String protocol) {
+        try {
+            String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
+            createNsxLbServerPool(memberList, tier1GatewayName, lbServerPoolName, algorithm);
+            createNsxLoadBalancer(tier1GatewayName, lbId);
+
+            String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
+            String lbServiceName = getLoadBalancerName(tier1GatewayName);
+            LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
+            LBVirtualServer lbVirtualServer = new LBVirtualServer.Builder()
+                    .setId(lbVirtualServerName)
+                    .setDisplayName(lbVirtualServerName)
+                    .setApplicationProfilePath(getLbProfileForProtocol(protocol))
+                    .setIpAddress(publicIp)
+                    .setLbServicePath(getLbPath(lbServiceName))
+                    .setPoolPath(getLbPoolPath(lbServerPoolName))
+                    .setPorts(List.of(publicPort))
+                    .build();
+            lbVirtualServers.patch(lbVirtualServerName, lbVirtualServer);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create and add NSX virtual server to the Load Balancer, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void deleteNsxLbResources(String tier1GatewayName, long lbId, long vmId) {
+        try {
+            // Delete associated Virtual servers
+            LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
+            String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
+            lbVirtualServers.delete(lbVirtualServerName, false);
+
+            // Delete LB pool
+            LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
+            String lbServerPoolName = getServerPoolName(tier1GatewayName, lbId);
+            lbPools.delete(lbServerPoolName, false);
+
+            // Delete load balancer
+            LBVirtualServerListResult lbVsListResult = lbVirtualServers.list(null, null, null, null, null, null);
+            LBPoolListResult lbPoolListResult = lbPools.list(null, null, null, null, null, null);
+            if (CollectionUtils.isEmpty(lbVsListResult.getResults()) && CollectionUtils.isEmpty(lbPoolListResult.getResults())) {
+                String lbName = getLoadBalancerName(tier1GatewayName);
+                LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+                lbServices.delete(lbName, true);
+            }
+
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to delete NSX Load Balancer resources, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getLbPoolPath(String lbPoolName) {
+        try {
+            LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
+            LBPool lbPool = lbPools.get(lbPoolName);
+            return Objects.nonNull(lbPool) ? lbPool.getPath() : null;
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to get NSX LB server pool, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+    private LBService getLbService(String lbName) {
+        try {
+            LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+            LBService lbService = lbServices.get(lbName);
+            if (Objects.nonNull(lbService)) {
+                return lbService;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
+    }
+
+    private String getLbPath(String lbServiceName) {
+        try {
+            LbServices lbServices = (LbServices) nsxService.apply(LbServices.class);
+            LBService lbService = lbServices.get(lbServiceName);
+            return Objects.nonNull(lbService) ? lbService.getPath() : null;
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to get NSX LB server pool, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getLbProfileForProtocol(String protocol) {
+        try {
+            LbAppProfiles lbAppProfiles = (LbAppProfiles) nsxService.apply(LbAppProfiles.class);
+            LBAppProfileListResult lbAppProfileListResults = lbAppProfiles.list(null, null,
+                    null, null, null, null);
+            Optional<Structure> appProfile = lbAppProfileListResults.getResults().stream().filter(profile -> profile._getDataValue().getField("path").toString().contains(protocol.toLowerCase(Locale.ROOT))).findFirst();
+            return appProfile.map(structure -> structure._getDataValue().getField("path").toString()).orElse(null);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to list NSX LB App profiles, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public String getNsxInfraServices(String ruleName, String port, String protocol) {
+        try {
+            Services service = (Services) nsxService.apply(Services.class);
+
+            // Find default service if present
+            ServiceListResult serviceList = service.list(null, true, false, null, null, null, null);
+
+            List<com.vmware.nsx_policy.model.Service> services = serviceList.getResults();
+            List<String> matchedDefaultSvc = services.parallelStream().filter(svc ->
+                            (svc.getServiceEntries().get(0) instanceof L4PortSetServiceEntry) &&
+                                    ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0).equals(port)
+                    && (((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getL4Protocol().equals(protocol)))
+                    .map(svc -> ((L4PortSetServiceEntry) svc.getServiceEntries().get(0)).getDestinationPorts().get(0))
+                    .collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(matchedDefaultSvc)) {
+                return matchedDefaultSvc.get(0);
+            }
+
+            // Else, find if there's a service matching the rule name
+            String servicePath = getServiceById(ruleName);
+            if (Objects.nonNull(servicePath)) {
+                return servicePath;
+            }
+
+            // Else, create a service entry
+            return createNsxInfraService(ruleName, port, protocol);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to list NSX infra service, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public String createNsxInfraService(String ruleName, String port, String protocol) {
+        try {
+            String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
+            String serviceName = getServiceName(ruleName, port, protocol);
+            Services service = (Services) nsxService.apply(Services.class);
+            com.vmware.nsx_policy.model.Service infraService = new com.vmware.nsx_policy.model.Service.Builder()
+                    .setServiceEntries(List.of(
+                            new L4PortSetServiceEntry.Builder()
+                                    .setId(serviceEntryName)
+                                    .setDisplayName(serviceEntryName)
+                                    .setDestinationPorts(List.of(port))
+                                    .setL4Protocol(protocol)
+                                    .build()
+                    ))
+                    .setId(serviceName)
+                    .setDisplayName(serviceName)
+                    .build();
+            service.patch(serviceName, infraService);
+
+            com.vmware.nsx_policy.model.Service svc = service.get(serviceName);
+            return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
+
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getServiceById(String ruleName) {
+        try {
+            Services service = (Services) nsxService.apply(Services.class);
+            com.vmware.nsx_policy.model.Service svc1 = service.get(ruleName);
+            if (Objects.nonNull(svc1)) {
+                return ((L4PortSetServiceEntry) svc1.getServiceEntries().get(0)).getParentPath();
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
     }
 }

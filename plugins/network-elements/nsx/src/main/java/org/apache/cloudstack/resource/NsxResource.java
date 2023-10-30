@@ -24,6 +24,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
+import com.cloud.network.Network;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -35,10 +36,15 @@ import com.vmware.nsx_policy.model.SiteListResult;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
+import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
+import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.cloudstack.utils.NsxControllerUtils;
@@ -107,6 +113,16 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxDhcpRelayConfigCommand) cmd);
         } else if (cmd instanceof CreateNsxTier1NatRuleCommand) {
             return executeRequest((CreateNsxTier1NatRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxStaticNatCommand) {
+            return executeRequest((CreateNsxStaticNatCommand) cmd);
+        } else if (cmd instanceof DeleteNsxNatRuleCommand) {
+            return executeRequest((DeleteNsxNatRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxPortForwardRuleCommand) {
+          return executeRequest((CreateNsxPortForwardRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxLoadBalancerRuleCommand) {
+            return executeRequest((CreateNsxLoadBalancerRuleCommand) cmd);
+        } else if (cmd instanceof DeleteNsxLoadBalancerRuleCommand) {
+            return executeRequest((DeleteNsxLoadBalancerRuleCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -352,6 +368,87 @@ public class NsxResource implements ServerResource {
             nsxApiClient.deleteSegment(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getVpcId(), cmd.getNetworkId(), segmentName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to delete NSX segment: %s", segmentName));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxStaticNatCommand cmd) {
+        String staticNatRuleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        try {
+            nsxApiClient.createStaticNatRule(cmd.getNetworkResourceName(), tier1GatewayName, staticNatRuleName, cmd.getPublicIp(), cmd.getVmIp());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", staticNatRuleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxPortForwardRuleCommand cmd) {
+        String ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        try {
+            String privatePort = cmd.getPrivatePort();
+            String service = privatePort.contains("-") ? nsxApiClient.createNsxInfraService(ruleName, privatePort, cmd.getProtocol()) :
+                    nsxApiClient.getNsxInfraServices(ruleName, privatePort, cmd.getProtocol());
+
+            nsxApiClient.createPortForwardingRule(ruleName, tier1GatewayName, cmd.getNetworkResourceName(), cmd.getPublicIp(),
+                    cmd.getVmIp(), cmd.getPublicPort(), service);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX port forward rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxNatRuleCommand cmd) {
+        String ruleName = null;
+        if (cmd.getService() == Network.Service.StaticNat) {
+            ruleName = NsxControllerUtils.getStaticNatRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                    cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        } else if (cmd.getService() == Network.Service.PortForwarding) {
+            ruleName = NsxControllerUtils.getPortForwardRuleName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                    cmd.getNetworkResourceId(), cmd.getRuleId(), cmd.isResourceVpc());
+        }
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        try {
+            nsxApiClient.deleteNatRule(cmd.getService(), cmd.getPrivatePort(), cmd.getProtocol(),
+                    cmd.getNetworkResourceName(), tier1GatewayName, ruleName);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX static NAT rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxLoadBalancerRuleCommand cmd) {
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
+        try {
+            nsxApiClient.createAndAddNsxLbVirtualServer(tier1GatewayName, cmd.getLbId(), cmd.getPublicIp(), cmd.getPublicPort(),
+                    cmd.getMemberList(), cmd.getAlgorithm(), cmd.getProtocol());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(DeleteNsxLoadBalancerRuleCommand cmd) {
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
+                cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        String ruleName = NsxControllerUtils.getLoadBalancerRuleName(tier1GatewayName, cmd.getLbId());
+        try {
+            nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId(), cmd.getVmId());
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
