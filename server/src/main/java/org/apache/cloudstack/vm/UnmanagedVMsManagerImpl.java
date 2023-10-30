@@ -109,6 +109,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
@@ -1627,8 +1628,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
 
+        String internalName = getInternalName(owner.getAccountId());
+
         try {
-            userVm = userVmManager.importVM(zone, null, template, "internalCSName", displayName, owner,
+            userVm = userVmManager.importVM(zone, null, template, internalName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     serviceOffering, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
@@ -1770,8 +1773,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             networkIndex++;
         }
 
+        String internalName = getInternalName(owner.getAccountId());
+
         try {
-            userVm = userVmManager.importVM(zone, null, template, "internalCSName", displayName, owner,
+            userVm = userVmManager.importVM(zone, null, template, internalName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     serviceOffering, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
@@ -1933,6 +1938,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         GetRemoteVmsAnswer getRemoteVmsAnswer = (GetRemoteVmsAnswer) answer;
         return getRemoteVmsAnswer.getUnmanagedInstances();
+    }
+
+    private String getInternalName(long accounId) {
+        String instanceSuffix = configurationDao.getValue(Config.InstanceName.key());
+        if (instanceSuffix == null) {
+            instanceSuffix = "DEFAULT";
+        }
+        long vmId = userVmDao.getNextInSequence(Long.class, "id");
+        return VirtualMachineName.getVmName(vmId, accounId, instanceSuffix);
     }
 
     @Override

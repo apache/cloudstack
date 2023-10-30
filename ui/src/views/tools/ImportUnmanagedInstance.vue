@@ -728,10 +728,12 @@ export default {
           diskpath: this.diskpath,
           tmppath: this.tmppath
         }
-        console.log(params)
         var importapi = 'importUnmanagedInstance'
         if (this.importsource === 'external' || this.importsource === 'local' || this.importsource === 'shared') {
           importapi = 'importVm'
+          if (this.importsource !== 'external') {
+            params.name = values.displayname
+          }
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
@@ -825,7 +827,7 @@ export default {
           }
         }
         this.updateLoading(true)
-        const name = this.resource.name
+        const name = params.name
         api(importapi, params).then(json => {
           const jobId = json.importvmresponse.jobid
           this.$pollJob({
