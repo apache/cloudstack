@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import java.util.List;
+
 public class NsxNetworkRule {
     private long domainId;
     private long accountId;
@@ -30,6 +32,8 @@ public class NsxNetworkRule {
     private String publicPort;
     private String privatePort;
     private String protocol;
+    private String algorithm;
+    private List<NsxLoadBalancerMember> memberList;
 
     public long getDomainId() {
         return domainId;
@@ -135,6 +139,22 @@ public class NsxNetworkRule {
         this.protocol = protocol;
     }
 
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public List<NsxLoadBalancerMember> getMemberList() {
+        return memberList;
+    }
+
+    public void setMemberList(List<NsxLoadBalancerMember> memberList) {
+        this.memberList = memberList;
+    }
+
     public static final class Builder {
         private long domainId;
         private long accountId;
@@ -150,6 +170,8 @@ public class NsxNetworkRule {
         private String publicPort;
         private String privatePort;
         private String protocol;
+        private String algorithm;
+        private List<NsxLoadBalancerMember> memberList;
 
         public Builder() {
         }
@@ -220,6 +242,16 @@ public class NsxNetworkRule {
             return this;
         }
 
+        public Builder setAlgorithm(String algorithm) {
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        public Builder setMemberList(List<NsxLoadBalancerMember> memberList) {
+            this.memberList = memberList;
+            return this;
+        }
+
         public NsxNetworkRule build() {
             NsxNetworkRule rule = new NsxNetworkRule();
             rule.setDomainId(this.domainId);
@@ -235,6 +267,8 @@ public class NsxNetworkRule {
             rule.setPrivatePort(this.privatePort);
             rule.setProtocol(this.protocol);
             rule.setRuleId(this.ruleId);
+            rule.setAlgorithm(this.algorithm);
+            rule.setMemberList(this.memberList);
             return rule;
         }
     }

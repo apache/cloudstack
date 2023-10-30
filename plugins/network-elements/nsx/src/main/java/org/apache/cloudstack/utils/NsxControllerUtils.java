@@ -23,6 +23,7 @@ import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.NsxCommand;
+import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -89,5 +90,44 @@ public class NsxControllerUtils {
     public static String getPortForwardRuleName(long domainId, long accountId, long zoneId, Long networkResourceId, long ruleId, boolean isVpcResource) {
         String suffix = "-PF";
         return getTier1GatewayName(domainId, accountId, zoneId, networkResourceId, isVpcResource) + suffix + ruleId;
+    }
+
+    public static String getServiceName(String ruleName, String port, String protocol) {
+        return ruleName + "-SVC-" + port + "-" +protocol;
+    }
+
+    public static String getServiceEntryName(String ruleName, String port, String protocol) {
+        return ruleName + "-SE-" + port + "-" + protocol;
+    }
+
+    public static String getLoadBalancerName(String tier1GatewayName) {
+        return tier1GatewayName + "-LB";
+    }
+
+    public static String getLoadBalancerRuleName(String tier1GatewayName, long lbId) {
+        return tier1GatewayName + "-LB" + lbId;
+    }
+
+    public static String getServerPoolName(String tier1GatewayName, long lbId) {
+        return  getLoadBalancerRuleName(tier1GatewayName, lbId) + "-SP";
+    }
+
+    public static String  getVirtualServerName(String tier1GatewayName, long lbId) {
+        return getLoadBalancerRuleName(tier1GatewayName, lbId) + "-VS";
+    }
+
+    public static String getServerPoolMemberName(String tier1GatewayName, long vmId) {
+        return tier1GatewayName + "-VM" + vmId;
+    }
+
+    public static String getLoadBalancerAlgorithm(String algorithm) {
+        switch (algorithm) {
+            case "leastconn":
+                return NsxApiClient.LBAlgorithm.LEAST_CONNECTION.name();
+            case "source":
+                return NsxApiClient.LBAlgorithm.IP_HASH.name();
+            default:
+                return NsxApiClient.LBAlgorithm.ROUND_ROBIN.name();
+        }
     }
 }

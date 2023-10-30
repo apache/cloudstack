@@ -23,9 +23,11 @@ import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
@@ -119,9 +121,28 @@ public class NsxServiceImpl implements NsxService {
     public boolean deletePortForwardRule(NsxNetworkRule netRule) {
         DeleteNsxNatRuleCommand deleteCmd = new DeleteNsxNatRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
-                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getVmId(), netRule.getRuleId(), netRule.getPrivatePort(), netRule.getPublicPort());
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getVmId(), netRule.getRuleId(), netRule.getPrivatePort(), netRule.getProtocol());
         deleteCmd.setService(Network.Service.PortForwarding);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(deleteCmd, netRule.getZoneId());
+        return result.getResult();
+    }
+
+    public boolean createLbRule(NsxNetworkRule netRule) {
+        CreateNsxLoadBalancerRuleCommand command = new CreateNsxLoadBalancerRuleCommand(netRule.getDomainId(),
+                netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
+                netRule.getPublicPort(), netRule.getAlgorithm(), netRule.getProtocol());
+        command.setPublicIp(netRule.getPublicIp());
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
+        return result.getResult();
+    }
+
+    public boolean deleteLbRule(NsxNetworkRule netRule) {
+        DeleteNsxLoadBalancerRuleCommand command = new DeleteNsxLoadBalancerRuleCommand(netRule.getDomainId(),
+                netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
+                netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
+                netRule.getVmId());
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
         return result.getResult();
     }
 }

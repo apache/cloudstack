@@ -38,11 +38,16 @@ public class NsxNetworkCommand extends NsxCommand {
     }
 
     public NsxNetworkCommand(long domainId, long accountId, long zoneId, Long networkResourceId, String networkResourceName,
-                            boolean isResourceVpc, Long vmId) {
+                             boolean isResourceVpc) {
         super(domainId, accountId, zoneId);
         this.networkResourceId = networkResourceId;
         this.networkResourceName = networkResourceName;
         this.isResourceVpc = isResourceVpc;
+    }
+
+    public NsxNetworkCommand(long domainId, long accountId, long zoneId, Long networkResourceId, String networkResourceName,
+                            boolean isResourceVpc, Long vmId) {
+        this(domainId, accountId, zoneId, networkResourceId, networkResourceName, isResourceVpc);
         this.vmId = vmId;
     }
 
