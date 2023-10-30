@@ -24,6 +24,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -41,17 +42,28 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
+import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -59,14 +71,19 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
 import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
+import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -74,6 +91,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -81,7 +99,7 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        ResourceStateAdapter, Listener {
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, ResourceStateAdapter, Listener {
 
     @Inject
     AccountManager accountMgr;
@@ -101,6 +119,12 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     NetworkModel networkModel;
     @Inject
     DomainDao domainDao;
+    @Inject
+    IPAddressDao ipAddressDao;
+    @Inject
+    VMInstanceDao vmInstanceDao;
+    @Inject
+    VpcDao vpcDao;
 
     private static final Logger LOGGER = Logger.getLogger(NsxElement.class);
 
@@ -170,6 +194,11 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     @Override
     public Map<Network.Service, Map<Network.Capability, String>> getCapabilities() {
         return capabilities;
+    }
+
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Network.Service> services) throws ResourceUnavailableException {
+        return true;
     }
 
     @Override
@@ -416,4 +445,117 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
     }
 
     private final LongFunction<DataCenterVO> zoneFunction = zoneId -> dataCenterDao.findById(zoneId);
+
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
+
+    @Override
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        for(StaticNat staticNat : rules) {
+            long sourceIpAddressId = staticNat.getSourceIpAddressId();
+            IPAddressVO ipAddressVO = ipAddressDao.findByIdIncludingRemoved(sourceIpAddressId);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(ipAddressVO.getAssociatedWithVmId());
+            // floating ip is released when nic was deleted
+            if (vm == null || networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId()) == null) {
+                continue;
+            }
+            Nic nic = networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId());
+            Network publicNetwork = networkModel.getSystemNetworkByZoneAndTrafficType(config.getDataCenterId(), Networks.TrafficType.Public);
+            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(config.getVpcId(), config.getId());
+            VpcVO vpc = vpcOrNetwork.first();
+            NetworkVO network = vpcOrNetwork.second();
+            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : network.getId();
+            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : network.getName();
+            boolean isVpcResource = Objects.nonNull(vpc);
+            if (!staticNat.isForRevoke()) {
+                return nsxService.createStaticNatRule(config.getDataCenterId(), config.getDomainId(), config.getAccountId(),
+                        networkResourceId, networkResourceName, isVpcResource, vm.getId(),
+                        ipAddressVO.getAddress().addr(), staticNat.getDestIpAddress());
+            } else {
+                return nsxService.deleteStaticNatRule(config.getDataCenterId(), config.getDomainId(), config.getAccountId(),
+                        networkResourceId, networkResourceName, isVpcResource);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.PortForwarding)) {
+            return false;
+        }
+        for (PortForwardingRule rule : rules) {
+            IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
+            UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
+            if (vm == null || networkModel.getNicInNetwork(vm.getId(), network.getId()) == null) {
+                continue;
+            }
+            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
+            VpcVO vpc = vpcOrNetwork.first();
+            NetworkVO networkVO = vpcOrNetwork.second();
+            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : networkVO.getId();
+            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : networkVO.getName();
+            boolean isVpcResource = Objects.nonNull(vpc);
+            long domainId = Objects.nonNull(vpc) ? vpc.getDomainId() : networkVO.getDomainId();
+            long accountId = Objects.nonNull(vpc) ? vpc.getAccountId() : networkVO.getAccountId();
+            long zoneId = Objects.nonNull(vpc) ? vpc.getZoneId() : networkVO.getDataCenterId();
+            String publicPort = getPublicPortRange(rule);
+
+            String privatePort = getPrivatePortRange(rule);
+
+            // TODO: add builder to reduce signature params ; should we pass port range?
+            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                    .setDomainId(domainId)
+                    .setAccountId(accountId)
+                    .setZoneId(zoneId)
+                    .setNetworkResourceId(networkResourceId)
+                    .setNetworkResourceName(networkResourceName)
+                    .setVpcResource(isVpcResource)
+                    .setVmId(vm.getId())
+                    .setVmIp(vm.getPrivateIpAddress())
+                    .setPublicIp(publicIp.getAddress().addr())
+                    .setPrivatePort(privatePort)
+                    .setPublicPort(publicPort)
+                    .setRuleId(rule.getId())
+                    .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
+                    .build();
+            if (rule.getState() == FirewallRule.State.Add) {
+                return nsxService.createPortForwardRule(networkRule);
+            } else if (rule.getState() == FirewallRule.State.Revoke) {
+                return nsxService.deletePortForwardRule(networkRule);
+            }
+        }
+        return true;
+    }
+
+    public Pair<VpcVO, NetworkVO> getVpcOrNetwork(Long vpcId, long networkId) {
+        VpcVO vpc = null;
+        NetworkVO network = null;
+        if (Objects.nonNull(vpcId)) {
+            vpc = vpcDao.findById(vpcId);
+            if (Objects.isNull(vpc)) {
+                throw new CloudRuntimeException(String.format("Failed to find VPC with id: %s", vpcId));
+            }
+        } else {
+            network = networkDao.findById(networkId);
+            if (Objects.isNull(network)) {
+                throw new CloudRuntimeException(String.format("Failed to find network with id: %s", networkId));
+            }
+        }
+        return new Pair<>(vpc, network);
+    }
+
+    private static String getPublicPortRange(PortForwardingRule rule) {
+        return rule.getDestinationPortStart() == rule.getDestinationPortEnd() ?
+                String.valueOf(rule.getDestinationPortStart()) :
+                String.valueOf(rule.getDestinationPortStart()).concat("-").concat(String.valueOf(rule.getDestinationPortEnd()));
+    }
+
+    private static String getPrivatePortRange(PortForwardingRule rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
 }

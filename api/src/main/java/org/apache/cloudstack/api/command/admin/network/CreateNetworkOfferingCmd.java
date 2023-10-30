@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -235,7 +236,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<String> getSupportedServices() {
-        if (!forNsx) {
+        if (!isForNsx()) {
             return supportedServices == null ? new ArrayList<String>() : supportedServices;
         } else {
             List<String> services = new ArrayList<>(List.of(
@@ -283,7 +284,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     }
 
     public Boolean isForNsx() {
-        return forNsx;
+        return !Objects.isNull(forNsx) && forNsx;
     }
 
     public String getNsxMode() {
