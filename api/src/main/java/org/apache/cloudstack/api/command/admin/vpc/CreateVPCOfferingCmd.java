@@ -145,10 +145,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSupportedServices() {
-        if (!forNsx && CollectionUtils.isEmpty(supportedServices)) {
+        if (!isForNsx() && CollectionUtils.isEmpty(supportedServices)) {
             throw new InvalidParameterValueException("Supported services needs to be provided");
         }
-        if (forNsx) {
+        if (isForNsx()) {
             return List.of(
                     Dhcp.getName(),
                     Dns.getName(),
