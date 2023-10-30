@@ -244,14 +244,19 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item name="pcidevice" ref="pcidevice" :label="$t('label.gpu')" v-if="!isSystem">
-          <a-radio-group
+          <a-select
             v-model:value="form.pcidevice"
-            buttonStyle="solid"
-            @change="selected => { handleGpuChange(selected.target.value) }">
-            <a-radio-button v-for="(opt, optIndex) in gpuTypes" :key="optIndex" :value="opt.value">
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="$t('label.gpu')"
+            @change="handleGpuChange">
+            <a-select-option v-for="(opt, optIndex) in gpuTypes" :key="optIndex" :value="opt.value">
               {{ opt.title }}
-            </a-radio-button>
-          </a-radio-group>
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item name="vgputype" ref="vgputype" :label="$t('label.vgputype')" v-if="vGpuVisible">
           <a-select
