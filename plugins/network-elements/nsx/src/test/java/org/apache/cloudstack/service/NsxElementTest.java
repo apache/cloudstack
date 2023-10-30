@@ -110,8 +110,6 @@ public class NsxElementTest {
         when(domainDao.findById(anyLong())).thenReturn(domain);
         when(vpc.getZoneId()).thenReturn(1L);
         when(vpc.getName()).thenReturn("testVPC");
-        when(vpc.getVpcOfferingId()).thenReturn(1L);
-        when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(false);
 
         PhysicalNetworkVO physicalNetworkVO = new PhysicalNetworkVO();
         physicalNetworkVO.setIsolationMethods(List.of("NSX"));

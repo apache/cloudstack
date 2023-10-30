@@ -96,7 +96,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected boolean canHandle(NetworkOffering offering) {
-        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && !offering.isForNsx();
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly();
     }
 
     @Override

@@ -294,11 +294,6 @@ public class NsxElement extends AdapterBase implements DhcpServiceProvider, DnsS
         if (Boolean.TRUE.equals(isNsxAndAccount.first()) && Objects.isNull(isNsxAndAccount.second())) {
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
-        Account account = isNsxAndAccount.second();
-        DomainVO domain = getDomainFromAccount(account);
-        Network.Service[] services = { Network.Service.SourceNat };
-        boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
-        // return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName(), sourceNatEnabled);
         return true;
     }
 
