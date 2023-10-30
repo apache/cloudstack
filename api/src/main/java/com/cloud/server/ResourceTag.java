@@ -30,6 +30,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
     public enum ResourceObjectType {
         UserVm(true, true, true),
         Template(true, true, true),
+        VnfTemplate(true, true, true),
         ISO(true, false, true),
         Volume(true, true),
         Snapshot(true, false),
