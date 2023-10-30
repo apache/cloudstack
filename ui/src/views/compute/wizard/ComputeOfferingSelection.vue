@@ -32,8 +32,10 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template #cpuTitle><appstore-outlined /> {{ $t('label.cpu') }}</template>
-      <template #ramTitle><bulb-outlined /> {{ $t('label.memory') }}</template>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'cpu'"><appstore-outlined /> {{ $t('label.cpu') }}</template>
+        <template v-if="column.key === 'ram'"><bulb-outlined /> {{ $t('label.memory') }}</template>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -109,18 +111,19 @@ export default {
       filter: '',
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
           title: this.$t('label.serviceofferingid'),
           width: '40%'
         },
         {
+          key: 'cpu',
           dataIndex: 'cpu',
-          slots: { title: 'cpuTitle' },
           width: '30%'
         },
         {
+          key: 'ram',
           dataIndex: 'ram',
-          slots: { title: 'ramTitle' },
           width: '30%'
         }
       ],

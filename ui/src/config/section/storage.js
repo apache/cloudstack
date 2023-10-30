@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'storage',
   title: 'label.storage',
-  icon: 'database-outlined',
+  icon: 'hdd-outlined',
   children: [
     {
       name: 'volume',
@@ -38,15 +38,11 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'type', 'vmname', 'sizegb']
+        const fields = ['name', 'state', 'sizegb', 'type', 'vmname']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
-          metricsFields.push({
-            physicalsize: (record) => {
-              return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
-            }
-          })
+          metricsFields.push('physicalsize')
         }
         metricsFields.push('utilization')
 
@@ -108,6 +104,7 @@ export default {
           icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
+          show: () => { return 'getUploadParamsForVolume' in store.getters.apis },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
@@ -307,18 +304,29 @@ export default {
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: () => {
-        var fields = ['name', 'state', 'volumename', 'intervaltype', 'created']
+        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('domain')
           fields.push('account')
+          fields.push('domain')
         }
+        fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'intervaltype', 'account', 'domain', 'created'],
+      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created'],
       tabs: [
         {
           name: 'details',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'zones',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SnapshotZones.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'Snapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -333,12 +341,8 @@ export default {
           label: 'label.create.template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
-          mapping: {
-            snapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
         },
         {
           api: 'createVolume',
@@ -380,8 +384,8 @@ export default {
       columns: () => {
         const fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('domain')
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -446,7 +450,7 @@ export default {
       title: 'label.backup',
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
-      columns: [{ name: (record) => { return record.virtualmachinename } }, 'virtualmachinename', 'status', 'type', 'created', 'account', 'zone'],
+      columns: [{ name: (record) => { return record.virtualmachinename } }, 'status', 'virtualmachinename', 'type', 'created', 'account', 'domain', 'zone'],
       details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       actions: [
         {

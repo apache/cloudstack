@@ -49,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
@@ -60,6 +62,8 @@ import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.MoveVolumeCommand;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
+import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
@@ -159,6 +163,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.SwiftUtil;
@@ -272,6 +277,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     @Override
     public Answer executeRequest(Command cmd) {
+        s_logger.debug(LogUtils.logGsonWithoutException("Executing command %s [%s].", cmd.getClass().getSimpleName(), cmd));
         if (cmd instanceof DownloadProgressCommand) {
             return _dlMgr.handleDownloadCommand(this, (DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
@@ -316,6 +322,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CreateDatadiskTemplateCommand)cmd);
         } else if (cmd instanceof MoveVolumeCommand) {
             return execute((MoveVolumeCommand)cmd);
+        } else if (cmd instanceof QuerySnapshotZoneCopyCommand) {
+            return execute((QuerySnapshotZoneCopyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -406,13 +414,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         NfsTO nfsImageStore = (NfsTO)srcStore;
         String secondaryStorageUrl = nfsImageStore.getUrl();
         assert (secondaryStorageUrl != null);
+
         String templateUrl = secondaryStorageUrl + File.separator + srcData.getPath();
+        String templateDetails = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(template, "uuid", "path", "name");
+        s_logger.debug(String.format("Trying to get disks of template [%s], using path [%s].", templateDetails, templateUrl));
+
         Pair<String, String> templateInfo = decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
         String templateRelativeFolderPath = templateInfo.first();
 
         try {
             String secondaryMountPoint = getRootDir(secondaryStorageUrl, _nfsVersion);
-            s_logger.info("MDOVE Secondary storage mount point: " + secondaryMountPoint);
+            s_logger.info(String.format("Trying to find template [%s] in secondary storage root mount point [%s].", templateDetails, secondaryMountPoint));
 
             String srcOVAFileName = getTemplateOnSecStorageFilePath(secondaryMountPoint, templateRelativeFolderPath, templateInfo.second(), ImageFormat.OVA.getFileExtension());
 
@@ -423,39 +435,46 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 command.add("--no-same-permissions");
                 command.add("-xf", srcOVAFileName);
                 command.setWorkDir(secondaryMountPoint + File.separator + templateRelativeFolderPath);
-                s_logger.info("Executing command: " + command.toString());
+
+                s_logger.info(String.format("Trying to decompress OVA file [%s] using command [%s].", srcOVAFileName, command.toString()));
                 String result = command.execute();
                 if (result != null) {
-                    String msg = "Unable to unpack snapshot OVA file at: " + srcOVAFileName;
+                    String msg = String.format("Unable to unpack snapshot OVA file [%s] due to [%s].", srcOVAFileName, result);
                     s_logger.error(msg);
                     throw new Exception(msg);
                 }
 
+                String directory = secondaryMountPoint + File.separator + templateRelativeFolderPath;
                 command = new Script("chmod", 0, s_logger);
                 command.add("-R");
-                command.add("666", secondaryMountPoint + File.separator + templateRelativeFolderPath);
+                command.add("666", directory);
+
+                s_logger.debug(String.format("Trying to add, recursivelly, permission 666 to directory [%s] using command [%s].", directory, command.toString()));
                 result = command.execute();
                 if (result != null) {
-                    s_logger.warn("Unable to set permissions for " + secondaryMountPoint + File.separator + templateRelativeFolderPath + " due to " + result);
+                    s_logger.warn(String.format("Unable to set permissions 666 for directory [%s] due to [%s].", directory, result));
                 }
             }
 
             Script command = new Script("cp", _timeout, s_logger);
             command.add(ovfFilePath);
             command.add(ovfFilePath + ORIGINAL_FILE_EXTENSION);
+            s_logger.debug(String.format("Trying to copy file from [%s] to [%s] using command [%s].", ovfFilePath, ovfFilePath + ORIGINAL_FILE_EXTENSION, command.toString()));
             String result = command.execute();
             if (result != null) {
-                String msg = "Unable to rename original OVF, error msg: " + result;
+                String msg = String.format("Unable to copy original OVF file [%s] to [%s] due to [%s].", ovfFilePath, ovfFilePath + ORIGINAL_FILE_EXTENSION, result);
                 s_logger.error(msg);
             }
 
-            s_logger.debug("Reading OVF " + ovfFilePath + " to retrive the number of disks present in OVA");
+            s_logger.debug(String.format("Reading OVF file [%s] to retrive the number of disks present in OVA file.", ovfFilePath));
             OVFHelper ovfHelper = new OVFHelper();
 
             List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfoFromFile(ovfFilePath, configurationId);
+            s_logger.debug(LogUtils.logGsonWithoutException("Found %s disks reading OVF file [%s] and using configuration id [%s]. The disks specifications are [%s].",
+                    disks.size(), ovfFilePath, configurationId, disks));
             return new GetDatadisksAnswer(disks);
         } catch (Exception e) {
-            String msg = "Get Datadisk Template Count failed due to " + e.getMessage();
+            String msg = String.format("Failed to get disks from template [%s] due to [%s].", templateDetails, e.getMessage());
             s_logger.error(msg, e);
             return new GetDatadisksAnswer(msg);
         }
@@ -584,7 +603,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      *  Template url may or may not end with .ova extension
      */
     public static Pair<String, String> decodeTemplateRelativePathAndNameFromUrl(String storeUrl, String templateUrl, String defaultName) {
-
+        s_logger.debug(String.format("Trying to get template relative path and name from URL [%s].", templateUrl));
         String templateName = null;
         String mountPoint = null;
         if (templateUrl.endsWith(".ova")) {
@@ -598,6 +617,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             templateName = templateUrl.substring(index + 1).replace(".ova", "");
 
             if (templateName == null || templateName.isEmpty()) {
+                s_logger.debug(String.format("Cannot find template name from URL [%s]. Using default name [%s].", templateUrl, defaultName));
                 templateName = defaultName;
             }
         } else {
@@ -608,11 +628,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             templateName = defaultName;
         }
 
+        s_logger.debug(String.format("Template relative path [%s] and name [%s] found from URL [%s].", mountPoint, templateName, templateUrl));
         return new Pair<String, String>(mountPoint, templateName);
     }
 
     public static String getTemplateOnSecStorageFilePath(String secStorageMountPoint, String templateRelativeFolderPath, String templateName, String fileExtension) {
-
+        s_logger.debug(String.format("Trying to find template [%s] with file extension [%s] in secondary storage mount point [%s] using relative folder path [%s].",
+                templateName, fileExtension, secStorageMountPoint, templateRelativeFolderPath));
         StringBuffer sb = new StringBuffer();
         sb.append(secStorageMountPoint);
         if (!secStorageMountPoint.endsWith("/")) {
@@ -699,17 +721,27 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String getOVFFilePath(String srcOVAFileName) {
+        s_logger.debug(String.format("Trying to get OVF file from OVA path [%s].", srcOVAFileName));
+
         File file = new File(srcOVAFileName);
         assert (_storage != null);
         String[] files = _storage.listFiles(file.getParent());
-        if (files != null) {
-            for (String fileName : files) {
-                if (fileName.toLowerCase().endsWith(".ovf")) {
-                    File ovfFile = new File(fileName);
-                    return file.getParent() + File.separator + ovfFile.getName();
-                }
+
+        if (files == null) {
+            s_logger.warn(String.format("Cannot find any files in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
+            return null;
+        }
+
+        s_logger.debug(String.format("Found [%s] files in parent directory of OVA file [%s]. Files found are [%s].", files.length + 1, file.getParent(), StringUtils.join(files, ", ")));
+        for (String fileName : files) {
+            if (fileName.toLowerCase().endsWith(".ovf")) {
+                File ovfFile = new File(fileName);
+                String ovfFilePath = file.getParent() + File.separator + ovfFile.getName();
+                s_logger.debug(String.format("Found OVF file [%s] from OVA file [%s].", ovfFilePath, srcOVAFileName));
+                return ovfFilePath;
             }
         }
+        s_logger.warn(String.format("Cannot find any OVF file in parent directory [%s] of OVA file [%s].", file.getParent(), srcOVAFileName));
         return null;
     }
 
@@ -1997,6 +2029,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
+    protected String getSnapshotFilepathForDelete(String path, String snapshotName) {
+        if (!path.endsWith(snapshotName)) {
+            return path + "/*" + snapshotName + "*";
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Snapshot file %s is present in the same name directory %s. Deleting the directory", snapshotName, path));
+        }
+        return path;
+    }
+
     protected Answer deleteSnapshot(final DeleteCommand cmd) {
         DataTO obj = cmd.getData();
         DataStoreTO dstore = obj.getDataStore();
@@ -2033,11 +2075,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new Answer(cmd, true, details);
             }
             // delete snapshot in the directory if exists
-            String lPath = absoluteSnapshotPath + "/*" + snapshotName + "*";
+            String lPath = getSnapshotFilepathForDelete(absoluteSnapshotPath, snapshotName);
             String result = deleteLocalFile(lPath);
             if (result != null) {
                 details = "failed to delete snapshot " + lPath + " , err=" + result;
                 s_logger.warn(details);
+                return new Answer(cmd, false, details);
+            }
+
+            // delete the directory if it is empty
+            if (snapshotDir.isDirectory() && snapshotDir.list().length == 0 && !snapshotDir.delete()) {
+                details = String.format("Unable to delete directory [%s] at path [%s].", snapshotDir.getName(), snapshotPath);
+                s_logger.debug(details);
                 return new Answer(cmd, false, details);
             }
             return new Answer(cmd, true, null);
@@ -2606,13 +2655,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return _parent;
         }
         try {
+            s_logger.debug(String.format("Trying to get root directory from secondary storage URL [%s] using NFS version [%s].", secUrl, nfsVersion));
             URI uri = new URI(secUrl);
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
-            s_logger.error(msg, e);
-            throw new CloudRuntimeException(msg);
+            String msg = String.format("Failed to get root directory from secondary storage URL [%s], using NFS version [%s], due to [%s].", secUrl, nfsVersion, e.getMessage());
+            throw new CloudRuntimeException(msg, e);
         }
     }
 
@@ -3543,6 +3592,34 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             s_logger.error("exception while decoding and deserialising metadata", ex);
         }
         return cmd;
+    }
+
+    protected Answer execute(QuerySnapshotZoneCopyCommand cmd) {
+        SnapshotObjectTO snapshot = cmd.getSnapshot();
+        String parentPath = getRootDir(snapshot.getDataStore().getUrl(), _nfsVersion);
+        String path = snapshot.getPath();
+        File snapFile = new File(parentPath + File.separator + path);
+        if (snapFile.exists() && !snapFile.isDirectory()) {
+            return new QuerySnapshotZoneCopyAnswer(cmd, List.of(path));
+        }
+        int index = path.lastIndexOf(File.separator);
+        String snapDir = path.substring(0, index);
+        List<String> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.list(Paths.get(parentPath + File.separator + snapDir))) {
+            List<String> fileNames = stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .map(Path::getFileName)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            for (String file : fileNames) {
+                file = snapDir + "/" + file;
+                s_logger.debug(String.format("Found snapshot file %s", file));
+                files.add(file);
+            }
+        } catch (IOException ioe) {
+            s_logger.error("Error preparing file list for snapshot copy", ioe);
+        }
+        return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }
 
 }

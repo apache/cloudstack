@@ -35,9 +35,9 @@
           v-model:value="selectedAccountType"
           v-focus="true"
           showSearch
-          optionFilterProp="label"
+          optionFilterProp="value"
           :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
@@ -71,7 +71,7 @@
             @change="changeAccount"
             v-model:value="selectedAccount"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
               return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >

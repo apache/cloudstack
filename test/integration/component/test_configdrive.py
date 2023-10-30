@@ -366,7 +366,7 @@ class ConfigDriveUtils:
             return None
 
     def _get_config_drive_data(self, ssh, file, name, fail_on_missing=True):
-        """Fetches the content of a file file on the config drive
+        """Fetches the content of a file on the config drive
 
         :param ssh: SSH connection to the VM
         :param file: path to the file to fetch
@@ -1025,7 +1025,7 @@ class ConfigDriveUtils:
         :rtype: str
         """
         self.debug("Updating userdata for VM - %s" % vm.name)
-        updated_user_data = base64.encodestring(new_user_data.encode()).decode()
+        updated_user_data = base64.encodebytes(new_user_data.encode()).decode()
         with self.stopped_vm(vm):
             vm.update(self.api_client, userdata=updated_user_data)
 
@@ -1613,7 +1613,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                          "List network should return a valid list"
                          )
         self.assertEqual(network.name, networks[0].name,
-                         "Name of the network should match with with the "
+                         "Name of the network should match with the "
                          "returned list data"
                          )
         if state:
@@ -1777,11 +1777,11 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         #    And the VM is successfully deployed and is in the "Running" state
         #    And there is no VR is deployed.
         # 4. And the user data in the ConfigDrive device is as expected
-        # 5. And the the vm password in the ConfigDrive device is as expected
+        # 5. And the vm password in the ConfigDrive device is as expected
 
         # 6. When I stop, reset the password, and start the VM
         # 7. Then I can login into the VM using the new password.
-        # 8. And the the vm password in the ConfigDrive device is the new one
+        # 8. And the vm password in the ConfigDrive device is the new one
 
         # 9. Verify various scenarios and check the data in configdriveIso
         # 10. Delete all the created objects (cleanup).
@@ -2000,11 +2000,11 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         #    And the VM is successfully deployed and is in the "Running" state
 
         # 4. And the user data in the ConfigDrive device is as expected
-        # 5. And the the vm password in the ConfigDrive device is as expected
+        # 5. And the vm password in the ConfigDrive device is as expected
 
         # 6. When I stop, reset the password, and start the VM
         # 7. Then I can login into the VM using the new password.
-        # 8. And the the vm password in the ConfigDrive device is the new one
+        # 8. And the vm password in the ConfigDrive device is the new one
 
         # 9. Verify various scenarios and check the data in configdriveIso
         # 10. Delete all the created objects (cleanup).

@@ -55,4 +55,3 @@ then
 fi
 
 [ -n "$gflag" ] && echo $gateway && exit 0
-

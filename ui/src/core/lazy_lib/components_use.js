@@ -63,10 +63,14 @@ import {
   Slider,
   AutoComplete,
   Collapse,
-  Space
+  Space,
+  Statistic
 } from 'ant-design-vue'
 import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
+
+import cronAnt from '@vue-js-cron/ant'
+import '@vue-js-cron/ant/dist/ant.css'
 
 export default {
   install: (app) => {
@@ -77,6 +81,7 @@ export default {
     app.config.globalProperties.$error = Modal.error
     app.config.globalProperties.$warning = Modal.warning
 
+    app.use(cronAnt)
     app.use(VueClipboard, { autoSetContainer: true })
     app.use(VueCropper)
     app.use(ConfigProvider)
@@ -127,5 +132,6 @@ export default {
     app.use(Collapse)
     app.use(Descriptions)
     app.use(Space)
+    app.use(Statistic)
   }
 }

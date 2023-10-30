@@ -47,6 +47,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.image.deployasis.DeployAsIsHelper;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -72,7 +73,7 @@ class VmwareVmImplementer {
     @Inject
     NetworkDao networkDao;
     @Inject
-    NetworkModel networkMgr;
+    NetworkModel networkModel;
     @Inject
     NicDao nicDao;
     @Inject
@@ -165,7 +166,7 @@ class VmwareVmImplementer {
 
         GuestOSHypervisorVO guestOsMapping = null;
         if (host != null) {
-            guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), host.getHypervisorVersion());
+            guestOsMapping = getGuestOsMapping(guestOS, host.getHypervisorVersion());
         }
         if (guestOsMapping == null || host == null) {
             to.setPlatformEmulator(null);
@@ -237,7 +238,7 @@ class VmwareVmImplementer {
                 nicTo.setNetmask("255.255.255.255");
 
                 try {
-                    String mac = networkMgr.getNextAvailableMacAddressInNetwork(networkId);
+                    String mac = networkModel.getNextAvailableMacAddressInNetwork(networkId);
                     nicTo.setMac(mac);
                 } catch (InsufficientAddressCapacityException e) {
                     throw new CloudRuntimeException("unable to allocate mac address on network: " + networkId);
@@ -253,7 +254,7 @@ class VmwareVmImplementer {
                 nicTo.setBroadcastUri(publicNicProfile.getBroadCastUri());
                 nicTo.setIsolationuri(publicNicProfile.getIsolationUri());
 
-                Integer networkRate = networkMgr.getNetworkRate(network.getId(), null);
+                Integer networkRate = networkModel.getNetworkRate(network.getId(), null);
                 nicTo.setNetworkRateMbps(networkRate);
 
                 expandedNics[i] = nicTo;
@@ -296,7 +297,7 @@ class VmwareVmImplementer {
 
         for (NicProfile nicProfile : nicProfiles) {
             if (nicProfile.getTrafficType() == Networks.TrafficType.Guest) {
-                if (networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Network.Service.Firewall, Network.Provider.CiscoVnmc)) {
+                if (networkModel.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Network.Service.Firewall, Network.Provider.CiscoVnmc)) {
                     details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
                 }
                 break;
@@ -404,5 +405,18 @@ class VmwareVmImplementer {
         });
 
         return listForSort.toArray(new NicTO[0]);
+    }
+
+    protected GuestOSHypervisorVO getGuestOsMapping(GuestOSVO guestOS , String hypervisorVersion) {
+        GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), hypervisorVersion);
+        if (guestOsMapping == null) {
+            LOGGER.debug(String.format("Cannot find guest os mappings for guest os \"%s\" on VMware %s", guestOS.getDisplayName(), hypervisorVersion));
+            String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
+            if (parentVersion != null) {
+                guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), Hypervisor.HypervisorType.VMware.toString(), parentVersion);
+                LOGGER.debug(String.format("Found guest os mappings for guest os \"%s\" on VMware %s: %s", guestOS.getDisplayName(), parentVersion, guestOsMapping));
+            }
+        }
+        return guestOsMapping;
     }
 }

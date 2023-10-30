@@ -35,4 +35,7 @@
 
 	<bean id="cleanupTags"
 		class="org.apache.cloudstack.storage.collector.StorPoolAbandonObjectsCollector" />
+
+    <bean id="statistics"
+        class="org.apache.cloudstack.storage.datastore.driver.StorPoolStatsCollector" />
 </beans>

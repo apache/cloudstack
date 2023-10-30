@@ -19,12 +19,12 @@
 
 package com.cloud.vm.dao;
 
+import java.util.Date;
+
+import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.ConsoleSessionVO;
-import com.cloud.utils.db.GenericDaoBase;
-
-import java.util.Date;
 
 public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long> implements ConsoleSessionDao {
 
@@ -48,7 +48,7 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
         if (consoleSessionVO == null) {
             return false;
         }
-        return !consoleSessionVO.isAcquired();
+        return consoleSessionVO.getAcquired() == null;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
     @Override
     public void acquireSession(String sessionUuid) {
         ConsoleSessionVO consoleSessionVO = findByUuid(sessionUuid);
-        consoleSessionVO.setAcquired(true);
+        consoleSessionVO.setAcquired(new Date());
         update(consoleSessionVO.getId(), consoleSessionVO);
     }
 

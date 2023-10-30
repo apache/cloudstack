@@ -18,6 +18,7 @@ package org.apache.cloudstack.network.tungsten.api.command;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,13 +27,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(DeleteTungstenFabricPolicyCmd.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteTungstenFabricPolicyCmdTest {
 
     @Mock
@@ -40,22 +38,27 @@ public class DeleteTungstenFabricPolicyCmdTest {
 
     DeleteTungstenFabricPolicyCmd deleteTungstenFabricPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         deleteTungstenFabricPolicyCmd = new DeleteTungstenFabricPolicyCmd();
         deleteTungstenFabricPolicyCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(deleteTungstenFabricPolicyCmd, "zoneId", 1L);
-        Whitebox.setInternalState(deleteTungstenFabricPolicyCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(deleteTungstenFabricPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(deleteTungstenFabricPolicyCmd, "policyUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
     public void executeTest() throws Exception {
-        SuccessResponse successResponse = Mockito.mock(SuccessResponse.class);
         Mockito.when(tungstenService.deleteTungstenPolicy(ArgumentMatchers.anyLong(),
                 ArgumentMatchers.anyString())).thenReturn(true);
-        PowerMockito.whenNew(SuccessResponse.class).withAnyArguments().thenReturn(successResponse);
         deleteTungstenFabricPolicyCmd.execute();
-        Assert.assertEquals(successResponse, deleteTungstenFabricPolicyCmd.getResponseObject());
+        Assert.assertTrue(((SuccessResponse) deleteTungstenFabricPolicyCmd.getResponseObject()).getSuccess());
     }
 }

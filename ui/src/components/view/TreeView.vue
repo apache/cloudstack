@@ -42,8 +42,9 @@
               @select="onSelect"
               @expand="onExpand"
               :expandedKeys="arrExpand">
-              <template #parent><folder-outlined /></template>
-              <template #leaf><block-outlined /></template>
+              <template #icon="{data}">
+                <block-outlined v-if="data.isLeaf" />
+              </template>
             </a-tree>
           </a-spin>
         </a-card>
@@ -136,6 +137,10 @@ export default {
       default () {
         return {}
       }
+    },
+    treeDeletedKey: {
+      type: String,
+      default: null
     }
   },
   provide: function () {
@@ -183,11 +188,11 @@ export default {
       this.treeViewData = []
       this.arrExpand = []
       if (!this.loading) {
-        this.treeViewData = this.treeData
-        this.treeVerticalData = this.treeData
+        this.treeViewData = this.treeData.slice()
+        this.treeVerticalData = this.treeData.slice()
 
         if (this.treeViewData.length > 0) {
-          this.oldTreeViewData = this.treeViewData
+          this.oldTreeViewData = this.treeViewData.slice()
           this.rootKey = this.treeViewData[0].key
         }
       }
@@ -288,39 +293,47 @@ export default {
             }
           }
 
-          this.onSelectResource()
+          this.handleSelectResource(treeNode.eventKey)
           resolve()
         })
       })
     },
-    onSelectResource () {
-      if (this.treeStore.selected) {
-        this.selectedTreeKey = this.treeStore.selected
-        this.defaultSelected = [this.selectedTreeKey]
+    async handleSelectResource (treeKey) {
+      if (this.treeDeletedKey && this.treeDeletedKey === this.treeStore?.treeSelected?.key) {
+        const treeSelectedKey = this.treeStore.treeSelected.parentdomainid
+        if (treeSelectedKey === this.rootKey) {
+          this.resource = this.treeVerticalData[0]
 
-        const resource = this.treeVerticalData.filter(item => item.id === this.selectedTreeKey)
-        if (resource.length > 0) {
-          this.resource = resource[0]
+          this.selectedTreeKey = treeSelectedKey
+          this.defaultSelected = [treeSelectedKey]
           this.$emit('change-resource', this.resource)
-        } else {
-          const resourceIdx = this.treeVerticalData.findIndex(item => item.id === this.resource.id)
-          const parentIndex = this.treeVerticalData.findIndex(item => item.id === this.resource.parentdomainid)
-          if (resourceIdx !== -1) {
-            this.resource = this.treeVerticalData[resourceIdx]
-          } else if (parentIndex !== 1) {
-            this.resource = this.treeVerticalData[parentIndex]
-          } else {
-            this.resource = this.treeVerticalData[0]
-          }
-          this.selectedTreeKey = this.resource.key
-          this.defaultSelected = [this.selectedTreeKey]
+          await this.setTreeStore(false, false, this.resource)
+          return
+        }
+        const resourceIndex = await this.treeVerticalData.findIndex(item => item.id === treeSelectedKey)
+        if (resourceIndex > -1) {
+          const resource = await this.getDetailResource(treeSelectedKey)
+          this.resource = await this.createResourceData(resource)
+
+          this.selectedTreeKey = treeSelectedKey
+          this.defaultSelected = [treeSelectedKey]
           this.$emit('change-resource', this.resource)
+          await this.setTreeStore(false, false, this.resource)
+          return
         }
       }
+      const treeSelectedKey = this.treeStore.treeSelected.key
+      const resourceIndex = await this.treeVerticalData.findIndex(item => item.id === treeSelectedKey)
+      if (resourceIndex > -1) {
+        this.selectedTreeKey = treeSelectedKey
+        this.defaultSelected = [treeSelectedKey]
+
+        this.resource = this.treeStore.treeSelected
+        this.$emit('change-resource', this.resource)
+      }
     },
-    onSelect (selectedKeys, event) {
+    async onSelect (selectedKeys, event) {
       if (!event.selected) {
-        setTimeout(() => { event.node.$refs.selectHandle.click() })
         return
       }
 
@@ -331,20 +344,20 @@ export default {
 
       this.defaultSelected = []
       this.defaultSelected.push(this.selectedTreeKey)
+      const resource = await this.getDetailResource(this.selectedTreeKey)
+      this.resource = await this.createResourceData(resource)
+      const index = this.treeVerticalData.findIndex(item => item.key === this.selectedTreeKey)
+      this.treeVerticalData[index] = this.resource
 
-      const treeStore = this.treeStore
-      treeStore.expands = this.arrExpand
-      treeStore.selected = this.selectedTreeKey
-      this.$emit('change-tree-store', this.treeStore)
-
-      this.getDetailResource(this.selectedTreeKey)
+      this.$emit('change-resource', this.resource)
+      await this.setTreeStore(false, false, this.resource)
     },
     onExpand (treeExpand) {
       const treeStore = this.treeStore
       this.arrExpand = treeExpand
       treeStore.isExpand = true
       treeStore.expands = this.arrExpand
-      treeStore.selected = this.selectedTreeKey
+      treeStore.treeSelected = this.resource
       this.$emit('change-tree-store', treeStore)
     },
     onSearch (value) {
@@ -416,40 +429,35 @@ export default {
     onTabChange (key) {
       this.tabActive = key
     },
+    setTreeStore (arrExpand, isExpand, resource) {
+      const treeStore = this.treeStore
+      if (arrExpand) treeStore.expands = arrExpand
+      if (isExpand) treeStore.isExpand = true
+      if (resource) treeStore.treeSelected = resource
+      this.$emit('change-tree-store', treeStore)
+    },
     getDetailResource (selectedKey) {
-      // set api name and parameter
-      const apiName = this.$route.meta.permission[0]
-      const params = {}
+      return new Promise(resolve => {
+        // set api name and parameter
+        const apiName = this.$route.meta.permission[0]
+        const params = {}
 
-      // set id to parameter
-      params.id = selectedKey
-      params.listAll = true
-      params.showicon = true
-      params.page = 1
-      params.pageSize = 1
+        // set id to parameter
+        params.id = selectedKey
+        params.listAll = true
+        params.showicon = true
+        params.page = 1
+        params.pageSize = 1
 
-      this.detailLoading = true
-      api(apiName, params).then(json => {
-        const jsonResponse = this.getResponseJsonData(json)
-
-        // check json response is empty
-        if (!jsonResponse || jsonResponse.length === 0) {
-          this.resource = []
-        } else {
-          this.resource = jsonResponse[0]
-          this.resource = this.createResourceData(this.resource)
-          // set all value of resource tree data
-          this.treeVerticalData.filter((item, index) => {
-            if (item.id === this.resource.id) {
-              this.treeVerticalData[index] = this.resource
-            }
-          })
-        }
-
-        // emit change resource to parent
-        this.$emit('change-resource', this.resource)
-      }).finally(() => {
-        this.detailLoading = false
+        this.detailLoading = true
+        api(apiName, params).then(json => {
+          const jsonResponse = this.getResponseJsonData(json)
+          resolve(jsonResponse[0])
+        }).catch(() => {
+          resolve()
+        }).finally(() => {
+          this.detailLoading = false
+        })
       })
     },
     getResponseJsonData (json) {
@@ -524,15 +532,13 @@ export default {
       })
       resource.title = resource.name
       resource.key = resource.id
-      resource.slots = {
-        icon: 'parent'
+      if (resource?.icon) {
+        resource.resourceIcon = resource.icon
+        delete resource.icon
       }
 
       if (!resource.haschild) {
         resource.isLeaf = true
-        resource.slots = {
-          icon: 'leaf'
-        }
       }
 
       return resource
@@ -586,8 +592,9 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.list-tree-view {
+:deep(.ant-tree).list-tree-view {
   overflow-y: hidden;
+  margin-top: 10px;
 }
 :deep(.ant-tree).ant-tree-directory {
   li.ant-tree-treenode-selected {
@@ -615,7 +622,7 @@ export default {
   }
 }
 
-:deep(.ant-tree) li span.ant-tree-switcher.ant-tree-switcher-noop {
+:deep(.ant-tree-show-line) .ant-tree-switcher.ant-tree-switcher-noop {
   display: none
 }
 
@@ -626,10 +633,38 @@ export default {
 
 :deep(.ant-tree-icon__customize) {
   padding-right: 5px;
+  background: transparent;
 }
 
-:deep(.ant-tree) li .ant-tree-node-content-wrapper {
-  padding-left: 0;
-  margin-left: 3px;
+:deep(.ant-tree) {
+  .ant-tree-treenode {
+    .ant-tree-node-content-wrapper {
+      margin-left: 0;
+      margin-bottom: 2px;
+
+      &:before {
+        border-left: 1px solid #d9d9d9;
+        content: " ";
+        height: 100%;
+        height: calc(100% - 15px);
+        left: 12px;
+        margin: 22px 0 0;
+        position: absolute;
+        width: 1px;
+        top: 0;
+      }
+    }
+
+    &.ant-tree-treenode-switcher-close, &.ant-tree-treenode-switcher-open, &.ant-tree-treenode-leaf-last {
+      .ant-tree-node-content-wrapper:before {
+        display: none;
+      }
+    }
+  }
+}
+
+:deep(.ant-tree-show-line) .ant-tree-indent-unit:before {
+  bottom: -2px;
+  top: -5px;
 }
 </style>

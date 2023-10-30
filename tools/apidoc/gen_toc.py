@@ -50,6 +50,7 @@ known_categories = {
     'SystemVm': 'System VM',
     'VirtualMachine': 'Virtual Machine',
     'VM': 'Virtual Machine',
+    'Vnf': 'Virtual Network Functions',
     'Domain': 'Domain',
     'Template': 'Template',
     'Iso': 'ISO',
@@ -248,7 +249,8 @@ known_categories = {
     'Rolling': 'Rolling Maintenance',
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
-    'ConsoleEndpoint': 'Console Endpoint'
+    'ConsoleEndpoint': 'Console Endpoint',
+    'Shutdown': 'Shutdown'
 }
 
 

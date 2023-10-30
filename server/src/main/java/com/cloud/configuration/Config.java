@@ -844,7 +844,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
-    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in miliseconds) to report volume statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in milliseconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -1621,7 +1621,7 @@ public enum Config {
             String.class,
             "implicit.host.tags",
             "GPU",
-            "Tag hosts at the time of host disovery based on the host properties/capabilities",
+            "Tag hosts at the time of host discovery based on the host properties/capabilities",
             null),
     VpcCleanupInterval(
             "Advanced",

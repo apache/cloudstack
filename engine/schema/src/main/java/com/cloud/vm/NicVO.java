@@ -30,6 +30,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Mode;
 import com.cloud.utils.db.GenericDao;
@@ -330,6 +333,8 @@ public class NicVO implements Nic {
             .append("-")
             .append(instanceId)
             .append("-")
+            .append(deviceId)
+            .append("-")
             .append(reservationId)
             .append("-")
             .append(iPv4Address)
@@ -399,6 +404,15 @@ public class NicVO implements Nic {
     }
 
     @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 31).append(id).toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return EqualsBuilder.reflectionEquals(this, obj);
+    }
+
     public Integer getMtu() {
         return mtu;
     }

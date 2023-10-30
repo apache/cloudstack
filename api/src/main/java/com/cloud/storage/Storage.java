@@ -125,6 +125,7 @@ public class Storage {
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
+        VNF,    /* VNFs (virtual network functions) template */
         DATADISK, /* Template corresponding to a datadisk(non root disk) present in an OVA */
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
@@ -149,7 +150,7 @@ public class Storage {
         ManagedNFS(true, false, false),
         Linstor(true, true, false),
         DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
-        StorPool(true, true, false);
+        StorPool(true, true, true);
 
         private final boolean shared;
         private final boolean overprovisioning;

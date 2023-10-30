@@ -50,6 +50,11 @@ import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.shutdown.ShutdownManager;
+import org.apache.cloudstack.shutdown.command.CancelShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.PrepareForShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.BaseShutdownManagementServerHostCommand;
+import org.apache.cloudstack.shutdown.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.log4j.Logger;
@@ -129,6 +134,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     private HAConfigDao haConfigDao;
     @Inject
     private CAManager caService;
+    @Inject
+    private ShutdownManager shutdownManager;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -1341,8 +1348,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 return _gson.toJson(answers);
             } else if (cmds.length == 1 && cmds[0] instanceof ScheduleHostScanTaskCommand) {
                 final ScheduleHostScanTaskCommand cmd = (ScheduleHostScanTaskCommand)cmds[0];
-                final String response = handleScheduleHostScanTaskCommand(cmd);
-                return response;
+                return handleScheduleHostScanTaskCommand(cmd);
+            } else if (cmds.length == 1 && cmds[0] instanceof BaseShutdownManagementServerHostCommand) {
+                final BaseShutdownManagementServerHostCommand cmd = (BaseShutdownManagementServerHostCommand)cmds[0];
+                return handleShutdownManagementServerHostCommand(cmd);
             }
 
             try {
@@ -1376,6 +1385,36 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             return null;
         }
 
+        private String handleShutdownManagementServerHostCommand(BaseShutdownManagementServerHostCommand cmd) {
+            if (cmd instanceof PrepareForShutdownManagementServerHostCommand) {
+                s_logger.debug("Received BaseShutdownManagementServerHostCommand - preparing to shut down");
+                try {
+                    shutdownManager.prepareForShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof TriggerShutdownManagementServerHostCommand) {
+                s_logger.debug("Received TriggerShutdownManagementServerHostCommand - triggering a shut down");
+                try {
+                    shutdownManager.triggerShutdown();
+                    return "Successfully triggered shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            if (cmd instanceof CancelShutdownManagementServerHostCommand) {
+                s_logger.debug("Received CancelShutdownManagementServerHostCommand - cancelling shut down");
+                try {
+                    shutdownManager.cancelShutdown();
+                    return "Successfully prepared for shutdown";
+                } catch(CloudRuntimeException e) {
+                    return e.getMessage();
+                }
+            }
+            throw new CloudRuntimeException("Unknown BaseShutdownManagementServerHostCommand command received : " + cmd);
+        }
     }
 
     public boolean executeAgentUserRequest(final long agentId, final Event event) throws AgentUnavailableException {

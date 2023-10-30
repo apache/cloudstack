@@ -236,7 +236,7 @@ public class ActionEventUtils {
         try {
             s_eventBus.publish(event);
         } catch (EventBusException e) {
-            s_logger.warn("Failed to publish action event on the the event bus.");
+            s_logger.warn("Failed to publish action event on the event bus.");
         }
     }
 
@@ -318,7 +318,6 @@ public class ActionEventUtils {
             return details;
         }
         HashMap<String, Pair<ApiCommandResourceType, String>> typeParentMethodMap = new HashMap<>();
-        typeParentMethodMap.put(ApiCommandResourceType.Snapshot.toString(), new Pair<>(ApiCommandResourceType.Volume, "getVolumeId"));
         typeParentMethodMap.put(ApiCommandResourceType.VmSnapshot.toString(), new Pair<>(ApiCommandResourceType.VirtualMachine, "getVmId"));
         if (!typeParentMethodMap.containsKey(details.third())) {
             return details;

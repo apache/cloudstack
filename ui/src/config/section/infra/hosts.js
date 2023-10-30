@@ -21,9 +21,14 @@ import store from '@/store'
 export default {
   name: 'host',
   title: 'label.hosts',
-  icon: 'desktop-outlined',
+  icon: 'database-outlined',
+  docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    return filters
+  },
   params: { type: 'routing' },
   columns: () => {
     const fields = ['name', 'state', 'resourcestate', 'ipaddress', 'hypervisor', 'instances', 'powerstate']
@@ -76,7 +81,9 @@ export default {
       label: 'label.action.secure.host',
       message: 'message.action.secure.host',
       dataView: true,
-      show: (record) => { return record.hypervisor === 'KVM' },
+      show: (record) => {
+        return record.hypervisor === 'KVM' || record.hypervisor === store.getters.customHypervisorName
+      },
       args: ['hostid'],
       mapping: {
         hostid: {

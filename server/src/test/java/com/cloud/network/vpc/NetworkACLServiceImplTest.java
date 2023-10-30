@@ -17,40 +17,6 @@
 
 package com.cloud.network.vpc;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.times;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
-import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
-import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
-import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -64,9 +30,42 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.times;
+
+@RunWith(MockitoJUnitRunner.class)
 public class NetworkACLServiceImplTest {
 
     @Spy
@@ -122,10 +121,12 @@ public class NetworkACLServiceImplTest {
     @Mock
     private CallContext callContextMock;
 
+    private MockedStatic<CallContext> callContextMocked;
+
     @Before
-    public void befoteTest() {
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+    public void setup() {
+        callContextMocked = Mockito.mockStatic(CallContext.class);
+        Mockito.when(CallContext.current()).thenReturn(callContextMock);
         Mockito.doReturn(Mockito.mock(User.class)).when(callContextMock).getCallingUser();
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
@@ -138,13 +139,14 @@ public class NetworkACLServiceImplTest {
 
         Mockito.when(moveNetworkAclItemCmdMock.getUuidRuleBeingMoved()).thenReturn(uuidAclRuleBeingMoved);
 
-        Mockito.when(aclRuleBeingMovedMock.getUuid()).thenReturn(uuidAclRuleBeingMoved);
         Mockito.when(aclRuleBeingMovedMock.getAclId()).thenReturn(networkAclMockId);
 
-        Mockito.when(previousAclRuleMock.getUuid()).thenReturn(previousAclRuleUuid);
-        Mockito.when(nextAclRuleMock.getUuid()).thenReturn(nextAclRuleUuid);
-
         Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        callContextMocked.close();
     }
 
     @Test
@@ -166,7 +168,6 @@ public class NetworkACLServiceImplTest {
         Mockito.doNothing().when(networkAclServiceImpl).validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkAcl(networkAclMock);
 
-        Mockito.doReturn(Action.Allow).when(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction(anyString());
         Mockito.when(networkAclItemDaoMock.getMaxNumberByACL(networkAclMockId)).thenReturn(5);
 
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkACLItem(Mockito.any(NetworkACLItemVO.class));
@@ -246,14 +247,12 @@ public class NetworkACLServiceImplTest {
         long networkId = 1L;
         Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(networkId);
         Network networkMock = Mockito.mock(Network.class);
-        ;
+
         Mockito.when(networkMock.getVpcId()).thenReturn(12L);
         Long expectedAclListId = 15L;
         Mockito.when(networkMock.getNetworkACLId()).thenReturn(expectedAclListId);
 
         Mockito.doReturn(networkMock).when(networkModelMock).getNetwork(networkId);
-
-        Mockito.doReturn(16L).when(networkAclServiceImpl).createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkMock);
 
         Long aclIdReturned = networkAclServiceImpl.createAclListIfNeeded(createNetworkAclCmdMock);
 
@@ -368,7 +367,6 @@ public class NetworkACLServiceImplTest {
     @Test
     public void validateAclRuleNumberTestNumberNull() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(null);
-        Mockito.doReturn(null).when(networkAclItemDaoMock).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
 
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
         Mockito.verify(networkAclItemDaoMock, Mockito.times(0)).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
@@ -395,19 +393,16 @@ public class NetworkACLServiceImplTest {
     public void validateNetworkAclTestAclNotDefaulWithoutVpc() {
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
         Mockito.doReturn(null).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        ;
 
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void validateNetworkAclTestAclNotDefaulWithVpc() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Mockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
         Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
@@ -420,8 +415,7 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
-        PowerMockito.verifyStatic(CallContext.class);
-        CallContext.current();
+        callContextMocked.verify(() -> CallContext.current());
 
     }
 
@@ -552,7 +546,6 @@ public class NetworkACLServiceImplTest {
 
     @Test
     public void validateProtocolTestProtocolIsNullOrBlank() {
-        Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
 
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn(null);
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
@@ -806,7 +799,6 @@ public class NetworkACLServiceImplTest {
         Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn(null);
 
         Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(false);
-        Mockito.when(networkAclItemVoMock.isDisplay()).thenReturn(false);
 
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
 
@@ -844,7 +836,6 @@ public class NetworkACLServiceImplTest {
         Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn("reason");
 
         Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(true);
-        Mockito.when(networkAclItemVoMock.isDisplay()).thenReturn(false);
 
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
 
@@ -864,7 +855,6 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void updateNetworkACLTestParametersNotNull() {
         String name = "name";
         String description = "desc";
@@ -1004,7 +994,6 @@ public class NetworkACLServiceImplTest {
 
         Mockito.doNothing().when(networkAclServiceImpl).validateAclConsistency(Mockito.any(MoveNetworkAclItemCmd.class), Mockito.any(NetworkACLVO.class), Mockito.anyListOf(NetworkACLItemVO.class));
 
-        Mockito.doReturn(new ArrayList<>()).when(networkAclServiceImpl).getAllAclRulesSortedByNumber(networkAclMockId);
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleToTheTop(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleToTheBottom(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class),
@@ -1068,7 +1057,6 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
-    @PrepareForTest(CallContext.class)
     public void updateNetworkACLTestParametersWithNullValues() {
         Mockito.when(updateNetworkACLListCmdMock.getName()).thenReturn(null);
         Mockito.when(updateNetworkACLListCmdMock.getDescription()).thenReturn(null);
@@ -1104,8 +1092,7 @@ public class NetworkACLServiceImplTest {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Mockito.when(CallContext.current()).thenReturn(callContextMock);
 
         Mockito.doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
@@ -1202,7 +1189,6 @@ public class NetworkACLServiceImplTest {
     public void moveRuleBetweenAclRulesTestThereIsSpaceBetweenPreviousRuleAndNextRuleToAccomodateTheNewRule() {
         Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(11);
-        Mockito.when(aclRuleBeingMovedMock.getNumber()).thenReturn(50);
         Mockito.when(aclRuleBeingMovedMock.getId()).thenReturn(1l);
 
         ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
@@ -1219,9 +1205,6 @@ public class NetworkACLServiceImplTest {
         allAclRules.add(networkACLItemVO13);
         allAclRules.add(networkACLItemVO14);
         allAclRules.add(aclRuleBeingMovedMock);
-
-        Mockito.doNothing().when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
-        Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclItemDaoMock).findById(1l);
 
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).updateAclRuleToNewPositionAndExecuteShiftIfNecessary(Mockito.any(NetworkACLItemVO.class), Mockito.anyInt(),
                 Mockito.anyListOf(NetworkACLItemVO.class), Mockito.anyInt());
@@ -1250,9 +1233,6 @@ public class NetworkACLServiceImplTest {
         Mockito.doNothing().when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclItemDaoMock).findById(1l);
 
-        Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).updateAclRuleToNewPositionAndExecuteShiftIfNecessary(Mockito.any(NetworkACLItemVO.class), Mockito.anyInt(),
-                Mockito.anyListOf(NetworkACLItemVO.class), Mockito.anyInt());
-
         networkAclServiceImpl.moveRuleBetweenAclRules(aclRuleBeingMovedMock, allAclRules, previousAclRuleMock, nextAclRuleMock);
 
         Mockito.verify(networkAclItemDaoMock).updateNumberFieldNetworkItem(aclRuleBeingMovedMock.getId(), 11);
@@ -1263,7 +1243,6 @@ public class NetworkACLServiceImplTest {
 
     @Test
     public void updateAclRuleToNewPositionAndExecuteShiftIfNecessaryTest() {
-        Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
 
         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(11);
         Mockito.when(nextAclRuleMock.getId()).thenReturn(50l);
@@ -1289,19 +1268,32 @@ public class NetworkACLServiceImplTest {
         allAclRules.add(networkACLItemVO14);
         allAclRules.add(aclRuleBeingMovedMock);
 
-        Mockito.doNothing().when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
-        Mockito.doReturn(null).when(networkAclItemDaoMock).findById(Mockito.anyLong());
+        Map<Long, NetworkACLItemVO> updatedItems = new HashMap<>();
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            Long id = (Long)invocation.getArguments()[0];
+            int position = (int)invocation.getArguments()[1];
+            NetworkACLItemVO item = new NetworkACLItemVO();
+            item.setNumber(position);
+            updatedItems.put(id, item);
+            return null;
+        }).when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
+        Mockito.doAnswer((Answer<NetworkACLItemVO>) invocation -> {
+            Long id = (Long)invocation.getArguments()[0];
+            return updatedItems.get(id);
+        }).when(networkAclItemDaoMock).findById(Mockito.anyLong());
 
-        networkAclServiceImpl.updateAclRuleToNewPositionAndExecuteShiftIfNecessary(aclRuleBeingMovedMock, 11, allAclRules, 1);
+        NetworkACLItem result = networkAclServiceImpl.updateAclRuleToNewPositionAndExecuteShiftIfNecessary(aclRuleBeingMovedMock, 11, allAclRules, 1);
 
-        Mockito.verify(aclRuleBeingMovedMock).setNumber(11);
-        Mockito.verify(nextAclRuleMock).setNumber(12);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(11, result.getNumber());
+        Assert.assertEquals(11, updatedItems.get(aclRuleBeingMovedMock.getId()).getNumber());
+        Assert.assertEquals(12, updatedItems.get(nextAclRuleMock.getId()).getNumber());
         Mockito.verify(networkAclItemDaoMock).updateNumberFieldNetworkItem(1l, 11);
         Mockito.verify(networkAclItemDaoMock).updateNumberFieldNetworkItem(50l, 12);
 
-        Assert.assertEquals(13, networkACLItemVO12.getNumber());
-        Assert.assertEquals(14, networkACLItemVO13.getNumber());
-        Assert.assertEquals(15, networkACLItemVO14.getNumber());
+        Assert.assertEquals(networkACLItemVO12.getNumber() + 1, updatedItems.get(networkACLItemVO12.getId()).getNumber());
+        Assert.assertEquals(networkACLItemVO13.getNumber() + 1, updatedItems.get(networkACLItemVO13.getId()).getNumber());
+        Assert.assertEquals(networkACLItemVO14.getNumber() + 1, updatedItems.get(networkACLItemVO14.getId()).getNumber());
     }
 
     @Test

@@ -2351,7 +2351,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
         }
 
-        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndNetwork(loadBalancer.getAccountId(), loadBalancer.getNetworkId());
+        List<UserVmVO> userVms = _vmDao.listByIds(appliedInstanceIdList);
 
         for (UserVmVO userVm : userVms) {
             // if the VM is destroyed, being expunged, in an error state, or in

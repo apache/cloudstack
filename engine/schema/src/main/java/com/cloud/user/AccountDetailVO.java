@@ -25,8 +25,6 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.db.Encrypt;
-
 @Entity
 @Table(name = "account_details")
 public class AccountDetailVO implements InternalIdentity {
@@ -41,7 +39,6 @@ public class AccountDetailVO implements InternalIdentity {
     @Column(name = "name")
     private String name;
 
-    @Encrypt
     @Column(name = "value", length=4096)
     private String value;
 

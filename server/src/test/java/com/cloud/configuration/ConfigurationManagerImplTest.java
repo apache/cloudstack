@@ -16,22 +16,34 @@
 // under the License.
 package com.cloud.configuration;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.StorageManager;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(NetUtils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigurationManagerImplTest {
+    @Mock
+    ConfigDepot configDepot;
     ConfigurationManagerImpl configurationManagerImplSpy = Mockito.spy(new ConfigurationManagerImpl());
+
+    @Before
+    public void setUp() throws Exception {
+        configurationManagerImplSpy._configDepot = configDepot;
+    }
+
     @Test
     public void validateIfIntValueIsInRangeTestValidValueReturnNull() {
         String testVariable = configurationManagerImplSpy.validateIfIntValueIsInRange("String name", "3", "1-5");
@@ -46,7 +58,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateIfStringValueIsInRangeTestValidValuesReturnNull() {
-        String testVariable = "";
+        String testVariable;
         List<String> methods = List.of("privateip", "hypervisorList", "instanceName", "domainName", "default");
         Mockito.doReturn(null).when(configurationManagerImplSpy).validateRangePrivateIp(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(null).when(configurationManagerImplSpy).validateRangeHypervisorList(Mockito.anyString());
@@ -61,7 +73,7 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateIfStringValueIsInRangeTestInvalidValuesReturnString() {
-        String testVariable = "";
+        String testVariable;
         List<String> methods = List.of("privateip", "hypervisorList", "instanceName", "domainName", "default");
         Mockito.doReturn("returnMsg").when(configurationManagerImplSpy).validateRangePrivateIp(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn("returnMsg").when(configurationManagerImplSpy).validateRangeHypervisorList(Mockito.anyString());
@@ -79,7 +91,6 @@ public class ConfigurationManagerImplTest {
     public void validateIfStringValueIsInRangeTestMultipleRangesValidValueReturnNull() {
         Mockito.doReturn("returnMsg1").when(configurationManagerImplSpy).validateRangePrivateIp(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(null).when(configurationManagerImplSpy).validateRangeInstanceName(Mockito.anyString());
-        Mockito.doReturn("returnMsg2").when(configurationManagerImplSpy).validateRangeOther(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         String testVariable = configurationManagerImplSpy.validateIfStringValueIsInRange("name", "value", "privateip", "instanceName", "default");
         Assert.assertNull(testVariable);
     }
@@ -96,18 +107,20 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateRangePrivateIpTestValidValueReturnNull() {
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isSiteLocalAddress(Mockito.anyString())).thenReturn(true);
-        String testVariable = configurationManagerImplSpy.validateRangePrivateIp("name", "value");
-        Assert.assertNull(testVariable);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.isSiteLocalAddress(Mockito.anyString())).thenReturn(true);
+            String testVariable = configurationManagerImplSpy.validateRangePrivateIp("name", "value");
+            Assert.assertNull(testVariable);
+        }
     }
 
     @Test
     public void validateRangePrivateIpTestInvalidValueReturnString() {
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.isSiteLocalAddress(Mockito.anyString())).thenReturn(false);
-        String testVariable = configurationManagerImplSpy.validateRangePrivateIp("name", "value");
-        Assert.assertEquals("a valid site local IP address", testVariable);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.isSiteLocalAddress(Mockito.anyString())).thenReturn(false);
+            String testVariable = configurationManagerImplSpy.validateRangePrivateIp("name", "value");
+            Assert.assertEquals("a valid site local IP address", testVariable);
+        }
     }
 
     @Test
@@ -124,18 +137,20 @@ public class ConfigurationManagerImplTest {
 
     @Test
     public void validateRangeInstanceNameTestValidValueReturnNull() {
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.verifyInstanceName(Mockito.anyString())).thenReturn(true);
-        String testVariable = configurationManagerImplSpy.validateRangeInstanceName("ThisStringShouldBeValid");
-        Assert.assertNull(testVariable);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.verifyInstanceName(Mockito.anyString())).thenReturn(true);
+            String testVariable = configurationManagerImplSpy.validateRangeInstanceName("ThisStringShouldBeValid");
+            Assert.assertNull(testVariable);
+        }
     }
 
     @Test
     public void validateRangeInstanceNameTestInvalidValueReturnString() {
-        PowerMockito.mockStatic(NetUtils.class);
-        PowerMockito.when(NetUtils.verifyInstanceName(Mockito.anyString())).thenReturn(false);
-        String testVariable = configurationManagerImplSpy.validateRangeInstanceName("This string should not be valid.");
-        Assert.assertEquals("a valid instance name (instance names cannot contain hyphens, spaces or plus signs)", testVariable);
+        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+            Mockito.when(NetUtils.verifyInstanceName(Mockito.anyString())).thenReturn(false);
+            String testVariable = configurationManagerImplSpy.validateRangeInstanceName("This string should not be valid.");
+            Assert.assertEquals("a valid instance name (instance names cannot contain hyphens, spaces or plus signs)", testVariable);
+        }
     }
 
     @Test
@@ -190,5 +205,49 @@ public class ConfigurationManagerImplTest {
     public void validateRangeOtherTestInvalidValueReturnString() {
         String testVariable = configurationManagerImplSpy.validateRangeOther("NameTest1", "ThisShouldNotWork", "ThisShouldWork,ThisShouldAlsoWork,SoShouldThis");
         Assert.assertNotNull(testVariable);
+    }
+
+    @Test
+    public void testValidateIpAddressRelatedConfigValuesUnrelated() {
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues(StorageManager.PreferredStoragePool.key(), "something");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.ip", "");
+        Mockito.when(configurationManagerImplSpy._configDepot.get("config.ip")).thenReturn(null);
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.ip", "something");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues(StorageManager.MountDisabledStoragePool.key(), "false");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateIpAddressRelatedConfigValuesInvalidIp() {
+        ConfigKey<String> key = StorageManager.PreferredStoragePool; // Any ConfigKey of String type
+        Mockito.doReturn(key).when(configurationManagerImplSpy._configDepot).get("config.ip");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.ip", "abcdefg");
+    }
+
+    @Test
+    public void testValidateIpAddressRelatedConfigValuesValidIp() {
+        ConfigKey<String> key = StorageManager.PreferredStoragePool; // Any ConfigKey of String type
+        Mockito.doReturn(key).when(configurationManagerImplSpy._configDepot).get("config.ip");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.ip", "192.168.1.1");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateIpAddressRelatedConfigValuesInvalidIpRange() {
+        ConfigKey<String> key = StorageManager.PreferredStoragePool; // Any ConfigKey of String type. RemoteAccessVpnManagerImpl.RemoteAccessVpnClientIpRange not accessible here
+        Mockito.doReturn(key).when(configurationManagerImplSpy._configDepot).get("config.iprange");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.iprange", "xyz-192.168.1.20");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateIpAddressRelatedConfigValuesInvalidIpRange1() {
+        ConfigKey<String> key = StorageManager.PreferredStoragePool; // Any ConfigKey of String type. RemoteAccessVpnManagerImpl.RemoteAccessVpnClientIpRange not accessible here
+        Mockito.doReturn(key).when(configurationManagerImplSpy._configDepot).get("config.iprange");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.iprange", "192.168.1.20");
+    }
+
+    @Test
+    public void testValidateIpAddressRelatedConfigValuesValidIpRange() {
+        ConfigKey<String> key = StorageManager.PreferredStoragePool; // Any ConfigKey of String type. RemoteAccessVpnManagerImpl.RemoteAccessVpnClientIpRange not accessible here
+        Mockito.doReturn(key).when(configurationManagerImplSpy._configDepot).get("config.iprange");
+        configurationManagerImplSpy.validateIpAddressRelatedConfigValues("config.iprange", "192.168.1.1-192.168.1.100");
     }
 }

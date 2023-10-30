@@ -87,16 +87,16 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              slots: { customRender: 'name' }
+              key: 'name'
             },
             {
               dataIndex: 'network',
               title: this.$t('label.network'),
-              slots: { customRender: 'network' }
+              key: 'network'
             },
             {
-              title: this.$t('label.action'),
-              slots: { customRender: 'action' },
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -135,21 +135,21 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              slots: { customRender: 'name' }
+              key: 'name'
             },
             {
               dataIndex: 'firewallpolicy',
               title: this.$t('label.firewallpolicy'),
-              slots: { customRender: 'firewallpolicy' }
+              key: 'firewallpolicy'
             },
             {
               dataIndex: 'tag',
               title: this.$t('label.tag'),
-              slots: { customRender: 'tag' }
+              key: 'tag'
             },
             {
-              title: this.$t('label.action'),
-              slots: { customRender: 'action' },
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -206,14 +206,14 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            slots: { customRender: 'name' }
+            key: 'name'
           }, {
             dataIndex: 'network',
             title: this.$t('label.network'),
-            slots: { customRender: 'network' }
+            key: 'network'
           }, {
-            title: this.$t('label.action'),
-            slots: { customRender: 'action' },
+            title: this.$t('label.actions'),
+            key: 'actions',
             width: 150
           }]
         },
@@ -298,11 +298,11 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              slots: { customRender: 'name' }
+              key: 'name'
             },
             {
-              title: this.$t('label.action'),
-              slots: { customRender: 'action' },
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -338,10 +338,10 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            slots: { customRender: 'name' }
+            key: 'name'
           }, {
-            title: this.$t('label.action'),
-            slots: { customRender: 'action' },
+            title: this.$t('label.actions'),
+            key: 'actions',
             width: 150
           }]
         },
@@ -411,26 +411,26 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              slots: { customRender: 'name' }
+              key: 'name'
             },
             {
               dataIndex: 'protocol',
               title: this.$t('label.protocol'),
-              slots: { customRender: 'protocol' }
+              key: 'protocol'
             },
             {
               dataIndex: 'startport',
               title: this.$t('label.startport'),
-              slots: { customRender: 'startport' }
+              key: 'startport'
             },
             {
               dataIndex: 'endport',
               title: this.$t('label.endport'),
-              slots: { customRender: 'endport' }
+              key: 'endport'
             },
             {
-              title: this.$t('label.action'),
-              slots: { customRender: 'action' },
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]
@@ -476,21 +476,21 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              slots: { customRender: 'name' }
+              key: 'name'
             },
             {
               dataIndex: 'ipprefix',
               title: this.$t('label.ipprefix'),
-              slots: { customRender: 'ipprefix' }
+              key: 'ipprefix'
             },
             {
               dataIndex: 'ipprefixlen',
               title: this.$t('label.ipprefixlen'),
-              slots: { customRender: 'ipprefixlen' }
+              key: 'ipprefixlen'
             },
             {
-              title: this.$t('label.action'),
-              slots: { customRender: 'action' },
+              title: this.$t('label.actions'),
+              key: 'actions',
               width: 150
             }
           ]

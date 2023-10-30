@@ -48,6 +48,10 @@ public interface VmDetailConstants {
     String IOTHREADS = "iothreads";
     String IO_POLICY = "io.policy";
 
+    // KVM specific, the number of queues for multiqueue NICs
+    String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
+    String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
+
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
     String FIRMWARE = "firmware";
@@ -68,6 +72,8 @@ public interface VmDetailConstants {
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
     String CONFIG_DRIVE_LOCATION = "configDriveLocation";
+
+    String SKIP_DRS = "skipFromDRS";
 
     // VM import with nic, disk and custom params for custom compute offering
     String NIC = "nic";

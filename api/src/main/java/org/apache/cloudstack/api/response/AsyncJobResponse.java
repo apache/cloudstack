@@ -32,8 +32,20 @@ import com.cloud.serializer.Param;
 public class AsyncJobResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "the account that executed the async command")
+    @Param(description = "the account id that executed the async command")
     private String accountId;
+
+    @SerializedName("account")
+    @Param(description = "the account that executed the async command")
+    private String account;
+
+    @SerializedName("domainid")
+    @Param(description = "the domain id that executed the async command")
+    private String domainid;
+
+    @SerializedName("domainpath")
+    @Param(description = "the domain that executed the async command")
+    private String domainPath;
 
     @SerializedName(ApiConstants.USER_ID)
     @Param(description = "the user that executed the async command")
@@ -71,6 +83,10 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "the unique ID of the instance/entity object related to the job")
     private String jobInstanceId;
 
+    @SerializedName("managementserverid")
+    @Param(description = "the msid of the management server on which the job is running", since = "4.19")
+    private Long msid;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "  the created date of the job")
     private Date created;
@@ -81,6 +97,18 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public void setDomainId(String domainid) {
+        this.domainid = domainid;
+    }
+
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setUserId(String userId) {
@@ -126,5 +154,9 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setRemoved(final Date removed) {
         this.removed = removed;
+    }
+
+    public void setMsid(Long msid) {
+        this.msid = msid;
     }
 }

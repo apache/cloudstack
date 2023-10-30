@@ -47,7 +47,6 @@
         <!-- keep in alphabetic order -->
         <module>api</module>
         <module>components-api</module>
-        <module>network</module>
         <module>orchestration</module>
         <module>schema</module>
         <module>service</module>
@@ -58,6 +57,8 @@
         <module>storage/image</module>
         <module>storage/snapshot</module>
         <module>storage/volume</module>
+        <module>userdata/cloud-init</module>
+        <module>userdata</module>
     </modules>
     <profiles>
         <profile>

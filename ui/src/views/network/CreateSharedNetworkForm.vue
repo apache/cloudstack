@@ -80,7 +80,7 @@
               :loading="formPhysicalNetworkLoading"
               :placeholder="apiParams.physicalnetworkid.description"
               @change="val => { handlePhysicalNetworkChange(formPhysicalNetworks[val]) }">
-              <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex" :label="opt.name || opt.description">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -164,7 +164,7 @@
               :loading="domainLoading"
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <block-outlined v-else style="margin-right: 5px" />
@@ -193,7 +193,7 @@
               :loading="accountLoading"
               :placeholder="apiParams.account.description"
               @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                   <user-outlined v-else style="margin-right: 5px" />
@@ -216,7 +216,7 @@
               :loading="projectLoading"
               :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
-              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
@@ -235,7 +235,7 @@
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>

@@ -16,4 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-ip tuntap del dev $1 mode tap
+ip tuntap del dev $1 mode tap multi_queue 2>/dev/null
+if [ $? -ne 0 ];then
+  ip tuntap del dev $1 mode tap
+fi

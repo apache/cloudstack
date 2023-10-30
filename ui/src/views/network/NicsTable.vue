@@ -60,15 +60,17 @@
         </template>
       </a-descriptions>
     </template>
-    <template #networkname="{ text, record }">
-      <resource-icon v-if="!networkIconLoading && networkicon[record.id]" :image="networkicon[record.id]" size="1x" style="margin-right: 5px"/>
-      <apartment-outlined v-else style="margin-right: 5px" />
-      <router-link :to="{ path: '/guestnetwork/' + record.networkid }">
-        {{ text }}
-      </router-link>
-      <a-tag v-if="record.isdefault">
-        {{ $t('label.default') }}
-      </a-tag>
+    <template #bodyCell="{ column, text, record }">
+      <template v-if="column.key === 'networkname'">
+        <resource-icon v-if="!networkIconLoading && networkicon[record.id]" :image="networkicon[record.id]" size="1x" style="margin-right: 5px"/>
+        <apartment-outlined v-else style="margin-right: 5px" />
+        <router-link :to="{ path: '/guestnetwork/' + record.networkid }">
+          {{ text }}
+        </router-link>
+        <a-tag v-if="record.isdefault">
+          {{ $t('label.default') }}
+        </a-tag>
+      </template>
     </template>
   </a-table>
 </template>
@@ -97,14 +99,14 @@ export default {
     return {
       nicColumns: [
         {
+          key: 'deviceid',
           title: this.$t('label.deviceid'),
-          dataIndex: 'deviceid',
-          slots: { customRender: 'deviceid' }
+          dataIndex: 'deviceid'
         },
         {
+          key: 'networkname',
           title: this.$t('label.networkname'),
-          dataIndex: 'networkname',
-          slots: { customRender: 'networkname' }
+          dataIndex: 'networkname'
         },
         {
           title: this.$t('label.macaddress'),

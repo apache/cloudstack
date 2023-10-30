@@ -3,7 +3,9 @@ Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
 Build-Depends: debhelper (>= 9), openjdk-11-jdk | java11-sdk | java11-jdk | zulu-11, genisoimage,
- python-mysql.connector | python3-mysql.connector, maven (>= 3) | maven3, python (>= 2.7), python3 (>= 3), nodejs (>= 12), lsb-release, dh-systemd, python-setuptools, python3-setuptools
+ python-mysql.connector | python3-mysql.connector, maven (>= 3) | maven3,
+ python (>= 2.7) | python2 (>= 2.7), python3 (>= 3), python-setuptools, python3-setuptools,
+ nodejs (>= 12), lsb-release, dh-systemd | debhelper (>= 13)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 

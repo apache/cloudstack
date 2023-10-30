@@ -47,12 +47,12 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option key="all" value="">
             {{ $t('label.view.all') }}
           </a-select-option>
-          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
+          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id" :label="network.name">
             {{ network.name }}
           </a-select-option>
         </a-select>
@@ -65,35 +65,57 @@
         :rowKey="item => item.id"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         :pagination="false" >
-        <template #ipaddress="{ text, record }">
-          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
-          <div v-else>{{ text }}</div>
-          <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
-        </template>
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'ipaddress'">
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }}&nbsp;</router-link>
+            <div v-else>{{ text }}</div>
+            <template v-if="record.issourcenat === true">
+              <a-tag>{{ $t('label.sourcenat') }}</a-tag>
+            </template>
+            <template v-else-if="record.isstaticnat === true">
+              <a-tag>{{ $t('label.staticnat') }}</a-tag>
+            </template>
+            <template v-else-if="record.hasrules === false">
+              <tooltip-button
+                v-if="record.forvirtualnetwork === true"
+                :tooltip="$t('label.action.set.as.source.nat.ip')"
+                type="primary"
+                :danger="false"
+                icon="aim-outlined"
+                :disabled="!('updateNetwork' in $store.getters.apis)"
+                @onClick="showChangeSourceNat(record)"></tooltip-button>
+            </template>
+            <template v-else><!-- -if="record.hasrules === true" -->
+              <Tooltip placement="topLeft" :title="$t('message.sourcenatip.change.inhibited')" >
+                <a-tag>{{ $t('label.hasrules') }}</a-tag>
+              </Tooltip>
+            </template>
+          </template>
 
-        <template #state="{ record }">
-          <status :text="record.state" displayText />
-        </template>
+          <template v-if="column.key === 'state'">
+            <status :text="record.state" displayText />
+          </template>
 
-        <template #virtualmachineid="{ record }">
-          <desktop-outlined v-if="record.virtualmachineid" />
-          <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
-        </template>
+          <template v-if="column.key === 'virtualmachineid'">
+            <desktop-outlined v-if="record.virtualmachineid" />
+            <router-link :to="{ path: getVmRouteUsingType(record) + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
+          </template>
 
-        <template #associatednetworkname="{ record }">
-          <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
-          <div v-else>{{ record.networkname }}</div>
-        </template>
+          <template v-if="column.key === 'associatednetworkname'">
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
+            <div v-else>{{ record.networkname }}</div>
+          </template>
 
-        <template #action="{ record }">
-          <tooltip-button
-            v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
-            :tooltip="$t('label.action.release.ip')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            :disabled="!('disassociateIpAddress' in $store.getters.apis)"
-            @onClick="releaseIpAddress(record)" />
+          <template v-if="column.key === 'actions'">
+            <tooltip-button
+              v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
+              :tooltip="$t('label.action.release.ip')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              :disabled="!('disassociateIpAddress' in $store.getters.apis)"
+              @onClick="releaseIpAddress(record)" />
+          </template>
         </template>
       </a-table>
       <a-divider/>
@@ -133,11 +155,12 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
+                :key="ip.ipaddress"
+                :label="ip.ipaddress + '(' + ip.state + ')'">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
@@ -146,6 +169,24 @@
           </div>
         </a-form>
       </a-spin>
+    </a-modal>
+    <a-modal
+      v-if="changeSourceNat"
+      :title="$t('message.sourcenatip.change.warning')"
+      :visible="changeSourceNat"
+      :closable="true"
+      :footer="null"
+      @cancel="cancelChangeSourceNat"
+      centered
+      :disabled="!('updateNetwork' in $store.getters.apis)"
+      width="450px">
+      <template>
+        <a-alert :message="$t('message.sourcenatip.change.warning')" type="warning" />
+      </template>
+      <div :span="24" class="action-button">
+        <a-button @click="cancelChangeSourceNat">{{ $t('label.cancel') }}</a-button>
+        <a-button ref="submit" type="primary" @click="setSourceNatIp(record)">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"
@@ -164,6 +205,7 @@
       @close-modal="closeModal" />
   </div>
 </template>
+
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
@@ -204,7 +246,7 @@ export default {
       showGroupActionModal: false,
       selectedItems: [],
       selectedColumns: [],
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       showConfirmationAction: false,
       message: {
         title: this.$t('label.action.bulk.release.public.ip.address'),
@@ -212,34 +254,35 @@ export default {
       },
       columns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ipaddress'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
+          key: 'virtualmachineid',
           title: this.$t('label.vm'),
-          dataIndex: 'virtualmachineid',
-          slots: { customRender: 'virtualmachineid' }
+          dataIndex: 'virtualmachineid'
         },
         {
+          key: 'associatednetworkname',
           title: this.$t('label.network'),
-          dataIndex: 'associatednetworkname',
-          slots: { customRender: 'associatednetworkname' }
+          dataIndex: 'associatednetworkname'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'actions',
+          title: ''
         }
       ],
       showAcquireIp: false,
       acquireLoading: false,
       acquireIp: null,
-      listPublicIpAddress: []
+      listPublicIpAddress: [],
+      changeSourceNat: false
     }
   },
   created () {
@@ -311,6 +354,50 @@ export default {
       this.selectedItems = (this.ips.filter(function (item) {
         return selection.indexOf(item.id) !== -1
       }))
+    },
+    setSourceNatIp (ipaddress) {
+      if (this.settingsourcenat) return
+      if (this.$route.path.startsWith('/vpc')) {
+        this.updateVpc(ipaddress)
+      } else {
+        this.updateNetwork(ipaddress)
+      }
+    },
+    updateNetwork (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateNetwork', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
+    },
+    updateVpc (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateVPC', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
     },
     resetSelection () {
       this.setSelection([])
@@ -385,9 +472,9 @@ export default {
     releaseIpAddresses (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -439,6 +526,14 @@ export default {
         })
       })
     },
+    getVmRouteUsingType (record) {
+      switch (record.virtualmachinetype) {
+        case 'DomainRouter' : return '/router/'
+        case 'ConsoleProxy' :
+        case 'SecondaryStorageVm': return '/systemvm/'
+        default: return '/vm/'
+      }
+    },
     async onShowAcquireIp () {
       this.showAcquireIp = true
       this.acquireLoading = true
@@ -471,6 +566,13 @@ export default {
     },
     closeModal () {
       this.showConfirmationAction = false
+    },
+    showChangeSourceNat (ipaddress) {
+      this.changeSourceNat = true
+      this.sourceNatIp = ipaddress
+    },
+    cancelChangeSourceNat () {
+      this.changeSourceNat = false
     }
   }
 }

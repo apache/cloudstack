@@ -41,8 +41,10 @@
               :dataSource="templateUserDataParams"
               :pagination="false"
               :rowKey="record => record.key">
-              <template #value="{ record }">
-                <a-input v-model:value="templateUserDataValues[record.key]" />
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'value'">
+                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                </template>
               </template>
             </a-table>
           </a-input-group>
@@ -87,8 +89,10 @@
                               :dataSource="userDataParams"
                               :pagination="false"
                               :rowKey="record => record.key">
-                              <template #value="{ record }">
-                                <a-input v-model:value="userDataValues[record.key]" />
+                              <template #bodyCell="{ column, record }">
+                                <template v-if="column.key === 'value'">
+                                  <a-input v-model:value="userDataValues[record.key]" />
+                                </template>
                               </template>
                             </a-table>
                           </a-input-group>
@@ -147,17 +151,17 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          sorter: (a, b) => genericCompare(a?.name || '', b?.name || ''),
           width: '40%'
         },
         {
           dataIndex: 'account',
-          slots: { title: 'account' },
+          title: this.$t('account'),
           width: '30%'
         },
         {
           dataIndex: 'domain',
-          slots: { title: 'domain' },
+          title: this.$t('domain'),
           width: '30%'
         }
       ],
@@ -188,7 +192,7 @@ export default {
         {
           title: this.$t('label.value'),
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          key: 'value'
         }
       ],
       userDataValues: {},
@@ -289,14 +293,6 @@ export default {
       this[type] = key
       this.userDataParams = []
     },
-    sanitizeReverse (value) {
-      const reversedValue = value
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-
-      return reversedValue
-    },
     isUserAllowedToListUserDatas () {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
@@ -309,7 +305,7 @@ export default {
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
-        if (resp) {
+        if (resp.length > 0) {
           var params = resp[0].params
           if (params) {
             var dataParams = params.split(',')
@@ -343,10 +339,9 @@ export default {
       this.loadingData = true
       console.log(values)
       const params = {
-        id: this.resource.id
       }
       if (values.userdata && values.userdata.length > 0) {
-        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        params.userdata = this.$toBase64AndURIEncoded(values.userdata)
       }
       if (values.userdataid) {
         params.userdataid = values.userdataid
@@ -364,7 +359,14 @@ export default {
           idx++
         }
       }
-      api('resetUserDataForVirtualMachine', params).then(json => {
+      params.id = this.resource.resetUserDataResourceId ? this.resource.resetUserDataResourceId : this.resource.id
+
+      const resetUserDataApiName = this.resource.resetUserDataApiName ? this.resource.resetUserDataApiName : 'resetUserDataForVirtualMachine'
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api(resetUserDataApiName, args, httpMethod, data).then(json => {
         this.$message.success({
           content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2

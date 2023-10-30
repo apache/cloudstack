@@ -31,7 +31,7 @@
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
-            :remove="handleRemove"
+            @remove="handleRemove"
             :beforeUpload="beforeUpload"
             @change="handleChange"
             v-model:value="form.file">
@@ -70,9 +70,9 @@
             v-model:value="form.type"
             :placeholder="apiParams.type.description"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}

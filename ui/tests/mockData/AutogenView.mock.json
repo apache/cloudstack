@@ -458,7 +458,8 @@
       "meta": {
         "title": "label.title",
         "icon": "play-circle-outlined",
-        "permission": ["testApiNameCase1"]
+        "permission": ["testApiNameCase1"],
+        "columns": ["column1", "column2", "column3"]
       },
       "component": {},
       "children": [{
@@ -487,7 +488,8 @@
       "meta": {
         "title": "label.title",
         "icon": "play-circle-outlined",
-        "permission": ["testApiNameCase1"]
+        "permission": ["testApiNameCase1"],
+        "columns": ["column1"]
       },
       "component": {}
     },

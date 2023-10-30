@@ -65,13 +65,13 @@ public class SynchronizationEvent {
         }
     }
 
-    public boolean waitEvent(long timeOutMiliseconds) throws InterruptedException {
+    public boolean waitEvent(long timeOutMilliseconds) throws InterruptedException {
         synchronized (this) {
             if (signalled)
                 return true;
 
             try {
-                wait(timeOutMiliseconds);
+                wait(timeOutMilliseconds);
                 return signalled;
             } catch (InterruptedException e) {
                 // TODO, we don't honor time out semantics when the waiting thread is interrupted

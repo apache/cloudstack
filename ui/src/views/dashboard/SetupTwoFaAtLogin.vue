@@ -38,10 +38,6 @@
           <a-form-item v-ctrl-enter="submitPin" ref="selectedProvider" name="selectedProvider">
              <a-select
               v-model:value="form.selectedProvider"
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
               @change="val => { handleSelectChange(val) }">
               <a-select-option
                 v-for="(opt) in providers"

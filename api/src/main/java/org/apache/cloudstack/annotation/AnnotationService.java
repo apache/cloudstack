@@ -45,7 +45,7 @@ public interface AnnotationService {
         SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
         ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
         PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false),
-        AUTOSCALE_VM_GROUP(true);
+        AUTOSCALE_VM_GROUP(true), MANAGEMENT_SERVER(false),;
 
         private final boolean usersAllowed;
 
@@ -77,6 +77,7 @@ public interface AnnotationService {
             list.add(EntityType.SECONDARY_STORAGE);
             list.add(EntityType.VR);
             list.add(EntityType.SYSTEM_VM);
+            list.add(EntityType.MANAGEMENT_SERVER);
             if (roleType != RoleType.DomainAdmin) {
                 list.add(EntityType.DOMAIN);
                 list.add(EntityType.SERVICE_OFFERING);

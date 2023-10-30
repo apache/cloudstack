@@ -61,9 +61,12 @@ const user = {
     loginFlag: false,
     logoutFlag: false,
     customColumns: {},
+    shutdownTriggered: false,
     twoFaEnabled: false,
     twoFaProvider: '',
-    twoFaIssuer: ''
+    twoFaIssuer: '',
+    customHypervisorName: 'Custom',
+    readyForShutdownPollingJob: ''
   },
 
   mutations: {
@@ -133,6 +136,9 @@ const user = {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
     },
+    SET_SHUTDOWN_TRIGGERED: (state, shutdownTriggered) => {
+      state.shutdownTriggered = shutdownTriggered
+    },
     SET_LOGOUT_FLAG: (state, flag) => {
       state.logoutFlag = flag
     },
@@ -147,6 +153,12 @@ const user = {
     },
     SET_LOGIN_FLAG: (state, flag) => {
       state.loginFlag = flag
+    },
+    SET_CUSTOM_HYPERVISOR_NAME (state, name) {
+      state.customHypervisorName = name
+    },
+    SET_READY_FOR_SHUTDOWN_POLLING_JOB: (state, job) => {
+      state.readyForShutdownPollingJob = job
     }
   },
 
@@ -278,6 +290,9 @@ const user = {
           if (result && result.defaultuipagesize) {
             commit('SET_DEFAULT_LISTVIEW_PAGE_SIZE', result.defaultuipagesize)
           }
+          if (result && result.customhypervisordisplayname) {
+            commit('SET_CUSTOM_HYPERVISOR_NAME', result.customhypervisordisplayname)
+          }
         }).catch(error => {
           reject(error)
         })
@@ -348,9 +363,13 @@ const user = {
       if (noticeIdx === -1) {
         noticeArray.push(noticeJson)
       } else {
+        const existingNotice = noticeArray[noticeIdx]
+        noticeJson.timestamp = existingNotice.timestamp
         noticeArray[noticeIdx] = noticeJson
       }
-
+      noticeArray.sort(function (a, b) {
+        return new Date(b.timestamp) - new Date(a.timestamp)
+      })
       commit('SET_HEADER_NOTICES', noticeArray)
     },
     ProjectView ({ commit }, projectid) {
@@ -387,6 +406,15 @@ const user = {
         }).catch(error => {
           reject(error)
         })
+
+        api('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+          if (json.listconfigurationsresponse.configuration !== null) {
+            const config = json.listconfigurationsresponse.configuration[0]
+            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+          }
+        }).catch(error => {
+          reject(error)
+        })
       })
     },
     UpdateConfiguration ({ commit }) {
@@ -407,6 +435,9 @@ const user = {
     },
     SetLoginFlag ({ commit }, loggedIn) {
       commit('SET_LOGIN_FLAG', loggedIn)
+    },
+    SetCustomHypervisorName ({ commit }, name) {
+      commit('SET_CUSTOM_HYPERVISOR_NAME', name)
     }
   }
 }

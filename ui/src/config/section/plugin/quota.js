@@ -78,8 +78,8 @@ export default {
       icon: 'credit-card-outlined',
       docHelp: 'plugins/quota.html#quota-tariff',
       permission: ['quotaTariffList'],
-      columns: ['usageName', 'description', 'usageUnit', 'tariffValue', 'tariffActions'],
-      details: ['usageName', 'description', 'usageUnit', 'tariffValue'],
+      columns: ['usageName', 'usageTypeDescription', 'usageUnit', 'tariffValue', 'tariffActions'],
+      details: ['usageName', 'usageTypeDescription', 'usageUnit', 'tariffValue'],
       component: shallowRef(() => import('@/views/plugins/quota/QuotaTariff.vue'))
     },
     {

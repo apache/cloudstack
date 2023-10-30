@@ -16,7 +16,6 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
-import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
@@ -27,15 +26,16 @@ export default {
     {
       name: 'vm',
       title: 'label.instances',
-      icon: 'desktop-outlined',
+      icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
-        var params = {}
+        var params = { details: 'servoff,tmpl,nics' }
         if (store.getters.metrics) {
-          params = { state: 'running' }
+          params = { details: 'servoff,tmpl,nics,stats' }
         }
+        params.isvnf = false
         return params
       },
       filters: () => {
@@ -46,8 +46,8 @@ export default {
         return filters
       },
       columns: () => {
-        const fields = ['name', 'displayname', 'state', 'ipaddress']
-        const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
+        const fields = ['name', 'state', 'ipaddress']
+        const metricsFields = ['cpunumber', 'cputotal', 'cpuused', 'memorytotal',
           {
             memoryused: (record) => {
               if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
@@ -56,7 +56,7 @@ export default {
               return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
           },
-          'memorytotal', 'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
+          'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
@@ -66,18 +66,17 @@ export default {
           fields.splice(2, 0, 'instancename')
           fields.push('account')
           fields.push('hostname')
-          fields.push('zonename')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
-          fields.push('zonename')
         } else {
-          fields.push('zonename')
+          fields.push('serviceofferingname')
         }
+        fields.push('zonename')
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
       details: () => {
-        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+        var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy', 'hostcontrolstate']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
@@ -164,6 +163,14 @@ export default {
           message: 'message.reinstall.vm',
           dataView: true,
           args: ['virtualmachineid', 'templateid'],
+          filters: (record) => {
+            var filters = {}
+            var filterParams = {}
+            filterParams.hypervisortype = record.hypervisor
+            filterParams.zoneid = record.zoneid
+            filters.templateid = filterParams
+            return filters
+          },
           show: (record) => { return ['Running', 'Stopped'].includes(record.state) },
           mapping: {
             virtualmachineid: {
@@ -249,7 +256,7 @@ export default {
         {
           api: 'createBackupSchedule',
           icon: 'schedule-outlined',
-          label: 'Configure Backup Schedule',
+          label: 'label.backup.configure.schedule',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,
@@ -362,8 +369,15 @@ export default {
           label: 'label.action.reset.password',
           message: 'message.action.instance.reset.password',
           dataView: true,
+          args: ['password'],
           show: (record) => { return ['Stopped'].includes(record.state) && record.passwordenabled },
-          response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
+          response: (result) => {
+            return {
+              message: result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null,
+              copybuttontext: result.virtualmachine.password ? 'label.copy.password' : null,
+              copytext: result.virtualmachine.password ? result.virtualmachine.password : null
+            }
+          }
         },
         {
           api: 'resetSSHKeyForVirtualMachine',
@@ -443,11 +457,11 @@ export default {
     {
       name: 'kubernetes',
       title: 'label.kubernetes',
-      icon: shallowRef(kubernetes),
+      icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html',
       permission: ['listKubernetesClusters'],
       columns: (store) => {
-        var fields = ['name', 'state', 'size', 'cpunumber', 'memory']
+        var fields = ['name', 'state', 'clustertype', 'size', 'cpunumber', 'memory', 'kubernetesversionname']
         if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
           fields.push('account')
         }
@@ -457,7 +471,11 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'created'],
+      filters: () => {
+        const filters = ['cloud.managed', 'external.managed']
+        return filters
+      },
+      details: ['name', 'description', 'zonename', 'kubernetesversionname', 'autoscalingenabled', 'minsize', 'maxsize', 'size', 'controlnodes', 'cpunumber', 'memory', 'keypair', 'associatednetworkname', 'account', 'domain', 'zonename', 'clustertype', 'created'],
       tabs: [{
         name: 'k8s',
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/KubernetesServiceTab.vue')))
@@ -480,7 +498,7 @@ export default {
           message: 'message.kubernetes.cluster.start',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#starting-a-stopped-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Stopped'].includes(record.state) },
+          show: (record) => { return ['Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -492,7 +510,7 @@ export default {
           message: 'message.kubernetes.cluster.stop',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#stopping-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) },
+          show: (record) => { return !['Stopped', 'Destroyed', 'Destroying'].includes(record.state) && record.clustertype === 'CloudManaged' },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -504,7 +522,7 @@ export default {
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running'].includes(record.state) },
+          show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
         },
@@ -515,7 +533,7 @@ export default {
           message: 'message.kubernetes.cluster.upgrade',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#upgrading-kubernetes-cluster',
           dataView: true,
-          show: (record) => { return ['Created', 'Running'].includes(record.state) },
+          show: (record) => { return ['Created', 'Running'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/UpgradeKubernetesCluster.vue')))
         },
@@ -529,18 +547,22 @@ export default {
           show: (record) => { return !['Destroyed', 'Destroying'].includes(record.state) },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          args: (record, store, group) => {
+            return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervm)
+              ? ['cleanup', 'expunge'] : ['cleanup']
+          },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, expunge: values.expunge, cleanup: values.cleanup } }) }
         }
       ]
     },
     {
       name: 'autoscalevmgroup',
       title: 'label.autoscale.vm.groups',
-      icon: 'ordered-list-outlined',
+      icon: 'fullscreen-outlined',
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'state'],
+      columns: ['name', 'state', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'account'],
       details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'availablevirtualmachinecount', 'interval', 'state', 'created'],
       related: [{
         name: 'vm',
@@ -644,7 +666,7 @@ export default {
       docHelp: 'adminguide/virtual_machines.html#changing-the-vm-name-os-or-group',
       resourceType: 'VMInstanceGroup',
       permission: ['listInstanceGroups'],
-      columns: ['name', 'account'],
+      columns: ['name', 'account', 'domain'],
       details: ['name', 'id', 'account', 'domain', 'created'],
       related: [{
         name: 'vm',
@@ -698,6 +720,7 @@ export default {
         var fields = ['name', 'fingerprint']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -775,6 +798,7 @@ export default {
         var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },
@@ -846,6 +870,7 @@ export default {
         var fields = ['name', 'type', 'description']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          fields.push('domain')
         }
         return fields
       },

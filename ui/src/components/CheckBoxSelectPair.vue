@@ -34,13 +34,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @change="val => { handleSelectChange(val) }">
             <a-select-option
               v-for="(opt) in selectSource"
               :key="opt.id"
-              :disabled="opt.enabled === false">
+              :disabled="opt.enabled === false"
+              :label="opt.displaytext || opt.name || opt.description">
               {{ opt.displaytext || opt.name || opt.description }}
             </a-select-option>
           </a-select>

@@ -96,7 +96,7 @@
         <template #content>
           <div v-ctrl-enter="saveNote">
             <a-textarea
-              rows="4"
+              :rows="4"
               @change="handleNoteChange"
               v-model:value="annotation"
               :placeholder="$t('label.add.note')" />
@@ -192,6 +192,7 @@ export default {
         case 'SystemVm': return 'SYSTEM_VM'
         case 'VirtualRouter': return 'VR'
         case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
+        case 'ManagementServer': return 'MANAGEMENT_SERVER'
         default: return ''
       }
     },

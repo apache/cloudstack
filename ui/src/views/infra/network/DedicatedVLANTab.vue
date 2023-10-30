@@ -33,21 +33,23 @@
       :dataSource="items"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #actions="{record}">
-        <a-popconfirm
-          :title="`${$t('label.delete')}?`"
-          @confirm="handleDelete(record)"
-          :okText="$t('label.yes')"
-          :cancelText="$t('label.no')"
-          placement="top"
-        >
-          <tooltip-button
-            :tooltip="$t('label.delete')"
-            :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)"
-            icon="delete-outlined"
-            type="primary"
-            :danger="true" />
-        </a-popconfirm>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'actions'">
+          <a-popconfirm
+            :title="`${$t('label.delete')}?`"
+            @confirm="handleDelete(record)"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')"
+            placement="top"
+          >
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)"
+              icon="delete-outlined"
+              type="primary"
+              :danger="true" />
+          </a-popconfirm>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -91,10 +93,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
-              <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
+              <a-select-option value="account" :label="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+              <a-select-option value="project" :label="$t('label.project')">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 
@@ -121,7 +123,7 @@
             <a-select
               v-model:value="form.account"
               showSearch
-              optionFilterProp="label"
+              optionFilterProp="value"
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
@@ -219,8 +221,8 @@ export default {
           dataIndex: 'account'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.actions')
         }
       ]
     }

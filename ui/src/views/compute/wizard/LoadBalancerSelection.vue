@@ -32,9 +32,9 @@
       :rowSelection="rowSelection"
       size="middle"
       :scroll="{ y: 225 }">
-      <template #publicip><environment-outlined /> {{ $t('label.publicip') }}</template>
-      <template #publicport>{{ $t('label.publicport') }}</template>
-      <template #privateport>{{ $t('label.privateport') }}</template>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'publicip'"><environment-outlined /> {{ $t('label.publicip') }}</template>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -113,6 +113,7 @@ export default {
           width: '40%'
         },
         {
+          key: 'publicip',
           title: this.$t('label.publicip'),
           dataIndex: 'publicip'
         },

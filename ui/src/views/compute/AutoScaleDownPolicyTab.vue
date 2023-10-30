@@ -36,12 +36,13 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
           <a-select-option
             v-for="(scalepolicy, index) in this.policies"
             :value="scalepolicy.id"
-            :key="index">
+            :key="index"
+            :label="scalepolicy.displaytext || scalepolicy.name" >
             {{ scalepolicy.name || scalepolicy.id }}
           </a-select-option>
         </a-select>
@@ -109,28 +110,24 @@
       :dataSource="policy.conditions"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #name="{ record }">
-        {{ record.name }}
-      </template>
-      <template #relationaloperator="{ record }">
-        {{ getOperator(record.relationaloperator) }}
-      </template>
-      <template #threshold="{ record }">
-        {{ record.threshold }}
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
-          icon="edit-outlined"
-          @onClick="() => openUpdateConditionModal(record)" />
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'relationaloperator'">
+          {{ getOperator(record.relationaloperator) }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.edit')"
+            :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
+            icon="edit-outlined"
+            @onClick="() => openUpdateConditionModal(record)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'DISABLED'"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
+        </template>
       </template>
     </a-table>
 
@@ -147,11 +144,15 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
             v-model:value="newCondition.counterid">
-            <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+            <a-select-option
+              v-for="(counter, index) in countersList"
+              :value="counter.id"
+              :key="index"
+              :label="counter.name" >
               {{ counter.name }}
             </a-select-option>
           </a-select>
@@ -165,11 +166,11 @@
           <a-select
             v-model:value="newCondition.relationaloperator"
             style="width: 100%;"
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LT" >{{ getOperator('LT') }}</a-select-option>
           </a-select>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
@@ -216,11 +217,11 @@
           <a-select
             v-model:value="updateConditionDetails.relationaloperator"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LT" >{{ getOperator('LT') }}</a-select-option>
           </a-select>
         </div>
         <div class="update-condition__item">
@@ -277,10 +278,14 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-model:value="newPolicy.counterid">
-            <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+            <a-select-option
+              v-for="(counter, index) in countersList"
+              :value="counter.id"
+              :key="index"
+              :label="counter.name">
               {{ counter.name }}
             </a-select-option>
           </a-select>
@@ -293,11 +298,11 @@
           <a-select
             v-model:value="newPolicy.relationaloperator"
             showSearch
-            optionFilterProp="label"
+            optionFilterProp="value"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LT" >{{ getOperator('LT') }}</a-select-option>
           </a-select>
         </div>
         <div class="update-condition__item">
@@ -338,7 +343,7 @@ export default {
   },
   data () {
     return {
-      filterColumns: ['Action'],
+      filterColumns: ['Actions'],
       loading: true,
       policies: [],
       isEditable: false,
@@ -377,15 +382,15 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          slots: { customRender: 'relationaloperator' }
+          key: 'relationaloperator'
         },
         {
           title: this.$t('label.threshold'),
-          slots: { customRender: 'threshold' }
+          dataIndex: 'threshold'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          title: this.$t('label.actions'),
+          key: 'actions'
         }
       ]
     }

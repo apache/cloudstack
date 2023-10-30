@@ -26,42 +26,44 @@
           :dataSource="dataSource"
           :pagination="false"
           :rowKey="rowItem => rowItem.userid ? rowItem.userid : (rowItem.accountid || rowItem.account)">
-          <template #user="{ record }">
-            <span v-if="record.userid">{{ record.username }}</span>
-          </template>
-          <template #projectrole="{ record }">
-            <span v-if="record.projectroleid">{{ getProjectRole(record) }}</span>
-          </template>
-          <template #action="{ record }">
-            <div>
-              <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
-                <tooltip-button
-                  tooltipPlacement="top"
-                  :tooltip="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')"
-                  v-if="record.role !== owner"
-                  type="default"
-                  icon="arrow-up-outlined"
-                  size="small"
-                  @onClick="promoteAccount(record)" />
-                <tooltip-button
-                  tooltipPlacement="top"
-                  :tooltip="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
-                  v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0 && record.role === owner"
-                  type="default"
-                  icon="arrow-down-outlined"
-                  size="small"
-                  @onClick="demoteAccount(record)" />
-                <tooltip-button
-                  tooltipPlacement="top"
-                  :tooltip="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')"
-                  type="primary"
-                  :danger="true"
-                  icon="delete-outlined"
-                  size="small"
-                  :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
-                  @onClick="onShowConfirmDelete(record)" />
-              </span>
-            </div>
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'user'">
+              <span v-if="record.userid">{{ record.username }}</span>
+            </template>
+            <template v-if="column.key === 'projectrole'">
+              <span v-if="record.projectroleid">{{ getProjectRole(record) }}</span>
+            </template>
+            <template v-if="column.key === 'actions'">
+              <div>
+                <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
+                  <tooltip-button
+                    tooltipPlacement="top"
+                    :tooltip="record.userid ? $t('label.make.user.project.owner') : $t('label.make.project.owner')"
+                    v-if="record.role !== owner"
+                    type="default"
+                    icon="arrow-up-outlined"
+                    size="small"
+                    @onClick="promoteAccount(record)" />
+                  <tooltip-button
+                    tooltipPlacement="top"
+                    :tooltip="record.userid ? $t('label.demote.project.owner.user') : $t('label.demote.project.owner')"
+                    v-if="updateProjectApi.params.filter(x => x.name === 'swapowner').length > 0 && record.role === owner"
+                    type="default"
+                    icon="arrow-down-outlined"
+                    size="small"
+                    @onClick="demoteAccount(record)" />
+                  <tooltip-button
+                    tooltipPlacement="top"
+                    :tooltip="record.userid ? $t('label.remove.project.user') : $t('label.remove.project.account')"
+                    type="primary"
+                    :danger="true"
+                    icon="delete-outlined"
+                    size="small"
+                    :disabled="!('deleteAccountFromProject' in $store.getters.apis)"
+                    @onClick="onShowConfirmDelete(record)" />
+                </span>
+              </div>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -122,31 +124,31 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'account',
         title: this.$t('label.account'),
-        dataIndex: 'account',
-        slots: { customRender: 'account' }
+        dataIndex: 'account'
       },
       {
+        key: 'role',
         title: this.$t('label.roletype'),
-        dataIndex: 'role',
-        slots: { customRender: 'role' }
+        dataIndex: 'role'
       },
       {
-        title: this.$t('label.action'),
-        dataIndex: 'action',
-        slots: { customRender: 'action' }
+        key: 'actions',
+        title: this.$t('label.actions'),
+        dataIndex: 'actions'
       }
     ]
     if (this.isProjectRolesSupported()) {
       this.columns.splice(1, 0, {
+        key: 'user',
         title: this.$t('label.user'),
-        dataIndex: 'userid',
-        slots: { customRender: 'user' }
+        dataIndex: 'userid'
       })
       this.columns.splice(this.columns.length - 1, 0, {
+        key: 'projectrole',
         title: this.$t('label.project.role'),
-        dataIndex: 'projectroleid',
-        slots: { customRender: 'projectrole' }
+        dataIndex: 'projectroleid'
       })
     }
     this.page = 1

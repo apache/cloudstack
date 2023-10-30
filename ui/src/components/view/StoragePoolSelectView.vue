@@ -32,45 +32,49 @@
       :dataSource="storagePools"
       :pagination="false"
       :rowKey="record => record.id">
-      <template #suitabilityCustomTitle>
-        {{ $t('label.suitability') }}
-        <a-tooltip :title="$t('message.volume.state.primary.storage.suitability')" placement="top">
-          <info-circle-outlined class="table-tooltip-icon" />
-        </a-tooltip>
+      <template #headerCell="{ column }">
+        <template v-if="column.key === 'suitability'">
+          {{ $t('label.suitability') }}
+          <a-tooltip :title="$t('message.volume.state.primary.storage.suitability')" placement="top">
+            <info-circle-outlined class="table-tooltip-icon" />
+          </a-tooltip>
+        </template>
       </template>
-      <template #name="{ record }">
-        {{ record.name }}
-        <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
-          <info-circle-outlined class="table-tooltip-icon" />
-        </a-tooltip>
-      </template>
-      <template #suitability="{ record }">
-        <check-circle-two-tone
-          class="host-item__suitability-icon"
-          twoToneColor="#52c41a"
-          v-if="record.suitableformigration" />
-        <close-circle-two-tone
-          class="host-item__suitability-icon"
-          twoToneColor="#f5222d"
-          v-else />
-      </template>
-      <template #disksizetotal="{ record }">
-        <span v-if="record.disksizetotal">{{ $bytesToHumanReadableSize(record.disksizetotal) }}</span>
-      </template>
-      <template #disksizeused="{ record }">
-        <span v-if="record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizeused) }}</span>
-      </template>
-      <template #disksizefree="{ record }">
-        <span v-if="record.disksizetotal && record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizetotal * 1 - record.disksizeused * 1) }}</span>
-      </template>
-      <template #select="{ record }">
-        <a-tooltip placement="top" :title="record.state !== 'Up' ? $t('message.primary.storage.invalid.state') : ''">
-          <a-radio
-            :disabled="record.id !== -1 && record.state !== 'Up'"
-            @click="updateSelection(record)"
-            :checked="selectedStoragePool != null && record.id === selectedStoragePool.id">
-          </a-radio>
-        </a-tooltip>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          {{ record.name }}
+          <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
+            <info-circle-outlined class="table-tooltip-icon" />
+          </a-tooltip>
+        </template>
+        <template v-if="column.key === 'suitability'">
+          <check-circle-two-tone
+            class="host-item__suitability-icon"
+            twoToneColor="#52c41a"
+            v-if="record.suitableformigration" />
+          <close-circle-two-tone
+            class="host-item__suitability-icon"
+            twoToneColor="#f5222d"
+            v-else />
+        </template>
+        <template v-if="column.key === 'disksizetotal'">
+          <span v-if="record.disksizetotal">{{ $bytesToHumanReadableSize(record.disksizetotal) }}</span>
+        </template>
+        <template v-if="column.key === 'disksizeused'">
+          <span v-if="record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizeused) }}</span>
+        </template>
+        <template v-if="column.key === 'disksizefree'">
+          <span v-if="record.disksizetotal && record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizetotal * 1 - record.disksizeused * 1) }}</span>
+        </template>
+        <template v-if="column.key === 'select'">
+          <a-tooltip placement="top" :title="record.state !== 'Up' ? $t('message.primary.storage.invalid.state') : ''">
+            <a-radio
+              :disabled="record.id !== -1 && record.state !== 'Up'"
+              @click="updateSelection(record)"
+              :checked="selectedStoragePool != null && record.id === selectedStoragePool.id">
+            </a-radio>
+          </a-tooltip>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -132,8 +136,8 @@ export default {
       selectedStoragePool: null,
       columns: [
         {
-          title: this.$t('label.storageid'),
-          slots: { customRender: 'name' }
+          key: 'name',
+          title: this.$t('label.storageid')
         },
         {
           title: this.$t('label.clusterid'),
@@ -144,27 +148,27 @@ export default {
           dataIndex: 'podname'
         },
         {
-          title: this.$t('label.disksizetotal'),
-          slots: { customRender: 'disksizetotal' }
+          key: 'disksizetotal',
+          title: this.$t('label.disksizetotal')
         },
         {
-          title: this.$t('label.disksizeused'),
-          slots: { customRender: 'disksizeused' }
+          key: 'disksizeused',
+          title: this.$t('label.disksizeused')
         },
         {
-          title: this.$t('label.disksizefree'),
-          slots: { customRender: 'disksizefree' }
+          key: 'disksizefree',
+          title: this.$t('label.disksizefree')
         },
         {
-          title: this.$t('label.select'),
-          slots: { customRender: 'select' }
+          key: 'select',
+          title: this.$t('label.select')
         }
       ]
     }
   },
   created () {
     if (this.suitabilityEnabled) {
-      this.columns.splice(1, 0, { title: 'suitabilityCustomTitle', slots: 'suitability' })
+      this.columns.splice(1, 0, { key: 'suitability' })
     }
     this.preselectStoragePool()
     this.fetchStoragePools()

@@ -21,15 +21,21 @@ export default {
   name: 'offering',
   title: 'label.menu.service.offerings',
   icon: 'shopping-outlined',
-  permission: ['listServiceOfferings', 'listDiskOfferings', 'listDomains'],
+  permission: ['listServiceOfferings', 'listDiskOfferings'],
   children: [
     {
       name: 'computeoffering',
       title: 'label.compute.offerings',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       icon: 'cloud-outlined',
-      permission: ['listServiceOfferings', 'listDomains'],
-      params: { isrecursive: 'true' },
+      permission: ['listServiceOfferings'],
+      params: () => {
+        var params = {}
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          params = { isrecursive: 'true' }
+        }
+        return params
+      },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
@@ -51,7 +57,8 @@ export default {
         },
         {
           name: 'comments',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
+          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
         }
       ],
       related: [{
@@ -102,7 +109,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
       columns: ['name', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
-      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
+      details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       actions: [{
         api: 'createServiceOffering',
         icon: 'plus-outlined',
@@ -119,7 +126,7 @@ export default {
         dataView: true,
         params: { issystem: 'true' },
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        args: ['name', 'displaytext']
+        args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
         api: 'deleteServiceOffering',
         icon: 'delete-outlined',
@@ -138,8 +145,14 @@ export default {
       title: 'label.disk.offerings',
       icon: 'hdd-outlined',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
-      permission: ['listDiskOfferings', 'listDomains'],
-      params: { isrecursive: 'true' },
+      permission: ['listDiskOfferings'],
+      params: () => {
+        var params = {}
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          params = { isrecursive: 'true' }
+        }
+        return params
+      },
       columns: ['name', 'displaytext', 'disksize', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'tags', 'domain', 'zone', 'created', 'encrypt']
@@ -157,7 +170,8 @@ export default {
         },
         {
           name: 'comments',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
+          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
         }
       ],
       related: [{
@@ -205,7 +219,7 @@ export default {
       title: 'label.backup.offerings',
       icon: 'cloud-upload-outlined',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
-      permission: ['listBackupOfferings', 'listInfrastructure'],
+      permission: ['listBackupOfferings'],
       columns: ['name', 'description', 'zonename'],
       details: ['name', 'id', 'description', 'externalid', 'zone', 'allowuserdrivenbackups', 'created'],
       related: [{
@@ -246,7 +260,7 @@ export default {
       title: 'label.network.offerings',
       icon: 'wifi-outlined',
       docHelp: 'adminguide/networking.html#network-offerings',
-      permission: ['listNetworkOfferings', 'listInfrastructure'],
+      permission: ['listNetworkOfferings'],
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
@@ -257,7 +271,8 @@ export default {
         },
         {
           name: 'comments',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
+          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
         }
       ],
       actions: [{
@@ -337,7 +352,7 @@ export default {
       title: 'label.vpc.offerings',
       icon: 'deployment-unit-outlined',
       docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
-      permission: ['listVPCOfferings', 'listInfrastructure'],
+      permission: ['listVPCOfferings'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
       details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],

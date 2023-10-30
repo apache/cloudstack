@@ -26,44 +26,46 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <template #name="{ record }">
-        <span>{{ record.displaytext || record.name }}</span>
-        <div v-if="record.meta">
-          <div v-for="meta in record.meta" :key="meta.key">
-            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span>{{ record.displaytext || record.name }}</span>
+          <div v-if="record.meta">
+            <div v-for="meta in record.meta" :key="meta.key">
+              <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+            </div>
           </div>
-        </div>
-      </template>
-      <template #offering="{ record }">
-        <span
-          style="width: 50%"
-          v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
-          <check-box-select-pair
-            v-if="selectedCustomDiskOffering!=null"
-            layout="vertical"
-            :resourceKey="record.id"
-            :selectOptions="validOfferings[record.id]"
-            :checkBoxLabel="autoSelectLabel"
-            :defaultCheckBoxValue="true"
-            :reversed="true"
-            @handle-checkselectpair-change="updateOfferingCheckPairSelect" />
-          <a-select
-            v-else
-            @change="updateOfferingSelect($event, record.id)"
-            :defaultValue="validOfferings[record.id][0].id"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
-              {{ offering.displaytext }}
-            </a-select-option>
-          </a-select>
-        </span>
-        <span v-else style="width: 50%">
-          {{ $t('label.no.matching.offering') }}
-        </span>
+        </template>
+        <template v-if="column.key === 'offering'">
+          <span
+            style="width: 50%"
+            v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
+            <check-box-select-pair
+              v-if="selectedCustomDiskOffering!=null"
+              layout="vertical"
+              :resourceKey="record.id"
+              :selectOptions="validOfferings[record.id]"
+              :checkBoxLabel="autoSelectLabel"
+              :defaultCheckBoxValue="true"
+              :reversed="true"
+              @handle-checkselectpair-change="updateOfferingCheckPairSelect" />
+            <a-select
+              v-else
+              @change="updateOfferingSelect($event, record.id)"
+              :defaultValue="validOfferings[record.id][0].id"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id" :label="offering.displaytext">
+                {{ offering.displaytext }}
+              </a-select-option>
+            </a-select>
+          </span>
+          <span v-else style="width: 50%">
+            {{ $t('label.no.matching.offering') }}
+          </span>
+        </template>
       </template>
     </a-table>
   </div>
@@ -108,14 +110,14 @@ export default {
     return {
       columns: [
         {
+          key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.data.disk'),
-          slots: { customRender: 'name' }
+          title: this.$t('label.data.disk')
         },
         {
+          key: 'offering',
           dataIndex: 'offering',
-          title: this.$t('label.data.disk.offering'),
-          slots: { customRender: 'offering' }
+          title: this.$t('label.data.disk.offering')
         }
       ],
       loading: false,

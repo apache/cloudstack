@@ -138,12 +138,12 @@ export default {
         {
           title: 'name',
           dataIndex: 'name',
-          slots: { customRender: 'name' }
+          key: 'name'
         },
         {
           title: 'value',
           dataIndex: 'value',
-          slots: { customRender: 'value' },
+          key: 'value',
           width: '29%'
         }
       ]

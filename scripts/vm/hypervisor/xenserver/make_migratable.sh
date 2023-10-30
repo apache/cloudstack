@@ -78,5 +78,3 @@ case "${power_state}" in
     exit 3
     ;;
 esac
-
-

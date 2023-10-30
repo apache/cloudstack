@@ -177,9 +177,10 @@
                 :maxCpu="getMaxCpu()"
                 :minMemory="getMinMemory()"
                 :maxMemory="getMaxMemory()"
+                :cpuSpeed="getCPUSpeed()"
                 @update-iops-value="updateFieldValue"
                 @update-compute-cpunumber="updateFieldValue"
-                @update-compute-cpuspeed="updateFieldValue"
+                @update-compute-cpuspeed="updateCpuSpeed"
                 @update-compute-memory="updateFieldValue" />
               <div v-if="resource.disk && resource.disk.length > 1">
                 <a-form-item name="selection" ref="selection">
@@ -194,10 +195,10 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     @change="val => { selectedRootDiskIndex = val }">
-                    <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex">
+                    <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex" :label="opt.label || opt.id">
                       {{ opt.label || opt.id }}
                     </a-select-option>
                   </a-select>
@@ -226,6 +227,13 @@
                   filterMatchKey="broadcasturi"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
+              <a-row v-else style="margin: 12px 0">
+                <a-alert type="warning">
+                  <template #message>
+                    <div v-html="$t('message.warn.importing.instance.without.nic')"></div>
+                  </template>
+                </a-alert>
+              </a-row>
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
                   <a-form-item name="migrateallowed" ref="migrateallowed">
@@ -522,6 +530,15 @@ export default {
       }
       return 'serviceofferingdetails' in this.computeOffering ? this.computeOffering.serviceofferingdetails.maxmemory * 1 : Number.MAX_SAFE_INTEGER
     },
+    getCPUSpeed () {
+      if (!this.computeOffering) {
+        return 0
+      }
+      if (this.computeOffering.cpuspeed) {
+        return this.computeOffering.cpuspeed * 1
+      }
+      return this.resource.cpuspeed * 1 || 0
+    },
     fetchOptions (param, name, exclude) {
       if (exclude && exclude.length > 0) {
         if (exclude.includes(name)) {
@@ -584,6 +601,15 @@ export default {
         this.computeOfferingLoading = false
         this.selectMatchingComputeOffering()
       })
+    },
+    updateCpuSpeed (name, value) {
+      if (this.computeOffering.iscustomized) {
+        if (this.computeOffering.serviceofferingdetails) {
+          this.updateFieldValue(this.cpuSpeedKey, this.computeOffering.cpuspeed)
+        } else {
+          this.updateFieldValue(this.cpuSpeedKey, value)
+        }
+      }
     },
     updateFieldValue (name, value) {
       this.form[name] = value

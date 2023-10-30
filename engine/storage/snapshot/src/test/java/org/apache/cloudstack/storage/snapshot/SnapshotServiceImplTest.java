@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.snapshot;
 
-import com.cloud.storage.DataStoreRole;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -30,22 +29,20 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SnapshotServiceImpl.class})
+import com.cloud.storage.DataStoreRole;
+
+@RunWith(MockitoJUnitRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class SnapshotServiceImplTest {
 
@@ -60,15 +57,7 @@ public class SnapshotServiceImplTest {
     SnapshotDataFactory _snapshotFactory;
 
     @Mock
-    AsyncCallFuture<SnapshotResult> futureMock;
-
-    @Mock
     AsyncCallbackDispatcher<SnapshotServiceImpl, CommandResult> caller;
-
-    @Before
-    public void testSetUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testRevertSnapshotWithNoPrimaryStorageEntry() throws Exception {
@@ -77,7 +66,7 @@ public class SnapshotServiceImplTest {
 
         Mockito.when(snapshot.getId()).thenReturn(1L);
         Mockito.when(snapshot.getVolumeId()).thenReturn(1L);
-        Mockito.when(_snapshotFactory.getSnapshot(1L, DataStoreRole.Primary)).thenReturn(null);
+        Mockito.when(_snapshotFactory.getSnapshotOnPrimaryStore(1L)).thenReturn(null);
         Mockito.when(volFactory.getVolume(1L, DataStoreRole.Primary)).thenReturn(volumeInfo);
 
         PrimaryDataStore store = Mockito.mock(PrimaryDataStore.class);
@@ -85,14 +74,13 @@ public class SnapshotServiceImplTest {
 
         PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
         Mockito.when(store.getDriver()).thenReturn(driver);
-        Mockito.doNothing().when(driver).revertSnapshot(snapshot, null, caller);
 
         SnapshotResult result = Mockito.mock(SnapshotResult.class);
-        PowerMockito.whenNew(AsyncCallFuture.class).withNoArguments().thenReturn(futureMock);
-        Mockito.when(futureMock.get()).thenReturn(result);
-        Mockito.when(result.isFailed()).thenReturn(false);
-
-        Assert.assertEquals(true, snapshotService.revertSnapshot(snapshot));
+        try (MockedConstruction<AsyncCallFuture> ignored = Mockito.mockConstruction(AsyncCallFuture.class, (mock, context) -> {
+            Mockito.when(mock.get()).thenReturn(result);
+            Mockito.when(result.isFailed()).thenReturn(false);
+        })) {
+            Assert.assertTrue(snapshotService.revertSnapshot(snapshot));
+        }
     }
-
 }

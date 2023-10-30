@@ -29,9 +29,9 @@ import java.util.Base64;
 
 public class AeadBase64Encryptor implements Base64Encryptor {
     Aead aead = null;
-    private final byte[] aad = new byte[]{};
+    private byte[] aad = new byte[]{};
 
-    public AeadBase64Encryptor(byte[] key) {
+    private void initEncryptor(byte[] key) {
         try {
             AeadConfig.register();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -40,6 +40,15 @@ public class AeadBase64Encryptor implements Base64Encryptor {
         } catch (Exception e) {
             throw new EncryptionException("Failed to initialize AeadBase64Encryptor");
         }
+    }
+
+    public AeadBase64Encryptor(byte[] key) {
+        initEncryptor(key);
+    }
+
+    public AeadBase64Encryptor(byte[] key, byte[] aad) {
+        initEncryptor(key);
+        this.aad = aad;
     }
 
     @Override

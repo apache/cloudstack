@@ -18,6 +18,21 @@
  */
 package com.cloud.storage;
 
+import com.cloud.exception.InvalidParameterValueException;
+import org.apache.commons.lang3.EnumUtils;
+
 public enum ScopeType {
     HOST, CLUSTER, ZONE, REGION, GLOBAL;
+
+    public static ScopeType validateAndGetScopeType(String value) {
+        if (value == null) {
+            return null;
+        } else {
+            ScopeType scopeType = EnumUtils.getEnumIgnoreCase(ScopeType.class, value);
+            if (scopeType == null) {
+                throw new InvalidParameterValueException("Invalid scope type: " + value);
+            }
+            return scopeType;
+        }
+    }
 }

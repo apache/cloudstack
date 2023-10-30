@@ -31,17 +31,21 @@ export default {
     title: 'label.users',
     param: 'account'
   }],
+  filters: () => {
+    const filters = ['enabled', 'disabled', 'locked']
+    return filters
+  },
   tabs: [
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
-      name: 'resources',
+      name: 'limits',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
-      name: 'limits',
+      name: 'limits.configure',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
@@ -195,9 +199,8 @@ export default {
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,
-      show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
-          !(record.domain === 'ROOT' && record.name === 'admin' && record.accounttype === 1)
+      disabled: (record, store) => {
+        return record.id !== 'undefined' && store.userInfo.accountid === record.id
       },
       groupAction: true,
       popup: true,

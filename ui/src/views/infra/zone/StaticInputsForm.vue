@@ -46,12 +46,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="option in field.options"
               :key="option.id"
               :value="option.id"
+              :label="option.name || option.description"
             >
               {{ option.name || option.description }}
             </a-select-option>

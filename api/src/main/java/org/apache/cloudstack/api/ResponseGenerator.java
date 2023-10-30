@@ -62,6 +62,7 @@ import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
@@ -437,7 +438,7 @@ public interface ResponseGenerator {
      * @param result
      * @return
      */
-    PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result);
+    PrivateGatewayResponse createPrivateGatewayResponse(ResponseView view, PrivateGateway result);
 
     /**
      * @param result
@@ -462,6 +463,8 @@ public interface ResponseGenerator {
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
+
+    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 

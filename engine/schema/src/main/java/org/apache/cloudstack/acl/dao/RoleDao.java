@@ -26,13 +26,15 @@ import org.apache.cloudstack.acl.RoleVO;
 import java.util.List;
 
 public interface RoleDao extends GenericDao<RoleVO, Long> {
-    List<RoleVO> findAllByName(String roleName);
+    List<RoleVO> findAllByName(String roleName, boolean showPrivateRole);
 
-    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, Long offset, Long limit);
+    Pair<List<RoleVO>, Integer> findAllByName(final String roleName, String keyword, Long offset, Long limit, boolean showPrivateRole);
 
-    List<RoleVO> findAllByRoleType(RoleType type);
-    List<RoleVO> findByName(String roleName);
-    RoleVO findByNameAndType(String roleName, RoleType type);
+    List<RoleVO> findAllByRoleType(RoleType type, boolean showPrivateRole);
+    List<RoleVO> findByName(String roleName, boolean showPrivateRole);
+    RoleVO findByNameAndType(String roleName, RoleType type, boolean showPrivateRole);
 
-    Pair<List<RoleVO>, Integer> findAllByRoleType(RoleType type, Long offset, Long limit);
+    Pair<List<RoleVO>, Integer> findAllByRoleType(RoleType type, Long offset, Long limit, boolean showPrivateRole);
+
+    Pair<List<RoleVO>, Integer> listAllRoles(Long startIndex, Long limit, boolean showPrivateRole);
 }

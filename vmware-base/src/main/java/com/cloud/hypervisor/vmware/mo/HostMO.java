@@ -36,6 +36,7 @@ import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostConfigManager;
 import com.vmware.vim25.HostConnectInfo;
 import com.vmware.vim25.HostFirewallInfo;
@@ -1088,7 +1089,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         HostListSummaryQuickStats stats = getHostQuickStats();
         if (stats.getOverallCpuUsage() == null || stats.getOverallMemoryUsage() == null)
-            throw new Exception("Unable to get valid overal CPU/Memory usage data, host may be disconnected");
+            throw new Exception("Unable to get valid overall CPU/Memory usage data, host may be disconnected");
 
         resourceSummary.setEffectiveCpu(totalCpu - stats.getOverallCpuUsage());
 
@@ -1161,6 +1162,26 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         if (morParent.getType().equals("ClusterComputeResource")) {
             ClusterMO clusterMo = new ClusterMO(_context, morParent);
             return clusterMo.getRecommendedDiskController(guestOsId);
+        }
+        return null;
+    }
+
+    @Override
+    public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.getGuestOsDescriptor(guestOsId);
+        }
+        return null;
+    }
+
+    @Override
+    public List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.getGuestOsDescriptors();
         }
         return null;
     }

@@ -26,7 +26,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.l2')" key="3" v-if="isAdvancedZoneWithoutSGAvailable">
+      <a-tab-pane :tab="$t('label.l2')" key="3">
         <CreateL2NetworkForm
           :loading="loading"
           :resource="resource"
@@ -106,7 +106,8 @@ export default {
     fetchActionZoneData () {
       this.loading = true
       const params = {}
-      if (this.resource.zoneid && this.$route.name === 'deployVirtualMachine') {
+      console.log(this.resource)
+      if (this.$route.name === 'deployVirtualMachine' && this.resource.zoneid) {
         params.id = this.resource.zoneid
       }
       this.actionZoneLoading = true

@@ -34,20 +34,26 @@
       :pagination="defaultPagination"
       @change="handleTableChange"
       @handle-search-filter="handleTableChange" >
+      <template #bodyCell="{ column, text, record }">
+        <div
+          v-for="(col, index) in Object.keys(routerlinks({}))"
+          :key="index">
+          <template v-if="column.key === col">
+            <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[col] }" >{{ text }}</router-link>
+          </template>
+        </div>
 
-      <template
-        v-for="(column, index) in Object.keys(routerlinks({}))"
-        :key="index"
-        #[column]="{ text, record }" >
-        <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
+        <template v-if="column.key === 'state'">
+          <status :text="text ? text : ''" />{{ text }}
+        </template>
+
+        <template v-if="column.key === 'status'">
+          <status :text="text ? text : ''" />{{ text }}
+        </template>
       </template>
 
-      <template #state="{text}">
-        <status :text="text ? text : ''" />{{ text }}
-      </template>
-
-      <template #status="{text}">
-        <status :text="text ? text : ''" />{{ text }}
+      <template v-slot:created="{ item }">
+        {{ $toLocaleDate(item) }}
       </template>
 
     </a-table>
@@ -197,9 +203,9 @@ export default {
       var columns = []
       for (const col of this.columns) {
         columns.push({
+          key: col,
           dataIndex: col,
-          title: this.$t('label.' + col),
-          slots: { customRender: col }
+          title: this.$t('label.' + col)
         })
       }
       return columns

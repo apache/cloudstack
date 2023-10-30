@@ -32,7 +32,7 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
 
     private final SearchBuilder<KubernetesClusterVO> AccountIdSearch;
     private final SearchBuilder<KubernetesClusterVO> GarbageCollectedSearch;
-    private final SearchBuilder<KubernetesClusterVO> StateSearch;
+    private final SearchBuilder<KubernetesClusterVO> ManagedStateSearch;
     private final SearchBuilder<KubernetesClusterVO> SameNetworkSearch;
     private final SearchBuilder<KubernetesClusterVO> KubernetesVersionSearch;
 
@@ -44,11 +44,13 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         GarbageCollectedSearch = createSearchBuilder();
         GarbageCollectedSearch.and("gc", GarbageCollectedSearch.entity().isCheckForGc(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.and("state", GarbageCollectedSearch.entity().getState(), SearchCriteria.Op.EQ);
+        GarbageCollectedSearch.and("cluster_type", GarbageCollectedSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
         GarbageCollectedSearch.done();
 
-        StateSearch = createSearchBuilder();
-        StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        StateSearch.done();
+        ManagedStateSearch = createSearchBuilder();
+        ManagedStateSearch.and("state", ManagedStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ManagedStateSearch.and("cluster_type", ManagedStateSearch.entity().getClusterType(), SearchCriteria.Op.EQ);
+        ManagedStateSearch.done();
 
         SameNetworkSearch = createSearchBuilder();
         SameNetworkSearch.and("network_id", SameNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -71,13 +73,15 @@ public class KubernetesClusterDaoImpl extends GenericDaoBase<KubernetesClusterVO
         SearchCriteria<KubernetesClusterVO> sc = GarbageCollectedSearch.create();
         sc.setParameters("gc", true);
         sc.setParameters("state", KubernetesCluster.State.Destroying);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 
     @Override
-    public List<KubernetesClusterVO> findKubernetesClustersInState(KubernetesCluster.State state) {
-        SearchCriteria<KubernetesClusterVO> sc = StateSearch.create();
+    public List<KubernetesClusterVO> findManagedKubernetesClustersInState(KubernetesCluster.State state) {
+        SearchCriteria<KubernetesClusterVO> sc = ManagedStateSearch.create();
         sc.setParameters("state", state);
+        sc.setParameters("cluster_type", KubernetesCluster.ClusterType.CloudManaged);
         return listBy(sc);
     }
 

@@ -24,15 +24,19 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricPolicyResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+@RunWith(MockitoJUnitRunner.class)
 public class RemoveTungstenFabricPolicyCmdTest {
 
     @Mock
@@ -40,14 +44,21 @@ public class RemoveTungstenFabricPolicyCmdTest {
 
     RemoveTungstenFabricPolicyCmd removeTungstenFabricPolicyCmd;
 
+    AutoCloseable closeable;
+
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
         removeTungstenFabricPolicyCmd = new RemoveTungstenFabricPolicyCmd();
         removeTungstenFabricPolicyCmd.tungstenService = tungstenService;
-        Whitebox.setInternalState(removeTungstenFabricPolicyCmd, "zoneId", 1L);
-        Whitebox.setInternalState(removeTungstenFabricPolicyCmd, "networkUuid", "test");
-        Whitebox.setInternalState(removeTungstenFabricPolicyCmd, "policyUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricPolicyCmd, "zoneId", 1L);
+        ReflectionTestUtils.setField(removeTungstenFabricPolicyCmd, "networkUuid", "test");
+        ReflectionTestUtils.setField(removeTungstenFabricPolicyCmd, "policyUuid", "test");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test

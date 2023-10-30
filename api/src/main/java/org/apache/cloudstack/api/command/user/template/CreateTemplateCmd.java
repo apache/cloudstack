@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -135,6 +136,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create template for the project")
     private Long projectId;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone for the template. Can be specified with snapshot only", since = "4.19.0")
+    private Long zoneId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -207,6 +211,10 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public boolean isDynamicallyScalable() {
         return isDynamicallyScalable == null ? false : isDynamicallyScalable;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     // ///////////////////////////////////////////////////

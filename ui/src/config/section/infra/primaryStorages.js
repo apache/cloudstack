@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'storagepool',
   title: 'label.primary.storage',
-  icon: 'database-outlined',
+  icon: 'hdd-outlined',
   docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
   columns: () => {
@@ -41,6 +41,10 @@ export default {
     param: 'storageid'
   }],
   resourceType: 'PrimaryStorage',
+  filters: () => {
+    const filters = ['initial', 'initialized', 'creating', 'attaching', 'up', 'prepareformaintenance', 'errorinmaintenance', 'cancelmaintenance', 'maintenance', 'disabled', 'removed']
+    return filters
+  },
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))

@@ -419,7 +419,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TotalVMSnapshotSizeByPoolSearch.and("poolId", TotalVMSnapshotSizeByPoolSearch.entity().getPoolId(), Op.EQ);
         TotalVMSnapshotSizeByPoolSearch.and("removed", TotalVMSnapshotSizeByPoolSearch.entity().getRemoved(), Op.NULL);
         TotalVMSnapshotSizeByPoolSearch.and("state", TotalVMSnapshotSizeByPoolSearch.entity().getState(), Op.NEQ);
-        TotalVMSnapshotSizeByPoolSearch.and("vType", TotalVMSnapshotSizeByPoolSearch.entity().getVolumeType(), Op.EQ);
         TotalVMSnapshotSizeByPoolSearch.and("instanceId", TotalVMSnapshotSizeByPoolSearch.entity().getInstanceId(), Op.NNULL);
         TotalVMSnapshotSizeByPoolSearch.done();
 
@@ -661,7 +660,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<SumCount> sc = TotalVMSnapshotSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("state", State.Destroy);
-        sc.setParameters("vType", Volume.Type.ROOT.toString());
         List<SumCount> results = customSearch(sc, null);
         if (results != null) {
             return results.get(0).sum;
@@ -765,5 +763,16 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("vType", Volume.Type.ROOT);
         return findOneBy(sc);
+    }
+
+    @Override
+    public void updateAndRemoveVolume(VolumeVO volume) {
+        if (volume.getState() != Volume.State.Destroy) {
+            volume.setState(Volume.State.Destroy);
+            volume.setPoolId(null);
+            volume.setInstanceId(null);
+            update(volume.getId(), volume);
+            remove(volume.getId());
+        }
     }
 }
