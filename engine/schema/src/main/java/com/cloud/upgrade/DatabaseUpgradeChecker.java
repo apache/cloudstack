@@ -127,7 +127,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
     private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
-    private static final CloudStackVersion BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES = CloudStackVersion.parse("4.19.0.0");
     private List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathUnderResourceDirectory(VIEWS_DIRECTORY);
 
     @Inject
@@ -322,7 +321,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
 
                 String upgradedVersion = upgrade.getUpgradedVersion();
-                executeViewScripts(conn, upgradedVersion);
 
                 upgrade.performDataMigration(conn);
 
@@ -373,24 +371,27 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
         }
         updateSystemVmTemplates(upgrades);
+        executeViewScripts();
     }
 
-    protected void executeViewScripts(Connection conn, String upgradedVersion) {
-        if (CloudStackVersion.parse(upgradedVersion).compareTo(BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES) < 0) {
-            s_logger.debug(String.format("The base version for executing the VIEW scripts in separated files is [%s]; the current upgraded version is [%s], therefore, we will " +
-                    "not execute the VIEW scripts that are in separated files.", BASE_VERSION_FOR_MANAGE_DATABASE_VIEWS_VIA_SEPARATED_FILES, upgradedVersion));
-            return;
+    protected void executeViewScripts() {
+        try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
+            Connection conn = txn.getConnection();
+
+            s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+            for (String filePath : filesPathUnderViewsDirectory) {
+                s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
+
+                InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+                runScript(conn, viewScript);
+            }
+
+            s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        } catch (SQLException e) {
+            String message = String.format("Unable to execute VIEW scripts due to [%s].", e.getMessage());
+            s_logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
         }
-
-        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
-        for (String filePath : filesPathUnderViewsDirectory) {
-            s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
-
-            InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
-            runScript(conn, viewScript);
-        }
-
-        s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
     }
 
     @Override
