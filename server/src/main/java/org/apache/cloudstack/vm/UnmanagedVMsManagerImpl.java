@@ -385,7 +385,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags());
     }
 
-    private ServiceOfferingVO getUnmanagedInstanceServiceOffering(final UnmanagedInstanceTO instance, ServiceOfferingVO serviceOffering, final Account owner, final DataCenter zone, final Map<String, String> details)
+    private ServiceOfferingVO getUnmanagedInstanceServiceOffering(final UnmanagedInstanceTO instance, ServiceOfferingVO serviceOffering, final Account owner, final DataCenter zone, final Map<String, String> details, Hypervisor.HypervisorType hypervisorType)
             throws ServerApiException, PermissionDeniedException, ResourceAllocationException {
         if (instance == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Cannot find VM to import.");
@@ -429,7 +429,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (!memory.equals(serviceOffering.getRamSize()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMB memory does not match VM memory %dMB and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getRamSize(), memory, instance.getPowerState()));
             }
-            if (cpuSpeed != null && cpuSpeed > 0 && !cpuSpeed.equals(serviceOffering.getSpeed()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
+            if (hypervisorType == Hypervisor.HypervisorType.VMware && cpuSpeed != null && cpuSpeed > 0 && !cpuSpeed.equals(serviceOffering.getSpeed()) && !instance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Service offering (%s) %dMHz CPU speed does not match VM CPU speed %dMHz and VM is not in powered off state (Power state: %s)", serviceOffering.getUuid(), serviceOffering.getSpeed(), cpuSpeed, instance.getPowerState()));
             }
         }
@@ -928,7 +928,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UserVm userVm = null;
         ServiceOfferingVO validatedServiceOffering = null;
         try {
-            validatedServiceOffering = getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details);
+            validatedServiceOffering = getUnmanagedInstanceServiceOffering(unmanagedInstance, serviceOffering, owner, zone, details, cluster.getHypervisorType());
         } catch (Exception e) {
             String errorMsg = String.format("Failed to import Unmanaged VM [%s] because the service offering [%s] is not compatible due to [%s].", unmanagedInstance.getName(), serviceOffering.getUuid(), StringUtils.defaultIfEmpty(e.getMessage(), ""));
             LOGGER.error(errorMsg, e);
