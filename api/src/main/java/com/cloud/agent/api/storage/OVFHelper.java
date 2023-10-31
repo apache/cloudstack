@@ -807,9 +807,11 @@ public class OVFHelper {
                 String eulaLicense = null;
                 for (int i = 0; i < eulaChildNodes.getLength(); i++) {
                     Node eulaItem = eulaChildNodes.item(i);
-                    if (eulaItem.getNodeName().equalsIgnoreCase("Info")) {
+                    if (eulaItem.getNodeName().equalsIgnoreCase("Info")
+                            || eulaItem.getNodeName().endsWith(":Info")) {
                         eulaInfo = eulaItem.getTextContent();
-                    } else if (eulaItem.getNodeName().equalsIgnoreCase("License")) {
+                    } else if (eulaItem.getNodeName().equalsIgnoreCase("License")
+                            || eulaItem.getNodeName().endsWith(":License")) {
                         eulaLicense = eulaItem.getTextContent();
                     }
                 }

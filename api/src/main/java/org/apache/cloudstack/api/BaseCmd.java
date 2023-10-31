@@ -43,6 +43,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.ImageStoreService;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
@@ -213,6 +214,8 @@ public abstract class BaseCmd {
     public ResourceIconManager resourceIconManager;
     @Inject
     public Ipv6Service ipv6Service;
+    @Inject
+    public VnfTemplateManager vnfTemplateManager;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

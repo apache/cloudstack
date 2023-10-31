@@ -1330,7 +1330,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Host>, Integer>(result.first(), result.second());
     }
 
-    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VMInstanceVO vm) {
+    protected Pair<Boolean, List<HostVO>> filterUefiHostsForMigration(List<HostVO> allHosts, List<HostVO> filteredHosts, VirtualMachine vm) {
         UserVmDetailVO userVmDetailVO = _UserVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
         if (userVmDetailVO != null &&
                 (ApiConstants.BootMode.LEGACY.toString().equalsIgnoreCase(userVmDetailVO.getValue()) ||
@@ -1350,9 +1350,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(true, filteredHosts);
     }
 
-    @Override
-    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
-            final String keyword) {
+    private void validateVmForHostMigration(VirtualMachine vm) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1361,10 +1359,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new PermissionDeniedException("No permission to migrate VM, Only Root Admin can migrate a VM!");
         }
 
-        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-            final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with given id");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find the VM with given id");
         }
 
         if (vm.getState() != State.Running) {
@@ -1376,13 +1372,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
-            // Return empty list.
-            return new Ternary<>(new Pair<>(new ArrayList<HostVO>(), new Integer(0)),
-                    new ArrayList<>(), new HashMap<>());
-        }
-
         if (!LIVE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv/Ovm3, cannot migrate this VM.");
@@ -1392,6 +1381,27 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (VirtualMachine.Type.User.equals(vm.getType()) && HypervisorType.LXC.equals(vm.getHypervisorType())) {
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for User VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
+        }
+    }
+
+    @Override
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final Long vmId, final Long startIndex, final Long pageSize,
+                                                                                                                            final String keyword) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        return listHostsForMigrationOfVM(vm, startIndex, pageSize, keyword, Collections.emptyList());
+    }
+
+    @Override
+    public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(final VirtualMachine vm, final Long startIndex, final Long pageSize,
+            final String keyword, List<VirtualMachine> vmList) {
+
+        validateVmForHostMigration(vm);
+
+        if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
+            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
+            // Return empty list.
+            return new Ternary<>(new Pair<>(new ArrayList<>(), 0),
+                    new ArrayList<>(), new HashMap<>());
         }
 
         final long srcHostId = vm.getHostId();
@@ -1531,7 +1541,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (vmGroupCount > 0) {
             for (final AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, excludes);
+                processor.process(vmProfile, plan, excludes, vmList);
             }
         }
 
