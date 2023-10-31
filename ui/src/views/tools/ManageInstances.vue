@@ -37,7 +37,12 @@
       :md="24">
       <div>
         <a-card>
-          <a-alert type="info" :showIcon="true" :message="$t('label.desc.importexportinstancewizard')" :description="$t('message.desc.importexportinstancewizard')" />
+          <a-alert
+            type="info"
+            :showIcon="true"
+            :message="wizardTitle"
+            :description="wizardDescription"
+          />
           <br />
           <a-row :gutter="12">
             <a-col :md="24" :lg="12">
@@ -48,20 +53,34 @@
                 :rules="rules"
                 layout="vertical"
               >
-                <a-col :md="24" :lg="16">
-                  <a-form-item name="sourceoption" ref="sourceoption" :label="$t('label.source')">
+                <a-col :md="24" :lg="24">
+                  <a-form-item name="sourcehypervisor" ref="sourcehypervisor" :label="$t('label.source')">
+                    <a-radio-group
+                      style="text-align: center; width: 100%"
+                      v-model:value="form.sourceHypervisor"
+                      @change="selected => { onSelectHypervisor(selected.target.value) }"
+                      buttonStyle="solid">
+                      <a-radio-button value="vmware" style="width: 50%; text-align: center">
+                        VMware
+                      </a-radio-button>
+                      <a-radio-button value="kvm" style="width: 50%; text-align: center">
+                        KVM
+                      </a-radio-button>
+                    </a-radio-group>
+                  </a-form-item>
+                  <a-form-item name="sourceaction" ref="sourceaction" :label="$t('label.action')" v-if="sourceActions">
                     <a-select
-                      v-model:value="form.sourceoption"
+                      v-model:value="form.sourceAction"
                       showSearch
                       optionFilterProp="label"
                       :filterOption="(input, option) => {
                         return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                       }"
-                      @change="onSelectSourceOption"
-                      :loading="optionLoading.sourceoption"
+                      @change="onSelectSourceAction"
+                      :loading="optionLoading.sourcehypervisor"
                       v-focus="true"
                     >
-                      <a-select-option v-for="opt in sourceOptions" :key="opt.name" :label="opt.label">
+                      <a-select-option v-for="opt in sourceActions" :key="opt.name" :label="opt.label">
                         <span>
                           {{ opt.label }}
                         </span>
@@ -69,90 +88,78 @@
                     </a-select>
                   </a-form-item>
                 </a-col>
-                <a-col :md="24" :lg="16">
-                  <a-form-item name="destinationhypervisor" ref="destinationhypervisor" :label="$t('label.destination.hypervisor')">
-                    <a-select
-                      v-model:value="form.destinationhypervisor"
-                      showSearch
-                      optionFilterProp="label"
-                      :filterOption="(input, option) => {
-                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }"
-                      @change="onSelectHypervisor"
-                      :loading="optionLoading.hypervisors"
-                      v-focus="true"
-                    >
-                      <a-select-option v-for="hv in hypervisors" :key="hv" :label="hv">
-                        {{ hv }}
-                      </a-select-option>
-                    </a-select>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="24" :lg="16">
-                  <a-form-item
-                    name="zoneid"
-                    ref="zoneid"
-                    :label="isMigrateFromVmware ? $t('label.destination.zone') : $t('label.zoneid')"
-                  >
-                    <a-select
-                      v-model:value="form.zoneid"
-                      showSearch
-                      optionFilterProp="label"
-                      :filterOption="(input, option) => {
-                        return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                      }"
-                      @change="onSelectZoneId"
-                      :loading="optionLoading.zones"
-                    >
-                      <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
-                        <span>
-                          <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
-                          <global-outlined v-else style="margin-right: 5px" />
-                          {{ zoneitem.label }}
-                        </span>
-                      </a-select-option>
-                    </a-select>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="24" :lg="16">
-                  <a-form-item
-                    name="podid"
-                    ref="podid"
-                    :label="isMigrateFromVmware ? $t('label.destination.pod') : $t('label.podid')">
-                    <a-select
-                      v-model:value="form.podid"
-                      showSearch
-                      optionFilterProp="label"
-                      :filterOption="filterOption"
-                      :options="podSelectOptions"
-                      :loading="optionLoading.pods"
-                      @change="onSelectPodId"
-                    ></a-select>
-                  </a-form-item>
-                </a-col>
-                <a-col :md="24" :lg="16">
-                  <a-form-item
-                    name="clusterid"
-                    ref="clusterid"
-                    :label="isMigrateFromVmware ? $t('label.destination.cluster') : $t('label.clusterid')">
-                    <a-select
-                      v-model:value="form.clusterid"
-                      showSearch
-                      optionFilterProp="label"
-                      :filterOption="filterOption"
-                      :options="clusterSelectOptions"
-                      :loading="optionLoading.clusters"
-                      @change="onSelectClusterId"
-                    ></a-select>
-                  </a-form-item>
-                </a-col>
               </a-form>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="isKVM && isMigrateFromVmware && clusterId != undefined">
-              <SelectVmwareVcenter
-                @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
-                @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
-              />
+            <!-- ------------ -->
+            <!-- RIGHT COLUMN -->
+            <!-- ------------ -->
+            <a-col :md="24" :lg="12">
+              <a-form
+                style="min-width: 170px"
+                :ref="formRef"
+                :model="form"
+                :rules="rules"
+                layout="vertical"
+              >
+                <a-form-item
+                  name="zoneid"
+                  ref="zoneid"
+                  :label="isMigrateFromVmware ? $t('label.destination.zone') : $t('label.zoneid')"
+                >
+                  <a-select
+                    v-model:value="form.zoneid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    @change="onSelectZoneId"
+                    :loading="optionLoading.zones"
+                  >
+                    <a-select-option v-for="zoneitem in zoneSelectOptions" :key="zoneitem.value" :label="zoneitem.label">
+                      <span>
+                        <resource-icon v-if="zoneitem.icon" :image="zoneitem.icon" size="1x" style="margin-right: 5px"/>
+                        <global-outlined v-else style="margin-right: 5px" />
+                        {{ zoneitem.label }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+                <a-form-item
+                  name="podid"
+                  ref="podid"
+                  :label="isMigrateFromVmware ? $t('label.destination.pod') : $t('label.podid')">
+                  <a-select
+                    v-model:value="form.podid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="filterOption"
+                    :options="podSelectOptions"
+                    :loading="optionLoading.pods"
+                    @change="onSelectPodId"
+                  ></a-select>
+                </a-form-item>
+                <a-form-item
+                  name="clusterid"
+                  ref="clusterid"
+                  :label="isMigrateFromVmware ? $t('label.destination.cluster') : $t('label.clusterid')">
+                  <a-select
+                    v-model:value="form.clusterid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="filterOption"
+                    :options="clusterSelectOptions"
+                    :loading="optionLoading.clusters"
+                    @change="onSelectClusterId"
+                  ></a-select>
+                </a-form-item>
+                <a-form-item v-if="isDestinationKVM && isMigrateFromVmware && clusterId != undefined">
+                  <SelectVmwareVcenter
+                    @loadingVmwareUnmanagedInstances="() => this.unmanagedInstancesLoading = true"
+                    @listedVmwareUnmanagedInstances="($e) => onListUnmanagedInstancesFromVmware($e)"
+                  />
+                </a-form-item>
+              </a-form>
             </a-col>
           </a-row>
           <a-divider />
@@ -338,9 +345,6 @@ import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
 
-const VmwareHypervisor = 'VMware'
-const KVMHypervisor = 'KVM'
-
 export default {
   components: {
     Breadcrumb,
@@ -352,6 +356,54 @@ export default {
   },
   name: 'ManageVms',
   data () {
+    const AllSourceActions = [
+      {
+        name: 'unmanaged',
+        label: 'Manage/Unmanage existing instances',
+        sourceDestHypervisors: {
+          vmware: 'vmware',
+          kvm: 'kvm'
+        },
+        wizardTitle: this.$t('label.desc.importexportinstancewizard'),
+        wizardDescription: this.$t('message.desc.importexportinstancewizard')
+      },
+      {
+        name: 'migratefromvmware',
+        label: 'Migrate existing instances to KVM',
+        sourceDestHypervisors: {
+          vmware: 'kvm'
+        },
+        wizardTitle: this.$t('label.desc.importmigratefromvmwarewizard'),
+        wizardDescription: this.$t('message.desc.importmigratefromvmwarewizard')
+      },
+      {
+        name: 'external',
+        label: 'Import libvirt domain from KVM Host',
+        sourceDestHypervisors: {
+          kvm: 'kvm'
+        },
+        wizardTitle: 'Import libvirt domain from KVM Host',
+        wizardDescription: 'Import libvirt domain from KVM Host'
+      },
+      {
+        name: 'local',
+        label: 'Import QCOW image from Local Storage',
+        sourceDestHypervisors: {
+          kvm: 'kvm'
+        },
+        wizardTitle: 'Import QCOW image from Local Storage',
+        wizardDescription: 'Import QCOW image from Local Storage'
+      },
+      {
+        name: 'shared',
+        label: 'Import QCOW image from Shared Storage',
+        sourceDestHypervisors: {
+          kvm: 'kvm'
+        },
+        wizardTitle: 'Import QCOW image from Shared Storage',
+        wizardDescription: 'Import QCOW image from Shared Storage'
+      }
+    ]
     const unmanagedInstancesColumns = [
       {
         title: this.$t('label.name'),
@@ -410,7 +462,7 @@ export default {
       },
       rowCount: {},
       optionLoading: {
-        sourceoption: false,
+        sourceaction: false,
         hypervisors: false,
         zones: false,
         pods: false,
@@ -434,8 +486,12 @@ export default {
       },
       itemCount: {},
       hypervisors: [],
-      destinationHypervisor: VmwareHypervisor,
-      selectedSourceOption: undefined,
+      sourceHypervisor: 'vmware',
+      destinationHypervisor: 'vmware',
+      sourceActions: undefined,
+      selectedSourceAction: undefined,
+      wizardTitle: this.$t('label.desc.importexportinstancewizard'),
+      wizardDescription: this.$t('message.desc.importexportinstancewizard'),
       zone: {},
       zoneId: undefined,
       podId: undefined,
@@ -446,6 +502,7 @@ export default {
         migratefromvmware: 'listVmwareDcVms'
       },
       unmanagedInstancesColumns,
+      AllSourceActions,
       unmanagedInstancesLoading: false,
       unmanagedInstances: [],
       unmanagedInstancesSelectedRowKeys: [],
@@ -478,19 +535,16 @@ export default {
       return true
     },
     isUnmanaged () {
-      return this.selectedSourceOption === 'unmanaged'
+      return this.selectedSourceAction === 'unmanaged'
     },
     isUnmanagedOrExternal () {
-      return ((this.isUnmanaged) || this.selectedSourceOption === 'external')
+      return ((this.isUnmanaged) || this.selectedSourceAction === 'external')
     },
     isMigrateFromVmware () {
-      return this.selectedSourceOption === 'migratefromvmware'
+      return this.selectedSourceAction === 'migratefromvmware'
     },
-    isVMware () {
-      return this.destinationHypervisor === VmwareHypervisor
-    },
-    isKVM () {
-      return this.destinationHypervisor === KVMHypervisor
+    isDestinationKVM () {
+      return this.destinationHypervisor === 'kvm'
     },
     params () {
       return {
@@ -583,39 +637,15 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        sourceHypervisor: this.sourceHypervisor
+      })
       this.rules = reactive({})
     },
     fetchData () {
       this.unmanagedInstances = []
       this.managedInstances = []
-      this.sourceOptions = {
-        ImportUnmanaged: {
-          name: 'unmanaged',
-          label: 'Unmanaged Instance',
-          supportedHypervisors: [VmwareHypervisor, KVMHypervisor]
-        },
-        MigrateFromVMware: {
-          name: 'migratefromvmware',
-          label: 'Migrate From VMware',
-          supportedHypervisors: [KVMHypervisor]
-        },
-        ExternalImport: {
-          name: 'external',
-          label: 'External KVM',
-          supportedHypervisors: [KVMHypervisor]
-        },
-        LocalStorageImport: {
-          name: 'local',
-          label: 'Local Storage',
-          supportedHypervisors: [KVMHypervisor]
-        },
-        SharedStorageImport: {
-          name: 'shared',
-          label: 'Shared Storage',
-          supportedHypervisors: [KVMHypervisor]
-        }
-      }
+      this.onSelectHypervisor(this.sourceHypervisor)
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
           this.fetchOptions(param, name)
@@ -719,19 +749,22 @@ export default {
       this.managedInstancesSelectedRowKeys = []
     },
     onSelectHypervisor (value) {
-      this.destinationHypervisor = value
-      this.form.destinationhypervisor = value
-      this.fetchOptions(this.params.zones, 'zones')
+      this.sourceHypervisor = value
+      this.sourceActions = this.AllSourceActions.filter(x => x.sourceDestHypervisors[value])
+      this.form.sourceAction = this.sourceActions[0].name || ''
+      this.onSelectSourceAction(this.form.sourceAction)
     },
-    onSelectSourceOption (value) {
-      this.selectedSourceOption = value
+    onSelectSourceAction (value) {
+      this.selectedSourceAction = value
+      const selectedAction = _.find(this.AllSourceActions, (option) => option.name === value)
+      this.destinationHypervisor = selectedAction.sourceDestHypervisors[this.sourceHypervisor]
+      this.wizardTitle = selectedAction.wizardTitle
+      this.wizardDescription = selectedAction.wizardDescription
       this.form.zoneid = undefined
       this.form.podid = undefined
       this.form.clusterid = undefined
+      this.fetchOptions(this.params.zones, 'zones')
       this.resetLists()
-      const selectedOption = _.find(this.sourceOptions, (option) => option.name === value)
-      this.hypervisors = selectedOption.supportedHypervisors
-      this.onSelectHypervisor(this.hypervisors[0])
     },
     onSelectZoneId (value) {
       this.zoneId = value

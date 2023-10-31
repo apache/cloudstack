@@ -22,7 +22,7 @@
         :rules="rules"
         @finish="handleSubmit"
         layout="vertical">
-    <a-col :md="24" :lg="18">
+    <a-col :md="24" :lg="24">
       <div>
         <a-form-item :label="$t('label.select.source.vcenter.datacenter')" name="vmwareopt" ref="vmwareopt">
           <a-radio-group
