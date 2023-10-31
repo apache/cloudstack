@@ -119,7 +119,6 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        // when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 

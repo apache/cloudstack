@@ -59,6 +59,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -1073,14 +1074,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private boolean isNicAllocatedForNsxPublicNetworkOnVR(Network network, NicProfile requested, VirtualMachineProfile vm) {
+        if (ObjectUtils.anyNull(network, requested, vm)) {
+            return false;
+        }
         boolean isVirtualRouter = vm.getType() == Type.DomainRouter;
         boolean isPublicTraffic = network.getTrafficType() == TrafficType.Public;
         if (!isVirtualRouter || !isPublicTraffic || requested.getIPv4Address() == null) {
             return false;
         }
         IPAddressVO ip = _ipAddressDao.findByIp(requested.getIPv4Address());
+        if (ip == null) {
+            return false;
+        }
         VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
-        boolean isForNsx = vlanDetail != null && vlanDetail.getValue().equalsIgnoreCase("true");
+        if (vlanDetail == null) {
+            return false;
+        }
+        boolean isForNsx = vlanDetail.getValue().equalsIgnoreCase("true");
         return isForNsx && ip.isSourceNat() && !ip.isForSystemVms();
     }
 
