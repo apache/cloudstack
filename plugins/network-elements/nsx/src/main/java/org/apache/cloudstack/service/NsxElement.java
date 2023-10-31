@@ -131,6 +131,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     DomainDao domainDao;
     @Inject
     protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @Inject
     IPAddressDao ipAddressDao;
     @Inject
     VMInstanceDao vmInstanceDao;

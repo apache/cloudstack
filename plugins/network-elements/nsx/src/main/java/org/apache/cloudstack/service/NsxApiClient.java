@@ -457,29 +457,42 @@ public class NsxApiClient {
         }
     }
 
-    public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName, String algorithm) {
+    List<LBPoolMember> getLbPoolMembers(List<NsxLoadBalancerMember> memberList, String tier1GatewayName) {
+        List<LBPoolMember> members = new ArrayList<>();
         for (NsxLoadBalancerMember member : memberList) {
             try {
                 String serverPoolMemberName = getServerPoolMemberName(tier1GatewayName, member.getVmId());
-                LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
                 LBPoolMember lbPoolMember = new LBPoolMember.Builder()
                         .setDisplayName(serverPoolMemberName)
                         .setIpAddress(member.getVmIp())
                         .setPort(String.valueOf(member.getPort()))
                         .build();
-                LBPool lbPool = new LBPool.Builder()
-                        .setId(lbServerPoolName)
-                        .setDisplayName(lbServerPoolName)
-                        .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
-                        .setMembers(List.of(lbPoolMember))
-                        .build();
-                lbPools.patch(lbServerPoolName, lbPool);
+                members.add(lbPoolMember);
             } catch (Error error) {
                 ApiError ae = error.getData()._convertTo(ApiError.class);
-                String msg = String.format("Failed to create NSX LB server pool, due to: %s", ae.getErrorMessage());
+                String msg = String.format("Failed to create NSX LB pool members, due to: %s", ae.getErrorMessage());
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
             }
+        }
+        return members;
+    }
+    public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName, String algorithm) {
+        try {
+            List<LBPoolMember> members = getLbPoolMembers(memberList, tier1GatewayName);
+            LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
+            LBPool lbPool = new LBPool.Builder()
+                    .setId(lbServerPoolName)
+                    .setDisplayName(lbServerPoolName)
+                    .setAlgorithm(getLoadBalancerAlgorithm(algorithm))
+                    .setMembers(members)
+                    .build();
+            lbPools.patch(lbServerPoolName, lbPool);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX LB server pool, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
         }
     }
 
