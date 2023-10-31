@@ -83,7 +83,6 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        //TODO: check storage for HA support
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
         boolean storageSupportHA = storageSupportHa(clusterPools);
         if (!storageSupportHA) {

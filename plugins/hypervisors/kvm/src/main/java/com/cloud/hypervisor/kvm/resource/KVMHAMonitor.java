@@ -89,65 +89,71 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : storagePool.keySet()) {
                 HAStoragePool primaryStoragePool = storagePool.get(uuid);
-                StoragePool storage;
                 if (primaryStoragePool.getPool().getType() == StoragePoolType.NetworkFilesystem) {
-                    try {
-                        Connect conn = LibvirtConnection.getConnection();
-                        storage = conn.storagePoolLookupByUUIDString(uuid);
-                        if (storage == null || storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
-                            if (storage == null) {
-                                s_logger.debug(String.format("Libvirt storage pool [%s] not found, removing from HA list.", uuid));
-                            } else {
-                                s_logger.debug(String.format("Libvirt storage pool [%s] found, but not running, removing from HA list.", uuid));
-                            }
-
-                            removedPools.add(uuid);
-                            continue;
-                        }
-
-                        s_logger.debug(String.format("Found NFS storage pool [%s] in libvirt, continuing.", uuid));
-
-                    } catch (LibvirtException e) {
-                        s_logger.debug(String.format("Failed to lookup libvirt storage pool [%s].", uuid), e);
-
-                        if (e.toString().contains("pool not found")) {
-                            s_logger.debug(String.format("Removing pool [%s] from HA monitor since it was deleted.", uuid));
-                            removedPools.add(uuid);
-                            continue;
-                        }
+                    checkForNotExistingPools(removedPools, uuid);
+                    if (removedPools.contains(uuid)) {
+                        continue;
                     }
                 }
-
                 String result = null;
-                for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
-                    result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
-
-                    if (result != null) {
-                        s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; try: %s of %s.", uuid, result, i, _heartBeatUpdateMaxTries));
-                        try {
-                            Thread.sleep(_heartBeatUpdateRetrySleep);
-                        } catch (InterruptedException e) {
-                            s_logger.debug("[IGNORED] Interrupted between heartbeat retries.", e);
-                        }
-                    } else {
-                        break;
-                    }
-
-                }
+                result = executePoolHeartBeatCommand(uuid, primaryStoragePool, result);
 
                 if (result != null && rebootHostAndAlertManagementOnHeartbeatTimeout) {
                     s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; stopping cloudstack-agent.", uuid, result));
                     primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, null, false);;
                 }
             }
-
             if (!removedPools.isEmpty()) {
                 for (String uuid : removedPools) {
                     removeStoragePool(uuid);
                 }
             }
         }
+    }
 
+    private String executePoolHeartBeatCommand(String uuid, HAStoragePool primaryStoragePool, String result) {
+        for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
+            result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
+
+            if (result != null) {
+                s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; try: %s of %s.", uuid, result, i, _heartBeatUpdateMaxTries));
+                try {
+                    Thread.sleep(_heartBeatUpdateRetrySleep);
+                } catch (InterruptedException e) {
+                    s_logger.debug("[IGNORED] Interrupted between heartbeat retries.", e);
+                }
+            } else {
+                break;
+            }
+
+        }
+        return result;
+    }
+
+    private void checkForNotExistingPools(Set<String> removedPools, String uuid) {
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            StoragePool storage = conn.storagePoolLookupByUUIDString(uuid);
+            if (storage == null || storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
+                if (storage == null) {
+                    s_logger.debug(String.format("Libvirt storage pool [%s] not found, removing from HA list.", uuid));
+                } else {
+                    s_logger.debug(String.format("Libvirt storage pool [%s] found, but not running, removing from HA list.", uuid));
+                }
+
+                removedPools.add(uuid);
+            }
+
+            s_logger.debug(String.format("Found NFS storage pool [%s] in libvirt, continuing.", uuid));
+
+        } catch (LibvirtException e) {
+            s_logger.debug(String.format("Failed to lookup libvirt storage pool [%s].", uuid), e);
+
+            if (e.toString().contains("pool not found")) {
+                s_logger.debug(String.format("Removing pool [%s] from HA monitor since it was deleted.", uuid));
+                removedPools.add(uuid);
+            }
+        }
     }
 
     @Override
