@@ -699,12 +699,6 @@ export default {
       right: 0;
     }
   }
-
-  :deep(.ant-input-group) {
-    .ant-input-affix-wrapper {
-      width: calc(100% - 10px);
-    }
-  }
 }
 
 .filter-button {
