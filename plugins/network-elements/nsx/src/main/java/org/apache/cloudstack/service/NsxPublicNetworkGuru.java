@@ -18,15 +18,20 @@ package org.apache.cloudstack.service;
 
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -56,6 +61,26 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
     public NsxPublicNetworkGuru() {
         super();
+    }
+
+    protected boolean canHandle(NetworkOffering offering) {
+        return isMyTrafficType(offering.getTrafficType()) && offering.isSystemOnly() && offering.isForNsx();
+    }
+
+    @Override
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, String name, Long vpcId, Account owner) {
+        if (!canHandle(offering)) {
+            return null;
+        }
+
+        if (offering.getTrafficType() == Networks.TrafficType.Public) {
+            NetworkVO ntwk =
+                    new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, network.getBroadcastDomainType(), offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+                            plan.getPhysicalNetworkId(), offering.isRedundantRouter());
+            return ntwk;
+        } else {
+            return null;
+        }
     }
 
     @Override
