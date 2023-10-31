@@ -706,3 +706,31 @@ FROM
     `cloud`.`vpc_offering_details` AS `offering_details` ON `offering_details`.`offering_id` = `vpc_offerings`.`id` AND `offering_details`.`name`='internetprotocol'
 GROUP BY
     `vpc_offerings`.`id`;
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2'),
+    `default_value` = concat(`default_value`, ',OAUTH2'),
+    `value` = concat(`value`, ',OAUTH2')
+WHERE `name` = 'user.authenticators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2Auth'),
+    `default_value` = concat(`default_value`, ',OAUTH2Auth'),
+    `value` = concat(`value`, ',OAUTH2Auth')
+where `name` = 'pluggableApi.authenticators.order' ;
+
+-- Create table for OAuth provider details
+DROP TABLE IF EXISTS `cloud`.`oauth_provider`;
+CREATE TABLE `cloud`.`oauth_provider` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'unique identifier',
+  `description` varchar(1024) COMMENT 'description of the provider',
+  `provider` varchar(40) NOT NULL COMMENT 'name of the provider',
+  `client_id` varchar(255) NOT NULL COMMENT 'client id which is configured in the provider',
+  `secret_key` varchar(255) NOT NULL COMMENT 'secret key which is configured in the provider',
+  `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
+  `enabled` int(1) NOT NULL DEFAULT 1 COMMENT 'Enabled or disabled',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

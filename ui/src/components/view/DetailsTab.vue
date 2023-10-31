@@ -162,7 +162,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      return ['ip6routes', 'privatemtu', 'publicmtu']
+      return ['ip6routes', 'privatemtu', 'publicmtu', 'provider']
     },
     vnfAccessMethods () {
       if (this.resource.templatetype === 'VNF' && ['vm', 'vnfapp'].includes(this.$route.meta.name)) {

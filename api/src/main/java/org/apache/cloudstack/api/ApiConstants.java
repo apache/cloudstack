@@ -595,6 +595,8 @@ public class ApiConstants {
     public static final String SERVICE_CAPABILITY_LIST = "servicecapabilitylist";
     public static final String CAN_CHOOSE_SERVICE_CAPABILITY = "canchooseservicecapability";
     public static final String PROVIDER = "provider";
+    public static final String OAUTH_PROVIDER = "oauthprovider";
+    public static final String OAUTH_SECRET_KEY = "secretkey";
     public static final String MANAGED = "managed";
     public static final String CAPACITY_BYTES = "capacitybytes";
     public static final String CAPACITY_IOPS = "capacityiops";
@@ -1068,6 +1070,9 @@ public class ApiConstants {
     public static final String CLEAN_UP_VNF_NICS = "cleanupvnfnics";
     public static final String VNF_CONFIGURE_MANAGEMENT = "vnfconfiguremanagement";
     public static final String VNF_CIDR_LIST = "vnfcidrlist";
+
+    public static final String CLIENT_ID = "clientid";
+    public static final String REDIRECT_URI = "redirecturi";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
