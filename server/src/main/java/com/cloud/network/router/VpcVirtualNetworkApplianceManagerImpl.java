@@ -387,7 +387,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             _routerDao.update(routerVO.getId(), routerVO);
                         }
                     }
-                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()),
+                    String broadcastURI = publicNic.getBroadcastUri() != null ? publicNic.getBroadcastUri().toString() : null;
+                    final PlugNicCommand plugNicCmd = new PlugNicCommand(_nwHelper.getNicTO(domainRouterVO, publicNic.getNetworkId(), broadcastURI),
                             domainRouterVO.getInstanceName(), domainRouterVO.getType(), details);
                     cmds.addCommand(plugNicCmd);
                     final VpcVO vpc = _vpcDao.findById(domainRouterVO.getVpcId());

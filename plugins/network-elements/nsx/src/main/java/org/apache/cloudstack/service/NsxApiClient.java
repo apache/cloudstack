@@ -294,6 +294,10 @@ public class NsxApiClient {
     public void deleteTier1Gateway(String tier1Id) {
         com.vmware.nsx_policy.infra.tier_1s.LocaleServices localeService = (com.vmware.nsx_policy.infra.tier_1s.LocaleServices)
                 nsxService.apply(com.vmware.nsx_policy.infra.tier_1s.LocaleServices.class);
+        if (getTier1Gateway(tier1Id) == null) {
+            LOGGER.warn(String.format("The Tier 1 Gateway %s does not exist, cannot be removed", tier1Id));
+            return;
+        }
         removeTier1GatewayNatRules(tier1Id);
         localeService.delete(tier1Id, Tier_1_LOCALE_SERVICE_ID);
         Tier1s tier1service = (Tier1s) nsxService.apply(Tier1s.class);
