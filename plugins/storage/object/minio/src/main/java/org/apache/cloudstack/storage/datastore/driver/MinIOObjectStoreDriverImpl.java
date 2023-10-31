@@ -362,7 +362,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         }
     }
 
-    private MinioClient getMinIOClient(long storeId) {
+    protected MinioClient getMinIOClient(long storeId) {
         ObjectStoreVO store = _storeDao.findById(storeId);
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
         String url = store.getUrl();
@@ -379,7 +379,7 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         return minioClient;
     }
 
-    private MinioAdminClient getMinIOAdminClient(long storeId) {
+    protected MinioAdminClient getMinIOAdminClient(long storeId) {
         ObjectStoreVO store = _storeDao.findById(storeId);
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
         String url = store.getUrl();

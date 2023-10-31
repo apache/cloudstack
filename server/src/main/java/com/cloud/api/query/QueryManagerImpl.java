@@ -5080,6 +5080,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
         if (name != null) {
             sc.setParameters("name", name);
         }

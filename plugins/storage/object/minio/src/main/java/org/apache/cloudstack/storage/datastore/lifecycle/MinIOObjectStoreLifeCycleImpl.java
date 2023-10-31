@@ -18,15 +18,12 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.Discoverer;
-import com.cloud.resource.ResourceManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import io.minio.MinioClient;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
@@ -35,30 +32,16 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MinIOObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
 
     private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreLifeCycleImpl.class);
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    protected ObjectStoreDao objectStoreDao;
+
     @Inject
     ObjectStoreHelper objectStoreHelper;
     @Inject
     ObjectStoreProviderManager objectStoreMgr;
-
-    protected List<? extends Discoverer> _discoverers;
-
-    public List<? extends Discoverer> getDiscoverers() {
-        return _discoverers;
-    }
-
-    public void setDiscoverers(List<? extends Discoverer> discoverers) {
-        this._discoverers = discoverers;
-    }
 
     public MinIOObjectStoreLifeCycleImpl() {
     }

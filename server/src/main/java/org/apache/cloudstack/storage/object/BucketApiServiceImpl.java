@@ -30,7 +30,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
@@ -53,8 +52,7 @@ import java.util.concurrent.TimeUnit;
 
 public class BucketApiServiceImpl extends ManagerBase implements BucketApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(BucketApiServiceImpl.class);
-    @Inject
-    private EntityManager _entityMgr;
+
     @Inject
     private ObjectStoreDao _objectStoreDao;
     @Inject

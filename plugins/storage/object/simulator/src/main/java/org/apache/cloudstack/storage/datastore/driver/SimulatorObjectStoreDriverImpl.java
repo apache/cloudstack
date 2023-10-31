@@ -24,11 +24,8 @@ import com.cloud.agent.api.to.DataStoreTO;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.dao.BucketDao;
-import com.cloud.user.AccountDetailsDao;
-import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.log4j.Logger;
@@ -43,19 +40,10 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(SimulatorObjectStoreDriverImpl.class);
 
     @Inject
-    AccountDao _accountDao;
-
-    @Inject
-    AccountDetailsDao _accountDetailsDao;
-
-    @Inject
     ObjectStoreDao _storeDao;
 
     @Inject
     BucketDao _bucketDao;
-
-    @Inject
-    ObjectStoreDetailsDao _storeDetailsDao;
 
     private static final String ACCESS_KEY = "accesskey";
     private static final String SECRET_KEY = "secretkey";
@@ -148,5 +136,4 @@ public class SimulatorObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     public Map<String, Long> getAllBucketsUsage(long storeId) {
         return new HashMap<String, Long>();
     }
-
 }
