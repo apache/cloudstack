@@ -70,7 +70,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     NetworkOrchestrationService _networkMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
+    protected IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
     @Inject

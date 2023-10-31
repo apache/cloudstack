@@ -67,6 +67,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
@@ -129,6 +130,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     @Inject
     DomainDao domainDao;
     @Inject
+    protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
     IPAddressDao ipAddressDao;
     @Inject
     VMInstanceDao vmInstanceDao;
@@ -331,9 +333,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (Boolean.TRUE.equals(isNsxAndAccount.first()) && Objects.isNull(isNsxAndAccount.second())) {
             throw new InvalidParameterValueException(String.format("Failed to find account with id %s", vpc.getAccountId()));
         }
-        Account account = isNsxAndAccount.second();
-        DomainVO domain = getDomainFromAccount(account);
-        return nsxService.createVpcNetwork(vpc.getZoneId(), account.getId(), domain.getId(), vpc.getId(), vpc.getName());
+        return true;
     }
 
     @Override

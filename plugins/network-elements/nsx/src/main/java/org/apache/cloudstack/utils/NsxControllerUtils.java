@@ -40,6 +40,11 @@ public class NsxControllerUtils {
     @Inject
     NsxProviderDao nsxProviderDao;
 
+    public static String getNsxNatRuleId(long domainId, long accountId, long dataCenterId, long resourceId, boolean isForVpc) {
+        String resourcePrefix = isForVpc ? "V" : "N";
+        return String.format("D%s-A%s-Z%s-%s%s-NAT", domainId, accountId, dataCenterId, resourcePrefix, resourceId);
+    }
+
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
 
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);

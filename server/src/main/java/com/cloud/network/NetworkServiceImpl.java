@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -280,6 +282,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     DataCenterDao _dcDao = null;
     @Inject
     VlanDao _vlanDao = null;
+    @Inject
+    private VlanDetailsDao vlanDetailsDao;
     @Inject
     IPAddressDao _ipAddressDao = null;
     @Inject
@@ -1132,6 +1136,58 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
         }
         return ipVO;
+    }
+
+    @Override
+    public IpAddress reserveIpAddressWithVlanDetail(Account account, DataCenter zone, Boolean displayIp, String vlanDetailKey) throws ResourceAllocationException {
+        // verify permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, account);
+
+        VlanVO vlan = findOneVlanRangeMatchingVlanDetailKey(zone, vlanDetailKey);
+        if (vlan == null) {
+            String msg = String.format("Cannot find any vlan matching the detail key %s on zone %s", vlanDetailKey, zone.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        List<IPAddressVO> freeIps = _ipAddressDao.listByVlanIdAndState(vlan.getId(), State.Free);
+        if (CollectionUtils.isEmpty(freeIps)) {
+            String msg = String.format("Cannot find any free IP matching on the VLAN range %s on zone %s", vlan.getIpRange(), zone.getName());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        Collections.shuffle(freeIps);
+        IPAddressVO selectedIp = freeIps.get(0);
+
+        selectedIp.setAllocatedTime(new Date());
+        selectedIp.setAllocatedToAccountId(account.getAccountId());
+        selectedIp.setAllocatedInDomainId(account.getDomainId());
+        selectedIp.setState(State.Reserved);
+        if (displayIp != null) {
+            selectedIp.setDisplay(displayIp);
+        }
+        selectedIp = _ipAddressDao.persist(selectedIp);
+
+        Long ipDedicatedAccountId = getIpDedicatedAccountId(selectedIp.getVlanId());
+        if (ipDedicatedAccountId == null) {
+            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+        }
+
+        return selectedIp;
+    }
+
+    private VlanVO findOneVlanRangeMatchingVlanDetailKey(DataCenter zone, String vlanDetailKey) {
+        List<VlanVO> zoneVlans = _vlanDao.listByZone(zone.getId());
+        for (VlanVO zoneVlan : zoneVlans) {
+            VlanDetailsVO detail = vlanDetailsDao.findDetail(zoneVlan.getId(), vlanDetailKey);
+            if (detail != null && detail.getValue().equalsIgnoreCase("true")) {
+                s_logger.debug(String.format("Found the VLAN range %s is set for NSX on zone %s", zoneVlan.getIpRange(), zone.getName()));
+                return zoneVlan;
+            }
+        }
+        return null;
     }
 
     private Long getIpDedicatedAccountId(Long vlanId) {

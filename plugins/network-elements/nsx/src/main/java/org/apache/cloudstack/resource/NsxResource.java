@@ -41,6 +41,7 @@ import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
@@ -110,6 +111,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else if (cmd instanceof CreateNsxDhcpRelayConfigCommand) {
             return executeRequest((CreateNsxDhcpRelayConfigCommand) cmd);
+        } else if (cmd instanceof CreateNsxTier1NatRuleCommand) {
+            return executeRequest((CreateNsxTier1NatRuleCommand) cmd);
         } else if (cmd instanceof CreateNsxStaticNatCommand) {
             return executeRequest((CreateNsxStaticNatCommand) cmd);
         } else if (cmd instanceof DeleteNsxNatRuleCommand) {
@@ -226,6 +229,22 @@ public class NsxResource implements ServerResource {
         return true;
     }
 
+    private Answer executeRequest(CreateNsxTier1NatRuleCommand cmd) {
+        String tier1GatewayName = cmd.getTier1GatewayName();
+        String action = cmd.getAction();
+        String translatedIpAddress = cmd.getTranslatedIpAddress();
+        String natRuleId = cmd.getNatRuleId();
+        String natId = "USER";
+        try {
+            nsxApiClient.createTier1NatRule(tier1GatewayName, natId, natRuleId, action, translatedIpAddress);
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Error creating the NAT rule with ID %s on Tier1 Gateway %s: %s", natRuleId, tier1GatewayName, e.getMessage());
+            LOGGER.error(msg, e);
+            return new NsxAnswer(cmd, e);
+        }
+        return new NsxAnswer(cmd, true, "");
+    }
+
     private Answer executeRequest(CreateNsxDhcpRelayConfigCommand cmd) {
         long zoneId = cmd.getZoneId();
         long domainId = cmd.getDomainId();
@@ -271,8 +290,9 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
         String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
+        boolean sourceNatEnabled = cmd.isSourceNatEnabled();
         try {
-            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster);
+            nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster, sourceNatEnabled);
             return new NsxAnswer(cmd, true, "");
         } catch (CloudRuntimeException e) {
             String msg = String.format("Cannot create tier 1 gateway %s (%s: %s): %s", name,

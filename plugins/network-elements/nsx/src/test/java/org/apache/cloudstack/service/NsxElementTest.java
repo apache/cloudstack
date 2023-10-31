@@ -29,6 +29,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -74,6 +75,8 @@ public class NsxElementTest {
     Account account;
     @Mock
     DomainVO domain;
+    @Mock
+    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     NsxElement nsxElement;
     ReservationContext reservationContext;
@@ -93,6 +96,7 @@ public class NsxElementTest {
         nsxElement.physicalNetworkDao = physicalNetworkDao;
         nsxElement.domainDao = domainDao;
         nsxElement.networkModel = networkModel;
+        nsxElement.vpcOfferingServiceMapDao = vpcOfferingServiceMapDao;
         reservationContext = mock(ReservationContext.class);
         deployDestination = mock(DeployDestination.class);
 
@@ -115,8 +119,6 @@ public class NsxElementTest {
 
     @Test
     public void testImplementVpc() throws ResourceUnavailableException, InsufficientCapacityException {
-        when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString())).thenReturn(true);
-
         assertTrue(nsxElement.implementVpc(vpc, deployDestination, reservationContext));
     }
 

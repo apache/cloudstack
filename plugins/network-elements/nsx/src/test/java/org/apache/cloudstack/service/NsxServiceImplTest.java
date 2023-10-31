@@ -67,7 +67,7 @@ public class NsxServiceImplTest {
         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxTier1GatewayCommand.class), anyLong())).thenReturn(createNsxTier1GatewayAnswer);
         when(createNsxTier1GatewayAnswer.getResult()).thenReturn(true);
 
-        assertTrue(nsxService.createVpcNetwork(1L, 3L, 2L, 5L, "VPC01"));
+        assertTrue(nsxService.createVpcNetwork(1L, 3L, 2L, 5L, "VPC01", false));
     }
 
     @Test
