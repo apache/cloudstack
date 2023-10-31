@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.service;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.model.TransportZone;
