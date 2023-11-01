@@ -2584,6 +2584,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean staticNat = cmd.isStaticNat();
         final Boolean forDisplay = cmd.getDisplay();
         final String state = cmd.getState();
+        final Boolean forSystemVms = cmd.getForSystemVMs();
         final Map<String, String> tags = cmd.getTags();
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
@@ -2646,6 +2647,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() && IpAddress.State.Free.name().equalsIgnoreCase(state)) {
             sc.setParameters("forsystemvms", false);
+        } else {
+            sc.setParameters("forsystemvms", forSystemVms);
         }
     }
 

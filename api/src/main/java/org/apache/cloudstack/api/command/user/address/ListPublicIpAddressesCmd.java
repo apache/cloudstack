@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.address;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.log4j.Logger;
 
@@ -106,6 +107,9 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if range is dedicated for system VMs", since = "4.20.0")
+    private Boolean forSystemVMs;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -175,6 +179,10 @@ public class ListPublicIpAddressesCmd extends BaseListRetrieveOnlyResourceCountC
 
     public String getState() {
         return state;
+    }
+
+    public boolean getForSystemVMs() {
+        return !Objects.isNull(forSystemVMs) && forSystemVMs;
     }
 
     /////////////////////////////////////////////////////
