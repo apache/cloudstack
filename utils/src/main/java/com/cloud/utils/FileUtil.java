@@ -21,13 +21,18 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
@@ -70,40 +75,20 @@ public class FileUtil {
             throw new CloudRuntimeException(String.format("Resource directory [%s] does not exist or is empty.", resourceDirectory));
         }
 
-        String directoryPath = resourceDirectoryUrl.getPath();
-        s_logger.debug(String.format("Resources directory's full path is [%s].", directoryPath));
-
-        return getFilesPathsUnderDirectory(directoryPath);
-    }
-
-    public static List<String> getFilesPathsUnderDirectory(String directoryPath) {
-        s_logger.info(String.format("Searching for files under directory [%s].", directoryPath));
-
-        File[] files = new File(directoryPath).listFiles();
-        List<String> filesList = new ArrayList<>();
-
-        if (files == null) {
-            s_logger.info(String.format("No files found under directory [%s].", directoryPath));
-            return filesList;
+        URI resourceDirectoryUri;
+        try {
+            resourceDirectoryUri = resourceDirectoryUrl.toURI();
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format("Unable to get URI from URL [%s].", resourceDirectoryUrl), e);
         }
 
-        s_logger.info(String.format("Found [%s] files and directories under directory [%s].", files.length, directoryPath));
-
-        for (File file : files) {
-            String absolutePath = file.getAbsolutePath();
-            Path path = Path.of(absolutePath);
-
-            if (Files.isRegularFile(path)) {
-                s_logger.debug(String.format("Adding file [%s] to the list of files.", absolutePath));
-                filesList.add(absolutePath);
-            } else {
-                s_logger.debug(String.format("Path [%s] is a directory.", absolutePath));
-                filesList.addAll(getFilesPathsUnderDirectory(absolutePath));
+        try (FileSystem fs = FileSystems.newFileSystem(resourceDirectoryUri, Collections.emptyMap())) {
+            try (Stream<Path> paths = Files.walk(fs.getPath(resourceDirectory))) {
+                return paths.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
             }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Error while trying to list files under resource directory [%s].", resourceDirectoryUri), e);
         }
-
-        return filesList;
     }
-
 
 }
