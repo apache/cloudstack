@@ -127,7 +127,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
     private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
-    private List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathUnderResourceDirectory(VIEWS_DIRECTORY);
+    protected List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(VIEWS_DIRECTORY);
 
     @Inject
     VersionDao _dao;
@@ -375,10 +375,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     protected void executeViewScripts() {
+        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
         try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
             Connection conn = txn.getConnection();
 
-            s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
             for (String filePath : filesPathUnderViewsDirectory) {
                 s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
 
