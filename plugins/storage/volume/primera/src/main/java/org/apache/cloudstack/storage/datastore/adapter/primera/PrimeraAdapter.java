@@ -360,7 +360,7 @@ public class PrimeraAdapter implements ProviderAdapter {
     public void resize(ProviderAdapterContext context, ProviderAdapterDataObject request, long totalNewSizeInBytes) {
         assert request.getExternalName() != null: "External name not internally set for provided volume when requesting resize of volume";
         PrimeraVolume volume = new PrimeraVolume();
-        volume.setSizeMiB((int) totalNewSizeInBytes);
+        volume.setSizeMiB((int) (totalNewSizeInBytes / PrimeraAdapter.BYTES_IN_MiB));
         // GROW_VOLUME=3;
         // https://support.hpe.com/hpesc/public/docDisplay?docId=a00118636en_us&page=v25706371.html
         volume.setAction(3);

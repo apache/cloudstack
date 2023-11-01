@@ -179,7 +179,10 @@ public class PrimeraVolume implements ProviderSnapshot {
         this.readOnly = readOnly;
     }
     public String getState() {
-        return state.toString();
+        if (state != null) {
+            return state.toString();
+        }
+        return null;
     }
     public void setState(Integer state) {
         this.state = state;
