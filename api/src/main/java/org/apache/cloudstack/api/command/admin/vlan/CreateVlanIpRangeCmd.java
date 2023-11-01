@@ -40,6 +40,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
+import java.util.Objects;
+
 @APICommand(name = "createVlanIpRange", description = "Creates a VLAN IP range.", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVlanIpRangeCmd extends BaseCmd {
@@ -158,11 +160,11 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public boolean isForNsx() {
-        return forNsx;
+        return !Objects.isNull(forNsx) && forNsx;
     }
 
     public String getVlan() {
-        if ((vlan == null || vlan.isEmpty()) && !forNsx) {
+        if ((vlan == null || vlan.isEmpty()) && !isForNsx()) {
             vlan = "untagged";
         }
         return vlan;
