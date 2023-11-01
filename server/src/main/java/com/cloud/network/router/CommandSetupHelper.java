@@ -1359,7 +1359,8 @@ public class CommandSetupHelper {
         nicTO.setMac(ipAddress.getVifMacAddress());
         nicTO.setType(ipAddress.getTrafficType());
         nicTO.setGateway(ipAddress.getVlanGateway());
-        nicTO.setBroadcastUri(BroadcastDomainType.fromString(ipAddress.getBroadcastUri()));
+        URI broadcastUri = ipAddress.getBroadcastUri() != null ? BroadcastDomainType.fromString(ipAddress.getBroadcastUri()) : null;
+        nicTO.setBroadcastUri(broadcastUri);
         nicTO.setType(network.getTrafficType());
         nicTO.setName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
         nicTO.setBroadcastType(network.getBroadcastDomainType());
