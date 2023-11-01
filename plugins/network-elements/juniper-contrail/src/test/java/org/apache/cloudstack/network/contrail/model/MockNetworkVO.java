@@ -26,7 +26,8 @@ import static org.mockito.Mockito.when;
 public class MockNetworkVO {
 
     private NetworkVO network;
-    MockNetworkVO(Network.State state){
+
+    MockNetworkVO(Network.State state) {
         network = mock(NetworkVO.class);
         when(network.getName()).thenReturn("testnetwork");
         when(network.getState()).thenReturn(state);
@@ -39,6 +40,11 @@ public class MockNetworkVO {
 
     public NetworkVO getNetwork() {
         return network;
+    }
+
+    public static NetworkVO getNetwork(Network.State state) {
+        MockNetworkVO mockNetwork = new MockNetworkVO(state);
+        return mockNetwork.getNetwork();
     }
 
 }

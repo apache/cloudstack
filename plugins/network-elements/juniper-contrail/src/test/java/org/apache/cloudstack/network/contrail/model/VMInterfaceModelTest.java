@@ -16,6 +16,7 @@
 // under the License.
 
 package org.apache.cloudstack.network.contrail.model;
+
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -45,20 +46,20 @@ import net.juniper.contrail.api.types.VirtualMachineInterface;
 
 public class VMInterfaceModelTest extends TestCase {
     private static final Logger s_logger =
-        Logger.getLogger(VMInterfaceModelTest.class);
+            Logger.getLogger(VMInterfaceModelTest.class);
 
     @Test
     public void testCreateVMInterface() throws IOException {
 
         String uuid;
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
-        ModelController controller      = mock(ModelController.class);
+        ModelController controller = mock(ModelController.class);
         ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network =  new MockNetworkVO(Network.State.Implemented).getNetwork();
+        NetworkVO network = MockNetworkVO.getNetwork(Network.State.Implemented);
         NetworkDao networkDao = mock(NetworkDao.class);
         when(networkDao.findById(anyLong())).thenReturn(network);
         when(controller.getNetworkDao()).thenReturn(networkDao);
@@ -81,7 +82,7 @@ public class VMInterfaceModelTest extends TestCase {
         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         when(vm.getDomainId()).thenReturn(10L);
         when(vm.getAccountId()).thenReturn(42L);
-        UserVmDao VmDao      = mock(UserVmDao.class);
+        UserVmDao VmDao = mock(UserVmDao.class);
         when(VmDao.findById(anyLong())).thenReturn(null);
         when(controller.getVmDao()).thenReturn(VmDao);
 

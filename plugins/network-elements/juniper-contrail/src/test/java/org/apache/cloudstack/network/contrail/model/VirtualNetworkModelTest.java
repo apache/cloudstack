@@ -115,13 +115,13 @@ public class VirtualNetworkModelTest extends TestCase {
         when(vn3.getNetworkPolicy()).thenReturn(policyRefs3);
 
         //Virtual-Network 1
-        NetworkVO network1 =  new MockNetworkVO(State.Allocated).getNetwork();
+        NetworkVO network1 = MockNetworkVO.getNetwork(State.Allocated);
 
         //Virtual-Network 2
-        NetworkVO network2 = new MockNetworkVO(State.Allocated).getNetwork();
+        NetworkVO network2 = MockNetworkVO.getNetwork(State.Allocated);
 
         //Virtual-Network 3
-        NetworkVO network3 = new MockNetworkVO(State.Allocated).getNetwork();
+        NetworkVO network3 = MockNetworkVO.getNetwork(State.Allocated);
 
         when(contrailMgr.getCanonicalName(network1)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network1.getDomainId(), network1.getAccountId())).thenReturn("testProjectId");
@@ -158,13 +158,13 @@ public class VirtualNetworkModelTest extends TestCase {
 
         String uuid = UUID.randomUUID().toString();
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
-        ModelController controller      = mock(ModelController.class);
+        ModelController controller = mock(ModelController.class);
         ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network = new MockNetworkVO(State.Allocated).getNetwork();
+        NetworkVO network = MockNetworkVO.getNetwork(State.Allocated);
 
         when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
