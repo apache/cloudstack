@@ -45,6 +45,7 @@
 	<bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
 	<bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
 	<bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+	<bean id="imageStoreObjectDownloadDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDaoImpl" />
 	<bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
 	<bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
 	<bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />

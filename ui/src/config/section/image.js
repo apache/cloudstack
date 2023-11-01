@@ -62,7 +62,14 @@ export default {
         }
         return fields
       },
-      searchFilters: ['name', 'zoneid', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -219,7 +226,14 @@ export default {
         return fields
       },
       details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
-      searchFilters: ['name', 'zoneid', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       related: [{
         name: 'vm',
         title: 'label.instances',

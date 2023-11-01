@@ -337,6 +337,8 @@
         <constructor-arg name="timeout" value="10000" />
     </bean>
 
+    <bean id="storageStorageBrowserImpl" class="org.apache.cloudstack.storage.browser.StorageBrowserImpl" />
+
     <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />

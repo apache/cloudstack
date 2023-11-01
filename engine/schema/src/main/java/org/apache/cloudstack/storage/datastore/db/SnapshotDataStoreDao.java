@@ -97,6 +97,10 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
      */
     List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
 
+    List<SnapshotDataStoreVO> listByStoreAndInstallPaths(long storeId, DataStoreRole role, List<String> pathList);
+
+    List<SnapshotDataStoreVO> listByStoreAndSnapshotIds(long storeId, DataStoreRole role, List<Long> snapshotIds);
+
     List<SnapshotDataStoreVO> listBySnasphotStoreDownloadStatus(long snapshotId, long storeId, VMTemplateStorageResourceAssoc.Status... status);
 
     SnapshotDataStoreVO findOneBySnapshotAndDatastoreRole(long snapshotId, DataStoreRole role);

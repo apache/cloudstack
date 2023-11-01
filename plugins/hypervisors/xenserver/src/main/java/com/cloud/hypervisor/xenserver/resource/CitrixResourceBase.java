@@ -45,16 +45,23 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Vector;
 import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.trilead.ssh2.SFTPException;
+import com.trilead.ssh2.SFTPv3Client;
+import com.trilead.ssh2.SFTPv3DirectoryEntry;
+import com.trilead.ssh2.SFTPv3FileAttributes;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.security.ParserUtils;
@@ -5720,6 +5727,72 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             return false;
         }
 
+    }
+
+    public Answer listFilesAtPath(ListDataStoreObjectsCommand command) throws IOException, XmlRpcException {
+        DataStoreTO store = command.getStore();
+        int startIndex = command.getStartIndex();
+        int pageSize = command.getPageSize();
+        String relativePath = command.getPath();
+        if (relativePath.endsWith("/")) {
+            relativePath = relativePath.substring(0, relativePath.length() - 1);
+        }
+
+        final Connection conn = getConnection();
+
+        final SR sr = getStorageRepository(conn, store.getUuid());
+        final com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.getIp(), 22);
+        try {
+            sshConnection.connect(null, 60000, 60000);
+            if (!sshConnection.authenticateWithPassword(_username, _password.peek())) {
+                throw new CloudRuntimeException("Unable to authenticate");
+            }
+            String mountPoint = "/var/run/sr-mount/" + sr.getUuid(conn);
+            boolean pathExists = true;
+            SFTPv3FileAttributes fileAttr = null;
+            int count = 0;
+            List<String> names = new ArrayList<>();
+            List<String> paths = new ArrayList<>();
+            List<String> absPaths = new ArrayList<>();
+            List<Boolean> isDirs = new ArrayList<>();
+            List<Long> sizes = new ArrayList<>();
+            List<Long> modifiedList = new ArrayList<>();
+            SFTPv3Client client = new SFTPv3Client(sshConnection);
+            try {
+                fileAttr = client._stat(mountPoint + "/" + relativePath);
+
+                // Path doesn't exist
+                if (fileAttr == null) {
+                    return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+                }
+
+                try {
+                    Vector fileList = client.ls(mountPoint + "/" + relativePath);
+                    count = fileList.size() - 2; // -2 for . and ..
+                    for (int i = startIndex + 2; i < startIndex + pageSize + 2 && i < fileList.size(); i++) {
+                        SFTPv3DirectoryEntry entry = (SFTPv3DirectoryEntry) fileList.get(i);
+                        names.add(entry.filename);
+                        paths.add(relativePath + "/" + entry.filename);
+                        isDirs.add(entry.attributes.isDirectory());
+                        sizes.add(entry.attributes.size);
+                        modifiedList.add(entry.attributes.mtime * 1000L);
+                    }
+                } catch (SFTPException e) {
+                    // Path is a file
+                    count = 1;
+                    names.add(relativePath.substring(relativePath.lastIndexOf("/") + 1));
+                    paths.add(relativePath);
+                    isDirs.add(false);
+                    sizes.add(fileAttr.size);
+                    modifiedList.add(fileAttr.mtime * 1000L);
+                }
+            } finally {
+                client.close();
+            }
+            return new ListDataStoreObjectsAnswer(pathExists, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+        } finally {
+            sshConnection.close();
+        }
     }
 
     /**

@@ -88,7 +88,13 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createVolume',
@@ -333,7 +339,14 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'domainid', 'account', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createTemplate',
