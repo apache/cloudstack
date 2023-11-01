@@ -18,8 +18,6 @@ package com.cloud.simulator;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -50,8 +48,7 @@ public class MockStoragePoolVO implements InternalIdentity {
     private String hostGuid;
 
     @Column(name = "pool_type")
-    @Enumerated(value = EnumType.STRING)
-    private StoragePoolType poolType;
+    private String poolType;
 
     public MockStoragePoolVO() {
 
@@ -71,11 +68,11 @@ public class MockStoragePoolVO implements InternalIdentity {
     }
 
     public StoragePoolType getPoolType() {
-        return this.poolType;
+        return StoragePoolType.valueOf(this.poolType);
     }
 
     public void setStorageType(StoragePoolType poolType) {
-        this.poolType = poolType;
+        this.poolType = poolType.name();
     }
 
     public String getUuid() {

@@ -114,8 +114,7 @@ public class VolumeVO implements Volume {
     Type volumeType = Volume.Type.UNKNOWN;
 
     @Column(name = "pool_type")
-    @Enumerated(EnumType.STRING)
-    StoragePoolType poolType;
+    String poolType;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -328,12 +327,10 @@ public class VolumeVO implements Volume {
     }
 
     public void setPoolType(StoragePoolType poolType) {
-        this.poolType = poolType;
+        this.poolType = poolType.name();
     }
 
-    public StoragePoolType getPoolType() {
-        return poolType;
-    }
+    public StoragePoolType getPoolType() { return StoragePoolType.valueOf(poolType); }
 
     @Override
     public long getDomainId() {

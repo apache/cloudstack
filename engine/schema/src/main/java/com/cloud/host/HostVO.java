@@ -130,7 +130,7 @@ public class HostVO implements Host {
     private String resource;
 
     @Column(name = "fs_type")
-    private StoragePoolType fsType;
+    private String fsType;
 
     @Column(name = "available")
     private boolean available = true;
@@ -447,7 +447,7 @@ public class HostVO implements Host {
             null);
         this.parent = parent;
         this.totalSize = totalSize;
-        this.fsType = fsType;
+        this.fsType = fsType == null ? null : fsType.name();
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -674,7 +674,7 @@ public class HostVO implements Host {
     }
 
     public StoragePoolType getFsType() {
-        return fsType;
+        return StoragePoolType.valueOf(fsType);
     }
 
     @Override

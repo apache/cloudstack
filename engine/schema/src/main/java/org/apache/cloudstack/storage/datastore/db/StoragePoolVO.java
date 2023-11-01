@@ -57,8 +57,7 @@ public class StoragePoolVO implements StoragePool {
     private String uuid = null;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    @Enumerated(value = EnumType.STRING)
-    private StoragePoolType poolType;
+    private String poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
@@ -141,7 +140,7 @@ public class StoragePoolVO implements StoragePool {
         this.name = name;
         id = poolId;
         this.uuid = uuid;
-        poolType = type;
+        poolType = type.name();
         this.dataCenterId = dataCenterId;
         usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
@@ -153,11 +152,11 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, StoragePoolType.valueOf(that.poolType), that.dataCenterId, that.podId, that.usedBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
-        poolType = type;
+        poolType = type.name();
         this.hostAddress = hostAddress;
         this.port = port;
         setStatus(StoragePoolStatus.Initial);
@@ -177,11 +176,11 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public StoragePoolType getPoolType() {
-        return poolType;
+        return StoragePoolType.valueOf(poolType);
     }
 
     public void setPoolType(StoragePoolType protocol) {
-        poolType = protocol;
+        poolType = protocol.name();
     }
 
     @Override
@@ -273,7 +272,7 @@ public class StoragePoolVO implements StoragePool {
     @Override
     public String getPath() {
         String updatedPath = path;
-        if (poolType == StoragePoolType.SMB) {
+        if (poolType.equals(StoragePoolType.SMB.name())) {
             updatedPath = UriUtils.getUpdateUri(updatedPath, false);
             if (updatedPath.contains("password") && updatedPath.contains("?")) {
                 updatedPath = updatedPath.substring(0, updatedPath.indexOf('?'));

@@ -26,6 +26,10 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StorageAdaptor {
 
+    default StoragePoolType getStoragePoolType() {
+        return null;
+    }
+
     public KVMStoragePool getStoragePool(String uuid);
 
     // Get the storage pool from libvirt, but control if libvirt should refresh the pool (can take a long time)

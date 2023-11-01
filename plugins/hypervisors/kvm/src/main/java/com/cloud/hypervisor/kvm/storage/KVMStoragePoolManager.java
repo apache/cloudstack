@@ -105,20 +105,21 @@ public class KVMStoragePoolManager {
 
         // add any adaptors that wish to register themselves via annotation
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
-        Set<Class<? extends StorageAdaptor>> storageAdaptors = reflections.getSubTypesOf(StorageAdaptor.class);
-        for (Class<? extends StorageAdaptor> storageAdaptor : storageAdaptors) {
-            StorageAdaptorInfo info = storageAdaptor.getAnnotation(StorageAdaptorInfo.class);
-            if (info != null && info.storagePoolType() != null) {
-                if (this._storageMapper.containsKey(info.storagePoolType().toString())) {
-                    s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", info.storagePoolType().toString(), storageAdaptor.getName()));
-                } else {
-                    try {
-                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptor.getName()));
-                        this._storageMapper.put(info.storagePoolType().toString(), storageAdaptor.getDeclaredConstructor().newInstance());
-                    } catch (Exception ex) {
-                       throw new CloudRuntimeException(ex.toString());
+        Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
+        for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
+            try {
+                StorageAdaptor adaptor =  storageAdaptorClass.getDeclaredConstructor().newInstance();
+                StoragePoolType storagePoolType = adaptor.getStoragePoolType();
+                if (storagePoolType != null) {
+                    if (this._storageMapper.containsKey(storagePoolType.toString())) {
+                        s_logger.warn(String.format("Duplicate StorageAdaptor type %s, not loading %s", storagePoolType, storageAdaptorClass.getName()));
+                    } else {
+                        s_logger.info(String.format("adding storage adaptor for %s", storageAdaptorClass.getName()));
+                        this._storageMapper.put(storagePoolType.toString(), adaptor);
                     }
                 }
+            } catch (Exception ex) {
+                throw new CloudRuntimeException(ex.toString());
             }
         }
 

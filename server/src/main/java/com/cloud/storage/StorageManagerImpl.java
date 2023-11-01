@@ -2474,7 +2474,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @DB
     public StoragePoolVO findLocalStorageOnHost(long hostId) {
         SearchCriteria<StoragePoolVO> sc = LocalStorageSearch.create();
-        sc.setParameters("type", new Object[] {StoragePoolType.Filesystem, StoragePoolType.LVM});
+        sc.setParameters("type", StoragePoolType.Filesystem.toString(), StoragePoolType.LVM.toString());
         sc.setJoinParameters("poolHost", "hostId", hostId);
         List<StoragePoolVO> storagePools = _storagePoolDao.search(sc, null);
         if (!storagePools.isEmpty()) {
