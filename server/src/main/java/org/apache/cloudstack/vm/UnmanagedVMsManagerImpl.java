@@ -1500,13 +1500,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (StringUtils.isEmpty(displayName)) {
             displayName = instanceName;
         }
-        String hostName = cmd.getHostName();
-        if (StringUtils.isEmpty(hostName)) {
-            if (!NetUtils.verifyDomainNameLabel(instanceName, true)) {
-                throw new InvalidParameterValueException(String.format("Please provide hostname for the VM. VM name contains unsupported characters for it to be used as hostname"));
-            }
-            hostName = instanceName;
-        }
+        String hostName = instanceName;
+
         if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
             throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                     + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
@@ -1517,7 +1512,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
         final Map<String, String> details = cmd.getDetails();
 
-        String remoteUrl = cmd.getUrl();
+        String remoteUrl = cmd.getHost();
         String source = cmd.getImportSource().toUpperCase();
         String diskPath = cmd.getDiskPath();
         ImportSource importSource = Enum.valueOf(ImportSource.class, source);
@@ -1909,7 +1904,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         List<UnmanagedInstanceResponse> responses = new ArrayList<>();
-        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVms(zoneId, cmd.getUrl(), cmd.getUsername(), cmd.getPassword());
+        HashMap<String, UnmanagedInstanceTO> vmMap = getRemoteVms(zoneId, cmd.getHost(), cmd.getUsername(), cmd.getPassword());
         for (String key : vmMap.keySet()) {
             UnmanagedInstanceTO instance = vmMap.get(key);
             if (StringUtils.isNotEmpty(keyword) &&

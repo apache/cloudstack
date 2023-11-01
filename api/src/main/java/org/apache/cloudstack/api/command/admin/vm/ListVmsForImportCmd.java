@@ -76,11 +76,11 @@ public class ListVmsForImportCmd extends BaseListCmd {
             description = "the password for the host")
     private String password;
 
-    @Parameter(name = ApiConstants.URL,
+    @Parameter(name = ApiConstants.HOST_NAME,
             type = CommandType.STRING,
             required = true,
-            description = "the host URL")
-    private String url;
+            description = "the host name or IP address")
+    private String host;
 
     @Parameter(name = ApiConstants.HYPERVISOR,
             type = CommandType.STRING,
@@ -104,8 +104,8 @@ public class ListVmsForImportCmd extends BaseListCmd {
         return password;
     }
 
-    public String getUrl() {
-        return url;
+    public String getHost() {
+        return host;
     }
 
     public String getHypervisor() {
