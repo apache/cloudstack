@@ -60,7 +60,7 @@
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
-            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
+            v-if="record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(copyApi in $store.getters.apis)"
             :title="$t('label.action.copy.snapshot')"
@@ -68,7 +68,7 @@
             :loading="copyLoading"
             @onClick="showCopySnapshot(record)" />
           <tooltip-button
-            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
+            v-if="record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(deleteApi in $store.getters.apis)"
             :title="$t('label.action.delete.snapshot')"
