@@ -63,7 +63,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -119,8 +118,8 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -1413,7 +1412,7 @@ public class VolumeApiServiceImplTest {
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volumeVoMock.getAccountId(), volumeVoMock.getDataCenterId(), volumeVoMock.getId(),
                 volumeVoMock.getName(), Volume.class.getName(), volumeVoMock.getUuid(), volumeVoMock.isDisplayVolume());
 
-        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+        Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.volume);
         Mockito.verify(resourceLimitServiceMock).decrementResourceCount(accountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
 
         Mockito.verify(volumeVoMock).setAccountId(newAccountMock.getAccountId());
@@ -1421,7 +1420,7 @@ public class VolumeApiServiceImplTest {
 
         Mockito.verify(volumeDaoMock).persist(volumeVoMock);
 
-        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volumeVoMock.getSize()));
+        Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.volume);
         Mockito.verify(resourceLimitServiceMock).incrementResourceCount(newAccountMock.getAccountId(), ResourceType.primary_storage, volumeVoMock.getSize());
 
         PowerMockito.verifyStatic(UsageEventUtils.class);

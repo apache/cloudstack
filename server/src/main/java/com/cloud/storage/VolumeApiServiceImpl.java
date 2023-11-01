@@ -3784,7 +3784,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
-        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume);
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.primary_storage, volume.getSize());
 
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -3800,14 +3800,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected void updateVolumeAccount(Account oldAccount, VolumeVO volume, Account newAccount) {
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                 Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
         _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
 
         volume.setAccountId(newAccount.getAccountId());
         volume.setDomainId(newAccount.getDomainId());
         _volsDao.persist(volume);
 
-        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume, ByteScaleUtils.bytesToGibibytes(volume.getSize()));
+        _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
