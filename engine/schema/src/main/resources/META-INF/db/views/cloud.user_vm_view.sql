@@ -73,6 +73,7 @@ SELECT
     `vm_template`.`id` AS `template_id`,
     `vm_template`.`uuid` AS `template_uuid`,
     `vm_template`.`name` AS `template_name`,
+    `vm_template`.`type` AS `template_type`,
     `vm_template`.`display_text` AS `template_display_text`,
     `vm_template`.`enable_password` AS `password_enabled`,
     `iso`.`id` AS `iso_id`,
