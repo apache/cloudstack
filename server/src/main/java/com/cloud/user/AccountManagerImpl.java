@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -2330,6 +2332,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
+        List<UserAccountVO> userAccountByEmail = _userAccountDao.getUserAccountByEmail(email, domainId);
+        List<UserAccount> userAccounts = userAccountByEmail.stream()
+                .map(userAccountVO -> (UserAccount) userAccountVO)
+                .collect(Collectors.toList());
+        return userAccounts;
+    }
+
+    @Override
     public Account getActiveAccountById(long accountId) {
         return _accountDao.findById(accountId);
     }
@@ -2473,7 +2484,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]> requestParameters) {
         UserAccount user = null;
-        if (password != null && !password.isEmpty()) {
+        final String[] oAuthProviderArray = (String[])requestParameters.get(ApiConstants.PROVIDER);
+        final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
+        String oauthProvider = ((oAuthProviderArray == null) ? null : oAuthProviderArray[0]);
+        String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
+
+
+        if ((password != null && !password.isEmpty()) || (oauthProvider != null && secretCode != null)) {
             user = getUserAccount(username, password, domainId, requestParameters);
         } else {
             String key = _configDao.getValue("security.singlesignon.key");
@@ -2626,10 +2643,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
         User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
-            if (userSource != User.Source.UNKNOWN) {
+            final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
+            String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
+            if (userSource != User.Source.UNKNOWN && secretCode == null) {
                 if (!authenticator.getName().equalsIgnoreCase(userSource.name())) {
                     continue;
                 }
+            }
+            if (secretCode != null && !authenticator.getName().equals("oauth2")) {
+                continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
             if (result.first()) {
