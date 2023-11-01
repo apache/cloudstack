@@ -37,11 +37,22 @@
       :rowKey="record => record.zoneid">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
-          <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          <span v-if="record.datastoreid">
+            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + record.datastoreid }">
+              <span v-if="fetchZoneIcon(record.zoneid)">
+                <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+              </span>
+              <global-outlined v-else style="margin-right: 5px" />
+              <span> {{ record.zonename }} </span>
+            </router-link>
           </span>
-          <global-outlined v-else style="margin-right: 5px" />
-          <span> {{ record.zonename }} </span>
+          <span v-else>
+            <span v-if="fetchZoneIcon(record.zoneid)">
+              <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+            </span>
+            <global-outlined v-else style="margin-right: 5px" />
+            <span> {{ record.zonename }} </span>
+          </span>
         </template>
         <template v-if="column.key === 'isready'">
           <span v-if="record.datastorestate==='Ready'">{{ $t('label.yes') }}</span>

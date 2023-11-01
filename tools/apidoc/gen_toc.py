@@ -210,6 +210,7 @@ known_categories = {
     'deleteSecondaryStagingStore': 'Image Store',
     'listSecondaryStagingStores': 'Image Store',
     'updateImageStore': 'Image Store',
+    'downloadImageStoreObject': 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
 	'ObjectStore': 'Image Store',

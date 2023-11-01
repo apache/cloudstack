@@ -637,7 +637,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/') && to?.query?.tab !== 'browser') {
         if ('page' in to.query) {
           this.page = Number(to.query.page)
           this.pageSize = Number(to.query.pagesize)
@@ -786,6 +786,10 @@ export default {
       this.filters = this.$route && this.$route.meta && this.$route.meta.filters
       if (typeof this.filters === 'function') {
         this.filters = this.filters()
+      }
+
+      if (typeof this.searchFilters === 'function') {
+        this.searchFilters = this.searchFilters()
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
