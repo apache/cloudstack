@@ -20,37 +20,35 @@ import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
 
 import java.io.File;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@PrepareForTest(value = {Script.class, DigestHelper.class})
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.parsers.*", "javax.xml.*", "org.w3c.dom.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ChecksumUtilTest {
 
     @Test
     public void invalidFileForCheckSumValidationTest() {
-        PowerMockito.mockStatic(Script.class);
+        MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class);
         Mockito.when(Script.findScript(Mockito.anyString(), Mockito.anyString())).thenReturn(null);
         try {
             ChecksumUtil.calculateCurrentChecksum(Mockito.anyString(), Mockito.anyString());
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Unable to find cloudScripts path, cannot update SystemVM"));
         }
+        scriptMocked.close();
     }
 
     @Test
     public void generateChecksumTest() {
-        PowerMockito.mockStatic(Script.class);
-        PowerMockito.mockStatic(DigestHelper.class);
+        MockedStatic<Script> scriptMocked = Mockito.mockStatic(Script.class);
+        MockedStatic<DigestHelper> digestHelperMocked = Mockito.mockStatic(DigestHelper.class);
         Mockito.when(Script.findScript(Mockito.anyString(), Mockito.anyString())).thenReturn("/dummyPath");
         Mockito.when(DigestHelper.calculateChecksum(Mockito.any(File.class))).thenReturn("dummy-checksum");
         try {
@@ -58,5 +56,7 @@ public class ChecksumUtilTest {
         } catch (Exception e) {
             fail("Failed to generate checksum");
         }
+        scriptMocked.close();
+        digestHelperMocked.close();
     }
 }

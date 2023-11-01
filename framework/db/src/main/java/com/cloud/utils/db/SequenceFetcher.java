@@ -59,7 +59,7 @@ public class SequenceFetcher {
     }
 
     public <T> T getNextSequence(Class<T> clazz, TableGenerator tg, Object key, boolean isRandom) {
-        Future<T> future = _executors.submit(new Fetcher<T>(clazz, tg, key, isRandom));
+        Future<T> future = _executors.submit(new Fetcher<>(clazz, tg, key, isRandom));
         try {
             return future.get();
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class SequenceFetcher {
     }
 
     protected SequenceFetcher() {
-        _executors = new ThreadPoolExecutor(100, 100, 120l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(250), new NamedThreadFactory("SequenceFetcher"));
+        _executors = new ThreadPoolExecutor(100, 100, 120l, TimeUnit.SECONDS, new LinkedBlockingQueue<>(250), new NamedThreadFactory("SequenceFetcher"));
     }
 
     protected static final SequenceFetcher s_instance = new SequenceFetcher();

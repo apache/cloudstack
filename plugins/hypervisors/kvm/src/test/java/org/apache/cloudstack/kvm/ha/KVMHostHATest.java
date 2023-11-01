@@ -29,7 +29,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.exception.StorageUnavailableException;
@@ -47,7 +46,6 @@ public class KVMHostHATest {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         kvmHAProvider = new KVMHAProvider();
         kvmHAProvider.hostActivityChecker = kvmHostActivityChecker;
     }

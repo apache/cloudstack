@@ -163,6 +163,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-user-authenticator-oauth2</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-user-authenticator-pbkdf2</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -354,6 +359,16 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-userdata-cloud-init</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-userdata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-mom-rabbitmq</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -405,11 +420,6 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-engine-components-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-engine-network</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -520,6 +530,16 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-network-globodns</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-cluster-drs-balanced</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-cluster-drs-condensed</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -850,8 +870,6 @@
                                     <exclude>com.tngtech.java:junit-dataprovider</exclude>
                                     <exclude>org.mockito:mockito-all</exclude>
                                     <exclude>org.hamcrest:hamcrest-all</exclude>
-                                    <exclude>org.powermock:powermock-module-junit4</exclude>
-                                    <exclude>org.powermock:powermock-api-mockito2</exclude>
                                     <exclude>org.springframework:spring-test</exclude>
                                     <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
                                     <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>

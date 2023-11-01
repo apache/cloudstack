@@ -163,10 +163,9 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     @Param(description="the name of the Network where ip belongs to")
     private String networkName;
 
-    /*
-        @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-        private IdentityProxy jobId = new IdentityProxy("async_job");
-    */
+    @SerializedName(ApiConstants.HAS_RULES)
+    @Param(description="whether the ip address has Firewall/PortForwarding/LoadBalancing rules defined")
+    private boolean hasRules;
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -312,5 +311,9 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
 
     public void setNetworkName(String networkName) {
         this.networkName = networkName;
+    }
+
+    public void setHasRules(final boolean hasRules) {
+        this.hasRules = hasRules;
     }
 }

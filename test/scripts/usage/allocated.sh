@@ -83,4 +83,3 @@ else
 echo "Skipping verification for account $i (the account either a) misses the second VM b) VM wasn't stopped 3) VM Stop failed "
 fi
 done
-

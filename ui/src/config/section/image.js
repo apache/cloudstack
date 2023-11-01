@@ -16,7 +16,6 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
-import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
@@ -35,21 +34,31 @@ export default {
       resourceType: 'Template',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'hypervisor', 'ostypename']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('templatetype')
           fields.push('order')
         }
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'isready', 'passwordenabled',
-          'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
+        var fields = ['name', 'id', 'displaytext', 'checksum', 'hypervisor', 'format', 'ostypename', 'size', 'physicalsize', 'isready', 'passwordenabled',
+          'crossZones', 'templatetype', 'directdownload', 'deployasis', 'ispublic', 'isfeatured', 'isextractable', 'isdynamicallyscalable', 'crosszones', 'type',
           'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy']
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('templatetype', 'url')
+          fields.push('url')
         }
         return fields
       },
@@ -68,6 +77,10 @@ export default {
       }, {
         name: 'settings',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
+      }, {
+        name: 'vnf.settings',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/image/TemplateVnfSettings.vue'))),
+        show: (record) => { return record.templatetype === 'VNF' }
       },
       {
         name: 'events',
@@ -187,8 +200,17 @@ export default {
       resourceType: 'ISO',
       filters: ['self', 'shared', 'featured', 'community'],
       columns: () => {
-        var fields = ['name', 'ostypename']
+        var fields = ['name',
+          {
+            state: (record) => {
+              if (record.isready) {
+                return 'Ready'
+              }
+              return 'Not Ready'
+            }
+          }, 'ostypename']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('size')
           fields.push('account')
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
@@ -196,7 +218,7 @@ export default {
         }
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy'],
+      details: ['name', 'id', 'displaytext', 'checksum', 'ostypename', 'size', 'bootable', 'isready', 'directdownload', 'isextractable', 'ispublic', 'isfeatured', 'crosszones', 'account', 'domain', 'created', 'userdatadetails', 'userdatapolicy', 'url'],
       searchFilters: ['name', 'zoneid', 'tags'],
       related: [{
         name: 'vm',
@@ -322,7 +344,7 @@ export default {
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: shallowRef(kubernetes),
+      icon: ['fa-solid', 'fa-dharmachakra'],
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],

@@ -33,16 +33,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.reflections.ReflectionUtils;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"org.w3c.*", "javax.xml.*", "org.xml.*"})
-@PrepareForTest(ReflectionToStringBuilderUtils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ReflectionToStringBuilderUtilsTest extends TestCase {
 
     private static final Set<ToStringStyle> TO_STRING_STYLES = new HashSet<>(Arrays.asList(ToStringStyle.DEFAULT_STYLE, ToStringStyle.JSON_STYLE, ToStringStyle.MULTI_LINE_STYLE,
@@ -95,60 +91,63 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
 
     @Test
     public void validateGetObjectClassInvalidObjectMustReturnNull(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(false);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(false);
+            Class<?> result = ReflectionToStringBuilderUtils.getObjectClass("test");
 
-        Class<?> result = ReflectionToStringBuilderUtils.getObjectClass("test");
-
-        Assert.assertNull(result);
+            Assert.assertNull(result);
+        }
     }
 
     @Test
     public void validateGetObjectClassObjectIsNotACollectionMustReturnObjectClass(){
         Class<?> expectedResult = classToReflect;
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
 
-        Class<?> result = ReflectionToStringBuilderUtils.getObjectClass("test");
+            Class<?> result = ReflectionToStringBuilderUtils.getObjectClass("test");
 
-        Assert.assertEquals(expectedResult, result);
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 
     @Test
     public void validateGetObjectClassObjectIsAnEmptyCollectionMustReturnNull(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
-        Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<String>());
+            Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<String>());
 
-        Assert.assertNull(result);
+            Assert.assertNull(result);
+        }
     }
 
     @Test
     public void validateGetObjectClassObjectIsACollectionWithOnlyNullValuesMustReturnNull(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
-        Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<String>(Arrays.asList(null, null)));
+            Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<String>(Arrays.asList(null, null)));
 
-        Assert.assertNull(result);
+            Assert.assertNull(result);
+        }
     }
 
     @Test
     public void validateGetObjectClassObjectIsACollectionWithAtLeastOneObjectsMustReturnObjectClass(){
         Class<?> expectedResult = classToReflect;
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isValidObject(Mockito.any())).thenReturn(true);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
+            Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<>(Arrays.asList(null, "test1")));
 
-        Class<?> result = ReflectionToStringBuilderUtils.getObjectClass(new ArrayList<>(Arrays.asList(null, "test1")));
-
-        Assert.assertEquals(expectedResult, result);
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 
     @Test
@@ -163,12 +162,13 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
 
     @Test
     public void validateGetNonSelectedFieldsNullObjectClassMustReturnNull(){
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.getObjectClass(Mockito.any())).thenReturn(null);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getObjectClass(Mockito.any())).thenReturn(null);
 
-        String[] result = ReflectionToStringBuilderUtils.getNonSelectedFields(null, "test1", "test2");
+            String[] result = ReflectionToStringBuilderUtils.getNonSelectedFields(null, "test1", "test2");
 
-        Assert.assertNull(result);
+            Assert.assertNull(result);
+        }
     }
 
     @Test
@@ -250,26 +250,28 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
 
     @Test
     public void validateReflectOnlySelectedFieldsNullNonSelectedFieldsMustReturnNull() throws Exception{
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(null);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(null);
 
-        TO_STRING_STYLES.forEach(style -> {
-            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(null, style, "-");
-            Assert.assertNull(result);
-        });
+            TO_STRING_STYLES.forEach(style -> {
+                String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(null, style, "-");
+                Assert.assertNull(result);
+            });
+        }
     }
 
     @Test
     public void validateReflectOnlySelectedFieldsEmptyNonSelectedFieldsMustReturnEmptyString() throws Exception{
         String expectedResult = "";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(new String[0]);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(new String[0]);
 
-        TO_STRING_STYLES.forEach(style -> {
-            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(null, style, "-");
-            Assert.assertEquals(expectedResult, result);
-        });
+            TO_STRING_STYLES.forEach(style -> {
+                String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(null, style, "-");
+                Assert.assertEquals(expectedResult, result);
+            });
+        }
     }
 
     @Test
@@ -277,28 +279,30 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
         String fieldToRemove = classToReflectRemovedField;
         String expectedResult = "test";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(classToReflectFieldsNamesArray);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(classToReflectFieldsNamesArray);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
 
-        TO_STRING_STYLES.forEach(style -> {
-            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), style, "-", fieldToRemove);
-            Assert.assertEquals(expectedResult, result);
-        });
+            TO_STRING_STYLES.forEach(style -> {
+                String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), style, "-", fieldToRemove);
+                Assert.assertEquals(expectedResult, result);
+            });
+        }
     }
 
     @Test
     public void validateReflectOnlySelectedFieldsObjectIsNotACollectionMustReflectObject() throws Exception{
         String expectedResult = "test";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(classToReflectFieldsNamesArray);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getNonSelectedFields(Mockito.any(), Mockito.any())).thenReturn(classToReflectFieldsNamesArray);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(null);
 
-        for (ToStringStyle style : TO_STRING_STYLES){
-            PowerMockito.doReturn(expectedResult).when(ReflectionToStringBuilderUtils.class, "getReflectedObject", Mockito.any(), Mockito.any(), Mockito.any());
-            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(expectedResult, style, "-", classToReflectFieldsNamesArray);
-            Assert.assertEquals(expectedResult, result);
+            for (ToStringStyle style : TO_STRING_STYLES) {
+                reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.getReflectedObject(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(expectedResult);
+                String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(expectedResult, style, "-", classToReflectFieldsNamesArray);
+                Assert.assertEquals(expectedResult, result);
+            }
         }
     }
 
@@ -306,51 +310,54 @@ public class ReflectionToStringBuilderUtilsTest extends TestCase {
     public void validateReflectOnlySelectedFieldsDefaultStyleReflectionNullMustReturnNull(){
         String expectedResult = null;
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(null);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(null);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), (String[]) null);
-        Assert.assertEquals(expectedResult, result);
+            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object(), (String[]) null);
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 
     @Test
     public void validateReflectOnlySelectedFieldsDefaultStyleReflectCollectionMustReturnValue(){
         String expectedResult = "[test]";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn("test");
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn("test");
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(true);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
-        Assert.assertEquals(expectedResult, result);
+            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 
     @Test
     public void validateReflectOnlySelectedFieldsDefaultStyleReflectMustReturnValue(){
         String expectedResult = "test";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
-        PowerMockito.when(ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expectedResult);
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.isCollection(Mockito.any())).thenReturn(false);
 
-        String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
-        Assert.assertEquals(expectedResult, result);
+            String result = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(new Object());
+            Assert.assertEquals(expectedResult, result);
+        }
     }
 
     @Test
     public void reflectCollectionTestCallBaseReflectCollectionMethodWithDefaultParameters() {
         String expected = "test";
 
-        PowerMockito.spy(ReflectionToStringBuilderUtils.class);
-        PowerMockito.when(ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expected);
+        try (MockedStatic<ReflectionToStringBuilderUtils> reflectionToStringBuilderUtilsMocked = Mockito.mockStatic(ReflectionToStringBuilderUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            reflectionToStringBuilderUtilsMocked.when(() -> ReflectionToStringBuilderUtils.reflectCollection(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any())).thenReturn(expected);
 
-        Object object = Mockito.mock(Object.class);
-        String result = ReflectionToStringBuilderUtils.reflectCollection(object);
+            Object object = Mockito.mock(Object.class);
+            String result = ReflectionToStringBuilderUtils.reflectCollection(object);
 
-        Assert.assertEquals(expected, result);
+            Assert.assertEquals(expected, result);
 
-        PowerMockito.verifyStatic(ReflectionToStringBuilderUtils.class);
-        String[] excludeFields = null;
-        ReflectionToStringBuilderUtils.reflectCollection(object, DEFAULT_STYLE, DEFAULT_MULTIPLE_VALUES_SEPARATOR, excludeFields);
+            String[] excludeFields = null;
+            reflectionToStringBuilderUtilsMocked.verify(() -> ReflectionToStringBuilderUtils.reflectCollection(object, DEFAULT_STYLE, DEFAULT_MULTIPLE_VALUES_SEPARATOR, excludeFields));
+        }
     }
 }

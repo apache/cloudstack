@@ -52,10 +52,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -64,8 +62,9 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 
 import junit.framework.TestCase;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
@@ -322,12 +321,13 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     @Test
-    @PrepareForTest(QuotaResponseBuilderImpl.class)
     public void getNewQuotaTariffObjectTestCreateFromCurrentQuotaTariff() throws Exception {
-        PowerMockito.whenNew(QuotaTariffVO.class).withArguments(Mockito.any(QuotaTariffVO.class)).thenReturn(quotaTariffVoMock);
-
-        quotaResponseBuilderSpy.getNewQuotaTariffObject(quotaTariffVoMock, "", 0);
-        PowerMockito.verifyNew(QuotaTariffVO.class).withArguments(Mockito.any(QuotaTariffVO.class));
+        try (MockedConstruction<QuotaTariffVO> quotaTariffVOMockedConstruction = Mockito.mockConstruction(QuotaTariffVO.class, (mock,
+                                                                                                        context) -> {
+        })) {
+            QuotaTariffVO result = quotaResponseBuilderSpy.getNewQuotaTariffObject(quotaTariffVoMock, "", 0);
+            Assert.assertEquals(quotaTariffVOMockedConstruction.constructed().get(0), result);
+        }
     }
 
     @Test (expected = InvalidParameterValueException.class)
@@ -360,7 +360,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Test (expected = ServerApiException.class)
     public void deleteQuotaTariffTestQuotaDoesNotExistThrowsServerApiException() {
-        Mockito.doReturn(null).when(quotaTariffDaoMock).findById(Mockito.anyLong());
         quotaResponseBuilderSpy.deleteQuotaTariff("");
     }
 
@@ -380,7 +379,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Calendar[] period = createPeriodForQuotaSummary();
         overrideDefaultQuotaEnabledConfigValue("false");
 
-        Mockito.doReturn(accountMock).when(accountDaoMock).findActiveAccount(Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
         Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
         Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));
@@ -396,7 +394,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Calendar[] period = createPeriodForQuotaSummary();
         overrideDefaultQuotaEnabledConfigValue("true");
 
-        Mockito.doReturn(accountMock).when(accountDaoMock).findActiveAccount(Mockito.anyString(), Mockito.anyLong());
         Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
         Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
         Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));

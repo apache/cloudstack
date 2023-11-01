@@ -26,6 +26,18 @@ import org.junit.Test;
 
 public class AutoScaleVmProfileVOTest {
 
+    static long zoneId = 1L;
+    static long domainId = 2L;
+    static long accountId = 3L;
+    static long serviceOfferingId = 4L;
+    static long templateId  = 5L;
+    static String userdata = "userdata";
+    static long userdataId = 6L;
+    static String userdataDetails = "userdataDetails";
+    static String userdataNew = "userdataNew";
+
+    static long autoScaleUserId = 7L;
+
     @Test
     public void testCounterParamsForUpdate() {
         AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO();
@@ -61,5 +73,24 @@ public class AutoScaleVmProfileVOTest {
         Assert.assertEquals("a7fb50f6-01d9-11ed-8bc1-77f8f0228926", otherDeployParamsList.get(0).second());
         Assert.assertEquals("rootdisksize", otherDeployParamsList.get(1).first());
         Assert.assertEquals("10", otherDeployParamsList.get(1).second());
+    }
+
+    @Test
+    public void testProperties() {
+        AutoScaleVmProfileVO profile = new AutoScaleVmProfileVO(zoneId, domainId, accountId, serviceOfferingId, templateId, null, null, userdata, null, autoScaleUserId);
+        Assert.assertEquals(new Long(zoneId), profile.getZoneId());
+        Assert.assertEquals(domainId, profile.getDomainId());
+        Assert.assertEquals(accountId, profile.getAccountId());
+        Assert.assertEquals(new Long(serviceOfferingId), profile.getServiceOfferingId());
+        Assert.assertEquals(new Long(templateId), profile.getTemplateId());
+        Assert.assertEquals(userdata, profile.getUserData());
+        Assert.assertEquals(new Long(autoScaleUserId), profile.getAutoScaleUserId());
+
+        profile.setUserData(userdataNew);
+        profile.setUserDataId(userdataId);
+        profile.setUserDataDetails(userdataDetails);
+        Assert.assertEquals(userdataNew, profile.getUserData());
+        Assert.assertEquals(new Long(userdataId), profile.getUserDataId());
+        Assert.assertEquals(userdataDetails, profile.getUserDataDetails());
     }
 }

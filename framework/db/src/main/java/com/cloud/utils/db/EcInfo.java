@@ -57,10 +57,10 @@ public class EcInfo {
                     rawClass = HashSet.class;
                 } else if (List.class == rawClazz) {
                     rawClass = ArrayList.class;
-                } else if (Collection.class == Collection.class) {
+                } else if (Collection.class == rawClazz) {
                     rawClass = ArrayList.class;
                 } else {
-                    assert (false) : " We don't know how to create this calss " + rawType.toString() + " for " + attr.field.getName();
+                    assert (false) : " We don't know how to create this class " + rawType.toString() + " for " + attr.field.getName();
                 }
             } catch (NoSuchMethodException e) {
                 throw new CloudRuntimeException("Write your own support for " + rawClazz + " defined by " + attr.field.getName());

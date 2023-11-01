@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Matchers.eq;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,15 +29,17 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DatabaseAccessObjectTest {
@@ -49,11 +53,15 @@ public class DatabaseAccessObjectTest {
     @Mock
     private Logger loggerMock;
 
+    @Mock
+    private ResultSet resultSetMock;
+
     private final DatabaseAccessObject dao = new DatabaseAccessObject();
 
     @Before
     public void setup() {
-        Whitebox.setInternalState(dao.getClass(), "s_logger", loggerMock);
+        ReflectionTestUtils.setField(dao, "s_logger", loggerMock);
+
     }
 
     @Test
@@ -81,6 +89,61 @@ public class DatabaseAccessObjectTest {
         boolean isForeignKey = false;
 
         dao.dropKey(conn, tableName, key, isForeignKey);
+    }
+
+    @Test
+    public void generateIndexNameTest() {
+        String indexName = dao.generateIndexName("mytable","mycolumn");
+        Assert.assertEquals( "i_mytable__mycolumn", indexName);
+    }
+
+    @Test
+    public void indexExistsFalseTest() throws Exception {
+        when(resultSetMock.next()).thenReturn(false);
+        when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+
+        Connection conn = connectionMock;
+        String tableName = "mytable";
+        String indexName = "myindex";
+
+        Assert.assertFalse(dao.indexExists(conn, tableName, indexName));
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).executeQuery();
+        verify(preparedStatementMock, times(1)).close();
+    }
+
+    @Test
+    public void indexExistsTrueTest() throws Exception {
+        when(resultSetMock.next()).thenReturn(true);
+        when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+
+        Connection conn = connectionMock;
+        String tableName = "mytable";
+        String indexName = "myindex";
+
+        Assert.assertTrue(dao.indexExists(conn, tableName, indexName));
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).executeQuery();
+        verify(preparedStatementMock, times(1)).close();
+    }
+
+    @Test
+    public void createIndexTest() throws Exception {
+        when(connectionMock.prepareStatement(startsWith("CREATE INDEX"))).thenReturn(preparedStatementMock);
+        when(preparedStatementMock.execute()).thenReturn(true);
+
+        Connection conn = connectionMock;
+        String tableName = "mytable";
+        String columnName = "mycolumn";
+        String indexName = "myindex";
+
+        dao.createIndex(conn, tableName, columnName, indexName);
+        verify(connectionMock, times(1)).prepareStatement(anyString());
+        verify(preparedStatementMock, times(1)).execute();
+        verify(preparedStatementMock, times(1)).close();
+        verify(loggerMock, times(1)).debug("Created index myindex");
     }
 
     @Test

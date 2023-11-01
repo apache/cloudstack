@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -52,6 +53,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -162,6 +164,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -292,6 +295,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
+    @Inject
+    private UserDataDao userDataDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -811,6 +816,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return false;
         }
 
+        account.setState(State.REMOVED);
+        _accountDao.update(accountId, account);
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Removed account " + accountId);
         }
@@ -1089,6 +1097,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SSHKeyPairVO keypair : sshkeypairs) {
                 _sshKeyPairDao.remove(keypair.getId());
             }
+
+            // Delete registered UserData
+            userDataDao.removeByAccountId(accountId);
+
             return true;
         } catch (Exception ex) {
             s_logger.warn("Failed to cleanup account " + account + " due to ", ex);
@@ -1805,15 +1817,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (account == null || account.getRemoved() != null) {
-            if (account != null) {
-                s_logger.info("The account:" + account.getAccountName() + " is already removed");
-            }
+        if (! isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
+        // Account that manages project(s) can't be removed
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+        if (!managedProjectIds.isEmpty()) {
+            StringBuilder projectIds = new StringBuilder();
+            for (Long projectId : managedProjectIds) {
+                projectIds.append(projectId).append(", ");
+            }
+
+            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
+        }
+
+        CallContext.current().putContextParameter(Account.class, account.getUuid());
+
+        return deleteAccount(account, callerUserId, caller);
+    }
+
+    private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
+        if (account == null) {
+            s_logger.info(String.format("The account, identified by id %d, doesn't exist", accountId ));
+            return false;
+        }
+        if (account.getRemoved() != null) {
+            s_logger.info("The account:" + account.getAccountName() + " is already removed");
+            return false;
+        }
         // don't allow removing Project account
-        if (account == null || account.getType() == Account.Type.PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             throw new InvalidParameterValueException("The specified account does not exist in the system");
         }
 
@@ -1823,21 +1857,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account.isDefault()) {
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
-
-        // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
-            for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId + ", ");
-            }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
-        }
-
-        CallContext.current().putContextParameter(Account.class, account.getUuid());
-
-        return deleteAccount(account, callerUserId, caller);
+        return true;
     }
 
     @Override
@@ -2312,6 +2332,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public List<UserAccount> getActiveUserAccountByEmail(String email, Long domainId) {
+        List<UserAccountVO> userAccountByEmail = _userAccountDao.getUserAccountByEmail(email, domainId);
+        List<UserAccount> userAccounts = userAccountByEmail.stream()
+                .map(userAccountVO -> (UserAccount) userAccountVO)
+                .collect(Collectors.toList());
+        return userAccounts;
+    }
+
+    @Override
     public Account getActiveAccountById(long accountId) {
         return _accountDao.findById(accountId);
     }
@@ -2455,7 +2484,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]> requestParameters) {
         UserAccount user = null;
-        if (password != null && !password.isEmpty()) {
+        final String[] oAuthProviderArray = (String[])requestParameters.get(ApiConstants.PROVIDER);
+        final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
+        String oauthProvider = ((oAuthProviderArray == null) ? null : oAuthProviderArray[0]);
+        String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
+
+
+        if ((password != null && !password.isEmpty()) || (oauthProvider != null && secretCode != null)) {
             user = getUserAccount(username, password, domainId, requestParameters);
         } else {
             String key = _configDao.getValue("security.singlesignon.key");
@@ -2608,10 +2643,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
         User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
-            if (userSource != User.Source.UNKNOWN) {
+            final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
+            String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
+            if (userSource != User.Source.UNKNOWN && secretCode == null) {
                 if (!authenticator.getName().equalsIgnoreCase(userSource.name())) {
                     continue;
                 }
+            }
+            if (secretCode != null && !authenticator.getName().equals("oauth2")) {
+                continue;
             }
             Pair<Boolean, ActionOnFailedAuthentication> result = authenticator.authenticate(username, password, domainId, requestParameters);
             if (result.first()) {
@@ -2955,17 +2995,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (projectId != null) {
             if (!forProjectInvitation) {
                 if (projectId == -1L) {
-                    if (caller.getType() == Account.Type.ADMIN) {
-                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
-                        if (listAll) {
-                            domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
-                        }
-                    } else {
+                    domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                    if (caller.getType() != Account.Type.ADMIN) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                         // permittedAccounts can be empty when the caller is not a part of any project (a domain account)
-                        if (permittedAccounts.isEmpty()) {
+                        if (permittedAccounts.isEmpty() || listAll) {
                             permittedAccounts.add(caller.getId());
                         }
+                    }
+                    if (listAll) {
+                        domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
                     }
                 } else {
                     Project project = _projectMgr.getProject(projectId);
@@ -3245,7 +3284,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 _userDetailsDao.update(userDetailVO.getId(), userDetailVO);
             }
         } catch (CloudTwoFactorAuthenticationException e) {
-            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, "2FAsetupComplete");
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(userAccountId, UserDetailVO.Setup2FADetail);
             if (userDetailVO != null && userDetailVO.getValue().equals(UserAccountVO.Setup2FAstatus.ENABLED.name())) {
                 disableTwoFactorAuthentication(userAccountId, caller, owner);
             }
@@ -3321,7 +3360,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
         UserVO userVO = null;
         if (userId != null) {
-            userVO = validateUser(userId, caller.getDomainId());
+            userVO = validateUser(userId);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
         } else {
             userId = CallContext.current().getCallingUserId();
@@ -3343,15 +3382,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return response;
     }
 
-    private UserVO validateUser(Long userId, Long domainId) {
+    private UserVO validateUser(Long userId) {
         UserVO user = null;
         if (userId != null) {
             user = _userDao.findById(userId);
             if (user == null) {
                 throw new InvalidParameterValueException("Invalid user ID provided");
-            }
-            if (_accountDao.findById(user.getAccountId()).getDomainId() != domainId) {
-                throw new InvalidParameterValueException("User doesn't belong to the specified account or domain");
             }
         }
         return user;

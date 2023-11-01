@@ -211,7 +211,7 @@ public class NetworkerClient {
 
         SimpleDateFormat formatterDate = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat formatterTime = new SimpleDateFormat("HH:mm:ss");
-        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
+        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         String startDate = formatterDate.format(backupJobStart);
         String startTime = formatterTime.format(backupJobStart);
@@ -252,7 +252,13 @@ public class NetworkerClient {
             backup.setVmId(vm.getId());
             backup.setExternalId(networkerLatestBackup.getId());
             backup.setType(networkerLatestBackup.getType());
-            backup.setDate(networkerLatestBackup.getCreationTime());
+            try {
+                backup.setDate(formatterDateTime.parse(networkerLatestBackup.getCreationTime()));
+            } catch (ParseException e) {
+                String msg = String.format("Unable to parse date [%s].", networkerLatestBackup.getCreationTime());
+                LOG.error(msg, e);
+                throw new CloudRuntimeException(msg, e);
+            }
             backup.setSize(networkerLatestBackup.getSize().getValue());
             backup.setProtectedSize(networkerLatestBackup.getSize().getValue());
             backup.setStatus(org.apache.cloudstack.backup.Backup.Status.BackedUp);

@@ -73,6 +73,9 @@
         <module>deployment-planners/user-concentrated-pod</module>
         <module>deployment-planners/user-dispersing</module>
 
+        <module>drs/cluster/balanced</module>
+        <module>drs/cluster/condensed</module>
+
         <module>event-bus/inmemory</module>
         <module>event-bus/kafka</module>
         <module>event-bus/rabbitmq</module>
@@ -136,6 +139,7 @@
 
         <module>user-authenticators/ldap</module>
         <module>user-authenticators/md5</module>
+        <module>user-authenticators/oauth2</module>
         <module>user-authenticators/pbkdf2</module>
         <module>user-authenticators/plain-text</module>
         <module>user-authenticators/saml2</module>

@@ -67,9 +67,29 @@
         :pagination="false" >
         <template #bodyCell="{ column, text, record }">
           <template v-if="column.key === 'ipaddress'">
-            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
+            <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }}&nbsp;</router-link>
             <div v-else>{{ text }}</div>
-            <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
+            <template v-if="record.issourcenat === true">
+              <a-tag>{{ $t('label.sourcenat') }}</a-tag>
+            </template>
+            <template v-else-if="record.isstaticnat === true">
+              <a-tag>{{ $t('label.staticnat') }}</a-tag>
+            </template>
+            <template v-else-if="record.hasrules === false">
+              <tooltip-button
+                v-if="record.forvirtualnetwork === true"
+                :tooltip="$t('label.action.set.as.source.nat.ip')"
+                type="primary"
+                :danger="false"
+                icon="aim-outlined"
+                :disabled="!('updateNetwork' in $store.getters.apis)"
+                @onClick="showChangeSourceNat(record)"></tooltip-button>
+            </template>
+            <template v-else><!-- -if="record.hasrules === true" -->
+              <Tooltip placement="topLeft" :title="$t('message.sourcenatip.change.inhibited')" >
+                <a-tag>{{ $t('label.hasrules') }}</a-tag>
+              </Tooltip>
+            </template>
           </template>
 
           <template v-if="column.key === 'state'">
@@ -150,6 +170,24 @@
         </a-form>
       </a-spin>
     </a-modal>
+    <a-modal
+      v-if="changeSourceNat"
+      :title="$t('message.sourcenatip.change.warning')"
+      :visible="changeSourceNat"
+      :closable="true"
+      :footer="null"
+      @cancel="cancelChangeSourceNat"
+      centered
+      :disabled="!('updateNetwork' in $store.getters.apis)"
+      width="450px">
+      <template>
+        <a-alert :message="$t('message.sourcenatip.change.warning')" type="warning" />
+      </template>
+      <div :span="24" class="action-button">
+        <a-button @click="cancelChangeSourceNat">{{ $t('label.cancel') }}</a-button>
+        <a-button ref="submit" type="primary" @click="setSourceNatIp(record)">{{ $t('label.ok') }}</a-button>
+      </div>
+    </a-modal>
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"
       :showConfirmationAction="showConfirmationAction"
@@ -167,6 +205,7 @@
       @close-modal="closeModal" />
   </div>
 </template>
+
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
@@ -242,7 +281,8 @@ export default {
       showAcquireIp: false,
       acquireLoading: false,
       acquireIp: null,
-      listPublicIpAddress: []
+      listPublicIpAddress: [],
+      changeSourceNat: false
     }
   },
   created () {
@@ -314,6 +354,50 @@ export default {
       this.selectedItems = (this.ips.filter(function (item) {
         return selection.indexOf(item.id) !== -1
       }))
+    },
+    setSourceNatIp (ipaddress) {
+      if (this.settingsourcenat) return
+      if (this.$route.path.startsWith('/vpc')) {
+        this.updateVpc(ipaddress)
+      } else {
+        this.updateNetwork(ipaddress)
+      }
+    },
+    updateNetwork (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateNetwork', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatenetworkresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
+    },
+    updateVpc (ipaddress) {
+      const params = {}
+      params.sourcenatipaddress = this.sourceNatIp.ipaddress
+      params.id = this.resource.id
+      this.settingsourcenat = true
+      api('updateVPC', params).then(response => {
+        this.fetchData()
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.updatevpcresponse.errortext || error.response.data.errorresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.settingsourcenat = false
+        this.cancelChangeSourceNat()
+      })
     },
     resetSelection () {
       this.setSelection([])
@@ -482,6 +566,13 @@ export default {
     },
     closeModal () {
       this.showConfirmationAction = false
+    },
+    showChangeSourceNat (ipaddress) {
+      this.changeSourceNat = true
+      this.sourceNatIp = ipaddress
+    },
+    cancelChangeSourceNat () {
+      this.changeSourceNat = false
     }
   }
 }

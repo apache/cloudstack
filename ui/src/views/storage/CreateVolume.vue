@@ -35,7 +35,7 @@
           v-model:value="form.name"
           :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromSnapshot">
+      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromVM">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -143,6 +143,7 @@ export default {
   },
   data () {
     return {
+      snapshotZoneIds: [],
       zones: [],
       offerings: [],
       customDiskOffering: false,
@@ -151,6 +152,9 @@ export default {
     }
   },
   computed: {
+    createVolumeFromVM () {
+      return this.$route.path.startsWith('/vm/')
+    },
     createVolumeFromSnapshot () {
       return this.$route.path.startsWith('/snapshot')
     }
@@ -192,13 +196,50 @@ export default {
       }
     },
     fetchData () {
+      if (this.createVolumeFromSnapshot) {
+        this.fetchSnapshotZones()
+        return
+      }
+      let zoneId = null
+      if (this.createVolumeFromVM) {
+        zoneId = this.resource.zoneid
+      }
+      this.fetchZones(zoneId)
+    },
+    fetchZones (id) {
       this.loading = true
-      api('listZones', { showicon: true }).then(json => {
+      const params = { showicon: true }
+      if (Array.isArray(id)) {
+        params.ids = id.join()
+      } else if (id !== null) {
+        params.id = id
+      }
+      api('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)
       }).finally(() => {
         this.loading = false
+      })
+    },
+    fetchSnapshotZones () {
+      this.loading = true
+      this.snapshotZoneIds = []
+      const params = {
+        showunique: false,
+        id: this.resource.id
+      }
+      api('listSnapshots', params).then(json => {
+        const snapshots = json.listsnapshotsresponse.snapshot || []
+        for (const snapshot of snapshots) {
+          if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
+            this.snapshotZoneIds.push(snapshot.zoneid)
+          }
+        }
+      }).finally(() => {
+        if (this.snapshotZoneIds && this.snapshotZoneIds.length > 0) {
+          this.fetchZones(this.snapshotZoneIds)
+        }
       })
     },
     fetchDiskOfferings (zoneId) {
@@ -222,6 +263,12 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        if (this.createVolumeFromVM) {
+          values.account = this.resource.account
+          values.domainid = this.resource.domainid
+          values.virtualmachineid = this.resource.id
+          values.zoneid = this.resource.zoneid
+        }
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
         }
@@ -232,6 +279,25 @@ export default {
             title: this.$t('message.success.create.volume'),
             description: values.name,
             successMessage: this.$t('message.success.create.volume'),
+            successMethod: (result) => {
+              this.closeModal()
+              if (this.createVolumeFromVM) {
+                const params = {}
+                params.id = result.jobresult.volume.id
+                params.virtualmachineid = this.resource.id
+                api('attachVolume', params).then(response => {
+                  this.$pollJob({
+                    jobId: response.attachvolumeresponse.jobid,
+                    title: this.$t('message.success.attach.volume'),
+                    description: values.name,
+                    successMessage: this.$t('message.attach.volume.success'),
+                    errorMessage: this.$t('message.attach.volume.failed'),
+                    loadingMessage: this.$t('message.attach.volume.progress'),
+                    catchMessage: this.$t('error.fetching.async.job.result')
+                  })
+                })
+              }
+            },
             errorMessage: this.$t('message.create.volume.failed'),
             loadingMessage: this.$t('message.create.volume.processing'),
             catchMessage: this.$t('error.fetching.async.job.result')
@@ -263,7 +329,8 @@ export default {
   width: 80vw;
 
   @media (min-width: 500px) {
-    width: 400px;
+    min-width: 400px;
+    width: 100%;
   }
 }
 </style>

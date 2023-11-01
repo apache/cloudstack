@@ -73,6 +73,7 @@ public interface NetworkModel {
     String HYPERVISOR_HOST_NAME_FILE = "hypervisor-host-name";
     String CLOUD_DOMAIN_FILE = "cloud-domain";
     String CLOUD_DOMAIN_ID_FILE = "cloud-domain-id";
+    String CLOUD_NAME_FILE = "cloud-name";
     int CONFIGDATA_DIR = 0;
     int CONFIGDATA_FILE = 1;
     int CONFIGDATA_CONTENT = 2;
@@ -83,14 +84,15 @@ public interface NetworkModel {
             .put(PUBLIC_HOSTNAME_FILE, "name")
             .put(CLOUD_DOMAIN_FILE, CLOUD_DOMAIN_FILE)
             .put(CLOUD_DOMAIN_ID_FILE, CLOUD_DOMAIN_ID_FILE)
+            .put(CLOUD_NAME_FILE, CLOUD_NAME_FILE)
             .put(HYPERVISOR_HOST_NAME_FILE, HYPERVISOR_HOST_NAME_FILE)
             .build();
 
     List<String> metadataFileNames = new ArrayList<>(Arrays.asList(SERVICE_OFFERING_FILE, AVAILABILITY_ZONE_FILE, LOCAL_HOSTNAME_FILE, LOCAL_IPV4_FILE, PUBLIC_HOSTNAME_FILE, PUBLIC_IPV4_FILE,
-            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, HYPERVISOR_HOST_NAME_FILE));
+            INSTANCE_ID_FILE, VM_ID_FILE, PUBLIC_KEYS_FILE, CLOUD_IDENTIFIER_FILE, CLOUD_NAME_FILE, HYPERVISOR_HOST_NAME_FILE));
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<>("Advanced",Integer.class, "mac.identifier", "0",
-            "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
+            "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is zero (0) which means that the DB id of the zone will be used.", true, ConfigKey.Scope.Zone);
 
     static final ConfigKey<Boolean> AdminIsAllowedToDeployAnywhere = new ConfigKey<>("Advanced",Boolean.class, "admin.is.allowed.to.deploy.anywhere", "false",
             "This will determine if the root admin is allowed to deploy in networks in subdomains.", true, ConfigKey.Scope.Global);
@@ -114,6 +116,13 @@ public interface NetworkModel {
 
     List<? extends Nic> getNics(long vmId);
 
+    /**
+     * Gets the next available MAC and checks it for global uniqueness in the nics table. It will keep looking until it finds a MAC address that is unique.
+     *
+     * @param networkConfigurationId the id of the network to use the nic in. used for finding the zone
+     * @return a string containing a MAC address
+     * @throws InsufficientAddressCapacityException if no MAC can be returned
+     */
     String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);

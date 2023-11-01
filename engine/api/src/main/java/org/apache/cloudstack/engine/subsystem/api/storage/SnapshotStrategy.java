@@ -28,11 +28,11 @@ public interface SnapshotStrategy {
 
     SnapshotInfo backupSnapshot(SnapshotInfo snapshot);
 
-    boolean deleteSnapshot(Long snapshotId);
+    boolean deleteSnapshot(Long snapshotId, Long zoneId);
 
     boolean revertSnapshot(SnapshotInfo snapshot);
 
-    StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op);
+    StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op);
 
     void postSnapshotCreation(SnapshotInfo snapshot);
 }

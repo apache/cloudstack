@@ -27,7 +27,7 @@ public class Hypervisor {
     static Map<String, HypervisorType> hypervisorTypeMap;
     static Map<HypervisorType, ImageFormat> supportedImageFormatMap;
 
-    public static enum HypervisorType {
+    public enum HypervisorType {
         None, //for storage hosts
         XenServer,
         KVM,
@@ -40,6 +40,7 @@ public class Hypervisor {
         Ovm,
         Ovm3,
         LXC,
+        Custom,
 
         Any; /*If you don't care about the hypervisor type*/
 
@@ -57,6 +58,7 @@ public class Hypervisor {
             hypervisorTypeMap.put("lxc", HypervisorType.LXC);
             hypervisorTypeMap.put("any", HypervisorType.Any);
             hypervisorTypeMap.put("ovm3", HypervisorType.Ovm3);
+            hypervisorTypeMap.put("custom", HypervisorType.Custom);
 
             supportedImageFormatMap = new HashMap<>();
             supportedImageFormatMap.put(HypervisorType.XenServer, ImageFormat.VHD);
@@ -68,7 +70,19 @@ public class Hypervisor {
 
         public static HypervisorType getType(String hypervisor) {
             return hypervisor == null ? HypervisorType.None :
-                    hypervisorTypeMap.getOrDefault(hypervisor.toLowerCase(Locale.ROOT), HypervisorType.None);
+                    (hypervisor.toLowerCase(Locale.ROOT).equalsIgnoreCase(
+                            HypervisorGuru.HypervisorCustomDisplayName.value()) ? Custom :
+                            hypervisorTypeMap.getOrDefault(hypervisor.toLowerCase(Locale.ROOT), HypervisorType.None));
+        }
+
+        /**
+         * Returns the display name of a hypervisor type in case the custom hypervisor is used,
+         * using the 'hypervisor.custom.display.name' setting. Otherwise, returns hypervisor name
+         */
+        public String getHypervisorDisplayName() {
+            return !Hypervisor.HypervisorType.Custom.equals(this) ?
+                    this.toString() :
+                    HypervisorGuru.HypervisorCustomDisplayName.value();
         }
 
         /**

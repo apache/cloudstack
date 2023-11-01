@@ -17,7 +17,6 @@
 package com.cloud.hypervisor;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -96,14 +95,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         if (userVmVO != null) {
             HostVO host = hostDao.findById(userVmVO.getHostId());
             if (host != null) {
-                List<HostVO> clusterHosts = hostDao.listByClusterAndHypervisorType(host.getClusterId(), host.getHypervisorType());
-                HostVO hostWithMinSocket = clusterHosts.stream().min(Comparator.comparing(HostVO::getCpuSockets)).orElse(null);
-                Integer vCpus = MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId());
-                if (hostWithMinSocket != null && hostWithMinSocket.getCpuSockets() != null &&
-                        hostWithMinSocket.getCpuSockets() < vCpus) {
-                    vCpus = hostWithMinSocket.getCpuSockets();
-                }
-                to.setVcpuMaxLimit(vCpus);
+                to.setVcpuMaxLimit(MaxNumberOfVCPUSPerVM.valueIn(host.getClusterId()));
             }
         }
 

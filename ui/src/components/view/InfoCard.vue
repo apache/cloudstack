@@ -27,7 +27,7 @@
               v-clipboard:copy="name" >
               <upload-resource-icon v-if="'uploadResourceIcon' in $store.getters.apis" :visible="showUpload" :resource="resource" @handle-close="showUpload(false)"/>
               <div class="ant-upload-preview" v-if="$showIcon() && !$route.path.includes('zones')">
-                <camera-outlined class="upload-icon"/>
+                <edit-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
                 <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
@@ -36,6 +36,12 @@
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
+                  <font-awesome-icon
+                    v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
+                    :icon="$route.meta.icon"
+                    size="4x"
+                    class="anticon"
+                    :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                   <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
                 </span>
               </slot>
@@ -139,14 +145,14 @@
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
           <div class="resource-detail-item__details">
             <tooltip-button
-              tooltipPlacement="right"
+              tooltipPlacement="top"
               :tooltip="$t('label.copyid')"
               icon="barcode-outlined"
               type="dashed"
               size="small"
               :copyResource="String(resource.id)"
               @onClick="$message.success($t('label.copied.clipboard'))" />
-            <span style="margin-left: 10px;">{{ resource.id }}</span>
+            <span style="margin-left: 10px;"><copy-label :label="resource.id" /></span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.ostypename && resource.ostypeid">
@@ -157,6 +163,29 @@
             </span>
             <os-logo v-else :osId="resource.ostypeid" :osName="resource.ostypename" size="lg" style="margin-left: -1px" />
             <span style="margin-left: 8px">{{ resource.ostypename }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.ipaddress">
+          <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
+          <div class="resource-detail-item__details">
+            <environment-outlined
+              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
+              v-clipboard:copy="ipaddress" />
+            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">
+              <copy-label :label="ipaddress" />
+            </router-link>
+            <span v-else>
+              <span v-if="ipaddress.includes(',')">
+                <span
+                v-for="(value, index) in ipaddress.split(',')"
+                :key="index">
+                  <copy-label :label="value" /><br/>
+                </span>
+              </span>
+              <span v-else>
+                <copy-label :label="ipaddress" />
+              </span>
+            </span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
@@ -312,11 +341,19 @@
                 v-for="(eth, index) in resource.nic"
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
-                <api-outlined /><strong>eth{{ index }}</strong> {{ eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress }}
-                <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
+                <api-outlined />
+                <strong>eth{{ index }}</strong>&nbsp;
+                <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
                 <a-tag v-if="eth.isdefault">
                   {{ $t('label.default') }}
-                </a-tag >
+                </a-tag ><br/>
+                <span v-if="!isStatic && eth.networkname && eth.networkid">
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  <apartment-outlined/>
+                  <router-link :to="{ path: '/guestnetwork/' + eth.networkid      }">
+                    {{ eth.networkname }}
+                  </router-link>
+                </span>
               </div>
             </div>
           </div>
@@ -342,16 +379,6 @@
           <div class="resource-detail-item__details">
             <api-outlined />
             <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="resource.ipaddress">
-          <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
-          <div class="resource-detail-item__details">
-            <environment-outlined
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipaddress }`)"
-              v-clipboard:copy="ipaddress" />
-            <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
-            <span v-else>{{ ipaddress }}</span>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -388,10 +415,15 @@
         <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
-            <key-outlined />
-            <li v-for="keypair in keypairs" :key="keypair">
-              <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
-            </li>
+            <div>
+              <div
+                v-for="keypair in keypairs"
+                :key="keypair"
+                style="margin-top: 5px;">
+                <key-outlined />
+                <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
+              </div>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
@@ -440,7 +472,8 @@
           <div class="resource-detail-item__label">{{ $t('label.publicip') }}</div>
           <div class="resource-detail-item__details">
             <gateway-outlined />
-            <router-link :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+            <router-link v-if="resource.publicipid" :to="{ path: '/publicip/' + resource.publicipid }">{{ resource.publicip }} </router-link>
+            <copy-label :label="resource.publicip"/>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.vpcid">
@@ -496,7 +529,7 @@
           <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <cloud-outlined />
-            <router-link v-if="!isStatic && $route.meta.name === 'router'" :to="{ path: '/computeoffering/' + resource.serviceofferingid, query: { issystem: true } }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
+            <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
@@ -574,6 +607,7 @@
             </span>
             <global-outlined v-else />
             <router-link v-if="!isStatic && $router.resolve('/zone/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
+            <router-link v-else-if="$router.resolve('/zones/' + resource.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zones/' + resource.zoneid }">{{ resource.zone || resource.zonename || resource.zoneid }}</router-link>
             <span v-else>{{ resource.zone || resource.zonename || resource.zoneid }}</span>
           </div>
         </div>
@@ -753,6 +787,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
+import CopyLabel from '@/components/widgets/CopyLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
@@ -765,6 +800,7 @@ export default {
     Console,
     OsLogo,
     Status,
+    CopyLabel,
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
@@ -857,7 +893,7 @@ export default {
     },
     name () {
       return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||
-        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
+        this.resource.ipaddress || this.resource.virtualmachinename || this.resource.osname || this.resource.osdisplayname || this.resource.templatetype
     },
     keypairs () {
       if (!this.resource.keypairs) {

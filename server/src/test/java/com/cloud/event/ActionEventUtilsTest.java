@@ -36,19 +36,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.IpAddress;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -62,8 +60,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ComponentContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ActionEventUtilsTest {
     //Predictable constants used throughout this test.
     public static final long EVENT_ID = 1;
@@ -104,6 +101,8 @@ public class ActionEventUtilsTest {
 
     private AccountVO account;
     private UserVO user;
+
+    private MockedStatic<ComponentContext> componentContextMocked;
 
     /**
      * This setup method injects the mocked beans into the ActionEventUtils class.
@@ -149,8 +148,8 @@ public class ActionEventUtilsTest {
     public void setupCommonMocks() throws Exception {
         //Some basic mocks.
         Mockito.when(configDao.getValue(Config.PublishActionEvent.key())).thenReturn("true");
-        PowerMockito.mockStatic(ComponentContext.class);
-        Mockito.when(ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
+        componentContextMocked = Mockito.mockStatic(ComponentContext.class);
+        componentContextMocked.when(() -> ComponentContext.getComponent(EventBus.class)).thenReturn(eventBus);
 
         //Needed for persist to actually set an ID that can be returned from the ActionEventUtils
         //methods.
@@ -205,6 +204,8 @@ public class ActionEventUtilsTest {
         }
 
         utils.init();
+
+        componentContextMocked.close();
     }
 
     @Test
@@ -293,9 +294,6 @@ public class ActionEventUtilsTest {
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
-        Mockito.when(vm.getId()).thenReturn(resourceId);
-        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
         CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
         ActionEventUtils.onScheduledActionEvent(USER_ID, ACCOUNT_ID, EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType, true, 0L);
 
@@ -319,9 +317,6 @@ public class ActionEventUtilsTest {
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
-        Mockito.when(vm.getId()).thenReturn(resourceId);
-        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
         CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
         ActionEventUtils.onCreatedActionEvent(USER_ID, ACCOUNT_ID, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_START, true, "Test event", resourceId, resourceType);
 
@@ -345,9 +340,6 @@ public class ActionEventUtilsTest {
         final Long resourceId = 1L;
         final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
         final String resourceUuid = UUID.randomUUID().toString();
-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
-        Mockito.when(vm.getId()).thenReturn(resourceId);
-        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
         CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
         ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType);
 
@@ -365,21 +357,13 @@ public class ActionEventUtilsTest {
         final Long snapshotResourceId = 100L;
         final String snapshotResourceType = ApiCommandResourceType.Snapshot.toString();
         final String snapshotResourceUuid = UUID.randomUUID().toString();
-        final Long resourceId = 1L;
-        final String resourceType = ApiCommandResourceType.Volume.toString();
-        final String resourceUuid = UUID.randomUUID().toString();
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         Mockito.when(snapshot.getUuid()).thenReturn(snapshotResourceUuid);
-        Mockito.when(snapshot.getVolumeId()).thenReturn(resourceId);
-        Volume volume = Mockito.mock(Volume.class);
-        Mockito.when(volume.getUuid()).thenReturn(resourceUuid);
         Mockito.when(entityMgr.validEntityType(Snapshot.class)).thenReturn(true);
-        Mockito.when(entityMgr.validEntityType(Volume.class)).thenReturn(true);
         Mockito.when(entityMgr.findByIdIncludingRemoved(Snapshot.class, snapshotResourceId)).thenReturn(snapshot);
-        Mockito.when(entityMgr.findByIdIncludingRemoved(Volume.class, resourceId)).thenReturn(volume);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_SNAPSHOT_CREATE, "Test event", snapshotResourceId, snapshotResourceType);
 
-        checkEventResourceAndUnregisterContext(resourceId, resourceUuid, resourceType);
+        checkEventResourceAndUnregisterContext(snapshotResourceId, snapshotResourceUuid, snapshotResourceType);
     }
 
     @Test
@@ -398,7 +382,6 @@ public class ActionEventUtilsTest {
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getUuid()).thenReturn(resourceUuid);
         Mockito.when(entityMgr.validEntityType(VMSnapshot.class)).thenReturn(true);
-        Mockito.when(entityMgr.validEntityType(VirtualMachine.class)).thenReturn(true);
         Mockito.when(entityMgr.findByIdIncludingRemoved(VMSnapshot.class, vmSnapshotResourceId)).thenReturn(vmSnapshot);
         Mockito.when(entityMgr.findByIdIncludingRemoved(VirtualMachine.class, resourceId)).thenReturn(vm);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_VM_SNAPSHOT_CREATE, "Test event", vmSnapshotResourceId, vmSnapshotResourceType);

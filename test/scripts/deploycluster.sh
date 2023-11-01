@@ -49,7 +49,7 @@ deploy_server() {
   echo "Deploying management server software on remote machine $1"
 
   rsync -avzh -e ssh $path/cloudstack-oss root@$1:/root/
-  if [ $? -gt 0 ]; then echo "failed to rsync software between $path/cloudstack-oss and and remote machine $1"; return 2; fi
+  if [ $? -gt 0 ]; then echo "failed to rsync software between $path/cloudstack-oss and remote machine $1"; return 2; fi
 
   ssh root@$1 "cd /root/cloudstack-oss && ant clean build-all deploy-server"
   if [ $? -gt 0 ]; then echo "failed to deploy cluster on $1"; return 2; fi
@@ -70,8 +70,3 @@ for ip in $ips; do
   echo "$ip"
   deploy_server $ip
 done
-
-
-
-
-

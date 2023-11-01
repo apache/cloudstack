@@ -64,4 +64,3 @@ ALTER TABLE `cloud`.`user_statistics` MODIFY `device_id` bigint(20) unsigned NOT
 ALTER TABLE `cloud`.`user_statistics` MODIFY `device_type` varchar(32) NOT NULL;
 
 ALTER TABLE `cloud`.`nics` MODIFY `ip6_address` char(40);
-

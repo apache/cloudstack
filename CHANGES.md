@@ -2,7 +2,7 @@
 Apache CloudStack CHANGES
 =========================
 
-Full release notes for each release are located in the project's documentation [website](http://docs.cloudstack.apache.org/projects/cloudstack-release-notes)
+Full release notes for each release are located in the project's documentation [website](https://docs.cloudstack.apache.org/en/latest/releasenotes/index.html)
 
 Version 4.5.0
 -------------

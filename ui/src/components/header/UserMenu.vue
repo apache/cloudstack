@@ -17,6 +17,9 @@
 
 <template>
   <div class="user-menu">
+    <span class="action">
+      <create-menu v-if="device === 'desktop'" />
+    </span>
     <external-link class="action"/>
     <translation-menu class="action"/>
     <header-notice class="action"/>
@@ -27,12 +30,12 @@
     <a-dropdown>
       <span class="user-menu-dropdown action">
         <span v-if="image">
-          <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
+          <resource-icon :image="image" size="4x" style="margin-right: 5px; margin-top: -3px"/>
         </span>
-        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: $config.theme['@primary-color'], color: 'white' }">
           {{ userInitials }}
         </a-avatar>
-        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: $config.theme['@primary-color'], color: 'white' }">
           <template #icon><user-outlined /></template>
         </a-avatar>
         <span>{{ nickname() }}</span>
@@ -42,6 +45,10 @@
           <a-menu-item class="user-menu-item" key="profile">
             <UserOutlined class="user-menu-item-icon" />
             <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
+          </a-menu-item>
+          <a-menu-item class="user-menu-item" key="limits">
+            <ControlOutlined class="user-menu-item-icon" />
+            <span class="user-menu-item-name">{{ $t('label.limits') }}</span>
           </a-menu-item>
           <a-menu-item class="user-menu-item" key="timezone">
             <ClockCircleOutlined class="user-menu-item-icon" />
@@ -65,6 +72,7 @@
 
 <script>
 import { api } from '@/api'
+import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
@@ -76,10 +84,18 @@ import { SERVER_MANAGER } from '@/store/mutation-types'
 export default {
   name: 'UserMenu',
   components: {
+    CreateMenu,
     ExternalLink,
     TranslationMenu,
     HeaderNotice,
     ResourceIcon
+  },
+  props: {
+    device: {
+      type: String,
+      required: false,
+      default: 'desktop'
+    }
   },
   data () {
     return {
@@ -141,6 +157,9 @@ export default {
       switch (item.key) {
         case 'profile':
           this.$router.push(`/accountuser/${this.$store.getters.userInfo.id}`)
+          break
+        case 'limits':
+          this.$router.push(`/account/${this.$store.getters.userInfo.accountid}?tab=limits`)
           break
         case 'timezone':
           this.toggleUseBrowserTimezone()

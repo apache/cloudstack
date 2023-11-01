@@ -17,60 +17,6 @@
 
 package com.cloud.configuration;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBusBase;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.mockito.stubbing.Answer;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
@@ -131,6 +77,60 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBusBase;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
@@ -548,15 +548,67 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void validateEmptySourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+
+        configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+    }
+
+    @Test
+    public void validateInvalidSourceNatTypeForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Either peraccount or perzone source NAT type can be specified for SupportedSourceNatTypes"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidBooleanValueForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "maybe");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Unknown specified value for RedundantRouter"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidCapabilityForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.ElasticIp, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] capabilities can be specified for source nat service"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
     public void validateEmptyStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
 
         configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
     }
 
     @Test
     public void validateInvalidStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "Frue and Talse");
 
         boolean caught = false;
@@ -570,8 +622,42 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void isRedundantRouter() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "true");
+        Assert.assertTrue(configurationMgr.isRedundantRouter(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perzone");
+        Assert.assertTrue(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void isNotSharedSourceNat() {
+        Map<Network.Service, Set<Network.Provider>> serviceCapabilityMap = new HashMap<>();
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        Assert.assertFalse(configurationMgr.isSharedSourceNat(serviceCapabilityMap, sourceNatServiceCapabilityMap));
+    }
+
+    @Test
+    public void sourceNatCapabilitiesContainValidValues() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatServiceCapabilityMap.put(Capability.RedundantRouter, "True");
+
+        Assert.assertTrue(configurationMgr.sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap));
+    }
+
+    @Test
     public void validateTTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -580,7 +666,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -589,7 +675,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateTFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "false");
 
@@ -608,7 +694,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "False");
 
