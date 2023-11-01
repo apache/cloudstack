@@ -108,9 +108,9 @@
           v-for="(value,key) in record.metadata"
           :key="key"
           >
-          <a-row justify="space-around">
+          <a-row justify="space-between">
             <a-col>
-              <tooltip-label :title="value" bold />
+              <tooltip-label :title="key" bold />
             </a-col>
             <a-col>
               {{ value }}
