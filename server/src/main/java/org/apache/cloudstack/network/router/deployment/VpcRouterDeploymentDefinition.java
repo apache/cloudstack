@@ -19,7 +19,11 @@ package org.apache.cloudstack.network.router.deployment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Vlan;
+import com.cloud.network.element.NsxProviderVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.VlanDao;
@@ -120,8 +124,19 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
         sourceNatIp = null;
+        DataCenter zone = dest.getDataCenter();
+        Long zoneId = null;
+        if (Objects.nonNull(zone)) {
+            zoneId = zone.getId();
+        }
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
         if (isPublicNetwork) {
-            sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            if (Objects.isNull(nsxProvider)) {
+                sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            } else {
+                sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+            }
         }
     }
 

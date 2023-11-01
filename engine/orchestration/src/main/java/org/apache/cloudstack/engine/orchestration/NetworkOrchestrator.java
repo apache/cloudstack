@@ -1082,10 +1082,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!isVirtualRouter || !isPublicTraffic || requested.getIPv4Address() == null) {
             return false;
         }
-        IPAddressVO ip = _ipAddressDao.findByIp(requested.getIPv4Address());
-        if (ip == null) {
+        List<IPAddressVO> ips = new ArrayList<>();
+        if (Objects.nonNull(network.getVpcId())) {
+            ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
+        } else {
+            ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+        }
+        if (CollectionUtils.isEmpty(ips)) {
             return false;
         }
+        IPAddressVO ip = ips.get(0);
         VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
         if (vlanDetail == null) {
             return false;
