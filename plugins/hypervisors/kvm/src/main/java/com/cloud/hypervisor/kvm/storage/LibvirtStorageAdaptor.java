@@ -460,6 +460,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public StoragePoolType getStoragePoolType() {
+        // This is mapped manually in KVMStoragePoolManager
+        return  null;
+    }
+
+    @Override
     public KVMStoragePool getStoragePool(String uuid) {
         return this.getStoragePool(uuid, false);
     }

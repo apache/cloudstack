@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -98,17 +99,30 @@ public class KVMStoragePoolManager {
     public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
         this._haMonitor = monitor;
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
-        // add other storage adaptors here
-        // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.ManagedNFS.toString(), new ManagedNfsStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.PowerFlex.toString(), new ScaleIOStorageAdaptor(storagelayer));
+        // add other storage adaptors manually here
 
-        // add any adaptors that wish to register themselves via annotation
+        // add any adaptors that wish to register themselves via call to adaptor.getStoragePoolType()
         Reflections reflections = new Reflections("com.cloud.hypervisor.kvm.storage");
         Set<Class<? extends StorageAdaptor>> storageAdaptorClasses = reflections.getSubTypesOf(StorageAdaptor.class);
         for (Class<? extends StorageAdaptor> storageAdaptorClass : storageAdaptorClasses) {
+            s_logger.debug("Checking pool type for adaptor " + storageAdaptorClass.getName());
+            if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
+                s_logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
+                continue;
+            }
             try {
-                StorageAdaptor adaptor =  storageAdaptorClass.getDeclaredConstructor().newInstance();
+                Constructor<?> storageLayerConstructor = Arrays.stream(storageAdaptorClass.getConstructors())
+                        .filter(c -> c.getParameterCount() == 1)
+                        .filter(c -> c.getParameterTypes()[0].isAssignableFrom(StorageLayer.class))
+                        .findFirst().orElse(null);
+                StorageAdaptor adaptor;
+
+                if (storageLayerConstructor == null) {
+                    adaptor = storageAdaptorClass.getDeclaredConstructor().newInstance();
+                } else {
+                    adaptor = (StorageAdaptor) storageLayerConstructor.newInstance(storagelayer);
+                }
+
                 StoragePoolType storagePoolType = adaptor.getStoragePoolType();
                 if (storagePoolType != null) {
                     if (this._storageMapper.containsKey(storagePoolType.toString())) {
@@ -119,7 +133,7 @@ public class KVMStoragePoolManager {
                     }
                 }
             } catch (Exception ex) {
-                throw new CloudRuntimeException(ex.toString());
+                throw new CloudRuntimeException("Failed to set up storage adaptors", ex);
             }
         }
 

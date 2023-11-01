@@ -26,9 +26,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 
 public interface StorageAdaptor {
 
-    default StoragePoolType getStoragePoolType() {
-        return null;
-    }
+    StoragePoolType getStoragePoolType();
 
     public KVMStoragePool getStoragePool(String uuid);
 
