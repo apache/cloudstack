@@ -569,7 +569,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         allocate(vmInstanceName, template, serviceOffering, new DiskOfferingInfo(diskOffering), new ArrayList<>(), networks, plan, hyperType, null, null);
     }
 
-    private VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
+    VirtualMachineGuru getVmGuru(final VirtualMachine vm) {
         if(vm != null) {
             return _vmGurus.get(vm.getType());
         }
@@ -1474,7 +1474,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    private boolean areAllVolumesAllocated(long vmId) {
+    boolean areAllVolumesAllocated(long vmId) {
         final List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         return CollectionUtils.isEmpty(vols) || vols.stream().allMatch(v -> Volume.State.Allocated.equals(v.getState()));
     }
