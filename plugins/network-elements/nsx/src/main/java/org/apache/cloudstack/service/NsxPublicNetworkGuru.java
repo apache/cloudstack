@@ -40,9 +40,12 @@ import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class NsxPublicNetworkGuru extends PublicNetworkGuru {
 
@@ -106,6 +109,16 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
             throw new CloudRuntimeException(err);
         }
 
+        // For NSX, use VR Public IP != Source NAT
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+        if (CollectionUtils.isEmpty(ips)) {
+            String err = String.format("Cannot find a source NAT IP for the VPC %s", vpc.getName());
+            s_logger.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        ips = ips.stream().filter(x -> !x.getAddress().addr().equals(nic.getIPv4Address())).collect(Collectors.toList());
+        // Use Source NAT IP address from the NSX Public Range. Do not Use the VR Public IP address
+        ipAddress = ips.get(0);
         if (ipAddress.isSourceNat() && !ipAddress.isForSystemVms()) {
             VlanDetailsVO detail = vlanDetailsDao.findDetail(ipAddress.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
             if (detail != null && detail.getValue().equalsIgnoreCase("true")) {

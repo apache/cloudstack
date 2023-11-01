@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -347,6 +348,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private VlanDetailsDao vlanDetailsDao;
 
     List<NetworkGuru> networkGurus;
+    @Inject
+    private NsxProviderDao nsxProviderDao;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -1082,22 +1085,26 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (!isVirtualRouter || !isPublicTraffic || requested.getIPv4Address() == null) {
             return false;
         }
-        List<IPAddressVO> ips = new ArrayList<>();
-        if (Objects.nonNull(network.getVpcId())) {
-            ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
-        } else {
-            ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+        long dataCenterId = vm.getVirtualMachine().getDataCenterId();
+        if (nsxProviderDao.findByZoneId(dataCenterId) == null) {
+            return false;
         }
+
+        Long vpcId = _ipAddressDao.findByIp(requested.getIPv4Address()).getVpcId();
+        // TODO: Need to fix isolated network
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+
         if (CollectionUtils.isEmpty(ips)) {
             return false;
         }
+        ips = ips.stream().filter(x -> !x.getAddress().addr().equals(requested.getIPv4Address())).collect(Collectors.toList());
         IPAddressVO ip = ips.get(0);
         VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(ip.getVlanId(), ApiConstants.NSX_DETAIL_KEY);
         if (vlanDetail == null) {
             return false;
         }
         boolean isForNsx = vlanDetail.getValue().equalsIgnoreCase("true");
-        return isForNsx && ip.isSourceNat() && !ip.isForSystemVms();
+        return isForNsx && !ip.isForSystemVms();
     }
 
     private void setMtuDetailsInVRNic(final Pair<NetworkVO, VpcVO> networks, Network network, NicVO vo) {

@@ -23,6 +23,7 @@ import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.log4j.Logger;
 
@@ -135,7 +136,14 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
             if (Objects.isNull(nsxProvider)) {
                 sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             } else {
+                // NSX deploys VRs with Public NIC != to the source NAT, the source NAT IP is on the NSX Public range
                 sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
+                if (vpc != null) {
+                    IPAddressVO routerPublicIp = ipAddressDao.findByIp(sourceNatIp.getAddress().toString());
+                    routerPublicIp.setVpcId(vpc.getId());
+                    routerPublicIp.setSourceNat(true);
+                    ipAddressDao.persist(routerPublicIp);
+                }
             }
         }
     }
