@@ -76,7 +76,7 @@ public class ListVmsForImportCmd extends BaseListCmd {
             description = "the password for the host")
     private String password;
 
-    @Parameter(name = ApiConstants.HOST_NAME,
+    @Parameter(name = ApiConstants.HOST,
             type = CommandType.STRING,
             required = true,
             description = "the host name or IP address")

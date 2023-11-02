@@ -433,7 +433,7 @@
             :importsource="selectedSourceAction"
             :zoneid="this.zoneId"
             :hypervisor="this.destinationHypervisor"
-            :hostname="this.values.hostname"
+            :exthost="this.values.hostname"
             :username="this.values.username"
             :password="this.values.password"
             :tmppath="this.values.tmppath"
@@ -1036,6 +1036,10 @@ export default {
       }
     },
     fetchUnmanagedInstances (page, pageSize) {
+      if (this.isExternal) {
+        this.fetchExtKVMInstances(page, pageSize)
+        return
+      }
       const params = {
         clusterid: this.clusterId
       }
@@ -1098,11 +1102,11 @@ export default {
       this.values = toRaw(this.form)
       this.unmanagedInstancesLoading = true
       params.zoneid = this.zoneId
-      params.hostname = this.values.hostname
+      params.host = this.values.hostname
       params.username = this.values.username
       params.password = this.values.password
       params.hypervisor = this.destinationHypervisor
-      var details = ['hostname', 'username', 'password']
+      var details = ['host', 'username', 'password']
       for (var detail of details) {
         if (!params[detail]) {
           this.$notification.error({
@@ -1210,6 +1214,13 @@ export default {
         this.$notification.error({
           message: this.$t('message.request.failed'),
           description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.disk.path')
+        })
+        return
+      }
+      if (this.showPool && !this.values.poolid) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.storagepool')
         })
         return
       }

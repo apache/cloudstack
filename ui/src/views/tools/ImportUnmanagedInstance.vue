@@ -372,7 +372,7 @@ export default {
       type: String,
       required: false
     },
-    hostname: {
+    exthost: {
       type: String,
       required: false
     },
@@ -876,7 +876,8 @@ export default {
           zoneid: this.zoneid,
           importsource: this.importsource,
           hypervisor: this.hypervisor,
-          hostname: this.hostname,
+          host: this.exthost,
+          hostname: values.hostname,
           username: this.username,
           password: this.password,
           hostid: this.host.id,

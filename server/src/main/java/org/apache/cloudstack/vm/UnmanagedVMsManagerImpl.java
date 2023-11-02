@@ -1500,8 +1500,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (StringUtils.isEmpty(displayName)) {
             displayName = instanceName;
         }
-        String hostName = instanceName;
-
+        String hostName = cmd.getHostName();
+        if (StringUtils.isEmpty(hostName)) {
+            if (!NetUtils.verifyDomainNameLabel(instanceName, true)) {
+                throw new InvalidParameterValueException(String.format("Please provide hostname for the VM. VM name contains unsupported characters for it to be used as hostname"));
+            }
+            hostName = instanceName;
+        }
         if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
             throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                     + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");

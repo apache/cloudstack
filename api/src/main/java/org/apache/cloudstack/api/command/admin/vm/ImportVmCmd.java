@@ -122,7 +122,7 @@ public class ImportVmCmd extends BaseAsyncCmd {
             description = "the password for the host")
     private String password;
 
-    @Parameter(name = ApiConstants.HOST_NAME,
+    @Parameter(name = ApiConstants.HOST,
             type = CommandType.STRING,
             description = "the host name or IP address")
     private String host;
