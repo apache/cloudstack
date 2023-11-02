@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.service;
 
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.command.AddNsxControllerCmd;

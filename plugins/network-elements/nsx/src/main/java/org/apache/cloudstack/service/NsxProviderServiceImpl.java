@@ -25,7 +25,7 @@ import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;

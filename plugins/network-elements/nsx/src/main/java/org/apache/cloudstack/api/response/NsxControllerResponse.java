@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;

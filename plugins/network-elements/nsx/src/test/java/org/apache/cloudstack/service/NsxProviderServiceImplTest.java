@@ -20,7 +20,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;

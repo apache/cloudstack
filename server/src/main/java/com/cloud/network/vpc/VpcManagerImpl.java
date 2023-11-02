@@ -40,6 +40,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.nsx.NsxService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -264,6 +265,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
+    @Inject
+    private NsxService nsxService;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -1410,6 +1413,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
+                if (isVpcForNsx(vpc)) {
+                    nsxService.updateVpcSourceNatIp(vpc, requestedIp);
+                    // The NSX source NAT IP change does not require to update the VPC VR
+                    return false;
+                }
             } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",
                         requestedIp.getAddress().addr(), vpc.getName(), vpc.getUuid(), e.getLocalizedMessage());

@@ -41,7 +41,7 @@ import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
-import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
@@ -111,8 +111,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxTier1GatewayCommand) cmd);
         } else if (cmd instanceof CreateNsxDhcpRelayConfigCommand) {
             return executeRequest((CreateNsxDhcpRelayConfigCommand) cmd);
-        } else if (cmd instanceof CreateNsxTier1NatRuleCommand) {
-            return executeRequest((CreateNsxTier1NatRuleCommand) cmd);
+        } else if (cmd instanceof CreateOrUpdateNsxTier1NatRuleCommand) {
+            return executeRequest((CreateOrUpdateNsxTier1NatRuleCommand) cmd);
         } else if (cmd instanceof CreateNsxStaticNatCommand) {
             return executeRequest((CreateNsxStaticNatCommand) cmd);
         } else if (cmd instanceof DeleteNsxNatRuleCommand) {
@@ -229,7 +229,7 @@ public class NsxResource implements ServerResource {
         return true;
     }
 
-    private Answer executeRequest(CreateNsxTier1NatRuleCommand cmd) {
+    private Answer executeRequest(CreateOrUpdateNsxTier1NatRuleCommand cmd) {
         String tier1GatewayName = cmd.getTier1GatewayName();
         String action = cmd.getAction();
         String translatedIpAddress = cmd.getTranslatedIpAddress();

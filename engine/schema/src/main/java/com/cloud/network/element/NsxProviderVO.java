@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network.element;
 
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import com.cloud.utils.db.Encrypt;
 
 import javax.persistence.Column;
