@@ -194,7 +194,10 @@
       <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
     </template>
     <template #size="{ text }">
-      <span v-if="text">
+      <span v-if="text && $route.path === '/kubernetes'">
+        {{ text }}
+      </span>
+      <span v-else-if="text">
         {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
       </span>
     </template>
