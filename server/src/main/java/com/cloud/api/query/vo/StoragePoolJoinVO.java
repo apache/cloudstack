@@ -64,8 +64,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     private StoragePoolStatus status;
 
     @Column(name = "pool_type")
-    @Enumerated(value = EnumType.STRING)
-    private StoragePoolType poolType;
+    private String poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -183,7 +182,7 @@ public class StoragePoolJoinVO extends BaseViewVO implements InternalIdentity, I
     }
 
     public StoragePoolType getPoolType() {
-        return poolType;
+        return StoragePoolType.valueOf(poolType);
     }
 
     public Date getCreated() {
