@@ -320,7 +320,7 @@ public class TungstenServiceImplTest {
     public void createTungstenFloatingIpTest() throws Exception {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer createTungstenFloatingIpAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
         Ip ip = mock(Ip.class);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
@@ -334,7 +334,7 @@ public class TungstenServiceImplTest {
     public void deleteTungstenFloatingIpWithIpAddressTest() throws Exception {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer deleteTungstenFloatingIpAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpAnswer);
@@ -346,7 +346,7 @@ public class TungstenServiceImplTest {
     public void deleteTungstenDomainTest() throws Exception {
         DomainVO domainVO = mock(DomainVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer deleteTungstenDomainAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenDomainAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenDomainCommand.class), anyLong())).thenReturn(deleteTungstenDomainAnswer);
@@ -358,7 +358,7 @@ public class TungstenServiceImplTest {
     public void deleteTungstenProjectTest() throws Exception {
         ProjectVO projectVO = mock(ProjectVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer deleteTungstenProjectAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenProjectAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenProjectCommand.class), anyLong())).thenReturn(deleteTungstenProjectAnswer);
@@ -369,8 +369,8 @@ public class TungstenServiceImplTest {
     @Test
     public void addTungstenDefaultNetworkPolicyTest() {
         TungstenRule tungstenRule = mock(TungstenRule.class);
-        TungstenAnswer createTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenPolicyAnswer);
@@ -387,12 +387,12 @@ public class TungstenServiceImplTest {
         VirtualNetwork managementVirtualNetwork = mock(VirtualNetwork.class);
         VirtualNetwork fabricVirtualNetwork = mock(VirtualNetwork.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
-        TungstenAnswer createTungstenNetworkAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenGlobalVrouterConfigAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenFabricNetworkAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenGlobalVrouterConfigAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenFabricNetworkAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
                 eq(Networks.TrafficType.Management))).thenReturn(managementNetwork);
@@ -414,8 +414,8 @@ public class TungstenServiceImplTest {
     public void addManagementNetworkSubnetTest() {
         HostPodVO hostPodVO = mock(HostPodVO.class);
         Network managementNetwork = mock(Network.class);
-        TungstenAnswer addTungstenNetworkSubnetAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         DataCenterIpAddressVO dataCenterIpAddressVO = mock(DataCenterIpAddressVO.class);
 
         when(hostPodVO.getDescription()).thenReturn("192.168.100.100-192.168.100.200");
@@ -435,10 +435,10 @@ public class TungstenServiceImplTest {
     @Test
     public void deleteManagementNetworkTest() {
         Network managementNetwork = mock(Network.class);
-        TungstenAnswer deleteTungstenManagementPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenFabricNetworkAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenFabricPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenNetworkAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenManagementPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenFabricNetworkAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenFabricPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
         VirtualNetwork fabricVirtualNetwork = mock(VirtualNetwork.class);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
@@ -455,8 +455,8 @@ public class TungstenServiceImplTest {
     public void removeManagementNetworkSubnetTest() {
         HostPodVO hostPodVO = mock(HostPodVO.class);
         Network managementNetwork = mock(Network.class);
-        TungstenAnswer removeTungstenNetworkSubnetAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         DataCenterIpAddressVO dataCenterIpAddressVO = mock(DataCenterIpAddressVO.class);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
@@ -477,10 +477,10 @@ public class TungstenServiceImplTest {
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
         NetworkDetailVO networkDetailVO = mock(NetworkDetailVO.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
-        TungstenAnswer createPublicNetworkAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createFloatingIpPoolAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createPublicNetworkAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createFloatingIpPoolAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkCommand.class), anyLong())).thenReturn(createPublicNetworkAnswer);
@@ -499,11 +499,11 @@ public class TungstenServiceImplTest {
     public void addPublicNetworkSubnetTest() {
         VlanVO vlanVO = mock(VlanVO.class);
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer addTungstenNetworkSubnetAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
@@ -526,9 +526,9 @@ public class TungstenServiceImplTest {
     @Test
     public void deletePublicNetworkTest() {
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer deleteTungstenNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenFloatingIpPoolAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenNetworkAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenFloatingIpPoolAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
@@ -542,9 +542,9 @@ public class TungstenServiceImplTest {
     public void removePublicNetworkSubnetTest() {
         VlanVO vlanVO = mock(VlanVO.class);
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer deleteTungstenNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer removeTungstenNetworkSubnetAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer removeTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
@@ -562,7 +562,7 @@ public class TungstenServiceImplTest {
     @Test
     public void allocateDnsIpAddressTest() {
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
@@ -578,7 +578,7 @@ public class TungstenServiceImplTest {
     @Test
     public void deallocateDnsIpAddressTest() {
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
@@ -620,10 +620,10 @@ public class TungstenServiceImplTest {
         DomainVO domainVO = mock(DomainVO.class);
         ProjectVO projectVO = mock(ProjectVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer createTungstenDomainAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createTungstenProjectAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer createTungstenDefaultProjectAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenDomainAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createTungstenProjectAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer createTungstenDefaultProjectAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
 
         when(domainDao.listAll()).thenReturn(List.of(domainVO));
         when(projectDao.listAll()).thenReturn(List.of(projectVO));
@@ -644,8 +644,8 @@ public class TungstenServiceImplTest {
         Network publicNetwork = mock(Network.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         HostVO hostVO = mock(HostVO.class);
-        TungstenAnswer getTungstenLoadBalancerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateLoadBalancerServiceInstanceAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer getTungstenLoadBalancerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateLoadBalancerServiceInstanceAnswer = MockTungstenAnswerFactory.get(true);
         Answer updateTungstenLoadbalancerStatsAnswer = mock(Answer.class);
         Answer updateTungstenLoadbalancerSslAnswer = mock(Answer.class);
         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
@@ -687,8 +687,8 @@ public class TungstenServiceImplTest {
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         DomainVO domainVO = mock(DomainVO.class);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
-        TungstenAnswer createTungstenSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
 
         when(projectDao.findByProjectAccountId(anyLong())).thenReturn(projectVO);
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
@@ -706,7 +706,7 @@ public class TungstenServiceImplTest {
     public void deleteTungstenSecurityGroupTest() {
         SecurityGroup securityGroup = mock(SecurityGroup.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer deleteTungstenSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenSecurityGroupCommand.class), anyLong())).thenReturn(deleteTungstenSecurityGroupAnswer);
@@ -719,8 +719,8 @@ public class TungstenServiceImplTest {
         SecurityRule securityRule = mock(SecurityRule.class);
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
         TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
-        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
@@ -753,7 +753,7 @@ public class TungstenServiceImplTest {
         SecurityRule securityRule = mock(SecurityRule.class);
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
         TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
 
@@ -776,8 +776,8 @@ public class TungstenServiceImplTest {
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
         NicVO nicVO = mock(NicVO.class);
 
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
@@ -805,7 +805,7 @@ public class TungstenServiceImplTest {
         SecurityRule securityRule = mock(SecurityRule.class);
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
@@ -826,8 +826,8 @@ public class TungstenServiceImplTest {
         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
-        TungstenAnswer addTungstenSecondaryIpAddressAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenSecondaryIpAddressAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
 
         when(entityMgr.findById(eq(NicSecondaryIp.class), anyLong())).thenReturn(nicSecondaryIp);
         when(entityMgr.findById(eq(Network.class), anyLong())).thenReturn(network);
@@ -852,10 +852,10 @@ public class TungstenServiceImplTest {
         NicSecondaryIpVO nicSecondaryIpVO = mock(NicSecondaryIpVO.class);
         Network network = mock(Network.class);
         DataCenter dataCenter = mock(DataCenter.class);
-        TungstenAnswer removeTungstenSecondaryIpAddressAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenSecondaryIpAddressAnswer = MockTungstenAnswerFactory.get(true);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
-        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
 
         when(entityMgr.findById(eq(Network.class), anyLong())).thenReturn(network);
         when(entityMgr.findById(eq(DataCenter.class), anyLong())).thenReturn(dataCenter);
@@ -874,7 +874,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenPolicyTest() {
-        TungstenAnswer createTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
@@ -889,7 +889,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void addTungstenPolicyRuleTest() throws Exception {
-        TungstenAnswer addTungstenPolicyRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
@@ -928,7 +928,7 @@ public class TungstenServiceImplTest {
     @Test
     public void listTungstenPolicyTest() {
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer listTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -947,7 +947,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenNetworkTest() {
-        TungstenAnswer listTungstenNetworkAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
 
@@ -961,7 +961,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenNicTest() {
-        TungstenAnswer listTungstenNicAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenNicAnswer = MockTungstenAnswerFactory.get(true);
         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
 
@@ -974,7 +974,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenVmTest() {
-        TungstenAnswer listTungstenVmAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenVmAnswer = MockTungstenAnswerFactory.get(true);
         VirtualMachine virtualMachine = mock(VirtualMachine.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
 
@@ -987,7 +987,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenPolicyTest() {
-        TungstenAnswer deleteTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenPolicyCommand.class), anyLong())).thenReturn(deleteTungstenPolicyAnswer);
 
@@ -996,7 +996,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenPolicyRuleWithRuleUuidTest() {
-        TungstenAnswer listTungstenPolicyRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
@@ -1025,7 +1025,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenPolicyRuleWithAllRuleTest() {
-        TungstenAnswer listTungstenPolicyRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
@@ -1054,7 +1054,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void removeTungstenPolicyRuleTest() {
-        TungstenAnswer removeTungstenPolicyRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1071,7 +1071,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenTagTest() {
-        TungstenAnswer createTungstenTagAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
         TungstenTag tungstenTag = mock(TungstenTag.class);
         Tag tag = mock(Tag.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1094,7 +1094,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenTagTypeTest() {
-        TungstenAnswer createTungstenTagTypeAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenTagTypeAnswer = MockTungstenAnswerFactory.get(true);
         TagType tagtype = mock(TagType.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
 
@@ -1107,7 +1107,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenTagsTest() {
-        TungstenAnswer listTungstenTagAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
         TungstenTag tungstenTag = mock(TungstenTag.class);
         Tag tag = mock(Tag.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1133,7 +1133,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenTagTypesTest() {
-        TungstenAnswer listTungstenTagTypeAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenTagTypeAnswer = MockTungstenAnswerFactory.get(true);
         TagType tagtype = mock(TagType.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
 
@@ -1146,7 +1146,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenTagTest() {
-        TungstenAnswer deleteTungstenTagAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenTagCommand.class), anyLong())).thenReturn(deleteTungstenTagAnswer);
 
@@ -1155,7 +1155,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenTagTypeTest() {
-        TungstenAnswer deleteTungstenTagTypeAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenTagTypeAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenTagTypeCommand.class), anyLong())).thenReturn(deleteTungstenTagTypeAnswer);
 
@@ -1164,7 +1164,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void applyTungstenPolicyTest() {
-        TungstenAnswer applyTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1181,7 +1181,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void applyTungstenTagTest() {
-        TungstenAnswer applyTungstenTagAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer applyTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
         TungstenTag tungstenTag = mock(TungstenTag.class);
         Tag tag = mock(Tag.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
@@ -1206,7 +1206,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void removeTungstenPolicyTest() {
-        TungstenAnswer removeTungstenPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1223,7 +1223,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void removeTungstenTagTest() {
-        TungstenAnswer removeTungstenTagAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
         TungstenTag tungstenTag = mock(TungstenTag.class);
         Tag tag = mock(Tag.class);
         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
@@ -1249,7 +1249,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenAddressGroupTest() {
-        TungstenAnswer createTungstenAddressGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenAddressGroupAnswer = MockTungstenAnswerFactory.get(true);
         AddressGroup addressGroup = mock(AddressGroup.class);
         SubnetListType subnetListType = mock(SubnetListType.class);
         SubnetType subnetType = mock(SubnetType.class);
@@ -1266,7 +1266,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenServiceGroupTest() {
-        TungstenAnswer createTungstenServiceGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenServiceGroupAnswer = MockTungstenAnswerFactory.get(true);
         ServiceGroup serviceGroup = mock(ServiceGroup.class);
         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
@@ -1285,7 +1285,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenFirewallRuleTest() {
-        TungstenAnswer createTungstenFirewallRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenFirewallRuleAnswer = MockTungstenAnswerFactory.get(true);
         net.juniper.tungsten.api.types.FirewallRule firewallRule = mock(net.juniper.tungsten.api.types.FirewallRule.class);
         ActionListType actionListType = mock(ActionListType.class);
         ObjectReference<ApiPropertyBase> serviceGroup = mock(ObjectReference.class);
@@ -1315,7 +1315,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenFirewallPolicyTest() {
-        TungstenAnswer createTungstenFirewallPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenFirewallPolicyAnswer = MockTungstenAnswerFactory.get(true);
         FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
@@ -1331,7 +1331,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createTungstenApplicationPolicySetTest() {
-        TungstenAnswer createTungstenApplicationPolicySetAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
         ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
@@ -1350,7 +1350,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenApplicationPolicySetTest() {
-        TungstenAnswer listTungstenApplicationPolicySetAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
         ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
@@ -1369,7 +1369,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenFirewallPolicyTest() {
-        TungstenAnswer listTungstenFirewallPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenFirewallPolicyAnswer = MockTungstenAnswerFactory.get(true);
         FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
@@ -1385,7 +1385,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenFirewallRuleTest() {
-        TungstenAnswer listTungstenFirewallRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenFirewallRuleAnswer = MockTungstenAnswerFactory.get(true);
         net.juniper.tungsten.api.types.FirewallRule firewallRule = mock(net.juniper.tungsten.api.types.FirewallRule.class);
         ActionListType actionListType = mock(ActionListType.class);
         ObjectReference<ApiPropertyBase> serviceGroup = mock(ObjectReference.class);
@@ -1414,7 +1414,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenAddressGroupTest() {
-        TungstenAnswer listTungstenAddressGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenAddressGroupAnswer = MockTungstenAnswerFactory.get(true);
         AddressGroup addressGroup = mock(AddressGroup.class);
         SubnetListType subnetListType = mock(SubnetListType.class);
         SubnetType subnetType = mock(SubnetType.class);
@@ -1432,7 +1432,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listTungstenServiceGroupTest() {
-        TungstenAnswer listTungstenServiceGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer listTungstenServiceGroupAnswer = MockTungstenAnswerFactory.get(true);
         ServiceGroup serviceGroup = mock(ServiceGroup.class);
         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
@@ -1451,7 +1451,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenApplicationPolicySetTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(tungstenAnswer);
 
@@ -1460,7 +1460,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenFirewallPolicyTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(tungstenAnswer);
 
@@ -1469,7 +1469,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenFirewallRuleTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFirewallRuleCommand.class), anyLong())).thenReturn(tungstenAnswer);
 
@@ -1478,7 +1478,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenServiceGroupTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenServiceGroupCommand.class), anyLong())).thenReturn(tungstenAnswer);
 
@@ -1487,7 +1487,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteTungstenAddressGroupTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenAddressGroupCommand.class), anyLong())).thenReturn(tungstenAnswer);
 
@@ -1499,9 +1499,9 @@ public class TungstenServiceImplTest {
         Network network = mock(Network.class);
         Vlan vlan = mock(Vlan.class);
         AccountVO accountVO = mock(AccountVO.class);
-        TungstenAnswer createTungstenSharedNetworkAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer addNetworkSubnetAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer getTungstenNetworkDnsAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenSharedNetworkAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer addNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
         NetworkDetailVO networkDetailVO = mock(NetworkDetailVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         HostVO hostVO = mock(HostVO.class);
@@ -1540,12 +1540,12 @@ public class TungstenServiceImplTest {
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
         TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
-        TungstenAnswer addTungstenVmToSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenVmToSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
         NicVO nicVO = mock(NicVO.class);
         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
-        TungstenAnswer addTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
 
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
@@ -1573,10 +1573,10 @@ public class TungstenServiceImplTest {
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
-        TungstenAnswer removeTungstenVmFromSecurityGroupAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenVmFromSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
         NicVO nicVO = mock(NicVO.class);
         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
-        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
 
         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
@@ -1587,7 +1587,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void createRoutingLogicalRouterTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
         LogicalRouter logicalRouter = mock(LogicalRouter.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1605,7 +1605,7 @@ public class TungstenServiceImplTest {
     @Test
     public void addNetworkGatewayToLogicalRouterTest() {
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
         LogicalRouter logicalRouter = mock(LogicalRouter.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1624,7 +1624,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void listRoutingLogicalRouterTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
         LogicalRouter logicalRouter = mock(LogicalRouter.class);
         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
@@ -1642,7 +1642,7 @@ public class TungstenServiceImplTest {
     @Test
     public void removeNetworkGatewayFromLogicalRouterTest() {
         NetworkVO networkVO = mock(NetworkVO.class);
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
         LogicalRouter logicalRouter = mock(LogicalRouter.class);
@@ -1662,7 +1662,7 @@ public class TungstenServiceImplTest {
 
     @Test
     public void deleteLogicalRouterTest() {
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
 

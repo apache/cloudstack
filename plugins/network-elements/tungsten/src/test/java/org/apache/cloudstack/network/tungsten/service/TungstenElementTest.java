@@ -256,7 +256,7 @@ public class TungstenElementTest {
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
-        TungstenAnswer assignFloatingIpAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
         List<StaticNatImpl> staticNatList = List.of(staticNat);
@@ -277,7 +277,7 @@ public class TungstenElementTest {
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
-        TungstenAnswer assignFloatingIpAnswer = new MockTungstenAnswerFactory(false).get();
+        TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
         List<StaticNatImpl> staticNatList = List.of(staticNat);
@@ -298,7 +298,7 @@ public class TungstenElementTest {
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
-        TungstenAnswer releaseFloatingIpAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
         List<StaticNatImpl> staticNatList = List.of(staticNat);
@@ -319,7 +319,7 @@ public class TungstenElementTest {
         StaticNatImpl staticNat = mock(StaticNatImpl.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
-        TungstenAnswer releaseFloatingIpAnswer = new MockTungstenAnswerFactory(false).get();
+        TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
         Nic nic = mock(Nic.class);
         Network publicNetwork = mock(Network.class);
         List<StaticNatImpl> staticNatList = List.of(staticNat);
@@ -351,11 +351,11 @@ public class TungstenElementTest {
         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
-        TungstenAnswer createTungstenNetworkLoadbalancerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerPoolAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerMemberAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerListenerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenHealthMonitorAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenNetworkLoadbalancerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenLoadBalancerPoolAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenLoadBalancerMemberAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenLoadBalancerListenerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenHealthMonitorAnswer = MockTungstenAnswerFactory.get(true);
         LoadBalancingRule.LbSslCert lbSslCert = mock(LoadBalancingRule.LbSslCert.class);
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
         List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
@@ -402,10 +402,10 @@ public class TungstenElementTest {
         List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
-        TungstenAnswer createTungstenNetworkLoadbalancerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerPoolAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenLoadBalancerMemberAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer updateTungstenHealthMonitorAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenNetworkLoadbalancerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenLoadBalancerPoolAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenLoadBalancerMemberAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer updateTungstenHealthMonitorAnswer = MockTungstenAnswerFactory.get(true);
         List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
 
@@ -445,8 +445,8 @@ public class TungstenElementTest {
         List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
         List<LoadBalancerVO> loadBalancerVOList1 = List.of(loadBalancerVO1);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
-        TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenLoadBalancerCommand = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenLoadBalancerCommand = MockTungstenAnswerFactory.get(true);
 
         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
         when(loadBalancingRule1.getSourceIp()).thenReturn(ip1);
@@ -472,8 +472,8 @@ public class TungstenElementTest {
         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
         LoadBalancerVO loadBalancerVO2 = mock(LoadBalancerVO.class);
         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
-        TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer deleteTungstenLoadBalancerCommand = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer deleteTungstenLoadBalancerListenerAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer deleteTungstenLoadBalancerCommand = MockTungstenAnswerFactory.get(true);
         List<LoadBalancingRule> loadBalancingRuleList = List.of(loadBalancingRule);
         List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO1, loadBalancerVO2);
 
@@ -497,7 +497,7 @@ public class TungstenElementTest {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
-        TungstenAnswer applyTungstenPortForwardingAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
@@ -518,7 +518,7 @@ public class TungstenElementTest {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
-        TungstenAnswer applyTungstenPortForwardingAnswer = new MockTungstenAnswerFactory(false).get();
+        TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
@@ -539,7 +539,7 @@ public class TungstenElementTest {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
-        TungstenAnswer applyTungstenPortForwardingAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
@@ -560,7 +560,7 @@ public class TungstenElementTest {
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         UserVm userVm = mock(UserVm.class);
         Nic nic = mock(Nic.class);
-        TungstenAnswer applyTungstenPortForwardingAnswer = new MockTungstenAnswerFactory(false).get();
+        TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
 
         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
@@ -582,9 +582,9 @@ public class TungstenElementTest {
         ReservationContext reservationContext = mock(ReservationContext.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO host = mock(HostVO.class);
-        TungstenAnswer createTungstenVMAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenVMAnswer = MockTungstenAnswerFactory.get(true);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
-        TungstenAnswer createTungstenNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
 
         nicProfile.setIPv4Address("192.168.100.100");
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
@@ -611,7 +611,7 @@ public class TungstenElementTest {
         ReservationContext reservationContext = mock(ReservationContext.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO host = mock(HostVO.class);
-        TungstenAnswer createTungstenVMAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createTungstenVMAnswer = MockTungstenAnswerFactory.get(true);
 
         nicProfile.setIPv4Address("192.168.100.100");
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
@@ -728,8 +728,8 @@ public class TungstenElementTest {
         Network network = mock(Network.class);
         ReservationContext reservationContext = mock(ReservationContext.class);
         List<IPAddressVO> ipAddressVOList = Arrays.asList(ipAddressVO1, ipAddressVO2);
-        TungstenAnswer tungstenDeleteFIPAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer tungstenDeleteNPAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenDeleteFIPAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer tungstenDeleteNPAnswer = MockTungstenAnswerFactory.get(true);
 
         when(ipAddressDao.listByAssociatedNetwork(anyLong(), anyBoolean())).thenReturn(ipAddressVOList);
         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(tungstenDeleteFIPAnswer);
@@ -875,8 +875,8 @@ public class TungstenElementTest {
         Network network = mock(Network.class);
         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer createNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
 
         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
         when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
@@ -895,8 +895,8 @@ public class TungstenElementTest {
         Network network = mock(Network.class);
         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
         Network publicNetwork = mock(Network.class);
-        TungstenAnswer createNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
-        TungstenAnswer applyNetworkPolicyAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+        TungstenAnswer applyNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
         Ip ip = mock(Ip.class);
 
@@ -965,7 +965,7 @@ public class TungstenElementTest {
         ReservationContext context = mock(ReservationContext.class);
         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
         HostVO hostVO = mock(HostVO.class);
-        TungstenAnswer tungstenAnswer = new MockTungstenAnswerFactory(true).get();
+        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
 
         when(vm.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);

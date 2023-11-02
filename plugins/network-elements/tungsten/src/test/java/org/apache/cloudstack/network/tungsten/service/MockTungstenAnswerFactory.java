@@ -31,5 +31,8 @@ public class MockTungstenAnswerFactory {
     TungstenAnswer get() {
         return tungstenAnswer;
     }
-
+    public static TungstenAnswer get(boolean returnResult){
+        TungstenAnswer tungstenAnswers = new MockTungstenAnswerFactory(returnResult).get();
+        return tungstenAnswers;
+    }
 }
