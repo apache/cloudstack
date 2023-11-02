@@ -39,6 +39,16 @@ export default {
     name: 'volume',
     title: 'label.volumes',
     param: 'storageid'
+  },
+  {
+    name: 'template',
+    title: 'label.templates',
+    param: 'storageid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'storageid'
   }],
   resourceType: 'PrimaryStorage',
   filters: () => {
@@ -51,6 +61,10 @@ export default {
   }, {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'browser',
+    resourceType: 'PrimaryStorage',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/StorageBrowser.vue')))
   }, {
     name: 'events',
     resourceType: 'StoragePool',

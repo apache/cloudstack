@@ -1533,6 +1533,10 @@ public class ApiDBUtils {
         return s_ipAddressDao.findByAssociatedVmId(vmId);
     }
 
+    public static IpAddress findIpByAssociatedVmIdAndNetworkId(long vmId, long networkId) {
+        return s_ipAddressDao.findByVmIdAndNetworkId(networkId, vmId);
+    }
+
     public static String getHaTag() {
         return s_haMgr.getHaTag();
     }
@@ -2117,12 +2121,12 @@ public class ApiDBUtils {
         return s_templateJoinDao.newTemplateResponse(detailsView, view, vr);
     }
 
-    public static SnapshotResponse newSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO vr) {
-        return s_snapshotJoinDao.newSnapshotResponse(view, isShowUnique, vr);
+    public static TemplateResponse newIsoResponse(TemplateJoinVO vr, ResponseView view) {
+        return s_templateJoinDao.newIsoResponse(vr, view);
     }
 
-    public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
-        return s_templateJoinDao.newIsoResponse(vr);
+    public static SnapshotResponse newSnapshotResponse(ResponseView view, boolean isShowUnique, SnapshotJoinVO vr) {
+        return s_snapshotJoinDao.newSnapshotResponse(view, isShowUnique, vr);
     }
 
     public static TemplateResponse fillTemplateDetails(EnumSet<DomainDetails> detailsView, ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {

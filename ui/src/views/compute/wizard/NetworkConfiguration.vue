@@ -91,6 +91,10 @@ export default {
       type: Boolean,
       default: () => false
     },
+    vnf: {
+      type: Boolean,
+      default: () => false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -138,6 +142,9 @@ export default {
   },
   computed: {
     rowSelection () {
+      if (this.vnf) {
+        return null
+      }
       return {
         type: 'radio',
         selectedRowKeys: this.selectedRowKeys,

@@ -35,6 +35,7 @@ export default {
         if (store.getters.metrics) {
           params = { details: 'servoff,tmpl,nics,stats' }
         }
+        params.isvnf = false
         return params
       },
       filters: () => {
@@ -255,7 +256,7 @@ export default {
         {
           api: 'createBackupSchedule',
           icon: 'schedule-outlined',
-          label: 'Configure Backup Schedule',
+          label: 'label.backup.configure.schedule',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
           popup: true,

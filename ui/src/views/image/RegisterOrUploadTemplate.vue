@@ -324,6 +324,25 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          name="templatetype"
+          ref="templatetype">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.templatetype"
+            :placeholder="apiParams.templatetype.description">
+            <a-select-option v-for="opt in templateTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
@@ -405,11 +424,6 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12" v-if="isAdminRole">
-                    <a-checkbox value="isrouting">
-                      {{ $t('label.isrouting') }}
-                    </a-checkbox>
-                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
@@ -462,6 +476,7 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      templateTypes: {},
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
@@ -536,6 +551,7 @@ export default {
       this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
+      this.fetchTemplateTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -677,6 +693,33 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
+    },
+    fetchTemplateTypes () {
+      this.templateTypes.opts = []
+      const templatetypes = []
+      templatetypes.push({
+        id: 'USER',
+        description: 'USER'
+      })
+      templatetypes.push({
+        id: 'VNF',
+        description: 'VNF'
+      })
+      if (this.isAdminRole) {
+        templatetypes.push({
+          id: 'SYSTEM',
+          description: 'SYSTEM'
+        })
+        templatetypes.push({
+          id: 'BUILTIN',
+          description: 'BUILTIN'
+        })
+        templatetypes.push({
+          id: 'ROUTING',
+          description: 'ROUTING'
+        })
+      }
+      this.templateTypes.opts = templatetypes
     },
     fetchUserData () {
       const params = {}

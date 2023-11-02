@@ -70,6 +70,8 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> uploadTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> directDownloadTemplateSeach;
+    private SearchBuilder<TemplateDataStoreVO> imageStoreAndInstallPathSearch;
+    private SearchBuilder<TemplateDataStoreVO> storeIdAndTemplateIdsSearch;
     private SearchBuilder<VMTemplateVO> templateOnlySearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
@@ -162,6 +164,16 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         uploadTemplateStateSearch.join("templateOnlySearch", templateOnlySearch, templateOnlySearch.entity().getId(), uploadTemplateStateSearch.entity().getTemplateId(), JoinType.LEFT);
         uploadTemplateStateSearch.and("destroyed", uploadTemplateStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         uploadTemplateStateSearch.done();
+
+        imageStoreAndInstallPathSearch = createSearchBuilder();
+        imageStoreAndInstallPathSearch.and("store_id", imageStoreAndInstallPathSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        imageStoreAndInstallPathSearch.and("install_pathIN", imageStoreAndInstallPathSearch.entity().getInstallPath(), SearchCriteria.Op.IN);
+        imageStoreAndInstallPathSearch.done();
+
+        storeIdAndTemplateIdsSearch = createSearchBuilder();
+        storeIdAndTemplateIdsSearch.and("store_id", storeIdAndTemplateIdsSearch.entity().getDataStoreId(), Op.EQ);
+        storeIdAndTemplateIdsSearch.and("template_idIN", storeIdAndTemplateIdsSearch.entity().getTemplateId(), Op.IN);
+        storeIdAndTemplateIdsSearch.done();
 
         return true;
     }
@@ -554,6 +566,29 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         SearchCriteria<TemplateDataStoreVO> sc = downloadTemplateSearch.create();
         sc.setParameters("destroyed", false);
         sc.setParameters("store_id", storeId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listByStoreIdAndInstallPaths(long storeId, List<String> installPaths) {
+        if (CollectionUtils.isEmpty(installPaths)) {
+            return Collections.emptyList();
+        }
+
+        SearchCriteria<TemplateDataStoreVO> sc = imageStoreAndInstallPathSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("install_pathIN", installPaths.toArray());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<TemplateDataStoreVO> listByStoreIdAndTemplateIds(long storeId, List<Long> templateIds) {
+        if (CollectionUtils.isEmpty(templateIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<TemplateDataStoreVO> sc = storeIdAndTemplateIdsSearch.create();
+        sc.setParameters("store_id", storeId);
+        sc.setParameters("template_idIN", templateIds.toArray());
         return listBy(sc);
     }
 

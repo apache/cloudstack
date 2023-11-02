@@ -101,6 +101,8 @@ import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -115,6 +117,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -272,6 +275,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected ImageStoreDao _imageStoreDao = null;
     @Inject
     protected ImageStoreDetailsDao _imageStoreDetailsDao = null;
+    @Inject
+    protected ImageStoreObjectDownloadDao _imageStoreObjectDownloadDao = null;
     @Inject
     protected SnapshotDataStoreDao _snapshotStoreDao = null;
     @Inject
@@ -3369,6 +3374,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _templateStoreDao.update(templateOnImageStore.getId(), templateOnImageStore);
             } catch (Throwable th) {
                 s_logger.warn("caught exception while deleting download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId(), th);
+            }
+        }
+
+        Date date = DateUtils.addSeconds(new Date(), -1 * _downloadUrlExpirationInterval);
+        List<ImageStoreObjectDownloadVO> imageStoreObjectDownloadList = _imageStoreObjectDownloadDao.listToExpire(date);
+        for (ImageStoreObjectDownloadVO imageStoreObjectDownloadVO : imageStoreObjectDownloadList) {
+            try {
+                ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(imageStoreObjectDownloadVO.getStoreId(), DataStoreRole.Image);
+                secStore.deleteExtractUrl(imageStoreObjectDownloadVO.getPath(), imageStoreObjectDownloadVO.getDownloadUrl(), null);
+                _imageStoreObjectDownloadDao.expunge(imageStoreObjectDownloadVO.getId());
+            } catch (Throwable th) {
+                s_logger.warn("caught exception while deleting download url " + imageStoreObjectDownloadVO.getDownloadUrl() + " for object id " + imageStoreObjectDownloadVO.getId(), th);
             }
         }
     }
