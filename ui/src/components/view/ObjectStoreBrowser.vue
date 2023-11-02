@@ -210,7 +210,9 @@
             </template>
           </template>
           <template v-else-if="column.key == 'size'">
-            {{ convertBytes(record.size) }}
+            <template v-if="record.name !== undefined && !record.prefix">
+              {{ convertBytes(record.size) }}
+            </template>
           </template>
           <template v-else-if="column.key == 'lastModified' && record.lastModified">
             {{ $toLocaleDate(record.lastModified) }}
