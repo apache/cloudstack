@@ -139,10 +139,6 @@ public class PhysicalNetworkResponse extends BaseResponse {
         this.isolationMethods = buf.delete(buf.length() - 1, buf.length()).toString();
     }
 
-    public String getIsolationMethods() {
-        return isolationMethods;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
