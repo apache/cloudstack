@@ -282,7 +282,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             disk.setFileBaseName(physicalDisk.getName());
             if (CollectionUtils.isNotEmpty(diskDefs)) {
                 LibvirtVMDef.DiskDef diskDef = diskDefs.get(i);
-                disk.setController(diskDef.getBusType().toString());
+                disk.setController(diskDef.getBusType() != null ? diskDef.getBusType().toString() : LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString());
+            } else {
+                // If the job is finished but we cannot parse the XML, the guest VM can use the virtio driver
+                disk.setController(LibvirtVMDef.DiskDef.DiskBus.VIRTIO.toString());
             }
             instanceDisks.add(disk);
         }
