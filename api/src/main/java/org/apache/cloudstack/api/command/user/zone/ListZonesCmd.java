@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.zone;
 
+import java.util.List;
 import java.util.Map;
-
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,6 +41,9 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")
     private Long id;
+
+    @Parameter(name = ApiConstants.IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ZoneResponse.class, description = "the IDs of the zones, mutually exclusive with id", since = "4.19.0")
+    private List<Long> ids;
 
     @Parameter(name = ApiConstants.AVAILABLE,
                type = CommandType.BOOLEAN,
@@ -72,6 +75,10 @@ public class ListZonesCmd extends BaseListCmd implements UserCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public List<Long> getIds() {
+        return ids;
     }
 
     public Boolean isAvailable() {

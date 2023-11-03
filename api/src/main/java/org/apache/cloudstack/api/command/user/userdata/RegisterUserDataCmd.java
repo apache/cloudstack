@@ -140,5 +140,4 @@ public class RegisterUserDataCmd extends BaseCmd {
         response.setObjectName(ApiConstants.USER_DATA);
         setResponseObject(response);
     }
-
-    }
+}

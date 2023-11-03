@@ -74,5 +74,4 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
-    }
+}

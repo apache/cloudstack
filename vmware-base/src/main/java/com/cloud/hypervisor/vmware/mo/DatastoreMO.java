@@ -21,6 +21,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.vmware.vim25.FolderFileInfo;
 
 import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -319,7 +320,7 @@ public class DatastoreMO extends BaseMO {
         HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
         if (results != null) {
             List<FileInfo> info = results.getFile();
-            if (info != null && info.size() > 0) {
+            if (info != null && info.size() == 1 && !(info.get(0) instanceof FolderFileInfo)) {
                 logger.info("File " + fileFullPath + " exists on datastore");
                 return true;
             }
@@ -366,7 +367,7 @@ public class DatastoreMO extends BaseMO {
         HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(folderParentDatastorePath, folderName, true);
         if (results != null) {
             List<FileInfo> info = results.getFile();
-            if (info != null && info.size() > 0) {
+            if (info != null && info.size() == 1 && info.get(0) instanceof FolderFileInfo) {
                 logger.info("Folder " + folderName + " exists on datastore");
                 return true;
             }

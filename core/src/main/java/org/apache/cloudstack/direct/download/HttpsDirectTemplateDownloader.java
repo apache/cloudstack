@@ -19,29 +19,6 @@
 
 package org.apache.cloudstack.direct.download;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.QCOW2Utils;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.commons.collections.MapUtils;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,6 +36,32 @@ import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import com.cloud.utils.storage.QCOW2Utils;
 
 public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
@@ -183,8 +186,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
                 SSLContext context = getSSLContext();
                 urlConnection.setSSLSocketFactory(context.getSocketFactory());
                 urlConnection.connect();
-                boolean isCompressed = !url.endsWith("qcow2");
-                return QCOW2Utils.getVirtualSize(urlObj.openStream(), isCompressed);
+                return QCOW2Utils.getVirtualSize(urlObj.openStream(), UriUtils.isUrlForCompressedFile(url));
             } catch (IOException e) {
                 throw new CloudRuntimeException(String.format("Cannot obtain qcow2 virtual size due to: %s", e.getMessage()), e);
             }

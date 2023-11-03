@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -97,6 +99,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
     private SearchBuilder<VMTemplateVO> LatestTemplateByHypervisorTypeSearch;
     private SearchBuilder<VMTemplateVO> userDataSearch;
+    private SearchBuilder<VMTemplateVO> templateIdSearch;
     @Inject
     ResourceTagDao _tagsDao;
 
@@ -425,6 +428,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         userDataSearch.and("state", userDataSearch.entity().getState(), SearchCriteria.Op.EQ);
         userDataSearch.done();
 
+
+        templateIdSearch = createSearchBuilder();
+        templateIdSearch.and("idIN", templateIdSearch.entity().getId(), SearchCriteria.Op.IN);
+        templateIdSearch.done();
+
         return result;
     }
 
@@ -644,6 +652,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("userDataId", userdataId);
         sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         return listBy(sc);
+    }
+
+    @Override
+    public List<VMTemplateVO> listByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateVO> sc = templateIdSearch.create();
+        sc.setParameters("idIN", ids.toArray());
+        return listBy(sc, null);
     }
 
     @Override

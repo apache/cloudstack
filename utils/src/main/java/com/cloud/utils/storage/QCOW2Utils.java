@@ -33,6 +33,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UriUtils;
 
 public final class QCOW2Utils {
     protected static Logger LOGGER = LogManager.getLogger(QCOW2Utils.class);
@@ -115,7 +116,7 @@ public final class QCOW2Utils {
     public static long getVirtualSize(String urlStr) {
         try {
             URL url = new URL(urlStr);
-            return getVirtualSizeFromInputStream(url.openStream());
+            return getVirtualSize(url.openStream(), UriUtils.isUrlForCompressedFile(urlStr));
         } catch (MalformedURLException e) {
             LOGGER.warn("Failed to validate for qcow2, malformed URL: " + urlStr + ", error: " + e.getMessage());
             throw new IllegalArgumentException("Invalid URL: " + urlStr);

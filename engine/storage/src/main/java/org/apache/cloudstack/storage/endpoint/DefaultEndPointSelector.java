@@ -429,7 +429,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
 
         // If ssvm doesn't exist then find any ssvm in the zone.
-        logger.debug("Coudn't find ssvm for url" +downloadUrl);
+        logger.debug("Couldn't find ssvm for url" +downloadUrl);
         return findEndpointForImageStorage(store);
     }
 

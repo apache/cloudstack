@@ -64,7 +64,7 @@ public class Upgrade301to302 extends LegacyDbUpgrade {
         keys.add("i_host__allocation_state");
         uniqueKeys.put("host", keys);
 
-        logger.debug("Droping i_host__allocation_state key in host table");
+        logger.debug("Dropping i_host__allocation_state key in host table");
         for (String tableName : uniqueKeys.keySet()) {
             DbUpgradeUtils.dropKeysIfExist(conn, tableName, uniqueKeys.get(tableName), false);
         }

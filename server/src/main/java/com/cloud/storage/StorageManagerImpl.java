@@ -101,6 +101,8 @@ import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -115,6 +117,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -270,6 +273,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected ImageStoreDao _imageStoreDao = null;
     @Inject
     protected ImageStoreDetailsDao _imageStoreDetailsDao = null;
+    @Inject
+    protected ImageStoreObjectDownloadDao _imageStoreObjectDownloadDao = null;
     @Inject
     protected SnapshotDataStoreDao _snapshotStoreDao = null;
     @Inject
@@ -1287,37 +1292,64 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             try {
 
                                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                                logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());
+                                logger.debug(String.format("Storage pool garbage collector found [%s] templates to be cleaned up in storage pool [%s].", unusedTemplatesInPool.size(), pool.getName()));
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                                        logger.debug("Storage pool garbage collector is skipping template with ID: " + templatePoolVO.getTemplateId() + " on pool " + templatePoolVO.getPoolId()
-                                        + " because it is not completely downloaded.");
+                                        logger.debug(String.format("Storage pool garbage collector is skipping template [%s] clean up on pool [%s] " +
+                                                "because it is not completely downloaded.", templatePoolVO.getTemplateId(), templatePoolVO.getPoolId()));
                                         continue;
                                     }
 
                                     if (!templatePoolVO.getMarkedForGC()) {
                                         templatePoolVO.setMarkedForGC(true);
                                         _vmTemplatePoolDao.update(templatePoolVO.getId(), templatePoolVO);
-                                        logger.debug("Storage pool garbage collector has marked template with ID: " + templatePoolVO.getTemplateId() + " on pool " + templatePoolVO.getPoolId()
-                                        + " for garbage collection.");
+                                        logger.debug(String.format("Storage pool garbage collector has marked template [%s] on pool [%s] " +
+                                                "for garbage collection.", templatePoolVO.getTemplateId(), templatePoolVO.getPoolId()));
                                         continue;
                                     }
 
                                     _tmpltMgr.evictTemplateFromStoragePool(templatePoolVO);
                                 }
                             } catch (Exception e) {
-                                logger.warn("Problem cleaning up primary storage pool " + pool, e);
+                                logger.error(String.format("Failed to clean up primary storage pool [%s] due to: [%s].", pool, e.getMessage()));
+                                s_logger.debug(String.format("Failed to clean up primary storage pool [%s].", pool), e);
                             }
                         }
                     }
 
                     //destroy snapshots in destroying state in snapshot_store_ref
                     List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
-                    for (SnapshotDataStoreVO ssSnapshotVO : ssSnapshots) {
+                    for (SnapshotDataStoreVO snapshotDataStoreVO : ssSnapshots) {
+                        String snapshotUuid = null;
+                        SnapshotVO snapshot = null;
+                        final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
+                        if (s_logger.isDebugEnabled()) {
+                            snapshot = _snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+                            if (snapshot == null) {
+                                s_logger.warn(String.format("Did not find snapshot [ID: %d] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId()));
+                                continue;
+                            }
+                            snapshotUuid = snapshot.getUuid();
+                        }
+
                         try {
-                            _snapshotService.deleteSnapshot(snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image));
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
+                            }
+                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
+                            if (snapshotInfo != null) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug(String.format("Snapshot [%s] in destroying state found in %s data store [%s]; therefore, it will be destroyed.", snapshotUuid, storeRole, snapshotInfo.getDataStore().getUuid()));
+                                }
+                                _snapshotService.deleteSnapshot(snapshotInfo);
+                            } else if (s_logger.isDebugEnabled()) {
+                                s_logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
+                            }
                         } catch (Exception e) {
-                            logger.debug("Failed to delete snapshot: " + ssSnapshotVO.getId() + " from storage");
+                            logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", snapshotDataStoreVO.getSnapshotId(), e.getMessage()));
+                            if (logger.isDebugEnabled()) {
+                                logger.debug(String.format("Failed to delete snapshot [%s] from storage.", snapshotUuid), e);
+                            }
                         }
                     }
                     cleanupSecondaryStorage(recurring);
@@ -1341,7 +1373,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             // system, but not necessary.
                             handleManagedStorage(vol);
                         } catch (Exception e) {
-                            logger.warn("Unable to destroy host-side clustered file system " + vol.getUuid(), e);
+                            logger.error(String.format("Unable to destroy host-side clustered file system [%s] due to: [%s].", vol.getUuid(), e.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy host-side clustered file system [%s].", vol.getUuid()), e);
                         }
 
                         try {
@@ -1350,10 +1383,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 volService.ensureVolumeIsExpungeReady(vol.getId());
                                 volService.expungeVolumeAsync(volumeInfo);
                             } else {
-                                logger.debug("Volume " + vol.getUuid() + " is already destroyed");
+                                logger.debug(String.format("Volume [%s] is already destroyed.", vol.getUuid()));
                             }
                         } catch (Exception e) {
-                            logger.warn("Unable to destroy volume " + vol.getUuid(), e);
+                            logger.error(String.format("Unable to destroy volume [%s] due to: [%s].", vol.getUuid(), e.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy volume [%s].", vol.getUuid()), e);
                         }
                     }
 
@@ -1367,7 +1401,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                             _snapshotDao.expunge(snapshotVO.getId());
                         } catch (Exception e) {
-                            logger.warn("Unable to destroy snapshot " + snapshotVO.getUuid(), e);
+                            logger.error(String.format("Unable to destroy snapshot [%s] due to: [%s].", snapshotVO.getUuid(), e.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy snapshot [%s].", snapshotVO.getUuid()), e);
                         }
                     }
 
@@ -1376,14 +1411,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     for (VolumeDataStoreVO volumeDataStore : volumeDataStores) {
                         VolumeVO volume = volumeDao.findById(volumeDataStore.getVolumeId());
                         if (volume == null) {
-                            logger.warn("Uploaded volume with id " + volumeDataStore.getVolumeId() + " not found, so cannot be destroyed");
+                            logger.warn(String.format("Uploaded volume [%s] not found, so cannot be destroyed.", volumeDataStore.getVolumeId()));
                             continue;
                         }
                         try {
                             DataStore dataStore = _dataStoreMgr.getDataStore(volumeDataStore.getDataStoreId(), DataStoreRole.Image);
                             EndPoint ep = _epSelector.select(dataStore, volumeDataStore.getExtractUrl());
                             if (ep == null) {
-                                logger.warn("There is no secondary storage VM for image store " + dataStore.getName() + ", cannot destroy uploaded volume " + volume.getUuid());
+                                logger.warn(String.format("There is no secondary storage VM for image store [%s], cannot destroy uploaded volume [%s].", dataStore.getName(), volume.getUuid()));
                                 continue;
                             }
                             Host host = _hostDao.findById(ep.getId());
@@ -1395,17 +1430,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     // expunge volume from secondary if volume is on image store
                                     VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
                                     if (volOnSecondary != null) {
-                                        logger.info("Expunging volume " + volume.getUuid() + " uploaded using HTTP POST from secondary data store");
+                                        logger.info(String.format("Expunging volume [%s] uploaded using HTTP POST from secondary data store.", volume.getUuid()));
                                         AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnSecondary);
                                         VolumeApiResult result = future.get();
                                         if (!result.isSuccess()) {
-                                            logger.warn("Failed to expunge volume " + volume.getUuid() + " from the image store " + dataStore.getName() + " due to: " + result.getResult());
+                                            logger.warn(String.format("Failed to expunge volume [%s] from the image store [%s] due to: [%s].", volume.getUuid(), dataStore.getName(), result.getResult()));
                                         }
                                     }
                                 }
                             }
                         } catch (Throwable th) {
-                            logger.warn("Unable to destroy uploaded volume " + volume.getUuid() + ". Error details: " + th.getMessage());
+                            logger.error(String.format("Unable to destroy uploaded volume [%s] due to: [%s].", volume.getUuid(), th.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy uploaded volume [%s].", volume.getUuid()), th);
                         }
                     }
 
@@ -1414,14 +1450,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     for (TemplateDataStoreVO templateDataStore : templateDataStores) {
                         VMTemplateVO template = _templateDao.findById(templateDataStore.getTemplateId());
                         if (template == null) {
-                            logger.warn("Uploaded template with id " + templateDataStore.getTemplateId() + " not found, so cannot be destroyed");
+                            logger.warn(String.format("Uploaded template [%s] not found, so cannot be destroyed.", templateDataStore.getTemplateId()));
                             continue;
                         }
                         try {
                             DataStore dataStore = _dataStoreMgr.getDataStore(templateDataStore.getDataStoreId(), DataStoreRole.Image);
                             EndPoint ep = _epSelector.select(dataStore, templateDataStore.getExtractUrl());
                             if (ep == null) {
-                                logger.warn("There is no secondary storage VM for image store " + dataStore.getName() + ", cannot destroy uploaded template " + template.getUuid());
+                                logger.warn(String.format("Cannot destroy uploaded template [%s] as there is no secondary storage VM for image store [%s].", template.getUuid(), dataStore.getName()));
                                 continue;
                             }
                             Host host = _hostDao.findById(ep.getId());
@@ -1430,7 +1466,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     AsyncCallFuture<TemplateApiResult> future = _imageSrv.deleteTemplateAsync(tmplFactory.getTemplate(template.getId(), dataStore));
                                     TemplateApiResult result = future.get();
                                     if (!result.isSuccess()) {
-                                        logger.warn("Failed to delete template " + template.getUuid() + " from the image store " + dataStore.getName() + " due to: " + result.getResult());
+                                        logger.warn(String.format("Failed to delete template [%s] from image store [%s] due to: [%s]", template.getUuid(), dataStore.getName(), result.getResult()));
                                         continue;
                                     }
                                     // remove from template_zone_ref
@@ -1454,7 +1490,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 }
                             }
                         } catch (Throwable th) {
-                            logger.warn("Unable to destroy uploaded template " + template.getUuid() + ". Error details: " + th.getMessage());
+                            logger.error(String.format("Unable to destroy uploaded template [%s] due to: [%s].", template.getUuid(), th.getMessage()));
+                            s_logger.debug(String.format("Unable to destroy uploaded template [%s].", template.getUuid()), th);
                         }
                     }
                     cleanupInactiveTemplates();
@@ -1631,7 +1668,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             logger.debug("Deleting snapshot store DB entry: " + destroyedSnapshotStoreVO);
                         }
 
-                        _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
+                        List<SnapshotDataStoreVO> imageStoreRefs = _snapshotStoreDao.listBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Image);
+                        if (imageStoreRefs.size() <= 1) {
+                            _snapshotDao.remove(destroyedSnapshotStoreVO.getSnapshotId());
+                        }
                         SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findDestroyedReferenceBySnapshot(destroyedSnapshotStoreVO.getSnapshotId(), DataStoreRole.Primary);
                         if (snapshotOnPrimary != null) {
                             if (logger.isDebugEnabled()) {
@@ -3332,6 +3372,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _templateStoreDao.update(templateOnImageStore.getId(), templateOnImageStore);
             } catch (Throwable th) {
                 logger.warn("caught exception while deleting download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId(), th);
+            }
+        }
+
+        Date date = DateUtils.addSeconds(new Date(), -1 * _downloadUrlExpirationInterval);
+        List<ImageStoreObjectDownloadVO> imageStoreObjectDownloadList = _imageStoreObjectDownloadDao.listToExpire(date);
+        for (ImageStoreObjectDownloadVO imageStoreObjectDownloadVO : imageStoreObjectDownloadList) {
+            try {
+                ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(imageStoreObjectDownloadVO.getStoreId(), DataStoreRole.Image);
+                secStore.deleteExtractUrl(imageStoreObjectDownloadVO.getPath(), imageStoreObjectDownloadVO.getDownloadUrl(), null);
+                _imageStoreObjectDownloadDao.expunge(imageStoreObjectDownloadVO.getId());
+            } catch (Throwable th) {
+                s_logger.warn("caught exception while deleting download url " + imageStoreObjectDownloadVO.getDownloadUrl() + " for object id " + imageStoreObjectDownloadVO.getId(), th);
             }
         }
     }

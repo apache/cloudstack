@@ -42,12 +42,31 @@ export default {
     return fields
   },
   resourceType: 'SecondaryStorage',
+  related: [{
+    name: 'template',
+    title: 'label.templates',
+    param: 'imagestoreid'
+  },
+  {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'imagestoreid'
+  },
+  {
+    name: 'snapshot',
+    title: 'label.snapshots',
+    param: 'imagestoreid'
+  }],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
+  }, {
+    name: 'browser',
+    resourceType: 'ImageStore',
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/StorageBrowser.vue')))
   }, {
     name: 'events',
     resourceType: 'ImageStore',

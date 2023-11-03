@@ -19,17 +19,16 @@
 
 package com.cloud.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Arrays;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
@@ -37,8 +36,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.utils.NumbersUtil;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.logging.log4j.LogManager;
 
 public class TemplateLocation {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -66,6 +64,9 @@ public class TemplateLocation {
         if (_templatePath.matches(".*" + "volumes" + ".*")) {
             _file = _storage.getFile(_templatePath + "volume.properties");
             _resourceType = ResourceType.VOLUME;
+        } else if (_templatePath.matches(".*" + "snapshots" + ".*")) {
+            _file = _storage.getFile(_templatePath + "snapshot.properties");
+            _resourceType = ResourceType.SNAPSHOT;
         } else {
             _file = _storage.getFile(_templatePath + Filename);
         }
@@ -171,6 +172,8 @@ public class TemplateLocation {
         tmplInfo.installPath = _templatePath + _props.getProperty("filename"); // _templatePath endsWith /
         if (_resourceType == ResourceType.VOLUME) {
             tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("volumes"));
+        } else if (_resourceType == ResourceType.SNAPSHOT) {
+            tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("snapshots"));
         } else {
             tmplInfo.installPath = tmplInfo.installPath.substring(tmplInfo.installPath.indexOf("template"));
         }

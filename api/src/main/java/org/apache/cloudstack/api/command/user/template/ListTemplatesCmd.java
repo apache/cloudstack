@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import org.apache.cloudstack.api.APICommand;
@@ -94,6 +95,15 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "comma separated list of template details requested, value can be a list of [ all, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
+            description = "the type of the template", since = "4.19.0")
+    private String templateType;
+
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "flag to list VNF templates or not; true if need to list VNF templates, false otherwise.",
+            since = "4.19.0")
+    private Boolean isVnf;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -149,6 +159,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return parentTemplateId;
     }
 
+    public String getTemplateType() {
+        return templateType;
+    }
+
     public boolean listInReadyState() {
 
         Account account = CallContext.current().getCallingAccount();
@@ -171,6 +185,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public Boolean getShowIcon () {
         return  showIcon != null ? showIcon : false;
+    }
+
+    public Boolean getVnf() {
+        return isVnf;
     }
 
     @Override
@@ -205,6 +223,17 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     public List<Long> getIds() {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
         return ids;
+    }
+
+    public Long getImageStoreId() {
+        return null;
+    }
+
+    public Long getStoragePoolId() {
+        return null;
     }
 }

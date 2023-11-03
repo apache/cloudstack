@@ -1166,7 +1166,7 @@ public class Upgrade218to22 extends DbUpgradeAbstractImpl {
             pstmt.executeUpdate();
             logger.debug("Upgraded userStatistcis with device_type=DomainRouter");
 
-            // update device_id infrormation
+            // update device_id information
             try (
                     PreparedStatement selectUserStatistics = conn.prepareStatement("SELECT id, account_id, data_center_id FROM user_statistics");
                     ResultSet rs = selectUserStatistics.executeQuery();

@@ -93,5 +93,4 @@ public class CreateSSHKeyPairCmd extends BaseCmd {
         response.setObjectName("keypair");
         setResponseObject(response);
     }
-
-    }
+}
