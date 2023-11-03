@@ -135,7 +135,7 @@ public class VeeamClient {
 
     private void authenticate(final String username, final String password) {
         // https://helpcenter.veeam.com/docs/backup/rest/http_authentication.html?ver=95u4
-        final HttpPost request = new HttpPost(apiURI.toString() + "/sessionMngr/?v=v1_4");
+        final HttpPost request = new HttpPost(apiURI.toString() + "/sessionMngr/?v=latest");
         request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
         try {
             final HttpResponse response = httpClient.execute(request);
