@@ -296,6 +296,7 @@
                   </span>
                 </template>
                 <a-table
+                  v-if="!isExternal"
                   class="instances-card-table"
                   :loading="unmanagedInstancesLoading"
                   :rowSelection="unmanagedInstanceSelection"
@@ -310,6 +311,24 @@
                     <template v-if="column.key === 'state'">
                       <status :text="text ? text : ''" displayText />
                     </template>
+                  </template>
+                </a-table>
+                <a-table
+                  v-if="isExternal"
+                  class="instances-card-table"
+                  :loading="unmanagedInstancesLoading"
+                  :rowSelection="unmanagedInstanceSelection"
+                  :rowKey="(record, index) => index"
+                  :columns="externalInstancesColumns"
+                  :data-source="unmanagedInstances"
+                  :pagination="false"
+                  size="middle"
+                  :rowClassName="getRowClassName"
+                >
+                  <template #bodyCell="{ column, text }">
+                      <template v-if="column.key === 'state'">
+                          <status :text="text ? text : ''" displayText />
+                      </template>
                   </template>
                 </a-table>
                 <div class="instances-card-footer">
@@ -544,6 +563,18 @@ export default {
         dataIndex: 'osdisplayname'
       }
     ]
+    const externalInstancesColumns = [
+      {
+        title: this.$t('label.name'),
+        dataIndex: 'name',
+        width: 200
+      },
+      {
+        key: 'state',
+        title: this.$t('label.state'),
+        dataIndex: 'powerstate'
+      }
+    ]
     const managedInstancesColumns = [
       {
         key: 'name',
@@ -633,6 +664,7 @@ export default {
         external: 'listVmsForImport'
       },
       unmanagedInstancesColumns,
+      externalInstancesColumns,
       AllSourceActions,
       unmanagedInstancesLoading: false,
       unmanagedInstances: [],

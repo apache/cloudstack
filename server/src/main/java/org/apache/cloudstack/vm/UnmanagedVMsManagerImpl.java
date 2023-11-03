@@ -1217,7 +1217,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (templateId == null) {
             template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
             if (template == null) {
-                template = createDefaultDummyVmImportTemplate();
+                template = createDefaultDummyVmImportTemplate(false);
                 if (template == null) {
                     throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
                 }
@@ -1447,6 +1447,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_IMPORT, eventDescription = "importing VM", async = true)
     public UserVmResponse importVm(ImportVmCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
@@ -1477,7 +1478,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         VMTemplateVO template = templateDao.findByName(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME);
         if (template == null) {
-            template = createDefaultDummyVmImportTemplate();
+            template = createDefaultDummyVmImportTemplate(true);
             if (template == null) {
                 throw new InvalidParameterValueException("Error while creating default Import Vm Template");
             }
