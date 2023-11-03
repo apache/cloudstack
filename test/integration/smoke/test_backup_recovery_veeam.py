@@ -60,11 +60,17 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             return
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
-        cls.service_offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
+        cls.user_user = cls.account.user[0]
+        cls.user_apiclient = cls.testClient.getUserApiClient(
+            cls.user_user.username, cls.domain.name
+        )
+        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offerings"]["small"])
         cls._cleanup = [cls.service_offering, cls.account]
 
     @classmethod
     def isBackupOfferingUsed(cls, existing_offerings, provider_offering):
+        if not existing_offerings:
+            return False
         for existing_offering in existing_offerings:
             if existing_offering.externalid == provider_offering.externalid:
                 return True
@@ -72,7 +78,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
     def waitForBackUp(self, vm):
         def checkBackUp():
-            backups = Backup.list(self.apiclient, vm.id)
+            backups = Backup.list(self.user_apiclient, vm.id)
             if isinstance(backups, list) and len(backups) != 0:
                 return True, None
             return False, None
@@ -94,8 +100,6 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
         if self.backup_provider != "veeam":
             raise self.skipTest("Skipping test cases which must only run for veeam")
         if self.hypervisor.lower() != 'vmware':
@@ -104,7 +108,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
     def tearDown(self):
         try:
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.api_client, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
@@ -118,17 +122,21 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         offering = None
         existing_offerings = BackupOffering.listByZone(self.api_client, self.zone.id)
         provider_offerings = BackupOffering.listExternal(self.api_client, self.zone.id)
+        if not provider_offerings:
+            self.skipTest("Skipping test cases as the provider offering is None")
         for provider_offering in provider_offerings:
             if not self.isBackupOfferingUsed(existing_offerings, provider_offering):
                 self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
                 offering = BackupOffering.importExisting(self.api_client, self.zone.id, provider_offering.externalid,
-                                                             provider_offering.name, provider_offering.description)
+                                                         provider_offering.name, provider_offering.description)
+                if not offering:
+                    self.fail("Failed to import backup offering %s" % provider_offering.name)
                 break
         if not offering:
-            self.fail("Failed to import backup offering")
+            self.skipTest("Skipping test cases as there is no available provider offerings to import")
 
-        # Verify offering is listed
-        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
+        # Verify offering is listed by user
+        imported_offering = BackupOffering.listByZone(self.user_apiclient, self.zone.id)
         self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
         self.assertNotEqual(len(imported_offering), 0, "Check if the list API returns a non-empty response")
         matching_offerings = [x for x in imported_offering if x.id == offering.id]
@@ -138,11 +146,12 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         self.debug("Deleting backup offering %s" % offering.id)
         offering.delete(self.api_client)
 
-        #  Verify offering is not listed
-        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
-        self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
-        matching_offerings = [x for x in imported_offering if x.id == offering.id]
-        self.assertEqual(len(matching_offerings), 0, "Check there is not a matching offering")
+        #  Verify offering is not listed by user
+        imported_offering = BackupOffering.listByZone(self.user_apiclient, self.zone.id)
+        if imported_offering:
+            self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
+            matching_offerings = [x for x in imported_offering if x.id == offering.id]
+            self.assertEqual(len(matching_offerings), 0, "Check there is not a matching offering")
 
     @attr(tags=["advanced", "backup"], required_hardware="false")
     def test_vm_backup_lifecycle(self):
@@ -154,28 +163,32 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         offering = None
         existing_offerings = BackupOffering.listByZone(self.api_client, self.zone.id)
         provider_offerings = BackupOffering.listExternal(self.api_client, self.zone.id)
+        if not provider_offerings:
+            self.skipTest("Skipping test cases as the provider offering is None")
         for provider_offering in provider_offerings:
             if not self.isBackupOfferingUsed(existing_offerings, provider_offering):
                 self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
                 offering = BackupOffering.importExisting(self.api_client, self.zone.id, provider_offering.externalid,
                                                          provider_offering.name, provider_offering.description)
-                self.cleanup = [offering]
+                if not offering:
+                    self.fail("Failed to import backup offering %s" % provider_offering.name)
+                self.cleanup.append(offering)
                 break
         if not offering:
-            self.fail("Failed to import backup offering")
+            self.skipTest("Skipping test cases as there is no available provider offerings to import")
 
-        self.vm = VirtualMachine.create(self.api_client, self.services["small"], accountid=self.account.name,
+        self.vm = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
                                        domainid=self.account.domainid, serviceofferingid=self.service_offering.id,
                                        mode=self.services["mode"])
 
         # Verify there are no backups for the VM
-        backups = Backup.list(self.apiclient, self.vm.id)
+        backups = Backup.list(self.user_apiclient, self.vm.id)
         self.assertEqual(backups, None, "There should not exist any backup for the VM")
 
         # Assign VM to offering and create ad-hoc backup
-        offering.assignOffering(self.apiclient, self.vm.id)
+        offering.assignOffering(self.user_apiclient, self.vm.id)
         vms = VirtualMachine.list(
-            self.apiclient,
+            self.user_apiclient,
             id=self.vm.id,
             listall=True
         )
@@ -188,20 +201,20 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         self.assertEqual(offering.id, vms[0].backupofferingid, "The virtual machine should have backup offering %s" % offering.id)
 
         # Create backup
-        Backup.create(self.apiclient, self.vm.id)
+        Backup.create(self.user_apiclient, self.vm.id)
 
         # Verify backup is created for the VM
         self.waitForBackUp(self.vm)
-        backups = Backup.list(self.apiclient, self.vm.id)
+        backups = Backup.list(self.user_apiclient, self.vm.id)
         self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
         backup = backups[0]
 
         # Delete backup
-        Backup.delete(self.apiclient, backup.id, forced=True)
+        Backup.delete(self.user_apiclient, backup.id, forced=True)
 
         # Verify backup is deleted
-        backups = Backup.list(self.apiclient, self.vm.id)
+        backups = Backup.list(self.user_apiclient, self.vm.id)
         self.assertEqual(backups, None, "There should not exist any backup for the VM")
 
         # Remove VM from offering
-        offering.removeOffering(self.apiclient, self.vm.id)
+        offering.removeOffering(self.user_apiclient, self.vm.id)
