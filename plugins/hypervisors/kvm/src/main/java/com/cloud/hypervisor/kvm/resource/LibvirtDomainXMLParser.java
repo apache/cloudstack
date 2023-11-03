@@ -59,6 +59,8 @@ public class LibvirtDomainXMLParser {
     private Integer vncPort;
     private String desc;
 
+    private String name;
+
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
         try {
@@ -71,6 +73,7 @@ public class LibvirtDomainXMLParser {
             Element rootElement = doc.getDocumentElement();
 
             desc = getTagValue("description", rootElement);
+            name = getTagValue("name", rootElement);
 
             Element devices = (Element)rootElement.getElementsByTagName("devices").item(0);
             NodeList disks = devices.getElementsByTagName("disk");
@@ -310,19 +313,21 @@ public class LibvirtDomainXMLParser {
                 Element rng = (Element)rngs.item(i);
                 String backendModel = getAttrValue("backend", "model", rng);
                 String path = getTagValue("backend", rng);
-                String bytesStr = getAttrValue("rate", "bytes", rng);
-                String periodStr = getAttrValue("rate", "period", rng);
-                Integer bytes = StringUtils.isNotBlank(bytesStr) ? Integer.parseInt(bytesStr) : null;
-                Integer period = StringUtils.isNotBlank(periodStr) ? Integer.parseInt(periodStr) : null;
-
-                if (StringUtils.isEmpty(backendModel)) {
-                    def = new RngDef(path, bytes, period);
+                String bytes = getAttrValue("rate", "bytes", rng);
+                String period = getAttrValue("rate", "period", rng);
+                if (StringUtils.isAnyEmpty(bytes, period)) {
+                    s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
                 } else {
-                    def = new RngDef(path, RngBackendModel.valueOf(backendModel.toUpperCase()),
-                                     bytes, period);
+                    if (StringUtils.isEmpty(backendModel)) {
+                        def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
+                    } else {
+                        def = new RngDef(path, RngBackendModel.valueOf(backendModel.toUpperCase()),
+                                Integer.parseInt(bytes), Integer.parseInt(period));
+                    }
                 }
-
-                rngDefs.add(def);
+                if (def != null) {
+                    rngDefs.add(def);
+                }
             }
 
             NodeList watchDogs = devices.getElementsByTagName("watchdog");
@@ -428,5 +433,9 @@ public class LibvirtDomainXMLParser {
 
     public String getDescription() {
         return desc;
+    }
+
+    public String getName() {
+        return name;
     }
 }

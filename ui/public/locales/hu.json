@@ -651,7 +651,7 @@
 "label.level": "Szint",
 "label.limitcpuuse": "CPU Cap",
 "label.link.domain.to.ldap": "Link Domain to LDAP",
-"label.linklocalip": "Link Local IP Address",
+"label.linklocalip": "Control IP Address",
 "label.load.balancer": "Terhel\u00e9seloszt\u00f3",
 "label.loadbalancerinstance": "Hozz\u00e1rendelt VM-ek",
 "label.loadbalancerrule": "Terhel\u00e9seloszt\u00f3 szab\u00e1ly",

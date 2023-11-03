@@ -1350,8 +1350,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
                         currentVmBalloonStatsPeriod, vmId, dm.getName()));
-            } catch (final LibvirtException e) {
-                s_logger.warn("Failed to set up memory balloon stats period." + e.getMessage());
+            } catch (final Exception e) {
+                s_logger.warn(String.format("Failed to set up memory balloon stats period for the VM %s with exception %s", parser.getName(), e.getMessage()));
             }
         }
     }

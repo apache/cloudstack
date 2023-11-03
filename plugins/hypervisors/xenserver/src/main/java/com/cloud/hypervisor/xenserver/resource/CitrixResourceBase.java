@@ -1581,7 +1581,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             final Set<VDI> vdis = VDI.getByNameLabel(conn, nameLabel);
             if (vdis.size() != 1) {
-                s_logger.warn("destoryVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
+                s_logger.warn("destroyVDIbyNameLabel failed due to there are " + vdis.size() + " VDIs with name " + nameLabel);
                 return;
             }
             for (final VDI vdi : vdis) {
@@ -3199,7 +3199,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         // constraint
         // for
         // stability
-        if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
+        if (dynamicMaxRam > staticMax) { // XS constraint that dynamic max <=
             // static max
             s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " can't be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
@@ -3213,7 +3213,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             return dynamicMinRam;
         }
 
-        if (dynamicMinRam < recommendedValue) { // XS contraint that dynamic min
+        if (dynamicMinRam < recommendedValue) { // XS constraint that dynamic min
             // > static min
             s_logger.warn("Vm ram is set to dynamic min " + toHumanReadableSize(dynamicMinRam) + " and is less than the recommended static min " + toHumanReadableSize(recommendedValue) + ", this could lead to stability issues");
         }
@@ -4589,7 +4589,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             removeSR(conn, sr);
             return;
         } catch (XenAPIException | XmlRpcException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.toString()), e);
         }
         String msg = "Remove SR failed";
         s_logger.warn(msg);
@@ -4684,9 +4684,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             removeSR(conn, sr);
             return null;
         } catch (final XenAPIException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.toString()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.toString()), e);
         } catch (final XmlRpcException e) {
-            s_logger.warn(logX(sr, "Unable to get current opertions " + e.getMessage()), e);
+            s_logger.warn(logX(sr, "Unable to get current operations " + e.getMessage()), e);
         }
         final String msg = "Remove SR failed";
         s_logger.warn(msg);
