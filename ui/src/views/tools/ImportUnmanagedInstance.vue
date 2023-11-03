@@ -282,6 +282,27 @@
                   </a-alert>
                 </div>
               </a-row>
+              <div v-if="isDiskImport">
+                <a-form-item name="networkid" ref="networkid">
+                  <template #label>
+                    <tooltip-label :title="$t('label.network')"/>
+                  </template>
+                  <a-select
+                    v-model:value="form.networkid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    :loading="optionsLoading.networks">
+                    <a-select-option v-for="network in networkSelectOptions" :key="network.value" :label="network.label">
+                      <span>
+                        {{ network.label }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+              </div>
               <a-row :gutter="12">
                 <a-col :md="24" :lg="12">
                   <a-form-item name="migrateallowed" ref="migrateallowed" v-if="!selectedVmwareVcenter && !isDiskImport && !isExternalImport">
@@ -291,7 +312,7 @@
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
                   </a-form-item>
                 </a-col>
-                <a-col :md="24" :lg="12">
+                <a-col :md="24" :lg="12" v-if="!isDiskImport">
                   <a-form-item name="forced" ref="forced">
                     <template #label>
                       <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
@@ -402,12 +423,14 @@ export default {
       options: {
         domains: [],
         projects: [],
+        networks: [],
         templates: []
       },
       rowCount: {},
       optionsLoading: {
         domains: false,
         projects: false,
+        networks: false,
         templates: false
       },
       domains: [],
@@ -479,6 +502,15 @@ export default {
             showicon: true
           }
         },
+        networks: {
+          list: 'listNetworks',
+          isLoad: true,
+          field: 'networkid',
+          options: {
+            zoneid: this.zoneid,
+            details: 'min'
+          }
+        },
         templates: {
           list: 'listTemplates',
           isLoad: true,
@@ -536,6 +568,19 @@ export default {
         value: null
       })
       return projects
+    },
+    networkSelectOptions () {
+      var networks = this.options.networks.map((network) => {
+        return {
+          label: network.name + ' (' + network.displaytext + ')',
+          value: network.id
+        }
+      })
+      networks.unshift({
+        label: '',
+        value: null
+      })
+      return networks
     },
     templateSelectOptions () {
       return this.options.templates.map((template) => {
@@ -889,7 +934,15 @@ export default {
         if (this.isExternalImport || this.isDiskImport) {
           importapi = 'importVm'
           if (this.isDiskImport) {
+            if (!values.networkid) {
+              this.$notification.error({
+                message: this.$t('message.request.failed'),
+                description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.network')
+              })
+              return
+            }
             params.name = values.displayname
+            params.networkid = values.networkid
           }
         }
         console.log(importapi)

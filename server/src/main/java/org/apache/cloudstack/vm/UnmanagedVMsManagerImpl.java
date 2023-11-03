@@ -1523,6 +1523,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ImportSource importSource = Enum.valueOf(ImportSource.class, source);
         Long hostId = cmd.getHostId();
         Long poolId = cmd.getStoragePoolId();
+        Long networkId = cmd.getNetworkId();
 
         UnmanagedInstanceTO unmanagedInstanceTO = null;
         if (ImportSource.EXTERNAL == importSource) {
@@ -1561,6 +1562,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (diskPath == null) {
                 throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
             }
+
+            if (networkId == null) {
+                throw new InvalidParameterValueException("Network is required for Import from shared/local storage");
+            }
         }
 
         UserVm userVm = null;
@@ -1577,8 +1582,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             try {
                 userVm = importKvmVirtualMachineFromDisk(importSource, instanceName, zone,
                         template, displayName, hostName, caller, owner, userId,
-                        serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap, hostId, poolId, diskPath,
+                        serviceOffering, dataDiskOfferingMap, networkId, hostId, poolId, diskPath,
                         details);
             } catch (InsufficientCapacityException e) {
                 throw new RuntimeException(e);
@@ -1706,8 +1710,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private UserVm importKvmVirtualMachineFromDisk(final ImportSource importSource, final String instanceName, final DataCenter zone,
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
-                                                   final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                   final Map<String, Long> allNicNetworkMap, final Map<String, Network.IpAddresses> nicIpAddressMap,
+                                                   final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Long networkId,
                                                    final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) throws InsufficientCapacityException, ResourceAllocationException {
         UserVm userVm = null;
 
@@ -1719,59 +1722,44 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
-        List<Long> networkIdList = new ArrayList<>();
-        if (networkIdList == null || networkIdList.isEmpty()) {
-            NetworkVO defaultNetwork = getDefaultNetwork(zone, owner, false);
-            if (defaultNetwork != null) {
-                networkList.add(defaultNetwork);
-            }
-        } else {
-            for (Long networkId : networkIdList) {
-                NetworkVO network = networkDao.findById(networkId);
-                if (network == null) {
-                    throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
-                }
 
-                networkModel.checkNetworkPermissions(owner, network);
-
-                // don't allow to use system networks
-                NetworkOffering networkOffering = entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-                if (networkOffering.isSystemOnly()) {
-                    throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
-                }
-                networkList.add(network);
-            }
+        NetworkVO network = networkDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
         }
+
+        networkModel.checkNetworkPermissions(owner, network);
+
+        // don't allow to use system networks
+        NetworkOffering networkOffering = entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+        if (networkOffering.isSystemOnly()) {
+            throw new InvalidParameterValueException("Network id=" + networkId + " is system only and can't be used for vm deployment");
+        }
+
         LinkedHashMap<String, List<NicProfile>> networkNicMap = new LinkedHashMap<>();
 
-        short defaultNetworkNumber = 0;
-        boolean securityGroupEnabled = false;
-        int networkIndex = 0;
-        for (NetworkVO network : networkList) {
-            if ((network.getDataCenterId() != zone.getId())) {
-                if (!network.isStrechedL2Network()) {
-                    throw new InvalidParameterValueException("Network id=" + network.getId() +
-                            " doesn't belong to zone " + zone.getId());
-                }
+        if ((network.getDataCenterId() != zone.getId())) {
+            if (!network.isStrechedL2Network()) {
+                throw new InvalidParameterValueException("Network id=" + network.getId() +
+                        " doesn't belong to zone " + zone.getId());
             }
-
-            Network.IpAddresses requestedIpPair = new Network.IpAddresses(null, null);
-
-            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
-            profile.setOrderIndex(networkIndex);
-
-            if (networkModel.isSecurityGroupSupportedInNetwork(network)) {
-                securityGroupEnabled = true;
-            }
-            List<NicProfile> profiles = networkNicMap.get(network.getUuid());
-            if (CollectionUtils.isEmpty(profiles)) {
-                profiles = new ArrayList<>();
-            }
-            profiles.add(profile);
-            networkNicMap.put(network.getUuid(), profiles);
-            networkIndex++;
         }
+
+        Network.IpAddresses requestedIpPair = new Network.IpAddresses(null, null);
+
+        NicProfile nicProfile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
+        nicProfile.setOrderIndex(0);
+
+        boolean securityGroupEnabled = false;
+        if (networkModel.isSecurityGroupSupportedInNetwork(network)) {
+            securityGroupEnabled = true;
+        }
+        List<NicProfile> profiles = networkNicMap.get(network.getUuid());
+        if (CollectionUtils.isEmpty(profiles)) {
+            profiles = new ArrayList<>();
+        }
+        profiles.add(nicProfile);
+        networkNicMap.put(network.getUuid(), profiles);
 
         String internalName = getInternalName(owner.getAccountId());
 
@@ -1821,6 +1809,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             cleanupFailedImportVM(userVm);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
         }
+        networkOrchestrationService.importNic(null,0,network, true, userVm, null, true);
         publishVMUsageUpdateResourceCount(userVm, serviceOffering);
         return userVm;
     }

@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -171,6 +172,12 @@ public class ImportVmCmd extends BaseAsyncCmd {
             description = "Source location for Import" )
     private String importSource;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "the network ID")
+    private Long networkId;
+
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "Host where local disk is located")
     private Long hostId;
 
@@ -254,6 +261,10 @@ public class ImportVmCmd extends BaseAsyncCmd {
 
     public String getTmpPath() {
         return tmpPath;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     public Map<String, Long> getNicNetworkList() {
