@@ -1398,7 +1398,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         validateVmForHostMigration(vm);
 
         if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
-            s_logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
+            logger.info(" Live Migration of GPU enabled VM : " + vm.getInstanceName() + " is not supported");
             // Return empty list.
             return new Ternary<>(new Pair<>(new ArrayList<>(), 0),
                     new ArrayList<>(), new HashMap<>());

@@ -317,7 +317,7 @@ public class LibvirtDomainXMLParser {
                 String bytes = getAttrValue("rate", "bytes", rng);
                 String period = getAttrValue("rate", "period", rng);
                 if (StringUtils.isAnyEmpty(bytes, period)) {
-                    s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
+                    logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
                 } else {
                     if (StringUtils.isEmpty(backendModel)) {
                         def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));

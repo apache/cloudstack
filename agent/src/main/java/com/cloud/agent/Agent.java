@@ -845,7 +845,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 }
             }
         } else if (answer instanceof PingAnswer && (((PingAnswer) answer).isSendStartup()) && _reconnectAllowed) {
-            s_logger.info("Management server requested startup command to reinitialize the agent");
+            logger.info("Management server requested startup command to reinitialize the agent");
             sendStartup(link);
         } else {
             setLastPingResponseTime();

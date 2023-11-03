@@ -210,7 +210,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             EndPoint ep = _epSelector.select(snapshot);
             if (ep == null) {
                 String errMsg = "There is no secondary storage VM for downloading snapshot to image store " + store.getName();
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, snapshot, _timer, this, dcmd, callback);
@@ -221,14 +221,14 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // DownloadListener to use
                 // new ObjectInDataStore.State transition. TODO: fix this later
                 // to be able to remove downloadState from template_store_ref.
-                LOGGER.info("found existing download job");
+                logger.info("found existing download job");
                 dl.setCurrState(snapshotStore.getDownloadState());
             }
 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                LOGGER.warn("Unable to start /resume download of snapshot " + snapshot.getId() + " to " + store.getName(), e);
+                logger.warn("Unable to start /resume download of snapshot " + snapshot.getId() + " to " + store.getName(), e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -319,12 +319,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             if (snapshot.getUri() != null) {
                 initiateSnapshotDownload(snapshot, callback);
             } else {
-                LOGGER.info("Snapshot url is null, cannot download");
+                logger.info("Snapshot url is null, cannot download");
                 DownloadAnswer ans = new DownloadAnswer("Snapshot url is null", Status.UNKNOWN);
                 callback.complete(ans);
             }
         } else {
-            LOGGER.info("Snapshot download is already in progress or already downloaded");
+            logger.info("Snapshot download is already in progress or already downloaded");
             DownloadAnswer ans =
                     new DownloadAnswer("Snapshot download is already in progress or already downloaded", Status.UNKNOWN);
             callback.complete(ans);

@@ -7854,7 +7854,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
             }
             String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", path, e.getMessage());
-            s_logger.error(errorMsg, e);
+            logger.error(errorMsg, e);
         }
 
         return null;

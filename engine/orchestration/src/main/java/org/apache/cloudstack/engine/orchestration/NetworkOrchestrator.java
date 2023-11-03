@@ -4361,11 +4361,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private boolean getNicProfileDefaultNic(NicProfile nicProfile) {
         if (nicProfile != null) {
-            s_logger.debug(String.format("Using requested nic profile isDefaultNic value [%s].", nicProfile.isDefaultNic()));
+            logger.debug(String.format("Using requested nic profile isDefaultNic value [%s].", nicProfile.isDefaultNic()));
             return nicProfile.isDefaultNic();
         }
 
-        s_logger.debug("Using isDefaultNic default value [false] as requested nic profile is null.");
+        logger.debug("Using isDefaultNic default value [false] as requested nic profile is null.");
         return false;
     }
 

@@ -46,6 +46,8 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StorageSubsystemCommandHandlerBase implements StorageSubsystemCommandHandler {
     protected Logger logger = LogManager.getLogger(getClass());

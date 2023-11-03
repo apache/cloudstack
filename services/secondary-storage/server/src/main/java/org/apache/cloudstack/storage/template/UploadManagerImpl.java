@@ -283,7 +283,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         // Return error if the file does not exist or is a directory
         if (!file.exists() || file.isDirectory()) {
             String errorString = "Error in finding the file " + file.getAbsolutePath();
-            s_logger.error(errorString);
+            logger.error(errorString);
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 

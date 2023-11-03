@@ -3621,11 +3621,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     .collect(Collectors.toList());
             for (String file : fileNames) {
                 file = snapDir + "/" + file;
-                s_logger.debug(String.format("Found snapshot file %s", file));
+                logger.debug(String.format("Found snapshot file %s", file));
                 files.add(file);
             }
         } catch (IOException ioe) {
-            s_logger.error("Error preparing file list for snapshot copy", ioe);
+            logger.error("Error preparing file list for snapshot copy", ioe);
         }
         return new QuerySnapshotZoneCopyAnswer(cmd, files);
     }

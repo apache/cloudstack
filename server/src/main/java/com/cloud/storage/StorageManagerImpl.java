@@ -1312,7 +1312,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 }
                             } catch (Exception e) {
                                 logger.error(String.format("Failed to clean up primary storage pool [%s] due to: [%s].", pool, e.getMessage()));
-                                s_logger.debug(String.format("Failed to clean up primary storage pool [%s].", pool), e);
+                                logger.debug(String.format("Failed to clean up primary storage pool [%s].", pool), e);
                             }
                         }
                     }
@@ -1323,27 +1323,27 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         String snapshotUuid = null;
                         SnapshotVO snapshot = null;
                         final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
-                        if (s_logger.isDebugEnabled()) {
+                        if (logger.isDebugEnabled()) {
                             snapshot = _snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
                             if (snapshot == null) {
-                                s_logger.warn(String.format("Did not find snapshot [ID: %d] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId()));
+                                logger.warn(String.format("Did not find snapshot [ID: %d] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId()));
                                 continue;
                             }
                             snapshotUuid = snapshot.getUuid();
                         }
 
                         try {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
+                            if (logger.isDebugEnabled()) {
+                                logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
                             }
                             SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
                             if (snapshotInfo != null) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug(String.format("Snapshot [%s] in destroying state found in %s data store [%s]; therefore, it will be destroyed.", snapshotUuid, storeRole, snapshotInfo.getDataStore().getUuid()));
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug(String.format("Snapshot [%s] in destroying state found in %s data store [%s]; therefore, it will be destroyed.", snapshotUuid, storeRole, snapshotInfo.getDataStore().getUuid()));
                                 }
                                 _snapshotService.deleteSnapshot(snapshotInfo);
-                            } else if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
+                            } else if (logger.isDebugEnabled()) {
+                                logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
                             }
                         } catch (Exception e) {
                             logger.error(String.format("Failed to delete snapshot [%s] from storage due to: [%s].", snapshotDataStoreVO.getSnapshotId(), e.getMessage()));
@@ -1374,7 +1374,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             handleManagedStorage(vol);
                         } catch (Exception e) {
                             logger.error(String.format("Unable to destroy host-side clustered file system [%s] due to: [%s].", vol.getUuid(), e.getMessage()));
-                            s_logger.debug(String.format("Unable to destroy host-side clustered file system [%s].", vol.getUuid()), e);
+                            logger.debug(String.format("Unable to destroy host-side clustered file system [%s].", vol.getUuid()), e);
                         }
 
                         try {
@@ -1387,7 +1387,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                         } catch (Exception e) {
                             logger.error(String.format("Unable to destroy volume [%s] due to: [%s].", vol.getUuid(), e.getMessage()));
-                            s_logger.debug(String.format("Unable to destroy volume [%s].", vol.getUuid()), e);
+                            logger.debug(String.format("Unable to destroy volume [%s].", vol.getUuid()), e);
                         }
                     }
 
@@ -1402,7 +1402,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             _snapshotDao.expunge(snapshotVO.getId());
                         } catch (Exception e) {
                             logger.error(String.format("Unable to destroy snapshot [%s] due to: [%s].", snapshotVO.getUuid(), e.getMessage()));
-                            s_logger.debug(String.format("Unable to destroy snapshot [%s].", snapshotVO.getUuid()), e);
+                            logger.debug(String.format("Unable to destroy snapshot [%s].", snapshotVO.getUuid()), e);
                         }
                     }
 
@@ -1441,7 +1441,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                         } catch (Throwable th) {
                             logger.error(String.format("Unable to destroy uploaded volume [%s] due to: [%s].", volume.getUuid(), th.getMessage()));
-                            s_logger.debug(String.format("Unable to destroy uploaded volume [%s].", volume.getUuid()), th);
+                            logger.debug(String.format("Unable to destroy uploaded volume [%s].", volume.getUuid()), th);
                         }
                     }
 
@@ -1491,7 +1491,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                         } catch (Throwable th) {
                             logger.error(String.format("Unable to destroy uploaded template [%s] due to: [%s].", template.getUuid(), th.getMessage()));
-                            s_logger.debug(String.format("Unable to destroy uploaded template [%s].", template.getUuid()), th);
+                            logger.debug(String.format("Unable to destroy uploaded template [%s].", template.getUuid()), th);
                         }
                     }
                     cleanupInactiveTemplates();
@@ -3383,7 +3383,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 secStore.deleteExtractUrl(imageStoreObjectDownloadVO.getPath(), imageStoreObjectDownloadVO.getDownloadUrl(), null);
                 _imageStoreObjectDownloadDao.expunge(imageStoreObjectDownloadVO.getId());
             } catch (Throwable th) {
-                s_logger.warn("caught exception while deleting download url " + imageStoreObjectDownloadVO.getDownloadUrl() + " for object id " + imageStoreObjectDownloadVO.getId(), th);
+                logger.warn("caught exception while deleting download url " + imageStoreObjectDownloadVO.getDownloadUrl() + " for object id " + imageStoreObjectDownloadVO.getId(), th);
             }
         }
     }

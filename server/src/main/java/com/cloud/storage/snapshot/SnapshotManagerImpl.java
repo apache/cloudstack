@@ -1703,7 +1703,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
         if (dstSnapshotStore.getState() == ObjectInDataStoreStateMachine.State.Ready) {
             if (!dstSnapshotStore.isDisplay()) {
-                s_logger.debug(String.format("Snapshot ID: %d is in ready state on image store ID: %d, marking it displayable for view", snapshotId, dstSnapshotStore.getDataStoreId()));
+                logger.debug(String.format("Snapshot ID: %d is in ready state on image store ID: %d, marking it displayable for view", snapshotId, dstSnapshotStore.getDataStoreId()));
                 dstSnapshotStore.setDisplay(true);
                 _snapshotStoreDao.update(dstSnapshotStore.getId(), dstSnapshotStore);
             }
@@ -1740,18 +1740,18 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 copyUrl = result.getPath();
             }
         } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            s_logger.error(String.format("Failed to prepare URL for copy for snapshot ID: %d on store: %s", snapshotId, srcSecStore.getName()), ex);
+            logger.error(String.format("Failed to prepare URL for copy for snapshot ID: %d on store: %s", snapshotId, srcSecStore.getName()), ex);
         }
         if (StringUtils.isEmpty(copyUrl)) {
-            s_logger.error(String.format("Unable to prepare URL for copy for snapshot ID: %d on store: %s", snapshotId, srcSecStore.getName()));
+            logger.error(String.format("Unable to prepare URL for copy for snapshot ID: %d on store: %s", snapshotId, srcSecStore.getName()));
             return false;
         }
-        s_logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
+        logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
         try {
             AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
             SnapshotResult result = future.get();
             if (result.isFailed()) {
-                s_logger.debug(String.format("Copy snapshot ID: %d failed for image store %s: %s", snapshotId, dstSecStore.getName(), result.getResult()));
+                logger.debug(String.format("Copy snapshot ID: %d failed for image store %s: %s", snapshotId, dstSecStore.getName(), result.getResult()));
                 return false;
             }
             snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
@@ -1763,7 +1763,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             return true;
         } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            s_logger.debug(String.format("Failed to copy snapshot ID: %d to image store: %s", snapshotId, dstSecStore.getName()));
+            logger.debug(String.format("Failed to copy snapshot ID: %d to image store: %s", snapshotId, dstSecStore.getName()));
         }
         return false;
     }
@@ -1780,7 +1780,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         do {
             dstSecStore = getSnapshotZoneImageStore(currentSnap.getSnapshotId(), destZone.getId());
             if (dstSecStore != null) {
-                s_logger.debug(String.format("Snapshot ID: %d is already present in secondary storage: %s" +
+                logger.debug(String.format("Snapshot ID: %d is already present in secondary storage: %s" +
                         " in zone %s in ready state, don't need to copy any further",
                         currentSnap.getSnapshotId(), dstSecStore.getName(), destZone));
                 if (snapshotId == currentSnap.getSnapshotId()) {
@@ -1800,7 +1800,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, size);
         } catch (ResourceAllocationException e) {
-            s_logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
+            logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
             return false;
         }
         Collections.reverse(snapshotChain);
@@ -1815,10 +1815,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new StorageUnavailableException("Destination zone is not ready, no image store with free capacity", DataCenter.class, destZoneId);
             }
         }
-        s_logger.debug(String.format("Copying snapshot chain for snapshot ID: %d on secondary store: %s of zone ID: %d", snapshotId, dstSecStore.getName(), destZoneId));
+        logger.debug(String.format("Copying snapshot chain for snapshot ID: %d on secondary store: %s of zone ID: %d", snapshotId, dstSecStore.getName(), destZoneId));
         for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
             if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account)) {
-                s_logger.error(String.format("Failed to copy snapshot: %s to zone: %s due to failure to copy snapshot ID: %d from snapshot chain",
+                logger.error(String.format("Failed to copy snapshot: %s to zone: %s due to failure to copy snapshot ID: %d from snapshot chain",
                         snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId()));
                 return false;
             }
@@ -1876,7 +1876,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + dstZone.getName());
         }
         if (DataCenter.Type.Edge.equals(dstZone.getType())) {
-            s_logger.error(String.format("Edge zone %s specified for snapshot copy", dstZone));
+            logger.error(String.format("Edge zone %s specified for snapshot copy", dstZone));
             throw new InvalidParameterValueException(String.format("Snapshot copy is not supported by zone %s", dstZone.getName()));
         }
         return dstZone;
@@ -1906,7 +1906,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<String> failedZones = copySnapshotToZones(snapshot, srcSecStore, new ArrayList<>(dataCenterVOs.values()));
         if (destZoneIds.size() > failedZones.size()){
             if (!failedZones.isEmpty()) {
-                s_logger.error(String.format("There were failures when copying snapshot to zones: %s",
+                logger.error(String.format("There were failures when copying snapshot to zones: %s",
                         StringUtils.joinWith(", ", failedZones.toArray())));
             }
             return snapshot;
@@ -1929,7 +1929,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         String completedEventLevel = EventVO.LEVEL_ERROR;
         String completedEventMsg = String.format("Copying snapshot ID: %s failed", snapshotVO.getUuid());
         if (dataStore == null) {
-            s_logger.error(String.format("Unable to find an image store for zone ID: %d where snapshot %s is in Ready state", zoneId, snapshotVO));
+            logger.error(String.format("Unable to find an image store for zone ID: %d where snapshot %s is in Ready state", zoneId, snapshotVO));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
                     CallContext.current().getCallingAccountId(), completedEventLevel, EventTypes.EVENT_SNAPSHOT_COPY,
                     completedEventMsg, snapshotId, ApiCommandResourceType.Snapshot.toString(), startEventId);
@@ -1943,11 +1943,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         try {
             failedZones = copySnapshotToZones(snapshotVO, dataStore, dataCenterVOs);
             if (CollectionUtils.isNotEmpty(failedZones)) {
-                s_logger.error(String.format("There were failures while copying snapshot %s to zones: %s",
+                logger.error(String.format("There were failures while copying snapshot %s to zones: %s",
                         snapshotVO, StringUtils.joinWith(", ", failedZones.toArray())));
             }
         } catch (ResourceAllocationException | StorageUnavailableException | CloudRuntimeException e) {
-            s_logger.error(String.format("Error while copying snapshot %s to zones: %s", snapshotVO, StringUtils.joinWith(",", destZoneIds.toArray())));
+            logger.error(String.format("Error while copying snapshot %s to zones: %s", snapshotVO, StringUtils.joinWith(",", destZoneIds.toArray())));
         }
         if (failedZones.size() < destZoneIds.size()) {
             final List<String> failedZonesFinal = failedZones;

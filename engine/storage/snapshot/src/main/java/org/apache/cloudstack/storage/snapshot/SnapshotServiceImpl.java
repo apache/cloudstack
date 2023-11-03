@@ -172,7 +172,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             _sslCopy = Boolean.parseBoolean(sslCfg);
         }
         if(_sslCopy && (_ssvmUrlDomain == null || _ssvmUrlDomain.isEmpty())){
-            s_logger.warn("Empty secondary storage url domain, ignoring SSL");
+            logger.warn("Empty secondary storage url domain, ignoring SSL");
             _sslCopy = false;
         }
         if (_sslCopy) {
@@ -434,7 +434,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
             future.complete(snapResult);
         } catch (Exception e) {
-            s_logger.debug("Failed to update snapshot state", e);
+            logger.debug("Failed to update snapshot state", e);
             snapResult.setResult(e.toString());
             future.complete(snapResult);
         }
@@ -523,7 +523,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (result.isFailed()) {
                 throw new CloudRuntimeException(result.getResult());
             }
-            s_logger.debug(String.format("Successfully deleted snapshot [%s] with ID [%s].", snapInfo.getName(), snapInfo.getUuid()));
+            logger.debug(String.format("Successfully deleted snapshot [%s] with ID [%s].", snapInfo.getName(), snapInfo.getUuid()));
             return true;
         } catch (InterruptedException | ExecutionException e) {
             logger.error(String.format("Failed to delete snapshot [%s] due to: [%s].", snapInfo.getUuid(), e.getMessage()));
@@ -717,16 +717,16 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotObject snapshotForCopy = (SnapshotObject)_snapshotFactory.getSnapshot(snapshot, store);
         snapshotForCopy.setUrl(copyUrl);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Mark snapshot_store_ref entry as Creating");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Mark snapshot_store_ref entry as Creating");
         }
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         DataObject snapshotOnStore = store.create(snapshotForCopy);
         ((SnapshotObject)snapshotOnStore).setUrl(copyUrl);
         snapshotOnStore.processEvent(Event.CreateOnlyRequested);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Invoke datastore driver createAsync to create snapshot on destination store");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Invoke datastore driver createAsync to create snapshot on destination store");
         }
         try {
             CopySnapshotContext<CommandResult> context = new CopySnapshotContext<>(null, (SnapshotObject)snapshotOnStore, snapshotForCopy, future);
@@ -751,7 +751,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<CreateCmdResult> future = new AsyncCallFuture<>();
         EndPoint ep = epSelector.select(snapshot);
         if (ep == null) {
-            s_logger.error(String.format("Failed to find endpoint for generating copy URL for snapshot %d with store %d", snapshot.getId(), snapshot.getDataStore().getId()));
+            logger.error(String.format("Failed to find endpoint for generating copy URL for snapshot %d with store %d", snapshot.getId(), snapshot.getDataStore().getId()));
             throw new ResourceUnavailableException("No secondary VM in running state in source snapshot zone", DataCenter.class, snapshot.getDataCenterId());
         }
         DataStore store = snapshot.getDataStore();

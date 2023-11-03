@@ -252,7 +252,7 @@ public class Request {
                 jsonReader.setLenient(true);
                 _cmds = s_gson.fromJson(jsonReader, (Type)Command[].class);
             } catch (JsonParseException e) {
-                s_logger.error("Caught problem while parsing JSON command " + _content, e);
+                LOGGER.error("Caught problem while parsing JSON command " + _content, e);
                 _cmds = new Command[] { new BadCommand() };
             } catch (RuntimeException e) {
                 LOGGER.error("Caught problem with " + _content, e);

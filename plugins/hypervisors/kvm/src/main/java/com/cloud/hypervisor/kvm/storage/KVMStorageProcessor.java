@@ -1050,7 +1050,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     secondaryStoragePool.delete();
                 }
             } catch (final Exception ex) {
-                s_logger.debug("Failed to delete secondary storage", ex);
+                logger.debug("Failed to delete secondary storage", ex);
             }
         }
     }

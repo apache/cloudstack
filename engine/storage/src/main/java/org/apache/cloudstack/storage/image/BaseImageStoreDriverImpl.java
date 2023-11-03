@@ -192,8 +192,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         } else if (data.getType() == DataObjectType.SNAPSHOT) {
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null));
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Downloading volume to data store " + dataStore.getId());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Downloading volume to data store " + dataStore.getId());
             }
             _downloadMonitor.downloadSnapshotToStorage(data, caller);
         }
@@ -325,8 +325,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         SnapshotDataStoreVO snapshotStoreVO = snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Image, store.getId(), obj.getId());
         if (snapshotStoreVO != null) {
             if (VMTemplateStorageResourceAssoc.Status.DOWNLOADED.equals(snapshotStoreVO.getDownloadState())) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Snapshot is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Snapshot is already in DOWNLOADED state, ignore further incoming DownloadAnswer");
                 }
                 return null;
             }
@@ -356,7 +356,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             Long zoneId = dataStoreManager.getStoreZoneId(store.getId(), store.getRole());
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED,
                     zoneId, null, msg, msg);
-            LOGGER.error(msg);
+            logger.error(msg);
         } else if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             caller.complete(result);

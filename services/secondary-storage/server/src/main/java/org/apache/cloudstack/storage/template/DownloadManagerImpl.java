@@ -90,8 +90,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
+    protected static Logger LOGGER = LogManager.getLogger(DownloadManagerImpl.class);
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
