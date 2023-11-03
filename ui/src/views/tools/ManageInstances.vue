@@ -745,7 +745,8 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             podid: this.podId,
-            clusterid: this.clusterId
+            clusterid: this.clusterId,
+            scope: 'cluster'
           },
           field: 'poolid'
         }
