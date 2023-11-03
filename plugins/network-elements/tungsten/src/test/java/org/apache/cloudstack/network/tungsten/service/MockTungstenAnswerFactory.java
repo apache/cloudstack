@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,33 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.network.tungsten.service;
 
-package com.cloud.agent.api;
+import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
 
-public class PingAnswer extends Answer {
-    private PingCommand _command = null;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-    private boolean sendStartup = false;
+public class MockTungstenAnswerFactory {
 
-    protected PingAnswer() {
+    TungstenAnswer tungstenAnswer;
+    MockTungstenAnswerFactory(boolean returnResult){
+        tungstenAnswer=mock(TungstenAnswer.class);
+        when(tungstenAnswer.getResult()).thenReturn(returnResult);
     }
-
-    public PingAnswer(PingCommand cmd, boolean sendStartup) {
-        super(cmd);
-        _command = cmd;
-        this.sendStartup = sendStartup;
+    TungstenAnswer get() {
+        return tungstenAnswer;
     }
-
-    public PingCommand getCommand() {
-        return _command;
-    }
-
-    public boolean isSendStartup() {
-        return sendStartup;
-    }
-
-    public void setSendStartup(boolean sendStartup) {
-        this.sendStartup = sendStartup;
+    public static TungstenAnswer get(boolean returnResult){
+        TungstenAnswer tungstenAnswers = new MockTungstenAnswerFactory(returnResult).get();
+        return tungstenAnswers;
     }
 }
