@@ -368,7 +368,7 @@ public class VeeamClient {
 
     protected String getRepositoryNameFromJob(String backupName) {
         final List<String> cmds = Arrays.asList(
-                String.format("$Job = Get-VBRJob -name \"%s\"", backupName),
+                String.format("$Job = Get-VBRJob -name '%s'", backupName),
                 "$Job.GetBackupTargetRepository() ^| select Name ^| Format-List"
         );
         Pair<Boolean, String> result = executePowerShellCommands(cmds);
@@ -584,7 +584,7 @@ public class VeeamClient {
 
     public boolean setJobSchedule(final String jobName) {
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
-                String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
+                String.format("$job = Get-VBRJob -Name '%s'", jobName),
                 "if ($job) { Set-VBRJobSchedule -Job $job -Daily -At \"11:00\" -DailyKind Weekdays }"
         ));
         return result.first() && !result.second().isEmpty() && !result.second().contains(FAILED_TO_DELETE);
@@ -592,9 +592,9 @@ public class VeeamClient {
 
     public boolean deleteJobAndBackup(final String jobName) {
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
-                String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
+                String.format("$job = Get-VBRJob -Name '%s'", jobName),
                 "if ($job) { Remove-VBRJob -Job $job -Confirm:$false }",
-                String.format("$backup = Get-VBRBackup -Name \"%s\"", jobName),
+                String.format("$backup = Get-VBRBackup -Name '%s'", jobName),
                 "if ($backup) { Remove-VBRBackup -Backup $backup -FromDisk -Confirm:$false }",
                 "$repo = Get-VBRBackupRepository",
                 "Sync-VBRBackupRepository -Repository $repo"
@@ -679,7 +679,7 @@ public class VeeamClient {
 
     public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
         final List<String> cmds = Arrays.asList(
-                String.format("$backup = Get-VBRBackup -Name \"%s\"", backupName),
+                String.format("$backup = Get-VBRBackup -Name '%s'", backupName),
                 String.format("if ($backup) { $restore = (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true})", vmInternalName),
                 "if ($restore) { $restore ^| Format-List } }"
         );
