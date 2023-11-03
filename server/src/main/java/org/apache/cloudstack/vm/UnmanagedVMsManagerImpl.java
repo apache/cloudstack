@@ -521,11 +521,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private Pair<UnmanagedInstanceTO.Disk, List<UnmanagedInstanceTO.Disk>> getRootAndDataDisks(List<UnmanagedInstanceTO.Disk> disks, final Map<String, Long> dataDiskOfferingMap) {
         UnmanagedInstanceTO.Disk rootDisk = null;
         List<UnmanagedInstanceTO.Disk> dataDisks = new ArrayList<>();
-        //ToDo: fix cdrom
-        if (disks.size() == 2) {
-            rootDisk = disks.get(0);
-            return new Pair<>(rootDisk, dataDisks);
-        }
+
         Set<String> callerDiskIds = dataDiskOfferingMap.keySet();
         if (callerDiskIds.size() != disks.size() - 1) {
             String msg = String.format("VM has total %d disks for which %d disk offering mappings provided. %d disks need a disk offering for import", disks.size(), callerDiskIds.size(), disks.size()-1);
@@ -1653,6 +1649,17 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String rootVolumeName = String.format("ROOT-%s", userVm.getId());
         DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
 
+        DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
+        int diskSeq = 0;
+        for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+            if (disk.getCapacity() == null || disk.getCapacity() == 0) {
+                throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", disk.getDiskId()));
+            }
+            DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+            DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null);
+            dataDiskProfiles[diskSeq++] = dataDiskProfile;
+        }
+
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
         DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
         final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
@@ -1678,12 +1685,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     template, null, remoteUrl, username, password, tmpPath, diskProfile));
 
             long deviceId = 1L;
+            diskSeq = 0;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
-                if (disk.getCapacity() == null || disk.getCapacity() == 0) {
-                    throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", disk.getDiskId()));
-                }
+                DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-                DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s"), offering, null, null, null, userVm, template, owner, null);
 
                 diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
                         template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));

@@ -52,9 +52,8 @@ public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<
         try {
             String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
             s_logger.debug("Volume Copy Successful");
-            if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem) {
-                return  new CopyRemoteVolumeAnswer(command, "", dstPath +"/"+filename);
-            } else if(storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
+            if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem ||
+                    storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
                 return  new CopyRemoteVolumeAnswer(command, "", filename);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");

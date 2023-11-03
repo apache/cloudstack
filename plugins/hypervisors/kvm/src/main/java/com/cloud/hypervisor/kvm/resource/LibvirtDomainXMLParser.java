@@ -286,6 +286,10 @@ public class LibvirtDomainXMLParser {
                     continue;
                 }
 
+                if(path == null) {
+                    path = "";
+                }
+
                 ChannelDef def = null;
                 if (StringUtils.isBlank(state)) {
                     def = new ChannelDef(name, ChannelDef.ChannelType.valueOf(type.toUpperCase()), new File(path));
@@ -331,6 +335,18 @@ public class LibvirtDomainXMLParser {
                 String period = getAttrValue("rate", "period", rng);
                 if (StringUtils.isAnyEmpty(bytes, period)) {
                     s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
+                }
+
+                if(bytes == null) {
+                    bytes = "0";
+                }
+
+                if(period == null) {
+                    period = "0";
+                }
+
+                if (StringUtils.isEmpty(backendModel)) {
+                    def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
                 } else {
                     if (StringUtils.isEmpty(backendModel)) {
                         def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
