@@ -1399,6 +1399,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
             return vpcDao.findById(vpcId);
+        } else if (isVpcForNsx(vpcToUpdate)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("no restart needed.");
+            }
+            return vpcDao.findById(vpcId);
         } else {
             s_logger.error(String.format("failed to update vpc %s/%s",vpc.getName(), vpc.getUuid()));
             return null;
