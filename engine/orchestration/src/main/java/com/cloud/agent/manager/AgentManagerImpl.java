@@ -1408,8 +1408,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             // gateway was pingable
                             if (cmd instanceof PingRoutingCommand) {
                                 processPingRoutingCommand((PingRoutingCommand) cmd, hostId);
-                                final boolean gatewayAccessible = ((PingRoutingCommand)cmd).isGatewayAccessible();
-                                final HostVO host = _hostDao.findById(Long.valueOf(cmdHostId));
+                                gatewayAccessible = ((PingRoutingCommand)cmd).isGatewayAccessible();
 
                                 if (host != null) {
                                     if (!gatewayAccessible) {
