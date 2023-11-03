@@ -255,7 +255,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            s_logger.debug("Unable to destoy volume" + data.getId(), ex);
+            s_logger.debug("Unable to destroy volume" + data.getId(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
