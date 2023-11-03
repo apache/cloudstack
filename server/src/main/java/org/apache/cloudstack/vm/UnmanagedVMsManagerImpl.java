@@ -157,6 +157,7 @@ import java.util.stream.Collectors;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
+    public static final String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template.iso";
     private static final Logger LOGGER = Logger.getLogger(UnmanagedVMsManagerImpl.class);
 
     @Inject
@@ -236,10 +237,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         gson = GsonHelper.getGsonLogger();
     }
 
-    private VMTemplateVO createDefaultDummyVmImportTemplate() {
+    private VMTemplateVO createDefaultDummyVmImportTemplate(boolean isKVM) {
+        String templateName = (isKVM) ? KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME : VM_IMPORT_DEFAULT_TEMPLATE_NAME;
         VMTemplateVO template = null;
         try {
-            template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME, true,
+            template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), templateName, templateName, true,
                     "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
                     "VM Import Default Template", false, 1);
             template.setState(VirtualMachineTemplate.State.Inactive);
@@ -248,7 +250,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 return null;
             }
             templateDao.remove(template.getId());
-            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+            template = templateDao.findByName(templateName);
         } catch (Exception e) {
             LOGGER.error("Unable to create default dummy template for VM import", e);
         }
@@ -1473,7 +1475,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (CollectionUtils.isNotEmpty(userVOs)) {
             userId = userVOs.get(0).getId();
         }
-        VMTemplateVO template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+        VMTemplateVO template = templateDao.findByName(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME);
         if (template == null) {
             template = createDefaultDummyVmImportTemplate();
             if (template == null) {
