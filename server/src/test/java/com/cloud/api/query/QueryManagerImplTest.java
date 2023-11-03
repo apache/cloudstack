@@ -225,6 +225,7 @@ public class QueryManagerImplTest {
         Assert.assertEquals(expectedAccessMethods, options.get(VNF.AccessDetail.ACCESS_METHODS.name().toLowerCase()));
 
     }
+
     @Test
     public void applyPublicTemplateRestrictionsTestDoesNotApplyRestrictionsWhenCallerIsRootAdmin() {
         Mockito.when(accountMock.getType()).thenReturn(Account.Type.ADMIN);

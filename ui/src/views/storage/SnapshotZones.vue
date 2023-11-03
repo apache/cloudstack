@@ -37,11 +37,22 @@
       :rowKey="record => record.zoneid">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
-          <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          <span v-if="record.datastoreid">
+            <router-link :to="{ path: (record.datastoretype === 'Primary' ? '/storagepool/' : '/imagestore/') + record.datastoreid }">
+              <span v-if="fetchZoneIcon(record.zoneid)">
+                <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+              </span>
+              <global-outlined v-else style="margin-right: 5px" />
+              <span> {{ record.zonename }} </span>
+            </router-link>
           </span>
-          <global-outlined v-else style="margin-right: 5px" />
-          <span> {{ record.zonename }} </span>
+          <span v-else>
+            <span v-if="fetchZoneIcon(record.zoneid)">
+              <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+            </span>
+            <global-outlined v-else style="margin-right: 5px" />
+            <span> {{ record.zonename }} </span>
+          </span>
         </template>
         <template v-if="column.key === 'isready'">
           <span v-if="record.datastorestate==='Ready'">{{ $t('label.yes') }}</span>
@@ -49,7 +60,7 @@
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
-            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
+            v-if="record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(copyApi in $store.getters.apis)"
             :title="$t('label.action.copy.snapshot')"
@@ -57,7 +68,7 @@
             :loading="copyLoading"
             @onClick="showCopySnapshot(record)" />
           <tooltip-button
-            v-if="record.datastoretype==='Image' && record.state==='BackedUp'"
+            v-if="record.state==='BackedUp'"
             style="margin-right: 5px"
             :disabled="!(deleteApi in $store.getters.apis)"
             :title="$t('label.action.delete.snapshot')"

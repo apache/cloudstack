@@ -633,7 +633,7 @@ public class ViewResponseHelper {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if (vrData == null) {
                 // first time encountering this volume
-                vrData = ApiDBUtils.newIsoResponse(vr);
+                vrData = ApiDBUtils.newIsoResponse(vr, view);
             } else {
                 // update tags
                 vrData = ApiDBUtils.fillTemplateDetails(EnumSet.of(DomainDetails.all), view, vrData, vr);

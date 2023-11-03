@@ -34,6 +34,8 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
@@ -76,6 +78,7 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
+import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
@@ -149,9 +152,12 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -474,6 +480,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ProjectInvitationDao projectInvitationDao;
+
+    @Inject
+    private TemplateDataStoreDao templateDataStoreDao;
+
+    @Inject
+    private VMTemplatePoolDao templatePoolDao;
+
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Inject
     private UserDao userDao;
@@ -3799,8 +3814,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
+        accountMgr.buildACLSearchParameters(
+                caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
+                domainIdRecursiveListProject, listAll, false
+        );
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
         for (Long accountId : permittedAccountIds) {
@@ -3820,13 +3838,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         Boolean isVnf = cmd.getVnf();
 
-        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType,
-                showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(), templateType, isVnf);
+        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false,
+                null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
+                cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
+                listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
+                templateType, isVnf);
     }
 
-    private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
-            Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags, boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
+    private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
+            TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
+            Long startIndex, Long zoneId, Long storagePoolId, Long imageStoreId, HypervisorType hyperType,
+            boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
+            boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
             Boolean isVnf) {
 
         // check if zone is configured, if not, just return empty list
@@ -3852,7 +3876,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (ids != null && !ids.isEmpty()) {
             sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         }
+
+        if (storagePoolId != null) {
+            SearchBuilder<VMTemplateStoragePoolVO> storagePoolSb = templatePoolDao.createSearchBuilder();
+            storagePoolSb.and("pool_id", storagePoolSb.entity().getPoolId(), SearchCriteria.Op.EQ);
+            sb.join("storagePool", storagePoolSb, storagePoolSb.entity().getTemplateId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<TemplateJoinVO> sc = sb.create();
+
+        if (imageStoreId != null) {
+            sc.addAnd("dataStoreId", SearchCriteria.Op.EQ, imageStoreId);
+        }
+
+        if (storagePoolId != null) {
+            sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
+        }
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
@@ -3995,7 +4034,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
                 showRemovedTmpl, parentTemplateId, showUnique, templateType, isVnf, searchFilter, sc);
-
     }
 
     /**
@@ -4154,7 +4192,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         } else {
             sc.addAnd("templateState", SearchCriteria.Op.IN, new State[] {State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
             if (showUnique) {
-                final String[] distinctColumns = {"id"};
+                final String[] distinctColumns = {"template_view.id"};
                 uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
             } else {
                 final String[] distinctColumns = {"temp_zone_pair"};
@@ -4233,8 +4271,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null);
+        return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
+                cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
+                hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null);
     }
 
     @Override
@@ -4700,11 +4740,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), cmd.getIds(),
                 cmd.getVolumeId(), cmd.getSnapshotName(), cmd.getKeyword(), cmd.getTags(),
                 cmd.getSnapshotType(), cmd.getIntervalType(), cmd.getZoneId(), cmd.getLocationType(),
-                cmd.isShowUnique(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId(),
-                cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);
+                cmd.isShowUnique(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId(), cmd.getStoragePoolId(),
+                cmd.getImageStoreId(), cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.listAll(), cmd.isRecursive(), caller);
         ListResponse<SnapshotResponse> response = new ListResponse<>();
         ResponseView respView = ResponseView.Restricted;
-        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+        if (cmd instanceof ListSnapshotsCmdByAdmin) {
             respView = ResponseView.Full;
         }
         List<SnapshotResponse> templateResponses = ViewResponseHelper.createSnapshotResponse(respView, cmd.isShowUnique(), result.first().toArray(new SnapshotJoinVO[result.first().size()]));
@@ -4719,7 +4759,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<SnapshotJoinVO>, Integer> result = searchForSnapshotsWithParams(cmd.getId(), null,
                 null, null, null, null,
                 null, null, zoneIds.get(0), Snapshot.LocationType.SECONDARY.name(),
-                false, null, null, null,
+                false, null, null, null, null, null,
                 null, null, true, false, caller);
         ResponseView respView = ResponseView.Restricted;
         if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
@@ -4734,7 +4774,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private Pair<List<SnapshotJoinVO>, Integer> searchForSnapshotsWithParams(final Long id, List<Long> ids,
             final Long volumeId, final String name, final String keyword, final Map<String, String> tags,
             final String snapshotTypeStr, final String intervalTypeStr, final Long zoneId, final String locationTypeStr,
-            final boolean isShowUnique, final String accountName, Long domainId, final Long projectId,
+            final boolean isShowUnique, final String accountName, Long domainId, final Long projectId, final Long storagePoolId, final Long imageStoreId,
             final Long startIndex, final Long pageSize,final boolean listAll, boolean isRecursive, final Account caller) {
         ids = getIdsListFromCmd(id, ids);
         Snapshot.LocationType locationType = null;
@@ -4778,6 +4818,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("locationType", sb.entity().getStoreRole(), SearchCriteria.Op.EQ);
+        sb.and("imageStoreId", sb.entity().getStoreId(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = resourceTagDao.createSearchBuilder();
@@ -4791,10 +4832,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (storagePoolId != null) {
+            SearchBuilder<SnapshotDataStoreVO> storagePoolSb = snapshotDataStoreDao.createSearchBuilder();
+            storagePoolSb.and("poolId", storagePoolSb.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+            storagePoolSb.and("role", storagePoolSb.entity().getRole(), SearchCriteria.Op.EQ);
+            sb.join("storagePoolSb", storagePoolSb, sb.entity().getId(), storagePoolSb.entity().getSnapshotId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<SnapshotJoinVO> sc = sb.create();
         accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
 
         sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
+
+        if (imageStoreId != null) {
+            sc.setParameters("imageStoreId", imageStoreId);
+            locationType = Snapshot.LocationType.SECONDARY;
+        }
+
+        if (storagePoolId != null) {
+            sc.setJoinParameters("storagePoolSb", "poolId", storagePoolId);
+            sc.setJoinParameters("storagePoolSb", "role", DataStoreRole.Image);
+        }
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
