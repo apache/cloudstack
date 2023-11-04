@@ -1389,6 +1389,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<UnmanagedInstanceTO.Nic> convertedInstanceNics = convertedInstance.getNics();
         List<UnmanagedInstanceTO.Nic> clonedInstanceNics = clonedInstance.getNics();
         if (CollectionUtils.isEmpty(convertedInstanceNics) && CollectionUtils.isNotEmpty(clonedInstanceNics)) {
+            for (UnmanagedInstanceTO.Nic nic : clonedInstanceNics) {
+                // In case the NICs information is not parsed from the converted XML domain, use the cloned instance NICs with virtio adapter
+                nic.setAdapterType("virtio");
+            }
             convertedInstance.setNics(clonedInstanceNics);
         } else {
             for (int i = 0; i < convertedInstanceNics.size(); i++) {
