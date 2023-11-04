@@ -190,19 +190,18 @@
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-        </span>
-        <span v-else-if="$route.name === 'guestoshypervisormapping'">
-          <QuickView
-            style="margin-left: 5px"
-            :actions="actions"
-            :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
-            @exec-action="$parent.execAction"/>
-          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-        </span>
-      </template>
-      <span v-else>{{ text }}</span>
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      </span>
+      <span v-else-if="$route.name === 'guestoshypervisormapping'">
+        <QuickView
+          style="margin-left: 5px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
+          @exec-action="$parent.execAction"/>
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      </span>
+    <span v-else>{{ text }}</span>
     </template>
     <template v-if="column.key === 'osname'">
       <span v-if="$route.name === 'guestos'">
@@ -272,6 +271,8 @@
           </span>
         </span>
       </template>
+    </template>
+
       <template v-if="column.key === 'level'">
         <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
       </template>
