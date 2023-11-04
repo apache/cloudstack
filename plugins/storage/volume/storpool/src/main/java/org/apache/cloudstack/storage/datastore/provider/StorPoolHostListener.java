@@ -37,6 +37,8 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -47,6 +49,7 @@ import com.cloud.agent.api.storage.StorPoolModifyStoragePoolCommand;
 import com.cloud.agent.manager.AgentAttache;
 import com.cloud.alert.AlertManager;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.host.HostVO;
@@ -162,6 +165,11 @@ public class StorPoolHostListener implements HypervisorHostListener {
             poolHost.setLocalPath(mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
         }
 
+        if (host.getParent() == null && mspAnswer.getClientNodeId() != null) {
+            host.setParent(mspAnswer.getClientNodeId());
+            hostDao.update(host.getId(), host);
+        }
+
         StorPoolHelper.setSpClusterIdIfNeeded(hostId, mspAnswer.getClusterId(), clusterDao, hostDao, clusterDetailsDao);
 
         StorPoolUtil.spLog("Connection established between storage pool [%s] and host [%s]", poolVO.getName(), host.getName());
@@ -214,8 +222,21 @@ public class StorPoolHostListener implements HypervisorHostListener {
     }
 
     @Override
-    public boolean hostRemoved(long hostId, long clusterId) {
+    public synchronized boolean hostRemoved(long hostId, long clusterId) {
+        List<HostVO> hosts = hostDao.findByClusterId(clusterId);
+        if (CollectionUtils.isNotEmpty(hosts) && hosts.size() == 1) {
+            removeSPClusterIdWhenTheLastHostIsRemoved(clusterId);
+        }
         return true;
+    }
+
+    private void removeSPClusterIdWhenTheLastHostIsRemoved(long clusterId) {
+        ClusterDetailsVO clusterDetailsVo = clusterDetailsDao.findDetail(clusterId,
+                StorPoolConfigurationManager.StorPoolClusterId.key());
+        if (clusterDetailsVo != null && (clusterDetailsVo.getValue() != null && !clusterDetailsVo.getValue().equals(StorPoolConfigurationManager.StorPoolClusterId.defaultValue())) ){
+            clusterDetailsVo.setValue(StorPoolConfigurationManager.StorPoolClusterId.defaultValue());
+            clusterDetailsDao.update(clusterDetailsVo.getId(), clusterDetailsVo);
+        }
     }
 
     //workaround: we need this "hack" to add our command StorPoolModifyStoragePoolCommand in AgentAttache.s_commandsAllowedInMaintenanceMode
