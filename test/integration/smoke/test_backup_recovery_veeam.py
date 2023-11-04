@@ -172,7 +172,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
                                                          provider_offering.name, provider_offering.description)
                 if not offering:
                     self.fail("Failed to import backup offering %s" % provider_offering.name)
-                self.cleanup.append(offering)
+                self.cleanup.insert(0, offering)
                 break
         if not offering:
             self.skipTest("Skipping test cases as there is no available provider offerings to import")
