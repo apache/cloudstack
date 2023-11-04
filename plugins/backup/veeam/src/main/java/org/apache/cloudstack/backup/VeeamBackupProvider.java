@@ -64,6 +64,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             "backup.plugin.veeam.url", "https://localhost:9398/api/",
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
+    public ConfigKey<Integer> VeeamVersion = new ConfigKey<>("Advanced", Integer.class,
+            "backup.plugin.veeam.version", "9",
+            "The version of Veeam backup and recovery.", true, ConfigKey.Scope.Zone);
+
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.username", "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
@@ -92,7 +96,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
-            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamVersion.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
                     VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
@@ -349,6 +353,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 VeeamUrl,
+                VeeamVersion,
                 VeeamUsername,
                 VeeamPassword,
                 VeeamValidateSSLSecurity,

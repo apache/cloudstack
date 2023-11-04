@@ -92,13 +92,14 @@ public class VeeamClient {
     private static final String SESSION_HEADER = "X-RestSvcSessionId";
 
     private String veeamServerIp;
+    private Integer veeamServerVersion;
     private String veeamServerUsername;
     private String veeamServerPassword;
     private String veeamSessionId = null;
     private int restoreTimeout;
     private final int veeamServerPort = 22;
 
-    public VeeamClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout,
+    public VeeamClient(final String url, final Integer version, final String username, final String password, final boolean validateCertificate, final int timeout,
             final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
         this.restoreTimeout = restoreTimeout;
@@ -123,6 +124,7 @@ public class VeeamClient {
                     .build();
         }
 
+        this.veeamServerVersion = version;
         authenticate(username, password);
         setVeeamSshCredentials(this.apiURI.getHost(), username, password);
     }
@@ -553,7 +555,11 @@ public class VeeamClient {
      */
     protected String transformPowerShellCommandList(List<String> cmds) {
         StringJoiner joiner = new StringJoiner(";");
-        joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
+        if (this.veeamServerVersion != null && this.veeamServerVersion >= 11) {
+            joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
+        } else {
+            joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
+        }
         for (String cmd : cmds) {
             joiner.add(cmd);
         }
