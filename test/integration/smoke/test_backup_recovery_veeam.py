@@ -32,13 +32,13 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         # Setup
 
         cls.testClient = super(TestVeeamBackupAndRecovery, cls).getClsTestClient()
-        cls.api_client = cls.testClient.getApiClient()
+        cls.apiclient = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
-        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.services["mode"] = cls.zone.networktype
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        cls.domain = get_domain(cls.api_client)
-        cls.template = get_template(cls.api_client, cls.zone.id, cls.services["ostype"])
+        cls.domain = get_domain(cls.apiclient)
+        cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         if cls.template == FAILED:
             assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -46,26 +46,21 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         cls._cleanup = []
 
         # Check backup configuration values, set them to enable the veeam provider
-        backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled', zoneid=cls.zone.id)
-        backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin', zoneid=cls.zone.id)
+        backup_enabled_cfg = Configurations.list(cls.apiclient, name='backup.framework.enabled', zoneid=cls.zone.id)
+        backup_provider_cfg = Configurations.list(cls.apiclient, name='backup.framework.provider.plugin', zoneid=cls.zone.id)
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
 
         if cls.backup_enabled == "false":
-            Configurations.update(cls.api_client, 'backup.framework.enabled', value='true', zoneid=cls.zone.id)
+            Configurations.update(cls.apiclient, 'backup.framework.enabled', value='true', zoneid=cls.zone.id)
         if cls.backup_provider != "veeam":
             return
 
         if cls.hypervisor.lower() != 'vmware':
             return
 
-        cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
-        cls.user_user = cls.account.user[0]
-        cls.user_apiclient = cls.testClient.getUserApiClient(
-            cls.user_user.username, cls.domain.name
-        )
-        cls.service_offering = ServiceOffering.create(cls.api_client, cls.services["service_offerings"]["small"])
-        cls._cleanup = [cls.service_offering, cls.account]
+        cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offerings"]["small"])
+        cls._cleanup = [cls.service_offering]
 
     @classmethod
     def isBackupOfferingUsed(cls, existing_offerings, provider_offering):
@@ -89,15 +84,9 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            # Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
-
-            # Restore original backup framework values values
-            if cls.backup_enabled == "false":
-                Configurations.update(cls.api_client, 'backup.framework.enabled', value=cls.backup_enabled, zoneid=cls.zone.id)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        if cls.backup_enabled == "false":
+            Configurations.update(cls.apiclient, 'backup.framework.enabled', value=cls.backup_enabled, zoneid=cls.zone.id)
+        super(TestVeeamBackupAndRecovery, cls).tearDownClass()
 
     def setUp(self):
         if self.backup_provider != "veeam":
@@ -107,10 +96,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         self.cleanup = []
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.api_client, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestVeeamBackupAndRecovery, self).tearDown()
 
     @attr(tags=["advanced", "backup"], required_hardware="false")
     def test_import_backup_offering(self):
@@ -120,14 +106,14 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
         # Import backup offering
         offering = None
-        existing_offerings = BackupOffering.listByZone(self.api_client, self.zone.id)
-        provider_offerings = BackupOffering.listExternal(self.api_client, self.zone.id)
+        existing_offerings = BackupOffering.listByZone(self.apiclient, self.zone.id)
+        provider_offerings = BackupOffering.listExternal(self.apiclient, self.zone.id)
         if not provider_offerings:
             self.skipTest("Skipping test cases as the provider offering is None")
         for provider_offering in provider_offerings:
             if not self.isBackupOfferingUsed(existing_offerings, provider_offering):
                 self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
-                offering = BackupOffering.importExisting(self.api_client, self.zone.id, provider_offering.externalid,
+                offering = BackupOffering.importExisting(self.apiclient, self.zone.id, provider_offering.externalid,
                                                          provider_offering.name, provider_offering.description)
                 if not offering:
                     self.fail("Failed to import backup offering %s" % provider_offering.name)
@@ -136,7 +122,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             self.skipTest("Skipping test cases as there is no available provider offerings to import")
 
         # Verify offering is listed by user
-        imported_offering = BackupOffering.listByZone(self.user_apiclient, self.zone.id)
+        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
         self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
         self.assertNotEqual(len(imported_offering), 0, "Check if the list API returns a non-empty response")
         matching_offerings = [x for x in imported_offering if x.id == offering.id]
@@ -144,10 +130,10 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
 
         # Delete backup offering
         self.debug("Deleting backup offering %s" % offering.id)
-        offering.delete(self.api_client)
+        offering.delete(self.apiclient)
 
         #  Verify offering is not listed by user
-        imported_offering = BackupOffering.listByZone(self.user_apiclient, self.zone.id)
+        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
         if imported_offering:
             self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
             matching_offerings = [x for x in imported_offering if x.id == offering.id]
@@ -159,16 +145,24 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         Test VM backup lifecycle
         """
 
+        # Create user account
+        self.account = Account.create(self.apiclient, self.services["account"], domainid=self.domain.id)
+        self.user_user = self.account.user[0]
+        self.user_apiclient = self.testClient.getUserApiClient(
+            self.user_user.username, self.domain.name
+        )
+        self.cleanup = [self.account]
+
         # Import backup offering
         offering = None
-        existing_offerings = BackupOffering.listByZone(self.api_client, self.zone.id)
-        provider_offerings = BackupOffering.listExternal(self.api_client, self.zone.id)
+        existing_offerings = BackupOffering.listByZone(self.apiclient, self.zone.id)
+        provider_offerings = BackupOffering.listExternal(self.apiclient, self.zone.id)
         if not provider_offerings:
             self.skipTest("Skipping test cases as the provider offering is None")
         for provider_offering in provider_offerings:
             if not self.isBackupOfferingUsed(existing_offerings, provider_offering):
                 self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
-                offering = BackupOffering.importExisting(self.api_client, self.zone.id, provider_offering.externalid,
+                offering = BackupOffering.importExisting(self.apiclient, self.zone.id, provider_offering.externalid,
                                                          provider_offering.name, provider_offering.description)
                 if not offering:
                     self.fail("Failed to import backup offering %s" % provider_offering.name)
@@ -178,8 +172,7 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             self.skipTest("Skipping test cases as there is no available provider offerings to import")
 
         self.vm = VirtualMachine.create(self.user_apiclient, self.services["small"], accountid=self.account.name,
-                                       domainid=self.account.domainid, serviceofferingid=self.service_offering.id,
-                                       mode=self.services["mode"])
+                                       domainid=self.account.domainid, serviceofferingid=self.service_offering.id)
 
         # Verify there are no backups for the VM
         backups = Backup.list(self.user_apiclient, self.vm.id)
