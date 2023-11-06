@@ -159,6 +159,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         capabilities.put(Network.Service.Lb, null);
         capabilities.put(Network.Service.PortForwarding, null);
         capabilities.put(Network.Service.NetworkACL, null);
+        capabilities.put(Network.Service.Firewall, null);
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
