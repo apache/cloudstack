@@ -615,6 +615,9 @@ export default {
           var nic = { ...nicEntry }
           nic.name = nic.name || nic.id
           nic.displaytext = nic.name
+          if (this.isExternalImport && nic.vlanid === -1) {
+            delete nic.vlanid
+          }
           if (nic.vlanid) {
             nic.broadcasturi = 'vlan://' + nic.vlanid
             if (nic.isolatedpvlan) {
