@@ -20,12 +20,15 @@ package org.apache.cloudstack.backup.veeam;
 import static org.apache.cloudstack.backup.VeeamBackupProvider.BACKUP_IDENTIFIER;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -42,6 +45,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.veeam.api.BackupFile;
+import org.apache.cloudstack.backup.veeam.api.BackupFiles;
 import org.apache.cloudstack.backup.veeam.api.BackupJobCloneInfo;
 import org.apache.cloudstack.backup.veeam.api.CreateObjectInJobSpec;
 import org.apache.cloudstack.backup.veeam.api.EntityReferences;
@@ -53,9 +58,14 @@ import org.apache.cloudstack.backup.veeam.api.Link;
 import org.apache.cloudstack.backup.veeam.api.ObjectInJob;
 import org.apache.cloudstack.backup.veeam.api.ObjectsInJob;
 import org.apache.cloudstack.backup.veeam.api.Ref;
+import org.apache.cloudstack.backup.veeam.api.RestorePoint;
+import org.apache.cloudstack.backup.veeam.api.RestorePoints;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
+import org.apache.cloudstack.backup.veeam.api.VmRestorePoint;
+import org.apache.cloudstack.backup.veeam.api.VmRestorePoints;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -90,6 +100,14 @@ public class VeeamClient {
     private final HttpClient httpClient;
     private static final String RESTORE_VM_SUFFIX = "CS-RSTR-";
     private static final String SESSION_HEADER = "X-RestSvcSessionId";
+    private static final String BACKUP_REFERENCE = "BackupReference";
+    private static final String HIERARCHY_ROOT_REFERENCE = "HierarchyRootReference";
+    private static final String REPOSITORY_REFERENCE = "RepositoryReference";
+    private static final String RESTORE_POINT_REFERENCE = "RestorePointReference";
+    private static final String BACKUP_FILE_REFERENCE = "BackupFileReference";
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final SimpleDateFormat newDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
     private String veeamServerIp;
     private Integer veeamServerVersion;
@@ -240,7 +258,7 @@ public class VeeamClient {
             final ObjectMapper objectMapper = new XmlMapper();
             final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
-                if (ref.getName().equals(vmwareDcName) && ref.getType().equals("HierarchyRootReference")) {
+                if (ref.getName().equals(vmwareDcName) && ref.getType().equals(HIERARCHY_ROOT_REFERENCE)) {
                     return ref.getUid();
                 }
             }
@@ -357,7 +375,7 @@ public class VeeamClient {
             final ObjectMapper objectMapper = new XmlMapper();
             final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
             for (final Ref ref : references.getRefs()) {
-                if (ref.getType().equals("RepositoryReference") && ref.getName().equals(repositoryName)) {
+                if (ref.getType().equals(REPOSITORY_REFERENCE) && ref.getName().equals(repositoryName)) {
                     return ref;
                 }
             }
@@ -555,10 +573,10 @@ public class VeeamClient {
      */
     protected String transformPowerShellCommandList(List<String> cmds) {
         StringJoiner joiner = new StringJoiner(";");
-        if (this.veeamServerVersion != null && this.veeamServerVersion >= 11) {
-            joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
-        } else {
+        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
             joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
+        } else {
+            joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
         }
         for (String cmd : cmds) {
             joiner.add(cmd);
@@ -616,7 +634,7 @@ public class VeeamClient {
                     "$repo = Get-VBRBackupRepository",
                     "Sync-VBRBackupRepository -Repository $repo",
                 "} else { ",
-                    " Write-Output \"Failed to delete\"",
+                    " Write-Output 'Failed to delete'",
                     " Exit 1",
                 "}"
         ));
@@ -624,32 +642,112 @@ public class VeeamClient {
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {
+        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
+            return getBackupMetricsLegacy();
+        } else {
+            return getBackupMetricsViaVeeamAPI();
+        }
+    }
+
+    public Map<String, Backup.Metric> getBackupMetricsViaVeeamAPI() {
+        LOG.debug("Trying to get backup metrics via Veeam B&R API");
+
+        try {
+            final HttpResponse response = get(String.format("/backupFiles?format=Entity"));
+            checkResponseOK(response);
+            return processHttpResponseForBackupMetrics(response.getEntity().getContent());
+        } catch (final IOException e) {
+            LOG.error("Failed to get backup metrics via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return new HashMap<>();
+    }
+
+    protected Map<String, Backup.Metric> processHttpResponseForBackupMetrics(final InputStream content) {
+        Map<String, Backup.Metric> metrics = new HashMap<>();
+        try {
+            final ObjectMapper objectMapper = new XmlMapper();
+            final BackupFiles backupFiles = objectMapper.readValue(content, BackupFiles.class);
+            if (backupFiles == null || CollectionUtils.isEmpty(backupFiles.getBackupFiles())) {
+                throw new CloudRuntimeException("Could not get backup metrics via Veeam B&R API");
+            }
+            for (final BackupFile backupFile : backupFiles.getBackupFiles()) {
+                String vmUuid = null;
+                String backupName = null;
+                List<Link> links = backupFile.getLink();
+                for (Link link : links) {
+                    if (BACKUP_REFERENCE.equals(link.getType())) {
+                        backupName = link.getName();
+                        break;
+                    }
+                }
+                if (backupName != null && backupName.contains(BACKUP_IDENTIFIER)) {
+                    final String[] names = backupName.split(BACKUP_IDENTIFIER);
+                    if (names.length > 1) {
+                        vmUuid = names[1];
+                    }
+                }
+                if (vmUuid == null) {
+                    continue;
+                }
+                if (vmUuid.contains(" - ")) {
+                    vmUuid = vmUuid.split(" - ")[0];
+                }
+                Long usedSize = 0L;
+                Long dataSize = 0L;
+                if (metrics.containsKey(vmUuid)) {
+                    usedSize = metrics.get(vmUuid).getBackupSize();
+                    dataSize = metrics.get(vmUuid).getDataSize();
+                }
+                if (backupFile.getBackupSize() != null) {
+                    usedSize += Long.valueOf(backupFile.getBackupSize());
+                }
+                if (backupFile.getDataSize() != null) {
+                    dataSize += Long.valueOf(backupFile.getDataSize());
+                }
+                metrics.put(vmUuid, new Backup.Metric(usedSize, dataSize));
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return metrics;
+    }
+
+    public Map<String, Backup.Metric> getBackupMetricsLegacy() {
         final String separator = "=====";
         final List<String> cmds = Arrays.asList(
-            "$backups = Get-VBRBackup",
-            "foreach ($backup in $backups) {" +
-               "$backup.JobName;" +
-               "$storageGroups = $backup.GetStorageGroups();" +
-               "foreach ($group in $storageGroups) {" +
-                    "$usedSize = 0;" +
-                    "$dataSize = 0;" +
-                    "$sizePerStorage = $group.GetStorages().Stats.BackupSize;" +
-                    "$dataPerStorage = $group.GetStorages().Stats.DataSize;" +
-                    "foreach ($size in $sizePerStorage) {" +
+                "$backups = Get-VBRBackup",
+                "foreach ($backup in $backups) {" +
+                        "$backup.JobName;" +
+                        "$storageGroups = $backup.GetStorageGroups();" +
+                        "foreach ($group in $storageGroups) {" +
+                        "$usedSize = 0;" +
+                        "$dataSize = 0;" +
+                        "$sizePerStorage = $group.GetStorages().Stats.BackupSize;" +
+                        "$dataPerStorage = $group.GetStorages().Stats.DataSize;" +
+                        "foreach ($size in $sizePerStorage) {" +
                         "$usedSize += $size;" +
-                    "}" +
-                    "foreach ($size in $dataPerStorage) {" +
+                        "}" +
+                        "foreach ($size in $dataPerStorage) {" +
                         "$dataSize += $size;" +
-                    "}" +
-                    "$usedSize;" +
-                    "$dataSize;" +
-               "}" +
-               "echo \"" + separator + "\"" +
-            "}"
+                        "}" +
+                        "$usedSize;" +
+                        "$dataSize;" +
+                        "}" +
+                        "echo \"" + separator + "\"" +
+                        "}"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
+        return processPowerShellResultForBackupMetrics(response.second());
+    }
+
+    protected Map<String, Backup.Metric> processPowerShellResultForBackupMetrics(final String result) {
+        LOG.debug("Processing powershell result: " + result);
+
+        final String separator = "=====";
         final Map<String, Backup.Metric> sizes = new HashMap<>();
-        for (final String block : response.second().split(separator + "\r\n")) {
+        for (final String block : result.split(separator + "\r\n")) {
             final String[] parts = block.split("\r\n");
             if (parts.length != 3) {
                 continue;
@@ -683,7 +781,7 @@ public class VeeamClient {
         return new Backup.RestorePoint(id, created, type);
     }
 
-    public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
+    public List<Backup.RestorePoint> listRestorePointsLegacy(String backupName, String vmInternalName) {
         final List<String> cmds = Arrays.asList(
                 String.format("$backup = Get-VBRBackup -Name '%s'", backupName),
                 String.format("if ($backup) { $restore = (Get-VBRRestorePoint -Backup:$backup -Name \"%s\" ^| Where-Object {$_.IsConsistent -eq $true})", vmInternalName),
@@ -704,6 +802,114 @@ public class VeeamClient {
             restorePoints.add(getRestorePointFromBlock(parts));
         }
         return restorePoints;
+    }
+
+    public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
+        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
+            return listRestorePointsLegacy(backupName, vmInternalName);
+        } else {
+            return listVmRestorePointsViaVeeamAPI(vmInternalName);
+        }
+    }
+
+    public List<Backup.RestorePoint> listRestorePointsViaVeeamAPI(String backupName, String vmInternalName) {
+        LOG.debug(String.format("Trying to list restore points via Veeam B&R API for backup %s of VM %s: ", backupName, vmInternalName));
+
+        try {
+            final HttpResponse response = get("/restorePoints?format=Entity");
+            checkResponseOK(response);
+            return processHttpResponseForRestorePoints(response.getEntity().getContent(), backupName, vmInternalName);
+        } catch (final IOException e) {
+            LOG.error("Failed to list restore points via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return new ArrayList<>();
+    }
+
+    public List<Backup.RestorePoint> processHttpResponseForRestorePoints(InputStream content, String backupName, String vmInternalName) {
+        List<Backup.RestorePoint> restorePointList = new ArrayList<>();
+        try {
+            final ObjectMapper objectMapper = new XmlMapper();
+            final RestorePoints restorePoints = objectMapper.readValue(content, RestorePoints.class);
+            if (restorePoints == null) {
+                throw new CloudRuntimeException("Could not get restore points via Veeam B&R API");
+            }
+            for (final RestorePoint restorePoint : restorePoints.getRestorePoints()) {
+                String linkName = null;
+                List<Link> links = restorePoint.getLink();
+                for (Link link : links) {
+                    if (BACKUP_REFERENCE.equals(link.getType())) {
+                        linkName = link.getName();
+                        break;
+                    }
+                }
+                if (linkName != null && linkName.startsWith(backupName)) {
+                    String restorePointId = restorePoint.getUid().substring(restorePoint.getUid().lastIndexOf(':') + 1);
+                    restorePointList.addAll(listVmRestorePointsViaVeeamAPI(vmInternalName));
+                }
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to process response to get restore points via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return restorePointList;
+    }
+
+    public List<Backup.RestorePoint> listVmRestorePointsViaVeeamAPI(String vmInternalName) {
+        LOG.debug(String.format("Trying to list VM restore points via Veeam B&R API for VM %s: ", vmInternalName));
+
+        try {
+            final HttpResponse response = get(String.format("/vmRestorePoints?format=Entity"));
+            checkResponseOK(response);
+            return processHttpResponseForVmRestorePoints(response.getEntity().getContent(), vmInternalName);
+        } catch (final IOException e) {
+            LOG.error("Failed to list VM restore points via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return new ArrayList<>();
+    }
+
+    public List<Backup.RestorePoint> processHttpResponseForVmRestorePoints(InputStream content, String vmInternalName) {
+        List<Backup.RestorePoint> vmRestorePointList = new ArrayList<>();
+        try {
+            final ObjectMapper objectMapper = new XmlMapper();
+            final VmRestorePoints vmRestorePoints = objectMapper.readValue(content, VmRestorePoints.class);
+            if (vmRestorePoints == null) {
+                throw new CloudRuntimeException("Could not get VM restore points via Veeam B&R API");
+            }
+            for (final VmRestorePoint vmRestorePoint : vmRestorePoints.getVmRestorePoints()) {
+                LOG.debug(String.format("Processing VM restore point Name=%s, VmDisplayName=%s for vm name=%s",
+                        vmRestorePoint.getName(), vmRestorePoint.getVmDisplayName(), vmInternalName));
+                if (!vmInternalName.equals(vmRestorePoint.getVmDisplayName())) {
+                    continue;
+                }
+                boolean isReady = true;
+                List<Link> links = vmRestorePoint.getLink();
+                for (Link link : links) {
+                    if (Arrays.asList(BACKUP_FILE_REFERENCE, RESTORE_POINT_REFERENCE).contains(link.getType()) && !link.getRel().equals("Up")) {
+                        LOG.info(String.format("The VM restore point is not ready. Reference: %s, state: %s", link.getType(), link.getRel()));
+                        isReady = false;
+                        break;
+                    }
+                }
+                if (!isReady) {
+                    continue;
+                }
+                String vmRestorePointId = vmRestorePoint.getUid().substring(vmRestorePoint.getUid().lastIndexOf(':') + 1);
+                String created = formatDate(vmRestorePoint.getCreationTimeUtc());
+                String type = vmRestorePoint.getPointType();
+                LOG.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
+                vmRestorePointList.add(new Backup.RestorePoint(vmRestorePointId, created, type));
+            }
+        } catch (final IOException | ParseException e) {
+            LOG.error("Failed to process response to get VM restore points via Veeam B&R API due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return vmRestorePointList;
+    }
+
+    private String formatDate(String date) throws ParseException {
+        return newDateFormat.format(dateFormat.parse(StringUtils.substring(date, 0, 23)));
     }
 
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {

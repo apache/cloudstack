@@ -5991,7 +5991,7 @@ class Backup:
 
         cmd = createBackup.createBackupCmd()
         cmd.virtualmachineid = vmid
-        return (apiclient.createBackup(cmd))
+        return Backup(apiclient.createBackup(cmd).__dict__)
 
     @classmethod
     def delete(self, apiclient, id, forced=None):
@@ -6012,11 +6012,12 @@ class Backup:
         cmd.listall = True
         return (apiclient.listBackups(cmd))
 
-    def restoreVM(self, apiclient):
+    @classmethod
+    def restoreVM(self, apiclient, backupid):
         """Restore VM from backup"""
 
         cmd = restoreBackup.restoreBackupCmd()
-        cmd.id = self.id
+        cmd.id = backupid
         return (apiclient.restoreBackup(cmd))
 
 class ProjectRole:

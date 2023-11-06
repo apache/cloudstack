@@ -495,7 +495,8 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          args: ['forced']
         }
       ]
     }

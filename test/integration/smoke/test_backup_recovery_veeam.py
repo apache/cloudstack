@@ -202,6 +202,11 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
         backup = backups[0]
 
+        # Stop VM
+        self.vm.stop(self.user_apiclient, forced=True)
+        # Restore backup
+        Backup.restoreVM(self.user_apiclient, backup.id)
+
         # Delete backup
         Backup.delete(self.user_apiclient, backup.id, forced=True)
 
