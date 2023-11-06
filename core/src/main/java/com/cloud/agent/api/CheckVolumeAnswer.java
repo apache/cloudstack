@@ -18,37 +18,16 @@
 package com.cloud.agent.api;
 
 @LogLevel(LogLevel.Log4jLevel.Trace)
-public class CopyRemoteVolumeAnswer extends Answer {
-
-    private String remoteIp;
-    private String filename;
+public class CheckVolumeAnswer extends Answer {
 
     private long size;
 
-    CopyRemoteVolumeAnswer() {
+    CheckVolumeAnswer() {
     }
 
-    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, String details, String filename, long size) {
+    public CheckVolumeAnswer(CheckVolumeCommand cmd, String details, long size) {
         super(cmd, true, details);
-        this.remoteIp = cmd.getRemoteIp();
-        this.filename = filename;
         this.size = size;
-    }
-
-    public String getRemoteIp() {
-        return remoteIp;
-    }
-
-    public void setRemoteIp(String remoteIp) {
-        this.remoteIp = remoteIp;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
-    public String getFilename() {
-        return filename;
     }
 
     public long getSize() {
@@ -56,6 +35,6 @@ public class CopyRemoteVolumeAnswer extends Answer {
     }
 
     public String getString() {
-        return "CopyRemoteVolumeAnswer [remoteIp=" + remoteIp + "]";
+        return "CheckVolumeAnswer [size=" + size + "]";
     }
 }

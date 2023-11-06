@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,48 +15,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.to.StorageFilerTO;
+
 @LogLevel(LogLevel.Log4jLevel.Trace)
-public class CopyRemoteVolumeAnswer extends Answer {
+public class CheckVolumeCommand extends Command {
 
-    private String remoteIp;
-    private String filename;
+    String srcFile;
 
-    private long size;
+    StorageFilerTO storageFilerTO;
 
-    CopyRemoteVolumeAnswer() {
+
+    public String getSrcFile() {
+        return srcFile;
     }
 
-    public CopyRemoteVolumeAnswer(CopyRemoteVolumeCommand cmd, String details, String filename, long size) {
-        super(cmd, true, details);
-        this.remoteIp = cmd.getRemoteIp();
-        this.filename = filename;
-        this.size = size;
+    public void setSrcFile(String srcFile) {
+        this.srcFile = srcFile;
     }
 
-    public String getRemoteIp() {
-        return remoteIp;
+    public CheckVolumeCommand() {
     }
 
-    public void setRemoteIp(String remoteIp) {
-        this.remoteIp = remoteIp;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
-    public String getFilename() {
-        return filename;
-    }
-
-    public long getSize() {
-        return size;
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 
     public String getString() {
-        return "CopyRemoteVolumeAnswer [remoteIp=" + remoteIp + "]";
+        return "CheckVolumeCommand [srcFile=" + srcFile + "]";
+    }
+
+    public StorageFilerTO getStorageFilerTO() {
+        return storageFilerTO;
+    }
+
+    public void setStorageFilerTO(StorageFilerTO storageFilerTO) {
+        this.storageFilerTO = storageFilerTO;
     }
 }

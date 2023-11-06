@@ -20,8 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CopyRemoteVolumeAnswer;
-import com.cloud.agent.api.CopyRemoteVolumeCommand;
+import com.cloud.agent.api.CheckVolumeAnswer;
+import com.cloud.agent.api.CheckVolumeCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -39,39 +39,32 @@ import org.libvirt.LibvirtException;
 
 import java.util.Map;
 
-@ResourceWrapper(handles = CopyRemoteVolumeCommand.class)
-public final class LibvirtCopyRemoteVolumeCommandWrapper extends CommandWrapper<CopyRemoteVolumeCommand, Answer, LibvirtComputingResource> {
+@ResourceWrapper(handles = CheckVolumeCommand.class)
+public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCopyRemoteVolumeCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtCheckVolumeCommandWrapper.class);
 
     @Override
-    public Answer execute(final CopyRemoteVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
+    public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String result = null;
-        String srcIp = command.getRemoteIp();
-        String username = command.getUsername();
-        String password = command.getPassword();
         String srcFile = command.getSrcFile();
         StorageFilerTO storageFilerTO = command.getStorageFilerTO();
-        String tmpPath = command.getTmpPath();
         KVMStoragePoolManager poolMgr = libvirtComputingResource.getStoragePoolMgr();
         KVMStoragePool pool = poolMgr.getStoragePool(storageFilerTO.getType(), storageFilerTO.getUuid());
-        String dstPath = pool.getLocalPath();
 
         try {
             if (storageFilerTO.getType() == Storage.StoragePoolType.Filesystem ||
                     storageFilerTO.getType() == Storage.StoragePoolType.NetworkFilesystem) {
-                String filename = libvirtComputingResource.copyVolume(srcIp, username, password, dstPath, srcFile, tmpPath);
-                s_logger.debug("Volume Copy Successful");
-                final KVMPhysicalDisk vol = pool.getPhysicalDisk(filename);
+                final KVMPhysicalDisk vol = pool.getPhysicalDisk(srcFile);
                 final String path = vol.getPath();
                 long size = getVirtualSizeFromFile(path);
-                return  new CopyRemoteVolumeAnswer(command, "", filename, size);
+                return  new CheckVolumeAnswer(command, "", size);
             } else {
                 return new Answer(command, false, "Unsupported Storage Pool");
             }
 
         } catch (final Exception e) {
-            s_logger.error("Error while copying file from remote host: "+ e.getMessage());
+            s_logger.error("Error while locating disk: "+ e.getMessage());
             return new Answer(command, false, result);
         }
     }

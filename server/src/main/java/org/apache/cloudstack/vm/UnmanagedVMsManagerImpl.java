@@ -19,6 +19,8 @@ package org.apache.cloudstack.vm;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVolumeAnswer;
+import com.cloud.agent.api.CheckVolumeCommand;
 import com.cloud.agent.api.CopyRemoteVolumeAnswer;
 import com.cloud.agent.api.CopyRemoteVolumeCommand;
 import com.cloud.agent.api.GetRemoteVmsAnswer;
@@ -729,6 +731,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if(!copyRemoteVolumeAnswer.getResult()) {
             throw new CloudRuntimeException("Error while copying volume");
         }
+        diskProfile.setSize(copyRemoteVolumeAnswer.getSize());
         DiskProfile profile = volumeManager.updateImportedVolume(type, diskOffering, vm, template, deviceId,
                 storagePool.getId(), copyRemoteVolumeAnswer.getFilename(), chainInfo, diskProfile);
 
@@ -1801,6 +1804,25 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if(dest == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
         }
+
+
+        Map<Volume, StoragePool> storage = dest.getStorageForDisks();
+        Volume volume = volumeDao.findById(diskProfile.getVolumeId());
+        StoragePool storagePool = storage.get(volume);
+        CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
+        checkVolumeCommand.setSrcFile(diskPath);
+        StorageFilerTO storageTO = new StorageFilerTO(storagePool);
+        checkVolumeCommand.setStorageFilerTO(storageTO);
+        Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
+        if (!(answer instanceof CheckVolumeAnswer)) {
+            throw new CloudRuntimeException("Disk not found or is invalid");
+        }
+        CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
+        if(!checkVolumeAnswer.getResult()) {
+            throw new CloudRuntimeException("Disk not found or is invalid");
+        }
+        diskProfile.setSize(checkVolumeAnswer.getSize());
+
 
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {

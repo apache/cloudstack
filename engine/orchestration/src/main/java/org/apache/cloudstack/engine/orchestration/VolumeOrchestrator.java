@@ -2262,6 +2262,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setPoolId(poolId);
         vol.setPath(path);
         vol.setChainInfo(chainInfo);
+        vol.setSize(diskProfile.getSize());
         vol.setState(Volume.State.Ready);
         vol.setAttached(new Date());
         _volsDao.update(vol.getId(), vol);
