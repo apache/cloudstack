@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.network.NsxProvider;
+import com.cloud.network.nsx.NsxProvider;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;

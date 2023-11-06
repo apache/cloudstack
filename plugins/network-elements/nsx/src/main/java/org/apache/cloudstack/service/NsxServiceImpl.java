@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -27,12 +30,14 @@ import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
+import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -53,6 +58,28 @@ public class NsxServiceImpl implements NsxService {
                 new CreateNsxTier1GatewayCommand(domainId, accountId, zoneId, vpcId, vpcName, true, sourceNatEnabled);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(createNsxTier1GatewayCommand, zoneId);
         return result.getResult();
+    }
+
+    @Override
+    public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
+        if (vpc == null || address == null) {
+            return false;
+        }
+        long accountId = vpc.getAccountId();
+        long domainId = vpc.getDomainId();
+        long zoneId = vpc.getZoneId();
+        long vpcId = vpc.getId();
+
+        LOGGER.debug(String.format("Updating the source NAT IP for NSX VPC %s to IP: %s", vpc.getName(), address.getAddress().addr()));
+        String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, zoneId, vpcId, true);
+        String sourceNatRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, zoneId, vpcId, true);
+        CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, zoneId, tier1GatewayName, "SNAT", address.getAddress().addr(), sourceNatRuleId);
+        NsxAnswer answer = nsxControllerUtils.sendNsxCommand(cmd, zoneId);
+        if (!answer.getResult()) {
+            LOGGER.error(String.format("Could not update the source NAT IP address for VPC %s: %s", vpc.getName(), answer.getDetails()));
+            return false;
+        }
+        return true;
     }
 
     public boolean createNetwork(Long zoneId, long accountId, long domainId, Long networkId, String networkName) {

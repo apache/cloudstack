@@ -14,9 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.service;
+package com.cloud.network.nsx;
+
+import com.cloud.network.IpAddress;
+import com.cloud.network.vpc.Vpc;
 
 public interface NsxService {
 
     boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
+    boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
 }

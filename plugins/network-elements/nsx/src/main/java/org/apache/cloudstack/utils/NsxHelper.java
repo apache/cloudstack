@@ -25,7 +25,7 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
-import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 
 import java.util.List;
 
@@ -48,9 +48,9 @@ public class NsxHelper {
         return new CreateNsxTier1GatewayCommand(domain.getId(), account.getId(), zone.getId(), networkResourceId, networkResourceName, isResourceVpc, false);
     }
 
-    public static CreateNsxTier1NatRuleCommand createNsxNatRuleCommand(long domainId, long accountId, long zoneId,
-                                               String tier1Gateway, String action, String ipAddress,
-                                               String natRuleId) {
-        return new CreateNsxTier1NatRuleCommand(domainId, accountId, zoneId, tier1Gateway, action, ipAddress, natRuleId);
+    public static CreateOrUpdateNsxTier1NatRuleCommand createOrUpdateNsxNatRuleCommand(long domainId, long accountId, long zoneId,
+                                                                                       String tier1Gateway, String action, String ipAddress,
+                                                                                       String natRuleId) {
+        return new CreateOrUpdateNsxTier1NatRuleCommand(domainId, accountId, zoneId, tier1Gateway, action, ipAddress, natRuleId);
     }
 }

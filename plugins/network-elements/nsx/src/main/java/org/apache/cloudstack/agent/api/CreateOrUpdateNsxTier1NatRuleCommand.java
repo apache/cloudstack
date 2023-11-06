@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.agent.api;
 
-public class CreateNsxTier1NatRuleCommand extends NsxCommand {
+public class CreateOrUpdateNsxTier1NatRuleCommand extends NsxCommand {
 
     private String tier1GatewayName;
     private String action;
     private String translatedIpAddress;
     private String natRuleId;
 
-    public CreateNsxTier1NatRuleCommand(long domainId, long accountId, long zoneId,
-                                        String tier1GatewayName, String action, String translatedIpAddress, String natRuleId) {
+    public CreateOrUpdateNsxTier1NatRuleCommand(long domainId, long accountId, long zoneId,
+                                                String tier1GatewayName, String action, String translatedIpAddress, String natRuleId) {
         super(domainId, accountId, zoneId);
         this.tier1GatewayName = tier1GatewayName;
         this.action = action;

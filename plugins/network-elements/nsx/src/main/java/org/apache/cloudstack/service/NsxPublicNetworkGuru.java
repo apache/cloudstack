@@ -24,6 +24,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
@@ -36,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.NsxAnswer;
-import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
@@ -142,7 +143,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 String translatedIp = ipAddress.getAddress().addr();
                 s_logger.debug(String.format("Creating NSX Nat Rule for Tier1 GW %s for translated IP %s", tier1GatewayName, translatedIp));
                 String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, isForVpc);
-                CreateNsxTier1NatRuleCommand cmd = NsxHelper.createNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
+                CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
                 NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
                 if (!nsxAnswer.getResult()) {
                     String msg = String.format("Could not create NSX Nat Rule on Tier1 Gateway %s for IP %s", tier1GatewayName, translatedIp);
