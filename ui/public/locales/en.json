@@ -668,12 +668,8 @@
 "label.deployasis": "Read Instance settings from OVA",
 "label.deploymentplanner": "Deployment planner",
 "label.desc.db.stats": "Database Statistics",
-<<<<<<< HEAD
 "label.desc.importexportinstancewizard": "Import and export Instances to/from an existing VMware cluster.",
-=======
-"label.desc.importexportinstancewizard": "Import and export instances to/from an existing VMware cluster.",
 "label.desc.ingesttinstancewizard": "Ingest instances from an external KVM host",
->>>>>>> f4a3c46a25 (UI changes to include multiple KVM migration options)
 "label.desc.usage.stats": "Usage Server Statistics",
 "label.description": "Description",
 "label.destaddressgroupuuid": "Destination Address Group",
@@ -681,12 +677,8 @@
 "label.destendport": "Destination End Port",
 "label.desthost": "Destination host",
 "label.destination": "Destination",
-<<<<<<< HEAD
 "label.destinationphysicalnetworkid": "Destination physical Network ID",
-=======
 "label.destination.hypervisor":  "Destination Hypervisor",
-"label.destinationphysicalnetworkid": "Destination physical network ID",
->>>>>>> 8962b405d2 (Cleanup Import Remote Instance)
 "label.destinationtype": "Destination Type",
 "label.destipprefix": "Destination Network Address",
 "label.destipprefixlen": "Destination Prefix Length",
