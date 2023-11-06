@@ -248,6 +248,7 @@ export default {
           }
           data[x] = d
         }
+        d.network = this.networks[x].id
       }
       this.$emit('select-multi-network', data)
     }
