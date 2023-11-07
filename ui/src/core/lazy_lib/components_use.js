@@ -63,7 +63,8 @@ import {
   Slider,
   AutoComplete,
   Collapse,
-  Space
+  Space,
+  Statistic
 } from 'ant-design-vue'
 import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
@@ -127,5 +128,6 @@ export default {
     app.use(Collapse)
     app.use(Descriptions)
     app.use(Space)
+    app.use(Statistic)
   }
 }

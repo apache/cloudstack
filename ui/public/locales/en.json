@@ -2147,6 +2147,7 @@
 "label.volumetotal": "Volume",
 "label.volumetype": "Volume Type",
 "label.vpc": "VPC",
+"label.vpcs": "VPCs",
 "label.vpc.id": "VPC ID",
 "label.vpc.offerings": "VPC offerings",
 "label.vpc.virtual.router": "VPC virtual router",
