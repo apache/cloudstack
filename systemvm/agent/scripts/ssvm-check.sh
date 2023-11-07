@@ -106,7 +106,7 @@ else
     if [[ -z "$STORAGE_ADDRESSES" ]]
     then
       STORAGE_NETWORK_GATEWAY=`grep "storagegateway" $CMDLINE | sed -E 's/.*storagegateway=([^ ]*).*/\1/g'`
-      echo "Storage addresses list is empty, trying to ping storage network gateway instead ($STORAGE_NETWORK_GATEWAY)"
+      echo "Storage address list is empty, trying to ping storage network gateway instead ($STORAGE_NETWORK_GATEWAY)"
       ping -c 2  $STORAGE_NETWORK_GATEWAY
       if [ $? -eq 0 ]
       then
