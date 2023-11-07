@@ -18,7 +18,7 @@
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources, wait_until)
-from marvin.lib.base import (Account, ServiceOffering, VirtualMachine, BackupOffering, Configurations, Backup)
+from marvin.lib.base import (Account, ServiceOffering, VirtualMachine, BackupOffering, Configurations, Backup, BackupSchedule)
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
@@ -192,6 +192,26 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
         )
         self.assertEqual(1, len(vms), "List of the virtual machines should have 1 vm")
         self.assertEqual(offering.id, vms[0].backupofferingid, "The virtual machine should have backup offering %s" % offering.id)
+
+        # Create backup schedule on 01:00AM every Sunday
+        BackupSchedule.create(self.user_apiclient, self.vm.id, intervaltype="WEEKLY", timezone="CET", schedule="00:01:1")
+        backupSchedule = BackupSchedule.list(self.user_apiclient, self.vm.id)
+        self.assertIsNotNone(backupSchedule)
+        self.assertEqual("WEEKLY", backupSchedule.intervaltype)
+        self.assertEqual("00:01:1", backupSchedule.schedule)
+        self.assertEqual("CET", backupSchedule.timezone)
+        self.assertEqual(self.vm.id, backupSchedule.virtualmachineid)
+        self.assertEqual(self.vm.name, backupSchedule.virtualmachinename)
+
+        # Update backup schedule on 02:00AM every 20th
+        BackupSchedule.update(self.user_apiclient, self.vm.id, intervaltype="MONTHLY", timezone="CET", schedule="00:02:20")
+        backupSchedule = BackupSchedule.list(self.user_apiclient, self.vm.id)
+        self.assertIsNotNone(backupSchedule)
+        self.assertEqual("MONTHLY", backupSchedule.intervaltype)
+        self.assertEqual("00:02:20", backupSchedule.schedule)
+
+        # Delete backup schedule
+        BackupSchedule.delete(self.user_apiclient, self.vm.id)
 
         # Create backup
         Backup.create(self.user_apiclient, self.vm.id)
