@@ -58,8 +58,6 @@ import org.apache.cloudstack.backup.veeam.api.Link;
 import org.apache.cloudstack.backup.veeam.api.ObjectInJob;
 import org.apache.cloudstack.backup.veeam.api.ObjectsInJob;
 import org.apache.cloudstack.backup.veeam.api.Ref;
-import org.apache.cloudstack.backup.veeam.api.RestorePoint;
-import org.apache.cloudstack.backup.veeam.api.RestorePoints;
 import org.apache.cloudstack.backup.veeam.api.RestoreSession;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.backup.veeam.api.VmRestorePoint;
@@ -810,49 +808,6 @@ public class VeeamClient {
         } else {
             return listVmRestorePointsViaVeeamAPI(vmInternalName);
         }
-    }
-
-    public List<Backup.RestorePoint> listRestorePointsViaVeeamAPI(String backupName, String vmInternalName) {
-        LOG.debug(String.format("Trying to list restore points via Veeam B&R API for backup %s of VM %s: ", backupName, vmInternalName));
-
-        try {
-            final HttpResponse response = get("/restorePoints?format=Entity");
-            checkResponseOK(response);
-            return processHttpResponseForRestorePoints(response.getEntity().getContent(), backupName, vmInternalName);
-        } catch (final IOException e) {
-            LOG.error("Failed to list restore points via Veeam B&R API due to:", e);
-            checkResponseTimeOut(e);
-        }
-        return new ArrayList<>();
-    }
-
-    public List<Backup.RestorePoint> processHttpResponseForRestorePoints(InputStream content, String backupName, String vmInternalName) {
-        List<Backup.RestorePoint> restorePointList = new ArrayList<>();
-        try {
-            final ObjectMapper objectMapper = new XmlMapper();
-            final RestorePoints restorePoints = objectMapper.readValue(content, RestorePoints.class);
-            if (restorePoints == null) {
-                throw new CloudRuntimeException("Could not get restore points via Veeam B&R API");
-            }
-            for (final RestorePoint restorePoint : restorePoints.getRestorePoints()) {
-                String linkName = null;
-                List<Link> links = restorePoint.getLink();
-                for (Link link : links) {
-                    if (BACKUP_REFERENCE.equals(link.getType())) {
-                        linkName = link.getName();
-                        break;
-                    }
-                }
-                if (linkName != null && linkName.startsWith(backupName)) {
-                    String restorePointId = restorePoint.getUid().substring(restorePoint.getUid().lastIndexOf(':') + 1);
-                    restorePointList.addAll(listVmRestorePointsViaVeeamAPI(vmInternalName));
-                }
-            }
-        } catch (final IOException e) {
-            LOG.error("Failed to process response to get restore points via Veeam B&R API due to:", e);
-            checkResponseTimeOut(e);
-        }
-        return restorePointList;
     }
 
     public List<Backup.RestorePoint> listVmRestorePointsViaVeeamAPI(String vmInternalName) {
