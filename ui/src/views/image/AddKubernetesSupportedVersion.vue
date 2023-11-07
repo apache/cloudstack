@@ -133,7 +133,9 @@ export default {
       zones: [],
       zoneLoading: false,
       loading: false,
-      directDownloadDisabled: false
+      selectedZone: {},
+      directDownloadDisabled: false,
+      lastNonEdgeDirectDownloadUserSelection: false
     }
   },
   beforeCreate () {
@@ -220,13 +222,21 @@ export default {
     },
     handleZoneChange (zoneIdx) {
       const zone = this.zones[zoneIdx]
+      if (this.selectedZone.type === zone.type) {
+        return
+      }
+      var lastZoneType = this.selectedZone?.type || ''
+      if (lastZoneType !== 'Edge') {
+        this.nonEdgeDirectDownloadUserSelection = this.form.directdownload
+      }
+      this.selectedZone = zone
       if (zone.type && zone.type === 'Edge') {
         this.form.directdownload = true
         this.directDownloadDisabled = true
         return
       }
-      this.form.directdownload = false
       this.directDownloadDisabled = false
+      this.form.directdownload = this.nonEdgeDirectDownloadUserSelection
     },
     handleSubmit (e) {
       e.preventDefault()
