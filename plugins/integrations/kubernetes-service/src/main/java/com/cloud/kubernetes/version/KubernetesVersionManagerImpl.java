@@ -149,7 +149,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         return versions;
     }
 
-    private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum, final Boolean directDownload) throws IllegalAccessException, NoSuchFieldException,
+    private VirtualMachineTemplate registerKubernetesVersionIso(final Long zoneId, final String versionName, final String isoUrl, final String isoChecksum, final boolean directDownload) throws IllegalAccessException, NoSuchFieldException,
             IllegalArgumentException, ResourceAllocationException {
         String isoName = String.format("%s-Kubernetes-Binaries-ISO", versionName);
         RegisterIsoCmd registerIsoCmd = new RegisterIsoCmd();
@@ -165,9 +165,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (StringUtils.isNotEmpty(isoChecksum)) {
             registerIsoCmd.setChecksum(isoChecksum);
         }
-        if (directDownload != null) {
-            registerIsoCmd.setDirectDownload(directDownload);
-        }
+        registerIsoCmd.setDirectDownload(directDownload);
         registerIsoCmd.setAccountName(accountManager.getSystemAccount().getAccountName());
         registerIsoCmd.setDomainId(accountManager.getSystemAccount().getDomainId());
         return templateService.registerIso(registerIsoCmd);
@@ -293,7 +291,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         final String isoChecksum = cmd.getChecksum();
         final Integer minimumCpu = cmd.getMinimumCpu();
         final Integer minimumRamSize = cmd.getMinimumRamSize();
-        Boolean directDownload = cmd.getDirectDownload();
+        final boolean isDirectDownload = cmd.isDirectDownload();
         if (minimumCpu == null || minimumCpu < KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU) {
             throw new InvalidParameterValueException(String.format("Invalid value for %s parameter. Minimum %d vCPUs required.", ApiConstants.MIN_CPU_NUMBER, KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU));
         }
@@ -308,8 +306,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             if (zone == null) {
                 throw new InvalidParameterValueException("Invalid zone specified");
             }
-            if (DataCenter.Type.Edge.equals(zone.getType())) {
-                directDownload = true;
+            if (DataCenter.Type.Edge.equals(zone.getType()) && !isDirectDownload) {
+                throw new InvalidParameterValueException(String.format("Zone: %s supports only direct download Kubernetes versions", zone.getName()));
             }
         }
         if (StringUtils.isEmpty(isoUrl)) {
@@ -324,7 +322,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         VMTemplateVO template = null;
         try {
-            VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum, directDownload);
+            VirtualMachineTemplate vmTemplate = registerKubernetesVersionIso(zoneId, name, isoUrl, isoChecksum, isDirectDownload);
             template = templateDao.findById(vmTemplate.getId());
         } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException | ResourceAllocationException ex) {
             LOGGER.error(String.format("Unable to register binaries ISO for supported kubernetes version, %s, with url: %s", name, isoUrl), ex);

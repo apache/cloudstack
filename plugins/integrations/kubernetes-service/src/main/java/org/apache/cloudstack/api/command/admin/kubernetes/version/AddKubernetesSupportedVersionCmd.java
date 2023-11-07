@@ -85,7 +85,7 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
     private Integer minimumRamSize;
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD, type = CommandType.BOOLEAN, since="4.18.2",
-            description = "true if the Kubernetes supported version ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+            description = "If set to true the Kubernetes supported version ISO will bypass Secondary Storage and be downloaded to Primary Storage on deployment. Default is false")
     private Boolean directDownload;
 
     /////////////////////////////////////////////////////
@@ -127,8 +127,8 @@ public class AddKubernetesSupportedVersionCmd extends BaseCmd implements AdminCm
         return minimumRamSize;
     }
 
-    public Boolean getDirectDownload() {
-        return directDownload;
+    public boolean isDirectDownload() {
+        return (directDownload != null) ? directDownload : false;
     }
 
     @Override
