@@ -44,6 +44,11 @@ class TestTrafficTypeApi(cloudstackTestCase):
         )
         cls._cleanup.append(cls.physical_network)
 
+        @classmethod
+        def tearDownClass(cls):
+            super(TestTrafficTypeApi, cls).tearDownClass()
+            
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_list_api_fields(self):
         traffic_type = TrafficType.add(
