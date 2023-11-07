@@ -97,6 +97,12 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         long accountId = bucket.getAccountId();
         MinioClient minioClient = getMinIOClient(storeId);
         Account account = _accountDao.findById(accountId);
+
+        if ((_accountDetailsDao.findDetail(accountId, MINIO_ACCESS_KEY) == null)
+                || (_accountDetailsDao.findDetail(accountId, MINIO_SECRET_KEY) == null)) {
+            throw new CloudRuntimeException("Bucket access credentials unavailable for account: "+account.getAccountName());
+        }
+
         try {
             if(minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
                 throw new CloudRuntimeException("Bucket already exists with name "+ bucketName);
