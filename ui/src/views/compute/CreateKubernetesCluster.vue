@@ -421,7 +421,7 @@ export default {
       api('listNetworks', params).then(json => {
         var listNetworks = json.listnetworksresponse.network
         if (this.arrayHasItems(listNetworks)) {
-          listNetworks = listNetworks.filter(n => n.type != 'L2')
+          listNetworks = listNetworks.filter(n => n.type !== 'L2')
           this.networks = this.networks.concat(listNetworks)
         }
       }).finally(() => {
