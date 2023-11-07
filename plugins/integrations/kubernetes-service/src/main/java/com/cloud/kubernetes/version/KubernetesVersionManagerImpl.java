@@ -105,6 +105,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             response.setIsoId(template.getUuid());
             response.setIsoName(template.getName());
             response.setIsoState(template.getState().toString());
+            response.setDirectDownload(template.isDirectDownload());
         }
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
