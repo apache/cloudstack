@@ -300,11 +300,11 @@ export default {
           dataView: true,
           args: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume)
-                ? ['expunge'] : []
+              ? ['expunge'] : []
           },
           show: (record, store) => {
             return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating', 'Allocated', 'Uploaded'].includes(record.state) &&
-                record.type !== 'ROOT' && !record.virtualmachineid
+              record.type !== 'ROOT' && !record.virtualmachineid
           }
         }
       ]
@@ -563,4 +563,3 @@ export default {
     }
   ]
 }
-
