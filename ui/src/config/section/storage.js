@@ -42,11 +42,7 @@ export default {
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
-          metricsFields.push({
-            physicalsize: (record) => {
-              return record.physicalsize ? parseFloat(record.physicalsize / (1024.0 * 1024.0 * 1024.0)).toFixed(2) + 'GB' : ''
-            }
-          })
+          metricsFields.push('physicalsize')
         }
         metricsFields.push('utilization')
 
@@ -92,7 +88,13 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'state', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createVolume',
@@ -323,11 +325,28 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'zones',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/SnapshotZones.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'Snapshot',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
-      searchFilters: ['name', 'domainid', 'account', 'tags'],
+      searchFilters: () => {
+        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          filters.push('storageid')
+          filters.push('imagestoreid')
+        }
+        return filters
+      },
       actions: [
         {
           api: 'createTemplate',
@@ -335,12 +354,8 @@ export default {
           label: 'label.create.template',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: ['snapshotid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
-          mapping: {
-            snapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateTemplate.vue')))
         },
         {
           api: 'createVolume',
@@ -369,77 +384,6 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-        }
-      ]
-    },
-    {
-      name: 'vmsnapshot',
-      title: 'label.vm.snapshots',
-      icon: 'camera-outlined',
-      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
-      permission: ['listVMSnapshot'],
-      resourceType: 'VMSnapshot',
-      columns: () => {
-        const fields = ['displayname', 'state', 'name', 'type', 'current', 'parentName', 'created']
-        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          fields.push('account')
-          fields.push('domain')
-        }
-        return fields
-      },
-      details: ['name', 'id', 'displayname', 'description', 'type', 'current', 'parentName', 'virtualmachineid', 'account', 'domain', 'created'],
-      searchFilters: ['name', 'domainid', 'account', 'tags'],
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'comments',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
-        }
-      ],
-      actions: [
-        {
-          api: 'createSnapshotFromVMSnapshot',
-          icon: 'camera-outlined',
-          label: 'label.action.create.snapshot.from.vmsnapshot',
-          message: 'message.action.create.snapshot.from.vmsnapshot',
-          dataView: true,
-          popup: true,
-          show: (record) => { return (record.state === 'Ready' && record.hypervisor === 'KVM') },
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateSnapshotFromVMSnapshot.vue')))
-        },
-        {
-          api: 'revertToVMSnapshot',
-          icon: 'sync-outlined',
-          label: 'label.action.vmsnapshot.revert',
-          message: 'label.action.vmsnapshot.revert',
-          dataView: true,
-          show: (record) => { return record.state === 'Ready' },
-          args: ['vmsnapshotid'],
-          mapping: {
-            vmsnapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
-        },
-        {
-          api: 'deleteVMSnapshot',
-          icon: 'delete-outlined',
-          label: 'label.action.vmsnapshot.delete',
-          message: 'message.action.vmsnapshot.delete',
-          dataView: true,
-          show: (record) => { return ['Ready', 'Expunging', 'Error'].includes(record.state) },
-          args: ['vmsnapshotid'],
-          mapping: {
-            vmsnapshotid: {
-              value: (record) => { return record.id }
-            }
-          },
-          groupAction: true,
-          popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { vmsnapshotid: x } }) }
         }
       ]
     },

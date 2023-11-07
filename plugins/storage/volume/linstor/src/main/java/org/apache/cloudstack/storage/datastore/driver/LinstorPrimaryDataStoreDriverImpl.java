@@ -54,9 +54,11 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.host.Host;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -880,5 +882,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return false;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
     }
 }

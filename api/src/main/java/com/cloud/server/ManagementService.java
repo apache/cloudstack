@@ -441,6 +441,8 @@ public interface ManagementService {
      */
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize, String keyword);
 
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
+
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
      * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,

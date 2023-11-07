@@ -1264,6 +1264,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        addJoins(str, joins, new HashMap<>());
+    }
+
+    @DB()
+    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins, Map<String, Integer> joinedTableNames) {
         boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
@@ -1274,18 +1279,27 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
+            String joinTableName = join.getSecondAttribute().table;
+            String joinTableAlias = findNextJoinTableName(joinTableName, joinedTableNames);
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
             .append(join.getType().getName())
             .append(" ")
-            .append(join.getSecondAttribute().table)
-            .append(" ON ")
+            .append(joinTableName);
+            if (!joinTableAlias.equals(joinTableName)) {
+                onClause.append(" ").append(joinTableAlias);
+            }
+            onClause.append(" ON ")
             .append(join.getFirstAttribute().table)
             .append(".")
             .append(join.getFirstAttribute().columnName)
-            .append("=")
-            .append(join.getSecondAttribute().table)
-            .append(".")
+            .append("=");
+            if(!joinTableAlias.equals(joinTableName)) {
+                onClause.append(joinTableAlias);
+            } else {
+                onClause.append(joinTableName);
+            }
+            onClause.append(".")
             .append(join.getSecondAttribute().columnName)
             .append(" ");
             str.insert(fromIndex, onClause);
@@ -1306,9 +1320,20 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
-                addJoins(str, join.getT().getJoins());
+                addJoins(str, join.getT().getJoins(), joinedTableNames);
             }
         }
+    }
+
+    protected static String findNextJoinTableName(String tableName, Map<String, Integer> usedTableNames) {
+        if (usedTableNames.containsKey(tableName)) {
+            Integer tableCounter = usedTableNames.get(tableName);
+            usedTableNames.put(tableName, ++tableCounter);
+            tableName = tableName + tableCounter;
+        } else {
+            usedTableNames.put(tableName, 0);
+        }
+        return tableName;
     }
 
     private void removeAndClause(StringBuilder sql) {

@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.cluster.ClusterDrsService;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
@@ -571,6 +572,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
         weightBasedParametersForValidation.add(Config.VmUserDispersionWeight.key());
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
+        weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
 
     }
 

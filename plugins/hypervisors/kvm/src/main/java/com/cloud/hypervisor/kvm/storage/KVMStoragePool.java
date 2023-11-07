@@ -20,11 +20,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.joda.time.Duration;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
+
+    public static final long HeartBeatUpdateTimeout = 60000;
+    public static final long HeartBeatUpdateFreq = 60000;
+    public static final long HeartBeatUpdateMaxTries = 5;
+    public static final long HeartBeatUpdateRetrySleep = 10000;
+    public static final long HeartBeatCheckerTimeout = 360000; // 6 minutes
+
+
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
     public KVMPhysicalDisk createPhysicalDisk(String volumeUuid, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
@@ -74,4 +85,16 @@ public interface KVMStoragePool {
     public boolean supportsConfigDriveIso();
 
     public Map<String, String> getDetails();
+
+    public boolean isPoolSupportHA();
+
+    public String getHearthBeatPath();
+
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation);
+
+    public String getStorageNodeId();
+
+    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host);
+
+    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUUIDListString, String vmActivityCheckPath, long duration);
 }
