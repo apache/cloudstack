@@ -36,6 +36,8 @@ import javax.inject.Inject;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -352,6 +354,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private UserAccountJoinDao _userAccountJoinDao;
+
+    @Inject
+    private EventDao eventDao;
 
     @Inject
     private EventJoinDao _eventJoinDao;
@@ -790,9 +795,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<EventJoinVO>, Integer> searchForEventsInternal(ListEventsCmd cmd) {
+        Pair<List<Long>, Integer> eventIdPage = searchForEventIdsAndCount(cmd);
+
+        Integer count = eventIdPage.second();
+        Long[] idArray = eventIdPage.first().toArray(new Long[0]);
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<EventJoinVO> events = _eventJoinDao.searchByIds( idArray);
+        return new Pair<>(events, count);
+    }
+
+    private Pair<List<Long>, Integer> searchForEventIdsAndCount(ListEventsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         boolean isRootAdmin = accountMgr.isRootAdmin(caller.getId());
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
         Long id = cmd.getId();
         String type = cmd.getType();
@@ -841,32 +860,39 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
-        Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         // additional order by since createdDate does not have milliseconds
         // and two events, created within one second can be incorrectly ordered (for example VM.CREATE Completed before Scheduled)
-        searchFilter.addOrderBy(EventJoinVO.class, "id", false);
+        searchFilter.addOrderBy(EventVO.class, "id", false);
 
-        SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
-        accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchBuilder<EventVO> eventSearchBuilder = eventDao.createSearchBuilder();
+        accountMgr.buildACLSearchBuilder(eventSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
-        sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("createDateB", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-        sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
-        sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.or("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
-        sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
-        sb.and("displayEvent", sb.entity().getDisplay(), SearchCriteria.Op.EQ);
-        sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
-        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("id", eventSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("levelL", eventSearchBuilder.entity().getLevel(), SearchCriteria.Op.LIKE);
+        eventSearchBuilder.and("levelEQ", eventSearchBuilder.entity().getLevel(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("type", eventSearchBuilder.entity().getType(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("createDateB", eventSearchBuilder.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        eventSearchBuilder.and("createDateG", eventSearchBuilder.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
+        eventSearchBuilder.and("createDateL", eventSearchBuilder.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
+        eventSearchBuilder.and("state", eventSearchBuilder.entity().getState(), SearchCriteria.Op.NEQ);
+        eventSearchBuilder.or("startId", eventSearchBuilder.entity().getStartId(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("createDate", eventSearchBuilder.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
+        eventSearchBuilder.and("displayEvent", eventSearchBuilder.entity().isDisplay(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("archived", eventSearchBuilder.entity().getArchived(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("resourceId", eventSearchBuilder.entity().getResourceId(), SearchCriteria.Op.EQ);
+        eventSearchBuilder.and("resourceType", eventSearchBuilder.entity().getResourceType(), SearchCriteria.Op.EQ);
 
-        SearchCriteria<EventJoinVO> sc = sb.create();
+        if (keyword != null) {
+            eventSearchBuilder.and().op("keywordType", eventSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+            eventSearchBuilder.or("keywordDescription", eventSearchBuilder.entity().getDescription(), SearchCriteria.Op.LIKE);
+            eventSearchBuilder.or("keywordLevel", eventSearchBuilder.entity().getLevel(), SearchCriteria.Op.LIKE);
+            eventSearchBuilder.cp();
+        }
+
+        SearchCriteria<EventVO> sc = eventSearchBuilder.create();
         // building ACL condition
-        accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         // For end users display only enabled events
         if (!accountMgr.isRootAdmin(caller.getId())) {
@@ -885,11 +911,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyword != null) {
-            SearchCriteria<EventJoinVO> ssc = _eventJoinDao.createSearchCriteria();
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("level", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("level", SearchCriteria.Op.SC, ssc);
+            sc.setParameters("keywordType", "%" + keyword + "%");
+            sc.setParameters("keywordDescription", "%" + keyword + "%");
+            sc.setParameters("keywordLevel", "%" + keyword + "%");
         }
 
         if (level != null) {
@@ -920,7 +944,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("archived", cmd.getArchived());
         }
 
-        Pair<List<EventJoinVO>, Integer> eventPair = null;
+        Pair<List<Long>, Integer> eventPair = null;
         // event_view will not have duplicate rows for each event, so
         // searchAndCount should be good enough.
         if ((entryTime != null) && (duration != null)) {
@@ -944,11 +968,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
              * _eventDao.findCompletedEvent(event.getId()); if (completedEvent
              * == null) { pendingEvents.add(event); } } return pendingEvents;
              */
+            eventPair = new Pair<>(new ArrayList<>(), 0);
         } else {
-            eventPair = _eventJoinDao.searchAndCount(sc, searchFilter);
+            Pair<List<EventVO>, Integer> uniqueEventPair = eventDao.searchAndCount(sc, searchFilter);
+            Integer count = uniqueEventPair.second();
+            List<Long> eventIds = uniqueEventPair.first().stream().map(EventVO::getId).collect(Collectors.toList());
+            eventPair = new Pair<>(eventIds, count);
         }
         return eventPair;
-
     }
 
     @Override
