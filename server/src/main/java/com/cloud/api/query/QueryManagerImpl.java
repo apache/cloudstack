@@ -58,6 +58,7 @@ import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -176,6 +177,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -2331,6 +2333,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
+        Pair<List<Long>, Integer> volumeIdPage = searchForVolumeIdsAndCount(cmd);
+
+        Integer count = volumeIdPage.second();
+        Long[] idArray = volumeIdPage.first().toArray(new Long[0]);
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<VolumeJoinVO> vms = _volumeJoinDao.searchByIds( idArray);
+        return new Pair<>(vms, count);
+    }
+    private Pair<List<Long>, Integer> searchForVolumeIdsAndCount(ListVolumesCmd cmd) {
 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -2358,61 +2373,97 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(VolumeJoinVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        // hack for now, this should be done better but due to needing a join I
-        // opted to
-        // do this quickly and worry about making it pretty later
-        SearchBuilder<VolumeJoinVO> sb = _volumeJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
-        // ids to get
-        // number of
-        // records with
-        // pagination
-        accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchBuilder<VolumeVO> volumeSearchBuilder = volumeDao.createSearchBuilder();
+        volumeSearchBuilder.select(null, Func.DISTINCT, volumeSearchBuilder.entity().getId()); // select distinct
+        accountMgr.buildACLSearchBuilder(volumeSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("volumeType", sb.entity().getVolumeType(), SearchCriteria.Op.LIKE);
-        sb.and("uuid", sb.entity().getUuid(), SearchCriteria.Op.NNULL);
-        sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        if (CollectionUtils.isNotEmpty(ids)) {
+            volumeSearchBuilder.and("idIN", volumeSearchBuilder.entity().getId(), SearchCriteria.Op.IN);
+        }
+
+        volumeSearchBuilder.and("name", volumeSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("volumeType", volumeSearchBuilder.entity().getVolumeType(), SearchCriteria.Op.LIKE);
+        volumeSearchBuilder.and("uuid", volumeSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
+        volumeSearchBuilder.and("instanceId", volumeSearchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("dataCenterId", volumeSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+
+        if (keyword != null) {
+            volumeSearchBuilder.and().op("keywordName", volumeSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
+            volumeSearchBuilder.or("keywordVolumeType", volumeSearchBuilder.entity().getVolumeType(), SearchCriteria.Op.LIKE);
+            volumeSearchBuilder.or("keywordState", volumeSearchBuilder.entity().getState(), SearchCriteria.Op.LIKE);
+            volumeSearchBuilder.cp();
+        }
+
+        StoragePoolVO poolVO = null;
         if (storageId != null) {
-            StoragePoolVO poolVO = storagePoolDao.findByUuid(storageId);
-            if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.IN);
+            poolVO = storagePoolDao.findByUuid(storageId);
+            if (poolVO == null) {
+                throw new InvalidParameterValueException("Unable to find storage pool by uuid " + storageId);
+            } else if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
+                volumeSearchBuilder.and("storageId", volumeSearchBuilder.entity().getPoolId(), SearchCriteria.Op.IN);
             } else {
-                sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
+                volumeSearchBuilder.and("storageId", volumeSearchBuilder.entity().getPoolId(), SearchCriteria.Op.EQ);
             }
         }
-        sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
-        sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
 
+        if (clusterId != null || podId != null) {
+            SearchBuilder<StoragePoolVO> storagePoolSearch = storagePoolDao.createSearchBuilder();
+            storagePoolSearch.and("clusterId", storagePoolSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+            storagePoolSearch.and("podId", storagePoolSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+            volumeSearchBuilder.join("storagePoolSearch", storagePoolSearch, storagePoolSearch.entity().getId(), volumeSearchBuilder.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+        }
+
+        volumeSearchBuilder.and("diskOfferingId", volumeSearchBuilder.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("display", volumeSearchBuilder.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("state", volumeSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("stateNEQ", volumeSearchBuilder.entity().getState(), SearchCriteria.Op.NEQ);
+
+        // Need to test thoroughly
         if (!shouldListSystemVms) {
-            sb.and().op("systemUse", sb.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-            sb.or("nulltype", sb.entity().isSystemUse(), SearchCriteria.Op.NULL);
-            sb.cp();
+            SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
+            SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
+            vmSearch.and().op("svmType", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
+            vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
+            vmSearch.cp();
 
-            sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
-            sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-            sb.cp();
+            serviceOfferingSearch.and().op("systemUse", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+            serviceOfferingSearch.or("nulltype", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NULL);
+            serviceOfferingSearch.cp();
+
+            vmSearch.join("serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
+
+            volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
+
+        }
+
+        if (MapUtils.isNotEmpty(tags)) {
+            SearchBuilder<ResourceTagVO> resourceTagSearch = resourceTagDao.createSearchBuilder();
+            resourceTagSearch.and("resourceType", resourceTagSearch.entity().getResourceType(), Op.EQ);
+            resourceTagSearch.and().op();
+            for (int count = 0; count < tags.size(); count++) {
+                if (count == 0) {
+                    resourceTagSearch.op("tagKey" + count, resourceTagSearch.entity().getKey(), Op.EQ);
+                } else {
+                    resourceTagSearch.or().op("tagKey" + count, resourceTagSearch.entity().getKey(), Op.EQ);
+                }
+                resourceTagSearch.and("tagValue" + count, resourceTagSearch.entity().getValue(), Op.EQ);
+                resourceTagSearch.cp();
+            }
+            resourceTagSearch.cp();
+
+            volumeSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), volumeSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         // now set the SC criteria...
-        SearchCriteria<VolumeJoinVO> sc = sb.create();
-        accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        SearchCriteria<VolumeVO> sc = volumeSearchBuilder.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
-            SearchCriteria<VolumeJoinVO> ssc = _volumeJoinDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            sc.setParameters("keywordName", "%" + keyword + "%");
+            sc.setParameters("keywordVolumeType", "%" + keyword + "%");
+            sc.setParameters("keywordState", "%" + keyword + "%");
         }
 
         if (name != null) {
@@ -2426,19 +2477,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         setIdsListToSearchCriteria(sc, ids);
 
         if (!shouldListSystemVms) {
-            sc.setParameters("systemUse", 1);
-            sc.setParameters("type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+            sc.setJoinParameters("vmSearch", "svmType", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+            sc.setJoinParameters("serviceOfferingSearch", "systemUse", 1);
         }
 
-        if (tags != null && !tags.isEmpty()) {
-            SearchCriteria<VolumeJoinVO> tagSc = _volumeJoinDao.createSearchCriteria();
-            for (String key : tags.keySet()) {
-                SearchCriteria<VolumeJoinVO> tsc = _volumeJoinDao.createSearchCriteria();
-                tsc.addAnd("tagKey", SearchCriteria.Op.EQ, key);
-                tsc.addAnd("tagValue", SearchCriteria.Op.EQ, tags.get(key));
-                tagSc.addOr("tagKey", SearchCriteria.Op.SC, tsc);
+        if (MapUtils.isNotEmpty(tags)) {
+            int count = 0;
+            sc.setJoinParameters("tags", "resourceType", ResourceObjectType.Volume);
+            for (Map.Entry<String, String> entry  : tags.entrySet()) {
+                sc.setJoinParameters("tags", "tagKey" + count, entry.getKey());
+                sc.setJoinParameters("tags", "tagValue" + count, entry.getValue());
+                count++;
             }
-            sc.addAnd("tagKey", SearchCriteria.Op.SC, tagSc);
         }
 
         if (diskOffId != null) {
@@ -2458,23 +2508,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
         }
-        if (podId != null) {
-            sc.setParameters("podId", podId);
-        }
 
         if (storageId != null) {
-            StoragePoolVO poolVO = storagePoolDao.findByUuid(storageId);
             if (poolVO.getPoolType() == Storage.StoragePoolType.DatastoreCluster) {
-                List<StoragePoolVO> childDatastores = storagePoolDao.listChildStoragePoolsInDatastoreCluster(poolVO.getId());
-                List<String> childDatastoreIds = childDatastores.stream().map(mo -> mo.getUuid()).collect(Collectors.toList());
-                sc.setParameters("storageId", childDatastoreIds.toArray());
+                List<StoragePoolVO> childDataStores = storagePoolDao.listChildStoragePoolsInDatastoreCluster(poolVO.getId());
+                sc.setParameters("storageId", childDataStores.stream().map(StoragePoolVO::getId).toArray());
             } else {
-                sc.setParameters("storageId", storageId);
+                sc.setParameters("storageId", poolVO.getId());
             }
         }
 
         if (clusterId != null) {
-            sc.setParameters("clusterId", clusterId);
+            sc.setJoinParameters("storagePoolSearch", "clusterId", clusterId);
+        }
+        if (podId != null) {
+            sc.setJoinParameters("storagePoolSearch", "podId", podId);
         }
 
         if (state != null) {
@@ -2484,20 +2532,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         // search Volume details by ids
-        Pair<List<VolumeJoinVO>, Integer> uniqueVolPair = _volumeJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<VolumeVO>, Integer> uniqueVolPair = volumeDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueVolPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueVolPair;
-        }
-        List<VolumeJoinVO> uniqueVols = uniqueVolPair.first();
-        Long[] vrIds = new Long[uniqueVols.size()];
-        int i = 0;
-        for (VolumeJoinVO v : uniqueVols) {
-            vrIds[i++] = v.getId();
-        }
-        List<VolumeJoinVO> vrs = _volumeJoinDao.searchByIds(vrIds);
-        return new Pair<List<VolumeJoinVO>, Integer>(vrs, count);
+        List<Long> vmIds = uniqueVolPair.first().stream().map(VolumeVO::getId).collect(Collectors.toList());
+        return new Pair<>(vmIds, count);
     }
 
     private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
