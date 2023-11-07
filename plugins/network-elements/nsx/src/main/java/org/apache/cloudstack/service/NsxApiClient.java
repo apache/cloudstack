@@ -252,6 +252,7 @@ public class NsxApiClient {
     private List<String> getRouterAdvertisementTypeList(boolean sourceNatEnabled) {
         List<String> types = new ArrayList<>();
         types.add(RouteAdvertisementType.TIER1_IPSEC_LOCAL_ENDPOINT.name());
+        types.add(RouteAdvertisementType.TIER1_LB_VIP.name());
         types.add(RouteAdvertisementType.TIER1_NAT.name());
         if (!sourceNatEnabled) {
             types.add(RouteAdvertisementType.TIER1_CONNECTED.name());
