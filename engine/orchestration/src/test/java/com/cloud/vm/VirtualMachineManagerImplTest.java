@@ -19,9 +19,12 @@ package com.cloud.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -35,6 +38,23 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.Pod;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.org.Cluster;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.utils.Journal;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -46,10 +66,11 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -88,13 +109,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VirtualMachineManagerImplTest {
 
     @Spy
     @InjectMocks
-    private VirtualMachineManagerImpl virtualMachineManagerImpl;
+    private VirtualMachineManagerImpl virtualMachineManagerImpl = new VirtualMachineManagerImpl();
     @Mock
     private AgentManager agentManagerMock;
     @Mock
@@ -155,6 +177,20 @@ public class VirtualMachineManagerImplTest {
     private UserVmDao userVmDaoMock;
     @Mock
     private UserVmVO userVmMock;
+    @Mock
+    private EntityManager _entityMgr;
+    @Mock
+    private DeploymentPlanningManager _dpMgr;
+    @Mock
+    private HypervisorGuruManager _hvGuruMgr;
+    @Mock
+    private ClusterDetailsDao _clusterDetailsDao;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
+    @Mock
+    private ItWorkDao _workDao;
+    @Mock
+    protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     @Before
     public void setup() {
@@ -433,7 +469,7 @@ public class VirtualMachineManagerImplTest {
         HashMap<Long, Long> userDefinedVolumeToStoragePoolMap = new HashMap<>();
         userDefinedVolumeToStoragePoolMap.put(volumeMockId, storagePoolVoMockId);
 
-        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(Mockito.any(StoragePoolVO.class), Mockito.any(VolumeVO.class), Mockito.any(StoragePoolVO.class));
+        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(any(StoragePoolVO.class), any(VolumeVO.class), any(StoragePoolVO.class));
         Mockito.doReturn(null).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
 
         virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
@@ -445,8 +481,8 @@ public class VirtualMachineManagerImplTest {
         HashMap<Long, Long> userDefinedVolumeToStoragePoolMap = Mockito.spy(new HashMap<>());
         userDefinedVolumeToStoragePoolMap.put(volumeMockId, storagePoolVoMockId);
 
-        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(Mockito.any(StoragePoolVO.class), Mockito.any(VolumeVO.class),
-                Mockito.any(StoragePoolVO.class));
+        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolProvided(any(StoragePoolVO.class), any(VolumeVO.class),
+                any(StoragePoolVO.class));
         Mockito.doReturn(Mockito.mock(StoragePoolHostVO.class)).when(storagePoolHostDaoMock).findByPoolHost(storagePoolVoMockId, hostMockId);
 
         Map<Volume, StoragePool> volumeToPoolObjectMap = virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
@@ -482,7 +518,7 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
 
         Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolHostDaoMock, Mockito.times(0)).findByPoolHost(Mockito.anyLong(), Mockito.anyLong());
+        Mockito.verify(storagePoolHostDaoMock, Mockito.times(0)).findByPoolHost(anyLong(), anyLong());
     }
 
     @Test
@@ -506,15 +542,15 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void getCandidateStoragePoolsToMigrateLocalVolumeTestLocalVolume() {
-        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
 
         Mockito.doReturn(true).when(storagePoolVoMock).isLocal();
 
         List<StoragePool> poolListMock = new ArrayList<>();
         poolListMock.add(storagePoolVoMock);
 
-        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
 
@@ -524,15 +560,15 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void getCandidateStoragePoolsToMigrateLocalVolumeTestCrossClusterMigration() {
-        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
 
         Mockito.doReturn(false).when(storagePoolVoMock).isLocal();
 
         List<StoragePool> poolListMock = new ArrayList<>();
         poolListMock.add(storagePoolVoMock);
 
-        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
         Mockito.doReturn(true).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
@@ -543,15 +579,15 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void getCandidateStoragePoolsToMigrateLocalVolumeTestWithinClusterMigration() {
-        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
 
         Mockito.doReturn(false).when(storagePoolVoMock).isLocal();
 
         List<StoragePool> poolListMock = new ArrayList<>();
         poolListMock.add(storagePoolVoMock);
 
-        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
         Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
@@ -571,33 +607,33 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.setStoragePoolAllocators(storagePoolAllocatorsMock);
 
-        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(Mockito.mock(DiskOfferingVO.class)).when(diskOfferingDaoMock).findById(anyLong());
 
         Mockito.doReturn(false).when(storagePoolVoMock).isLocal();
 
         List<StoragePool> poolListMock = new ArrayList<>();
         poolListMock.add(storagePoolVoMock);
 
-        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(poolListMock).when(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
-        Mockito.doReturn(null).when(storagePoolAllocatorMock2).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(null).when(storagePoolAllocatorMock2).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
-        Mockito.doReturn(new ArrayList<>()).when(storagePoolAllocatorMock3).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.doReturn(new ArrayList<>()).when(storagePoolAllocatorMock3).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
 
         Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(clusterMockId, storagePoolVoMock);
         List<StoragePool> poolList = virtualMachineManagerImpl.getCandidateStoragePoolsToMigrateLocalVolume(virtualMachineProfileMock, dataCenterDeploymentMock, volumeVoMock);
 
         Assert.assertTrue(poolList.isEmpty());
 
-        Mockito.verify(storagePoolAllocatorMock).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
-        Mockito.verify(storagePoolAllocatorMock2).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
-        Mockito.verify(storagePoolAllocatorMock3).allocateToPool(Mockito.any(DiskProfile.class), Mockito.any(VirtualMachineProfile.class), Mockito.any(DeploymentPlan.class),
-                Mockito.any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.verify(storagePoolAllocatorMock).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.verify(storagePoolAllocatorMock2).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
+        Mockito.verify(storagePoolAllocatorMock3).allocateToPool(any(DiskProfile.class), any(VirtualMachineProfile.class), any(DeploymentPlan.class),
+                any(ExcludeList.class), Mockito.eq(StoragePoolAllocator.RETURN_UPTO_ALL));
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -686,8 +722,8 @@ public class VirtualMachineManagerImplTest {
         HashMap<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
 
         Mockito.doReturn(ScopeType.CLUSTER).when(storagePoolVoMock).getScope();
-        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(Mockito.anyLong(), Mockito.any());
+        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(any(), any(), any());
+        Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(anyLong(), any());
 
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
 
@@ -710,7 +746,7 @@ public class VirtualMachineManagerImplTest {
 
         Mockito.doReturn(volumesNotMapped).when(virtualMachineManagerImpl).findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToPoolObjectMap);
         Mockito.doNothing().when(virtualMachineManagerImpl).createStoragePoolMappingsForVolumes(Mockito.eq(virtualMachineProfileMock),
-                Mockito.any(DataCenterDeployment.class), Mockito.eq(volumeToPoolObjectMap), Mockito.eq(volumesNotMapped));
+                any(DataCenterDeployment.class), Mockito.eq(volumeToPoolObjectMap), Mockito.eq(volumesNotMapped));
 
         Map<Volume, StoragePool> mappingVolumeAndStoragePool = virtualMachineManagerImpl.createMappingVolumeAndStoragePool(virtualMachineProfileMock, hostMock, new HashMap<>());
 
@@ -720,7 +756,7 @@ public class VirtualMachineManagerImplTest {
         inOrder.verify(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock), Mockito.anyMapOf(Long.class, Long.class));
         inOrder.verify(virtualMachineManagerImpl).findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToPoolObjectMap);
         inOrder.verify(virtualMachineManagerImpl).createStoragePoolMappingsForVolumes(Mockito.eq(virtualMachineProfileMock),
-                Mockito.any(DataCenterDeployment.class), Mockito.eq(volumeToPoolObjectMap), Mockito.eq(volumesNotMapped));
+                any(DataCenterDeployment.class), Mockito.eq(volumeToPoolObjectMap), Mockito.eq(volumesNotMapped));
     }
 
     @Test
@@ -774,11 +810,11 @@ public class VirtualMachineManagerImplTest {
 
     private void prepareAndTestIsRootVolumeOnLocalStorage(ScopeType scope, boolean expected) {
         StoragePoolVO storagePoolVoMock = Mockito.mock(StoragePoolVO.class);
-        Mockito.doReturn(storagePoolVoMock).when(storagePoolDaoMock).findById(Mockito.anyLong());
+        Mockito.doReturn(storagePoolVoMock).when(storagePoolDaoMock).findById(anyLong());
         Mockito.doReturn(scope).when(storagePoolVoMock).getScope();
         List<VolumeVO> mockedVolumes = new ArrayList<>();
         mockedVolumes.add(volumeVoMock);
-        Mockito.doReturn(mockedVolumes).when(volumeDaoMock).findByInstanceAndType(Mockito.anyLong(), Mockito.any());
+        Mockito.doReturn(mockedVolumes).when(volumeDaoMock).findByInstanceAndType(anyLong(), any());
 
         boolean result = virtualMachineManagerImpl.isRootVolumeOnLocalStorage(0l);
 
@@ -806,7 +842,7 @@ public class VirtualMachineManagerImplTest {
     }
 
     private void prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(boolean isRootOnLocal, boolean isOfferingUsingLocal) {
-        Mockito.doReturn(isRootOnLocal).when(virtualMachineManagerImpl).isRootVolumeOnLocalStorage(Mockito.anyLong());
+        Mockito.doReturn(isRootOnLocal).when(virtualMachineManagerImpl).isRootVolumeOnLocalStorage(anyLong());
         Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
         Mockito.doReturn(isOfferingUsingLocal).when(diskOfferingMock).isUseLocalStorage();
         virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, diskOfferingMock);
@@ -894,5 +930,191 @@ public class VirtualMachineManagerImplTest {
         Mockito.when(pool2.getClusterId()).thenReturn(null);
         map.put(Mockito.mock(Volume.class), pool2);
         virtualMachineManagerImpl.checkAndAttemptMigrateVmAcrossCluster(vm, destinationClusterId, map);
+    }
+
+    @Test
+    public void testOrchestrateStartNonNullPodId() throws Exception {
+        VMInstanceVO vmInstance = new VMInstanceVO();
+        ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
+        ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
+        ReflectionTestUtils.setField(vmInstance, "hostId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "type", VirtualMachine.Type.User);
+        ReflectionTestUtils.setField(vmInstance, "dataCenterId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "hypervisorType", HypervisorType.KVM);
+
+        VirtualMachineGuru vmGuru = mock(VirtualMachineGuru.class);
+
+        User user = mock(User.class);
+
+        Account account = mock(Account.class);
+
+        ReservationContext ctx = mock(ReservationContext.class);
+
+        ItWorkVO work = mock(ItWorkVO.class);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(template.isDeployAsIs()).thenReturn(false);
+
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getPodId()).thenReturn(1L);
+
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+
+        DeploymentPlanner planner = mock(DeploymentPlanner.class);
+
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstance);
+
+        doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+
+        Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+
+        when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+
+        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
+
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+
+        Host destHost = mock(Host.class);
+        Pod destPod = mock(Pod.class);
+        DeployDestination dest = mock(DeployDestination.class);
+        when(dest.getHost()).thenReturn(destHost);
+        when(dest.getPod()).thenReturn(destPod);
+        when(dest.getCluster()).thenReturn(mock(Cluster.class));
+        when(destHost.getId()).thenReturn(1L);
+        when(destPod.getId()).thenReturn(2L);
+        when(_dpMgr.planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class))).thenReturn(dest);
+
+        doNothing().when(virtualMachineManagerImpl).checkIfTemplateNeededForCreatingVmVolumes(vmInstance);
+
+        when(_workDao.updateStep(any(), any())).thenReturn(true);
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 1L), vmInstanceDaoMock)).thenThrow(new CloudRuntimeException("Error while transitioning"));
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationFailed, new Pair(vmInstance.getHostId(), null), vmInstanceDaoMock)).thenReturn(true);
+
+
+        Cluster cluster = mock(Cluster.class);
+        when(dest.getCluster()).thenReturn(cluster);
+        ClusterDetailsVO cluster_detail_cpu = mock(ClusterDetailsVO.class);
+        ClusterDetailsVO cluster_detail_ram = mock(ClusterDetailsVO.class);
+        when(cluster.getId()).thenReturn(1L);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
+        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(cluster_detail_cpu.getValue()).thenReturn("1.0");
+        when(cluster_detail_ram.getValue()).thenReturn("1.0");
+        doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
+        }
+
+        assertEquals(vmInstance.getPodIdToDeployIn(), (Long) destPod.getId());
+    }
+
+    @Test
+    public void testOrchestrateStartNullPodId() throws Exception {
+        VMInstanceVO vmInstance = new VMInstanceVO();
+        ReflectionTestUtils.setField(vmInstance, "id", 1L);
+        ReflectionTestUtils.setField(vmInstance, "uuid", "vm-uuid");
+        ReflectionTestUtils.setField(vmInstance, "serviceOfferingId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "instanceName", "myVm");
+        ReflectionTestUtils.setField(vmInstance, "hostId", 2L);
+        ReflectionTestUtils.setField(vmInstance, "type", VirtualMachine.Type.User);
+        ReflectionTestUtils.setField(vmInstance, "dataCenterId", 1L);
+        ReflectionTestUtils.setField(vmInstance, "hypervisorType", HypervisorType.KVM);
+
+        VirtualMachineGuru vmGuru = mock(VirtualMachineGuru.class);
+
+        User user = mock(User.class);
+
+        Account account = mock(Account.class);
+
+        ReservationContext ctx = mock(ReservationContext.class);
+
+        ItWorkVO work = mock(ItWorkVO.class);
+
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(template.isDeployAsIs()).thenReturn(false);
+
+        DataCenterDeployment plan = mock(DataCenterDeployment.class);
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getPodId()).thenReturn(1L);
+
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+
+        DeploymentPlanner planner = mock(DeploymentPlanner.class);
+
+        when(vmInstanceDaoMock.findByUuid("vm-uuid")).thenReturn(vmInstance);
+
+        doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+
+        Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account);
+
+        when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+
+        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
+
+        when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+
+        Host destHost = mock(Host.class);
+        Pod destPod = mock(Pod.class);
+        DeployDestination dest = mock(DeployDestination.class);
+        when(dest.getHost()).thenReturn(destHost);
+        when(dest.getPod()).thenReturn(destPod);
+        when(dest.getCluster()).thenReturn(mock(Cluster.class));
+        when(destHost.getId()).thenReturn(1L);
+        when(destPod.getId()).thenReturn(2L);
+        when(_dpMgr.planDeployment(any(VirtualMachineProfileImpl.class), any(DataCenterDeployment.class), any(ExcludeList.class), any(DeploymentPlanner.class))).thenReturn(dest);
+
+        doNothing().when(virtualMachineManagerImpl).checkIfTemplateNeededForCreatingVmVolumes(vmInstance);
+
+        when(_workDao.updateStep(any(), any())).thenReturn(true);
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationRetry, new Pair(vmInstance.getHostId(), 1L), vmInstanceDaoMock)).thenThrow(new CloudRuntimeException("Error while transitioning"));
+        when(_stateMachine.transitTo(vmInstance, VirtualMachine.Event.OperationFailed, new Pair(vmInstance.getHostId(), null), vmInstanceDaoMock)).thenReturn(true);
+
+
+        Cluster cluster = mock(Cluster.class);
+        when(dest.getCluster()).thenReturn(cluster);
+        ClusterDetailsVO cluster_detail_cpu = mock(ClusterDetailsVO.class);
+        ClusterDetailsVO cluster_detail_ram = mock(ClusterDetailsVO.class);
+        when(cluster.getId()).thenReturn(1L);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
+        when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
+        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(cluster_detail_cpu.getValue()).thenReturn("1.0");
+        when(cluster_detail_ram.getValue()).thenReturn("1.0");
+        doReturn(true).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
+        }
+
+        assertNull(vmInstance.getPodIdToDeployIn());
     }
 }
