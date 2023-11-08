@@ -79,13 +79,6 @@ class TestVAppsVM(cloudstackTestCase):
 
         if cls.hypervisorNotSupported == False:
 
-            cls.account = Account.create(
-                cls.apiclient,
-                cls.services["account"],
-                domainid=cls.domain.id
-            )
-            cls._cleanup.append(cls.account)
-
             cls.templates = get_test_ovf_templates(
                 cls.apiclient,
                 cls.zone.id,
@@ -114,6 +107,13 @@ class TestVAppsVM(cloudstackTestCase):
             )
             cls._cleanup.append(cls.l2_network_offering)
             cls.l2_network_offering.update(cls.apiclient, state='Enabled')
+
+            cls.account = Account.create(
+                cls.apiclient,
+                cls.services["account"],
+                domainid=cls.domain.id
+            )
+            cls._cleanup.append(cls.account)
 
     @classmethod
     def tearDownClass(cls):
@@ -235,7 +235,6 @@ class TestVAppsVM(cloudstackTestCase):
                 properties=vm_service['properties'],
                 nicnetworklist=nicnetworklist
             )
-            self.cleanup.append(vm)
 
             list_vm_response = VirtualMachine.list(
                 self.apiclient,
@@ -288,4 +287,3 @@ class TestVAppsVM(cloudstackTestCase):
             cmd = destroyVirtualMachine.destroyVirtualMachineCmd()
             cmd.id = vm.id
             self.apiclient.destroyVirtualMachine(cmd)
-            self.cleanup.remove(vm)
