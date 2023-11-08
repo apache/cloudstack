@@ -52,6 +52,7 @@ import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountVO;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.vm.InstanceGroupVMMapVO;
@@ -804,7 +805,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return new Pair<>(new ArrayList<>(), count);
         }
 
-        List<EventJoinVO> events = _eventJoinDao.searchByIds( idArray);
+        List<EventJoinVO> events = _eventJoinDao.searchByIds(idArray);
         return new Pair<>(events, count);
     }
 
@@ -866,6 +867,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(EventVO.class, "id", false);
 
         SearchBuilder<EventVO> eventSearchBuilder = eventDao.createSearchBuilder();
+        eventSearchBuilder.select(null, Func.DISTINCT, eventSearchBuilder.entity().getId());
         accountMgr.buildACLSearchBuilder(eventSearchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         eventSearchBuilder.and("id", eventSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
@@ -1160,7 +1162,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         // search vm details by ids
-        List<UserVmJoinVO> vms = _userVmJoinDao.searchByIds( idArray);
+        List<UserVmJoinVO> vms = _userVmJoinDao.searchByIds(idArray);
         return new Pair<>(vms, count);
     }
 
@@ -2369,7 +2371,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return new Pair<>(new ArrayList<>(), count);
         }
 
-        List<VolumeJoinVO> vms = _volumeJoinDao.searchByIds( idArray);
+        List<VolumeJoinVO> vms = _volumeJoinDao.searchByIds(idArray);
         return new Pair<>(vms, count);
     }
     private Pair<List<Long>, Integer> searchForVolumeIdsAndCount(ListVolumesCmd cmd) {
@@ -2667,6 +2669,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<AccountJoinVO>, Integer> searchForAccountsInternal(ListAccountsCmd cmd) {
+
+        Pair<List<Long>, Integer> accountIdPage = searchForAccountIdsAndCount(cmd);
+
+        Integer count = accountIdPage.second();
+        Long[] idArray = accountIdPage.first().toArray(new Long[0]);
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<AccountJoinVO> accounts = _accountJoinDao.searchByIds(idArray);
+        return new Pair<>(accounts, count);
+    }
+
+    private Pair<List<Long>, Integer> searchForAccountIdsAndCount(ListAccountsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
@@ -2722,29 +2739,38 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             accountMgr.checkAccess(caller, null, true, account);
         }
 
-        Filter searchFilter = new Filter(AccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         Object type = cmd.getAccountType();
         Object state = cmd.getState();
         Object isCleanupRequired = cmd.isCleanupRequired();
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<AccountJoinVO> sb = _accountJoinDao.createSearchBuilder();
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("needsCleanup", sb.entity().isNeedsCleanup(), SearchCriteria.Op.EQ);
-        sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
-        sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
-        sb.and("type2NEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
+        SearchBuilder<AccountVO> accountSearchBuilder = _accountDao.createSearchBuilder();
+        accountSearchBuilder.select(null, Func.DISTINCT, accountSearchBuilder.entity().getId()); // select distinct
+        accountSearchBuilder.and("accountName", accountSearchBuilder.entity().getAccountName(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("domainId", accountSearchBuilder.entity().getDomainId(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("id", accountSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("type", accountSearchBuilder.entity().getType(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("state", accountSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("needsCleanup", accountSearchBuilder.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
+        accountSearchBuilder.and("typeNEQ", accountSearchBuilder.entity().getType(), SearchCriteria.Op.NEQ);
+        accountSearchBuilder.and("idNEQ", accountSearchBuilder.entity().getId(), SearchCriteria.Op.NEQ);
+        accountSearchBuilder.and("type2NEQ", accountSearchBuilder.entity().getType(), SearchCriteria.Op.NEQ);
 
         if (domainId != null && isRecursive) {
-            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            accountSearchBuilder.join("domainSearch", domainSearch, domainSearch.entity().getId(), accountSearchBuilder.entity().getDomainId(), JoinBuilder.JoinType.INNER);
         }
 
-        SearchCriteria<AccountJoinVO> sc = sb.create();
+        if (keyword != null) {
+            accountSearchBuilder.and().op("keywordAccountName", accountSearchBuilder.entity().getAccountName(), SearchCriteria.Op.LIKE);
+            accountSearchBuilder.or("keywordState", accountSearchBuilder.entity().getState(), SearchCriteria.Op.LIKE);
+            accountSearchBuilder.cp();
+        }
+
+        SearchCriteria<AccountVO> sc = accountSearchBuilder.create();
 
         // don't return account of type project to the end user
         sc.setParameters("typeNEQ", Account.Type.PROJECT);
@@ -2758,10 +2784,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyword != null) {
-            SearchCriteria<AccountJoinVO> ssc = _accountJoinDao.createSearchCriteria();
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
+            sc.setParameters("keywordAccountName", "%" + keyword + "%");
+            sc.setParameters("keywordState", "%" + keyword + "%");
         }
 
         if (type != null) {
@@ -2790,13 +2814,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (domain == null) {
                     domain = _domainDao.findById(domainId);
                 }
-                sc.setParameters("path", domain.getPath() + "%");
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
             } else {
                 sc.setParameters("domainId", domainId);
             }
         }
 
-        return _accountJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<AccountVO>, Integer> uniqueAccountPair = _accountDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueAccountPair.second();
+        List<Long> accountIds = uniqueAccountPair.first().stream().map(AccountVO::getId).collect(Collectors.toList());
+        return new Pair<>(accountIds, count);
     }
 
     @Override
