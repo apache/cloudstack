@@ -65,6 +65,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
 
+    protected static final String checkIfConversionIsSupportedCommand = "which virt-v2v";
+
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
         RemoteInstanceTO sourceInstance = cmd.getSourceInstance();
@@ -82,8 +84,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return new ConvertInstanceAnswer(cmd, false, msg);
         }
 
-        if (destinationHypervisorType != Hypervisor.HypervisorType.KVM ||
-                !supportedInstanceConvertSourceHypervisors.contains(sourceHypervisorType)) {
+        if (!areSourceAndDestinationHypervisorsSupported(sourceHypervisorType, destinationHypervisorType)) {
             String err = destinationHypervisorType != Hypervisor.HypervisorType.KVM ?
                     String.format("The destination hypervisor type is %s, KVM was expected, cannot handle it", destinationHypervisorType) :
                     String.format("The source hypervisor type %s is not supported for KVM conversion", sourceHypervisorType);
@@ -92,14 +93,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
-        KVMStoragePool temporaryStoragePool;
-        if (conversionTemporaryLocation instanceof NfsTO) {
-            NfsTO nfsTO = (NfsTO) conversionTemporaryLocation;
-            temporaryStoragePool = storagePoolMgr.getStoragePoolByURI(nfsTO.getUrl());
-        } else {
-            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) conversionTemporaryLocation;
-            temporaryStoragePool = storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-        }
+        KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
 
         s_logger.info(String.format("Attempting to convert the instance %s from %s to KVM",
                 sourceInstanceName, sourceHypervisorType));
@@ -148,7 +142,23 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
     }
 
-    private List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser, String convertedBasePath) {
+    protected KVMStoragePool getTemporaryStoragePool(DataStoreTO conversionTemporaryLocation, KVMStoragePoolManager storagePoolMgr) {
+        if (conversionTemporaryLocation instanceof NfsTO) {
+            NfsTO nfsTO = (NfsTO) conversionTemporaryLocation;
+            return storagePoolMgr.getStoragePoolByURI(nfsTO.getUrl());
+        } else {
+            PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) conversionTemporaryLocation;
+            return storagePoolMgr.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+        }
+    }
+
+    protected boolean areSourceAndDestinationHypervisorsSupported(Hypervisor.HypervisorType sourceHypervisorType,
+                                                                  Hypervisor.HypervisorType destinationHypervisorType) {
+        return destinationHypervisorType == Hypervisor.HypervisorType.KVM &&
+                supportedInstanceConvertSourceHypervisors.contains(sourceHypervisorType);
+    }
+
+    protected List<KVMPhysicalDisk> getTemporaryDisksFromParsedXml(KVMStoragePool pool, LibvirtDomainXMLParser xmlParser, String convertedBasePath) {
         List<LibvirtVMDef.DiskDef> disksDefs = xmlParser.getDisks();
         disksDefs = disksDefs.stream().filter(x -> x.getDiskType() == LibvirtVMDef.DiskDef.DiskType.FILE &&
                 x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
@@ -170,7 +180,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return disks;
     }
 
-    private List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
+    protected List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
         String msg = String.format("Could not parse correctly the converted XML domain, checking for disks on %s with prefix %s", path, prefix);
         s_logger.info(msg);
         pool.refresh();
@@ -197,12 +207,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Script.runSimpleBashScript(String.format("rm -f %s/%s*.xml", temporaryStoragePool.getLocalPath(), temporaryConvertUuid));
     }
 
-    private boolean isInstanceConversionSupportedOnHost() {
-        int exitValue = Script.runSimpleBashScriptForExitValue("which virt-v2v");
+    protected boolean isInstanceConversionSupportedOnHost() {
+        int exitValue = Script.runSimpleBashScriptForExitValue(checkIfConversionIsSupportedCommand);
         return exitValue == 0;
     }
 
-    private void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
+    protected void sanitizeDisksPath(List<LibvirtVMDef.DiskDef> disks) {
         for (LibvirtVMDef.DiskDef disk : disks) {
             String[] diskPathParts = disk.getDiskPath().split("/");
             String relativePath = diskPathParts[diskPathParts.length - 1];
