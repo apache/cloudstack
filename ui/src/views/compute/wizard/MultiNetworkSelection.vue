@@ -101,6 +101,10 @@ export default {
     filterMatchKey: {
       type: String,
       default: null
+    },
+    hypervisor: {
+      type: String,
+      default: null
     }
   },
   data () {
@@ -203,7 +207,10 @@ export default {
     },
     setIpAddressEnabled (nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
-      this.indexNum = (this.indexNum % 2) + 1
+      this.values[nic.id] = network ? network.id : ''
+      if (!this.ipAddresses[nic.id] && this.ipAddressesEnabled[nic.id]) {
+        this.ipAddresses[nic.id] = 'auto'
+      }
     },
     setIpAddress (nicId, autoAssign, ipAddress) {
       this.ipAddresses[nicId] = autoAssign ? 'auto' : ipAddress

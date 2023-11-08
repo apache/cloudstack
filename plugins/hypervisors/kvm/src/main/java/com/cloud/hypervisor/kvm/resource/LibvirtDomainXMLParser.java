@@ -345,6 +345,14 @@ public class LibvirtDomainXMLParser {
                     period = "0";
                 }
 
+                if(bytes == null) {
+                    bytes = "0";
+                }
+
+                if(period == null) {
+                    period = "0";
+                }
+
                 if (StringUtils.isEmpty(backendModel)) {
                     def = new RngDef(path, Integer.parseInt(bytes), Integer.parseInt(period));
                 } else {

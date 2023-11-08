@@ -129,6 +129,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -235,7 +236,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -4472,7 +4472,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
             // already verified for positive number
             rootDiskSize = Long.parseLong(customParameters.get(VmDetailConstants.ROOT_DISK_SIZE));
-
             VMTemplateVO templateVO = _templateDao.findById(template.getId());
             if (templateVO == null) {
                 throw new InvalidParameterValueException("Unable to look up template by id " + template.getId());
@@ -4500,6 +4499,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.setState(State.Running);
             }
         }
+
+        setVncPasswordForKvmIfAvailable(customParameters, vm);
 
         vm.setUserVmType(vmType);
         _vmDao.persist(vm);
@@ -4875,7 +4876,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_CREATE, eventDescription = "deploying Vm", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "starting Vm", async = true)
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         long vmId = cmd.getEntityId();
         if (!cmd.getStartVm()) {
@@ -4886,7 +4887,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long hostId = cmd.getHostId();
         Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
-        Map<String, String> details = cmd.getDetails();
         if (cmd instanceof DeployVMCmdByAdmin) {
             DeployVMCmdByAdmin adminCmd = (DeployVMCmdByAdmin)cmd;
             podId = adminCmd.getPodId();
@@ -8240,8 +8240,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 return false;
             }
 
-            if (vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-                throw new UnsupportedServiceException("Unmanaging a VM is currently allowed for VMware VMs only");
+            if (!UnmanagedVMsManager.isSupported(vm.getHypervisorType())) {
+                throw new UnsupportedServiceException("Unmanaging a VM is currently not supported on hypervisor " +
+                        vm.getHypervisorType().toString());
             }
 
             List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
@@ -8419,5 +8420,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
         return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
+    }
+
+    private void setVncPasswordForKvmIfAvailable(Map<String, String> customParameters, UserVmVO vm){
+        if (customParameters.containsKey(VmDetailConstants.KVM_VNC_PASSWORD)
+                && StringUtils.isNotEmpty(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD))) {
+            vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
+        }
     }
 }

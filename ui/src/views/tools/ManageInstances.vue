@@ -418,6 +418,7 @@
                   </a-pagination>
                   <div :span="24" class="action-button-right">
                     <a-button
+
                       :disabled="!(('unmanageVirtualMachine' in $store.getters.apis) && managedInstancesSelectedRowKeys.length > 0)"
                       type="primary"
                       @click="onUnmanageInstanceAction">
@@ -452,16 +453,17 @@
             :importsource="selectedSourceAction"
             :zoneid="this.zoneId"
             :hypervisor="this.destinationHypervisor"
-            :exthost="this.values.hostname"
-            :username="this.values.username"
-            :password="this.values.password"
-            :tmppath="this.values.tmppath"
-            :diskpath="this.values.diskpath"
+            :exthost="this.values?.hostname || ''"
+            :username="this.values?.username || ''"
+            :password="this.values?.password || ''"
+            :tmppath="this.values?.tmppath || ''"
+            :diskpath="this.values?.diskpath || ''"
             :isOpen="showUnmanageForm"
             :selectedVmwareVcenter="selectedVmwareVcenter"
             @refresh-data="fetchInstances"
             @close-action="closeImportUnmanagedInstanceForm"
             @loading-changed="updateManageInstanceActionLoading"
+            @track-import-jobid="trackImportJobId"
           />
         </a-modal>
       </div>
@@ -497,7 +499,8 @@ export default {
         name: 'unmanaged',
         label: 'Manage/Unmanage existing instances',
         sourceDestHypervisors: {
-          vmware: 'vmware'
+          vmware: 'vmware',
+          kvm: 'kvm'
         },
         wizardTitle: this.$t('label.desc.importexportinstancewizard'),
         wizardDescription: this.$t('message.desc.importexportinstancewizard')
@@ -1218,6 +1221,9 @@ export default {
     },
     updateManageInstanceActionLoading (value) {
       this.importUnmanagedInstanceLoading = value
+      if (!value) {
+        this.fetchInstances()
+      }
     },
     onManageInstanceAction () {
       this.selectedUnmanagedInstance = {}
@@ -1281,6 +1287,21 @@ export default {
         cancelText: this.$t('label.cancel'),
         onOk () {
           self.unmanageInstances()
+        }
+      })
+    },
+    trackImportJobId (details) {
+      const jobId = details[0]
+      const name = details[1]
+      this.$pollJob({
+        jobId,
+        title: this.$t('label.import.instance'),
+        description: this.$t('label.import.instance'),
+        loadingMessage: `${this.$t('label.import.instance')} ${name} ${this.$t('label.in.progress')}`,
+        catchMessage: this.$t('error.fetching.async.job.result'),
+        successMessage: this.$t('message.success.import.instance') + ' ' + name,
+        successMethod: (result) => {
+          this.fetchInstances()
         }
       })
     },

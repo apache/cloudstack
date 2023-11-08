@@ -120,7 +120,7 @@
                   :value="templateType"
                   @change="changeTemplateType">
                   <a-row :gutter="12">
-                    <a-col :md="24" :lg="12">
+                    <a-col :md="24" :lg="12" v-if="this.cluster.hypervisortype === 'VMWare'">
                       <a-radio value="auto">
                         {{ $t('label.template.temporary.import') }}
                       </a-radio>
@@ -269,8 +269,8 @@
                   :zoneId="cluster.zoneid"
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
-                  filterMatchKey="broadcasturi"
                   :hypervisor="this.cluster.hypervisortype"
+                  filterMatchKey="broadcasturi"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
               <a-row v-else style="margin: 12px 0" >
@@ -438,7 +438,7 @@ export default {
       selectedDomainId: null,
       templates: [],
       templateLoading: false,
-      templateType: 'auto',
+      templateType: this.defaultTemplateType(),
       totalComputeOfferings: 0,
       computeOfferings: [],
       computeOfferingLoading: false,
@@ -802,6 +802,12 @@ export default {
     updateMultiNetworkOffering (data) {
       this.nicsNetworksMapping = data
     },
+    defaultTemplateType () {
+      if (this.cluster.hypervisortype === 'VMWare') {
+        return 'auto'
+      }
+      return 'custom'
+    },
     changeTemplateType (e) {
       this.templateType = e.target.value
       if (this.templateType === 'auto') {
@@ -1109,7 +1115,7 @@ export default {
       for (var field of fields) {
         this.updateFieldValue(field, undefined)
       }
-      this.templateType = 'auto'
+      this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
       this.switches = {}
     },
