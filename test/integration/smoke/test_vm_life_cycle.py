@@ -720,6 +720,7 @@ class TestVMLifeCycle(cloudstackTestCase):
             )
             self.cleanup.append(volume)
             VirtualMachine.attach_volume(vm, self.apiclient, volume)
+            self.cleanup.remove(volume)
 
         # Start the VM
         self.debug("Starting VM - ID: %s" % vm.id)
