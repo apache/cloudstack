@@ -79,6 +79,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -1414,5 +1415,14 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean isStorageSupportHA(StoragePoolType type) {
+        return false;
+    }
+
+    @Override
+    public void detachVolumeFromAllStorageNodes(Volume volume) {
     }
 }

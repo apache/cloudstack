@@ -44,6 +44,7 @@ import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
@@ -122,7 +123,6 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -2377,7 +2377,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (org.apache.commons.lang3.StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
+        if (StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
@@ -2392,7 +2392,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(startIPv6)) {
+        if (StringUtils.isNotBlank(startIPv6)) {
             if (!NetUtils.isValidIp6(startIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
             }
@@ -2401,7 +2401,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(endIPv6)) {
+        if (StringUtils.isNotBlank(endIPv6)) {
             if (!NetUtils.isValidIp6(endIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
             }
@@ -2601,15 +2601,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (userData != null) {
             vmData.add(new String[]{USERDATA_DIR, USERDATA_FILE, userData});
         }
-        vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
-        vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
-        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
+        vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, com.cloud.utils.StringUtils.unicodeEscape(serviceOffering)});
+        vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, com.cloud.utils.StringUtils.unicodeEscape(zoneName)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, com.cloud.utils.StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
 
         addUserDataDetailsToCommand(vmData, userDataDetails);
 
         String publicIpAddress = guestIpAddress;
-        String publicHostName = StringUtils.unicodeEscape(vmHostName);
+        String publicHostName = com.cloud.utils.StringUtils.unicodeEscape(vmHostName);
 
         if (dcVo.getNetworkType() != DataCenter.NetworkType.Basic) {
             if (publicIp != null) {
@@ -2654,7 +2654,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     throw new CloudRuntimeException("Unable to get MD5 MessageDigest", e);
                 }
                 md5.reset();
-                md5.update(password.getBytes(StringUtils.getPreferredCharset()));
+                md5.update(password.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
                 byte[] digest = md5.digest();
                 BigInteger bigInt = new BigInteger(1, digest);
                 String hashtext = bigInt.toString(16);
@@ -2687,8 +2687,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             String[] keyValuePairs = userDataDetails.split(",");
             for(String pair : keyValuePairs)
             {
-                final Pair<String, String> keyValue = StringUtils.getKeyValuePairWithSeparator(pair, "=");
-                vmData.add(new String[]{METATDATA_DIR, keyValue.first(), StringUtils.unicodeEscape(keyValue.second())});
+                final Pair<String, String> keyValue = com.cloud.utils.StringUtils.getKeyValuePairWithSeparator(pair, "=");
+                vmData.add(new String[]{METATDATA_DIR, keyValue.first(), com.cloud.utils.StringUtils.unicodeEscape(keyValue.second())});
             }
         }
     }
@@ -2711,7 +2711,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getDns1())) {
+        if (StringUtils.isNotBlank(network.getDns1())) {
             return new Pair<>(network.getDns1(), network.getDns2());
         }
         return new Pair<>(zone.getDns1(), zone.getDns2());
@@ -2719,7 +2719,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getIp6Dns1())) {
+        if (StringUtils.isNotBlank(network.getIp6Dns1())) {
             return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
         }
         return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
@@ -2727,26 +2727,26 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
+        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
             throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+        if (StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
             throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+        if (StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
         }
     }
 
     @Override
     public void verifyIp6DnsPair(String ip6Dns1, String ip6Dns2) {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
             throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+        if (StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
+        if (StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
         }
     }

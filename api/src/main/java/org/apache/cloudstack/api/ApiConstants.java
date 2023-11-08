@@ -972,6 +972,7 @@ public class ApiConstants {
     public static final String TARGET_ID = "targetid";
     public static final String FILES = "files";
     public static final String SRC_POOL = "srcpool";
+    public static final String DEST_POOL = "destpool";
     public static final String DEST_POOLS = "destpools";
     public static final String VOLUME_IDS = "volumeids";
 
