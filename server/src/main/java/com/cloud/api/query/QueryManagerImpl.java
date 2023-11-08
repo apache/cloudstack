@@ -2790,7 +2790,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<StoragePoolJoinVO>, Integer> searchForLocalStorages(ListStoragePoolsCmd cmd) {
         long id = cmd.getHostId();
-        String scope = "HOST";
+        String scope = ScopeType.HOST.toString();
         Pair<List<StoragePoolJoinVO>, Integer> localStorages;
 
         ListHostsCmd listHostsCmd = new ListHostsCmd();
