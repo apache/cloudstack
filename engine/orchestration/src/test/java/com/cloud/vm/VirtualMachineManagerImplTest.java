@@ -66,8 +66,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import com.cloud.agent.AgentManager;
@@ -107,15 +109,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(CallContext.class)
-@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class VirtualMachineManagerImplTest {
 
     @Spy
@@ -1014,15 +1010,16 @@ public class VirtualMachineManagerImplTest {
         doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
 
         CallContext callContext = mock(CallContext.class);
-        Mockito.when(callContext.getCallingAccount()).thenReturn(account);
-        Mockito.when(callContext.getCallingUser()).thenReturn(user);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContext);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
 
-        try {
-            virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
-        } catch (CloudRuntimeException e) {
-            assertEquals(e.getMessage(), "Error while transitioning");
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
         }
 
         assertEquals(vmInstance.getPodIdToDeployIn(), (Long) destPod.getId());
@@ -1106,15 +1103,16 @@ public class VirtualMachineManagerImplTest {
         doReturn(true).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
 
         CallContext callContext = mock(CallContext.class);
-        Mockito.when(callContext.getCallingAccount()).thenReturn(account);
-        Mockito.when(callContext.getCallingUser()).thenReturn(user);
-        PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(callContext);
+        when(callContext.getCallingAccount()).thenReturn(account);
+        when(callContext.getCallingUser()).thenReturn(user);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
 
-        try {
-            virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
-        } catch (CloudRuntimeException e) {
-            assertEquals(e.getMessage(), "Error while transitioning");
+            try {
+                virtualMachineManagerImpl.orchestrateStart("vm-uuid", params, plan, planner);
+            } catch (CloudRuntimeException e) {
+                assertEquals(e.getMessage(), "Error while transitioning");
+            }
         }
 
         assertNull(vmInstance.getPodIdToDeployIn());
