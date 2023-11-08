@@ -311,4 +311,3 @@ class TestMigrateVMwithVolume(cloudstackTestCase):
         vol = Volume.list(self.apiclient, id=volume1.id)[0]
 
         self.assertEqual(vol.storageid, target_pool.id, "Storage pool was not the same as expected")
-
