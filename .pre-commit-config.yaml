@@ -56,6 +56,13 @@ repos:
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
       # - id: trailing-whitespace
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        name: run codespell
+        description: Check spelling with codespell
+        entry: codespell --ignore-words=codespell.txt
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0
     hooks:
