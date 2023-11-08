@@ -256,7 +256,8 @@ known_categories = {
     'importVsphereStoragePolicies' : 'vSphere storage policies',
     'listVsphereStoragePolicies' : 'vSphere storage policies',
     'ConsoleEndpoint': 'Console Endpoint',
-    'Shutdown': 'Shutdown'
+    'Shutdown': 'Shutdown',
+    'importVm': 'Virtual Machine'
 }
 
 

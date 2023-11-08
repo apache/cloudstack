@@ -55,6 +55,7 @@ import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -1080,79 +1081,36 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     @Override
     public UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd) {
+        return baseImportInstance(cmd);
+    }
+
+    /**
+     * Base logic for import virtual machines (unmanaged, external) into CloudStack
+     * @param cmd importVM or importUnmanagedInstance command
+     * @return imported user vm
+     */
+    private UserVmResponse baseImportInstance(ImportUnmanagedInstanceCmd cmd) {
+        basicParametersCheckForImportInstance(cmd.getName(), cmd.getDomainId(), cmd.getAccountName());
+
+        final String instanceName = cmd.getName();
         Long clusterId = cmd.getClusterId();
         Cluster cluster = basicAccessChecks(clusterId);
 
         final Account caller = CallContext.current().getCallingAccount();
         final DataCenter zone = dataCenterDao.findById(cluster.getDataCenterId());
-        final String instanceName = cmd.getName();
-        if (StringUtils.isEmpty(instanceName)) {
-            throw new InvalidParameterValueException("Instance name cannot be empty");
-        }
-        if (cmd.getDomainId() != null && StringUtils.isEmpty(cmd.getAccountName())) {
-            throw new InvalidParameterValueException(String.format("%s parameter must be specified with %s parameter", ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT));
-        }
         final Account owner = accountService.getActiveAccountById(cmd.getEntityOwnerId());
-        long userId = CallContext.current().getCallingUserId();
-        List<UserVO> userVOs = userDao.listByAccount(owner.getAccountId());
-        if (CollectionUtils.isNotEmpty(userVOs)) {
-            userId = userVOs.get(0).getId();
-        }
-        VMTemplateVO template;
-        final Long templateId = cmd.getTemplateId();
-        if (templateId == null) {
-            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
-            if (template == null) {
-                template = createDefaultDummyVmImportTemplate();
-                if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
-                }
-            }
-        } else {
-            template = templateDao.findById(templateId);
-        }
-        if (template == null) {
-            throw new InvalidParameterValueException(String.format("Template ID: %d cannot be found", templateId));
-        }
-        final Long serviceOfferingId = cmd.getServiceOfferingId();
-        if (serviceOfferingId == null) {
-            throw new InvalidParameterValueException("Service offering ID cannot be null");
-        }
-        final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
-        if (serviceOffering == null) {
-            throw new InvalidParameterValueException(String.format("Service offering ID: %d cannot be found", serviceOfferingId));
-        }
-        accountService.checkAccess(owner, serviceOffering, zone);
-        try {
-            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
-        } catch (ResourceAllocationException e) {
-            LOGGER.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
-        }
-        String displayName = cmd.getDisplayName();
-        if (StringUtils.isEmpty(displayName)) {
-            displayName = instanceName;
-        }
-        String hostName = cmd.getHostName();
-        if (StringUtils.isEmpty(hostName)) {
-            hostName = cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware ? instanceName : displayName;
-            if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
-                throw new InvalidParameterValueException("Please provide a valid hostname for the VM. VM name contains unsupported characters that cannot be used as hostname.");
-            }
-        }
-        if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
-            throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
-        }
-        if (cluster.getHypervisorType().equals(Hypervisor.HypervisorType.VMware) &&
-                Boolean.parseBoolean(configurationDao.getValue(Config.SetVmInternalNameUsingDisplayName.key()))) {
-            // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
-            // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
-            VMInstanceVO vmByHostName = vmDao.findVMByHostNameInZone(hostName, zone.getId());
-            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
-                throw new InvalidParameterValueException(String.format("Failed to import VM: %s. There already exists a VM by the hostname: %s in zone: %s", instanceName, hostName, zone.getUuid()));
-            }
-        }
+        long userId = getUserIdForImportInstance(owner);
+
+        VMTemplateVO template = getTemplateForImportInstance(cmd.getTemplateId(), cluster.getHypervisorType());
+        ServiceOfferingVO serviceOffering = getServiceOfferingForImportInstance(cmd.getServiceOfferingId(), owner, zone);
+
+        checkResourceLimitForImportInstance(owner);
+
+        String displayName = getDisplayNameForImportInstance(cmd.getDisplayName(), instanceName);
+        String hostName = getHostNameForImportInstance(cmd.getHostName(), cluster.getHypervisorType(), instanceName, displayName);
+
+        checkVmwareInstanceNameForImportInstance(cluster.getHypervisorType(), instanceName, hostName, zone);
+
         final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
         final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
@@ -1167,18 +1125,29 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
                 cmd.getEventDescription(), null, null, true, 0);
 
-        if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
-            userVm = importUnmanagedInstanceFromVmwareToVmware(zone, cluster, hosts, additionalNameFilters,
-                    template, instanceName, displayName, hostName, caller, owner, userId,
-                    serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
-                    details, cmd.getMigrateAllowed(), managedVms, forced);
-        } else if (cluster.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
-            userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster,
-                    template, instanceName, displayName, hostName, caller, owner, userId,
-                    serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
-                    details, cmd, forced);
+        //TODO: Placeholder for integration with KVM ingestion and KVM extend unmanage/manage VMs
+        if (cmd instanceof ImportVmCmd) {
+            ImportVmCmd importVmCmd = (ImportVmCmd) cmd;
+            if (StringUtils.isBlank(importVmCmd.getImportSource())) {
+                throw new CloudRuntimeException("Please provide an import source for importing the VM");
+            }
+            String source = importVmCmd.getImportSource().toUpperCase();
+            ImportSource importSource = Enum.valueOf(ImportSource.class, source);
+            if (ImportSource.VMWARE == importSource) {
+                userVm = importUnmanagedInstanceFromVmwareToKvm(zone, cluster,
+                        template, instanceName, displayName, hostName, caller, owner, userId,
+                        serviceOffering, dataDiskOfferingMap,
+                        nicNetworkMap, nicIpAddressMap,
+                        details, importVmCmd, forced);
+            }
+        } else {
+            if (cluster.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
+                userVm = importUnmanagedInstanceFromVmwareToVmware(zone, cluster, hosts, additionalNameFilters,
+                        template, instanceName, displayName, hostName, caller, owner, userId,
+                        serviceOffering, dataDiskOfferingMap,
+                        nicNetworkMap, nicIpAddressMap,
+                        details, cmd.getMigrateAllowed(), managedVms, forced);
+            }
         }
 
         if (userVm == null) {
@@ -1189,6 +1158,101 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         ActionEventUtils.onCompletedActionEvent(userId, owner.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_IMPORT,
                 cmd.getEventDescription(), userVm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
+    }
+
+    private long getUserIdForImportInstance(Account owner) {
+        long userId = CallContext.current().getCallingUserId();
+        List<UserVO> userVOs = userDao.listByAccount(owner.getAccountId());
+        if (CollectionUtils.isNotEmpty(userVOs)) {
+            userId = userVOs.get(0).getId();
+        }
+        return userId;
+    }
+
+    private void basicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
+        if (StringUtils.isEmpty(name)) {
+            throw new InvalidParameterValueException("Instance name cannot be empty");
+        }
+        if (domainId != null && StringUtils.isEmpty(accountName)) {
+            throw new InvalidParameterValueException(String.format("%s parameter must be specified with %s parameter", ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT));
+        }
+    }
+
+    private void checkVmwareInstanceNameForImportInstance(Hypervisor.HypervisorType hypervisorType, String instanceName, String hostName, DataCenter zone) {
+        if (hypervisorType.equals(Hypervisor.HypervisorType.VMware) &&
+                Boolean.parseBoolean(configurationDao.getValue(Config.SetVmInternalNameUsingDisplayName.key()))) {
+            // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
+            // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
+            VMInstanceVO vmByHostName = vmDao.findVMByHostNameInZone(hostName, zone.getId());
+            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
+                throw new InvalidParameterValueException(String.format("Failed to import VM: %s. There already exists a VM by the hostname: %s in zone: %s", instanceName, hostName, zone.getUuid()));
+            }
+        }
+    }
+
+    private String getHostNameForImportInstance(String hostName, Hypervisor.HypervisorType hypervisorType,
+                                                String instanceName, String displayName) {
+        if (StringUtils.isEmpty(hostName)) {
+            hostName = hypervisorType == Hypervisor.HypervisorType.VMware ? instanceName : displayName;
+            if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
+                throw new InvalidParameterValueException("Please provide a valid hostname for the VM. VM name contains unsupported characters that cannot be used as hostname.");
+            }
+        }
+        if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
+            throw new InvalidParameterValueException("Invalid VM hostname. VM hostname can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                    + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
+        }
+        return hostName;
+    }
+
+    private String getDisplayNameForImportInstance(String displayName, String instanceName) {
+        return StringUtils.isEmpty(displayName) ? instanceName : displayName;
+    }
+
+    private void checkResourceLimitForImportInstance(Account owner) {
+        try {
+            resourceLimitService.checkResourceLimit(owner, Resource.ResourceType.user_vm, 1);
+        } catch (ResourceAllocationException e) {
+            LOGGER.error(String.format("VM resource allocation error for account: %s", owner.getUuid()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM resource allocation error for account: %s. %s", owner.getUuid(), StringUtils.defaultString(e.getMessage())));
+        }
+    }
+
+    private ServiceOfferingVO getServiceOfferingForImportInstance(Long serviceOfferingId, Account owner, DataCenter zone) {
+        if (serviceOfferingId == null) {
+            throw new InvalidParameterValueException("Service offering ID cannot be null");
+        }
+        final ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException(String.format("Service offering ID: %d cannot be found", serviceOfferingId));
+        }
+        accountService.checkAccess(owner, serviceOffering, zone);
+        return serviceOffering;
+    }
+
+    private VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
+        VMTemplateVO template;
+        if (templateId == null) {
+            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+            if (template == null) {
+                template = createDefaultDummyVmImportTemplate();
+                if (template == null) {
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, hypervisorType.toString()));
+                }
+            }
+        } else {
+            template = templateDao.findById(templateId);
+        }
+        if (template == null) {
+            throw new InvalidParameterValueException(String.format("Template ID: %d cannot be found", templateId));
+        }
+        return template;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_IMPORT, eventDescription = "importing VM", async = true)
+    public UserVmResponse importVm(ImportVmCmd cmd) {
+        return baseImportInstance(cmd);
     }
 
     private UserVm importUnmanagedInstanceFromVmwareToVmware(DataCenter zone, Cluster cluster,
@@ -1262,7 +1326,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                           Account caller, Account owner, long userId,
                                                           ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                           Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                          Map<String, String> details, ImportUnmanagedInstanceCmd cmd, boolean forced) {
+                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced) {
         Long existingVcenterId = cmd.getExistingVcenterId();
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
@@ -1569,6 +1633,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         cmdList.add(ListUnmanagedInstancesCmd.class);
         cmdList.add(ImportUnmanagedInstanceCmd.class);
         cmdList.add(UnmanageVMInstanceCmd.class);
+        cmdList.add(ImportVmCmd.class);
         return cmdList;
     }
 

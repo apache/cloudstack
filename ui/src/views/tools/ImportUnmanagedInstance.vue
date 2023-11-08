@@ -167,6 +167,7 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
+                  style="margin-bottom: 20px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
@@ -195,39 +196,39 @@
                 <template #label>
                   <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
                 </template>
+                <compute-offering-selection
+                  :compute-items="computeOfferings"
+                  :loading="computeOfferingLoading"
+                  :rowCount="totalComputeOfferings"
+                  :value="computeOffering ? computeOffering.id : ''"
+                  :minimumCpunumber="isVmRunning ? resource.cpunumber : null"
+                  :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
+                  :minimumMemory="isVmRunning ? resource.memory : null"
+                  :allowAllOfferings="selectedVmwareVcenter ? true : false"
+                  size="small"
+                  @select-compute-item="($event) => updateComputeOffering($event)"
+                  @handle-search-filter="($event) => fetchComputeOfferings($event)" />
+                <compute-selection
+                  class="row-element"
+                  v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
+                  :isCustomized="computeOffering.iscustomized"
+                  :isCustomizedIOps="'iscustomizediops' in computeOffering && computeOffering.iscustomizediops"
+                  :cpuNumberInputDecorator="cpuNumberKey"
+                  :cpuSpeedInputDecorator="cpuSpeedKey"
+                  :memoryInputDecorator="memoryKey"
+                  :computeOfferingId="computeOffering.id"
+                  :preFillContent="resource"
+                  :isConstrained="'serviceofferingdetails' in computeOffering"
+                  :minCpu="getMinCpu()"
+                  :maxCpu="getMaxCpu()"
+                  :minMemory="getMinMemory()"
+                  :maxMemory="getMaxMemory()"
+                  :cpuSpeed="getCPUSpeed()"
+                  @update-iops-value="updateFieldValue"
+                  @update-compute-cpunumber="updateFieldValue"
+                  @update-compute-cpuspeed="updateCpuSpeed"
+                  @update-compute-memory="updateFieldValue" />
               </a-form-item>
-              <compute-offering-selection
-                :compute-items="computeOfferings"
-                :loading="computeOfferingLoading"
-                :rowCount="totalComputeOfferings"
-                :value="computeOffering ? computeOffering.id : ''"
-                :minimumCpunumber="isVmRunning ? resource.cpunumber : null"
-                :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
-                :minimumMemory="isVmRunning ? resource.memory : null"
-                :allowAllOfferings="selectedVmwareVcenter ? true : false"
-                size="small"
-                @select-compute-item="($event) => updateComputeOffering($event)"
-                @handle-search-filter="($event) => fetchComputeOfferings($event)" />
-              <compute-selection
-                class="row-element"
-                v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
-                :isCustomized="computeOffering.iscustomized"
-                :isCustomizedIOps="'iscustomizediops' in computeOffering && computeOffering.iscustomizediops"
-                :cpuNumberInputDecorator="cpuNumberKey"
-                :cpuSpeedInputDecorator="cpuSpeedKey"
-                :memoryInputDecorator="memoryKey"
-                :computeOfferingId="computeOffering.id"
-                :preFillContent="resource"
-                :isConstrained="'serviceofferingdetails' in computeOffering"
-                :minCpu="getMinCpu()"
-                :maxCpu="getMaxCpu()"
-                :minMemory="getMinMemory()"
-                :maxMemory="getMaxMemory()"
-                :cpuSpeed="getCPUSpeed()"
-                @update-iops-value="updateFieldValue"
-                @update-compute-cpunumber="updateFieldValue"
-                @update-compute-cpuspeed="updateCpuSpeed"
-                @update-compute-memory="updateFieldValue" />
               <div v-if="resource.disk && resource.disk.length > 1">
                 <a-form-item name="selection" ref="selection">
                   <template #label>
@@ -342,6 +343,14 @@ export default {
     cluster: {
       type: Object,
       required: true
+    },
+    importsource: {
+      type: String,
+      required: false
+    },
+    hypervisor: {
+      type: String,
+      required: false
     },
     resource: {
       type: Object,
@@ -819,7 +828,13 @@ export default {
         const params = {
           name: this.resource.name,
           clusterid: this.cluster.id,
-          displayname: values.displayname
+          displayname: values.displayname,
+          importsource: this.importsource,
+          hypervisor: this.hypervisor
+        }
+        var importapi = 'importUnmanagedInstance'
+        if (this.isExternalImport || this.isDiskImport || this.selectedVmwareVcenter) {
+          importapi = 'importVm'
         }
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
@@ -930,10 +945,15 @@ export default {
           }
         }
         this.updateLoading(true)
-        const name = this.resource.name
+        const name = params.name
         return new Promise((resolve, reject) => {
-          api('importUnmanagedInstance', params).then(response => {
-            const jobId = response.importunmanagedinstanceresponse.jobid
+          api(importapi, params).then(response => {
+            var jobId
+            if (this.isDiskImport || this.isExternalImport || this.selectedVmwareVcenter) {
+              jobId = response.importvmresponse.jobid
+            } else {
+              jobId = response.importunmanagedinstanceresponse.jobid
+            }
             let msgLoading = this.$t('label.import.instance') + ' ' + name + ' ' + this.$t('label.in.progress')
             if (this.selectedKvmHostForConversion) {
               const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]

@@ -321,6 +321,8 @@
             class="importform"
             :resource="selectedUnmanagedInstance"
             :cluster="selectedCluster"
+            :importsource="selectedSourceAction"
+            :hypervisor="this.destinationHypervisor"
             :isOpen="showUnmanageForm"
             :selectedVmwareVcenter="selectedVmwareVcenter"
             @refresh-data="fetchInstances"
@@ -368,7 +370,7 @@ export default {
         wizardDescription: this.$t('message.desc.importexportinstancewizard')
       },
       {
-        name: 'migratefromvmware',
+        name: 'vmware',
         label: 'Migrate existing instances to KVM',
         sourceDestHypervisors: {
           vmware: 'kvm'
@@ -541,7 +543,7 @@ export default {
       return ((this.isUnmanaged) || this.selectedSourceAction === 'external')
     },
     isMigrateFromVmware () {
-      return this.selectedSourceAction === 'migratefromvmware'
+      return this.selectedSourceAction === 'vmware'
     },
     isDestinationKVM () {
       return this.destinationHypervisor === 'kvm'

@@ -27,24 +27,19 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -129,7 +124,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the ID of the service offering for the virtual machine")
+            description = "the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
@@ -161,48 +156,6 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.BOOLEAN,
             description = "VM is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
     private Boolean forced;
-
-    // Import from Vmware to KVM migration parameters
-
-    @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
-            type = CommandType.UUID,
-            entityType = VmwareDatacenterResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
-    private Long existingVcenterId;
-
-    @Parameter(name = ApiConstants.HOST_IP,
-            type = BaseCmd.CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
-    private String host;
-
-    @Parameter(name = ApiConstants.VCENTER,
-            type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
-    private String vcenter;
-
-    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
-    private String datacenterName;
-
-    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
-    private String clusterName;
-
-    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The Username required to connect to resource.")
-    private String username;
-
-    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING,
-            description = "(only for importing migrated VMs from Vmware to KVM) The password for the specified username.")
-    private String password;
-
-    @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
-    private Long convertInstanceHostId;
-
-    @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
-            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
-    private Long convertStoragePoolId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -327,53 +280,11 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         String vmName = this.name;
-        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
-            String msg = StringUtils.isNotBlank(vcenter) ?
-                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
-                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
-            return String.format("Importing unmanaged VM: %s from %s - VM: %s", displayName, msg, vmName);
-        }
         return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     public boolean isForced() {
         return BooleanUtils.isTrue(forced);
-    }
-
-    public Long getExistingVcenterId() {
-        return existingVcenterId;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getVcenter() {
-        return vcenter;
-    }
-
-    public String getDatacenterName() {
-        return datacenterName;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public Long getConvertInstanceHostId() {
-        return convertInstanceHostId;
-    }
-
-    public Long getConvertStoragePoolId() {
-        return convertStoragePoolId;
     }
 
     /////////////////////////////////////////////////////
