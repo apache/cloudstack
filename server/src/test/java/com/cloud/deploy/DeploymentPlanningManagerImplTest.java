@@ -413,12 +413,12 @@ public class DeploymentPlanningManagerImplTest {
 
         _dpm.avoidDisabledResources(vmProfile, dc, avoids);
 
-        verify(_dpm, times(timesRouter)).isRouterDeployableInDisabledResources();
-        verify(_dpm, times(timesAdminVm)).isAdminVmDeployableInDisabledResources();
-        verify(_dpm, times(timesDisabledResource)).avoidDisabledDataCenters(dc, avoids);
-        verify(_dpm, times(timesDisabledResource)).avoidDisabledPods(dc, avoids);
-        verify(_dpm, times(timesDisabledResource)).avoidDisabledClusters(dc, avoids);
-        verify(_dpm, times(timesDisabledResource)).avoidDisabledHosts(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesRouter)).isRouterDeployableInDisabledResources();
+        Mockito.verify(_dpm, Mockito.times(timesAdminVm)).isAdminVmDeployableInDisabledResources();
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledDataCenters(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledPods(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledClusters(dc, avoids);
+        Mockito.verify(_dpm, Mockito.times(timesDisabledResource)).avoidDisabledHosts(dc, avoids);
         Mockito.reset(_dpm);
     }
 
