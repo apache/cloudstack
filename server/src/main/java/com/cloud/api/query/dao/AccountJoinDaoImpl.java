@@ -51,15 +51,15 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     @Inject
     private ConfigurationDao configDao;
     private final SearchBuilder<AccountJoinVO> acctIdSearch;
-    private final SearchBuilder<AccountJoinVO> volSearch;
+    private final SearchBuilder<AccountJoinVO> domainSearch;
     @Inject
     AccountManager _acctMgr;
 
     protected AccountJoinDaoImpl() {
 
-        volSearch = createSearchBuilder();
-        volSearch.and("idIN", volSearch.entity().getId(), SearchCriteria.Op.IN);
-        volSearch.done();
+        domainSearch = createSearchBuilder();
+        domainSearch.and("idIN", domainSearch.entity().getId(), SearchCriteria.Op.IN);
+        domainSearch.done();
 
         acctIdSearch = createSearchBuilder();
         acctIdSearch.and("id", acctIdSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -249,7 +249,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
-        // query details by batches
+
         List<AccountJoinVO> uvList = new ArrayList<>();
         // query details by batches
         int curr_index = 0;
@@ -259,11 +259,11 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = accountIds[j];
                 }
-                SearchCriteria<AccountJoinVO> sc = volSearch.create();
+                SearchCriteria<AccountJoinVO> sc = domainSearch.create();
                 sc.setParameters("idIN", ids);
-                List<AccountJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
-                if (vms != null) {
-                    uvList.addAll(vms);
+                List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
+                if (accounts != null) {
+                    uvList.addAll(accounts);
                 }
                 curr_index += DETAILS_BATCH_SIZE;
             }
@@ -275,7 +275,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
             for (int k = 0, j = curr_index; j < curr_index + batch_size; j++, k++) {
                 ids[k] = accountIds[j];
             }
-            SearchCriteria<AccountJoinVO> sc = volSearch.create();
+            SearchCriteria<AccountJoinVO> sc = domainSearch.create();
             sc.setParameters("idIN", ids);
             List<AccountJoinVO> accounts = searchIncludingRemoved(sc, null, null, false);
             if (accounts != null) {

@@ -2587,6 +2587,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<DomainJoinVO>, Integer> searchForDomainsInternal(ListDomainsCmd cmd) {
+        Pair<List<Long>, Integer> domainIdPage = searchForDomainIdsAndCount(cmd);
+
+        Integer count = domainIdPage.second();
+        Long[] idArray = domainIdPage.first().toArray(new Long[0]);
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<DomainJoinVO> domains = _domainJoinDao.searchByIds(idArray);
+        return new Pair<>(domains, count);
+    }
+
+    private Pair<List<Long>, Integer> searchForDomainIdsAndCount(ListDomainsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
@@ -2608,24 +2622,27 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Filter searchFilter = new Filter(DomainJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         String domainName = cmd.getDomainName();
         Integer level = cmd.getLevel();
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<DomainJoinVO> sb = _domainJoinDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("level", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
-        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<DomainJoinVO> sc = sb.create();
+        SearchBuilder<DomainVO> domainSearchBuilder = _domainDao.createSearchBuilder();
+        domainSearchBuilder.select(null, Func.DISTINCT, domainSearchBuilder.entity().getId()); // select distinct
+        domainSearchBuilder.and("id", domainSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        domainSearchBuilder.and("name", domainSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        domainSearchBuilder.and("level", domainSearchBuilder.entity().getLevel(), SearchCriteria.Op.EQ);
+        domainSearchBuilder.and("path", domainSearchBuilder.entity().getPath(), SearchCriteria.Op.LIKE);
+        domainSearchBuilder.and("state", domainSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
-            SearchCriteria<DomainJoinVO> ssc = _domainJoinDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            domainSearchBuilder.and("keywordName", domainSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
+        }
+
+        SearchCriteria<DomainVO> sc = domainSearchBuilder.create();
+
+        if (keyword != null) {
+            sc.setParameters("keywordName", "%" + keyword + "%");
         }
 
         if (domainName != null) {
@@ -2650,7 +2667,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // return only Active domains to the API
         sc.setParameters("state", Domain.State.Active);
 
-        return _domainJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<DomainVO>, Integer> uniqueDomainPair = _domainDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueDomainPair.second();
+        List<Long> domainIds = uniqueDomainPair.first().stream().map(DomainVO::getId).collect(Collectors.toList());
+        return new Pair<>(domainIds, count);
     }
 
     @Override
