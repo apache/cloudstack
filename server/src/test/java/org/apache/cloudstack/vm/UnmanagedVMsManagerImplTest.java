@@ -88,6 +88,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,7 +118,7 @@ import static org.mockito.Mockito.when;
 public class UnmanagedVMsManagerImplTest {
 
     @InjectMocks
-    private UnmanagedVMsManager unmanagedVMsManager = new UnmanagedVMsManagerImpl();
+    private UnmanagedVMsManagerImpl unmanagedVMsManager = new UnmanagedVMsManagerImpl();
 
     @Mock
     private UserVmManager userVmManager;
@@ -402,4 +403,51 @@ public class UnmanagedVMsManagerImplTest {
     public void unmanageVMInstanceExistingISOAttachedTest() {
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId);
     }
+
+    private void baseBasicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
+        unmanagedVMsManager.basicParametersCheckForImportInstance(name, domainId, accountName);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicParametersCheckForImportInstanceMissingName() {
+        baseBasicParametersCheckForImportInstance(null, 1L, "test");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicParametersCheckForImportInstanceMissingDomainAndAccount() {
+        baseBasicParametersCheckForImportInstance("vm", 1L, "");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicAccessChecksMissingClusterId() {
+        unmanagedVMsManager.basicAccessChecks(null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testBasicAccessChecksNotAdminCaller() {
+        CallContext.unregister();
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+        unmanagedVMsManager.basicAccessChecks(1L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicAccessChecksUnsupportedHypervisorType() {
+        ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
+        clusterVO.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
+        when(clusterDao.findById(Mockito.anyLong())).thenReturn(clusterVO);
+        unmanagedVMsManager.basicAccessChecks(1L);
+    }
+
+    @Test
+    public void testGetTemplateForImportInstanceDefaultTemplate() {
+        String defaultTemplateName = "DefaultTemplate";
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getName()).thenReturn(defaultTemplateName);
+        when(templateDao.findByName(anyString())).thenReturn(template);
+        VMTemplateVO templateForImportInstance = unmanagedVMsManager.getTemplateForImportInstance(null, Hypervisor.HypervisorType.KVM);
+        Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
+    }
+
 }

@@ -1031,7 +1031,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return unmanagedInstances;
     }
 
-    private Cluster basicAccessChecks(Long clusterId) {
+    protected Cluster basicAccessChecks(Long clusterId) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, caller account [%s] is not ROOT Admin.", caller.getUuid()));
@@ -1169,7 +1169,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userId;
     }
 
-    private void basicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
+    protected void basicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
         if (StringUtils.isEmpty(name)) {
             throw new InvalidParameterValueException("Instance name cannot be empty");
         }
@@ -1230,7 +1230,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return serviceOffering;
     }
 
-    private VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
+    protected VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
         VMTemplateVO template;
         if (templateId == null) {
             template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
