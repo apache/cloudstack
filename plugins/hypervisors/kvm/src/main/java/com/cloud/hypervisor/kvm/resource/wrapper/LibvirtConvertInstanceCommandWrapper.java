@@ -220,7 +220,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
     }
 
-    private List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
+    protected List<KVMPhysicalDisk> moveTemporaryDisksToDestination(List<KVMPhysicalDisk> temporaryDisks,
                                                                   List<String> destinationStoragePools,
                                                                   KVMStoragePoolManager storagePoolMgr) {
         List<KVMPhysicalDisk> targetDisks = new ArrayList<>();
@@ -238,9 +238,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 continue;
             }
             KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
-            String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
-                    " to destination storage pool %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid());
-            s_logger.debug(msg);
+            if (s_logger.isDebugEnabled()) {
+                String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
+                        " to destination storage pool %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid());
+                s_logger.debug(msg);
+            }
 
             String destinationName = UUID.randomUUID().toString();
 
@@ -275,7 +277,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return nics;
     }
 
-    private List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<KVMPhysicalDisk> vmDisks, LibvirtDomainXMLParser xmlParser) {
+    protected List<UnmanagedInstanceTO.Disk> getUnmanagedInstanceDisks(List<KVMPhysicalDisk> vmDisks, LibvirtDomainXMLParser xmlParser) {
         List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
         List<LibvirtVMDef.DiskDef> diskDefs = xmlParser != null ? xmlParser.getDisks() : null;
         for (int i = 0; i< vmDisks.size(); i++) {
@@ -302,7 +304,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return instanceDisks;
     }
 
-    private Pair<String, String> getNfsStoragePoolHostAndPath(KVMStoragePool storagePool) {
+    protected Pair<String, String> getNfsStoragePoolHostAndPath(KVMStoragePool storagePool) {
         String sourceHostIp = null;
         String sourcePath = null;
         String storagePoolMountPoint = Script.runSimpleBashScript(String.format("mount | grep %s", storagePool.getLocalPath()));

@@ -26,8 +26,11 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +56,8 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
     @Mock
     private KVMStoragePool temporaryPool;
+    @Mock
+    private KVMStoragePool destinationPool;
     @Mock
     private PrimaryDataStoreTO primaryDataStore;
     @Mock
@@ -160,5 +165,65 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
         convertInstanceCommandWrapper.sanitizeDisksPath(List.of(diskDef));
         Assert.assertEquals(relativePath, diskDef.getDiskPath());
+    }
+
+    @Test
+    public void testMoveTemporaryDisksToDestination() {
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(sourceDisk.getPool()).thenReturn(temporaryPool);
+        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+        String destinationPoolUuid = UUID.randomUUID().toString();
+        List<String> destinationPools = List.of(destinationPoolUuid);
+
+        KVMPhysicalDisk destDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(destDisk.getPath()).thenReturn("xyz");
+        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, destinationPoolUuid))
+                .thenReturn(destinationPool);
+        Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
+                .thenReturn(destDisk);
+
+        List<KVMPhysicalDisk> movedDisks = convertInstanceCommandWrapper.moveTemporaryDisksToDestination(disks, destinationPools, storagePoolManager);
+        Assert.assertEquals(1, movedDisks.size());
+        Assert.assertEquals("xyz", movedDisks.get(0).getPath());
+    }
+
+    @Test
+    public void testGetUnmanagedInstanceDisks() {
+        String relativePath = UUID.randomUUID().toString();
+        LibvirtVMDef.DiskDef diskDef = new LibvirtVMDef.DiskDef();
+        LibvirtVMDef.DiskDef.DiskBus bus = LibvirtVMDef.DiskDef.DiskBus.IDE;
+        LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
+        diskDef.defFileBasedDisk(relativePath, relativePath, bus, type);
+
+        KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+        Mockito.when(sourceDisk.getName()).thenReturn(UUID.randomUUID().toString());
+        Mockito.when(sourceDisk.getPool()).thenReturn(destinationPool);
+        Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+
+        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
+
+        List<UnmanagedInstanceTO.Disk> unmanagedInstanceDisks = convertInstanceCommandWrapper.getUnmanagedInstanceDisks(disks, parser);
+        Assert.assertEquals(1, unmanagedInstanceDisks.size());
+        UnmanagedInstanceTO.Disk disk = unmanagedInstanceDisks.get(0);
+        Assert.assertEquals(LibvirtVMDef.DiskDef.DiskBus.IDE.toString(), disk.getController());
+    }
+
+    @Test
+    public void testGetNfsStoragePoolHostAndPath() {
+        try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
+            String localMountPoint = "/mnt/xyz";
+            String host = "192.168.1.2";
+            String path = "/secondary";
+            String mountOutput = String.format("%s:%s on %s type nfs (...)", host, path, localMountPoint);
+            Mockito.when(temporaryPool.getLocalPath()).thenReturn(localMountPoint);
+            Mockito.when(Script.runSimpleBashScript(Mockito.anyString()))
+                    .thenReturn(mountOutput);
+
+            Pair<String, String> pair = convertInstanceCommandWrapper.getNfsStoragePoolHostAndPath(temporaryPool);
+            Assert.assertEquals(host, pair.first());
+            Assert.assertEquals(path, pair.second());
+        }
     }
 }
