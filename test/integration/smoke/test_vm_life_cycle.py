@@ -86,7 +86,8 @@ class TestVMLifeCycle(cloudstackTestCase):
             cls.services["ostype"],
             cls.hypervisor
         )
-        assert (template == FAILED), "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
+        if template == FAILED:
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
