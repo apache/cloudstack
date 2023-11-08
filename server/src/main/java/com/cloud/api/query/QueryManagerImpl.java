@@ -38,6 +38,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -165,6 +166,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
@@ -546,6 +549,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private HostDao hostDao;
+
+    @Inject
+    private OutOfBandManagementDao outOfBandManagementDao;
 
     @Inject
     private InstanceGroupVMMapDao instanceGroupVMMapDao;
@@ -2197,7 +2203,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     public Pair<List<HostJoinVO>, Integer> searchForServersInternal(ListHostsCmd cmd) {
+        Pair<List<Long>, Integer> serverIdPage = searchForServerIdsAndCount(cmd);
 
+        Integer count = serverIdPage.second();
+        Long[] idArray = serverIdPage.first().toArray(new Long[0]);
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<HostJoinVO> servers = hostJoinDao.searchByIds(idArray);
+        return new Pair<>(servers, count);
+    }
+    public Pair<List<Long>, Integer> searchForServerIdsAndCount(ListHostsCmd cmd) {
         Long zoneId = accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), cmd.getZoneId());
         Object name = cmd.getHostName();
         Object type = cmd.getType();
@@ -2214,44 +2232,55 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long pageSize = cmd.getPageSizeVal();
         Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
 
-        Filter searchFilter = new Filter(HostJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+        Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
-        SearchBuilder<HostJoinVO> sb = hostJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        SearchBuilder<HostVO> hostSearchBuilder = hostDao.createSearchBuilder();
+        hostSearchBuilder.select(null, Func.DISTINCT, hostSearchBuilder.entity().getId()); // select distinct
         // ids
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
-        sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
-        sb.and("dataCenterId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
-        sb.and("oobmEnabled", sb.entity().isOutOfBandManagementEnabled(), SearchCriteria.Op.EQ);
-        sb.and("powerState", sb.entity().getOutOfBandManagementPowerState(), SearchCriteria.Op.EQ);
-        sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
-        sb.and("hypervisor_type", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("id", hostSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("name", hostSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+        hostSearchBuilder.and("status", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("dataCenterId", hostSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("podId", hostSearchBuilder.entity().getPodId(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("clusterId", hostSearchBuilder.entity().getClusterId(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("resourceState", hostSearchBuilder.entity().getResourceState(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("hypervisor_type", hostSearchBuilder.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+
+        if (keyword != null) {
+            hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.or("keywordStatus", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.or("keywordType", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.cp();
+        }
+
+        if (outOfBandManagementEnabled != null || powerState != null) {
+            SearchBuilder<OutOfBandManagementVO> oobmSearch = outOfBandManagementDao.createSearchBuilder();
+            oobmSearch.and("oobmEnabled", oobmSearch.entity().isEnabled(), SearchCriteria.Op.EQ);
+            oobmSearch.and("powerState", oobmSearch.entity().getPowerState(), SearchCriteria.Op.EQ);
+
+            hostSearchBuilder.join("oobmSearch", oobmSearch, hostSearchBuilder.entity().getId(), oobmSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
+        }
 
         String haTag = _haMgr.getHaTag();
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
+            SearchBuilder<HostTagVO> hostTagSearchBuilder = _hostTagDao.createSearchBuilder();
             if ((Boolean)haHosts) {
-                sb.and("tag", sb.entity().getTag(), SearchCriteria.Op.EQ);
+                hostTagSearchBuilder.and("tag", hostTagSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
             } else {
-                sb.and().op("tag", sb.entity().getTag(), SearchCriteria.Op.NEQ);
-                sb.or("tagNull", sb.entity().getTag(), SearchCriteria.Op.NULL);
-                sb.cp();
+                hostTagSearchBuilder.and().op("tag", hostTagSearchBuilder.entity().getName(), Op.NEQ);
+                hostTagSearchBuilder.or("tagNull", hostTagSearchBuilder.entity().getName(), Op.NULL);
+                hostTagSearchBuilder.cp();
             }
-
+            hostSearchBuilder.join("hostTagSearch", hostTagSearchBuilder, hostSearchBuilder.entity().getId(), hostTagSearchBuilder.entity().getHostId(), JoinBuilder.JoinType.LEFT);
         }
 
-        SearchCriteria<HostJoinVO> sc = sb.create();
+        SearchCriteria<HostVO> sc = hostSearchBuilder.create();
 
         if (keyword != null) {
-            SearchCriteria<HostJoinVO> ssc = hostJoinDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("status", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            sc.setParameters("keywordName", "%" + keyword + "%");
+            sc.setParameters("keywordStatus", "%" + keyword + "%");
+            sc.setParameters("keywordType", "%" + keyword + "%");
         }
 
         if (id != null) {
@@ -2278,11 +2307,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (outOfBandManagementEnabled != null) {
-            sc.setParameters("oobmEnabled", outOfBandManagementEnabled);
+            sc.setJoinParameters("oobmSearch", "oobmEnabled", outOfBandManagementEnabled);
         }
 
         if (powerState != null) {
-            sc.setParameters("powerState", powerState);
+            sc.setJoinParameters("oobmSearch", "powerState", powerState);
         }
 
         if (resourceState != null) {
@@ -2290,28 +2319,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
-            sc.setParameters("tag", haTag);
+            sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
 
         if (hypervisorType != HypervisorType.None && hypervisorType != HypervisorType.Any) {
             sc.setParameters("hypervisor_type", hypervisorType);
         }
-        // search host details by ids
-        Pair<List<HostJoinVO>, Integer> uniqueHostPair = hostJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueHostPair.second();
-        if (count.intValue() == 0) {
-            // handle empty result cases
-            return uniqueHostPair;
-        }
-        List<HostJoinVO> uniqueHosts = uniqueHostPair.first();
-        Long[] hostIds = new Long[uniqueHosts.size()];
-        int i = 0;
-        for (HostJoinVO v : uniqueHosts) {
-            hostIds[i++] = v.getId();
-        }
-        List<HostJoinVO> hosts = hostJoinDao.searchByIds(hostIds);
-        return new Pair<List<HostJoinVO>, Integer>(hosts, count);
 
+        Pair<List<HostVO>, Integer> uniqueHostPair = hostDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueHostPair.second();
+        List<Long> hostIds = uniqueHostPair.first().stream().map(HostVO::getId).collect(Collectors.toList());
+        return new Pair<>(hostIds, count);
     }
 
     @Override
