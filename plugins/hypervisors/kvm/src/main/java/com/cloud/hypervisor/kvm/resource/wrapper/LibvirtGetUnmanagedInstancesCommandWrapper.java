@@ -58,8 +58,10 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
             for (Domain domain : domains) {
                 UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
-                unmanagedInstances.put(instance.getName(), instance);
-                domain.free();
+                if (instance != null) {
+                    unmanagedInstances.put(instance.getName(), instance);
+                    domain.free();
+                }
             }
         } catch (Exception e) {
             LOGGER.error("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
@@ -133,8 +135,8 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
             return instance;
         } catch (Exception e) {
-            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage());
-            throw new CloudRuntimeException("Unable to retrieve unmanaged instance info. " + e.getMessage());
+            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
+            return null;
         }
     }
 
