@@ -542,7 +542,7 @@ export default {
       return false
     },
     isKVMUnmanage () {
-      return this.hypervisor && this.hypervisor === 'kvm' && this.importsource === 'unmanaged'
+      return this.hypervisor && this.hypervisor === 'kvm' && (this.importsource === 'unmanaged' || this.importsource === 'external')
     },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
