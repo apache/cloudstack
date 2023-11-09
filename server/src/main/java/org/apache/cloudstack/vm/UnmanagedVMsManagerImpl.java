@@ -1502,7 +1502,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new CloudRuntimeException(msg);
             }
             if (selectedHost.getResourceState() != ResourceState.Enabled ||
-                    selectedHost.getState() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
+                    selectedHost.getStatus() != Status.Up || selectedHost.getType() != Host.Type.Routing ||
                     selectedHost.getClusterId() != destinationCluster.getId()) {
                 String msg = String.format("Cannot perform the conversion on the host %s as it is not a running and Enabled host", selectedHost.getName());
                 LOGGER.error(msg);
