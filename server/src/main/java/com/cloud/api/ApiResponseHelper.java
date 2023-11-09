@@ -2598,6 +2598,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
+                StringBuilder domainPath = new StringBuilder("ROOT");
+                (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                response.setDomainPath(domainPath.toString());
             }
 
         }
@@ -2846,6 +2849,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+        response.setDomainPath(domainPath.toString());
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
