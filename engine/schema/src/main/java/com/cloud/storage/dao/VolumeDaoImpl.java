@@ -71,6 +71,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
+    private final SearchBuilder<VolumeVO> poolAndPathSearch;
     @Inject
     ResourceTagDao _tagsDao;
 
@@ -487,6 +488,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         volumeIdSearch.and("idIN", volumeIdSearch.entity().getId(), Op.IN);
         volumeIdSearch.done();
 
+        poolAndPathSearch = createSearchBuilder();
+        poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
+        poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
+        poolAndPathSearch.done();
+
     }
 
     @Override
@@ -800,6 +806,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("poolId", id);
         sc.setParameters("pathIN", pathList.toArray());
         return listBy(sc);
+    }
+
+    @Override
+    public VolumeVO findByPoolIdAndPath(long id, String path) {
+        SearchCriteria<VolumeVO> sc = poolAndPathSearch.create();
+        sc.setParameters("poolId", id);
+        sc.setParameters("path", path);
+        return findOneBy(sc);
     }
 
     @Override

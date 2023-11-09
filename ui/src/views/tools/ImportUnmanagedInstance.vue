@@ -940,7 +940,7 @@ export default {
           hostid: this.host.id,
           storageid: this.pool.id,
           diskpath: this.diskpath,
-          tmppath: this.tmppath
+          temppath: this.tmppath
         }
         var importapi = 'importUnmanagedInstance'
         if (this.isExternalImport || this.isDiskImport) {

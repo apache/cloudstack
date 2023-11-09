@@ -122,6 +122,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -1489,7 +1490,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_IMPORT, eventDescription = "importing VM", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VM_IMPORT, eventDescription = "importing VM")
     public UserVmResponse importVm(ImportVmCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
         if (caller.getType() != Account.Type.ADMIN) {
@@ -1583,6 +1584,16 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
 
+        if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
+            if (diskPath == null) {
+                throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
+            }
+
+            if (networkId == null) {
+                throw new InvalidParameterValueException("Network is required for Import from shared/local storage");
+            }
+        }
+
         if (ImportSource.SHARED == importSource) {
             if (poolId == null) {
                 throw new InvalidParameterValueException("Storage Pool is required for Import from shared storage");
@@ -1590,6 +1601,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             if (primaryDataStoreDao.findById(poolId) == null) {
                 throw new InvalidParameterValueException("Storage Pool not found");
+            }
+
+            if (volumeDao.findByPoolIdAndPath(poolId, diskPath) != null) {
+                throw new InvalidParameterValueException("Disk image is already in use");
             }
         }
 
@@ -1601,15 +1616,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (hostDao.findById(hostId) == null) {
                 throw new InvalidParameterValueException("Host not found");
             }
-        }
 
-        if (ImportSource.SHARED == importSource || ImportSource.LOCAL == importSource) {
-            if (diskPath == null) {
-                throw new InvalidParameterValueException("Disk Path is required for Import from shared/local storage");
-            }
-
-            if (networkId == null) {
-                throw new InvalidParameterValueException("Network is required for Import from shared/local storage");
+            List<StoragePoolVO> localPools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
+            for(StoragePoolVO localPool : localPools) {
+                if (volumeDao.findByPoolIdAndPath(localPool.getId(), diskPath) != null) {
+                    throw new InvalidParameterValueException("Disk image is already in use");
+                }
             }
         }
 
@@ -1638,6 +1650,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (userVm == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import Vm with name: %s ", instanceName));
         }
+
+        CallContext.current().setEventResourceId(userVm.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.VirtualMachine);
         return responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Full, "virtualmachine", userVm).get(0);
     }
 
@@ -1766,6 +1781,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                    final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                    final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Long networkId,
                                                    final Long hostId, final Long poolId, final String diskPath, final Map<String, String> details) throws InsufficientCapacityException, ResourceAllocationException {
+
         UserVm userVm = null;
 
         Map<String, String> allDetails = new HashMap<>(details);
