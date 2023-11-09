@@ -45,7 +45,7 @@
           />
           <br />
           <a-row :gutter="12">
-            <a-card class="instances-card">
+            <a-card class="source-dest-card">
               <a-col :md="24" :lg="48">
                 <a-form
                   style="min-width: 170px"
@@ -92,8 +92,12 @@
                     <a-col v-if="showExtHost" :md="24" :lg="12">
                         <a-form-item
                                 name="hostname"
-                                ref="hostname"
-                                :label="$t('label.hostname')">
+                                ref="hostname">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.hostname')"
+                              :tooltip="$t('label.ext.hostname.tooltip')"/>
+                          </template>
                             <a-input
                                     v-model:value="form.hostname"
                             ></a-input>
@@ -102,8 +106,12 @@
                     <a-col v-if="showExtHost" :md="24" :lg="12">
                         <a-form-item
                                 name="username"
-                                ref="username"
-                                :label="$t('label.username')">
+                                ref="username">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.username')"
+                              :tooltip="$t('label.username.tooltip')"/>
+                          </template>
                             <a-input
                                     v-model:value="form.username"
                             ></a-input>
@@ -112,8 +120,12 @@
                     <a-col v-if="showExtHost" :md="24" :lg="12">
                         <a-form-item
                                 name="password"
-                                ref="password"
-                                :label="$t('label.password')">
+                                ref="password">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.password')"
+                              :tooltip="$t('label.password.tooltip')"/>
+                          </template>
                             <a-input-password
                                     v-model:value="form.password"
                             ></a-input-password>
@@ -122,8 +134,12 @@
                     <a-col v-if="showExtHost" :md="24" :lg="12">
                         <a-form-item
                                 name="tmppath"
-                                ref="tmppath"
-                                :label="$t('label.tmppath')">
+                                ref="tmppath">
+                          <template #label>
+                            <tooltip-label
+                              :title="$t('label.tmppath')"
+                              :tooltip="$t('label.tmppath.tooltip')"/>
+                          </template>
                             <a-input
                                     v-model:value="form.tmppath"
                             ></a-input>
@@ -136,7 +152,7 @@
             <!-- ------------ -->
             <!-- RIGHT COLUMN -->
             <!-- ------------ -->
-            <a-card class="instances-card">
+            <a-card class="source-dest-card">
               <template #title>
                 Destination
               </template>
@@ -211,8 +227,12 @@
                   <a-form-item
                     v-if="showHost"
                     name="hostid"
-                    ref="hostid"
-                    :label="$t('label.hostname')">
+                    ref="hostid">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.hostname')"
+                        :tooltip="$t('label.hostname.tooltip')"/>
+                    </template>
                       <a-select
                         v-model:value="form.hostid"
                         showSearch
@@ -226,8 +246,12 @@
                   <a-form-item
                     v-if="showPool"
                     name="poolid"
-                    ref="poolid"
-                    :label="$t('label.storagepool')">
+                    ref="poolid">
+                    <template #label>
+                      <tooltip-label
+                        :title="$t('label.storagepool')"
+                        :tooltip="$t('label.storagepool.tooltip')"/>
+                    </template>
                       <a-select
                         v-model:value="form.poolid"
                         showSearch
@@ -251,9 +275,6 @@
                       v-model:value="form.diskpath"
                     ></a-input>
                   </a-form-item>
-                    <template #label>
-                        <tooltip-label :title="$t('label.podname')" :tooltip="placeholder.podid"/>
-                    </template>
                   <a-col v-if="showExtHost" :md="24" :lg="8">
                     <div :span="24" class="action-button-right">
                       <a-button
@@ -529,8 +550,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import libvirt domain from KVM Host',
-        wizardDescription: 'Import libvirt domain from External KVM Host not managed by CloudStack'
+        wizardTitle: this.$t('label.desc.import.ext.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.ext.kvm.wizard')
       },
       {
         name: 'local',
@@ -538,8 +559,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import QCOW image from Local Storage',
-        wizardDescription: 'Import QCOW image from Local Storage of selected KVM Host'
+        wizardTitle: this.$t('label.desc.import.local.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.local.kvm.wizard')
       },
       {
         name: 'shared',
@@ -547,8 +568,8 @@ export default {
         sourceDestHypervisors: {
           kvm: 'kvm'
         },
-        wizardTitle: 'Import QCOW image from Shared Storage',
-        wizardDescription: 'Import QCOW image from selected Primary Storage Pool'
+        wizardTitle: this.$t('label.desc.import.shared.kvm.wizard'),
+        wizardDescription: this.$t('message.desc.import.shared.kvm.wizard')
       }
     ]
     const unmanagedInstancesColumns = [
@@ -1359,6 +1380,10 @@ export default {
   width: 80vw;
 }
 .instances-card {
+  height: 100%;
+}
+.source-dest-card {
+  width: 50%;
   height: 100%;
 }
 .instances-card-table {
