@@ -270,7 +270,7 @@
                   :selectionEnabled="false"
                   :filterUnimplementedNetworks="true"
                   :hypervisor="this.cluster.hypervisortype"
-                  filterMatchKey="broadcasturi"
+                  :filterMatchKey="isKVMUnmanage ? undefined : 'broadcasturi'"
                   @select-multi-network="updateMultiNetworkOffering" />
               </div>
               <a-row v-else style="margin: 12px 0" >
@@ -540,6 +540,9 @@ export default {
         return true
       }
       return false
+    },
+    isKVMUnmanage () {
+      return this.hypervisor && this.hypervisor === 'kvm' && this.importsource === 'unmanaged'
     },
     domainSelectOptions () {
       var domains = this.options.domains.map((domain) => {
