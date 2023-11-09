@@ -21,18 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.command.user.UserCmd;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +29,18 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -139,6 +138,15 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone for the template. Can be specified with snapshot only", since = "4.19.0")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+          type = CommandType.UUID,
+          entityType = DomainResponse.class,
+          description = "an optional domainId. If the account parameter is used, domainId must also be used.")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
+    private String accountName;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -217,6 +225,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
         return zoneId;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -251,17 +267,25 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
             }
         }
 
-        if(projectId != null){
+        Account accountToUse = callingAccount;
+        if (accountName != null && domainId != null) {
+            try {
+                accountToUse = _accountService.getAccount(_accountService.finalyzeAccountId(accountName, domainId, projectId, true));
+
+            } catch (Exception exception) {
+                s_logger.info("Unable to find accountId associated with accountName=" + accountName + " and domainId="
+                      + domainId + " using account=" + accountToUse);
+            }
+        } else if (projectId != null) {
             final Project project = _projectService.getProject(projectId);
             if (project != null) {
                 if (project.getState() == Project.State.Active) {
-                    Account projectAccount= _accountService.getAccount(project.getProjectAccountId());
-                    _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, projectAccount);
-                    return project.getProjectAccountId();
+                    accountToUse = _accountService.getAccount(project.getProjectAccountId());
+                    _accountService.checkAccess(callingAccount, SecurityChecker.AccessType.UseEntry, false, accountToUse);
                 } else {
                     final PermissionDeniedException ex =
-                            new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
-                                    " as it's no longer active");
+                          new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
+                                " as it's no longer active");
                     ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }
@@ -269,8 +293,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
                 throw new InvalidParameterValueException("Unable to find project by id");
             }
         }
-
-        return callingAccount.getId();
+        return accountToUse.getId();
     }
 
     @Override

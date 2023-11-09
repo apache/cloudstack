@@ -29,4 +29,12 @@ public class CreateTemplateCmdTest {
         ReflectionTestUtils.setField(cmd, "zoneId", id);
         Assert.assertEquals(id, cmd.getZoneId());
     }
+
+    @Test
+    public void testDomainId() {
+        final CreateTemplateCmd cmd = new CreateTemplateCmd();
+        Long id = 2L;
+        ReflectionTestUtils.setField(cmd, "domainId", id);
+        Assert.assertEquals(id, cmd.getDomainId());
+    }
 }
