@@ -241,12 +241,19 @@
                   <a-form-item
                     v-if="showDiskPath"
                     name="diskpath"
-                    ref="diskpath"
-                    :label="$t('label.disk.path')">
+                    ref="diskpath">
+                    <template #label>
+                          <tooltip-label
+                            :title="$t('label.disk.path')"
+                            :tooltip="$t('label.disk.path.tooltip')"/>
+                    </template>
                     <a-input
                       v-model:value="form.diskpath"
                     ></a-input>
                   </a-form-item>
+                    <template #label>
+                        <tooltip-label :title="$t('label.podname')" :tooltip="placeholder.podid"/>
+                    </template>
                   <a-col v-if="showExtHost" :md="24" :lg="8">
                     <div :span="24" class="action-button-right">
                       <a-button
@@ -482,9 +489,11 @@ import SearchView from '@/components/view/SearchView'
 import ImportUnmanagedInstances from '@/views/tools/ImportUnmanagedInstance'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import SelectVmwareVcenter from '@/views/tools/SelectVmwareVcenter'
+import TooltipLabel from '@/components/widgets/TooltipLabel.vue'
 
 export default {
   components: {
+    TooltipLabel,
     Breadcrumb,
     Status,
     SearchView,

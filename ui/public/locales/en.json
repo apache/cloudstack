@@ -710,6 +710,7 @@
 "label.disk": "Disk",
 "label.disk.offerings": "Disk offerings",
 "label.disk.path": "Disk Path",
+"label.disk.path.tooltip": "Disk Path relative to the selected Storage Pool",
 "label.disk.selection": "Disk selection",
 "label.disk.size": "Disk size",
 "label.disk.usage.info": "Disk usage information",

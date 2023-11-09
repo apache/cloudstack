@@ -954,7 +954,6 @@ export default {
             params.networkid = values.networkid
           }
         }
-        console.log(importapi)
         if (!this.computeOffering || !this.computeOffering.id) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
@@ -995,6 +994,16 @@ export default {
               message: this.$t('message.request.failed'),
               description: this.$t('error.form.message')
             })
+          }
+        }
+        if (this.isDiskImport) {
+          var storageType = this.computeOffering.storagetype
+          if (this.importsource !== storageType) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: 'Incompatible Storage. Import Source is: ' + this.importsource + '. Storage Type in service offering is: ' + storageType
+            })
+            return
           }
         }
         if (this.selectedVmwareVcenter) {
@@ -1039,6 +1048,7 @@ export default {
         }
         var nicNetworkIndex = 0
         var nicIpIndex = 0
+        var networkcheck = new Set()
         for (var nicId in this.nicsNetworksMapping) {
           if (!this.nicsNetworksMapping[nicId].network) {
             this.$notification.error({
@@ -1049,6 +1059,16 @@ export default {
           }
           params['nicnetworklist[' + nicNetworkIndex + '].nic'] = nicId
           params['nicnetworklist[' + nicNetworkIndex + '].network'] = this.nicsNetworksMapping[nicId].network
+          var netId = this.nicsNetworksMapping[nicId].network
+          if (!networkcheck.has(netId)) {
+            networkcheck.add(netId)
+          } else {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: 'Same network cannot be assigned to multiple Nics'
+            })
+            return
+          }
           nicNetworkIndex++
           if ('ipAddress' in this.nicsNetworksMapping[nicId]) {
             if (!this.nicsNetworksMapping[nicId].ipAddress) {
@@ -1062,6 +1082,9 @@ export default {
             params['nicipaddresslist[' + nicIpIndex + '].ip4Address'] = this.nicsNetworksMapping[nicId].ipAddress
             nicIpIndex++
           }
+        }
+        if (this.isExternalImport) {
+          return
         }
         this.updateLoading(true)
         const name = params.name
