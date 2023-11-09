@@ -838,6 +838,12 @@
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
+                                    <groupId>com.linbit.linstor.api</groupId>
+                                    <artifactId>java-linstor</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
                                     <artifactId>bctls-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
@@ -880,6 +886,7 @@
                                     <exclude>mysql:mysql-connector-java</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                     <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-linstor</exclude>
+                                    <exclude>com.linbit.linstor.api:java-linstor</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
