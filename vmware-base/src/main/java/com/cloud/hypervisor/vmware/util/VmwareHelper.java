@@ -839,7 +839,7 @@ public class VmwareHelper {
         return instance;
     }
 
-    private static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {
+    protected static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {
         List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
         VirtualDisk[] disks = null;
         try {
