@@ -3015,26 +3015,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
 
-        Filter searchFilter = new Filter(StoragePoolJoinVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+        Filter searchFilter = new Filter(StoragePoolVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
-        // search & count Pool details by ids
-        Pair<List<StoragePoolJoinVO>, Integer> uniquePoolPair = _poolJoinDao.searchAndCount(id, name, zoneId, path, pod,
+        Pair<List<Long>, Integer> uniquePoolPair = storagePoolDao.searchForIdsAndCount(id, name, zoneId, path, pod,
                 cluster, address, scopeType, status, keyword, searchFilter);
 
-        Integer count = uniquePoolPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniquePoolPair;
-        }
-        List<StoragePoolJoinVO> uniquePools = uniquePoolPair.first();
-        Long[] vrIds = new Long[uniquePools.size()];
-        int i = 0;
-        for (StoragePoolJoinVO v : uniquePools) {
-            vrIds[i++] = v.getId();
-        }
-        List<StoragePoolJoinVO> vrs = _poolJoinDao.searchByIds(vrIds);
-        return new Pair<List<StoragePoolJoinVO>, Integer>(vrs, count);
+        List<StoragePoolJoinVO> storagePools = _poolJoinDao.searchByIds(uniquePoolPair.first().toArray(new Long[0]));
 
+        return new Pair<>(storagePools, uniquePoolPair.second());
     }
 
     @Override
@@ -3685,7 +3673,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (cpuSpeed != null) {
             SearchCriteria<ServiceOfferingJoinVO> cpuSpeedSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
-            cpuSpeedSearchCriteria.addOr("speed", Op.NULL);
+        cpuSpeedSearchCriteria.addOr("speed", Op.NULL);
             cpuSpeedSearchCriteria.addOr("speed", Op.GTEQ, cpuSpeed);
             sc.addAnd("cpuspeedconstraints", SearchCriteria.Op.SC, cpuSpeedSearchCriteria);
         }

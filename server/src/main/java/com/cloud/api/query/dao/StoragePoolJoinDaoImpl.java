@@ -312,7 +312,9 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName, Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status, String keyword, Filter searchFilter) {
+    public Pair<List<StoragePoolJoinVO>, Integer> searchAndCount(Long storagePoolId, String storagePoolName,
+            Long zoneId, String path, Long podId, Long clusterId, String address, ScopeType scopeType,
+            StoragePoolStatus status, String keyword, Filter searchFilter) {
         SearchCriteria<StoragePoolJoinVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, address, scopeType, status, keyword);
         return searchAndCount(sc, searchFilter);
     }
