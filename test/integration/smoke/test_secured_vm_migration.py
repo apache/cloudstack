@@ -69,6 +69,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
         cls._cleanup = []
 
+        cls.hypervisorNotSupported = False
         if cls.hypervisor.lower() not in ["kvm"]:
             cls.hypervisorNotSupported = True
 

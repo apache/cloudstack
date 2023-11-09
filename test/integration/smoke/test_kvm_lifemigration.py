@@ -76,6 +76,7 @@ class TestKVMLiveMigration(cloudstackTestCase):
             0].__dict__
         cls.management_ip = cls.config.__dict__["mgtSvr"][0].__dict__["mgtSvrIp"]
 
+        cls.hypervisorNotSupported = False
         if cls.hypervisor.lower() not in ["kvm"]:
             cls.hypervisorNotSupported = True
 
