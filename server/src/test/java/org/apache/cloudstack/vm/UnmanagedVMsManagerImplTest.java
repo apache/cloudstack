@@ -57,6 +57,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -64,6 +65,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -77,6 +79,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
@@ -202,6 +205,8 @@ public class UnmanagedVMsManagerImplTest {
     private ImageStoreDao imageStoreDao;
     @Mock
     private DataStoreManager dataStoreManager;
+    @Mock
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -480,7 +485,12 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
     }
 
-    private void baseTestImportVmFromVmwareToKvm(boolean existingVcenter, boolean selectConvertHost, boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException {
+    private enum VcenterParameter {
+        EXISTING, EXTERNAL, BOTH, NONE, EXISTING_INVALID, AGENT_UNAVAILABLE, CONVERT_FAILURE
+    }
+
+    private void baseTestImportVmFromVmwareToKvm(VcenterParameter vcenterParameter, boolean selectConvertHost,
+                                                 boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException {
         long clusterId = 1L;
         long zoneId = 1L;
         long podId = 1L;
@@ -562,7 +572,7 @@ public class UnmanagedVMsManagerImplTest {
         when(primaryDataStoreDao.listPoolsByCluster(clusterId)).thenReturn(List.of(destPool));
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(List.of(destPool));
 
-        if (existingVcenter) {
+        if (VcenterParameter.EXISTING == vcenterParameter) {
             VmwareDatacenterVO datacenterVO = mock(VmwareDatacenterVO.class);
             when(datacenterVO.getVcenterHost()).thenReturn(vcenterHost);
             when(datacenterVO.getVmwareDatacenterName()).thenReturn(datacenter);
@@ -570,12 +580,30 @@ public class UnmanagedVMsManagerImplTest {
             when(datacenterVO.getPassword()).thenReturn(password);
             when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
             when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(datacenterVO);
+        } else if (VcenterParameter.EXTERNAL == vcenterParameter) {
+            when(importVmCmd.getVcenter()).thenReturn(vcenterHost);
+            when(importVmCmd.getDatacenterName()).thenReturn(datacenter);
+            when(importVmCmd.getUsername()).thenReturn(username);
+            when(importVmCmd.getPassword()).thenReturn(password);
+        }
+
+        if (VcenterParameter.BOTH == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
+            when(importVmCmd.getVcenter()).thenReturn(vcenterHost);
+        } else if (VcenterParameter.NONE == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(null);
+            when(importVmCmd.getVcenter()).thenReturn(null);
+        } else if (VcenterParameter.EXISTING_INVALID == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
+            when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(null);
         }
 
         ConvertInstanceAnswer answer = mock(ConvertInstanceAnswer.class);
-        when(answer.getResult()).thenReturn(true);
+        when(answer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
         when(answer.getConvertedInstance()).thenReturn(instance);
-        when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(answer);
+        if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(answer);
+        }
 
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importVm(importVmCmd);
@@ -586,16 +614,100 @@ public class UnmanagedVMsManagerImplTest {
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenter() throws OperationTimedoutException, AgentUnavailableException {
-        baseTestImportVmFromVmwareToKvm(true, false, false);
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, false, false);
     }
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException {
-        baseTestImportVmFromVmwareToKvm(true, true, false);
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, false);
     }
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException {
-        baseTestImportVmFromVmwareToKvm(true, true, true);
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, true);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterExclusiveParameters() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.BOTH, false, false);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterMissingParameters() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.NONE, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterInvalid() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING_INVALID, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterAgentUnavailable() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.AGENT_UNAVAILABLE, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterConvertFailure() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.CONVERT_FAILURE, false, false);
+    }
+
+    private ClusterVO getClusterForTests() {
+        ClusterVO cluster = mock(ClusterVO.class);
+        when(cluster.getId()).thenReturn(1L);
+        when(cluster.getDataCenterId()).thenReturn(1L);
+        return cluster;
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationInvalidStorage() {
+        ClusterVO cluster = getClusterForTests();
+
+        long poolId = 1L;
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationPoolInvalidScope() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+        Mockito.when(pool.getClusterId()).thenReturn(100L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationLocalStoragePoolInvalid() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.HOST);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        HostVO convertHost = Mockito.mock(HostVO.class);
+        Mockito.when(convertHost.getId()).thenReturn(1L);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, convertHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationStoragePoolInvalidType() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        Mockito.when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+        Mockito.when(pool.getClusterId()).thenReturn(1L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        HostVO convertHost = Mockito.mock(HostVO.class);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, poolId, convertHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationNoPoolAvailable() {
+        ClusterVO cluster = getClusterForTests();
+        Mockito.when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null);
     }
 }

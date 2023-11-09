@@ -1321,7 +1321,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return vmwareGuru.cloneHypervisorVMOutOfBand(sourceHostName, sourceVM, params);
     }
 
-    private UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
+    protected UserVm importUnmanagedInstanceFromVmwareToKvm(DataCenter zone, Cluster destinationCluster, VMTemplateVO template,
                                                           String sourceVM, String displayName, String hostName,
                                                           Account caller, Account owner, long userId,
                                                           ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
@@ -1582,7 +1582,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(msg);
     }
 
-    private DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster, Long convertStoragePoolId, HostVO convertHost) {
+    protected DataStoreTO selectInstanceConversionTemporaryLocation(Cluster destinationCluster, Long convertStoragePoolId, HostVO convertHost) {
         if (convertStoragePoolId != null) {
             StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
             if (selectedStoragePool == null) {
