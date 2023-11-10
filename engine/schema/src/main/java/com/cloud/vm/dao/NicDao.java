@@ -81,6 +81,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     int countNicsForNonStoppedVms(long networkId);
 
+    int countNicsForNonStoppedRunningVrs(long networkId);
+
     NicVO getControlNicForVM(long vmId);
 
     Long getPeerRouterId(String publicMacAddress, long routerId);

@@ -93,6 +93,8 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
 
         CountByForNonStoppedVms = createSearchBuilder(Integer.class);
         CountByForNonStoppedVms.select(null, Func.COUNT, CountByForNonStoppedVms.entity().getId());
+        CountByForNonStoppedVms.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
+        CountByForNonStoppedVms.and("vmTypeNEQ", AllFieldsSearch.entity().getVmType(), Op.NEQ);
         CountByForNonStoppedVms.and("networkId", CountByForNonStoppedVms.entity().getNetworkId(), Op.EQ);
         CountByForNonStoppedVms.and("removed", CountByForNonStoppedVms.entity().getRemoved(), Op.NULL);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
@@ -341,7 +343,18 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     public int countNicsForNonStoppedVms(long networkId) {
         SearchCriteria<Integer> sc = CountByForNonStoppedVms.create();
         sc.setParameters("networkId", networkId);
+        sc.setParameters("vmType", VirtualMachine.Type.User);
         sc.setJoinParameters("vm", "state", new Object[] {VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating});
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+    @Override
+    public int countNicsForNonStoppedRunningVrs(long networkId) {
+        SearchCriteria<Integer> sc = CountByForNonStoppedVms.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("vmTypeNEQ", VirtualMachine.Type.User);
+        sc.setJoinParameters("vm", "state", new Object[] {VirtualMachine.State.Starting, VirtualMachine.State.Stopping, VirtualMachine.State.Migrating});
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
     }
