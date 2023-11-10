@@ -3184,12 +3184,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
         }
 
-        if (storageType != null) {
-            Boolean isLocalStorageType = getStorageType(storageType);
-            if (isLocalStorageType != null) {
-                sc.addAnd("useLocalStorage", Op.EQ, isLocalStorageType);
-            }
-        }
+        useStorageType(sc, storageType);
 
         if (zoneId != null) {
             SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
@@ -3270,13 +3265,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<>(result.first(), result.second());
     }
 
-    private Boolean getStorageType(String storageType) {
-        if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
-            return true;
-        } else if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
-            return false;
+    private void useStorageType(SearchCriteria<?> sc, String storageType) {
+        if (storageType != null) {
+            if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+
+            } else if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
+                sc.addAnd("useLocalStorage", Op.EQ, false);
+            }
         }
-        return null;
     }
 
     private List<Long> findRelatedDomainIds(Domain domain, boolean isRecursive) {
@@ -3452,12 +3449,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("vmType", SearchCriteria.Op.EQ, vmTypeStr);
         }
 
-        if (storageType != null) {
-            Boolean isLocalStorageType = getStorageType(storageType);
-            if (isLocalStorageType != null) {
-                sc.addAnd("useLocalStorage", Op.EQ, isLocalStorageType);
-            }
-        }
+        useStorageType(sc, storageType);
 
         if (zoneId != null) {
             SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
@@ -3567,6 +3559,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
+
 
     @Override
     public ListResponse<ZoneResponse> listDataCenters(ListZonesCmd cmd) {
