@@ -2584,7 +2584,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
                     StringBuilder domainPath = new StringBuilder();
-                    if(ObjectUtils.isEmpty(domain.getPath())){
+                    if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
                         domainPath.append("/");
                     }
                     else{
@@ -2603,7 +2603,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
                 StringBuilder domainPath = new StringBuilder();
-                if(ObjectUtils.isEmpty(domain.getPath())){
+                if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
                     domainPath.append("/");
                 }
                 else{
@@ -2859,7 +2859,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
         StringBuilder domainPath = new StringBuilder();
-        if(ObjectUtils.isEmpty(domain.getPath())){
+        if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
             domainPath.append("/");
         }
         else{
