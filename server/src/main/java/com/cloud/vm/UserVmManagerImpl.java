@@ -4487,19 +4487,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm.setDisplayVm(true);
         }
 
-        if (isImport) {
-            vm.setDataCenterId(zone.getId());
-            if (hypervisorType == HypervisorType.VMware) {
-                vm.setHostId(host.getId());
-            }
-            if (lastHost != null) {
-                vm.setLastHostId(lastHost.getId());
-            }
-            vm.setPowerState(powerState);
-            if (powerState == VirtualMachine.PowerState.PowerOn) {
-                vm.setState(State.Running);
-            }
-        }
+        setVmRequiredFieldsForImport(isImport, vm, zone, hypervisorType, host, lastHost, powerState);
 
         vm.setUserVmType(vmType);
         _vmDao.persist(vm);
@@ -4585,6 +4573,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             resourceCountIncrement(accountId, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
         return vm;
+    }
+
+    protected void setVmRequiredFieldsForImport(boolean isImport, UserVmVO vm, DataCenter zone, HypervisorType hypervisorType,
+                                                Host host, Host lastHost, VirtualMachine.PowerState powerState) {
+        if (isImport) {
+            vm.setDataCenterId(zone.getId());
+            if (hypervisorType == HypervisorType.VMware) {
+                vm.setHostId(host.getId());
+            }
+            if (lastHost != null) {
+                vm.setLastHostId(lastHost.getId());
+            }
+            vm.setPowerState(powerState);
+            if (powerState == VirtualMachine.PowerState.PowerOn) {
+                vm.setState(State.Running);
+            }
+        }
     }
 
     private void updateVMDiskController(UserVmVO vm, Map<String, String> customParameters, GuestOSVO guestOS) {

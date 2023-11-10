@@ -317,7 +317,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return new Pair<>(sourceHostIp, sourcePath);
     }
 
-    private boolean performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
+    protected boolean performInstanceConversion(String convertInstanceUrl, String sourceInstanceName,
                                               String temporaryPasswordFilePath,
                                               String temporaryConvertFolder,
                                               String temporaryConvertUuid,
