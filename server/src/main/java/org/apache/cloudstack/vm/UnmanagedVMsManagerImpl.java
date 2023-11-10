@@ -741,6 +741,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         copyRemoteVolumeCommand.setStorageFilerTO(storageTO);
         if(tmpPath == null) {
             tmpPath = "/tmp/";
+        } else {
+            // Add / if path doesn't end with /
+            if(tmpPath.charAt(tmpPath.length() - 1) != '/') {
+                tmpPath += "/";
+            }
         }
         copyRemoteVolumeCommand.setTempPath(tmpPath);
         Answer answer = agentManager.easySend(dest.getHost().getId(), copyRemoteVolumeCommand);
