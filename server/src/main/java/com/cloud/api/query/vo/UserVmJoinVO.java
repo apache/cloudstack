@@ -16,19 +16,7 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Map;
-
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
@@ -42,9 +30,22 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import java.net.URI;
+import java.util.Date;
+import java.util.Map;
+
 @Entity
 @Table(name = "user_vm_view")
-@AttributeOverride( name="id", column = @Column(name = "id", updatable = false, nullable = false) )
+@AttributeOverride(name = "id", column = @Column(name = "id", updatable = false, nullable = false))
 public class UserVmJoinVO extends BaseViewWithTagInformationVO implements ControlledViewEntity {
 
     @Id
@@ -113,7 +114,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="update_time")
+    @Column(name = "update_time")
     private Date lastUpdated;
 
     @Column(name = "instance_name", updatable = true, nullable = false)
@@ -256,7 +257,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String poolUuid;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = StoragePoolTypeConverter.class)
     private StoragePoolType poolType;
 
     @Column(name = "volume_id")
