@@ -365,7 +365,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.vnf.nics')"
+                :title="$t('label.vnf.nic.mappings')"
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="showVnfNicsSection">
                 <template #description>
@@ -1906,7 +1906,6 @@ export default {
       }
     },
     updateDefaultNetworks (id) {
-      this.defaultnetworkid = id
       this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
