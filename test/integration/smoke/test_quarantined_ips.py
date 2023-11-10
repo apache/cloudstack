@@ -155,7 +155,7 @@ class TestQuarantineIPs(cloudstackTestCase):
         self.assertIsNotNone(public_ip, "Failed to Associate IP Address")
         self.assertEqual(public_ip.ipaddress.ipaddress, ip_address, "Associated IP is not same as specified")
 
-        self.debug(f"Disassociating public IP {public_ip}.")
+        self.debug(f"Disassociating public IP {public_ip.ipaddress.ipaddress}.")
         public_ip.delete(self.domain_admin_apiclient)
 
         # Creating Root Admin VPC
@@ -204,7 +204,7 @@ class TestQuarantineIPs(cloudstackTestCase):
         self.assertIsNotNone(public_ip, "Failed to Associate IP Address")
         self.assertEqual(public_ip.ipaddress.ipaddress, ip_address, "Associated IP is not same as specified")
 
-        self.debug(f"Disassociating public IP {public_ip}.")
+        self.debug(f"Disassociating public IP {public_ip.ipaddress.ipaddress}.")
         public_ip.delete(self.domain_admin_apiclient)
 
         # Creating Root Admin VPC
@@ -251,7 +251,7 @@ class TestQuarantineIPs(cloudstackTestCase):
         self.assertIsNotNone(public_ip, "Failed to Associate IP Address")
         self.assertEqual(public_ip.ipaddress.ipaddress, ip_address, "Associated IP is not same as specified")
 
-        self.debug(f"Disassociating public IP {public_ip}.")
+        self.debug(f"Disassociating public IP {public_ip.ipaddress.ipaddress}.")
         public_ip.delete(self.domain_admin_apiclient)
 
         # Creating Root Admin network
@@ -307,7 +307,7 @@ class TestQuarantineIPs(cloudstackTestCase):
         self.assertIsNotNone(public_ip, "Failed to Associate IP Address")
         self.assertEqual(public_ip.ipaddress.ipaddress, ip_address, "Associated IP is not same as specified")
 
-        self.debug(f"Disassociating public IP {public_ip}.")
+        self.debug(f"Disassociating public IP {public_ip.ipaddress.ipaddress}.")
         public_ip.delete(self.domain_admin_apiclient)
 
         # Creating Root Admin VPC
