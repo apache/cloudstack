@@ -933,6 +933,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO newParentDomain = returnDomainIfExistsAndIsActive(idOfNewParentDomain);
         s_logger.debug(String.format("Found the domain [%s] as the new parent domain of the domain to be moved [%s].", newParentDomain, domainToBeMoved));
 
+        Account caller = getCaller();
+        _accountMgr.checkAccess(caller, domainToBeMoved);
+        _accountMgr.checkAccess(caller, newParentDomain);
+
         Long idOfCurrentParentOfDomainToBeMoved = domainToBeMoved.getParent();
         if (idOfCurrentParentOfDomainToBeMoved.equals(idOfNewParentDomain)) {
             throw new InvalidParameterValueException(String.format("The current parent domain of the domain to be moved is equal to the new parent domain [%s].", newParentDomain));

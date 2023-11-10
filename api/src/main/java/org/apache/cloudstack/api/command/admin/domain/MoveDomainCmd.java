@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 
 import java.util.Objects;
 
-@APICommand(name = "moveDomain", description = "Moves a domain and its children to a new parent domain.", responseObject = DomainResponse.class,
+@APICommand(name = "moveDomain", description = "Moves a domain and its children to a new parent domain.", since = "4.19.0.0", responseObject = DomainResponse.class,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class MoveDomainCmd extends BaseCmd {
 
@@ -38,8 +38,8 @@ public class MoveDomainCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The ID of the domain to be moved.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PARENT_DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "The ID of the new parent domain of the domain to be moved. If no parent domain is specified, the ROOT domain is assumed.")
+    @Parameter(name = ApiConstants.PARENT_DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class,
+            description = "The ID of the new parent domain of the domain to be moved.")
     private Long parentDomainId;
 
     public Long getDomainId() {
@@ -47,7 +47,7 @@ public class MoveDomainCmd extends BaseCmd {
     }
 
     public Long getParentDomainId() {
-        return Objects.requireNonNullElse(parentDomainId, Domain.ROOT_DOMAIN);
+        return parentDomainId;
     }
 
     @Override

@@ -18,14 +18,14 @@ package com.cloud.user;
 
 import java.util.List;
 
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
+import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.command.admin.domain.MoveDomainCmd;
 
 public interface DomainService {
 
