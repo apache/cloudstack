@@ -258,7 +258,7 @@ public interface GenericDao<T, ID extends Serializable> {
 
     public T findOneBy(final SearchCriteria<T> sc);
 
-    T findOneIncludingRemovedBy(SearchCriteria<T> sc, Filter filter);
+    T findOneBy(SearchCriteria<T> sc, Filter filter);
 
     /**
      * @return

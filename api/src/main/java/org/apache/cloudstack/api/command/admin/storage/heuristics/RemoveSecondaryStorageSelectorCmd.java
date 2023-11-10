@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
-@APICommand(name = "removeSecondaryStorageSelector", description = "Removes an existing secondary storage selector.", responseObject = SecondaryStorageHeuristicsResponse.class,
-        requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+@APICommand(name = "removeSecondaryStorageSelector", description = "Removes an existing secondary storage selector.", since = "4.19.0", responseObject =
+        SecondaryStorageHeuristicsResponse.class, requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class RemoveSecondaryStorageSelectorCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = SecondaryStorageHeuristicsResponse.class, required = true,
             description = "The unique identifier of the secondary storage selector to be removed.")

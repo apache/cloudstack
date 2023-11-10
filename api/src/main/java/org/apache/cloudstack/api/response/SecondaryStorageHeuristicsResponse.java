@@ -62,8 +62,17 @@ public class SecondaryStorageHeuristicsResponse extends BaseResponse {
     @Param(description = "When the heuristic was removed.")
     private Date removed;
 
-    public SecondaryStorageHeuristicsResponse() {
+
+    public SecondaryStorageHeuristicsResponse(String id, String name, String description, String zoneId, String purpose, String heuristicRule, Date created, Date removed) {
         super("heuristics");
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.zoneId = zoneId;
+        this.purpose = purpose;
+        this.heuristicRule = heuristicRule;
+        this.created = created;
+        this.removed = removed;
     }
 
     public String getId() {

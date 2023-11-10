@@ -1924,7 +1924,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         validateHeuristicRule(heuristicRule);
 
-        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedPurpose.toString(), heuristicRule, new Date(), null);
+        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedPurpose.toString(), heuristicRule);
         return secondaryStorageHeuristicDao.persist(heuristicVO);
     }
 
@@ -1948,7 +1948,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (heuristicVO != null) {
             secondaryStorageHeuristicDao.remove(heuristicId);
         } else {
-            throw new CloudRuntimeException(String.format("Unable to find an active heuristic with the specified UUID."));
+            throw new CloudRuntimeException("Unable to find an active heuristic with the specified UUID.");
         }
     }
 

@@ -45,6 +45,6 @@ public class SecondaryStorageHeuristicDaoImpl extends GenericDaoBase<HeuristicVO
         searchCriteria.setParameters("purpose", purpose.toString());
         final Filter filter = new Filter(HeuristicVO.class, "created", false);
 
-        return findOneIncludingRemovedBy(searchCriteria, filter);
+        return findOneBy(searchCriteria, filter);
     }
 }

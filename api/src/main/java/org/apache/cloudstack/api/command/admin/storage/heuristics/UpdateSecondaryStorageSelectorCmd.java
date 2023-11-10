@@ -27,15 +27,16 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
-@APICommand(name = "updateSecondaryStorageSelector", description = "Updates an existing secondary storage selector.", responseObject = SecondaryStorageHeuristicsResponse.class,
-        requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+@APICommand(name = "updateSecondaryStorageSelector", description = "Updates an existing secondary storage selector.", since = "4.19.0", responseObject =
+        SecondaryStorageHeuristicsResponse.class, requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class UpdateSecondaryStorageSelectorCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = SecondaryStorageHeuristicsResponse.class, required = true,
             description = "The unique identifier of the secondary storage selector.")
     private Long id;
 
     @Parameter(name = ApiConstants.HEURISTIC_RULE, required = true, type = BaseCmd.CommandType.STRING, description = "The heuristic rule, in JavaScript language. It is required " +
-            "that it returns the UUID of a secondary storage pool.", length = 65535)
+            "that it returns the UUID of a secondary storage pool. An example of a rule is `if (snapshot.hypervisorType === 'KVM') { '7832f261-c602-4e8e-8580-2496ffbbc45d'; " +
+            "}` would allocate all snapshots with the KVM hypervisor to the specified secondary storage UUID.", length = 65535)
     private String heuristicRule;
 
     public Long getId() {

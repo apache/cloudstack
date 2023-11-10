@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-public class Account extends GenericHeuristicPresetVariable{
+public class Account extends GenericHeuristicPresetVariable {
     private String id;
 
     private Domain domain;

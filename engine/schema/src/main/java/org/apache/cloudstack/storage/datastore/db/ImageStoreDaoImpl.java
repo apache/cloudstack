@@ -203,7 +203,7 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     @Override
     public List<ImageStoreVO> listImageStoresByZoneIds(Long... zoneIds) {
         SearchCriteria<ImageStoreVO> sc = zonesInSearch.create();
-        sc.setParametersIfNotNull("zonesIn" ,zoneIds);
+        sc.setParametersIfNotNull("zonesIn", zoneIds);
         return listBy(sc);
     }
 }

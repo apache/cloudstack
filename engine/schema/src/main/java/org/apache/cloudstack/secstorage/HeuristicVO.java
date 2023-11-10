@@ -68,14 +68,12 @@ public class HeuristicVO implements Heuristic {
     public HeuristicVO() {
     }
 
-    public HeuristicVO(String name, String description, Long zoneId, String purpose, String heuristicRule, Date created, Date removed) {
+    public HeuristicVO(String name, String description, Long zoneId, String purpose, String heuristicRule) {
         this.name = name;
         this.description = description;
         this.zoneId = zoneId;
         this.purpose = purpose;
         this.heuristicRule = heuristicRule;
-        this.created = created;
-        this.removed = removed;
     }
 
     @Override

@@ -262,7 +262,7 @@ public class MockUsageEventDao implements UsageEventDao{
     }
 
     @Override
-    public UsageEventVO findOneIncludingRemovedBy(SearchCriteria<UsageEventVO> sc, Filter filter) {
+    public UsageEventVO findOneBy(SearchCriteria<UsageEventVO> sc, Filter filter) {
         return null;
     }
 

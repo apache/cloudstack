@@ -28,8 +28,8 @@ import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
 import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_PURPOSE_VALID_OPTIONS;
 
-@APICommand(name = "listSecondaryStorageSelectors", description = "Lists the secondary storage selectors and their rules.", responseObject = SecondaryStorageHeuristicsResponse.class,
-        requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
+@APICommand(name = "listSecondaryStorageSelectors", description = "Lists the secondary storage selectors and their rules.", since = "4.19.0", responseObject =
+        SecondaryStorageHeuristicsResponse.class, requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class ListSecondaryStorageSelectorsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ZONE_ID, required = true, entityType = ZoneResponse.class, type = CommandType.UUID, description = "The zone ID to be used in the search filter.")
