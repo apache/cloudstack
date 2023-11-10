@@ -93,8 +93,8 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
 
         CountByForNonStoppedVms = createSearchBuilder(Integer.class);
         CountByForNonStoppedVms.select(null, Func.COUNT, CountByForNonStoppedVms.entity().getId());
-        CountByForNonStoppedVms.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
-        CountByForNonStoppedVms.and("vmTypeNEQ", AllFieldsSearch.entity().getVmType(), Op.NEQ);
+        CountByForNonStoppedVms.and("vmType", CountByForNonStoppedVms.entity().getVmType(), Op.EQ);
+        CountByForNonStoppedVms.and("vmTypeNEQ", CountByForNonStoppedVms.entity().getVmType(), Op.NEQ);
         CountByForNonStoppedVms.and("networkId", CountByForNonStoppedVms.entity().getNetworkId(), Op.EQ);
         CountByForNonStoppedVms.and("removed", CountByForNonStoppedVms.entity().getRemoved(), Op.NULL);
         SearchBuilder<VMInstanceVO> join1 = _vmDao.createSearchBuilder();
