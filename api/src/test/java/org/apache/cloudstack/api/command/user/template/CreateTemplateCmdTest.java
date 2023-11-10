@@ -37,4 +37,12 @@ public class CreateTemplateCmdTest {
         ReflectionTestUtils.setField(cmd, "domainId", id);
         Assert.assertEquals(id, cmd.getDomainId());
     }
+
+    @Test
+    public void testGetAccountName() {
+        final CreateTemplateCmd cmd = new CreateTemplateCmd();
+        String accountName = "user1";
+        ReflectionTestUtils.setField(cmd, "accountName", accountName);
+        Assert.assertEquals(accountName, cmd.getAccountName());
+    }
 }
