@@ -68,7 +68,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     List<PluggableService> _services = null;
     protected static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
 
-    List<String> quotaCmdList;
+    private List<String> quotaCmdList;
 
     @Inject
     AccountService accountService;
@@ -271,7 +271,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
                 return null;
 
-            if (accountNotAdminAndQuotaEnabledAndQuotaAccountNotEnabledAndApiNameInQuotaCmdList(user, name, account))
+            if (isAccountNotAdminAndQuotaEnabledAndQuotaAccountNotEnabledAndApiNameInQuotaCmdList(user, name, account))
                 return null;
 
             for (APIChecker apiChecker : _apiAccessCheckers) {
@@ -317,13 +317,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         }
     }
 
-    private boolean accountNotAdminAndQuotaEnabledAndQuotaAccountNotEnabledAndApiNameInQuotaCmdList(User user, String name, Account account) {
-        if (account.getType() != Account.Type.ADMIN && PluginAccessConfigs.QuotaPluginEnabled.value() &&
-            !PluginAccessConfigs.QuotaAccountEnabled.valueIn(user.getAccountId()) && quotaCmdList.parallelStream().anyMatch(name::equalsIgnoreCase)) {
-
-            return true;
-        }
-        return false;
+    private boolean isAccountNotAdminAndQuotaEnabledAndQuotaAccountNotEnabledAndApiNameInQuotaCmdList(User user, String name, Account account) {
+        return account.getType() != Account.Type.ADMIN && PluginAccessConfigs.QuotaPluginEnabled.value() &&
+                !PluginAccessConfigs.QuotaAccountEnabled.valueIn(user.getAccountId()) && quotaCmdList.parallelStream().anyMatch(name::equalsIgnoreCase);
     }
 
     @Override
