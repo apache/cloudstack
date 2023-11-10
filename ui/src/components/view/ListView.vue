@@ -38,7 +38,7 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <template v-if="column.key === 'name'">
+      <template v-if="['name', 'provider'].includes(column.key) ">
         <span v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
@@ -50,7 +50,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
+            :enabled="quickViewEnabled() && actions.length > 0 && columns && ['name', 'provider'].includes(columns[0].dataIndex)"
             @exec-action="$parent.execAction"/>
           <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
             <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
@@ -170,7 +170,10 @@
         <router-link :to="{ path: '/volume/' + record.volumeid }">{{ text }}</router-link>
       </template>
       <template v-if="column.key === 'size'">
-        <span v-if="text">
+        <span v-if="text && $route.path === '/kubernetes'">
+          {{ text }}
+        </span>
+        <span v-else-if="text">
           {{ parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) }} GiB
         </span>
       </template>
@@ -187,89 +190,88 @@
       </template>
       <template v-if="column.key === 'hypervisor'">
         <span v-if="$route.name === 'hypervisorcapability'">
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      </span>
-      <span v-else-if="$route.name === 'guestoshypervisormapping'">
-        <QuickView
-          style="margin-left: 5px"
-          :actions="actions"
-          :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
-          @exec-action="$parent.execAction"/>
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      </span>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-if="column.key === 'osname'">
-      <span v-if="$route.name === 'guestos'">
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      </span>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-if="column.key === 'state'">
-      <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
-      <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
-    </template>
-    <template v-if="column.key === 'status'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'allocationstate'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'resourcestate'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'powerstate'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'agentstate'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'quotastate'">
-      <status :text="text ? text : ''" displayText />
-    </template>
-    <template v-if="column.key === 'vlan'">
-      <a href="javascript:;">
-        <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
-      </a>
-    </template>
-    <template v-if="column.key === 'guestnetworkname'">
-      <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
-    </template>
-    <template v-if="column.key === 'associatednetworkname'">
-      <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
-    </template>
-    <template v-if="column.key === 'vpcname'">
-      <a v-if="record.vpcid">
-        <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
-      </a>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-if="column.key === 'hostname'">
-      <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
-      <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-if="column.key === 'storage'">
-      <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
-    </template>
-    <template v-for="(value, name) in thresholdMapping" :key="name">
-      <template v-if="column.key === name">
-        <span>
-          <span v-if="record[value.disable]" class="alert-disable-threshold">
-            {{ text }}
-          </span>
-          <span v-else-if="record[value.notification]" class="alert-notification-threshold">
-            {{ text }}
-          </span>
-          <span style="padding: 10%;" v-else>
-            {{ text }}
-          </span>
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
         </span>
+        <span v-else-if="$route.name === 'guestoshypervisormapping'">
+          <QuickView
+            style="margin-left: 5px"
+            :actions="actions"
+            :resource="record"
+            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
+            @exec-action="$parent.execAction"/>
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
       </template>
-    </template>
-
+      <template v-if="column.key === 'osname'">
+        <span v-if="$route.name === 'guestos'">
+          <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        </span>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'state'">
+        <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
+        <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
+      </template>
+      <template v-if="column.key === 'status'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'allocationstate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'resourcestate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'powerstate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'agentstate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'quotastate'">
+        <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'vlan'">
+        <a href="javascript:;">
+          <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
+        </a>
+      </template>
+      <template v-if="column.key === 'guestnetworkname'">
+        <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
+      </template>
+      <template v-if="column.key === 'associatednetworkname'">
+        <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
+      </template>
+      <template v-if="column.key === 'vpcname'">
+        <a v-if="record.vpcid">
+          <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
+        </a>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'hostname'">
+        <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
+        <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'storage'">
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-for="(value, name) in thresholdMapping" :key="name">
+        <template v-if="column.key === name">
+          <span>
+            <span v-if="record[value.disable]" class="alert-disable-threshold">
+              {{ text }}
+            </span>
+            <span v-else-if="record[value.notification]" class="alert-notification-threshold">
+              {{ text }}
+            </span>
+            <span style="padding: 10%;" v-else>
+              {{ text }}
+            </span>
+          </span>
+        </template>
+      </template>
       <template v-if="column.key === 'level'">
         <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
       </template>
@@ -586,7 +588,7 @@ export default {
         '/project', '/account',
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/guestos', '/guestoshypervisormapping'].join('|'))
+        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

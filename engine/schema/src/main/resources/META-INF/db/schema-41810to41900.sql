@@ -195,6 +195,26 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
 
+-- Add indexes for data store browser
+ALTER TABLE `cloud`.`template_spool_ref` ADD INDEX `i_template_spool_ref__install_path`(`install_path`);
+ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__path`(`path`);
+ALTER TABLE `cloud`.`snapshot_store_ref` ADD INDEX `i_snapshot_store_ref__install_path`(`install_path`);
+ALTER TABLE `cloud`.`template_store_ref` ADD INDEX `i_template_store_ref__install_path`(`install_path`);
+
+-- Add table for image store object download
+DROP TABLE IF EXISTS `cloud`.`image_store_object_download`;
+CREATE TABLE `cloud`.`image_store_object_download` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'image store id',
+  `path` varchar(255) NOT NULL COMMENT 'path on store',
+  `download_url` varchar(255) NOT NULL COMMENT 'download url',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`store_id`, `path`),
+  INDEX `i_image_store_object_download__created`(`created`),
+  CONSTRAINT `fk_image_store_object_download__store_id` FOREIGN KEY (`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Set removed state for all removed accounts
 UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
 
@@ -571,3 +591,31 @@ CREATE VIEW `cloud`.`snapshot_view` AS
              OR (`snapshot_zone_ref`.`zone_id` = `data_center`.`id`))))
          LEFT JOIN `resource_tags` ON ((`resource_tags`.`resource_id` = `snapshots`.`id`)
              AND (`resource_tags`.`resource_type` = 'Snapshot')));
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2'),
+    `default_value` = concat(`default_value`, ',OAUTH2'),
+    `value` = concat(`value`, ',OAUTH2')
+WHERE `name` = 'user.authenticators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2Auth'),
+    `default_value` = concat(`default_value`, ',OAUTH2Auth'),
+    `value` = concat(`value`, ',OAUTH2Auth')
+where `name` = 'pluggableApi.authenticators.order' ;
+
+-- Create table for OAuth provider details
+DROP TABLE IF EXISTS `cloud`.`oauth_provider`;
+CREATE TABLE `cloud`.`oauth_provider` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'unique identifier',
+  `description` varchar(1024) COMMENT 'description of the provider',
+  `provider` varchar(40) NOT NULL COMMENT 'name of the provider',
+  `client_id` varchar(255) NOT NULL COMMENT 'client id which is configured in the provider',
+  `secret_key` varchar(255) NOT NULL COMMENT 'secret key which is configured in the provider',
+  `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
+  `enabled` int(1) NOT NULL DEFAULT 1 COMMENT 'Enabled or disabled',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

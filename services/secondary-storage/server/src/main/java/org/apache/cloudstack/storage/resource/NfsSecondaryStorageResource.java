@@ -68,6 +68,7 @@ import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.template.DownloadManager;
@@ -322,11 +323,17 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((CreateDatadiskTemplateCommand)cmd);
         } else if (cmd instanceof MoveVolumeCommand) {
             return execute((MoveVolumeCommand)cmd);
+        } else if (cmd instanceof ListDataStoreObjectsCommand) {
+            return execute((ListDataStoreObjectsCommand)cmd);
         } else if (cmd instanceof QuerySnapshotZoneCopyCommand) {
             return execute((QuerySnapshotZoneCopyCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+    private Answer execute(ListDataStoreObjectsCommand cmd) {
+        return listFilesAtPath(getRootDir(cmd.getStore().getUrl(), _nfsVersion), cmd.getPath(), cmd.getStartIndex(), cmd.getPageSize());
     }
 
     private Answer execute(HandleConfigDriveIsoCommand cmd) {
