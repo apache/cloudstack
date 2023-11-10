@@ -1086,9 +1086,6 @@ export default {
             nicIpIndex++
           }
         }
-        if (this.isExternalImport) {
-          return
-        }
         this.updateLoading(true)
         const name = params.name
         return new Promise((resolve, reject) => {
