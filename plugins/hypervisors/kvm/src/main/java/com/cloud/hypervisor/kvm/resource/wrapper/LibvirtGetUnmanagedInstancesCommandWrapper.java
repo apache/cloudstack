@@ -64,11 +64,12 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
-            throw new CloudRuntimeException("GetUnmanagedInstancesCommand failed due to " + e.getMessage());
+            String err = String.format("Error listing unmanaged instances: %s", e.getMessage());
+            LOGGER.error(err, e);
+            return new GetUnmanagedInstancesAnswer(command, err);
         }
 
-        return new GetUnmanagedInstancesAnswer(command, "True", unmanagedInstances);
+        return new GetUnmanagedInstancesAnswer(command, "OK", unmanagedInstances);
     }
 
     private List<Domain> getDomains(GetUnmanagedInstancesCommand command,
@@ -79,8 +80,9 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
         if (StringUtils.isNotBlank(vmNameCmd)) {
             final Domain domain = libvirtComputingResource.getDomain(conn, vmNameCmd);
             if (domain == null) {
-                LOGGER.error("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
-                throw new CloudRuntimeException("GetUnmanagedInstancesCommand: vm not found " + vmNameCmd);
+                String msg = String.format("VM %s not found", vmNameCmd);
+                LOGGER.error(msg);
+                throw new CloudRuntimeException(msg);
             }
 
             checkIfVmExists(vmNameCmd,domain);

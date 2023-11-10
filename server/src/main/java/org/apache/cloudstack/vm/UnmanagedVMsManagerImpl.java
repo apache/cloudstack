@@ -1170,7 +1170,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         command.setInstanceName(instanceName);
         command.setManagedInstancesNames(managedVms);
         Answer answer = agentManager.easySend(host.getId(), command);
-        if (!(answer instanceof GetUnmanagedInstancesAnswer)) {
+        if (!(answer instanceof GetUnmanagedInstancesAnswer) || !answer.getResult()) {
             return unmanagedInstances;
         }
         GetUnmanagedInstancesAnswer unmanagedInstancesAnswer = (GetUnmanagedInstancesAnswer) answer;

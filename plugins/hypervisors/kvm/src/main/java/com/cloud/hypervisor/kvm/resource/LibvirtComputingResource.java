@@ -3703,15 +3703,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @return Pair with IP of host and path
      */
     public Pair<String, String> getSourceHostPath(String diskPath) {
-        String sourceHostIp = null, sourcePath = null;
+        String sourceHostIp = null;
+        String sourcePath = null;
         try {
             String mountResult = Script.runSimpleBashScript("mount | grep \"" + diskPath + "\"");
             s_logger.debug("Got mount result for " + diskPath + "\n\n" + mountResult);
             if (StringUtils.isNotEmpty(mountResult)) {
                 String[] res = mountResult.strip().split(" ");
-                res = res[0].split(":");
-                sourceHostIp = res[0].strip();
-                sourcePath = res[1].strip();
+                if (res[0].contains(":")) {
+                    res = res[0].split(":");
+                    sourceHostIp = res[0].strip();
+                    sourcePath = res[1].strip();
+                } else {
+                    // Assume local storage
+                    sourceHostIp = getPrivateIp();
+                    sourcePath = diskPath;
+                }
             }
             if (StringUtils.isNotEmpty(sourceHostIp) && StringUtils.isNotEmpty(sourcePath)) {
                 return new Pair<>(sourceHostIp, sourcePath);
