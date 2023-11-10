@@ -2583,9 +2583,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
-
-                    StringBuilder domainPath = new StringBuilder("ROOT");
-                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                    StringBuilder domainPath = new StringBuilder();
+                    if(!ObjectUtils.isEmpty(domain.getPath())){
+                        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                    }
                     response.setDomainPath(domainPath.toString());
                 }
             }
@@ -2598,8 +2599,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
-                StringBuilder domainPath = new StringBuilder("ROOT");
-                (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                StringBuilder domainPath = new StringBuilder();
+                if(!ObjectUtils.isEmpty(domain.getPath())){
+                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+                }
                 response.setDomainPath(domainPath.toString());
             }
 
@@ -2849,8 +2852,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
-        StringBuilder domainPath = new StringBuilder("ROOT");
-        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+        StringBuilder domainPath = new StringBuilder();
+        if(!ObjectUtils.isEmpty(domain.getPath())){
+            (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
+        }
         response.setDomainPath(domainPath.toString());
     }
 
