@@ -16,6 +16,7 @@
 // under the License.
 
 package org.apache.cloudstack.network.contrail.model;
+
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -49,20 +50,13 @@ public class VMInterfaceModelTest extends TestCase {
 
         String uuid;
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
-        ModelController controller      = mock(ModelController.class);
+        ModelController controller = mock(ModelController.class);
         ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("testnetwork");
-        when(network.getState()).thenReturn(Network.State.Implemented);
-        when(network.getGateway()).thenReturn("10.1.1.1");
-        when(network.getCidr()).thenReturn("10.1.1.0/24");
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
-        when(network.getDomainId()).thenReturn(10L);
-        when(network.getAccountId()).thenReturn(42L);
+        NetworkVO network = MockNetworkVO.getNetwork(Network.State.Implemented);
         NetworkDao networkDao = mock(NetworkDao.class);
         when(networkDao.findById(anyLong())).thenReturn(network);
         when(controller.getNetworkDao()).thenReturn(networkDao);
@@ -85,7 +79,7 @@ public class VMInterfaceModelTest extends TestCase {
         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         when(vm.getDomainId()).thenReturn(10L);
         when(vm.getAccountId()).thenReturn(42L);
-        UserVmDao VmDao      = mock(UserVmDao.class);
+        UserVmDao VmDao = mock(UserVmDao.class);
         when(VmDao.findById(anyLong())).thenReturn(null);
         when(controller.getVmDao()).thenReturn(VmDao);
 

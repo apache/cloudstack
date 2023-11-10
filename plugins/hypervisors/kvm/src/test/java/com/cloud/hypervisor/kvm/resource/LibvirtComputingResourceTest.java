@@ -174,7 +174,7 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ClockDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
@@ -3346,8 +3346,8 @@ public class LibvirtComputingResourceTest {
 
         final KVMHAMonitor monitor = Mockito.mock(KVMHAMonitor.class);
 
-        final NfsStoragePool storagePool = Mockito.mock(NfsStoragePool.class);
-        final List<NfsStoragePool> pools = new ArrayList<NfsStoragePool>();
+        final HAStoragePool storagePool = Mockito.mock(HAStoragePool.class);
+        final List<HAStoragePool> pools = new ArrayList<HAStoragePool>();
         pools.add(storagePool);
 
         when(libvirtComputingResourceMock.getMonitor()).thenReturn(monitor);

@@ -269,7 +269,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
-            <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
+            <a-form-item ref="nicAdapterType" name="nicAdapterType" :label="$t('label.nicadaptertype')">
               <a-select
                 v-model:value="form.nicAdapterType"
                 showSearch
@@ -812,30 +812,30 @@ export default {
 
       this.rootDisk.opts = controller
     },
-    fetchNicAdapterType () {
-      const nicAdapterType = []
-      nicAdapterType.push({
+    fetchNicAdapterTypes () {
+      const nicAdapterTypes = []
+      nicAdapterTypes.push({
         id: '',
         description: ''
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'E1000',
         description: 'E1000'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'PCNet32',
         description: 'PCNet32'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet2',
         description: 'Vmxnet2'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet3',
         description: 'Vmxnet3'
       })
 
-      this.nicAdapterType.opts = nicAdapterType
+      this.nicAdapterType.opts = nicAdapterTypes
     },
     fetchKeyboardType () {
       const keyboardType = []
@@ -1001,7 +1001,7 @@ export default {
       this.resetSelect(arrSelectReset)
       this.fetchFormat(hyperVisor)
       this.fetchRootDisk(hyperVisor)
-      this.fetchNicAdapterType()
+      this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
@@ -1016,10 +1016,10 @@ export default {
           delete this.form.zoneids
         }
         const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
+        const formvalues = this.handleRemoveFields(formRaw)
         let params = {}
-        for (const key in values) {
-          const input = values[key]
+        for (const key in formvalues) {
+          const input = formvalues[key]
 
           if (input === undefined) {
             continue
