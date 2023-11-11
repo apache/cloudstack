@@ -252,9 +252,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Override
     public long getEntityOwnerId() {
         Account callingAccount = CallContext.current().getCallingAccount();
-        // Perform access check on volume/snapshot for callingAccount
         ensureAccessCheck(callingAccount);
-        // Obtain accountIdToUse using (account and domainId) | projectId
         return findAccountIdToUse(callingAccount);
     }
 
