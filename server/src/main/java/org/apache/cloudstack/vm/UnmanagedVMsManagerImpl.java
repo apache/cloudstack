@@ -739,7 +739,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         copyRemoteVolumeCommand.setSrcFile(path);
         StorageFilerTO storageTO = new StorageFilerTO(storagePool);
         copyRemoteVolumeCommand.setStorageFilerTO(storageTO);
-        if(tmpPath == null) {
+        if(tmpPath == null || tmpPath.length() < 1) {
             tmpPath = "/tmp/";
         } else {
             // Add / if path doesn't end with /

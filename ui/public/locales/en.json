@@ -2056,7 +2056,7 @@
 "label.timeout.in.second ": " Timeout (seconds)",
 "label.timezone": "Timezone",
 "label.tmppath": "Temp Path",
-"label.tmppath.tooltip": "Temporary Path to store disk images of External Vm before copying to destination storage pool. Default is /tmp",
+"label.tmppath.tooltip": "Temporary Path to store disk images on External Vm before copying to destination storage pool. Default is /tmp",
 "label.to": "to",
 "label.token": "Token",
 "label.token.for.dashboard.login": "Token for dashboard login can be retrieved using following command",
