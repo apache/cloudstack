@@ -112,6 +112,8 @@ public interface NetworkService {
 
     IpAddress getIp(long id);
 
+    IpAddress getIp(String ipAddress);
+
     Network updateGuestNetwork(final UpdateNetworkCmd cmd);
 
     /**

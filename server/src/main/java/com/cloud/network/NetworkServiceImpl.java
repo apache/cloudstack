@@ -2793,6 +2793,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return _ipAddressDao.findById(ipAddressId);
     }
 
+    @Override
+    public IpAddress getIp(String ipAddress) { return _ipAddressDao.findByIp(ipAddress); }
+
     protected boolean providersConfiguredForExternalNetworking(Collection<String> providers) {
         for (String providerStr : providers) {
             Provider provider = Network.Provider.getProvider(providerStr);
