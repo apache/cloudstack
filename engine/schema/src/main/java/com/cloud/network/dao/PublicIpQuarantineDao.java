@@ -22,4 +22,6 @@ import com.cloud.utils.db.GenericDao;
 public interface PublicIpQuarantineDao extends GenericDao<PublicIpQuarantineVO, Long> {
 
     PublicIpQuarantineVO findByPublicIpAddressId(long publicIpAddressId);
+
+    PublicIpQuarantineVO findByIpAddress(String publicIpAddress);
 }

@@ -32,9 +32,13 @@ import org.apache.cloudstack.api.response.SuccessResponse;
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class RemoveQuarantinedIpCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, required = true, description = "The ID of the public IP address in " +
-            "active quarantine.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, description = "The ID of the public IP address in active quarantine. " +
+            "Either the IP address is informed, or the ID of the IP address in quarantine.")
     private Long id;
+
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "The public IP address in active quarantine. Either the IP address is informed, or the ID" +
+            " of the IP address in quarantine.")
+    private String ipAddress;
 
     @Parameter(name = ApiConstants.REMOVAL_REASON, type = CommandType.STRING, required = true, description = "The reason for removing the public IP address from quarantine " +
             "prematurely.")
@@ -42,6 +46,10 @@ public class RemoveQuarantinedIpCmd extends BaseCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     public String getRemovalReason() {

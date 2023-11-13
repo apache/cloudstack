@@ -19,20 +19,35 @@ package com.cloud.network.dao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 @Component
 public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantineVO, Long> implements PublicIpQuarantineDao {
     private SearchBuilder<PublicIpQuarantineVO> publicIpAddressByIdSearch;
 
+    private SearchBuilder<IPAddressVO> ipAddressSearchBuilder;
+
+    @Inject
+    IPAddressDao ipAddressDao;
+
     @PostConstruct
     public void init() {
         publicIpAddressByIdSearch = createSearchBuilder();
         publicIpAddressByIdSearch.and("publicIpAddressId", publicIpAddressByIdSearch.entity().getPublicIpAddressId(), SearchCriteria.Op.EQ);
+
+        ipAddressSearchBuilder = ipAddressDao.createSearchBuilder();
+        ipAddressSearchBuilder.and("ipAddress", ipAddressSearchBuilder.entity().getAddress(), SearchCriteria.Op.EQ);
+        ipAddressSearchBuilder.and("removed", ipAddressSearchBuilder.entity().getRemoved(), SearchCriteria.Op.NULL);
+        publicIpAddressByIdSearch.join("quarantineJoin", ipAddressSearchBuilder, ipAddressSearchBuilder.entity().getId(),
+                publicIpAddressByIdSearch.entity().getPublicIpAddressId(), JoinBuilder.JoinType.INNER);
+
+        ipAddressSearchBuilder.done();
         publicIpAddressByIdSearch.done();
     }
 
@@ -42,6 +57,15 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
         sc.setParameters("publicIpAddressId", publicIpAddressId);
         final Filter filter = new Filter(PublicIpQuarantineVO.class, "created", false);
 
-        return findOneIncludingRemovedBy(sc, filter);
+        return findOneBy(sc, filter);
+    }
+
+    @Override
+    public PublicIpQuarantineVO findByIpAddress(String publicIpAddress) {
+        SearchCriteria<PublicIpQuarantineVO> sc = publicIpAddressByIdSearch.create();
+        sc.setJoinParameters("quarantineJoin", "ipAddress", publicIpAddress);
+        final Filter filter = new Filter(PublicIpQuarantineVO.class, "created", false);
+
+        return findOneBy(sc, filter);
     }
 }
