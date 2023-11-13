@@ -389,6 +389,7 @@ public class NsxApiClient {
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            removeSegmentDistributedFirewallRules(segmentName);
             removeGroupForSegment(segmentName);
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
@@ -752,6 +753,18 @@ public class NsxApiClient {
         LOGGER.info(String.format("Removing Group for Segment %s", segmentName));
         Groups service = (Groups) nsxService.apply(Groups.class);
         service.delete(DEFAULT_DOMAIN, segmentName, true, false);
+    }
+
+    private void removeSegmentDistributedFirewallRules(String segmentName) {
+        try {
+            SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
+            services.delete(DEFAULT_DOMAIN, segmentName);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to remove NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
     }
 
     public void createSegmentDistributedFirewall(String policyName, List<NsxNetworkRule> nsxRules) {
