@@ -353,6 +353,7 @@ public class NsxResource implements ServerResource {
             String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
                     cmd.getZoneId(), networkResourceId, isResourceVpc);
             nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones);
+            nsxApiClient.createGroupForSegment(segmentName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));

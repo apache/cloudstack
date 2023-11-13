@@ -29,12 +29,14 @@ import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
+import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
 import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
+import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
@@ -44,6 +46,7 @@ import com.vmware.nsx_policy.model.LBService;
 import com.vmware.nsx_policy.model.LBVirtualServer;
 import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
+import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
 import com.vmware.nsx_policy.model.Segment;
@@ -97,6 +100,7 @@ public class NsxApiClient {
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
+    private static final String SEGMENTS_PATH = "/infra/segments";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -711,4 +715,24 @@ public class NsxApiClient {
         }
         return null;
     }
+
+    /**
+     * Create a Group for the Segment, with the same name as the segment and being the segment the only member of the group
+     */
+    public void createGroupForSegment(String segmentName) {
+        LOGGER.info(String.format("Creating Group for Segment %s", segmentName));
+
+        PathExpression pathExpression = new PathExpression();
+        List<String> paths = List.of(String.format("%s/%s", SEGMENTS_PATH, segmentName));
+        pathExpression.setPaths(paths);
+
+        Groups service = (Groups) nsxService.apply(Groups.class);
+        Group group = new Group.Builder()
+                .setId(segmentName)
+                .setDisplayName(segmentName)
+                .setExpression(List.of(pathExpression))
+                .build();
+        service.patch("default", segmentName, group);
+    }
+
 }
