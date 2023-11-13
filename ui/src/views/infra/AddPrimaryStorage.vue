@@ -32,6 +32,7 @@
           <a-select
             v-model:value="form.scope"
             v-focus="true"
+            @change="val => changeScope(val)"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
@@ -438,6 +439,15 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    changeScope (value) {
+      if (value === 'host') {
+        const cluster = this.clusters.find(cluster => cluster.id === this.form.cluster)
+        this.hypervisorType = cluster.hypervisortype
+        if (this.hypervisorType === 'KVM') {
+          this.protocols.push('Filesystem')
+        }
+      }
     },
     changeZone (value) {
       this.form.zone = value
