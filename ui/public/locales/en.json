@@ -2495,6 +2495,8 @@
 "message.config.health.monitor.failed": "Configure Health Monitor failed",
 "message.config.sticky.policy.failed": "Failed to configure sticky policy.",
 "message.config.sticky.policy.processing": "Updating sticky policy...",
+"message.configure.network.ip.and.mac": "Please configure the IP address and mac address of networks if needed.",
+"message.configure.network.select.default.network": "Please configure the IP address and mac address of networks if needed. Please select a network as the default network.",
 "message.configuring.guest.traffic": "Configuring guest traffic",
 "message.configuring.physical.networks": "Configuring physical Networks",
 "message.configuring.public.traffic": "Configuring public traffic",
