@@ -384,6 +384,7 @@ public class NsxApiClient {
     public void deleteSegment(long zoneId, long domainId, long accountId, Long vpcId, long networkId, String segmentName) {
         try {
             Segments segmentService = (Segments) nsxService.apply(Segments.class);
+            removeGroupForSegment(segmentName);
             LOGGER.debug(String.format("Removing the segment with ID %s", segmentName));
             segmentService.delete(segmentName);
             DhcpRelayConfigs dhcpRelayConfig = (DhcpRelayConfigs) nsxService.apply(DhcpRelayConfigs.class);
@@ -739,4 +740,9 @@ public class NsxApiClient {
         service.patch(DEFAULT_DOMAIN, segmentName, group);
     }
 
+    private void removeGroupForSegment(String segmentName) {
+        LOGGER.info(String.format("Removing Group for Segment %s", segmentName));
+        Groups service = (Groups) nsxService.apply(Groups.class);
+        service.delete(DEFAULT_DOMAIN, segmentName, true, false);
+    }
 }
