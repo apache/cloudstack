@@ -126,6 +126,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.security.SecurityGroupManager;
@@ -251,6 +252,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private SecurityGroupManager securityGroupManager;
     @Inject
     public SecurityGroupService securityGroupService;
+    @Inject
+    public NetworkHelper networkHelper;
 
     @Inject
     private UserVmService userVmService;
@@ -358,8 +361,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     public VMTemplateVO getKubernetesServiceTemplate(DataCenter dataCenter, Hypervisor.HypervisorType hypervisorType) {
         VMTemplateVO template = templateDao.findSystemVMReadyTemplate(dataCenter.getId(), hypervisorType);
+        if (DataCenter.Type.Edge.equals(dataCenter.getType()) && template != null && !template.isDirectDownload()) {
+            LOGGER.debug(String.format("Template %s can not be used for edge zone %s", template, dataCenter));
+            template = templateDao.findRoutingTemplate(hypervisorType, networkHelper.getHypervisorRouterTemplateConfigMap().get(hypervisorType).valueIn(dataCenter.getId()));
+        }
         if (template == null) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenter.getId());
+            throw new CloudRuntimeException("Not able to find the System or Routing template in ready state for the zone " + dataCenter.getUuid());
         }
         return  template;
     }
@@ -626,13 +633,16 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId) {
+    private DataCenter validateAndGetZoneForKubernetesCreateParameters(Long zoneId, Long networkId) {
         DataCenter zone = dataCenterDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by ID: " + zoneId);
         }
         if (zone.getAllocationState() == Grouping.AllocationState.Disabled) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, zone ID: %s is currently disabled", zone.getUuid()));
+        }
+        if (DataCenter.Type.Edge.equals(zone.getType()) && networkId == null) {
+            throw new PermissionDeniedException("Kubernetes clusters cannot be created on an edge zone without an existing network");
         }
         return zone;
     }
@@ -673,7 +683,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
         }
 
-        validateAndGetZoneForKubernetesCreateParameters(zoneId);
+        validateAndGetZoneForKubernetesCreateParameters(zoneId, networkId);
         validateSshKeyPairForKubernetesCreateParameters(sshKeyPair, owner);
 
         if (nodeRootDiskSize != null && nodeRootDiskSize <= 0) {
@@ -749,7 +759,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 String.format("Maximum cluster size can not exceed %d. Please contact your administrator", maxClusterSize));
         }
 
-        DataCenter zone = validateAndGetZoneForKubernetesCreateParameters(zoneId);
+        DataCenter zone = validateAndGetZoneForKubernetesCreateParameters(zoneId, networkId);
 
         if (!isKubernetesServiceConfigured(zone)) {
             throw new CloudRuntimeException("Kubernetes service has not been configured properly to provision Kubernetes clusters");

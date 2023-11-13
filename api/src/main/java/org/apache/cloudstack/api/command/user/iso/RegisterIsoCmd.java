@@ -175,6 +175,9 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     }
 
     public Long getZoneId() {
+        if (zoneId == null || zoneId == -1) {
+            return null;
+        }
         return zoneId;
     }
 
@@ -216,6 +219,10 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
 
     public boolean isDirectDownload() {
         return directDownload == null ? false : directDownload;
+    }
+
+    public void setDirectDownload(Boolean directDownload) {
+        this.directDownload = directDownload;
     }
 
     public boolean isPasswordEnabled() {
