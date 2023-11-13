@@ -216,7 +216,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format,
                                               Storage.ProvisioningType provisioningType, long size, byte[] passphrase)
     {
-        s_logger.debug(String.format("Linstor.createPhysicalDisk: %s;%s", name, format));
+        logger.debug(String.format("Linstor.createPhysicalDisk: %s;%s", name, format));
         final String rscName = getLinstorRscName(name);
         LinstorStoragePool lpool = (LinstorStoragePool) pool;
         final DevelopersApi api = getLinstorAPI(pool);
@@ -257,7 +257,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 throw new CloudRuntimeException("Linstor: viewResources didn't return resources or volumes.");
             }
         } catch (ApiException apiEx) {
-            s_logger.error(String.format("Linstor.createPhysicalDisk: ApiException: %s", apiEx.getBestMessage()));
+            logger.error(String.format("Linstor.createPhysicalDisk: ApiException: %s", apiEx.getBestMessage()));
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
     }
@@ -437,7 +437,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
-        s_logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
+        logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());

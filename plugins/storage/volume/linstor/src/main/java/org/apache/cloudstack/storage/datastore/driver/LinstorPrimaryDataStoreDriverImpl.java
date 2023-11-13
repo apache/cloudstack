@@ -238,7 +238,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 }
                 throw new CloudRuntimeException("Linstor: Unable to delete snapshot: " + rscDefName);
             }
-            s_logger.info("Linstor: Deleted snapshot " + snapshotName + " for resource " + rscDefName);
+            logger.info("Linstor: Deleted snapshot " + snapshotName + " for resource " + rscDefName);
         } catch (ApiException apiEx)
         {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -447,7 +447,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             return getDeviceName(api, rscName);
         } catch (ApiException apiEx)
         {
-            s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
     }
@@ -740,7 +740,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 resultMsg = "Linstor: Snapshot revert datastore not supported";
             }
         } catch (ApiException apiEx) {
-            s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
             resultMsg = apiEx.getBestMessage();
         }
 
@@ -789,7 +789,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public boolean canCopy(DataObject srcData, DataObject dstData)
     {
-        s_logger.debug("LinstorPrimaryDataStoreDriverImpl.canCopy: " + srcData.getType() + " -> " + dstData.getType());
+        logger.debug("LinstorPrimaryDataStoreDriverImpl.canCopy: " + srcData.getType() + " -> " + dstData.getType());
 
         if (canCopySnapshotCond(srcData, dstData)) {
             SnapshotInfo sinfo = (SnapshotInfo) srcData;
@@ -809,7 +809,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     @Override
     public void copyAsync(DataObject srcData, DataObject dstData, AsyncCompletionCallback<CopyCommandResult> callback)
     {
-        s_logger.debug("LinstorPrimaryDataStoreDriverImpl.copyAsync: "
+        logger.debug("LinstorPrimaryDataStoreDriverImpl.copyAsync: "
             + srcData.getType() + " -> " + dstData.getType());
 
         final CopyCommandResult res;
@@ -848,12 +848,12 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         for (String nodeName : linstorNodeNames) {
             host = _hostDao.findByName(nodeName);
             if (host != null) {
-                s_logger.info(String.format("Linstor: Make resource %s available on node %s ...", rscName, nodeName));
+                logger.info(String.format("Linstor: Make resource %s available on node %s ...", rscName, nodeName));
                 ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, nodeName, new ResourceMakeAvailable());
                 if (!answers.hasError()) {
                     break; // found working host
                 } else {
-                    s_logger.error(
+                    logger.error(
                         String.format("Linstor: Unable to make resource %s on node %s available: %s",
                             rscName,
                             nodeName,
@@ -864,7 +864,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         if (host == null)
         {
-            s_logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
+            logger.error("Linstor: Couldn't create a resource on any cloudstack host.");
             return Optional.empty();
         }
         else
@@ -881,7 +881,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             Host host = _hostDao.findByName(linSP.getNodeName());
             if (host == null)
             {
-                s_logger.error("Linstor: Host '" + linSP.getNodeName() + "' not found.");
+                logger.error("Linstor: Host '" + linSP.getNodeName() + "' not found.");
                 return Optional.empty();
             }
             else
@@ -923,7 +923,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 answer = new Answer(cmd, false, "Unable to get matching Linstor endpoint.");
             }
         } catch (ApiException exc) {
-            s_logger.error("copy template failed: ", exc);
+            logger.error("copy template failed: ", exc);
             throw new CloudRuntimeException(exc.getBestMessage());
         }
         return answer;
@@ -966,7 +966,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             }
             return answer;
         } catch (Exception e) {
-            s_logger.debug("copy snapshot failed: ", e);
+            logger.debug("copy snapshot failed: ", e);
             throw new CloudRuntimeException(e.toString());
         }
 
@@ -976,7 +976,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback)
     {
         // as long as canCopy is false, this isn't called
-        s_logger.debug("Linstor: copyAsync with host");
+        logger.debug("Linstor: copyAsync with host");
         copyAsync(srcData, destData, callback);
     }
 

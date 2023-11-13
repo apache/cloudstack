@@ -1112,7 +1112,7 @@ public class TransactionLegacy implements Closeable {
                     simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
                             simulatorAutoReconnect;
                 } else {
-                    s_logger.warn("db.simulator.uri was set, ignoring the following properties on db.properties: [db.simulator.driver, db.simulator.host, db.simulator.port, "
+                    LOGGER.warn("db.simulator.uri was set, ignoring the following properties on db.properties: [db.simulator.driver, db.simulator.host, db.simulator.port, "
                             + "db.simulator.name, db.simulator.autoReconnect].");
                     String[] splitUri = simulatorUri.split(":");
                     simulatorDriver = String.format("%s:%s", splitUri[0], splitUri[1]);
@@ -1145,7 +1145,7 @@ public class TransactionLegacy implements Closeable {
             driver = dbProps.getProperty(String.format("db.%s.driver", schema));
             connectionUri = getPropertiesAndBuildConnectionUri(dbProps, loadBalanceStrategy, driver, useSSL, schema);
         } else {
-            s_logger.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
+            LOGGER.warn(String.format("db.%s.uri was set, ignoring the following properties for schema %s of db.properties: [host, port, name, driver, autoReconnect, url.params,"
                     + " replicas, ha.loadBalanceStrategy, ha.enable, failOverReadOnly, reconnectAtTxEnd, autoReconnectForPools, secondsBeforeRetrySource, queriesBeforeRetrySource, "
                     + "initialTimeout].", schema, schema));
 
@@ -1154,7 +1154,7 @@ public class TransactionLegacy implements Closeable {
 
             connectionUri = propertyUri;
         }
-        s_logger.info(String.format("Using the following URI to connect to %s database [%s].", schema, connectionUri));
+        LOGGER.info(String.format("Using the following URI to connect to %s database [%s].", schema, connectionUri));
         return new Pair<>(connectionUri, driver);
     }
 
@@ -1170,7 +1170,7 @@ public class TransactionLegacy implements Closeable {
         if (s_dbHAEnabled) {
             dbHaParams = getDBHAParams(schema, dbProps);
             replicas = dbProps.getProperty(String.format("db.%s.replicas", schema));
-            s_logger.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
+            LOGGER.info(String.format("The replicas configured for %s data base are %s.", schema, replicas));
         }
 
         return buildConnectionUri(loadBalanceStrategy, driver, useSSL, host, replicas, port, dbName, autoReconnect, urlParams, dbHaParams);

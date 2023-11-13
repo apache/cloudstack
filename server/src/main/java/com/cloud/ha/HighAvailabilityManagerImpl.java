@@ -323,7 +323,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     protected void wakeupWorkers() {
-        s_logger.debug("Wakeup workers HA");
+        logger.debug("Wakeup workers HA");
         for (WorkerThread worker : _workers) {
             worker.wakup();
         }
@@ -342,7 +342,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     @Override
     public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
-        s_logger.debug("HA schedule restart");
+        logger.debug("HA schedule restart");
         Long hostId = vm.getHostId();
         if (hostId == null) {
             try {
@@ -436,7 +436,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     protected Long restart(final HaWorkVO work) {
-        s_logger.debug("RESTART with HAWORK");
+        logger.debug("RESTART with HAWORK");
         List<HaWorkVO> items = _haDao.listFutureHaWorkForVm(work.getInstanceId(), work.getId());
         if (items.size() > 0) {
             StringBuilder str = new StringBuilder("Cancelling this work item because newer ones have been scheduled.  Work Ids = [");
