@@ -30,6 +30,7 @@ import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.domains.Groups;
+import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
@@ -49,6 +50,8 @@ import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
+import com.vmware.nsx_policy.model.Rule;
+import com.vmware.nsx_policy.model.SecurityPolicy;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.ServiceListResult;
@@ -67,6 +70,7 @@ import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAp
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
+import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -102,6 +106,7 @@ public class NsxApiClient {
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
     protected static final String SEGMENTS_PATH = "/infra/segments";
     protected static final String DEFAULT_DOMAIN = "default";
+    protected static final String GROUPS_PATH_PREFIX = "/infra/domains/default/groups";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -722,7 +727,7 @@ public class NsxApiClient {
     }
 
     /**
-     * Create a Group for the Segment, with the same name as the segment and being the segment the only member of the group
+     * Create a Group for the Segment on the Inventory, with the same name as the segment and being the segment the only member of the group
      */
     public void createGroupForSegment(String segmentName) {
         LOGGER.info(String.format("Creating Group for Segment %s", segmentName));
@@ -740,9 +745,67 @@ public class NsxApiClient {
         service.patch(DEFAULT_DOMAIN, segmentName, group);
     }
 
+    /**
+     * Remove Segment Group from the Inventory
+     */
     private void removeGroupForSegment(String segmentName) {
         LOGGER.info(String.format("Removing Group for Segment %s", segmentName));
         Groups service = (Groups) nsxService.apply(Groups.class);
         service.delete(DEFAULT_DOMAIN, segmentName, true, false);
     }
+
+    public void createSegmentDistributedFirewall(String policyName, List<NsxNetworkRule> nsxRules) {
+        try {
+            SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
+            List<Rule> rules = getRulesForDistributedFirewall(policyName, nsxRules);
+            SecurityPolicy policy = new SecurityPolicy.Builder()
+                    .setDisplayName(policyName)
+                    .setId(policyName)
+                    .setCategory("Application")
+                    .setRules(rules)
+                    .build();
+            services.patch(DEFAULT_DOMAIN, policyName, policy);
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX distributed firewall policy for segment %s, due to: %s", policyName, ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private List<Rule> getRulesForDistributedFirewall(String policyName, List<NsxNetworkRule> nsxRules) {
+        List<Rule> rules = new ArrayList<>();
+        for (NsxNetworkRule rule: nsxRules) {
+            String ruleId = String.format("%s-%s", policyName, rule.getRuleId());
+            String trafficType = rule.getTrafficType();
+            Rule ruleToAdd = new Rule.Builder()
+                    .setAction(rule.getAclAction().toUpperCase())
+                    .setId(ruleId)
+                    .setDisplayName(ruleId)
+                    .setResourceType("SecurityPolicy")
+                    .setSourceGroups(getGroupsForTraffic(rule, trafficType, policyName, true))
+                    .setDestinationGroups(getGroupsForTraffic(rule, trafficType, policyName, false))
+                    .setServices(List.of("ANY"))
+                    .setScope(List.of("ANY"))
+                    .build();
+            rules.add(ruleToAdd);
+        }
+        return rules;
+    }
+
+    private List<String> getGroupsForTraffic(NsxNetworkRule rule, String trafficType,
+                                             String policyName, boolean source) {
+        List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, policyName));
+        List<String> ruleCidrList = rule.getCidrList();
+
+        if (trafficType.equalsIgnoreCase("ingress")) {
+            return source ? ruleCidrList : segmentGroup;
+        } else if (trafficType.equalsIgnoreCase("egress")) {
+            return source ? segmentGroup : ruleCidrList;
+        }
+        String err = String.format("Unsupported traffic type %s", trafficType);
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
+    }
+
 }

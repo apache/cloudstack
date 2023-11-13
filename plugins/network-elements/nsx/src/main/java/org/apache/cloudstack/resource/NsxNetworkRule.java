@@ -34,6 +34,9 @@ public class NsxNetworkRule {
     private String protocol;
     private String algorithm;
     private List<NsxLoadBalancerMember> memberList;
+    private String aclAction;
+    private List<String> cidrList;
+    private String trafficType;
 
     public long getDomainId() {
         return domainId;
@@ -155,6 +158,30 @@ public class NsxNetworkRule {
         this.memberList = memberList;
     }
 
+    public String getAclAction() {
+        return aclAction;
+    }
+
+    public void setAclAction(String aclAction) {
+        this.aclAction = aclAction;
+    }
+
+    public List<String> getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(List<String> cidrList) {
+        this.cidrList = cidrList;
+    }
+
+    public String getTrafficType() {
+        return trafficType;
+    }
+
+    public void setTrafficType(String trafficType) {
+        this.trafficType = trafficType;
+    }
+
     public static final class Builder {
         private long domainId;
         private long accountId;
@@ -172,6 +199,9 @@ public class NsxNetworkRule {
         private String protocol;
         private String algorithm;
         private List<NsxLoadBalancerMember> memberList;
+        private String aclAction;
+        private List<String> cidrList;
+        private String trafficType;
 
         public Builder() {
         }
@@ -252,6 +282,21 @@ public class NsxNetworkRule {
             return this;
         }
 
+        public Builder setAclAction(String aclAction) {
+            this.aclAction = aclAction;
+            return this;
+        }
+
+        public Builder setCidrList(List<String> cidrList) {
+            this.cidrList = cidrList;
+            return this;
+        }
+
+        public Builder setTrafficType(String trafficType) {
+            this.trafficType = trafficType;
+            return this;
+        }
+
         public NsxNetworkRule build() {
             NsxNetworkRule rule = new NsxNetworkRule();
             rule.setDomainId(this.domainId);
@@ -269,6 +314,9 @@ public class NsxNetworkRule {
             rule.setRuleId(this.ruleId);
             rule.setAlgorithm(this.algorithm);
             rule.setMemberList(this.memberList);
+            rule.setAclAction(this.aclAction);
+            rule.setCidrList(this.cidrList);
+            rule.setTrafficType(this.trafficType);
             return rule;
         }
     }
