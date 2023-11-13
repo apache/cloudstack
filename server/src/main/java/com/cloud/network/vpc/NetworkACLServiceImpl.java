@@ -222,8 +222,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified ACL");
         }
 
-        //Do not allow deletion of default ACLs
-        if (acl.getId() == NetworkACL.DEFAULT_ALLOW || acl.getId() == NetworkACL.DEFAULT_DENY) {
+        if (isDefaultAcl(acl.getId())) {
             throw new InvalidParameterValueException("Default ACL cannot be removed");
         }
 
@@ -253,7 +252,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified vpc id");
         }
 
-        if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW) {
+        if (!isDefaultAcl(aclId)) {
             final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
             if (vpc == null) {
                 throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
@@ -293,7 +292,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Network ACL can be created just for networks of type " + Networks.TrafficType.Guest);
         }
 
-        if (aclId != NetworkACL.DEFAULT_DENY && aclId != NetworkACL.DEFAULT_ALLOW && !isGlobalAcl(acl.getVpcId())) {
+        if (!isDefaultAcl(aclId) && !isGlobalAcl(acl.getVpcId())) {
             validateAclAssociatedToVpc(acl.getVpcId(), caller, acl.getUuid());
 
             if (!network.getVpcId().equals(acl.getVpcId())) {
@@ -419,7 +418,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Unable to find specified ACL.");
         }
 
-        if (acl.getId() == NetworkACL.DEFAULT_DENY || acl.getId() == NetworkACL.DEFAULT_ALLOW) {
+        if (isDefaultAcl(acl.getId())) {
             throw new InvalidParameterValueException("Default ACL cannot be modified");
         }
 
@@ -792,7 +791,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
             final Account account = CallContext.current().getCallingAccount();
 
-            if (aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY) {
+            if (isDefaultAcl(aclItem.getAclId())) {
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
             validateGlobalAclPermissionAndAclAssociatedToVpc(acl, account, "Only Root Admin can delete global ACL rules.");
@@ -1149,7 +1148,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         NetworkACLVO acl = _networkACLDao.findById(aclId);
         Account account = CallContext.current().getCallingAccount();
 
-        if (aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY) {
+        if (isDefaultAcl(aclId)) {
             throw new InvalidParameterValueException("Default ACL rules cannot be moved.");
         }
 
@@ -1194,5 +1193,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     protected boolean isGlobalAcl(Long aclVpcId) {
         return aclVpcId != null && aclVpcId == 0;
+    }
+
+    protected boolean isDefaultAcl(long aclId) {
+        return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
     }
 }

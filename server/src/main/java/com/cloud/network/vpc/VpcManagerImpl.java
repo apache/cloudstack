@@ -2200,7 +2200,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (aclVO == null) {
                     throw new InvalidParameterValueException("Invalid network acl id passed ");
                 }
-                if (aclVO.getVpcId() != vpcId && !(aclId == NetworkACL.DEFAULT_DENY || aclId == NetworkACL.DEFAULT_ALLOW)) {
+                if (aclVO.getVpcId() != vpcId && !isDefaultAcl(aclId) && !isGlobalAcl(aclVO.getVpcId())) {
                     throw new InvalidParameterValueException("Private gateway and network acl are not in the same vpc");
                 }
 
@@ -3153,5 +3153,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         return filteredDomainIds;
+    }
+
+    protected boolean isGlobalAcl(Long aclVpcId) {
+        return aclVpcId != null && aclVpcId == 0;
+    }
+
+    protected boolean isDefaultAcl(long aclId) {
+        return aclId == NetworkACL.DEFAULT_ALLOW || aclId == NetworkACL.DEFAULT_DENY;
     }
 }
