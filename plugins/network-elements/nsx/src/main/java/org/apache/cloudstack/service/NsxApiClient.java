@@ -89,7 +89,7 @@ import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgo
 
 public class NsxApiClient {
 
-    private final Function<Class<? extends Service>, Service> nsxService;
+    protected Function<Class<? extends Service>, Service> nsxService;
 
     public static final int RESPONSE_TIMEOUT_SECONDS = 60;
     private static final Logger LOGGER = Logger.getLogger(NsxApiClient.class);
@@ -100,7 +100,8 @@ public class NsxApiClient {
     private static final String SEGMENT_RESOURCE_TYPE = "Segment";
     private static final String TIER_0_GATEWAY_PATH_PREFIX = "/infra/tier-0s/";
     private static final String TIER_1_GATEWAY_PATH_PREFIX = "/infra/tier-1s/";
-    private static final String SEGMENTS_PATH = "/infra/segments";
+    protected static final String SEGMENTS_PATH = "/infra/segments";
+    protected static final String DEFAULT_DOMAIN = "default";
 
     private enum PoolAllocation { ROUTING, LB_SMALL, LB_MEDIUM, LB_LARGE, LB_XLARGE }
 
@@ -139,6 +140,9 @@ public class NsxApiClient {
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
+    }
+
+    protected NsxApiClient() {
     }
 
     public NsxApiClient(String hostname, String port, String username, char[] password) {
@@ -732,7 +736,7 @@ public class NsxApiClient {
                 .setDisplayName(segmentName)
                 .setExpression(List.of(pathExpression))
                 .build();
-        service.patch("default", segmentName, group);
+        service.patch(DEFAULT_DOMAIN, segmentName, group);
     }
 
 }
