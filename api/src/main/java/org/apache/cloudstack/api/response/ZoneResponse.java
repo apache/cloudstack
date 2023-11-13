@@ -141,6 +141,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "The maximum value the MTU can have on the VR's public interfaces", since = "4.18.0")
     private Integer routerPublicInterfaceMaxMtu;
 
+    @SerializedName(ApiConstants.NSX_ENABLED)
+            @Param(description = "true, if zone is NSX enabled", since = "4.20.0")
+    private boolean nsxEnabled = false;
+
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "the type of the zone - core or edge", since = "4.18.0")
     String type;
@@ -367,5 +371,9 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public String getType() {
         return type;
+    }
+
+    public void setNsxEnabled(boolean nsxEnabled) {
+        this.nsxEnabled = nsxEnabled;
     }
 }

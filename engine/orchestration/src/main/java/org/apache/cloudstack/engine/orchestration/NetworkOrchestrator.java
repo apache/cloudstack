@@ -1736,7 +1736,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //apply network ACLs
         // TODO: remove check for NSX
-        if (!offering.isForNsx() && !_networkACLMgr.applyACLToNetwork(networkId)) {
+        if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }
@@ -2863,7 +2863,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
         if (cidr != null && ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) {
-            if (!NetUtils.validateGuestCidr(cidr)) {
+            if (!ConfigurationManager.AllowNonRFC1918CompliantIPs.value() && !NetUtils.validateGuestCidr(cidr)) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC 1918 or 6598 compliant");
             }
         }
@@ -4720,7 +4720,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
     public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
             "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
-
+//    public static final ConfigKey<Boolean> AllowNonRFC1918CompliantIPs = new ConfigKey<Boolean>(Boolean.class,
+//            "allow.non.rfc1918.compliant.ips", "Advanced", "false",
+//            "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true);
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,

@@ -1247,10 +1247,14 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         serviceProviderMap.put(Service.Dns, routerProvider);
         serviceProviderMap.put(Service.UserData, routerProvider);
         if (nsxMode == NetworkOffering.NsxMode.NATTED) {
-            serviceProviderMap.put(Service.SourceNat, Provider.Nsx);
             serviceProviderMap.put(Service.StaticNat, Provider.Nsx);
             serviceProviderMap.put(Service.PortForwarding, Provider.Nsx);
             serviceProviderMap.put(Service.Lb, Provider.Nsx);
+            if (forVpc) {
+                serviceProviderMap.put(Service.NetworkACL, Provider.Nsx);
+            } else {
+                serviceProviderMap.put(Service.Firewall, Provider.Nsx);
+            }
         }
         return serviceProviderMap;
     }

@@ -29,6 +29,7 @@ import com.vmware.nsx_policy.infra.Segments;
 import com.vmware.nsx_policy.infra.Services;
 import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
+import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
@@ -46,6 +47,7 @@ import com.vmware.nsx_policy.model.LBVirtualServerListResult;
 import com.vmware.nsx_policy.model.LocaleServicesListResult;
 import com.vmware.nsx_policy.model.PolicyNatRule;
 import com.vmware.nsx_policy.model.PolicyNatRuleListResult;
+import com.vmware.nsx_policy.model.Rule;
 import com.vmware.nsx_policy.model.Segment;
 import com.vmware.nsx_policy.model.SegmentSubnet;
 import com.vmware.nsx_policy.model.ServiceListResult;
@@ -71,18 +73,13 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolMemberName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getVirtualServerName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceEntryName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerName;
-import static org.apache.cloudstack.utils.NsxControllerUtils.getLoadBalancerAlgorithm;
+import static org.apache.cloudstack.utils.NsxControllerUtils.*;
 
 public class NsxApiClient {
 
@@ -132,6 +129,17 @@ public class NsxApiClient {
         LARGE,
         XLARGE
     }
+
+    private enum firewallActions {
+        ALLOW,
+        DROP,
+        REJECT,
+        JUMP_TO_APPLICATION
+    }
+
+    private Map<String,String> actionMap = Map.of(
+        "Allow", firewallActions.ALLOW.name(),
+    "Deny", firewallActions.DROP.name());
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -691,6 +699,25 @@ public class NsxApiClient {
             com.vmware.nsx_policy.model.Service svc = service.get(serviceName);
             return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
 
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void createNsxFirewallRule(String policyName, String ruleName, String action, List<String> cidrList, String protocol, String trafficType) {
+        try {
+            Rules rules = (Rules) nsxService.apply(Rules.class);
+            Rule rule = new Rule.Builder()
+                    .setId(ruleName)
+                    .setDisplayName(ruleName)
+                    .setAction(actionMap.get(action))
+                    .setSourceGroups(cidrList)
+                    .build();
+            //TODO: get default domain
+            rules.patch("default", policyName, ruleName, rule);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());

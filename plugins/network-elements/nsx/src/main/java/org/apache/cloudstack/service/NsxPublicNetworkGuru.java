@@ -28,10 +28,13 @@ import com.cloud.network.nsx.NsxService;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -60,6 +63,10 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
     private NsxControllerUtils nsxControllerUtils;
     @Inject
     private NsxService nsxService;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
+    @Inject
+    private NetworkOfferingDao offeringDao;
 
     private static final Logger s_logger = Logger.getLogger(NsxPublicNetworkGuru.class);
 
@@ -128,7 +135,7 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                 long dataCenterId = vpc.getZoneId();
                 boolean isForVpc = true;
                 long resourceId = isForVpc ? vpc.getId() : network.getId();
-                Network.Service[] services = { Network.Service.SourceNat };
+                Network.Service[] services = {Network.Service.SourceNat};
                 boolean sourceNatEnabled = vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(vpc.getVpcOfferingId(), services);
 
                 s_logger.info(String.format("Creating Tier 1 Gateway for VPC %s", vpc.getName()));
@@ -139,16 +146,27 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                     throw new CloudRuntimeException(msg);
                 }
 
-                String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, isForVpc);
-                String translatedIp = ipAddress.getAddress().addr();
-                s_logger.debug(String.format("Creating NSX Nat Rule for Tier1 GW %s for translated IP %s", tier1GatewayName, translatedIp));
-                String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, isForVpc);
-                CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
-                NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
-                if (!nsxAnswer.getResult()) {
-                    String msg = String.format("Could not create NSX Nat Rule on Tier1 Gateway %s for IP %s", tier1GatewayName, translatedIp);
-                    s_logger.error(msg);
-                    throw new CloudRuntimeException(msg);
+                boolean hasNatSupport = false;
+                if (vpc == null) {
+                    NetworkOffering offering = offeringDao.findById(network.getNetworkOfferingId());
+                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode());
+                } else {
+                    VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
+                }
+
+                if (hasNatSupport) {
+                    String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, isForVpc);
+                    String translatedIp = ipAddress.getAddress().addr();
+                    s_logger.debug(String.format("Creating NSX Nat Rule for Tier1 GW %s for translated IP %s", tier1GatewayName, translatedIp));
+                    String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, isForVpc);
+                    CreateOrUpdateNsxTier1NatRuleCommand cmd = NsxHelper.createOrUpdateNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
+                    NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
+                    if (!nsxAnswer.getResult()) {
+                        String msg = String.format("Could not create NSX Nat Rule on Tier1 Gateway %s for IP %s", tier1GatewayName, translatedIp);
+                        s_logger.error(msg);
+                        throw new CloudRuntimeException(msg);
+                    }
                 }
             }
         }

@@ -125,6 +125,10 @@ public class NsxControllerUtils {
         return tier1GatewayName + "-VM" + vmId;
     }
 
+    public static String getFirewallRuleId(String segmentName, long ruleId) {
+        return segmentName + "-R" + ruleId;
+    }
+
     public static String getLoadBalancerAlgorithm(String algorithm) {
         switch (algorithm) {
             case "leastconn":

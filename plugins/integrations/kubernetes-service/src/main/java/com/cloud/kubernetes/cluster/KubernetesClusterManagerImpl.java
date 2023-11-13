@@ -1900,10 +1900,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.SourceNat, forNsx ? Network.Provider.Nsx : Network.Provider.VirtualRouter);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.StaticNat, forNsx ? Network.Provider.Nsx : Network.Provider.VirtualRouter);
         defaultKubernetesServiceNetworkOfferingProviders.put(Service.PortForwarding, forNsx ? Network.Provider.Nsx : Network.Provider.VirtualRouter);
-        defaultKubernetesServiceNetworkOfferingProviders.put(Service.Vpn, forNsx ? Network.Provider.Nsx : Network.Provider.VirtualRouter);
 
         if (!forNsx) {
             defaultKubernetesServiceNetworkOfferingProviders.put(Service.Gateway, Network.Provider.VirtualRouter);
+            defaultKubernetesServiceNetworkOfferingProviders.put(Service.Vpn, Network.Provider.VirtualRouter);
         }
 
         NetworkOfferingVO defaultKubernetesServiceNetworkOffering =
@@ -1914,6 +1914,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         true, false, false, false, false,
                         false, false, false, true, true, false,
                         false, true, false, false);
+        if (forNsx) {
+            defaultKubernetesServiceNetworkOffering.setNsxMode(NetworkOffering.NsxMode.NATTED.name());
+        }
         defaultKubernetesServiceNetworkOffering.setSupportsVmAutoScaling(true);
         defaultKubernetesServiceNetworkOffering.setState(NetworkOffering.State.Enabled);
         defaultKubernetesServiceNetworkOffering = networkOfferingDao.persistDefaultNetworkOffering(defaultKubernetesServiceNetworkOffering);

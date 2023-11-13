@@ -36,6 +36,7 @@ import com.vmware.nsx_policy.model.SiteListResult;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
+import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
@@ -123,6 +124,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxLoadBalancerRuleCommand) cmd);
         } else if (cmd instanceof DeleteNsxLoadBalancerRuleCommand) {
             return executeRequest((DeleteNsxLoadBalancerRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxDistributedFirewallRuleCommand) {
+            return executeRequest((CreateNsxDistributedFirewallRuleCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -290,7 +293,7 @@ public class NsxResource implements ServerResource {
 
     private Answer executeRequest(CreateNsxTier1GatewayCommand cmd) {
         String name = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(), cmd.getNetworkResourceId(), cmd.isResourceVpc());
-        boolean sourceNatEnabled = cmd.isSourceNatEnabled();
+        boolean sourceNatEnabled = cmd.isSourceNatEnabled() || !cmd.isResourceVpc();
         try {
             nsxApiClient.createTier1Gateway(name, tier0Gateway, edgeCluster, sourceNatEnabled);
             return new NsxAnswer(cmd, true, "");
@@ -452,6 +455,12 @@ public class NsxResource implements ServerResource {
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxDistributedFirewallRuleCommand cmd) {
+        String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(), cmd.getZoneId(),
+                cmd.isResourceVpc() ? cmd.getNetworkResourceId() : null, cmd.isResourceVpc() ? null : cmd.getNetworkResourceId());
+        // TODO: execute apiclient
     }
 
     @Override

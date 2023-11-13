@@ -56,6 +56,7 @@ import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
@@ -87,6 +88,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.vmware.nsx_policy.infra.firewall.Rules;
 import net.sf.ehcache.config.InvalidConfigurationException;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
@@ -107,7 +109,7 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider,
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
         LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
 
 
@@ -159,7 +161,14 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         capabilities.put(Network.Service.Lb, null);
         capabilities.put(Network.Service.PortForwarding, null);
         capabilities.put(Network.Service.NetworkACL, null);
-        capabilities.put(Network.Service.Firewall, null);
+        Map<Network.Capability, String> firewallCapabilities = new HashMap<>();
+        firewallCapabilities.put(Network.Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Network.Capability.SupportedEgressProtocols, "tcp,udp,icmp,all");
+        firewallCapabilities.put(Network.Capability.MultipleIps, "true");
+        firewallCapabilities.put(Network.Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Network.Capability.SupportedTrafficDirection, "ingress, egress");
+        capabilities.put(Network.Service.Firewall, firewallCapabilities);
+
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
@@ -645,5 +654,17 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             lbMembers.add(member);
         }
         return lbMembers;
+    }
+
+    @Override
+    public boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        if (!canHandle(config, Network.Service.NetworkACL)) {
+            return false;
+        }
+        NsxNetworkRule networkRule = new NsxNetworkRule.Builder().build();
+        for (NetworkACLItem rule : rules) {
+            nsxService.addFirewallRule(networkRule);
+        }
+        return true;
     }
 }
