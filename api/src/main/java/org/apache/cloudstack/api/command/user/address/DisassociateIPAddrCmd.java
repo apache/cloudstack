@@ -47,10 +47,11 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "the ID of the public IP address"
-        + " to disassociate")
+        + " to disassociate. Mutually exclusive with the ipaddress parameter")
     private Long id;
 
-   @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="IP Address to be disassociated")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING,  since="4.19.0", description="IP Address to be disassociated."
+        +  " Mutually exclusive with the id parameter")
     private String ipAddress;
 
     // unexposed parameter needed for events logging
@@ -62,6 +63,10 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public Long getIpAddressId() {
+       if (id != null & ipAddress != null) {
+           throw new InvalidParameterValueException("id parameter is mutually exclusive with ipaddress parameter");
+       }
+
        if (id != null) {
             return id;
         } else if (ipAddress != null) {
@@ -112,9 +117,6 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         if (ownerId == null) {
             IpAddress ip = getIpAddress();
-            if (ip == null) {
-                throw new InvalidParameterValueException("Unable to find IP address by ID=" + ip.getId());
-            }
             ownerId = ip.getAccountId();
         }
 
@@ -155,6 +157,10 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     }
 
     private IpAddress getIpAddress() {
+        if (id != null & ipAddress != null) {
+            throw new InvalidParameterValueException("id parameter is mutually exclusive with ipaddress parameter");
+        }
+
         if (id != null) {
             return getIpAddressById(id);
         } else if (ipAddress != null){
