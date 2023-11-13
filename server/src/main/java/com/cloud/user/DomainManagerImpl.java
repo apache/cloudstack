@@ -982,6 +982,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             long newParentDomainResourceCount = _resourceCountDao.getResourceCount(newParentDomainId, ResourceOwnerType.Domain, resourceType);
             long newParentDomainResourceLimit = resourceLimitService.findCorrectResourceLimitForDomain(newParentDomain, resourceType);
 
+            if (newParentDomainResourceLimit == Resource.RESOURCE_UNLIMITED) {
+                return;
+            }
+
             if (currentDomainResourceCount + newParentDomainResourceCount > newParentDomainResourceLimit) {
                 String message = String.format("Cannot move domain [%s] to parent domain [%s] as maximum domain resource limit of type [%s] would be exceeded. The current resource "
                         + "count for domain [%s] is [%s], the resource count for the new parent domain [%s] is [%s], and the limit is [%s].", domainToBeMoved.getUuid(),
