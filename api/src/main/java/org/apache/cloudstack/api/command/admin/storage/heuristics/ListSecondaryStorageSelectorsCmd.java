@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
-import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_PURPOSE_VALID_OPTIONS;
+import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_TYPE_VALID_OPTIONS;
 
 @APICommand(name = "listSecondaryStorageSelectors", description = "Lists the secondary storage selectors and their rules.", since = "4.19.0", responseObject =
         SecondaryStorageHeuristicsResponse.class, requestHasSensitiveInfo = false, entityType = {Heuristic.class}, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
@@ -35,9 +35,9 @@ public class ListSecondaryStorageSelectorsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, required = true, entityType = ZoneResponse.class, type = CommandType.UUID, description = "The zone ID to be used in the search filter.")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PURPOSE, type = CommandType.STRING, description =
-            "Whether to filter the selectors by purpose and, if so, which one. " + HEURISTIC_PURPOSE_VALID_OPTIONS)
-    private String purpose;
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description =
+            "Whether to filter the selectors by type and, if so, which one. " + HEURISTIC_TYPE_VALID_OPTIONS)
+    private String type;
 
     @Parameter(name = ApiConstants.SHOW_REMOVED, type = CommandType.BOOLEAN, description = "Show removed heuristics.")
     private boolean showRemoved = false;
@@ -46,8 +46,8 @@ public class ListSecondaryStorageSelectorsCmd extends BaseListCmd {
         return zoneId;
     }
 
-    public String getPurpose() {
-        return purpose;
+    public String getType() {
+        return type;
     }
 
     public boolean isShowRemoved() {

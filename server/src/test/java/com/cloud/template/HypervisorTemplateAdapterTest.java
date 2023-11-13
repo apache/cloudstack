@@ -50,7 +50,7 @@ import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
@@ -413,23 +413,23 @@ public class HypervisorTemplateAdapterTest {
     }
 
     @Test
-    public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicPurpose() {
+    public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicType() {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
 
         Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(ImageFormat.ISO);
         _adapter.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
-        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicPurpose.ISO, vmTemplateVOMock);
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
     }
 
     @Test
-    public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicPurpose() {
+    public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicType() {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
 
         Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(ImageFormat.QCOW2);
         _adapter.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
-        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicPurpose.TEMPLATE, vmTemplateVOMock);
+        Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
     }
 
     @Test

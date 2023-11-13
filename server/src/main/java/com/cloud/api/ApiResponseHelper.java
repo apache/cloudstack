@@ -5095,7 +5095,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public SecondaryStorageHeuristicsResponse createSecondaryStorageSelectorResponse(Heuristic heuristic) {
         String zoneUuid = ApiDBUtils.findZoneById(heuristic.getZoneId()).getUuid();
         SecondaryStorageHeuristicsResponse secondaryStorageHeuristicsResponse = new SecondaryStorageHeuristicsResponse(heuristic.getUuid(), heuristic.getName(),
-                heuristic.getDescription(), zoneUuid, heuristic.getPurpose(), heuristic.getHeuristicRule(), heuristic.getCreated(), heuristic.getRemoved());
+                heuristic.getDescription(), zoneUuid, heuristic.getType(), heuristic.getHeuristicRule(), heuristic.getCreated(), heuristic.getRemoved());
         secondaryStorageHeuristicsResponse.setResponseName("secondarystorageheuristics");
 
         return secondaryStorageHeuristicsResponse;

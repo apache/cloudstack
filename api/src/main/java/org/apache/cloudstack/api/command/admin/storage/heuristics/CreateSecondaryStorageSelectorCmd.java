@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
-import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_PURPOSE_VALID_OPTIONS;
+import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_TYPE_VALID_OPTIONS;
 
 @APICommand(name = "createSecondaryStorageSelector", description = "Creates a secondary storage selector, described by the heuristic rule.", since = "4.19.0", responseObject =
         SecondaryStorageHeuristicsResponse.class, entityType = {Heuristic.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
@@ -44,9 +44,9 @@ public class CreateSecondaryStorageSelectorCmd extends BaseCmd{
             "rule will be applied.")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PURPOSE, required = true, type = BaseCmd.CommandType.STRING, description =
-            "The resource type directed to a specific secondary storage by the selector. " + HEURISTIC_PURPOSE_VALID_OPTIONS)
-    private String purpose;
+    @Parameter(name = ApiConstants.TYPE, required = true, type = BaseCmd.CommandType.STRING, description =
+            "The resource type directed to a specific secondary storage by the selector. " + HEURISTIC_TYPE_VALID_OPTIONS)
+    private String type;
 
     @Parameter(name = ApiConstants.HEURISTIC_RULE, required = true, type = BaseCmd.CommandType.STRING, description = "The heuristic rule, in JavaScript language. It is required " +
             "that it returns the UUID of a secondary storage pool. An example of a rule is `if (snapshot.hypervisorType === 'KVM') { '7832f261-c602-4e8e-8580-2496ffbbc45d'; " +
@@ -65,8 +65,8 @@ public class CreateSecondaryStorageSelectorCmd extends BaseCmd{
         return zoneId;
     }
 
-    public String getPurpose() {
-        return purpose;
+    public String getType() {
+        return type;
     }
 
     public String getHeuristicRule() {

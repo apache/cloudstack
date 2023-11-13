@@ -87,7 +87,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -465,7 +465,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (storeUuid != null) {
             imageStore = _dataStoreMgr.getDataStore(storeUuid, DataStoreRole.Image);
         } else {
-            imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicPurpose.VOLUME, volume);
+            imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, HeuristicType.VOLUME, volume);
             if (imageStore == null) {
                 imageStore = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             }

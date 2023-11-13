@@ -29,7 +29,7 @@ public interface Heuristic extends InternalIdentity, Identity {
 
     Long getZoneId();
 
-    String getPurpose();
+    String getType();
 
     String getHeuristicRule();
 

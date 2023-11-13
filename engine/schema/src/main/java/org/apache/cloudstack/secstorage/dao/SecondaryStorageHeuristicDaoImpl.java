@@ -21,28 +21,28 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.secstorage.HeuristicVO;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
 @Component
 public class SecondaryStorageHeuristicDaoImpl extends GenericDaoBase<HeuristicVO, Long> implements SecondaryStorageHeuristicDao {
-    private SearchBuilder<HeuristicVO> zoneAndPurposeSearch;
+    private SearchBuilder<HeuristicVO> zoneAndTypeSearch;
 
     @PostConstruct
     public void init() {
-        zoneAndPurposeSearch = createSearchBuilder();
-        zoneAndPurposeSearch.and("zoneId", zoneAndPurposeSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        zoneAndPurposeSearch.and("purpose", zoneAndPurposeSearch.entity().getPurpose(), SearchCriteria.Op.IN);
-        zoneAndPurposeSearch.done();
+        zoneAndTypeSearch = createSearchBuilder();
+        zoneAndTypeSearch.and("zoneId", zoneAndTypeSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        zoneAndTypeSearch.and("type", zoneAndTypeSearch.entity().getType(), SearchCriteria.Op.IN);
+        zoneAndTypeSearch.done();
     }
 
     @Override
-    public HeuristicVO findByZoneIdAndPurpose(long zoneId, HeuristicPurpose purpose) {
-        SearchCriteria<HeuristicVO> searchCriteria = zoneAndPurposeSearch.create();
+    public HeuristicVO findByZoneIdAndType(long zoneId, HeuristicType type) {
+        SearchCriteria<HeuristicVO> searchCriteria = zoneAndTypeSearch.create();
         searchCriteria.setParameters("zoneId", zoneId);
-        searchCriteria.setParameters("purpose", purpose.toString());
+        searchCriteria.setParameters("type", type.toString());
         final Filter filter = new Filter(HeuristicVO.class, "created", false);
 
         return findOneBy(searchCriteria, filter);

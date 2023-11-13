@@ -57,7 +57,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -317,13 +317,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     protected DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId) {
-        HeuristicPurpose heuristicPurpose;
+        HeuristicType heuristicType;
         if (ImageFormat.ISO.equals(template.getFormat())) {
-            heuristicPurpose = HeuristicPurpose.ISO;
+            heuristicType = HeuristicType.ISO;
         } else {
-            heuristicPurpose = HeuristicPurpose.TEMPLATE;
+            heuristicType = HeuristicType.TEMPLATE;
         }
-        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicPurpose, template);
+        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
     protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {

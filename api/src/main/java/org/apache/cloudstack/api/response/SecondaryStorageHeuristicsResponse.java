@@ -25,7 +25,7 @@ import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 
 import java.util.Date;
 
-import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_PURPOSE_VALID_OPTIONS;
+import static org.apache.cloudstack.api.ApiConstants.HEURISTIC_TYPE_VALID_OPTIONS;
 
 @EntityReference(value = {Heuristic.class})
 public class SecondaryStorageHeuristicsResponse extends BaseResponse {
@@ -46,9 +46,9 @@ public class SecondaryStorageHeuristicsResponse extends BaseResponse {
     @Param(description = "The zone which the heuristic is valid upon.")
     private String zoneId;
 
-    @SerializedName(ApiConstants.PURPOSE)
-    @Param(description = "The resource type directed to a specific secondary storage by the selector. " + HEURISTIC_PURPOSE_VALID_OPTIONS)
-    private String purpose;
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "The resource type directed to a specific secondary storage by the selector. " + HEURISTIC_TYPE_VALID_OPTIONS)
+    private String type;
 
     @SerializedName(ApiConstants.HEURISTIC_RULE)
     @Param(description = "The heuristic rule, in JavaScript language, used to select a secondary storage to be directed.")
@@ -63,13 +63,13 @@ public class SecondaryStorageHeuristicsResponse extends BaseResponse {
     private Date removed;
 
 
-    public SecondaryStorageHeuristicsResponse(String id, String name, String description, String zoneId, String purpose, String heuristicRule, Date created, Date removed) {
+    public SecondaryStorageHeuristicsResponse(String id, String name, String description, String zoneId, String type, String heuristicRule, Date created, Date removed) {
         super("heuristics");
         this.id = id;
         this.name = name;
         this.description = description;
         this.zoneId = zoneId;
-        this.purpose = purpose;
+        this.type = type;
         this.heuristicRule = heuristicRule;
         this.created = created;
         this.removed = removed;
@@ -107,12 +107,12 @@ public class SecondaryStorageHeuristicsResponse extends BaseResponse {
         this.zoneId = zoneId;
     }
 
-    public String getPurpose() {
-        return purpose;
+    public String getType() {
+        return type;
     }
 
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getHeuristicRule() {

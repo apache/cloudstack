@@ -29,7 +29,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.junit.Assert;
 import org.junit.Test;
@@ -95,7 +95,7 @@ public class SnapshotServiceImplTest {
 
     @Test
     public void getImageStoreForSnapshotTestShouldListFreeImageStoresWithNoHeuristicRule() {
-        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(SnapshotInfo.class))).
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(SnapshotInfo.class))).
                 thenReturn(null);
         Mockito.when(snapshotMock.getDataCenterId()).thenReturn(DUMMY_ID);
 
@@ -107,7 +107,7 @@ public class SnapshotServiceImplTest {
     @Test
     public void getImageStoreForSnapshotTestShouldReturnImageStoreReturnedByTheHeuristicRule() {
         DataStore dataStore = Mockito.mock(DataStore.class);
-        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(SnapshotInfo.class))).
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(SnapshotInfo.class))).
                 thenReturn(dataStore);
 
         snapshotService.getImageStoreForSnapshot(DUMMY_ID, snapshotMock);

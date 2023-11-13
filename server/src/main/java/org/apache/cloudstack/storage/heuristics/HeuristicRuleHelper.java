@@ -31,7 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Account;
@@ -74,34 +74,34 @@ public class HeuristicRuleHelper {
     private AccountDao accountDao;
 
     /**
-     * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicPurpose}.
+     * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
      * It returns null otherwise.
      * @param zoneId used to search for the heuristic rules.
-     * @param heuristicPurpose used for checking if there is a heuristic rule for the given {@link HeuristicPurpose}.
+     * @param heuristicType used for checking if there is a heuristic rule for the given {@link HeuristicType}.
      * @param obj can be from the following classes: {@link VMTemplateVO}, {@link SnapshotInfo} and {@link VolumeVO}.
      *           They are used to retrieve attributes for injecting in the JS rule.
      * @return the corresponding {@link DataStore} if there is a heuristic rule, returns null otherwise.
      */
-    public DataStore getImageStoreIfThereIsHeuristicRule(Long zoneId, HeuristicPurpose heuristicPurpose, Object obj) {
-        HeuristicVO heuristicsVO = secondaryStorageHeuristicDao.findByZoneIdAndPurpose(zoneId, heuristicPurpose);
+    public DataStore getImageStoreIfThereIsHeuristicRule(Long zoneId, HeuristicType heuristicType, Object obj) {
+        HeuristicVO heuristicsVO = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, heuristicType);
 
         if (heuristicsVO == null) {
-            LOGGER.debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic purpose [%s]. Returning null.", zoneId, heuristicPurpose));
+            LOGGER.debug(String.format("No heuristic rules found for zone with ID [%s] and heuristic type [%s]. Returning null.", zoneId, heuristicType));
             return null;
         } else {
             LOGGER.debug(String.format("Found the heuristic rule %s to apply for zone with ID [%s].", heuristicsVO, zoneId));
-            return interpretHeuristicRule(heuristicsVO.getHeuristicRule(), heuristicPurpose, obj, zoneId);
+            return interpretHeuristicRule(heuristicsVO.getHeuristicRule(), heuristicType, obj, zoneId);
         }
     }
 
     /**
      * Build the preset variables ({@link Template}, {@link Snapshot} and {@link Volume}) for the JS script.
      */
-    protected void buildPresetVariables(JsInterpreter jsInterpreter, HeuristicPurpose heuristicPurpose, long zoneId, Object obj) {
+    protected void buildPresetVariables(JsInterpreter jsInterpreter, HeuristicType heuristicType, long zoneId, Object obj) {
         PresetVariables presetVariables = new PresetVariables();
         Long accountId = null;
 
-        switch (heuristicPurpose) {
+        switch (heuristicType) {
             case TEMPLATE:
             case ISO:
                 presetVariables.setTemplate(setTemplatePresetVariable((VMTemplateVO) obj));
@@ -238,22 +238,22 @@ public class HeuristicRuleHelper {
     }
 
     /**
-     * This method calls {@link HeuristicRuleHelper#buildPresetVariables(JsInterpreter, HeuristicPurpose, long, Object)} for building the preset variables and
+     * This method calls {@link HeuristicRuleHelper#buildPresetVariables(JsInterpreter, HeuristicType, long, Object)} for building the preset variables and
      * execute the JS script specified in the <b>rule</b> ({@link String}) parameter. The script is pre-injected with the preset variables, to allow the JS script to reference them
      * in the code scope.
      * <br>
      * <br>
      * The JS script needs to return a valid UUID ({@link String}) of a secondary storage, otherwise a {@link CloudRuntimeException} is thrown.
      * @param rule the {@link String} representing the JS script.
-     * @param heuristicPurpose used for building the preset variables accordingly to the  {@link HeuristicPurpose} specified.
+     * @param heuristicType used for building the preset variables accordingly to the  {@link HeuristicType} specified.
      * @param obj can be from the following classes: {@link VMTemplateVO}, {@link SnapshotInfo} and {@link VolumeVO}.
      *           They are used to retrieve attributes for injecting in the JS rule.
      * @param zoneId used for injecting the {@link SecondaryStorage} preset variables.
      * @return the {@link DataStore} returned by the script.
      */
-    public DataStore interpretHeuristicRule(String rule, HeuristicPurpose heuristicPurpose, Object obj, long zoneId) {
+    public DataStore interpretHeuristicRule(String rule, HeuristicType heuristicType, Object obj, long zoneId) {
         try (JsInterpreter jsInterpreter = new JsInterpreter(HEURISTICS_SCRIPT_TIMEOUT)) {
-            buildPresetVariables(jsInterpreter, heuristicPurpose, zoneId, obj);
+            buildPresetVariables(jsInterpreter, heuristicType, zoneId, obj);
             Object scriptReturn = jsInterpreter.executeScript(rule);
 
             if (!(scriptReturn instanceof String)) {

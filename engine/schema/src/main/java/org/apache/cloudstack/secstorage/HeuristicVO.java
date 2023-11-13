@@ -51,8 +51,8 @@ public class HeuristicVO implements Heuristic {
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 
-    @Column(name = "purpose", nullable = false)
-    private String purpose;
+    @Column(name = "type", nullable = false)
+    private String type;
 
     @Column(name = "heuristic_rule", nullable = false, length = 65535)
     private String heuristicRule;
@@ -68,11 +68,11 @@ public class HeuristicVO implements Heuristic {
     public HeuristicVO() {
     }
 
-    public HeuristicVO(String name, String description, Long zoneId, String purpose, String heuristicRule) {
+    public HeuristicVO(String name, String description, Long zoneId, String type, String heuristicRule) {
         this.name = name;
         this.description = description;
         this.zoneId = zoneId;
-        this.purpose = purpose;
+        this.type = type;
         this.heuristicRule = heuristicRule;
     }
 
@@ -98,8 +98,8 @@ public class HeuristicVO implements Heuristic {
         return zoneId;
     }
 
-    public String getPurpose() {
-        return purpose;
+    public String getType() {
+        return type;
     }
 
     public String getHeuristicRule() {
@@ -120,6 +120,6 @@ public class HeuristicVO implements Heuristic {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "heuristicRule", "purpose");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "heuristicRule", "type");
     }
 }

@@ -91,7 +91,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -628,7 +628,7 @@ public class TemplateManagerImplTest {
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
 
         Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
-        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(VolumeVO.class))).thenReturn(null);
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(VolumeVO.class))).thenReturn(null);
         Mockito.when(dataStoreManager.getImageStoreWithFreeCapacity(Mockito.anyLong())).thenReturn(dataStore);
 
         templateManager.getImageStore(null, 1L, volumeVO);
@@ -641,7 +641,7 @@ public class TemplateManagerImplTest {
         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
 
         Mockito.when(dataStoreManager.getDataStore(Mockito.anyString(), Mockito.any(DataStoreRole.class))).thenReturn(null);
-        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicPurpose.class), Mockito.any(VolumeVO.class))).thenReturn(dataStore);
+        Mockito.when(heuristicRuleHelperMock.getImageStoreIfThereIsHeuristicRule(Mockito.anyLong(), Mockito.any(HeuristicType.class), Mockito.any(VolumeVO.class))).thenReturn(dataStore);
 
         templateManager.getImageStore(null, 1L, volumeVO);
         Mockito.verify(dataStoreManager, Mockito.times(0)).getImageStoreWithFreeCapacity(Mockito.anyLong());

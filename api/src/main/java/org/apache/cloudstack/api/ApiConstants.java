@@ -1051,7 +1051,7 @@ public class ApiConstants {
     public static final String HAS_RULES = "hasrules";
 
     public static final String HEURISTIC_RULE = "heuristicrule";
-    public static final String HEURISTIC_PURPOSE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
+    public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
 
     public static final String MANAGEMENT = "management";
     public static final String IS_VNF = "isvnf";

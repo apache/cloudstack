@@ -4746,7 +4746,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<SecondaryStorageHeuristicsResponse> listSecondaryStorageSelectors(ListSecondaryStorageSelectorsCmd cmd) {
         ListResponse<SecondaryStorageHeuristicsResponse> response = new ListResponse<>();
-        Pair<List<HeuristicVO>, Integer> result = listSecondaryStorageSelectorsInternal(cmd.getZoneId(), cmd.getPurpose(), cmd.isShowRemoved());
+        Pair<List<HeuristicVO>, Integer> result = listSecondaryStorageSelectorsInternal(cmd.getZoneId(), cmd.getType(), cmd.isShowRemoved());
         List<SecondaryStorageHeuristicsResponse> listOfSecondaryStorageHeuristicsResponses = new ArrayList<>();
 
         for (Heuristic heuristic : result.first()) {
@@ -4758,17 +4758,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
-    private Pair<List<HeuristicVO>, Integer> listSecondaryStorageSelectorsInternal(Long zoneId, String purpose, boolean showRemoved) {
+    private Pair<List<HeuristicVO>, Integer> listSecondaryStorageSelectorsInternal(Long zoneId, String type, boolean showRemoved) {
         SearchBuilder<HeuristicVO> searchBuilder = secondaryStorageHeuristicDao.createSearchBuilder();
 
         searchBuilder.and("zoneId", searchBuilder.entity().getZoneId(), SearchCriteria.Op.EQ);
-        searchBuilder.and("purpose", searchBuilder.entity().getPurpose(), SearchCriteria.Op.EQ);
+        searchBuilder.and("type", searchBuilder.entity().getType(), SearchCriteria.Op.EQ);
 
         searchBuilder.done();
 
         SearchCriteria<HeuristicVO> searchCriteria = searchBuilder.create();
         searchCriteria.setParameters("zoneId", zoneId);
-        searchCriteria.setParametersIfNotNull("purpose", purpose);
+        searchCriteria.setParametersIfNotNull("type", type);
 
         return secondaryStorageHeuristicDao.searchAndCount(searchCriteria, null, showRemoved);
     }

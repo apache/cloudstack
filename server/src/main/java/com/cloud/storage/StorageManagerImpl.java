@@ -102,7 +102,7 @@ import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
@@ -1906,25 +1906,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         String description = cmd.getDescription();
         long zoneId = cmd.getZoneId();
         String heuristicRule = cmd.getHeuristicRule();
-        String purpose = cmd.getPurpose();
-        HeuristicPurpose formattedPurpose = EnumUtils.getEnumIgnoreCase(HeuristicPurpose.class, purpose);
+        String type = cmd.getType();
+        HeuristicType formattedType = EnumUtils.getEnumIgnoreCase(HeuristicType.class, type);
 
-        if (formattedPurpose == null) {
-            throw new IllegalArgumentException(String.format("The given heuristic purpose [%s] is not valid for creating a new secondary storage selector." +
-                    " The valid options are %s.", purpose, Arrays.asList(HeuristicPurpose.values())));
+        if (formattedType == null) {
+            throw new IllegalArgumentException(String.format("The given heuristic type [%s] is not valid for creating a new secondary storage selector." +
+                    " The valid options are %s.", type, Arrays.asList(HeuristicType.values())));
         }
 
-        HeuristicVO heuristic = secondaryStorageHeuristicDao.findByZoneIdAndPurpose(zoneId, formattedPurpose);
+        HeuristicVO heuristic = secondaryStorageHeuristicDao.findByZoneIdAndType(zoneId, formattedType);
 
         if (heuristic != null) {
             DataCenterVO dataCenter = _dcDao.findById(zoneId);
-            throw new CloudRuntimeException(String.format("There is already a heuristic rule in the specified %s with purpose [%s].",
-                    dataCenter, purpose));
+            throw new CloudRuntimeException(String.format("There is already a heuristic rule in the specified %s with the type [%s].",
+                    dataCenter, type));
         }
 
         validateHeuristicRule(heuristicRule);
 
-        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedPurpose.toString(), heuristicRule);
+        HeuristicVO heuristicVO = new HeuristicVO(name, description, zoneId, formattedType.toString(), heuristicRule);
         return secondaryStorageHeuristicDao.persist(heuristicVO);
     }
 

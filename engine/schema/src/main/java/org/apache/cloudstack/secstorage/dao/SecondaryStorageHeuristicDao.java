@@ -18,9 +18,9 @@ package org.apache.cloudstack.secstorage.dao;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 
 public interface SecondaryStorageHeuristicDao extends GenericDao<HeuristicVO, Long> {
 
-    HeuristicVO findByZoneIdAndPurpose(long zoneId, HeuristicPurpose purpose);
+    HeuristicVO findByZoneIdAndType(long zoneId, HeuristicType type);
 }

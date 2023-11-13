@@ -146,13 +146,14 @@ CREATE TABLE IF NOT EXISTS `cloud`.`heuristics` (
     `name` text NOT NULL,
     `description` text DEFAULT NULL,
     `zone_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the zone to apply the heuristic, foreign key to `data_center` table',
-    `purpose` varchar(255) NOT NULL,
+    `type` varchar(255) NOT NULL,
     `heuristic_rule` text NOT NULL COMMENT 'JS script that defines to which secondary storage the resource will be allocated.',
     `created` datetime NOT NULL,
     `removed` datetime DEFAULT NULL,
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_heuristics__zone_id` FOREIGN KEY(`zone_id`) REFERENCES `cloud`.`data_center`(`id`)
 );
+
 -- Add tables for VM Scheduler
 DROP TABLE IF EXISTS `cloud`.`vm_schedule`;
 CREATE TABLE `cloud`.`vm_schedule` (

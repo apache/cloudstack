@@ -47,7 +47,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicPurpose;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
@@ -330,7 +330,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * Otherwise, returns {@link DataStore}s with free capacity.
      */
     protected DataStore getImageStoreForSnapshot(Long dataCenterId, SnapshotInfo snapshot) {
-        DataStore imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(dataCenterId, HeuristicPurpose.SNAPSHOT, snapshot);
+        DataStore imageStore = heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(dataCenterId, HeuristicType.SNAPSHOT, snapshot);
 
         if (imageStore == null) {
             imageStore = dataStoreMgr.getImageStoreWithFreeCapacity(snapshot.getDataCenterId());
