@@ -1157,7 +1157,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     private String getDataStoreUrlFromStore(DataStoreTO store) {
         List<StoragePoolType> supportedPoolType = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.Filesystem);
         if (!(store instanceof NfsTO) && (!(store instanceof PrimaryDataStoreTO) || !supportedPoolType.contains(((PrimaryDataStoreTO) store).getPoolType()))) {
-            s_logger.error(String.format("Unsupported protocol, store: %s", store.getUuid()));
+            logger.error(String.format("Unsupported protocol, store: %s", store.getUuid()));
             throw new InvalidParameterValueException("unsupported protocol");
         }
 
