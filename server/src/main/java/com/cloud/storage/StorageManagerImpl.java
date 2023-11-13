@@ -865,9 +865,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreLifeCycle lifeCycle = storeProvider.getDataStoreLifeCycle();
         DataStore store = null;
         try {
-            if(params.get("scheme").toString().equals("file")){
+            if (params.get("scheme").toString().equals("file")) {
                 store = createLocalStorage(params);
-            }else{
+            } else {
                 store = lifeCycle.initialize(params);
             }
             if (scopeType == ScopeType.CLUSTER) {
