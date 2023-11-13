@@ -24,6 +24,7 @@ import com.cloud.host.Host;
 
 public class CheckOnHostCommand extends Command {
     HostTO host;
+    boolean reportCheckFailureIfOneStorageIsDown;
 
     protected CheckOnHostCommand() {
     }
@@ -33,8 +34,18 @@ public class CheckOnHostCommand extends Command {
         setWait(20);
     }
 
+    public CheckOnHostCommand(Host host, boolean reportCheckFailureIfOneStorageIsDown) {
+        super();
+        this.host = new HostTO(host);
+        this.reportCheckFailureIfOneStorageIsDown = reportCheckFailureIfOneStorageIsDown;
+    }
+
     public HostTO getHost() {
         return host;
+    }
+
+    public boolean isCheckFailedOnOneStorage() {
+        return reportCheckFailureIfOneStorageIsDown;
     }
 
     @Override

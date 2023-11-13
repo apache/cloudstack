@@ -269,7 +269,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="hyperVMWShow && !deployasis">
-            <a-form-item :label="$t('label.nicadaptertype')" name="nicadaptertype" ref="nicadaptertype">
+            <a-form-item ref="nicAdapterType" name="nicAdapterType" :label="$t('label.nicadaptertype')">
               <a-select
                 v-model:value="form.nicAdapterType"
                 showSearch
@@ -320,6 +320,25 @@
             :loading="osTypes.loading"
             :placeholder="apiParams.ostypeid.description">
             <a-select-option v-for="opt in osTypes.opts" :key="opt.id" :label="opt.name || opt.description">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item
+          name="templatetype"
+          ref="templatetype">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.templatetype"
+            :placeholder="apiParams.templatetype.description">
+            <a-select-option v-for="opt in templateTypes.opts" :key="opt.id">
               {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -405,11 +424,6 @@
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12" v-if="isAdminRole">
-                    <a-checkbox value="isrouting">
-                      {{ $t('label.isrouting') }}
-                    </a-checkbox>
-                  </a-col>
                 </a-row>
               </a-checkbox-group>
             </a-form-item>
@@ -465,6 +479,7 @@ export default {
       format: {},
       osTypes: {},
       defaultOsType: '',
+      templateTypes: {},
       userdata: {},
       userdataid: null,
       userdatapolicy: null,
@@ -539,6 +554,7 @@ export default {
       this.fetchCustomHypervisorName()
       this.fetchZone()
       this.fetchOsTypes()
+      this.fetchTemplateTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -681,6 +697,33 @@ export default {
         this.osTypes.loading = false
       })
     },
+    fetchTemplateTypes () {
+      this.templateTypes.opts = []
+      const templatetypes = []
+      templatetypes.push({
+        id: 'USER',
+        description: 'USER'
+      })
+      templatetypes.push({
+        id: 'VNF',
+        description: 'VNF'
+      })
+      if (this.isAdminRole) {
+        templatetypes.push({
+          id: 'SYSTEM',
+          description: 'SYSTEM'
+        })
+        templatetypes.push({
+          id: 'BUILTIN',
+          description: 'BUILTIN'
+        })
+        templatetypes.push({
+          id: 'ROUTING',
+          description: 'ROUTING'
+        })
+      }
+      this.templateTypes.opts = templatetypes
+    },
     fetchUserData () {
       const params = {}
       params.listAll = true
@@ -769,30 +812,30 @@ export default {
 
       this.rootDisk.opts = controller
     },
-    fetchNicAdapterType () {
-      const nicAdapterType = []
-      nicAdapterType.push({
+    fetchNicAdapterTypes () {
+      const nicAdapterTypes = []
+      nicAdapterTypes.push({
         id: '',
         description: ''
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'E1000',
         description: 'E1000'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'PCNet32',
         description: 'PCNet32'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet2',
         description: 'Vmxnet2'
       })
-      nicAdapterType.push({
+      nicAdapterTypes.push({
         id: 'Vmxnet3',
         description: 'Vmxnet3'
       })
 
-      this.nicAdapterType.opts = nicAdapterType
+      this.nicAdapterType.opts = nicAdapterTypes
     },
     fetchKeyboardType () {
       const keyboardType = []
@@ -958,7 +1001,7 @@ export default {
       this.resetSelect(arrSelectReset)
       this.fetchFormat(hyperVisor)
       this.fetchRootDisk(hyperVisor)
-      this.fetchNicAdapterType()
+      this.fetchNicAdapterTypes()
       this.fetchKeyboardType()
 
       this.form.rootDiskControllerType = this.rootDisk.opts.length > 0 ? 'osdefault' : ''
@@ -973,10 +1016,10 @@ export default {
           delete this.form.zoneids
         }
         const formRaw = toRaw(this.form)
-        const values = this.handleRemoveFields(formRaw)
+        const formvalues = this.handleRemoveFields(formRaw)
         let params = {}
-        for (const key in values) {
-          const input = values[key]
+        for (const key in formvalues) {
+          const input = formvalues[key]
 
           if (input === undefined) {
             continue

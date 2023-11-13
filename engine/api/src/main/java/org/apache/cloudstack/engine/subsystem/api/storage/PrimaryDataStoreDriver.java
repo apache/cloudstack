@@ -23,6 +23,8 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.Pair;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
@@ -132,4 +134,8 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
      * @param tagValue The value of the VM's tag
      */
     void provideVmTags(long vmId, long volumeId, String tagValue);
+
+    boolean isStorageSupportHA(StoragePoolType type);
+
+    void detachVolumeFromAllStorageNodes(Volume volume);
 }

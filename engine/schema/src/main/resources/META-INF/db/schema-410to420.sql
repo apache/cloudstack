@@ -154,7 +154,7 @@ CREATE VIEW `cloud`.`image_store_view` AS
         `cloud`.`image_store_details` ON image_store_details.store_id = image_store.id;
 
             
--- here we have to allow null for store_id to accomodate baremetal case to search for ready templates since template state is only stored in this table
+-- here we have to allow null for store_id to accommodate baremetal case to search for ready templates since template state is only stored in this table
 -- FK also commented out due to this            
 CREATE TABLE  `cloud`.`template_store_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -525,9 +525,9 @@ CREATE VIEW `cloud`.`event_view` AS
             left join
         `cloud`.`event` eve ON event.start_id = eve.id;
 
-ALTER TABLE `cloud`.`region` ADD COLUMN `portableip_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Portable IP service enalbed in the Region';
+ALTER TABLE `cloud`.`region` ADD COLUMN `portableip_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Portable IP service enabled in the Region';
 
-ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enalbed in the Region';
+ALTER TABLE `cloud`.`region` ADD COLUMN `gslb_service_enabled` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Is GSLB service enabled in the Region';
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting as gslb service provider in the zone';
 
@@ -2067,7 +2067,7 @@ update `cloud`.`vpc_gateways` set network_acl_id = 2;
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'VpcManager', 'blacklisted.routes', NULL, 'Routes that are blacklisted, can not be used for Static Routes creation for the VPC Private Gateway');
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Diables dynamically scaling a vm');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.dynamic.scale.vm', 'false', 'Enables/Disables dynamically scaling a vm');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'scale.retry', '2', 'Number of times to retry scaling up the vm');
 
