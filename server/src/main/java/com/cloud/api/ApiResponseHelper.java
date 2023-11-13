@@ -2583,14 +2583,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 Domain domain = ApiDBUtils.findDomainById(domainNetworkDetails.first());
                 if (domain != null) {
                     response.setDomainId(domain.getUuid());
-                    StringBuilder domainPath = new StringBuilder();
-                    if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
-                        domainPath.append("/");
-                    }
-                    else{
-                        (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-                    }
-                    response.setDomainPath(domainPath.toString());
+                    response.setDomainPath(getDomainPath(domain.getPath()));
                 }
             }
             response.setSubdomainAccess(domainNetworkDetails.second());
@@ -2602,14 +2595,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
                 response.setDomainName(domain.getName());
-                StringBuilder domainPath = new StringBuilder();
-                if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
-                    domainPath.append("/");
-                }
-                else{
-                    (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-                }
-                response.setDomainPath(domainPath.toString());
+                response.setDomainPath(getDomainPath(domain.getPath()));
             }
 
         }
@@ -2858,14 +2844,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(object.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
-        StringBuilder domainPath = new StringBuilder();
-        if(ObjectUtils.isEmpty(domain.getPath()) || domain.getPath().equals("/")){
-            domainPath.append("/");
-        }
-        else{
-            (domainPath.append(domain.getPath())).deleteCharAt(domainPath.length() - 1);
-        }
-        response.setDomainPath(domainPath.toString());
+        response.setDomainPath(getDomainPath(domain.getPath()));
     }
 
     private void populateOwner(ControlledViewEntityResponse response, ControlledEntity object) {
@@ -5107,5 +5086,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
         return response;
+    }
+
+    private String getDomainPath(String path){
+        StringBuilder domainPath = new StringBuilder();
+        if(ObjectUtils.isEmpty(path) || path.equals("/")){
+            domainPath.append("/");
+        }
+        else{
+            (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
+        }
+        return domainPath.toString();
     }
 }
