@@ -5952,15 +5952,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
-    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) {
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) throws CloudRuntimeException {
         Long ipId = cmd.getId();
+        String ipAddress = cmd.getIpAddress();
         Date newEndDate = cmd.getEndDate();
 
         if (new Date().after(newEndDate)) {
             throw new InvalidParameterValueException(String.format("The given end date [%s] is invalid as it is before the current date.", newEndDate));
         }
 
-        PublicIpQuarantine publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
         checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
 
         String publicIpQuarantineAddress = _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString();
@@ -5970,28 +5971,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new CloudRuntimeException(String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", publicIpQuarantineAddress));
         }
 
-        return _ipAddrMgr.updatePublicIpAddressInQuarantine(ipId, newEndDate);
+        return _ipAddrMgr.updatePublicIpAddressInQuarantine(publicIpQuarantine.getId(), newEndDate);
     }
 
     @Override
-    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) {
+    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) throws CloudRuntimeException {
         Long ipId = cmd.getId();
         String ipAddress = cmd.getIpAddress();
-        PublicIpQuarantine publicIpQuarantine;
-
-        if (ipId != null) {
-            s_logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
-            publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
-        } else if (ipAddress != null) {
-            s_logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
-            publicIpQuarantine = publicIpQuarantineDao.findByIpAddress(ipAddress);
-        } else {
-            throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");
-        }
-
-        if (publicIpQuarantine == null) {
-            throw new CloudRuntimeException("There is no quarantine for the specified IP address.");
-        }
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
 
         String removalReason = cmd.getRemovalReason();
         if (StringUtils.isBlank(removalReason)) {
@@ -6003,6 +5990,29 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
 
         _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
+    }
+
+    /**
+     * Retrieves the active quarantine for the given public IP address. It can find by the ID of the quarantine or the address of the public IP.
+     * @throws CloudRuntimeException if it does not find an active quarantine for the given public IP.
+     */
+    protected PublicIpQuarantine retrievePublicIpQuarantine(Long ipId, String ipAddress) throws CloudRuntimeException {
+        PublicIpQuarantine publicIpQuarantine;
+        if (ipId != null) {
+            s_logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
+            publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        } else if (ipAddress != null) {
+            s_logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
+            publicIpQuarantine = publicIpQuarantineDao.findByIpAddress(ipAddress);
+        } else {
+            throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");
+        }
+
+        if (publicIpQuarantine == null) {
+            throw new CloudRuntimeException("There is no active quarantine for the specified IP address.");
+        }
+
+        return  publicIpQuarantine;
     }
 
     protected void checkCallerForPublicIpQuarantineAccess(PublicIpQuarantine publicIpQuarantine) {

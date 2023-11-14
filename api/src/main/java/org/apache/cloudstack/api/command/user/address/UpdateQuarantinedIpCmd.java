@@ -34,15 +34,23 @@ import java.util.Date;
         authorized = {RoleType.Admin, RoleType.DomainAdmin})
 public class UpdateQuarantinedIpCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, required = true, description = "The ID of the public IP address in " +
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IpQuarantineResponse.class, description = "The ID of the public IP address in " +
             "active quarantine.")
     private Long id;
+
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "The public IP address in active quarantine. Either the IP address is informed, or the ID" +
+            " of the IP address in quarantine.")
+    private String ipAddress;
 
     @Parameter(name = ApiConstants.END_DATE, type = BaseCmd.CommandType.DATE, required = true, description = "The date when the quarantine will no longer be active.")
     private Date endDate;
 
     public Long getId() {
         return id;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     public Date getEndDate() {

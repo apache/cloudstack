@@ -863,6 +863,57 @@ public class NetworkServiceImplTest {
 
         Assert.assertEquals(expectedNewEndDate , actualPublicIpQuarantine.getEndDate());
     }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestIpIdNullAndIpAddressNullShouldThrowException() {
+        service.retrievePublicIpQuarantine(null, null);
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestValidIpIdShouldReturnPublicQuarantine() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(1L, null);
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestInvalidIpIdShouldThrowException() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(null);
+
+        service.retrievePublicIpQuarantine(1L, null);
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestValidIpAddressShouldReturnPublicQuarantine() {
+        Mockito.when(publicIpQuarantineDaoMock.findByIpAddress(Mockito.anyString())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(null, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void retrievePublicIpQuarantineTestInvalidIpAddressShouldThrowException() {
+        Mockito.when(publicIpQuarantineDaoMock.findByIpAddress(Mockito.anyString())).thenReturn(null);
+
+        service.retrievePublicIpQuarantine(null, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findByIpAddress(Mockito.anyString());
+    }
+
+    @Test
+    public void retrievePublicIpQuarantineTestIpIdAndAddressInformedShouldUseId() {
+        Mockito.when(publicIpQuarantineDaoMock.findById(Mockito.anyLong())).thenReturn(publicIpQuarantineVOMock);
+
+        service.retrievePublicIpQuarantine(1L, "10.1.1.1");
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(1)).findById(Mockito.anyLong());
+        Mockito.verify(publicIpQuarantineDaoMock, Mockito.times(0)).findByIpAddress(Mockito.anyString());
+    }
+
     @Test
     public void validateNotSharedNetworkRouterIPv4() {
         NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
