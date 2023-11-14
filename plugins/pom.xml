@@ -60,6 +60,7 @@
         <module>api/rate-limit</module>
         <module>api/solidfire-intg-test</module>
 
+        <module>backup/backroll</module>
         <module>backup/dummy</module>
         <module>backup/networker</module>
 
@@ -194,6 +195,7 @@
             </activation>
             <modules>
                 <module>api/vmware-sioc</module>
+                <module>backup/backroll</module>
                 <module>backup/veeam</module>
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
