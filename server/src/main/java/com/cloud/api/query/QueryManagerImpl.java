@@ -3560,7 +3560,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return _srvOfferingJoinDao.searchAndCount(sc, searchFilter);
     }
 
-
     @Override
     public ListResponse<ZoneResponse> listDataCenters(ListZonesCmd cmd) {
         Pair<List<DataCenterJoinVO>, Integer> result = listDataCentersInternal(cmd);
