@@ -400,7 +400,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private VMTemplateZoneDao _templateZoneDao;
     @Inject
-    private TemplateDataStoreDao _templateStoreDao;
+    protected TemplateDataStoreDao _templateStoreDao;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -1227,6 +1227,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm;
     }
 
+    /**
+     Updates the instance details map with the current values of the instance for the CPU speed, memory, and CPU number if they have not been specified.
+     @param details Map containing the instance details.
+     @param vmInstance The virtual machine instance.
+     @param newServiceOfferingId The ID of the new service offering.
+     */
+
+    protected void updateInstanceDetails (Map<String, String> details, VirtualMachine vmInstance, Long newServiceOfferingId) {
+        ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
+        ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(newServiceOfferingId);
+        updateInstanceDetailsWithCurrentValue(newServiceOffering.getSpeed(), details, VmDetailConstants.CPU_SPEED, currentServiceOffering.getSpeed());
+        updateInstanceDetailsWithCurrentValue(newServiceOffering.getRamSize(), details, VmDetailConstants.MEMORY, currentServiceOffering.getRamSize());
+        updateInstanceDetailsWithCurrentValue(newServiceOffering.getCpu(), details, VmDetailConstants.CPU_NUMBER, currentServiceOffering.getCpu());
+    }
+
+    /**
+     * Updates a specific instance detail with the current instance value if the new value is null.
+     *
+     * @param newValue         the new value to be set
+     * @param details          a map of instance details
+     * @param detailsConstant  the name of the detail constant to be updated
+     * @param currentValue     the current value of the detail constant
+     */
+
+    protected void updateInstanceDetailsWithCurrentValue(Integer newValue, Map<String, String> details, String detailsConstant, Integer currentValue) {
+        if (newValue == null && details.get(detailsConstant) == null) {
+            String currentValueString = String.valueOf(currentValue);
+            s_logger.debug(String.format("[%s] was not specified, keeping the current value: [%s].", detailsConstant, currentValueString));
+            details.put(detailsConstant, currentValueString);
+        }
+    }
+
+
     private void validateOfferingMaxResource(ServiceOfferingVO offering) {
         Integer maxCPUCores = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.value() == 0 ? Integer.MAX_VALUE: ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
         if (offering.getCpu() > maxCPUCores) {
@@ -1892,7 +1925,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
-        boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getDetails());
+//        boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getDetails());
+        Map<String, String> cmdDetails = cmd.getDetails();
+
+        updateInstanceDetails(cmdDetails, vm, newServiceOfferingId);
+
+        boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmdDetails);
         if (result) {
             UserVmVO vmInstance = _vmDao.findById(vmId);
             if (vmInstance.getState().equals(State.Stopped)) {
