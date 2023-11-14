@@ -1004,10 +1004,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         rollingMaintenanceExecutor = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED)) ? new RollingMaintenanceAgentExecutor(hooksDir) :
                 new RollingMaintenanceServiceExecutor(hooksDir);
 
-        hypervisorURI = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_URI);
-        if (hypervisorURI == null) {
-            hypervisorURI = LibvirtConnection.getHypervisorURI(hypervisorType.toString());
-        }
+        hypervisorURI = LibvirtConnection.getHypervisorURI(hypervisorType.toString());
 
         networkDirectSourceMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_SOURCE_MODE);
         networkDirectDevice = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_DEVICE);
