@@ -6023,6 +6023,16 @@ class Backup:
         cmd.id = backupid
         return (apiclient.restoreBackup(cmd))
 
+    @classmethod
+    def restoreVolumeFromBackupAndAttachToVM(self, apiclient, backupid, volumeid, virtualmachineid):
+        """Restore VM from backup"""
+
+        cmd = restoreVolumeFromBackupAndAttachToVM.restoreVolumeFromBackupAndAttachToVMCmd()
+        cmd.backupid = backupid
+        cmd.volumeid = volumeid
+        cmd.virtualmachineid = virtualmachineid
+        return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
+
 
 class BackupSchedule:
 
