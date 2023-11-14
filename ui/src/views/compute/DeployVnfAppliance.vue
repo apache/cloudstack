@@ -2315,7 +2315,11 @@ export default {
                 if (vm.password) {
                   credentials.push('New password : ' + vm.password)
                 }
-                credentials.push(this.$t('message.vnf.credentials.change'))
+                if (credentials.size > 0) {
+                  credentials.push(this.$t('message.vnf.credentials.change'))
+                } else {
+                  credentials.push(this.$t('message.vnf.no.credentials'))
+                }
                 this.$notification.success({
                   message: `${this.$t('message.vnf.credentials.default')} ` + name,
                   description: (<span v-html={credentials.join('<br>')}></span>),
