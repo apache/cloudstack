@@ -36,6 +36,7 @@ import com.vmware.nsx_policy.model.SiteListResult;
 import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.StartupNsxCommand;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
+import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
@@ -123,6 +124,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxLoadBalancerRuleCommand) cmd);
         } else if (cmd instanceof DeleteNsxLoadBalancerRuleCommand) {
             return executeRequest((DeleteNsxLoadBalancerRuleCommand) cmd);
+        } else if (cmd instanceof CreateNsxDistributedFirewallRulesCommand) {
+            return executeRequest((CreateNsxDistributedFirewallRulesCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -353,6 +356,7 @@ public class NsxResource implements ServerResource {
             String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(cmd.getDomainId(), cmd.getAccountId(),
                     cmd.getZoneId(), networkResourceId, isResourceVpc);
             nsxApiClient.createSegment(segmentName, tier1GatewayName, gatewayAddress, enforcementPointPath, transportZones);
+            nsxApiClient.createGroupForSegment(segmentName);
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to create network: %s", cmd.getNetworkName()));
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
@@ -449,6 +453,19 @@ public class NsxResource implements ServerResource {
             nsxApiClient.deleteNsxLbResources(tier1GatewayName, cmd.getLbId(), cmd.getVmId());
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to add NSX load balancer rule %s for network: %s", ruleName, cmd.getNetworkResourceName()));
+            return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
+        }
+        return new NsxAnswer(cmd, true, null);
+    }
+
+    private NsxAnswer executeRequest(CreateNsxDistributedFirewallRulesCommand cmd) {
+        String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(),
+                cmd.getZoneId(), cmd.getVpcId(), cmd.getNetworkId());
+        List<NsxNetworkRule> rules = cmd.getRules();
+        try {
+            nsxApiClient.createSegmentDistributedFirewall(segmentName, rules);
+        } catch (Exception e) {
+            LOGGER.error(String.format("Failed to create NSX distributed firewall %s: %s", segmentName, e.getMessage()), e);
             return new NsxAnswer(cmd, new CloudRuntimeException(e.getMessage()));
         }
         return new NsxAnswer(cmd, true, null);

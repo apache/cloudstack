@@ -26,6 +26,7 @@ import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.NsxAnswer;
+import org.apache.cloudstack.agent.api.CreateNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.CreateNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxPortForwardRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
@@ -41,6 +42,7 @@ import org.apache.cloudstack.utils.NsxHelper;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 
 public class NsxServiceImpl implements NsxService {
@@ -170,6 +172,13 @@ public class NsxServiceImpl implements NsxService {
                 netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
                 netRule.getVmId());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
+        return result.getResult();
+    }
+
+    public boolean addFirewallRules(Network network, List<NsxNetworkRule> netRules) {
+        CreateNsxDistributedFirewallRulesCommand command = new CreateNsxDistributedFirewallRulesCommand(network.getDomainId(),
+                network.getAccountId(), network.getDataCenterId(), network.getVpcId(), network.getId(), netRules);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
         return result.getResult();
     }
 }

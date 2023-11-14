@@ -1735,8 +1735,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //apply network ACLs
-        // TODO: remove check for NSX
-        if (!offering.isForNsx() && !_networkACLMgr.applyACLToNetwork(networkId)) {
+        if (!_networkACLMgr.applyACLToNetwork(networkId)) {
             s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
             success = false;
         }

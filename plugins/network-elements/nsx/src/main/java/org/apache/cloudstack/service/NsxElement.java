@@ -56,6 +56,7 @@ import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
@@ -107,7 +108,7 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider,
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
         LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
 
 
@@ -159,7 +160,15 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         capabilities.put(Network.Service.Lb, null);
         capabilities.put(Network.Service.PortForwarding, null);
         capabilities.put(Network.Service.NetworkACL, null);
-        capabilities.put(Network.Service.Firewall, null);
+
+        Map<Network.Capability, String> firewallCapabilities = new HashMap<>();
+        firewallCapabilities.put(Network.Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Network.Capability.SupportedEgressProtocols, "tcp,udp,icmp,all");
+        firewallCapabilities.put(Network.Capability.MultipleIps, "true");
+        firewallCapabilities.put(Network.Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Network.Capability.SupportedTrafficDirection, "ingress, egress");
+        capabilities.put(Network.Service.Firewall, firewallCapabilities);
+
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
@@ -645,5 +654,38 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             lbMembers.add(member);
         }
         return lbMembers;
+    }
+
+    @Override
+    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.NetworkACL)) {
+            return false;
+        }
+        List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
+        for (NetworkACLItem rule : rules) {
+            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                    .setRuleId(rule.getId())
+                    .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
+                    .setAclAction(rule.getAction().toString())
+                    .setTrafficType(rule.getTrafficType().toString())
+                    .build();
+            nsxNetworkRules.add(networkRule);
+        }
+        return nsxService.addFirewallRules(network, nsxNetworkRules);
+    }
+
+    /**
+     * Replace 0.0.0.0/0 to ANY on each occurrence
+     */
+    private List<String> transformCidrListValues(List<String> sourceCidrList) {
+        List<String> list = new ArrayList<>();
+        for (String cidr : sourceCidrList) {
+            if (cidr.equals("0.0.0.0/0")) {
+                list.add("ANY");
+            } else {
+                list.add(cidr);
+            }
+        }
+        return list;
     }
 }
