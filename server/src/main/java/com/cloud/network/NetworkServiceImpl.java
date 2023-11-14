@@ -5989,6 +5989,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");
         }
 
+        if (publicIpQuarantine == null) {
+            throw new CloudRuntimeException("There is no quarantine for the specified IP address.");
+        }
+
         String removalReason = cmd.getRemovalReason();
         if (StringUtils.isBlank(removalReason)) {
             s_logger.error("The removalReason parameter cannot be blank.");
@@ -5998,7 +6002,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
 
-        _ipAddrMgr.removePublicIpAddressFromQuarantine(ipId, removalReason);
+        _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
     }
 
     protected void checkCallerForPublicIpQuarantineAccess(PublicIpQuarantine publicIpQuarantine) {
