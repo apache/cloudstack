@@ -80,8 +80,9 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     public boolean canHandle(NetworkOffering offering, DataCenter.NetworkType networkType,
                              PhysicalNetwork physicalNetwork) {
         return networkType == DataCenter.NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
-                && isMyIsolationMethod(physicalNetwork) && networkOfferingServiceMapDao.isProviderForNetworkOffering(
-                offering.getId(), Network.Provider.Nsx);
+                && isMyIsolationMethod(physicalNetwork) && (NetworkOffering.NsxMode.ROUTED.name().equals(offering.getNsxMode())
+                || (networkOfferingServiceMapDao.isProviderForNetworkOffering(
+                offering.getId(), Network.Provider.Nsx) && NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode())));
     }
 
     @Override

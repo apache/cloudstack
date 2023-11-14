@@ -28,10 +28,13 @@ import com.cloud.network.nsx.NsxService;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
@@ -60,6 +63,10 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
     private NsxControllerUtils nsxControllerUtils;
     @Inject
     private NsxService nsxService;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
+    @Inject
+    private NetworkOfferingDao offeringDao;
 
     private static final Logger s_logger = Logger.getLogger(NsxPublicNetworkGuru.class);
 
@@ -137,6 +144,19 @@ public class NsxPublicNetworkGuru extends PublicNetworkGuru {
                     String msg = String.format("Error creating Tier 1 Gateway for VPC %s", vpc.getName());
                     s_logger.error(msg);
                     throw new CloudRuntimeException(msg);
+                }
+
+                boolean hasNatSupport = false;
+                if (vpc == null) {
+                    NetworkOffering offering = offeringDao.findById(network.getNetworkOfferingId());
+                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(offering.getNsxMode());
+                } else {
+                    VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                    hasNatSupport = NetworkOffering.NsxMode.NATTED.name().equals(vpcOffering.getNsxMode());
+                }
+
+                if (!hasNatSupport) {
+                    return nic;
                 }
 
                 String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, isForVpc);

@@ -63,6 +63,9 @@ public interface ConfigurationManager {
     static final String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
     static final ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
             "Max length of vm userdata after base64 decoding. Default is 32768 and maximum is 1048576", true);
+    public static final ConfigKey<Boolean> AllowNonRFC1918CompliantIPs = new ConfigKey<Boolean>(Boolean.class,
+            "allow.non.rfc1918.compliant.ips", "Advanced", "false",
+            "Allows non-compliant RFC 1918 IPs for Shared, Isolated networks and VPCs", true);
 
     /**
      * @param offering
