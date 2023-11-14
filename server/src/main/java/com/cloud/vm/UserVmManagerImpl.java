@@ -4488,7 +4488,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (isImport) {
             vm.setDataCenterId(zone.getId());
-            if(host != null) {
+            if (host != null) {
                 vm.setHostId(host.getId());
             }
             if (lastHost != null) {

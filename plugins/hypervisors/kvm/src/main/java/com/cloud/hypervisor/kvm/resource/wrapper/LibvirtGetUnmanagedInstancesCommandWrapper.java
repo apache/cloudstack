@@ -44,7 +44,7 @@ import java.util.Map;
 
 @ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtPrepareUnmanageVMInstanceCommandWrapper.class);
+    private static final Logger LOGGER = Logger.getLogger(LibvirtGetUnmanagedInstancesCommandWrapper.class);
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {

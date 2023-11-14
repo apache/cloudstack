@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.vm;
 
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;

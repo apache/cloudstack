@@ -60,9 +60,7 @@ public class LibvirtDomainXMLParser {
     private  String vncPasswd;
     private String desc;
     private LibvirtVMDef.CpuTuneDef cpuTuneDef;
-
     private LibvirtVMDef.CpuModeDef cpuModeDef;
-
     private String name;
 
     public boolean parseDomainXML(String domXML) {
@@ -282,11 +280,11 @@ public class LibvirtDomainXMLParser {
                 String name = getAttrValue("target", "name", channel);
                 String state = getAttrValue("target", "state", channel);
 
-                if ( ChannelDef.ChannelType.valueOf(type.toUpperCase()).equals(ChannelDef.ChannelType.SPICEVMC)) {
+                if (ChannelDef.ChannelType.valueOf(type.toUpperCase()).equals(ChannelDef.ChannelType.SPICEVMC)) {
                     continue;
                 }
 
-                if(path == null) {
+                if (path == null) {
                     path = "";
                 }
 
@@ -337,19 +335,19 @@ public class LibvirtDomainXMLParser {
                     s_logger.debug(String.format("Bytes and period in the rng section should not be null, please check the VM %s", name));
                 }
 
-                if(bytes == null) {
+                if (bytes == null) {
                     bytes = "0";
                 }
 
-                if(period == null) {
+                if (period == null) {
                     period = "0";
                 }
 
-                if(bytes == null) {
+                if (bytes == null) {
                     bytes = "0";
                 }
 
-                if(period == null) {
+                if (period == null) {
                     period = "0";
                 }
 
@@ -453,6 +451,7 @@ public class LibvirtDomainXMLParser {
     public String getVncPasswd() {
         return vncPasswd;
     }
+
     public MemBalloonDef getMemBalloon() {
         return memBalloonDef;
     }

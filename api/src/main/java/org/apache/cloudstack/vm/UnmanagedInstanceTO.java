@@ -48,6 +48,7 @@ public class UnmanagedInstanceTO {
     private List<Disk> disks;
 
     private List<Nic> nics;
+
     private String vncPassword;
 
     public String getName() {
@@ -172,6 +173,7 @@ public class UnmanagedInstanceTO {
         private String datastorePath;
 
         private int datastorePort;
+
         private String datastoreType;
 
         public String getDiskId() {
@@ -277,7 +279,6 @@ public class UnmanagedInstanceTO {
         public void setDatastoreType(String datastoreType) {
             this.datastoreType = datastoreType;
         }
-
 
         public void setDatastorePort(int datastorePort) {
             this.datastorePort = datastorePort;
