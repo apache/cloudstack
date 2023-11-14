@@ -767,37 +767,36 @@ public class NsxApiClient {
         }
     }
 
-    public void createSegmentDistributedFirewall(String policyName, List<NsxNetworkRule> nsxRules) {
+    public void createSegmentDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         try {
             SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
-            List<Rule> rules = getRulesForDistributedFirewall(policyName, nsxRules);
+            List<Rule> rules = getRulesForDistributedFirewall(segmentName, nsxRules);
             SecurityPolicy policy = new SecurityPolicy.Builder()
-                    .setDisplayName(policyName)
-                    .setId(policyName)
+                    .setDisplayName(segmentName)
+                    .setId(segmentName)
                     .setCategory("Application")
                     .setRules(rules)
                     .build();
-            services.patch(DEFAULT_DOMAIN, policyName, policy);
+            services.patch(DEFAULT_DOMAIN, segmentName, policy);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
-            String msg = String.format("Failed to create NSX distributed firewall policy for segment %s, due to: %s", policyName, ae.getErrorMessage());
+            String msg = String.format("Failed to create NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
     }
 
-    private List<Rule> getRulesForDistributedFirewall(String policyName, List<NsxNetworkRule> nsxRules) {
+    private List<Rule> getRulesForDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         List<Rule> rules = new ArrayList<>();
         for (NsxNetworkRule rule: nsxRules) {
-            String ruleId = String.format("%s-%s", policyName, rule.getRuleId());
-            String trafficType = rule.getTrafficType();
+            String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
                     .setAction(rule.getAclAction().toUpperCase())
                     .setId(ruleId)
                     .setDisplayName(ruleId)
                     .setResourceType("SecurityPolicy")
-                    .setSourceGroups(getGroupsForTraffic(rule, trafficType, policyName, true))
-                    .setDestinationGroups(getGroupsForTraffic(rule, trafficType, policyName, false))
+                    .setSourceGroups(getGroupsForTraffic(rule, segmentName, true))
+                    .setDestinationGroups(getGroupsForTraffic(rule, segmentName, false))
                     .setServices(List.of("ANY"))
                     .setScope(List.of("ANY"))
                     .build();
@@ -806,11 +805,12 @@ public class NsxApiClient {
         return rules;
     }
 
-    private List<String> getGroupsForTraffic(NsxNetworkRule rule, String trafficType,
-                                             String policyName, boolean source) {
-        List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, policyName));
+    protected List<String> getGroupsForTraffic(NsxNetworkRule rule,
+                                             String segmentName, boolean source) {
+        List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, segmentName));
         List<String> ruleCidrList = rule.getCidrList();
 
+        String trafficType = rule.getTrafficType();
         if (trafficType.equalsIgnoreCase("ingress")) {
             return source ? ruleCidrList : segmentGroup;
         } else if (trafficType.equalsIgnoreCase("egress")) {

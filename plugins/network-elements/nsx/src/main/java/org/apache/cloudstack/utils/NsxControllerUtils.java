@@ -45,6 +45,10 @@ public class NsxControllerUtils {
         return String.format("D%s-A%s-Z%s-%s%s-NAT", domainId, accountId, dataCenterId, resourcePrefix, resourceId);
     }
 
+    public static String getNsxDistributedFirewallPolicyRuleId(String segmentName, long ruleId) {
+        return String.format("%s-P%s", segmentName, ruleId);
+    }
+
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
 
         NsxProviderVO nsxProviderVO = nsxProviderDao.findByZoneId(zoneId);

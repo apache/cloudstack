@@ -20,6 +20,8 @@ import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.PathExpression;
 import com.vmware.vapi.bindings.Service;
+import org.apache.cloudstack.resource.NsxNetworkRule;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -63,5 +65,29 @@ public class NsxApiClientTest {
             Mockito.verify(groups[0]).setExpression(Mockito.eq(List.of(pathExpressions[0])));
             Mockito.verify(pathExpressions[0]).setPaths(List.of(segmentPath));
         }
+    }
+
+    @Test
+    public void testGetGroupsForTrafficIngress() {
+        NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
+        Mockito.when(rule.getCidrList()).thenReturn(List.of("ANY"));
+        Mockito.when(rule.getTrafficType()).thenReturn("Ingress");
+        String segmentName = "segment";
+        List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
+        List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
+        Assert.assertEquals(List.of("ANY"), sourceGroups);
+        Assert.assertEquals(List.of(String.format("%s/%s", NsxApiClient.GROUPS_PATH_PREFIX, segmentName)), destinationGroups);
+    }
+
+    @Test
+    public void testGetGroupsForTrafficEgress() {
+        NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
+        Mockito.when(rule.getCidrList()).thenReturn(List.of("ANY"));
+        Mockito.when(rule.getTrafficType()).thenReturn("Egress");
+        String segmentName = "segment";
+        List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
+        List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
+        Assert.assertEquals(List.of(String.format("%s/%s", NsxApiClient.GROUPS_PATH_PREFIX, segmentName)), sourceGroups);
+        Assert.assertEquals(List.of("ANY"), destinationGroups);
     }
 }
