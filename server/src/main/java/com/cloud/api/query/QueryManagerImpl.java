@@ -242,6 +242,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -3139,6 +3140,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
         Boolean encrypt = cmd.getEncrypt();
+        String storageType = cmd.getStorageType();
+
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -3189,6 +3192,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (encrypt != null) {
             sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
         }
+
+        useStorageType(sc, storageType);
 
         if (zoneId != null) {
             SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
@@ -3269,6 +3274,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return new Pair<>(result.first(), result.second());
     }
 
+    private void useStorageType(SearchCriteria<?> sc, String storageType) {
+        if (storageType != null) {
+            if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
+                sc.addAnd("useLocalStorage", Op.EQ, true);
+
+            } else if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
+                sc.addAnd("useLocalStorage", Op.EQ, false);
+            }
+        }
+    }
+
     private List<Long> findRelatedDomainIds(Domain domain, boolean isRecursive) {
         List<Long> domainIds = _domainDao.getDomainParentIds(domain.getId())
             .stream().collect(Collectors.toList());
@@ -3318,6 +3334,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer memory = cmd.getMemory();
         Integer cpuSpeed = cmd.getCpuSpeed();
         Boolean encryptRoot = cmd.getEncryptRoot();
+        String storageType = cmd.getStorageType();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -3440,6 +3457,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (vmTypeStr != null) {
             sc.addAnd("vmType", SearchCriteria.Op.EQ, vmTypeStr);
         }
+
+        useStorageType(sc, storageType);
 
         if (zoneId != null) {
             SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
