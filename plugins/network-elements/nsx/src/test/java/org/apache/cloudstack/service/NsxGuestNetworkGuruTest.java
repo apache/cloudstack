@@ -128,6 +128,7 @@ public class NsxGuestNetworkGuruTest {
 
         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(offering.getNsxMode()).thenReturn(NetworkOffering.NsxMode.NATTED.name());
         when(offering.getId()).thenReturn(1L);
 
         when(plan.getDataCenterId()).thenReturn(1L);
