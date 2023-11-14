@@ -59,7 +59,7 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
                 responseCode = 200;
             }
             byte[] bytesToOutput = response.getBytes(StandardCharsets.UTF_8);
-            httpExchange.getResponseHeaders().set("content-type", "text/plain");
+            httpExchange.getResponseHeaders().set("content-type", "text/plain; charset=UTF-8");
             httpExchange.sendResponseHeaders(responseCode, bytesToOutput.length);
             final OutputStream os = httpExchange.getResponseBody();
             try {
