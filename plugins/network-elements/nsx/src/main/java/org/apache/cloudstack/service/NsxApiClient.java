@@ -31,6 +31,7 @@ import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
+import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
@@ -815,6 +816,19 @@ public class NsxApiClient {
             String msg = String.format("Failed to create NSX distributed firewall policy for segment %s, due to: %s", segmentName, ae.getErrorMessage());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
+        }
+    }
+
+    public void deleteDistributedFirewallRules(String segmentName, List<NsxNetworkRule> nsxRules) {
+        for(NsxNetworkRule rule : nsxRules) {
+            String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
+            String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol());
+            // delete rules
+            Rules rules = (Rules) nsxService.apply(Rules.class);
+            rules.delete(DEFAULT_DOMAIN, segmentName, ruleId);
+            // delete service - if any
+            Services services = (Services) nsxService.apply(Services.class);
+            services.delete(svcName);
         }
     }
 

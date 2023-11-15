@@ -36,6 +36,7 @@ import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.DeletedNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.cloudstack.utils.NsxHelper;
@@ -177,6 +178,13 @@ public class NsxServiceImpl implements NsxService {
 
     public boolean addFirewallRules(Network network, List<NsxNetworkRule> netRules) {
         CreateNsxDistributedFirewallRulesCommand command = new CreateNsxDistributedFirewallRulesCommand(network.getDomainId(),
+                network.getAccountId(), network.getDataCenterId(), network.getVpcId(), network.getId(), netRules);
+        NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
+        return result.getResult();
+    }
+
+    public boolean deleteFirewallRules(Network network, List<NsxNetworkRule> netRules) {
+        DeletedNsxDistributedFirewallRulesCommand command = new DeletedNsxDistributedFirewallRulesCommand(network.getDomainId(),
                 network.getAccountId(), network.getDataCenterId(), network.getVpcId(), network.getId(), netRules);
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, network.getDataCenterId());
         return result.getResult();

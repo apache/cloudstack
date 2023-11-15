@@ -666,7 +666,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         for (NetworkACLItem rule : rules) {
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
-                    .setSourceCidrList(transformCidrListValues(rule.getSourceCidrList()))
+                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
                     .setAclAction(rule.getAction().toString())
                     .setTrafficType(rule.getTrafficType().toString())
                     .setService(Network.Service.NetworkACL)
@@ -682,7 +682,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     private List<String> transformCidrListValues(List<String> sourceCidrList) {
         List<String> list = new ArrayList<>();
         for (String cidr : sourceCidrList) {
-            if (cidr.equals("0.0.0.0/0")) {
+            if (cidr == null || cidr.equals("0.0.0.0/0")) {
                 list.add("ANY");
             } else {
                 list.add(cidr);
@@ -697,12 +697,15 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.Firewall)) {
             return false;
         }
-        List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         for (FirewallRule rule : rules) {
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
-                    .setSourceCidrList(transformCidrListValues(rule.getSourceCidrList()))
-                    .setDestinationCidrList(transformCidrListValues(rule.getDestinationCidrList()))
+                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ?
+                            transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                    .setDestinationCidrList(Objects.nonNull(rule.getDestinationCidrList()) ?
+                            transformCidrListValues(rule.getDestinationCidrList()) : List.of("ANY"))
                     .setIcmpCode(rule.getIcmpCode())
                     .setIcmpType(rule.getIcmpType())
                     .setPrivatePort(getPrivatePortRange(rule))
@@ -710,8 +713,19 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setService(Network.Service.Firewall)
                     .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
-            nsxNetworkRules.add(networkRule);
+            if (rule.getState() == FirewallRule.State.Add) {
+                nsxAddNetworkRules.add(networkRule);
+            } else if (rule.getState() == FirewallRule.State.Revoke) {
+                nsxDelNetworkRules.add(networkRule);
+            }
         }
-        return nsxService.addFirewallRules(network, nsxNetworkRules);
+        boolean success = true;
+        if (!nsxDelNetworkRules.isEmpty()) {
+            success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
+            if (!success) {
+                LOGGER.warn("Not all firewall rules were successfully deleted");
+            }
+        }
+        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
     }
 }
