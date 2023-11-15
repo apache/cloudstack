@@ -294,12 +294,14 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        if (storageUri.getScheme().equalsIgnoreCase("nfs") || storageUri.getScheme().equalsIgnoreCase("NetworkFilesystem")) {
+        final String scheme = storageUri.getScheme().toLowerCase();
+        List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
+        if (acceptedSchemes.contains(scheme)) {
             sourcePath = storageUri.getPath();
             sourcePath = sourcePath.replace("//", "/");
             sourceHost = storageUri.getHost();
             uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
-            protocol = StoragePoolType.NetworkFilesystem;
+            protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
         }
 
         // secondary storage registers itself through here
