@@ -609,7 +609,7 @@ public class VeeamClient {
                 String.format("$job = Get-VBRJob -Name '%s'", jobName),
                 "if ($job) { Set-VBRJobSchedule -Job $job -Daily -At \"11:00\" -DailyKind Weekdays }"
         ));
-        return result.first() && !result.second().isEmpty() && !result.second().contains(FAILED_TO_DELETE);
+        return result != null && result.first() && !result.second().isEmpty() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public boolean deleteJobAndBackup(final String jobName) {
@@ -621,7 +621,7 @@ public class VeeamClient {
                 "$repo = Get-VBRBackupRepository",
                 "Sync-VBRBackupRepository -Repository $repo"
         ));
-        return result.first() && !result.second().contains(FAILED_TO_DELETE);
+        return result != null && result.first() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public boolean deleteBackup(final String restorePointId) {
@@ -636,7 +636,7 @@ public class VeeamClient {
                     " Exit 1",
                 "}"
         ));
-        return result.first() && !result.second().contains(FAILED_TO_DELETE);
+        return result != null && result.first() && !result.second().contains(FAILED_TO_DELETE);
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {
@@ -737,6 +737,9 @@ public class VeeamClient {
                         "}"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
+        if (response == null || !response.first()) {
+            throw new CloudRuntimeException("Failed to get backup metrics via PowerShell command");
+        }
         return processPowerShellResultForBackupMetrics(response.second());
     }
 
