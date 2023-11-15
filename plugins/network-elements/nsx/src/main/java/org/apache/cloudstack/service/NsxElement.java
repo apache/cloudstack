@@ -693,6 +693,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
 
     @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+
         if (!canHandle(network, Network.Service.Firewall)) {
             return false;
         }
@@ -707,6 +708,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setPrivatePort(getPrivatePortRange(rule))
                     .setTrafficType(rule.getTrafficType().toString())
                     .setService(Network.Service.Firewall)
+                    .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                     .build();
             nsxNetworkRules.add(networkRule);
         }

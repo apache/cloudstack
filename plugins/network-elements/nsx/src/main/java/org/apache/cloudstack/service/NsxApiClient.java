@@ -79,6 +79,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -143,6 +144,17 @@ public class NsxApiClient {
         LARGE,
         XLARGE
     }
+
+    private enum FirewallActions {
+        ALLOW,
+        DROP,
+        REJECT,
+        JUMP_TO_APPLICATION
+    }
+
+    private Map<String,String> actionMap = Map.of(
+            "Allow", FirewallActions.ALLOW.name(),
+            "Deny", FirewallActions.DROP.name());
 
     public enum  RouteAdvertisementType { TIER1_STATIC_ROUTES, TIER1_CONNECTED, TIER1_NAT,
         TIER1_LB_VIP, TIER1_LB_SNAT, TIER1_DNS_FORWARDER_IP, TIER1_IPSEC_LOCAL_ENDPOINT
@@ -689,7 +701,7 @@ public class NsxApiClient {
                                       Integer icmpCode, Integer icmpType) {
         try {
             List<Structure> serviceEntries = new ArrayList<>();
-            protocol = protocol.equals("ICMP") ? "ICMP4" : protocol;
+            protocol = "ICMP".equals(protocol) ? "ICMP4" : protocol;
             String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
             if (protocol.equals("ICMP4")) {
                 serviceEntries.add(new ICMPTypeServiceEntry.Builder()
@@ -811,13 +823,13 @@ public class NsxApiClient {
         for (NsxNetworkRule rule: nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
-                    .setAction(rule.getAclAction().toUpperCase())
+                    .setAction(Objects.nonNull(rule.getAclAction()) ? actionMap.get(rule.getAclAction()) : FirewallActions.ALLOW.name())
                     .setId(ruleId)
                     .setDisplayName(ruleId)
                     .setResourceType("SecurityPolicy")
                     .setSourceGroups(getGroupsForTraffic(rule, segmentName, true))
                     .setDestinationGroups(getGroupsForTraffic(rule, segmentName, false))
-                    .setServices(Objects.nonNull(rule.getPrivatePort()) ? List.of(getServicePath(ruleId, rule.getPrivatePort(),
+                    .setServices(Objects.nonNull(rule.getPrivatePort()) && !rule.getPrivatePort().equals("null") ? List.of(getServicePath(ruleId, rule.getPrivatePort(),
                             rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode())) : List.of("ANY"))
                     .setScope(List.of("ANY"))
                     .build();
