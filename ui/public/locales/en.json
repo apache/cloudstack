@@ -1415,7 +1415,7 @@
 "label.ocfs2": "OCFS2",
 "label.object.storage" : "Object Storage",
 "label.object.presigned.url": "Presigned URL",
-"label.object.presigned.url.description" : "Presigned  of the object to access the object without authentication",
+"label.object.presigned.url.description" : "Presigned URL of the object in order to access it without authentication.",
 "label.object.url.description" : "URL of the object",
 "label.objectstore" : "Object Storage",
 "label.objectstore.search" : "Prefix based search in current directory",
