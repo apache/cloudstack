@@ -65,7 +65,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
     public ConfigKey<Integer> VeeamVersion = new ConfigKey<>("Advanced", Integer.class,
-            "backup.plugin.veeam.version", "9",
+            "backup.plugin.veeam.version", "",
             "The version of Veeam backup and recovery.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,

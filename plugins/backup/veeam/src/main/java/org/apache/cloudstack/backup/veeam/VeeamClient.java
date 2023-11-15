@@ -571,7 +571,7 @@ public class VeeamClient {
      */
     protected String transformPowerShellCommandList(List<String> cmds) {
         StringJoiner joiner = new StringJoiner(";");
-        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
+        if (this.veeamServerVersion != null || this.veeamServerVersion < 11) {
             joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
         } else {
             joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
@@ -640,7 +640,7 @@ public class VeeamClient {
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {
-        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
+        if (this.veeamServerVersion != null || this.veeamServerVersion < 11) {
             return getBackupMetricsLegacy();
         } else {
             return getBackupMetricsViaVeeamAPI();
