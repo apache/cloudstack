@@ -96,7 +96,10 @@ public class PropertiesStorage implements StorageComponent {
                     return false;
                 }
             } catch (IOException e) {
-                s_logger.error(String.format("Unable to create _file: %s", file.getAbsolutePath()), e);
+                s_logger.error(String.format("Unable to create file: %s", file.getAbsolutePath()));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.bedug(String.format("IOException while trying to create file: %s", file.getAbsolutePath()), e);
+                }
                 return false;
             }
         }
