@@ -61,8 +61,9 @@ class TestVeeamBackupAndRecovery(cloudstackTestCase):
             return
 
         cls.service_offering = ServiceOffering.create(cls.apiclient, cls.services["service_offerings"]["small"])
+        cls._cleanup.append(cls.service_offering)
         cls.disk_offering = DiskOffering.create(cls.apiclient, cls.services["disk_offering"])
-        cls._cleanup = [cls.service_offering, cls.disk_offering]
+        cls._cleanup.append(cls.disk_offering)
 
     @classmethod
     def isBackupOfferingUsed(cls, existing_offerings, provider_offering):
