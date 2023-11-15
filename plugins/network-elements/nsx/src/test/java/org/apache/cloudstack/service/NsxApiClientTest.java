@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.network.Network;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.model.Group;
 import com.vmware.nsx_policy.model.PathExpression;
@@ -72,6 +73,7 @@ public class NsxApiClientTest {
         NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
         Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Ingress");
+        Mockito.when(rule.getService()).thenReturn(Network.Service.NetworkACL);
         String segmentName = "segment";
         List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
         List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
@@ -84,6 +86,7 @@ public class NsxApiClientTest {
         NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
         Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Egress");
+        Mockito.when(rule.getService()).thenReturn(Network.Service.NetworkACL);
         String segmentName = "segment";
         List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
         List<String> destinationGroups = client.getGroupsForTraffic(rule, segmentName, false);
