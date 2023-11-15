@@ -38,6 +38,7 @@ import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Group;
+import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
 import com.vmware.nsx_policy.model.LBPool;
@@ -650,7 +651,7 @@ public class NsxApiClient {
         }
     }
 
-    public String getNsxInfraServices(String ruleName, String port, String protocol) {
+    public String getNsxInfraServices(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
         try {
             Services service = (Services) nsxService.apply(Services.class);
 
@@ -675,7 +676,7 @@ public class NsxApiClient {
             }
 
             // Else, create a service entry
-            return createNsxInfraService(ruleName, port, protocol);
+            return getServicePath(ruleName, port, protocol, icmpType, icmpCode);
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to list NSX infra service, due to: %s", ae.getErrorMessage());
@@ -684,34 +685,53 @@ public class NsxApiClient {
         }
     }
 
-    public String createNsxInfraService(String ruleName, String port, String protocol) {
+    public void createNsxInfraService(Services service, String serviceName, String ruleName, String port, String protocol,
+                                      Integer icmpCode, Integer icmpType) {
         try {
+            List<Structure> serviceEntries = new ArrayList<>();
+            protocol = protocol.equals("ICMP") ? "ICMP4" : protocol;
             String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
-            String serviceName = getServiceName(ruleName, port, protocol);
-            Services service = (Services) nsxService.apply(Services.class);
+            if (protocol.equals("ICMP4")) {
+                serviceEntries.add(new ICMPTypeServiceEntry.Builder()
+                        .setDisplayName(serviceEntryName)
+                        .setDisplayName(serviceEntryName)
+                                .setIcmpCode(Long.valueOf(icmpCode))
+                                .setIcmpType(Long.valueOf(icmpType))
+                                .setProtocol(protocol)
+                        .build()
+                );
+            } else {
+                serviceEntries.add( new L4PortSetServiceEntry.Builder()
+                        .setId(serviceEntryName)
+                        .setDisplayName(serviceEntryName)
+                        .setDestinationPorts(List.of(port))
+                        .setL4Protocol(protocol)
+                        .build());
+            }
             com.vmware.nsx_policy.model.Service infraService = new com.vmware.nsx_policy.model.Service.Builder()
-                    .setServiceEntries(List.of(
-                            new L4PortSetServiceEntry.Builder()
-                                    .setId(serviceEntryName)
-                                    .setDisplayName(serviceEntryName)
-                                    .setDestinationPorts(List.of(port))
-                                    .setL4Protocol(protocol)
-                                    .build()
-                    ))
+                    .setServiceEntries(serviceEntries)
                     .setId(serviceName)
                     .setDisplayName(serviceName)
                     .build();
             service.patch(serviceName, infraService);
-
-            com.vmware.nsx_policy.model.Service svc = service.get(serviceName);
-            return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
-
         } catch (Error error) {
             ApiError ae = error.getData()._convertTo(ApiError.class);
             String msg = String.format("Failed to create NSX infra service, due to: %s", ae.getErrorMessage());
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
+    }
+
+    private com.vmware.nsx_policy.model.Service getInfraService(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
+        Services service = (Services) nsxService.apply(Services.class);
+        String serviceName = getServiceName(ruleName, port, protocol);
+        createNsxInfraService(service, serviceName, ruleName, port, protocol, icmpType, icmpCode);
+        return service.get(serviceName);
+    }
+
+    public String getServicePath(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode)  { //com.vmware.nsx_policy.model.Service svc) {
+        com.vmware.nsx_policy.model.Service svc = getInfraService(ruleName, port, protocol, icmpType, icmpCode);
+        return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
     }
 
     private String getServiceById(String ruleName) {
@@ -797,9 +817,13 @@ public class NsxApiClient {
                     .setResourceType("SecurityPolicy")
                     .setSourceGroups(getGroupsForTraffic(rule, segmentName, true))
                     .setDestinationGroups(getGroupsForTraffic(rule, segmentName, false))
-                    .setServices(List.of("ANY"))
+                    .setServices(Objects.nonNull(rule.getPrivatePort()) ? List.of(getServicePath(ruleId, rule.getPrivatePort(),
+                            rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode())) : List.of("ANY"))
                     .setScope(List.of("ANY"))
                     .build();
+            if (Objects.nonNull(rule.getPrivatePort())) {
+
+            }
             rules.add(ruleToAdd);
         }
         return rules;
@@ -808,13 +832,14 @@ public class NsxApiClient {
     protected List<String> getGroupsForTraffic(NsxNetworkRule rule,
                                              String segmentName, boolean source) {
         List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, segmentName));
-        List<String> ruleCidrList = rule.getCidrList();
+        List<String> sourceCidrList = rule.getSourceCidrList();
+        List<String> destCidrList = rule.getDestinationCidrList();
 
         String trafficType = rule.getTrafficType();
         if (trafficType.equalsIgnoreCase("ingress")) {
-            return source ? ruleCidrList : segmentGroup;
+            return source ? sourceCidrList : (rule.getService() == Network.Service.NetworkACL ? segmentGroup : destCidrList);
         } else if (trafficType.equalsIgnoreCase("egress")) {
-            return source ? segmentGroup : ruleCidrList;
+            return source ? segmentGroup : (rule.getService() == Network.Service.NetworkACL ? sourceCidrList : destCidrList);
         }
         String err = String.format("Unsupported traffic type %s", trafficType);
         LOGGER.error(err);

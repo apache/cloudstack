@@ -54,6 +54,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
+import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
@@ -109,7 +110,7 @@ import java.util.function.LongFunction;
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
         StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
-        LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
+        LoadBalancingServiceProvider, FirewallServiceProvider, ResourceStateAdapter, Listener {
 
 
     @Inject
@@ -578,7 +579,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 String.valueOf(rule.getDestinationPortStart()).concat("-").concat(String.valueOf(rule.getDestinationPortEnd()));
     }
 
-    private static String getPrivatePortRange(PortForwardingRule rule) {
+    private static String getPrivatePortRange(FirewallRule rule) {
         return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
                 String.valueOf(rule.getSourcePortStart()) :
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
@@ -665,9 +666,10 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         for (NetworkACLItem rule : rules) {
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
-                    .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
+                    .setSourceCidrList(transformCidrListValues(rule.getSourceCidrList()))
                     .setAclAction(rule.getAction().toString())
                     .setTrafficType(rule.getTrafficType().toString())
+                    .setService(Network.Service.NetworkACL)
                     .build();
             nsxNetworkRules.add(networkRule);
         }
@@ -687,5 +689,27 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             }
         }
         return list;
+    }
+
+    @Override
+    public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.Firewall)) {
+            return false;
+        }
+        List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
+        for (FirewallRule rule : rules) {
+            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                    .setRuleId(rule.getId())
+                    .setSourceCidrList(transformCidrListValues(rule.getSourceCidrList()))
+                    .setDestinationCidrList(transformCidrListValues(rule.getDestinationCidrList()))
+                    .setIcmpCode(rule.getIcmpCode())
+                    .setIcmpType(rule.getIcmpType())
+                    .setPrivatePort(getPrivatePortRange(rule))
+                    .setTrafficType(rule.getTrafficType().toString())
+                    .setService(Network.Service.Firewall)
+                    .build();
+            nsxNetworkRules.add(networkRule);
+        }
+        return nsxService.addFirewallRules(network, nsxNetworkRules);
     }
 }

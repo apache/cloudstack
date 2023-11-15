@@ -70,7 +70,7 @@ public class NsxApiClientTest {
     @Test
     public void testGetGroupsForTrafficIngress() {
         NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
-        Mockito.when(rule.getCidrList()).thenReturn(List.of("ANY"));
+        Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Ingress");
         String segmentName = "segment";
         List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
@@ -82,7 +82,7 @@ public class NsxApiClientTest {
     @Test
     public void testGetGroupsForTrafficEgress() {
         NsxNetworkRule rule = Mockito.mock(NsxNetworkRule.class);
-        Mockito.when(rule.getCidrList()).thenReturn(List.of("ANY"));
+        Mockito.when(rule.getSourceCidrList()).thenReturn(List.of("ANY"));
         Mockito.when(rule.getTrafficType()).thenReturn("Egress");
         String segmentName = "segment";
         List<String> sourceGroups = client.getGroupsForTraffic(rule, segmentName, true);
