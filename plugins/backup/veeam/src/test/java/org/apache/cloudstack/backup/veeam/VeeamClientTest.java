@@ -69,6 +69,7 @@ public class VeeamClientTest {
         client = new VeeamClient("http://localhost:9399/api/", 12, adminUsername, adminPassword, true, 60, 600);
         mockClient = Mockito.mock(VeeamClient.class);
         Mockito.when(mockClient.getRepositoryNameFromJob(Mockito.anyString())).thenCallRealMethod();
+        Mockito.when(mockClient.getVeeamServerVersion()).thenCallRealMethod();
     }
 
     @Test
@@ -457,5 +458,26 @@ public class VeeamClientTest {
         Assert.assertEquals("f6d504cf-eafe-4cd2-8dfc-e9cfe2f1e977", vmRestorePointList.get(0).getId());
         Assert.assertEquals("2023-11-03 16:26:12", vmRestorePointList.get(0).getCreated());
         Assert.assertEquals("Full", vmRestorePointList.get(0).getType());
+    }
+
+    @Test
+    public void testGetVeeamServerVersionAllGood() {
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "12.0.0.1");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        Assert.assertEquals(12, (int) mockClient.getVeeamServerVersion());
+    }
+
+    @Test
+    public void testGetVeeamServerVersionWithError() {
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.FALSE, "");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        Assert.assertEquals(0, (int) mockClient.getVeeamServerVersion());
+    }
+
+    @Test
+    public void testGetVeeamServerVersionWithEmptyVersion() {
+        Pair<Boolean, String> response = new Pair<Boolean, String>(Boolean.TRUE, "");
+        Mockito.doReturn(response).when(mockClient).executePowerShellCommands(Mockito.anyList());
+        Assert.assertEquals(0, (int) mockClient.getVeeamServerVersion());
     }
 }

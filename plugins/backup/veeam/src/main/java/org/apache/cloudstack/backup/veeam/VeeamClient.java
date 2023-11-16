@@ -177,7 +177,7 @@ public class VeeamClient {
         }
     }
 
-    private Integer getVeeamServerVersion() {
+    protected Integer getVeeamServerVersion() {
         final List<String> cmds = Arrays.asList(
                 "$InstallPath = Get-ItemProperty -Path 'HKLM:\\Software\\Veeam\\Veeam Backup and Replication\\' ^| Select -ExpandProperty CorePath",
                 "Add-Type -LiteralPath \\\"$InstallPath\\Veeam.Backup.Configuration.dll\\\"",
