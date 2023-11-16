@@ -96,7 +96,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
-            return new VeeamClient(VeeamUrl.valueIn(zoneId), null, VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamVersion.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
                     VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
