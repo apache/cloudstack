@@ -1925,7 +1925,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         CallContext.current().setEventDetails("Vm Id: " + vm.getUuid());
 
-//        boolean result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getDetails());
         Map<String, String> cmdDetails = cmd.getDetails();
 
         updateInstanceDetails(cmdDetails, vm, newServiceOfferingId);
