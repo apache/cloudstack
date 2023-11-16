@@ -2315,7 +2315,7 @@ export default {
                 if (vm.password) {
                   credentials.push('New password : ' + vm.password)
                 }
-                if (credentials.size > 0) {
+                if (credentials.length > 0) {
                   credentials.push(this.$t('message.vnf.credentials.change'))
                 } else {
                   credentials.push(this.$t('message.vnf.no.credentials'))
