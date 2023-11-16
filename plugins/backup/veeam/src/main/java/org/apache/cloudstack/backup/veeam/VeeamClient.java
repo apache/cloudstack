@@ -79,6 +79,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
@@ -108,11 +109,11 @@ public class VeeamClient {
 
 
     private String veeamServerIp;
-    private Integer veeamServerVersion;
+    private final Integer veeamServerVersion;
     private String veeamServerUsername;
     private String veeamServerPassword;
     private String veeamSessionId = null;
-    private int restoreTimeout;
+    private final int restoreTimeout;
     private final int veeamServerPort = 22;
 
     public VeeamClient(final String url, final Integer version, final String username, final String password, final boolean validateCertificate, final int timeout,
@@ -140,9 +141,9 @@ public class VeeamClient {
                     .build();
         }
 
-        this.veeamServerVersion = version;
         authenticate(username, password);
         setVeeamSshCredentials(this.apiURI.getHost(), username, password);
+        this.veeamServerVersion = version != null ? version : getVeeamServerVersion();
     }
 
     protected void setVeeamSshCredentials(String hostIp, String username, String password) {
@@ -173,6 +174,26 @@ public class VeeamClient {
     private void checkAuthFailure(final HttpResponse response) {
         if (response != null && response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, "Veeam B&R API call unauthorized, please ask your administrator to fix integration issues.");
+        }
+    }
+
+    private Integer getVeeamServerVersion() {
+        final List<String> cmds = Arrays.asList(
+                "$InstallPath = Get-ItemProperty -Path 'HKLM:\\Software\\Veeam\\Veeam Backup and Replication\\' ^| Select -ExpandProperty CorePath",
+                "Add-Type -LiteralPath \\\"$InstallPath\\Veeam.Backup.Configuration.dll\\\"",
+                "$ProductData = [Veeam.Backup.Configuration.BackupProduct]::Create()",
+                "$Version = $ProductData.ProductVersion.ToString()",
+                "if ($ProductData.MarketName -ne '') {$Version += \\\" $($ProductData.MarketName)\\\"}",
+                "$Version"
+        );
+        Pair<Boolean, String> response = executePowerShellCommands(cmds);
+        if (response == null || !response.first() || response.second() == null || StringUtils.isBlank(response.second().trim())) {
+            LOG.error("Failed to get veeam server version, using default version");
+            return 0;
+        } else {
+            Integer majorVersion = NumbersUtil.parseInt(response.second().trim().split("\\.")[0], 0);
+            LOG.info(String.format("Veeam server full version is %s, major version is %s", response.second().trim(), majorVersion));
+            return majorVersion;
         }
     }
 
@@ -571,7 +592,7 @@ public class VeeamClient {
      */
     protected String transformPowerShellCommandList(List<String> cmds) {
         StringJoiner joiner = new StringJoiner(";");
-        if (this.veeamServerVersion != null || this.veeamServerVersion < 11) {
+        if (isLegacyServer()) {
             joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
         } else {
             joiner.add("PowerShell Import-Module Veeam.Backup.PowerShell -WarningAction SilentlyContinue");
@@ -640,7 +661,7 @@ public class VeeamClient {
     }
 
     public Map<String, Backup.Metric> getBackupMetrics() {
-        if (this.veeamServerVersion != null || this.veeamServerVersion < 11) {
+        if (isLegacyServer()) {
             return getBackupMetricsLegacy();
         } else {
             return getBackupMetricsViaVeeamAPI();
@@ -806,7 +827,7 @@ public class VeeamClient {
     }
 
     public List<Backup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
-        if (this.veeamServerVersion == null || this.veeamServerVersion < 11) {
+        if (isLegacyServer()) {
             return listRestorePointsLegacy(backupName, vmInternalName);
         } else {
             return listVmRestorePointsViaVeeamAPI(vmInternalName);
@@ -886,5 +907,9 @@ public class VeeamClient {
             throw new CloudRuntimeException("Failed to restore VM to location " + restoreLocation);
         }
         return new Pair<>(result.first(), restoreLocation);
+    }
+
+    private boolean isLegacyServer() {
+        return this.veeamServerVersion != null && (this.veeamServerVersion > 0 && this.veeamServerVersion < 11);
     }
 }
