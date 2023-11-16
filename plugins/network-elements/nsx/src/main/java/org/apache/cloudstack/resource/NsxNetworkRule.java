@@ -19,6 +19,11 @@ package org.apache.cloudstack.resource;
 import java.util.List;
 
 public class NsxNetworkRule {
+
+    public enum NsxRuleAction {
+        ALLOW, DROP
+    }
+
     private long domainId;
     private long accountId;
     private long zoneId;
@@ -34,7 +39,7 @@ public class NsxNetworkRule {
     private String protocol;
     private String algorithm;
     private List<NsxLoadBalancerMember> memberList;
-    private String aclAction;
+    private NsxRuleAction aclAction;
     private List<String> cidrList;
     private String trafficType;
 
@@ -158,11 +163,11 @@ public class NsxNetworkRule {
         this.memberList = memberList;
     }
 
-    public String getAclAction() {
+    public NsxRuleAction getAclAction() {
         return aclAction;
     }
 
-    public void setAclAction(String aclAction) {
+    public void setAclAction(NsxRuleAction aclAction) {
         this.aclAction = aclAction;
     }
 
@@ -199,7 +204,7 @@ public class NsxNetworkRule {
         private String protocol;
         private String algorithm;
         private List<NsxLoadBalancerMember> memberList;
-        private String aclAction;
+        private NsxRuleAction aclAction;
         private List<String> cidrList;
         private String trafficType;
 
@@ -282,7 +287,7 @@ public class NsxNetworkRule {
             return this;
         }
 
-        public Builder setAclAction(String aclAction) {
+        public Builder setAclAction(NsxRuleAction aclAction) {
             this.aclAction = aclAction;
             return this;
         }

@@ -666,7 +666,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
                     .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
-                    .setAclAction(rule.getAction().toString())
+                    .setAclAction(transformActionValue(rule.getAction()))
                     .setTrafficType(rule.getTrafficType().toString())
                     .build();
             nsxNetworkRules.add(networkRule);
@@ -674,16 +674,29 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         return nsxService.addFirewallRules(network, nsxNetworkRules);
     }
 
+    protected NsxNetworkRule.NsxRuleAction transformActionValue(NetworkACLItem.Action action) {
+        if (action == NetworkACLItem.Action.Allow) {
+            return NsxNetworkRule.NsxRuleAction.ALLOW;
+        } else if (action == NetworkACLItem.Action.Deny) {
+            return NsxNetworkRule.NsxRuleAction.DROP;
+        }
+        String err = String.format("Unsupported action %s", action.toString());
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
+    }
+
     /**
      * Replace 0.0.0.0/0 to ANY on each occurrence
      */
-    private List<String> transformCidrListValues(List<String> sourceCidrList) {
+    protected List<String> transformCidrListValues(List<String> sourceCidrList) {
         List<String> list = new ArrayList<>();
-        for (String cidr : sourceCidrList) {
-            if (cidr.equals("0.0.0.0/0")) {
-                list.add("ANY");
-            } else {
-                list.add(cidr);
+        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(sourceCidrList)) {
+            for (String cidr : sourceCidrList) {
+                if (cidr.equals("0.0.0.0/0")) {
+                    list.add("ANY");
+                } else {
+                    list.add(cidr);
+                }
             }
         }
         return list;

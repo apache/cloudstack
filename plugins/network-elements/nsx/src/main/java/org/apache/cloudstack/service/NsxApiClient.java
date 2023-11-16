@@ -791,7 +791,7 @@ public class NsxApiClient {
         for (NsxNetworkRule rule: nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
-                    .setAction(rule.getAclAction().toUpperCase())
+                    .setAction(rule.getAclAction().toString())
                     .setId(ruleId)
                     .setDisplayName(ruleId)
                     .setResourceType("SecurityPolicy")
