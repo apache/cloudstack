@@ -5974,7 +5974,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         String removalReason = cmd.getRemovalReason();
         if (StringUtils.isBlank(removalReason)) {
-            s_logger.error("The removalReason parameter cannot be blank.");
+            logger.error("The removalReason parameter cannot be blank.");
             ipAddress = ObjectUtils.defaultIfNull(ipAddress, _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString());
             throw new CloudRuntimeException(String.format("The given reason for removing the public IP address [%s] from quarantine is blank.", ipAddress));
         }
@@ -5991,10 +5991,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     protected PublicIpQuarantine retrievePublicIpQuarantine(Long ipId, String ipAddress) throws CloudRuntimeException {
         PublicIpQuarantine publicIpQuarantine;
         if (ipId != null) {
-            s_logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
+            logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
             publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
         } else if (ipAddress != null) {
-            s_logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
+            logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
             publicIpQuarantine = publicIpQuarantineDao.findByIpAddress(ipAddress);
         } else {
             throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");

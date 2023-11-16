@@ -2405,25 +2405,25 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         PublicIpQuarantineVO publicIpQuarantineVO = publicIpQuarantineDao.findByPublicIpAddressId(ip.getId());
 
         if (publicIpQuarantineVO == null) {
-            s_logger.debug(String.format("Public IP address [%s] is not in quarantine; therefore, it is allowed to be allocated.", ip));
+            logger.debug(String.format("Public IP address [%s] is not in quarantine; therefore, it is allowed to be allocated.", ip));
             return true;
         }
 
         if (!isPublicIpAddressStillInQuarantine(publicIpQuarantineVO, new Date())) {
-            s_logger.debug(String.format("Public IP address [%s] is no longer in quarantine; therefore, it is allowed to be allocated.", ip));
+            logger.debug(String.format("Public IP address [%s] is no longer in quarantine; therefore, it is allowed to be allocated.", ip));
             return true;
         }
 
         Account previousOwner = _accountMgr.getAccount(publicIpQuarantineVO.getPreviousOwnerId());
 
         if (Objects.equals(previousOwner.getUuid(), newOwner.getUuid())) {
-            s_logger.debug(String.format("Public IP address [%s] is in quarantine; however, the Public IP previous owner [%s] is the same as the new owner [%s]; therefore the IP" +
+            logger.debug(String.format("Public IP address [%s] is in quarantine; however, the Public IP previous owner [%s] is the same as the new owner [%s]; therefore the IP" +
                     " can be allocated. The public IP address will be removed from quarantine.", ip, previousOwner, newOwner));
             removePublicIpAddressFromQuarantine(publicIpQuarantineVO.getId(), "IP was removed from quarantine because it has been allocated by the previous owner");
             return true;
         }
 
-        s_logger.error(String.format("Public IP address [%s] is in quarantine and the previous owner [%s] is different than the new owner [%s]; therefore, the IP cannot be " +
+        logger.error(String.format("Public IP address [%s] is in quarantine and the previous owner [%s] is different than the new owner [%s]; therefore, the IP cannot be " +
                 "allocated.", ip, previousOwner, newOwner));
         return false;
     }
@@ -2441,7 +2441,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     public PublicIpQuarantine addPublicIpAddressToQuarantine(IpAddress publicIpAddress, Long domainId) {
         Integer quarantineDuration = PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.valueInDomain(domainId);
         if (quarantineDuration <= 0) {
-            s_logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
+            logger.debug(String.format("Not adding IP [%s] to quarantine because configuration [%s] has value equal or less to 0.", publicIpAddress.getAddress(),
                     PUBLIC_IP_ADDRESS_QUARANTINE_DURATION.key()));
             return null;
         }
@@ -2450,7 +2450,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         long accountId = publicIpAddress.getAccountId();
 
         if (accountId == Account.ACCOUNT_ID_SYSTEM) {
-            s_logger.debug(String.format("Not adding IP [%s] to quarantine because it belongs to the system account.", publicIpAddress.getAddress()));
+            logger.debug(String.format("Not adding IP [%s] to quarantine because it belongs to the system account.", publicIpAddress.getAddress()));
             return null;
         }
 
@@ -2460,7 +2460,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         quarantineEndDate.add(Calendar.MINUTE, quarantineDuration);
 
         PublicIpQuarantineVO publicIpQuarantine = new PublicIpQuarantineVO(ipId, accountId, currentDate, quarantineEndDate.getTime());
-        s_logger.debug(String.format("Adding public IP Address [%s] to quarantine for the duration of [%s] minute(s).", publicIpAddress.getAddress(), quarantineDuration));
+        logger.debug(String.format("Adding public IP Address [%s] to quarantine for the duration of [%s] minute(s).", publicIpAddress.getAddress(), quarantineDuration));
         return publicIpQuarantineDao.persist(publicIpQuarantine);
     }
 
@@ -2473,7 +2473,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         publicIpQuarantineVO.setRemoved(removedDate);
         publicIpQuarantineVO.setRemovalReason(removalReason);
 
-        s_logger.debug(String.format("Removing public IP Address [%s] from quarantine by updating the removed date to [%s].", ipAddress, removedDate));
+        logger.debug(String.format("Removing public IP Address [%s] from quarantine by updating the removed date to [%s].", ipAddress, removedDate));
         publicIpQuarantineDao.persist(publicIpQuarantineVO);
     }
 
@@ -2485,7 +2485,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         publicIpQuarantineVO.setEndDate(newEndDate);
 
-        s_logger.debug(String.format("Updating the end date for the quarantine of the public IP Address [%s] from [%s] to [%s].", ipAddress, currentEndDate, newEndDate));
+        logger.debug(String.format("Updating the end date for the quarantine of the public IP Address [%s] from [%s] to [%s].", ipAddress, currentEndDate, newEndDate));
         publicIpQuarantineDao.persist(publicIpQuarantineVO);
         return publicIpQuarantineVO;
     }

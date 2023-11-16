@@ -346,11 +346,11 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
         try {
             accountIdToUse = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         } catch (InvalidParameterValueException | PermissionDeniedException ex) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("An exception occurred while finalizing account id with accountName, domainId and projectId" +
                       "using callingAccountId=%s", callingAccount.getUuid()), ex);
             }
-            s_logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
+            logger.warn("Unable to find accountId associated with accountName=" + accountName + " and domainId="
                   + domainId + " or projectId=" + projectId + ", using callingAccountId=" + callingAccount.getUuid());
         }
         return accountIdToUse != null ? accountIdToUse : callingAccount.getAccountId();

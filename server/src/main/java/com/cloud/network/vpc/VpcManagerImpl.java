@@ -1106,7 +1106,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         String sourceNatIP = cmd.getSourceNatIP();
         if (sourceNatIP != null) {
-            s_logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
+            logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
             allocateSourceNatIp(vpc, sourceNatIP);
         }
         return vpc;
