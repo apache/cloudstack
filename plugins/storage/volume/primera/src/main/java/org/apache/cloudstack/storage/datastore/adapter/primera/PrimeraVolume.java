@@ -63,7 +63,7 @@ public class PrimeraVolume implements ProviderSnapshot {
     private PrimeraVolumeAdminSpace adminSpace = null;
     private PrimeraVolumeSnapshotSpace snapshotSpace = null;
     private PrimeraVolumeUserSpace userSpace = null;
-    private Integer totalReservedMiB;
+    private Integer totalReservedMiB = null;
     private Integer totalUsedMiB = null;
     private Integer sizeMiB = null;
     private Integer hostWriteMiB = null;
@@ -338,6 +338,7 @@ public class PrimeraVolume implements ProviderSnapshot {
         this.links = links;
     }
     @Override
+    @JsonIgnore
     public Boolean isDestroyed() {
         return false;
     }
@@ -372,14 +373,23 @@ public class PrimeraVolume implements ProviderSnapshot {
         return this.wwn;
     }
     @Override
+    @JsonIgnore
     public Long getAllocatedSizeInBytes() {
-        return this.getTotalUsedMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        if (this.getSizeMiB() != null) {
+            return this.getSizeMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        }
+        return 0L;
     }
     @Override
+    @JsonIgnore
     public Long getUsedBytes() {
-        return this.getTotalReservedMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        if (this.getTotalReservedMiB() != null) {
+            return this.getTotalReservedMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        }
+        return 0L;
     }
     @Override
+    @JsonIgnore
     public String getExternalUuid() {
         return uuid;
     }
@@ -387,6 +397,7 @@ public class PrimeraVolume implements ProviderSnapshot {
         this.uuid = uuid;
     }
     @Override
+    @JsonIgnore
     public String getExternalName() {
         return name;
     }
@@ -394,6 +405,7 @@ public class PrimeraVolume implements ProviderSnapshot {
         this.name = name;
     }
     @Override
+    @JsonIgnore
     public String getExternalConnectionId() {
         return connectionId;
     }
@@ -401,6 +413,7 @@ public class PrimeraVolume implements ProviderSnapshot {
         this.connectionId = connectionId;
     }
     @Override
+    @JsonIgnore
     public Boolean canAttachDirectly() {
         return true;
     }

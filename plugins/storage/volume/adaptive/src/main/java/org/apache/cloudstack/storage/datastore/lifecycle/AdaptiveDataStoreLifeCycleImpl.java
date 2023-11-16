@@ -34,6 +34,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCy
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
+import org.apache.cloudstack.storage.datastore.adapter.ProviderVolumeStorageStats;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.provider.AdaptivePrimaryDatastoreAdapterFactoryMap;
@@ -219,6 +220,24 @@ public class AdaptiveDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle
 
             // validate the provided details are correct/valid for the provider
             api.validate();
+
+            // if we have user-provided capacity bytes, validate they do not exceed the manaaged storage capacity bytes
+            ProviderVolumeStorageStats stats = api.getManagedStorageStats();
+            if (capacityBytes != null && capacityBytes != 0) {
+                if (stats.getCapacityInBytes() > 0) {
+                    if (stats.getCapacityInBytes() < capacityBytes) {
+                        throw new InvalidParameterValueException("Capacity bytes provided exceeds the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
+                    }
+                }
+                parameters.setCapacityBytes(capacityBytes);
+            }
+            // if we have no user-provided capacity bytes, use the ones provided by storage
+            else {
+                if (stats.getCapacityInBytes() <= 0) {
+                    throw new InvalidParameterValueException("Capacity bytes note available from the storage provider, user provided capacity bytes must be specified");
+                }
+                parameters.setCapacityBytes(stats.getCapacityInBytes());
+            }
 
             s_logger.info("Persisting [" + dsName + "] storage pool metadata to database");
             return _dataStoreHelper.createPrimaryDataStore(parameters);

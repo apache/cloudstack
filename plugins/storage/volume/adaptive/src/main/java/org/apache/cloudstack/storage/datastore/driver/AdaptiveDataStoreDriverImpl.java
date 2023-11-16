@@ -33,6 +33,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -92,6 +93,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 
 public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDriverImpl {
 
@@ -129,6 +131,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     DataCenterDao _datacenterDao;
     @Inject
     DomainDao _domainDao;
+    @Inject
+    VolumeService _volumeService;
 
     private AdaptivePrimaryDatastoreAdapterFactoryMap _adapterFactoryMap = null;
 
@@ -286,6 +290,18 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 ProviderAdapterDataObject destIn = newManagedDataObject(destdata, storagePool);
                 outVolume = api.copy(context, sourceIn, destIn);
 
+                // populate this data - it may be needed later
+                destIn.setExternalName(outVolume.getExternalName());
+                destIn.setExternalConnectionId(outVolume.getExternalConnectionId());
+                destIn.setExternalUuid(outVolume.getExternalUuid());
+
+                // if we copied from one volume to another, the target volume's disk offering or user input may be of a larger size
+                // we won't, however, shrink a volume if its smaller.
+                if (outVolume.getAllocatedSizeInBytes() < destdata.getSize()) {
+                    s_logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
+                    api.resize(context, destIn, destdata.getSize());
+                }
+
                 String connectionId = api.attach(context, destIn);
 
                 String finalPath;
@@ -328,7 +344,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 + srcData.getDataStore().getId() + " AND destData ["
                 + destData.getUuid() + ":" + destData.getType() + ":" + destData.getDataStore().getId() + "]");
         try {
-            if (!isSameProvider(srcData)) { // TODO: change to generic
+            if (!isSameProvider(srcData)) { 
                 s_logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
                 return false;
             }
@@ -401,7 +417,16 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
                 ProviderAdapterContext context = newManagedVolumeContext(data);
                 ProviderAdapterDataObject dataIn = newManagedDataObject(data, poolVO);
+                if (s_logger.isDebugEnabled()) s_logger.debug("Calling provider API to resize volume " + data.getUuid() + " to " + resizeParameter.newSize);
                 api.resize(context, dataIn, resizeParameter.newSize);
+
+                if (vol.isAttachedVM()) {
+                    if (VirtualMachine.State.Running.equals(vol.getAttachedVM().getState())) {
+                        if (s_logger.isDebugEnabled()) s_logger.debug("Notify currently attached VM of volume resize for " + data.getUuid() + " to " + resizeParameter.newSize);
+                        _volumeService.resizeVolumeOnHypervisor(vol.getId(), resizeParameter.newSize, vol.getAttachedVM().getHostId(), vol.getAttachedVM().getInstanceName());
+                    }
+                }
+
                 result = new CreateCmdResult(data.getUuid(), new Answer(null));
                 result.setSuccess(true);
             } catch (Throwable e) {
@@ -815,7 +840,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     boolean isSameProvider(DataObject obj) {
         StoragePoolVO storagePool = this._storagePoolDao.findById(obj.getDataStore().getId());
-        if (storagePool.getStorageProviderName().equals(this.getProviderName())) {
+        if (storagePool != null && storagePool.getStorageProviderName().equals(this.getProviderName())) {
             return true;
         } else {
             return false;

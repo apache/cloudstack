@@ -1471,6 +1471,16 @@ public class VolumeServiceImpl implements VolumeService {
                 if (templatePoolRef.getDownloadState() == Status.NOT_DOWNLOADED) {
                     copyTemplateToManagedTemplateVolume(srcTemplateInfo, templateOnPrimary, templatePoolRef, destPrimaryDataStore, destHost);
                 }
+            } catch (Exception e) {
+                if (templateOnPrimary != null) {
+                    templateOnPrimary.processEvent(Event.OperationFailed);
+                }
+                VolumeApiResult result = new VolumeApiResult(volumeInfo);
+                result.setResult(e.getLocalizedMessage());
+                result.setSuccess(false);
+                future.complete(result);
+                s_logger.warn("Failed to create template on primary storage", e);
+                return future;
             } finally {
                 if (lock != null) {
                     lock.unlock();

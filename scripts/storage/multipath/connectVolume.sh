@@ -29,6 +29,12 @@ WWID=${2:?"WWID required"}
 
 WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
+systemctl is-active multipathd || systemctl restart multipathd || {
+   echo "$(date): Multipathd is NOT running and cannot be started.  This must be corrected before this host can access this storage volume."
+   logger -t "CS_SCSI_VOL_FIND" "${WWID} cannot be mapped to this host because multipathd is not currently running and cannot be started"
+   exit 1
+}
+
 echo "$(date): Looking for ${WWID} on lun ${LUN}"
 
 # get vendor OUI.  we will only delete a device on the designated lun if it matches the
@@ -70,7 +76,7 @@ logger -t "CS_SCSI_VOL_FIND" "${WWID} awaiting disk path at /dev/mapper/3${WWID}
 # wait for multipath to map the new lun to the WWID
 echo "$(date): Waiting for multipath entry to show up for the WWID"
 while true; do
-   ls /dev/mapper/3${WWID} >/dev/null 2&1
+   ls /dev/mapper/3${WWID} >/dev/null 2>&1
    if [ $? == 0 ]; then
       break
    fi
@@ -93,6 +99,17 @@ while true; do
    sleep 5
 done
 
+echo "$(date): Doing a recan to make sure we have proper current size locally"
+for device in $(multipath -ll 3${WWID} | egrep '^  ' | awk '{print $2}'); do
+    echo "1" > /sys/bus/scsi/drivers/sd/${device}/rescan;
+done
+
+sleep 3
+
+multipathd reconfigure
+
+sleep 3
+
 # cleanup any old/faulty paths
 delete_needed=false
 multipath -l 3${WWID}
@@ -109,7 +126,7 @@ fi
 
 multipath -l 3${WWID}
 
-logger -t "CS_SCSI_VOLFIND" "${WWID} successfully discovered and available"
+logger -t "CS_SCSI_VOL_FIND" "${WWID} successfully discovered and available"
 
 echo "$(date): Complete - found mapped LUN at /dev/mapper/3${WWID}"
 

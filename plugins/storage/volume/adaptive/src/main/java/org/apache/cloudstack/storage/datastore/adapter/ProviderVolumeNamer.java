@@ -21,6 +21,8 @@ public class ProviderVolumeNamer {
     private static final String SNAPSHOT_PREFIX = "snap";
     private static final String VOLUME_PREFIX = "vol";
     private static final String TEMPLATE_PREFIX = "tpl";
+    /** Simple method to allow sharing storage setup, primarily in lab/testing environment */
+    private static final String ENV_PREFIX = System.getProperty("adaptive.storage.provider.envIdentifier");
 
     public static String generateObjectName(ProviderAdapterContext context, ProviderAdapterDataObject obj) {
         ProviderAdapterDataObject.Type objType = obj.getType();
@@ -34,6 +36,11 @@ public class ProviderVolumeNamer {
         } else {
             throw new RuntimeException("Unknown ManagedDataObject type provided: " + obj.getType());
         }
+
+        if (ENV_PREFIX != null) {
+            prefix = ENV_PREFIX + "-" + prefix;
+        }
+
         return prefix + "-" + obj.getDataStoreId() + "-" + context.getDomainId() + "-" + context.getAccountId() + "-" + obj.getId();
     }
 

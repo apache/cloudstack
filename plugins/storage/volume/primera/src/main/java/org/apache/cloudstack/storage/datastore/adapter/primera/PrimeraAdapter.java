@@ -236,47 +236,41 @@ public class PrimeraAdapter implements ProviderAdapter {
     }
 
     @Override
-    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolume,
-            ProviderAdapterDataObject targetVolume) {
+    public ProviderVolume copy(ProviderAdapterContext context, ProviderAdapterDataObject sourceVolumeInfo,
+            ProviderAdapterDataObject targetVolumeInfo) {
         PrimeraVolumeCopyRequest request = new PrimeraVolumeCopyRequest();
         PrimeraVolumeCopyRequestParameters parms = new PrimeraVolumeCopyRequestParameters();
 
-        assert sourceVolume.getExternalName() != null: "External provider name not provided on copy request to Primera volume provider";
+        assert sourceVolumeInfo.getExternalName() != null: "External provider name not provided on copy request to Primera volume provider";
 
         // if we have no external name, treat it as a new volume
-        if (targetVolume.getExternalName() == null) {
-            targetVolume.setExternalName(ProviderVolumeNamer.generateObjectName(context, targetVolume));
+        if (targetVolumeInfo.getExternalName() == null) {
+            targetVolumeInfo.setExternalName(ProviderVolumeNamer.generateObjectName(context, targetVolumeInfo));
         }
 
-        parms.setDestVolume(targetVolume.getExternalName());
-        parms.setDestCPG(cpg);
-        parms.setOnline(true);
-        parms.setReduce(true);
-        parms.setSnapCPG(snapCpg);
+        ProviderVolume sourceVolume = this.getVolume(context, sourceVolumeInfo);
+        if (sourceVolume == null) {
+            throw new RuntimeException("Source volume " + sourceVolumeInfo.getExternalUuid() + " with provider name " + sourceVolumeInfo.getExternalName() + " not found on storage provider");
+        }
+
+        ProviderVolume targetVolume = this.getVolume(context, targetVolumeInfo);
+        if (targetVolume == null) {
+            this.create(context, targetVolumeInfo, null, sourceVolume.getAllocatedSizeInBytes());
+        }
+
+        parms.setDestVolume(targetVolumeInfo.getExternalName());
+        parms.setOnline(false);
         request.setParameters(parms);
 
-        PrimeraTaskReference taskref = POST("/volumes/" + sourceVolume.getExternalName(), request, new TypeReference<PrimeraTaskReference>() {});
+        PrimeraTaskReference taskref = POST("/volumes/" + sourceVolumeInfo.getExternalName(), request, new TypeReference<PrimeraTaskReference>() {});
         if (taskref == null) {
             throw new RuntimeException("Unable to retrieve task used to copy to newly created volume");
         }
 
-        waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolume.getExternalName() + " to " +
-            targetVolume.getExternalName(), taskWaitTimeoutMs);
+        waitForTaskToComplete(taskref.getTaskid(), "copy volume " + sourceVolumeInfo.getExternalName() + " to " +
+            targetVolumeInfo.getExternalName(), taskWaitTimeoutMs);
 
-        String newVolLocation = taskref.getLocation();
-        if (newVolLocation == null) {
-            throw new RuntimeException("Unable to retrieve link to newly created copy volume");
-        }
-        String subpath = newVolLocation.substring(newVolLocation.lastIndexOf("/api/v1", 0)).replaceAll("/api/v1", "");
-
-        // update the comment for the metadata (since we did a copy the new volume doesn't have any metadata comment yet)
-        PrimeraVolumeUpdateRequest updateobj = new PrimeraVolumeUpdateRequest();
-        updateobj.setComment(ProviderVolumeNamer.generateObjectComment(context, targetVolume));
-        PUT(subpath, updateobj, null);
-
-        // return a re-fetched volume object
-        return GET(subpath, new TypeReference<PrimeraVolume>() {
-        });
+        return this.getVolume(context, targetVolumeInfo);
     }
 
     private void waitForTaskToComplete(String taskid, String taskDescription, Long timeoutMs) {
@@ -356,13 +350,27 @@ public class PrimeraAdapter implements ProviderAdapter {
         return getVolumeById(context, snapVol.getParentId());
     }
 
+    /**
+     * Resize the volume to the new size.  For HPE Primera, the API takes the additional space to add to the volume
+     * so this method will first retrieve the current volume's size and subtract that from the new size provided
+     * before calling the API.
+     *
+     * This method uses option GROW_VOLUME=3 for the API at this URL:
+     * https://support.hpe.com/hpesc/public/docDisplay?docId=a00118636en_us&page=v25706371.html
+     *
+     */
     @Override
     public void resize(ProviderAdapterContext context, ProviderAdapterDataObject request, long totalNewSizeInBytes) {
         assert request.getExternalName() != null: "External name not internally set for provided volume when requesting resize of volume";
+
+        PrimeraVolume existingVolume = (PrimeraVolume) getVolume(context, request);
+        assert existingVolume != null: "Storage volume resize request not possible as existing volume not found for external provider name: " + request.getExternalName();
+        long existingSizeInBytes = existingVolume.getSizeMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        assert existingSizeInBytes < totalNewSizeInBytes: "Existing volume size is larger than requested new size for volume resize request.  The Primera storage system does not support truncating/shrinking volumes.";
+        long addOnSizeInBytes = totalNewSizeInBytes - existingSizeInBytes;
+
         PrimeraVolume volume = new PrimeraVolume();
-        volume.setSizeMiB((int) (totalNewSizeInBytes / PrimeraAdapter.BYTES_IN_MiB));
-        // GROW_VOLUME=3;
-        // https://support.hpe.com/hpesc/public/docDisplay?docId=a00118636en_us&page=v25706371.html
+        volume.setSizeMiB((int) (addOnSizeInBytes / PrimeraAdapter.BYTES_IN_MiB));
         volume.setAction(3);
         PUT("/volumes/" + request.getExternalName(), volume, null);
     }
@@ -412,14 +420,17 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (cpgobj == null || cpgobj.getTotalSpaceMiB() == 0) {
             return null;
         }
-        Long capacityBytes = cpgobj.getTotalSpaceMiB() * PrimeraAdapter.BYTES_IN_MiB;
-        Long usedBytes = (cpgobj.getTotalSpaceMiB() - cpgobj.getFreeSpaceMiB())
-                * PrimeraAdapter.BYTES_IN_MiB;
-        Long virtualUsedInBytes = (cpgobj.getRawTotalSpaceMiB() - cpgobj.getRawFreeSpaceMiB()) * PrimeraAdapter.BYTES_IN_MiB;
+        Long capacityBytes = 0L;
+        if (cpgobj.getsDGrowth() != null) {
+            capacityBytes = cpgobj.getsDGrowth().getLimitMiB() * PrimeraAdapter.BYTES_IN_MiB;
+        }
+        Long usedBytes = 0L;
+        if (cpgobj.getUsrUsage() != null) {
+            usedBytes = (cpgobj.getUsrUsage().getRawUsedMiB()) * PrimeraAdapter.BYTES_IN_MiB;
+        }
         ProviderVolumeStorageStats stats = new ProviderVolumeStorageStats();
         stats.setActualUsedInBytes(usedBytes);
         stats.setCapacityInBytes(capacityBytes);
-        stats.setVirtualUsedInBytes(virtualUsedInBytes);
         return stats;
     }
 

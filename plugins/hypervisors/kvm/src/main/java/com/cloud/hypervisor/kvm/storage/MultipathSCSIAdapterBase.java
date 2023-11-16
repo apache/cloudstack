@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -62,6 +63,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static final Property<String> CLEANUP_SCRIPT = new Property<String>("multimap.cleanup.script", "cleanStaleMaps.sh");
     static final Property<String> CONNECT_SCRIPT = new Property<String>("multimap.connect.script", "connectVolume.sh");
     static final Property<String> DISCONNECT_SCRIPT = new Property<String>("multimap.disconnect.script", "disconnectVolume.sh");
+    static final Property<String> RESIZE_SCRIPT = new Property<String>("multimap.resize.script", "resizeVolume.sh");
     static final Property<Integer> DISK_WAIT_SECS = new Property<Integer>("multimap.disk.wait.secs", 240);
     static final Property<String> STORAGE_SCRIPTS_DIR = new Property<String>("multimap.storage.scripts.dir", "scripts/storage/multipath");
 
@@ -70,6 +72,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     private static String connectScript = CONNECT_SCRIPT.getFinalValue();
     private static String disconnectScript = DISCONNECT_SCRIPT.getFinalValue();
     private static String cleanupScript = CLEANUP_SCRIPT.getFinalValue();
+    private static String resizeScript = RESIZE_SCRIPT.getFinalValue();
     private static int diskWaitTimeSecs = DISK_WAIT_SECS.getFinalValue();
 
     /**
@@ -88,6 +91,11 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         disconnectScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), disconnectScript);
         if (disconnectScript == null) {
             throw new Error("Unable to find the disconnectVolume.sh script");
+        }
+
+        resizeScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), resizeScript);
+        if (resizeScript == null) {
+            throw new Error("Unable to find the resizeVolume.sh script");
         }
 
         if (cleanupEnabled) {
@@ -459,33 +467,74 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
     }
 
-    boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, int waitTimeInSec) {
+    boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
         LOGGER.debug("Waiting for the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid() + " to become available for " + waitTimeInSec + " secs");
-        int timeBetweenTries = 1000; // Try more frequently (every sec) and return early if disk is found
+        long scriptTimeoutSecs = 30; // how long to wait for each script execution to run
+        long maxTries = 10; // how many max retries to attempt the script
+        long waitTimeInMillis = waitTimeInSec * 1000; // how long overall to wait
+        int timeBetweenTries = 1000; // how long to sleep between tries
+        // wait at least 60 seconds even if input was lower
+        if (waitTimeInSec < 60) {
+            waitTimeInSec = 60;
+        }
         KVMPhysicalDisk physicalDisk = null;
 
-        String lun = address.getConnectionId();
-        if (address.getConnectionId() == null) {
-            lun = "-";
-        }
-
         // Rescan before checking for the physical disk
-        while (waitTimeInSec > 0) {
-            runConnectScript(lun, address);
-            physicalDisk = getPhysicalDisk(address, pool);
-            if (physicalDisk != null && physicalDisk.getSize() > 0) {
-                LOGGER.debug("Found the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
-                return true;
+        int tries = 0;
+        while (waitTimeInMillis > 0 && tries < maxTries) {
+            tries++;
+            long start = System.currentTimeMillis();
+            String lun;
+            if (address.getConnectionId() == null) {
+                lun = "-";
+            } else {
+                lun = address.getConnectionId();
             }
 
-            waitTimeInSec--;
-            sleep(timeBetweenTries);
-        }
+            try {
+                ProcessBuilder builder = new ProcessBuilder(connectScript, lun, address.getAddress());
+                Process p = builder.start();
+                if (p.waitFor(scriptTimeoutSecs, TimeUnit.SECONDS)) {
+                    int rc = p.exitValue();
+                    StringBuffer output = new StringBuffer();
+                    if (rc == 0) {
+                        BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                        String line = null;
+                        while ((line = input.readLine()) != null) {
+                            output.append(line);
+                            output.append(" ");
+                        }
 
-        physicalDisk = getPhysicalDisk(address, pool);
-        if (physicalDisk != null && physicalDisk.getSize() > 0) {
-            LOGGER.debug("Found the volume using id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
-            return true;
+                        physicalDisk = getPhysicalDisk(address, pool);
+                        if (physicalDisk != null && physicalDisk.getSize() > 0) {
+                            LOGGER.debug("Found the volume using id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
+                            return true;
+                        }
+
+                        break;
+                    } else {
+                        LOGGER.warn("Failure discovering LUN via " + connectScript);
+                        BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                        String line = null;
+                        while ((line = error.readLine()) != null) {
+                            LOGGER.warn("error --> " + line);
+                        }
+                    }
+                } else {
+                    LOGGER.debug("Timeout waiting for " + connectScript + " to complete - try " + tries);
+                }
+            } catch (IOException | InterruptedException | IllegalThreadStateException e) {
+                LOGGER.warn("Problem performing scan on SCSI hosts - try " + tries, e);
+            }
+
+            long elapsed = System.currentTimeMillis() - start;
+            waitTimeInMillis = waitTimeInMillis - elapsed;
+
+            try {
+                Thread.sleep(timeBetweenTries);
+            } catch (Exception ex) {
+                // don't do anything
+            }
         }
 
         LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
@@ -559,6 +608,25 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         return size;
+    }
+
+    public void resize(String path, String vmName, long newSize) {
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("Executing resize of " + path + " to " + newSize + " bytes for VM " + vmName);
+
+        // extract wwid
+        AddressInfo address = parseAndValidatePath(path);
+        if (address == null || address.getAddress() == null) {
+            LOGGER.error("Unable to resize volume, address value is not valid");
+            throw new CloudRuntimeException("Unable to resize volume, address value is not valid");
+        }
+
+        if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Running %s %s %s %s", resizeScript, address.getAddress(), vmName, newSize));
+
+        // call resizeVolume.sh <wwid>
+        String output = Script.runSimpleBashScript(String.format("%s %s %s %s", resizeScript, address.getAddress(), vmName, newSize), 60000);
+
+        LOGGER.info("Resize of volume at address " + address.getAddress() + " completed successfully: " + output);
+        return ;
     }
 
     static void cleanupStaleMaps() {

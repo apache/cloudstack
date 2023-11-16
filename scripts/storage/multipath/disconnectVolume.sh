@@ -28,8 +28,13 @@
 WWID=${1:?"WWID required"}
 WWID=$(echo $WWID | tr '[:upper:]' '[:lower:]')
 
-exec > >(tee -a /var/log/cloudstack/agent/scsitrace/${WWID}.log)
 echo "$(date): Removing ${WWID}"
+
+systemctl is-active multipathd || systemctl restart multipathd || {
+   echo "$(date): Multipathd is NOT running and cannot be started.  This must be corrected before this host can access this storage volume."
+   logger -t "CS_SCSI_VOL_REMOVE" "${WWID} cannot be disconnected from this host because multipathd is not currently running and cannot be started"
+   exit 1
+}
 
 # first get dm- name
 DM_NAME=$(ls -lrt /dev/mapper/3${WWID} | awk '{ print $NF }' | awk -F'/' '{print $NF}')

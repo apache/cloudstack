@@ -23,7 +23,10 @@ import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.joda.time.Duration;
 
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 
@@ -198,5 +201,41 @@ public class MultipathSCSIPool implements KVMStoragePool {
     @Override
     public Map<String, String> getDetails() {
         return this.details;
+    }
+
+    @Override
+    public boolean isPoolSupportHA() {
+        return false;
+    }
+
+    @Override
+    public String getHearthBeatPath() {
+        return null;
+    }
+
+    @Override
+    public String createHeartBeatCommand(HAStoragePool primaryStoragePool, String hostPrivateIp,
+            boolean hostValidation) {
+        return null;
+    }
+
+    @Override
+    public String getStorageNodeId() {
+        return null;
+    }
+
+    @Override
+    public Boolean checkingHeartBeat(HAStoragePool pool, HostTO host) {
+        return null;
+    }
+
+    @Override
+    public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout,
+            String volumeUUIDListString, String vmActivityCheckPath, long duration) {
+        return null;
+    }
+
+    public void resize(String path, String vmName, long newSize) {
+        ((MultipathSCSIAdapterBase)storageAdaptor).resize(path, vmName, newSize);
     }
 }
