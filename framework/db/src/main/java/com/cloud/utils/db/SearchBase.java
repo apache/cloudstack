@@ -36,6 +36,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * SearchBase contains the methods that are used to build up search
@@ -68,6 +69,14 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     SearchBase(final Class<T> entityType, final Class<K> resultType) {
         init(entityType, resultType);
+    }
+
+    public SearchBase<?, ?, ?> getJoinSB(String name) {
+        JoinBuilder<SearchBase<?, ?, ?>> jb = null;
+        if (_joins != null) {
+            jb = _joins.get(name);
+        }
+        return jb == null ? null : jb.getT();
     }
 
     protected void init(final Class<T> entityType, final Class<K> resultType) {
@@ -202,7 +211,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
 
-        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
+        final JoinBuilder<SearchBase<?, ?, ?>> t = new JoinBuilder<SearchBase<?, ?, ?>>(name, builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
         if (_joins == null) {
             _joins = new HashMap<String, JoinBuilder<SearchBase<?, ?, ?>>>();
         }
@@ -242,16 +251,25 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return _specifiedAttrs;
     }
 
-    protected Condition constructCondition(final String conditionName, final String cond, final Attribute attr, final Op op) {
+    protected Condition constructCondition(final String joinName, final String conditionName, final String cond, final Attribute attr, final Op op) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert op == null || _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert op != Op.SC : "Call join";
 
         final Condition condition = new Condition(conditionName, cond, attr, op);
+        if (StringUtils.isNotEmpty(joinName)) {
+            condition.setJoinName(joinName);
+        }
         _conditions.add(condition);
         _specifiedAttrs.clear();
         return condition;
     }
+
+
+    protected Condition constructCondition(final String conditionName, final String cond, final Attribute attr, final Op op) {
+        return constructCondition(null, conditionName, cond, attr, op);
+    }
+
 
     /**
      * creates the SearchCriteria so the actual values can be filled in.
@@ -364,6 +382,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     protected static class Condition {
         protected final String name;
         protected final String cond;
+        protected String joinName;
         protected final Op op;
         protected final Attribute attr;
         protected Object[] presets;
@@ -388,11 +407,25 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
             this.presets = presets;
         }
 
+        public void setJoinName(final String joinName) {
+            this.joinName = joinName;
+        }
+
         public Object[] getPresets() {
             return presets;
         }
 
         public void toSql(final StringBuilder sql, final Object[] params, final int count) {
+            String tableAlias = null;
+            if (joinName != null) {
+                tableAlias = joinName;
+            } else if (attr != null) {
+                tableAlias = attr.table;
+            }
+            toSql(sql, tableAlias, params, count);
+        }
+
+        public void toSql(final StringBuilder sql, final String tableAlias, final Object[] params, final int count) {
             if (count > 0) {
                 sql.append(cond);
             }
@@ -414,7 +447,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                 sql.append(" FIND_IN_SET(?, ");
             }
 
-            sql.append(attr.table).append(".").append(attr.columnName).append(op.toString());
+            sql.append(tableAlias).append(".").append(attr.columnName).append(op.toString());
             if (op == Op.IN && params.length == 1) {
                 sql.delete(sql.length() - op.toString().length(), sql.length());
                 sql.append("=?");

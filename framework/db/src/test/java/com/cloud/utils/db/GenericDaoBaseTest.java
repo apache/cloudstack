@@ -230,8 +230,8 @@ public class GenericDaoBaseTest {
         Attribute attr3 = new Attribute("table3", "column1");
         Attribute attr4 = new Attribute("table4", "column2");
 
-        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), attr1, attr2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), attr3, attr4, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), attr1, attr2, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), attr3, attr4, JoinBuilder.JoinType.INNER));
         dbTestDao.addJoins(joinString, joins);
 
         Assert.assertEquals(" INNER JOIN table2 ON table1.column1=table2.column2  INNER JOIN table4 ON table3.column1=table4.column2 ", joinString.toString());
@@ -249,9 +249,9 @@ public class GenericDaoBaseTest {
         Attribute tCc3 = new Attribute("tableC", "column3");
         Attribute tDc4 = new Attribute("tableD", "column4");
 
-        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
-        joins.add(new JoinBuilder<>(dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tBc2, tAc1, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tCc3, tAc2, JoinBuilder.JoinType.INNER));
+        joins.add(new JoinBuilder<>("", dbTestDao.createSearchCriteria(), tDc4, tAc3, JoinBuilder.JoinType.INNER));
         dbTestDao.addJoins(joinString, joins);
 
         Assert.assertEquals(" INNER JOIN tableA ON tableB.column2=tableA.column1  INNER JOIN tableA tableA1 ON tableC.column3=tableA1.column2  INNER JOIN tableA tableA2 ON tableD.column4=tableA2.column3 ", joinString.toString());

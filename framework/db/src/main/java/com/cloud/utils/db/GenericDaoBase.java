@@ -1289,7 +1289,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             String joinTableName = join.getSecondAttribute().table;
-            String joinTableAlias = findNextJoinTableName(joinTableName, joinedTableNames);
+            String joinTableAlias = StringUtils.isNotEmpty(join.getName()) ? join.getName() : findNextJoinTableName(joinTableName, joinedTableNames);
             StringBuilder onClause = new StringBuilder();
             onClause.append(" ")
             .append(join.getType().getName())
@@ -1312,7 +1312,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             .append(join.getSecondAttribute().columnName)
             .append(" ");
             str.insert(fromIndex, onClause);
-            String whereClause = join.getT().getWhereClause();
+            String whereClause = join.getT().getWhereClause(joinTableAlias);
             if (StringUtils.isNotEmpty(whereClause)) {
                 if (!hasWhereClause) {
                     str.append(" WHERE ");
@@ -1596,9 +1596,19 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
         if (attr.field.getType() == String.class) {
-            final String str = (String)value;
-            if (str == null) {
-                pstmt.setString(j, null);
+            final String str;
+            try {
+                str = (String) value;
+                if (str == null) {
+                    pstmt.setString(j, null);
+                    return;
+                }
+            } catch (ClassCastException ex) {
+                // This happens when we pass in an integer, long or any other object which can't be cast to String.
+                // Converting to string in case of integer or long can result in different results. Required specifically for details tables.
+                // So, we set the value for the object directly.
+                s_logger.debug("ClassCastException when casting value to String. Setting the value of the object directly.");
+                pstmt.setObject(j, value);
                 return;
             }
             final Column column = attr.field.getAnnotation(Column.class);

@@ -33,15 +33,21 @@ public class JoinBuilder<T> {
     }
 
     private final T t;
+    private final String name;
     private JoinType type;
     private Attribute firstAttribute;
     private Attribute secondAttribute;
 
-    public JoinBuilder(T t, Attribute firstAttribute, Attribute secondAttribute, JoinType type) {
+    public JoinBuilder(String name, T t, Attribute firstAttribute, Attribute secondAttribute, JoinType type) {
+        this.name = name;
         this.t = t;
         this.firstAttribute = firstAttribute;
         this.secondAttribute = secondAttribute;
         this.type = type;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public T getT() {
