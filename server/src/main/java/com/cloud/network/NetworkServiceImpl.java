@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -55,6 +56,8 @@ import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -399,6 +402,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     CommandSetupHelper commandSetupHelper;
     @Inject
     ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -5936,5 +5941,76 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+    }
+
+    @Override
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) throws CloudRuntimeException {
+        Long ipId = cmd.getId();
+        String ipAddress = cmd.getIpAddress();
+        Date newEndDate = cmd.getEndDate();
+
+        if (new Date().after(newEndDate)) {
+            throw new InvalidParameterValueException(String.format("The given end date [%s] is invalid as it is before the current date.", newEndDate));
+        }
+
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        String publicIpQuarantineAddress = _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString();
+        Date currentEndDate = publicIpQuarantine.getEndDate();
+
+        if (new Date().after(currentEndDate)) {
+            throw new CloudRuntimeException(String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", publicIpQuarantineAddress));
+        }
+
+        return _ipAddrMgr.updatePublicIpAddressInQuarantine(publicIpQuarantine.getId(), newEndDate);
+    }
+
+    @Override
+    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) throws CloudRuntimeException {
+        Long ipId = cmd.getId();
+        String ipAddress = cmd.getIpAddress();
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
+
+        String removalReason = cmd.getRemovalReason();
+        if (StringUtils.isBlank(removalReason)) {
+            s_logger.error("The removalReason parameter cannot be blank.");
+            ipAddress = ObjectUtils.defaultIfNull(ipAddress, _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString());
+            throw new CloudRuntimeException(String.format("The given reason for removing the public IP address [%s] from quarantine is blank.", ipAddress));
+        }
+
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
+    }
+
+    /**
+     * Retrieves the active quarantine for the given public IP address. It can find by the ID of the quarantine or the address of the public IP.
+     * @throws CloudRuntimeException if it does not find an active quarantine for the given public IP.
+     */
+    protected PublicIpQuarantine retrievePublicIpQuarantine(Long ipId, String ipAddress) throws CloudRuntimeException {
+        PublicIpQuarantine publicIpQuarantine;
+        if (ipId != null) {
+            s_logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
+            publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        } else if (ipAddress != null) {
+            s_logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
+            publicIpQuarantine = publicIpQuarantineDao.findByIpAddress(ipAddress);
+        } else {
+            throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");
+        }
+
+        if (publicIpQuarantine == null) {
+            throw new CloudRuntimeException("There is no active quarantine for the specified IP address.");
+        }
+
+        return  publicIpQuarantine;
+    }
+
+    protected void checkCallerForPublicIpQuarantineAccess(PublicIpQuarantine publicIpQuarantine) {
+        Account callingAccount = CallContext.current().getCallingAccount();
+        DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
+
+        _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
     }
 }

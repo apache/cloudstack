@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -58,6 +59,12 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     @Parameter(name = ApiConstants.ENCRYPT, type = CommandType.BOOLEAN, description = "listed offerings support disk encryption", since = "4.18")
     private Boolean encrypt;
 
+    @Parameter(name = ApiConstants.STORAGE_TYPE,
+            type = CommandType.STRING,
+            description = "the storage type of the service offering. Values are local and shared.",
+            since = "4.19")
+    private String storageType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -81,6 +88,10 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     public Long getStoragePoolId() { return storagePoolId; }
 
     public Boolean getEncrypt() { return encrypt; }
+
+    public String getStorageType() {
+        return storageType;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

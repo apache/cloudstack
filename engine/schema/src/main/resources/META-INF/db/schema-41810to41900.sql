@@ -136,6 +136,21 @@ UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
 ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
 
+-- IP quarantine PR#7378
+CREATE TABLE IF NOT EXISTS `cloud`.`quarantined_ips` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `uuid` varchar(255) UNIQUE,
+  `public_ip_address_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the quarantined public IP address, foreign key to `user_ip_address` table',
+  `previous_owner_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the previous owner of the public IP address, foreign key to `account` table',
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  `end_date` datetime NOT NULL,
+  `removal_reason` VARCHAR(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_quarantined_ips__public_ip_address_id` FOREIGN KEY(`public_ip_address_id`) REFERENCES `cloud`.`user_ip_address`(`id`),
+  CONSTRAINT `fk_quarantined_ips__previous_owner_id` FOREIGN KEY(`previous_owner_id`) REFERENCES `cloud`.`account`(`id`)
+);
+
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
 

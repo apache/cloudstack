@@ -29,15 +29,17 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.OutputInterpreter.AllLinesParser;
 import com.cloud.utils.script.Script;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 
 public class KVMHABase {
     protected Logger logger = LogManager.getLogger(getClass());
     private long _timeout = 60000; /* 1 minutes */
     protected static String s_heartBeatPath;
-    protected long _heartBeatUpdateTimeout = 60000;
-    protected long _heartBeatUpdateFreq = 60000;
-    protected long _heartBeatUpdateMaxTries = 5;
-    protected long _heartBeatUpdateRetrySleep = 10000;
+    protected long _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
+    protected long _heartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
+    protected long _heartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
+    protected long _heartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage
