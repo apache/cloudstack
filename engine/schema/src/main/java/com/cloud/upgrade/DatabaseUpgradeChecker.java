@@ -367,8 +367,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
-        updateSystemVmTemplates(upgrades);
+
         executeViewScripts();
+        updateSystemVmTemplates(upgrades);
     }
 
     protected void executeViewScripts() {
