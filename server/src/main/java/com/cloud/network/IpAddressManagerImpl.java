@@ -394,9 +394,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (userIp.getState() == State.Free) {
                 possibleAddr.setState(State.Allocating);
                 if (_ipAddressDao.update(possibleAddr.getId(), possibleAddr)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(String.format("successfully allocated ip address %s", possibleAddr.getAddress()));
-                    }
+                    s_logger.info(String.format("successfully allocated ip address %s", possibleAddr.getAddress()));
                     finalAddress = possibleAddr;
                 }
             } else {
