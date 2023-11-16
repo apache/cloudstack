@@ -717,23 +717,23 @@ public class VeeamClient {
         final List<String> cmds = Arrays.asList(
                 "$backups = Get-VBRBackup",
                 "foreach ($backup in $backups) {" +
-                        "$backup.JobName;" +
-                        "$storageGroups = $backup.GetStorageGroups();" +
-                        "foreach ($group in $storageGroups) {" +
-                        "$usedSize = 0;" +
-                        "$dataSize = 0;" +
-                        "$sizePerStorage = $group.GetStorages().Stats.BackupSize;" +
-                        "$dataPerStorage = $group.GetStorages().Stats.DataSize;" +
-                        "foreach ($size in $sizePerStorage) {" +
-                        "$usedSize += $size;" +
-                        "}" +
-                        "foreach ($size in $dataPerStorage) {" +
-                        "$dataSize += $size;" +
-                        "}" +
-                        "$usedSize;" +
-                        "$dataSize;" +
-                        "}" +
-                        "echo \"" + separator + "\"" +
+                        "    $backup.JobName;" +
+                        "    $storageGroups = $backup.GetStorageGroups();" +
+                        "    foreach ($group in $storageGroups) {" +
+                        "        $usedSize = 0;" +
+                        "        $dataSize = 0;" +
+                        "        $sizePerStorage = $group.GetStorages().Stats.BackupSize;" +
+                        "        $dataPerStorage = $group.GetStorages().Stats.DataSize;" +
+                        "        foreach ($size in $sizePerStorage) {" +
+                        "            $usedSize += $size;" +
+                        "        }" +
+                        "        foreach ($size in $dataPerStorage) {" +
+                        "            $dataSize += $size;" +
+                        "        }" +
+                        "        $usedSize;" +
+                        "        $dataSize;" +
+                        "    }" +
+                        "    echo \"" + separator + "\"" +
                         "}"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
