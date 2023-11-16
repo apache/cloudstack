@@ -82,10 +82,9 @@ public class FileUtil {
             throw new CloudRuntimeException(String.format("Unable to get URI from URL [%s].", resourceDirectoryUrl), e);
         }
 
-        try (FileSystem fs = FileSystems.newFileSystem(resourceDirectoryUri, Collections.emptyMap())) {
-            try (Stream<Path> paths = Files.walk(fs.getPath(resourceDirectory))) {
-                return paths.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
-            }
+        try (FileSystem fs = FileSystems.newFileSystem(resourceDirectoryUri, Collections.emptyMap());
+                Stream<Path> paths = Files.walk(fs.getPath(resourceDirectory))) {
+            return paths.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
         } catch (IOException e) {
             throw new CloudRuntimeException(String.format("Error while trying to list files under resource directory [%s].", resourceDirectoryUri), e);
         }
