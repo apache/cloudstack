@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -55,6 +56,8 @@ import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -178,11 +181,13 @@ import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -388,6 +393,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Inject
+    VpcGatewayDao vpcGatewayDao;
+    @Inject
     AlertManager alertManager;
     @Inject
     DomainRouterDao routerDao;
@@ -397,6 +404,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     CommandSetupHelper commandSetupHelper;
     @Inject
     ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1939,24 +1948,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (domainId != null && associatedNetwork.getDomainId() != domainId) {
             throw new InvalidParameterValueException("The new network and associated network MUST be in same domain");
         }
-        if (cidr != null && associatedNetwork.getCidr() != null && NetUtils.isNetworksOverlap(cidr, associatedNetwork.getCidr())) {
-            throw new InvalidParameterValueException("The cidr overlaps with associated network: " + associatedNetwork.getName());
-        }
-        List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
-        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
-            NetworkVO associatedNetwork2 = _networksDao.findById(networkDetailVO.getResourceId());
-            if (associatedNetwork2 != null) {
-                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(associatedNetwork2.getId());
-                if (vlans.isEmpty()) {
-                    continue;
-                }
-                String startIP2 = vlans.get(0).getIpRange().split("-")[0];
-                String endIP2 = vlans.get(0).getIpRange().split("-")[1];
-                if (StringUtils.isNoneBlank(startIp, startIP2) && NetUtils.ipRangesOverlap(startIp, endIp, startIP2, endIP2)) {
-                    throw new InvalidParameterValueException("The startIp/endIp overlaps with network: " + associatedNetwork2.getName());
-                }
+        if (cidr != null && associatedNetwork.getCidr() != null) {
+            String[] guestVmCidrPair = associatedNetwork.getCidr().split("\\/");
+            String[] cidrIpRange = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], Long.valueOf(guestVmCidrPair[1]));
+            if (StringUtils.isNoneBlank(startIp, endIp) && NetUtils.ipRangesOverlap(startIp, endIp, cidrIpRange[0], cidrIpRange[1])) {
+                throw new InvalidParameterValueException(String.format("The IP range (%s-%s) overlaps with cidr of associated network: %s (%s)",
+                        startIp, endIp, associatedNetwork.getName(), associatedNetwork.getCidr()));
             }
         }
+        // Check IP range overlap on shared networks and vpc private gateways associated to the same network
+        checkIpRangeOverlapWithAssociatedNetworks(associatedNetworkId, startIp, endIp);
+
         associatedNetwork = implementedNetworkInCreation(caller, zone, associatedNetwork);
         if (associatedNetwork == null || (associatedNetwork.getState() != Network.State.Implemented && associatedNetwork.getState() != Network.State.Setup)) {
             throw new InvalidParameterValueException("Unable to implement associated network " + associatedNetwork);
@@ -3062,8 +3064,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (networkOfferingChanged) {
                 throw new InvalidParameterValueException("Cannot specify this network offering change and guestVmCidr at same time. Specify only one.");
             }
-            if (!(network.getState() == Network.State.Implemented)) {
-                throw new InvalidParameterValueException("The network must be in " + Network.State.Implemented + " state. IP Reservation cannot be applied in " + network.getState() + " state");
+            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Allocated) {
+                throw new InvalidParameterValueException(String.format("The network must be in %s or %s state. IP Reservation cannot be applied in %s state",
+                        Network.State.Implemented, Network.State.Allocated, network.getState()));
             }
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
@@ -3121,6 +3124,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             + "specify guestVmCidr to be: " + network.getNetworkCidr());
                 }
             }
+
+            // Check IP range overlap on shared networks and vpc private gateways associated to this network
+            checkIpRangeOverlapWithAssociatedNetworks(networkId, cidrIpRange[0], cidrIpRange[1]);
 
             // When reservation is applied for the first time, network_cidr will be null
             // Populate it with the actual network cidr
@@ -3944,12 +3950,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterException("Only one isolationMethod can be specified for a physical network at this time");
         }
 
-        if (vnetRange != null) {
-            // Verify zone type
-            if (zoneType == NetworkType.Basic || (zoneType == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
-                throw new InvalidParameterValueException(
-                        "Can't add vnet range to the physical network in the zone that supports " + zoneType + " network, Security Group enabled: " + zone.isSecurityGroupEnabled());
-            }
+        if (vnetRange != null && zoneType == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Can't add vnet range to the physical network in the Basic zone");
         }
 
         BroadcastDomainRange broadcastDomainRange = null;
@@ -4071,11 +4073,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (zone == null) {
             throwInvalidIdException("Zone with id=" + network.getDataCenterId() + " doesn't exist in the system", String.valueOf(network.getDataCenterId()), "dataCenterId");
         }
-        if (newVnetRange != null) {
-            if (zone.getNetworkType() == NetworkType.Basic || (zone.getNetworkType() == NetworkType.Advanced && zone.isSecurityGroupEnabled())) {
-                throw new InvalidParameterValueException(
-                        "Can't add vnet range to the physical network in the zone that supports " + zone.getNetworkType() + " network, Security Group enabled: " + zone.isSecurityGroupEnabled());
-            }
+
+        if (newVnetRange != null && zone.getNetworkType() == NetworkType.Basic) {
+            throw new InvalidParameterValueException("Can't add vnet range to the physical network in the Basic zone");
         }
 
         if (tags != null && tags.size() > 1) {
@@ -5114,7 +5114,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             List<SecondaryStorageVmVO> ssvms = _stnwMgr.getSSVMWithNoStorageNetwork(network.getDataCenterId());
             if (!ssvms.isEmpty()) {
                 StringBuilder sb = new StringBuilder("Cannot add " + trafficType
-                        + " traffic type as there are below secondary storage vm still running. Please stop them all and add Storage traffic type again, then destory them all to allow CloudStack recreate them with storage network(If you have added storage network ip range)");
+                        + " traffic type as there are below secondary storage vm still running. Please stop them all and add Storage traffic type again, then destroy them all to allow CloudStack recreate them with storage network(If you have added storage network ip range)");
                 sb.append("SSVMs:");
                 for (SecondaryStorageVmVO ssvm : ssvms) {
                     sb.append(ssvm.getInstanceName()).append(":").append(ssvm.getState());
@@ -5908,6 +5908,30 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return accountIds;
     }
 
+    private void checkIpRangeOverlapWithAssociatedNetworks(Long associatedNetworkId, String startIp, String endIp) {
+        List<NetworkDetailVO> associatedNetworks = _networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(associatedNetworkId), null);
+        for (NetworkDetailVO networkDetailVO : associatedNetworks) {
+            NetworkVO associatedNetwork2 = _networksDao.findById(networkDetailVO.getResourceId());
+            if (associatedNetwork2 != null) {
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(associatedNetwork2.getId());
+                if (vlans.isEmpty()) {
+                    VpcGatewayVO vpcGateway = vpcGatewayDao.getVpcGatewayByNetworkId(associatedNetwork2.getId());
+                    if (vpcGateway != null && NetUtils.ipRangesOverlap(startIp, endIp, vpcGateway.getIp4Address(), vpcGateway.getIp4Address())) {
+                        throw new InvalidParameterValueException(String.format("The startIp/endIp (%s - %s) overlaps with vpc private gateway %s (%s): ",
+                                startIp, endIp, associatedNetwork2.getName(), vpcGateway.getIp4Address()));
+                    }
+                    continue;
+                }
+                String startIP2 = vlans.get(0).getIpRange().split("-")[0];
+                String endIP2 = vlans.get(0).getIpRange().split("-")[1];
+                if (StringUtils.isNoneBlank(startIp, startIP2) && NetUtils.ipRangesOverlap(startIp, endIp, startIP2, endIP2)) {
+                    throw new InvalidParameterValueException(String.format("The startIp/endIp (%s - %s) overlaps with network %s (%s - %s)",
+                            startIp, endIp, associatedNetwork2.getName(), startIP2, endIP2));
+                }
+            }
+        }
+    }
+
     @Override
     public String getConfigComponentName() {
         return NetworkService.class.getSimpleName();
@@ -5924,5 +5948,76 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     public boolean isAclAttachedToVpc(Long aclVpcId, Long vpcId) {
         return aclVpcId != 0 && !vpcId.equals(aclVpcId);
+    }
+
+    @Override
+    public PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd) throws CloudRuntimeException {
+        Long ipId = cmd.getId();
+        String ipAddress = cmd.getIpAddress();
+        Date newEndDate = cmd.getEndDate();
+
+        if (new Date().after(newEndDate)) {
+            throw new InvalidParameterValueException(String.format("The given end date [%s] is invalid as it is before the current date.", newEndDate));
+        }
+
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        String publicIpQuarantineAddress = _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString();
+        Date currentEndDate = publicIpQuarantine.getEndDate();
+
+        if (new Date().after(currentEndDate)) {
+            throw new CloudRuntimeException(String.format("The quarantine for the public IP address [%s] is no longer active; thus, it cannot be updated.", publicIpQuarantineAddress));
+        }
+
+        return _ipAddrMgr.updatePublicIpAddressInQuarantine(publicIpQuarantine.getId(), newEndDate);
+    }
+
+    @Override
+    public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) throws CloudRuntimeException {
+        Long ipId = cmd.getId();
+        String ipAddress = cmd.getIpAddress();
+        PublicIpQuarantine publicIpQuarantine = retrievePublicIpQuarantine(ipId, ipAddress);
+
+        String removalReason = cmd.getRemovalReason();
+        if (StringUtils.isBlank(removalReason)) {
+            s_logger.error("The removalReason parameter cannot be blank.");
+            ipAddress = ObjectUtils.defaultIfNull(ipAddress, _ipAddressDao.findById(publicIpQuarantine.getPublicIpAddressId()).getAddress().toString());
+            throw new CloudRuntimeException(String.format("The given reason for removing the public IP address [%s] from quarantine is blank.", ipAddress));
+        }
+
+        checkCallerForPublicIpQuarantineAccess(publicIpQuarantine);
+
+        _ipAddrMgr.removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), removalReason);
+    }
+
+    /**
+     * Retrieves the active quarantine for the given public IP address. It can find by the ID of the quarantine or the address of the public IP.
+     * @throws CloudRuntimeException if it does not find an active quarantine for the given public IP.
+     */
+    protected PublicIpQuarantine retrievePublicIpQuarantine(Long ipId, String ipAddress) throws CloudRuntimeException {
+        PublicIpQuarantine publicIpQuarantine;
+        if (ipId != null) {
+            s_logger.debug("The ID of the IP in quarantine was informed; therefore, the `ipAddress` parameter will be ignored.");
+            publicIpQuarantine = publicIpQuarantineDao.findById(ipId);
+        } else if (ipAddress != null) {
+            s_logger.debug("The address of the IP in quarantine was informed, it will be used to fetch its metadata.");
+            publicIpQuarantine = publicIpQuarantineDao.findByIpAddress(ipAddress);
+        } else {
+            throw new CloudRuntimeException("Either the ID or the address of the IP in quarantine must be informed.");
+        }
+
+        if (publicIpQuarantine == null) {
+            throw new CloudRuntimeException("There is no active quarantine for the specified IP address.");
+        }
+
+        return  publicIpQuarantine;
+    }
+
+    protected void checkCallerForPublicIpQuarantineAccess(PublicIpQuarantine publicIpQuarantine) {
+        Account callingAccount = CallContext.current().getCallingAccount();
+        DomainVO domainOfThePreviousOwner = _domainDao.findById(_accountDao.findById(publicIpQuarantine.getPreviousOwnerId()).getDomainId());
+
+        _accountMgr.checkAccess(callingAccount, domainOfThePreviousOwner);
     }
 }

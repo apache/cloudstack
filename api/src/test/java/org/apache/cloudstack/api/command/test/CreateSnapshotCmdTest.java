@@ -23,6 +23,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.isNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -92,7 +93,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         try {
             Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), isNull(),
-                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class))).thenReturn(snapshot);
+                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class), nullable(List.class))).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -125,7 +126,7 @@ public class CreateSnapshotCmdTest extends TestCase {
 
         try {
                 Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), nullable(Long.class),
-                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), anyObject())).thenReturn(null);
+                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), anyObject(), Mockito.anyList())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
@@ -158,5 +159,15 @@ public class CreateSnapshotCmdTest extends TestCase {
         tagsParams.put("1", tag2);
         ReflectionTestUtils.setField(createSnapshotCmd, "tags", tagsParams);
         Assert.assertEquals(createSnapshotCmd.getTags(), expectedTags);
+    }
+
+    @Test
+    public void testGetZoneIds() {
+        final CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+        List<Long> ids = List.of(400L, 500L);
+        ReflectionTestUtils.setField(cmd, "zoneIds", ids);
+        Assert.assertEquals(ids.size(), cmd.getZoneIds().size());
+        Assert.assertEquals(ids.get(0), cmd.getZoneIds().get(0));
+        Assert.assertEquals(ids.get(1), cmd.getZoneIds().get(1));
     }
 }

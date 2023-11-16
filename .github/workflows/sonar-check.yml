@@ -29,11 +29,11 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'apache/cloudstack'
+    if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0

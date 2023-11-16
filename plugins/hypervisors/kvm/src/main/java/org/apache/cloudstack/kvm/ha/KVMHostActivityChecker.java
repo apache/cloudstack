@@ -22,6 +22,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVMActivityOnStoragePoolCommand;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -90,7 +91,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         }
         Status hostStatus = Status.Unknown;
         Status neighbourStatus = Status.Unknown;
-        final CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
+        final CheckOnHostCommand cmd = new CheckOnHostCommand(agent, HighAvailabilityManager.KvmHAFenceHostIfHeartbeatFailsOnStorage.value());
         try {
             LOG.debug(String.format("Checking %s status...", agent.toString()));
             Answer answer = agentMgr.easySend(agent.getId(), cmd);

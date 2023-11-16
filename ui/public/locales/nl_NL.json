@@ -652,7 +652,7 @@
 "label.level": "Level",
 "label.limitcpuuse": "CPU Cap",
 "label.link.domain.to.ldap": "link domein aan LDAP",
-"label.linklocalip": "Link Local IP Adres",
+"label.linklocalip": "Control IP Adres",
 "label.load.balancer": "Load Balancer",
 "label.loadbalancerinstance": "toegewezen VMs",
 "label.loadbalancerrule": "load balancing regel",

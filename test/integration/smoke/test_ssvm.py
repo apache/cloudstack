@@ -121,7 +121,7 @@ class TestSSVMs(cloudstackTestCase):
         #    should return only ONE SSVM per zone
         # 2. The returned SSVM should be in Running state
         # 3. listSystemVM for secondarystoragevm should list publicip,
-        #    privateip and link-localip
+        #    privateip, link-localip and service offering id/name
         # 4. The gateway programmed on the ssvm by listSystemVm should be
         #    the same as the gateway returned by listVlanIpRanges
         # 5. DNS entries must match those given for the zone
@@ -186,6 +186,18 @@ class TestSSVMs(cloudstackTestCase):
                 hasattr(ssvm, 'publicip'),
                 True,
                 "Check whether SSVM has public IP field"
+            )
+
+            self.assertEqual(
+                hasattr(ssvm, 'serviceofferingid'),
+                True,
+                "Check whether SSVM has service offering id field"
+            )
+
+            self.assertEqual(
+                hasattr(ssvm, 'serviceofferingname'),
+                True,
+                "Check whether SSVM has service offering name field"
             )
 
             # Fetch corresponding ip ranges information from listVlanIpRanges
@@ -261,8 +273,8 @@ class TestSSVMs(cloudstackTestCase):
         # 1. listSystemVM (systemvmtype=consoleproxy) should return
         #    at least ONE CPVM per zone
         # 2. The returned ConsoleProxyVM should be in Running state
-        # 3. listSystemVM for console proxy should list publicip, privateip
-        #    and link-localip
+        # 3. listSystemVM for console proxy should list publicip, privateip,
+        #    link-localip and service offering id/name
         # 4. The gateway programmed on the console proxy should be the same
         #    as the gateway returned by listZones
         # 5. DNS entries must match those given for the zone
@@ -326,6 +338,18 @@ class TestSSVMs(cloudstackTestCase):
                 hasattr(cpvm, 'publicip'),
                 True,
                 "Check whether CPVM has public IP field"
+            )
+
+            self.assertEqual(
+                hasattr(cpvm, 'serviceofferingid'),
+                True,
+                "Check whether CPVM has service offering id field"
+            )
+
+            self.assertEqual(
+                hasattr(cpvm, 'serviceofferingname'),
+                True,
+                "Check whether CPVM has service offering name field"
             )
             # Fetch corresponding ip ranges information from listVlanIpRanges
             ipranges_response = list_vlan_ipranges(

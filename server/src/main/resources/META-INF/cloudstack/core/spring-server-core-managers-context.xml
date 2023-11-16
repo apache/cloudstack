@@ -337,11 +337,17 @@
         <constructor-arg name="timeout" value="10000" />
     </bean>
 
+    <bean id="storageStorageBrowserImpl" class="org.apache.cloudstack.storage.browser.StorageBrowserImpl" />
+
     <bean id="rollingMaintenanceManager" class="com.cloud.resource.RollingMaintenanceManagerImpl">
         <property name="affinityGroupProcessors"
                   value="#{affinityProcessorsRegistry.registered}" />
     </bean>
 
+    <bean id="clusterDrsService" class="org.apache.cloudstack.cluster.ClusterDrsServiceImpl">
+        <property name="drsAlgorithms" value="#{clusterDrsAlgorithmRegistry.registered}"/>
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
     <bean id="resourceManagerUtilImpl"
           class="com.cloud.tags.ResourceManagerUtilImpl"/>
 
@@ -352,4 +358,5 @@
         <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
     </bean>
 
+    <bean id="vnfTemplateManager" class="org.apache.cloudstack.storage.template.VnfTemplateManagerImpl" />
 </beans>

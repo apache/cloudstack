@@ -59,7 +59,8 @@ jobs:
                   smoke/test_domain_network_offerings
                   smoke/test_domain_service_offerings
                   smoke/test_domain_vpc_offerings",
-                "smoke/test_dynamicroles
+                "smoke/test_cluster_drs
+                  smoke/test_dynamicroles
                   smoke/test_enable_account_settings_for_domain
                   smoke/test_enable_role_based_users_in_projects
                   smoke/test_events_resource
@@ -192,7 +193,7 @@ jobs:
                 "component/test_vpc_network_lbrules" ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

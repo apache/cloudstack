@@ -124,7 +124,7 @@ public class DbUtil {
     public static Field findField(Class<?> clazz, String columnName) {
         for (Field field : clazz.getDeclaredFields()) {
             if (field.getAnnotation(Embedded.class) != null || field.getAnnotation(EmbeddedId.class) != null) {
-                findField(field.getClass(), columnName);
+                findField(field.getType(), columnName);
             } else {
                 if (columnName.equals(DbUtil.getColumnName(field))) {
                     return field;
@@ -170,7 +170,7 @@ public class DbUtil {
         }
 
         if (field.getAnnotation(EmbeddedId.class) != null) {
-            assert (field.getClass().getAnnotation(Embeddable.class) != null) : "Class " + field.getClass().getName() + " must be Embeddable to be used as Embedded Id";
+            assert (field.getType().getAnnotation(Embeddable.class) != null) : "Class " + field.getType().getName() + " must be Embeddable to be used as Embedded Id";
             return true;
         }
 

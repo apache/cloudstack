@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.domain.Domain;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -39,6 +41,7 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -141,6 +144,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
 
     @Override
     public String getName() {
@@ -168,7 +173,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         if (host == null) {
             throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
         }
-        CheckUrlCommand cmd = new CheckUrlCommand(format, url);
+        Integer socketTimeout = DirectDownloadManager.DirectDownloadSocketTimeout.value();
+        Integer connectRequestTimeout = DirectDownloadManager.DirectDownloadConnectionRequestTimeout.value();
+        Integer connectTimeout = DirectDownloadManager.DirectDownloadConnectTimeout.value();
+        CheckUrlCommand cmd = new CheckUrlCommand(format, url, connectTimeout, connectRequestTimeout, socketTimeout);
         s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer == null || !answer.getResult()) {
@@ -662,11 +670,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Pair<Class<?>, Long> tmplt = new Pair<Class<?>, Long>(VirtualMachineTemplate.class, template.getId());
             _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, tmplt);
 
-            // Remove template details
-            templateDetailsDao.removeDetails(template.getId());
-
-            // Remove deploy-as-is details (if any)
-            templateDeployAsIsDetailsDao.removeDetails(template.getId());
+            checkAndRemoveTemplateDetails(template);
 
             // Remove comments (if any)
             AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
@@ -675,6 +679,23 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         }
         return success;
+    }
+
+    /**
+     * removes details of the template and
+     * if the template is registered as deploy as is,
+     * then it also deletes the details related to deploy as is only if there are no VMs using the template
+     * @param template
+     */
+    void checkAndRemoveTemplateDetails(VMTemplateVO template) {
+        templateDetailsDao.removeDetails(template.getId());
+
+        if (template.isDeployAsIs()) {
+            List<VMInstanceVO> vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(template.getId());
+            if (CollectionUtils.isEmpty(vmInstanceVOList)) {
+                templateDeployAsIsDetailsDao.removeDetails(template.getId());
+            }
+        }
     }
 
     @Override

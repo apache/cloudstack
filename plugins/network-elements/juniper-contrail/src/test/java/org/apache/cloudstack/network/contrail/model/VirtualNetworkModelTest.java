@@ -115,34 +115,13 @@ public class VirtualNetworkModelTest extends TestCase {
         when(vn3.getNetworkPolicy()).thenReturn(policyRefs3);
 
         //Virtual-Network 1
-        NetworkVO network1 = mock(NetworkVO.class);
-        when(network1.getName()).thenReturn("testnetwork");
-        when(network1.getState()).thenReturn(State.Allocated);
-        when(network1.getGateway()).thenReturn("10.1.1.1");
-        when(network1.getCidr()).thenReturn("10.1.1.0/24");
-        when(network1.getPhysicalNetworkId()).thenReturn(42L);
-        when(network1.getDomainId()).thenReturn(10L);
-        when(network1.getAccountId()).thenReturn(42L);
+        NetworkVO network1 = MockNetworkVO.getNetwork(State.Allocated);
 
         //Virtual-Network 2
-        NetworkVO network2 = mock(NetworkVO.class);
-        when(network2.getName()).thenReturn("Testnetwork");
-        when(network2.getState()).thenReturn(State.Allocated);
-        when(network2.getGateway()).thenReturn("10.1.1.1");
-        when(network2.getCidr()).thenReturn("10.1.1.0/24");
-        when(network2.getPhysicalNetworkId()).thenReturn(42L);
-        when(network2.getDomainId()).thenReturn(10L);
-        when(network2.getAccountId()).thenReturn(42L);
+        NetworkVO network2 = MockNetworkVO.getNetwork(State.Allocated);
 
         //Virtual-Network 3
-        NetworkVO network3 = mock(NetworkVO.class);
-        when(network3.getName()).thenReturn("Testnetwork");
-        when(network3.getState()).thenReturn(State.Allocated);
-        when(network3.getGateway()).thenReturn("10.1.1.1");
-        when(network3.getCidr()).thenReturn("10.1.1.0/24");
-        when(network3.getPhysicalNetworkId()).thenReturn(42L);
-        when(network3.getDomainId()).thenReturn(10L);
-        when(network3.getAccountId()).thenReturn(42L);
+        NetworkVO network3 = MockNetworkVO.getNetwork(State.Allocated);
 
         when(contrailMgr.getCanonicalName(network1)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network1.getDomainId(), network1.getAccountId())).thenReturn("testProjectId");
@@ -179,20 +158,13 @@ public class VirtualNetworkModelTest extends TestCase {
 
         String uuid = UUID.randomUUID().toString();
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
-        ModelController controller      = mock(ModelController.class);
+        ModelController controller = mock(ModelController.class);
         ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
         // Create Virtual-Network (VN)
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getName()).thenReturn("testnetwork");
-        when(network.getState()).thenReturn(State.Allocated);
-        when(network.getGateway()).thenReturn("10.1.1.1");
-        when(network.getCidr()).thenReturn("10.1.1.0/24");
-        when(network.getPhysicalNetworkId()).thenReturn(42L);
-        when(network.getDomainId()).thenReturn(10L);
-        when(network.getAccountId()).thenReturn(42L);
+        NetworkVO network = MockNetworkVO.getNetwork(State.Allocated);
 
         when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
         when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
