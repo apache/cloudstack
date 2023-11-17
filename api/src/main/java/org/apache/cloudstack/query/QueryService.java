@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
+import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -64,6 +65,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
@@ -182,6 +184,8 @@ public interface QueryService {
     ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd);
 
     List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd);
+
+    ListResponse<IpQuarantineResponse> listQuarantinedIps(ListQuarantinedIpsCmd cmd);
 
     ListResponse<SnapshotResponse> listSnapshots(ListSnapshotsCmd cmd);
 

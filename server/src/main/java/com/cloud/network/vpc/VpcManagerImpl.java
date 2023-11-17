@@ -1105,8 +1105,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Vpc vpc = createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
             cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
             cmd.getIp6Dns2(), cmd.isDisplay(), cmd.getPublicMtu());
-        // associate cmd.getSourceNatIP() with this vpc
-        allocateSourceNatIp(vpc, cmd.getSourceNatIP());
+
+        String sourceNatIP = cmd.getSourceNatIP();
+        if (sourceNatIP != null) {
+            s_logger.info(String.format("Trying to allocate the specified IP [%s] as the source NAT of VPC [%s].", sourceNatIP, vpc));
+            allocateSourceNatIp(vpc, sourceNatIP);
+        }
         return vpc;
     }
 

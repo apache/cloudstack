@@ -1854,7 +1854,7 @@ class PublicIPAddress:
 
         if zoneid:
             cmd.zoneid = zoneid
-        elif "zoneid" in services:
+        elif services and "zoneid" in services:
             cmd.zoneid = services["zoneid"]
 
         if domainid:
@@ -5105,7 +5105,7 @@ class VPC:
     @classmethod
     def create(cls, apiclient, services, vpcofferingid,
                zoneid, networkDomain=None, account=None,
-               domainid=None, **kwargs):
+               domainid=None, start=True, **kwargs):
         """Creates the virtual private connection (VPC)"""
 
         cmd = createVPC.createVPCCmd()
@@ -5113,6 +5113,7 @@ class VPC:
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.vpcofferingid = vpcofferingid
         cmd.zoneid = zoneid
+        cmd.start = start
         if "cidr" in services:
             cmd.cidr = services["cidr"]
         if account:

@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -88,6 +89,12 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
         since = "4.18")
     private Boolean encryptRoot;
 
+    @Parameter(name = ApiConstants.STORAGE_TYPE,
+            type = CommandType.STRING,
+            description = "the storage type of the service offering. Values are local and shared.",
+            since = "4.19")
+    private String storageType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,6 +136,10 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     }
 
     public Boolean getEncryptRoot() { return encryptRoot; }
+
+    public String getStorageType() {
+        return storageType;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
