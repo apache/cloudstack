@@ -2791,10 +2791,29 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd) {
-        Pair<List<StoragePoolJoinVO>, Integer> result = searchForStoragePoolsInternal(cmd);
-        ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
+        Pair<List<StoragePoolJoinVO>, Integer> result = cmd.getHostId() != null ? searchForLocalStorages(cmd) : searchForStoragePoolsInternal(cmd);
+        return createStoragesPoolResponse(result);
+    }
 
-        List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(result.first().toArray(new StoragePoolJoinVO[result.first().size()]));
+    private Pair<List<StoragePoolJoinVO>, Integer> searchForLocalStorages(ListStoragePoolsCmd cmd) {
+        long id = cmd.getHostId();
+        String scope = ScopeType.HOST.toString();
+        Pair<List<StoragePoolJoinVO>, Integer> localStorages;
+
+        ListHostsCmd listHostsCmd = new ListHostsCmd();
+        listHostsCmd.setId(id);
+        Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(listHostsCmd);
+
+        cmd.setScope(scope);
+        localStorages = searchForStoragePoolsInternal(cmd);
+
+        return localStorages;
+    }
+
+    private ListResponse<StoragePoolResponse> createStoragesPoolResponse(Pair<List<StoragePoolJoinVO>, Integer> storagePools) {
+        ListResponse<StoragePoolResponse> response = new ListResponse<>();
+
+        List<StoragePoolResponse> poolResponses = ViewResponseHelper.createStoragePoolResponse(storagePools.first().toArray(new StoragePoolJoinVO[storagePools.first().size()]));
         for (StoragePoolResponse poolResponse : poolResponses) {
             DataStore store = dataStoreManager.getPrimaryDataStore(poolResponse.getId());
             if (store != null) {
@@ -2814,7 +2833,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        response.setResponses(poolResponses, result.second());
+        response.setResponses(poolResponses, storagePools.second());
         return response;
     }
 

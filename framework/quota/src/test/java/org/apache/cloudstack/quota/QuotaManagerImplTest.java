@@ -142,7 +142,9 @@ public class QuotaManagerImplTest {
     public void getUsageValueAccordingToUsageUnitTypeTestAllTypes() {
         Mockito.doReturn(10.0).when(usageVoMock).getRawUsage();
         Mockito.doReturn(ByteScaleUtils.GiB).when(usageVoMock).getSize();
+        Mockito.doReturn(new Date(0, 8, 10)).when(usageVoMock).getStartDate();
         BigDecimal aggregatedQuotaTariffsValue = new BigDecimal(400);
+
 
         Arrays.asList(UsageUnitTypes.values()).forEach(type -> {
            BigDecimal result = quotaManagerImplSpy.getUsageValueAccordingToUsageUnitType(usageVoMock, aggregatedQuotaTariffsValue, type.toString());
