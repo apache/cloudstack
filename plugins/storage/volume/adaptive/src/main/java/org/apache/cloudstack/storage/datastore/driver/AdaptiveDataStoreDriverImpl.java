@@ -344,7 +344,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 + srcData.getDataStore().getId() + " AND destData ["
                 + destData.getUuid() + ":" + destData.getType() + ":" + destData.getDataStore().getId() + "]");
         try {
-            if (!isSameProvider(srcData)) { 
+            if (!isSameProvider(srcData)) {
                 s_logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
                 return false;
             }
