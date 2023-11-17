@@ -374,23 +374,23 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     protected void executeViewScripts() {
-        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        LOGGER.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
         List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(VIEWS_DIRECTORY);
 
         try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
             Connection conn = txn.getConnection();
 
             for (String filePath : filesPathUnderViewsDirectory) {
-                s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
+                LOGGER.debug(String.format("Executing VIEW script [%s].", filePath));
 
                 InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
                 runScript(conn, viewScript);
             }
 
-            s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+            LOGGER.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
         } catch (SQLException e) {
             String message = String.format("Unable to execute VIEW scripts due to [%s].", e.getMessage());
-            s_logger.error(message, e);
+            LOGGER.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
     }

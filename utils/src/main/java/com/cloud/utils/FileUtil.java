@@ -69,7 +69,7 @@ public class FileUtil {
     }
 
     public static List<String> getFilesPathsUnderResourceDirectory(String resourceDirectory) {
-        s_logger.info(String.format("Searching for files under resource directory [%s].", resourceDirectory));
+        LOGGER.info(String.format("Searching for files under resource directory [%s].", resourceDirectory));
 
         URL resourceDirectoryUrl = Thread.currentThread().getContextClassLoader().getResource(resourceDirectory);
         if (resourceDirectoryUrl == null) {

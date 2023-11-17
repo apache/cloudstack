@@ -934,7 +934,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             hostPath = URLDecoder.decode(storagePath, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            s_logger.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
+            logger.error("[ignored] we are on a platform not supporting \"UTF-8\"!?!", e);
         }
         if (hostPath == null) { // if decoding fails, use getPath() anyway
             hostPath = storagePath;

@@ -514,9 +514,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
             try {
                 storageMgr.connectHostToSharedPool(scope.getScopeId(), dataStore.getId());
             } catch (StorageUnavailableException ex) {
-                s_logger.error("Storage unavailable ",ex);
+                logger.error("Storage unavailable ",ex);
             } catch (StorageConflictException ex) {
-                s_logger.error("Storage already exists ",ex);
+                logger.error("Storage already exists ",ex);
             }
         }
         return true;
