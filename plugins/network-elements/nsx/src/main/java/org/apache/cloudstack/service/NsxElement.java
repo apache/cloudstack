@@ -526,7 +526,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             long zoneId = Objects.nonNull(vpc) ? vpc.getZoneId() : networkVO.getDataCenterId();
             String publicPort = getPublicPortRange(rule);
 
-            String privatePort = getPrivatePortRange(rule);
+            String privatePort = getPrivatePFPortRange(rule);
 
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setDomainId(domainId)
@@ -574,6 +574,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     private static String getPublicPortRange(PortForwardingRule rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
+    private static String getPrivatePFPortRange(PortForwardingRule rule) {
         return rule.getDestinationPortStart() == rule.getDestinationPortEnd() ?
                 String.valueOf(rule.getDestinationPortStart()) :
                 String.valueOf(rule.getDestinationPortStart()).concat("-").concat(String.valueOf(rule.getDestinationPortEnd()));
