@@ -1237,9 +1237,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void updateInstanceDetails (Map<String, String> details, VirtualMachine vmInstance, Long newServiceOfferingId) {
         ServiceOfferingVO currentServiceOffering = serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
         ServiceOfferingVO newServiceOffering = serviceOfferingDao.findById(newServiceOfferingId);
-        updateInstanceDetailsWithCurrentValue(newServiceOffering.getSpeed(), details, VmDetailConstants.CPU_SPEED, currentServiceOffering.getSpeed());
-        updateInstanceDetailsWithCurrentValue(newServiceOffering.getRamSize(), details, VmDetailConstants.MEMORY, currentServiceOffering.getRamSize());
-        updateInstanceDetailsWithCurrentValue(newServiceOffering.getCpu(), details, VmDetailConstants.CPU_NUMBER, currentServiceOffering.getCpu());
+        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getSpeed(), details, VmDetailConstants.CPU_SPEED, currentServiceOffering.getSpeed());
+        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getRamSize(), details, VmDetailConstants.MEMORY, currentServiceOffering.getRamSize());
+        updateInstanceDetailsKeepCurrentValueIfNull(newServiceOffering.getCpu(), details, VmDetailConstants.CPU_NUMBER, currentServiceOffering.getCpu());
     }
 
     /**
@@ -1251,7 +1251,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param currentValue     the current value of the detail constant
      */
 
-    protected void updateInstanceDetailsWithCurrentValue(Integer newValue, Map<String, String> details, String detailsConstant, Integer currentValue) {
+    protected void updateInstanceDetailsKeepCurrentValueIfNull(Integer newValue, Map<String, String> details, String detailsConstant, Integer currentValue) {
         if (newValue == null && details.get(detailsConstant) == null) {
             String currentValueString = String.valueOf(currentValue);
             s_logger.debug(String.format("[%s] was not specified, keeping the current value: [%s].", detailsConstant, currentValueString));
