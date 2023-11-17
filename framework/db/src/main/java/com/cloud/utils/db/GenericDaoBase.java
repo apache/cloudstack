@@ -422,7 +422,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -499,7 +499,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return results;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1154,7 +1154,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return result;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -1236,7 +1236,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return pstmt.executeUpdate();
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -2059,7 +2059,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
@@ -2110,7 +2110,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception in executing: " + sql, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught exception in : " + sql, e);
         }
     }
@@ -2167,7 +2167,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             return 0;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             throw new CloudRuntimeException("Caught: " + pstmt, e);
         }
     }
