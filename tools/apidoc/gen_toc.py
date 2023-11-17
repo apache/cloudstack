@@ -257,7 +257,11 @@ known_categories = {
     'listVsphereStoragePolicies' : 'vSphere storage policies',
     'ConsoleEndpoint': 'Console Endpoint',
     'Shutdown': 'Shutdown',
-    'importVm': 'Virtual Machine'
+    'importVm': 'Virtual Machine',
+    'listQuarantinedIp': 'IP Quarantine',
+    'updateQuarantinedIp': 'IP Quarantine',
+    'removeQuarantinedIp': 'IP Quarantine',
+    'Shutdown': 'Shutdown'
 }
 
 
