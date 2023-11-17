@@ -22,15 +22,18 @@ import static com.google.common.collect.ObjectArrays.concat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -123,6 +126,7 @@ import com.google.common.annotations.VisibleForTesting;
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
+    private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
 
     @Inject
     VersionDao _dao;
@@ -363,7 +367,31 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 txn.close();
             }
         }
+
+        executeViewScripts();
         updateSystemVmTemplates(upgrades);
+    }
+
+    protected void executeViewScripts() {
+        s_logger.info(String.format("Executing VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(VIEWS_DIRECTORY);
+
+        try (TransactionLegacy txn = TransactionLegacy.open("execute-view-scripts")) {
+            Connection conn = txn.getConnection();
+
+            for (String filePath : filesPathUnderViewsDirectory) {
+                s_logger.debug(String.format("Executing VIEW script [%s].", filePath));
+
+                InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+                runScript(conn, viewScript);
+            }
+
+            s_logger.info(String.format("Finished execution of VIEW scripts that are under resource directory [%s].", VIEWS_DIRECTORY));
+        } catch (SQLException e) {
+            String message = String.format("Unable to execute VIEW scripts due to [%s].", e.getMessage());
+            s_logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
     }
 
     @Override
