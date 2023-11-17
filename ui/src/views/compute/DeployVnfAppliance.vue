@@ -2037,7 +2037,7 @@ export default {
               if (templateVnfNic.deviceid !== nextDeviceId) {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
-                  description: this.$t('message.vnf.error.deviceid.should.be.continuous')
+                  description: this.$t('message.vnf.error.deviceid.should.be.consecutive')
                 })
                 return
               }
