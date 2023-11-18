@@ -279,7 +279,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing unmanaged VM";
+        String vmName = this.name;
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
 
     public boolean isForced() {
