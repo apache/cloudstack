@@ -16,42 +16,6 @@
 // under the License.
 package com.cloud.utils.db;
 
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLifecycle;
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.component.ComponentMethodInterceptable;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.SearchCriteria.SelectType;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.CallbackFilter;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.Factory;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.NoOp;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.log4j.Logger;
-
-import javax.naming.ConfigurationException;
-import javax.persistence.AttributeConverter;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.EmbeddedId;
-import javax.persistence.EntityExistsException;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Table;
-import javax.persistence.TableGenerator;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
@@ -83,37 +47,77 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.naming.ConfigurationException;
+import javax.persistence.AttributeConverter;
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.EmbeddedId;
+import javax.persistence.EntityExistsException;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
+
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.ComponentMethodInterceptable;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.SearchCriteria.SelectType;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.NoOp;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
+
 /**
- * GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
- * support the full EJB3 spec.  It borrows some of the annotations from
- * the EJB3 spec to produce a set of SQLs so developers don't have to
- * copy and paste the same code over and over again.  Of course,
- * GenericDaoBase is completely at the mercy of the annotations you add
- * to your entity bean.  If GenericDaoBase does not fit your needs, then
- * don't extend from it.
- * <p>
- * GenericDaoBase attempts to achieve the following:
- * 1. If you use _allFieldsStr in your SQL statement and use to() to convert
- * the result to the entity bean, you don't ever have to worry about
- * missing fields because its automatically taken from the entity bean's
- * annotations.
- * 2. You don't have to rewrite the same insert and select query strings
- * in all of your DAOs.
- * 3. You don't have to match the '?' (you know what I'm talking about) to
- * the fields in the insert statement as that's taken care of for you.
- * <p>
- * GenericDaoBase looks at the following annotations:
- * 1. Table - just name
- * 2. Column - just name
- * 3. GeneratedValue - any field with this annotation is not inserted.
- * 4. SequenceGenerator - sequence generator
- * 5. Id
- * 6. SecondaryTable
- * <p>
- * Sometime later, I might look into injecting the SQLs as needed but right
- * now we have to construct them at construction time.  The good thing is that
- * the DAOs are suppose to be one per jvm so the time is all during the
- * initial load.
+ *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
+ *  support the full EJB3 spec.  It borrows some of the annotations from
+ *  the EJB3 spec to produce a set of SQLs so developers don't have to
+ *  copy and paste the same code over and over again.  Of course,
+ *  GenericDaoBase is completely at the mercy of the annotations you add
+ *  to your entity bean.  If GenericDaoBase does not fit your needs, then
+ *  don't extend from it.
+ *
+ *  GenericDaoBase attempts to achieve the following:
+ *    1. If you use _allFieldsStr in your SQL statement and use to() to convert
+ *       the result to the entity bean, you don't ever have to worry about
+ *       missing fields because its automatically taken from the entity bean's
+ *       annotations.
+ *    2. You don't have to rewrite the same insert and select query strings
+ *       in all of your DAOs.
+ *    3. You don't have to match the '?' (you know what I'm talking about) to
+ *       the fields in the insert statement as that's taken care of for you.
+ *
+ *  GenericDaoBase looks at the following annotations:
+ *    1. Table - just name
+ *    2. Column - just name
+ *    3. GeneratedValue - any field with this annotation is not inserted.
+ *    4. SequenceGenerator - sequence generator
+ *    5. Id
+ *    6. SecondaryTable
+ *
+ *  Sometime later, I might look into injecting the SQLs as needed but right
+ *  now we have to construct them at construction time.  The good thing is that
+ *  the DAOs are suppose to be one per jvm so the time is all during the
+ *  initial load.
+ *
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
@@ -170,7 +174,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     public static <J> GenericDao<? extends J, ? extends Serializable> getDao(Class<J> entityType) {
         @SuppressWarnings("unchecked")
-        GenericDao<? extends J, ? extends Serializable> dao = (GenericDao<? extends J, ? extends Serializable>) s_daoMaps.get(entityType);
+        GenericDao<? extends J, ? extends Serializable> dao = (GenericDao<? extends J, ? extends Serializable>)s_daoMaps.get(entityType);
         assert dao != null : "Unable to find DAO for " + entityType + ".  Are you sure you waited for the DAO to be initialized before asking for it?";
         return dao;
     }
@@ -189,8 +193,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @SuppressWarnings("unchecked")
     public T createSearchEntity(MethodInterceptor interceptor) {
-        T entity = (T) _searchEnhancer.create();
-        final Factory factory = (Factory) entity;
+        T entity = (T)_searchEnhancer.create();
+        final Factory factory = (Factory)entity;
         factory.setCallback(0, interceptor);
         return entity;
     }
@@ -200,11 +204,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         super();
         Type t = getClass().getGenericSuperclass();
         if (t instanceof ParameterizedType) {
-            _entityBeanType = (Class<T>) ((ParameterizedType) t).getActualTypeArguments()[0];
-        } else if (((Class<?>) t).getGenericSuperclass() instanceof ParameterizedType) {
-            _entityBeanType = (Class<T>) ((ParameterizedType) ((Class<?>) t).getGenericSuperclass()).getActualTypeArguments()[0];
+            _entityBeanType = (Class<T>)((ParameterizedType)t).getActualTypeArguments()[0];
+        } else if (((Class<?>)t).getGenericSuperclass() instanceof ParameterizedType) {
+            _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)t).getGenericSuperclass()).getActualTypeArguments()[0];
         } else {
-            _entityBeanType = (Class<T>) ((ParameterizedType) ((Class<?>) ((Class<?>) t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
+            _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
         }
 
         s_daoMaps.put(_entityBeanType, this);
@@ -220,7 +224,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
         _partialSelectSql = generator.buildSelectSql(false);
         _count = generator.buildCountSql();
-        _distinctIdSql = generator.buildDistinctIdSql();
+        _distinctIdSql= generator.buildDistinctIdSql();
         _partialQueryCacheSelectSql = generator.buildSelectSql(true);
         _embeddedFields = generator.getEmbeddedFields();
         _insertSqls = generator.buildInsertSqls();
@@ -252,13 +256,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             _tgs.put(tg.name(), tg);
         }
 
-        Callback[] callbacks = new Callback[]{NoOp.INSTANCE, new UpdateBuilder(this)};
+        Callback[] callbacks = new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)};
 
         _enhancer = new Enhancer();
         _enhancer.setSuperclass(_entityBeanType);
         _enhancer.setCallbackFilter(s_callbackFilter);
         _enhancer.setCallbacks(callbacks);
-        _factory = (Factory) _enhancer.create();
+        _factory = (Factory)_enhancer.create();
 
         _searchEnhancer = new Enhancer();
         _searchEnhancer.setSuperclass(_entityBeanType);
@@ -281,11 +285,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             s_logger.trace("Collection SQLs");
             for (Attribute attr : _ecAttributes) {
-                EcInfo info = (EcInfo) attr.attache;
+                EcInfo info = (EcInfo)attr.attache;
                 s_logger.trace(info.insertSql);
                 s_logger.trace(info.selectSql);
             }
         }
+
         _conversionSupport = new ConversionSupport();
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM);
     }
@@ -294,7 +299,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     @SuppressWarnings("unchecked")
     public T createForUpdate(final ID id) {
-        final T entity = (T) _factory.newInstance(new Callback[]{NoOp.INSTANCE, new UpdateBuilder(this)});
+        final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)});
         if (id != null) {
             try {
                 _idField.set(entity, id);
@@ -434,7 +439,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             throw new CloudRuntimeException("Call to customSearchIncludingRemoved with null search Criteria");
         }
         if (sc.isSelectAll()) {
-            return (List<M>) searchIncludingRemoved((SearchCriteria<T>) sc, filter, null, false);
+            return (List<M>)searchIncludingRemoved((SearchCriteria<T>)sc, filter, null, false);
         }
         String clause = sc.getWhereClause();
         if (clause != null && clause.length() == 0) {
@@ -484,7 +489,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             List<Field> fields = sc.getSelectFields();
             while (rs.next()) {
                 if (st == SelectType.Entity) {
-                    results.add((M) toEntityBean(rs, false));
+                    results.add((M)toEntityBean(rs, false));
                 } else if (st == SelectType.Fields || st == SelectType.Result) {
                     M m = sc.getResultType().newInstance();
                     for (int j = 1; j <= fields.size(); j++) {
@@ -549,7 +554,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 final Enumerated enumerated = field.getAnnotation(Enumerated.class);
                 final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
 
-                final Enum<?>[] enums = (Enum<?>[]) field.getType().getEnumConstants();
+                final Enum<?>[] enums = (Enum<?>[])field.getType().getEnumConstants();
                 for (final Enum<?> e : enums) {
                     if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
                             (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
@@ -660,9 +665,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     /**
      * Get a value from a result set.
      *
-     * @param type  the expected type of the result
-     * @param rs    the result set
-     * @param index the index of the column
+     * @param type
+     *            the expected type of the result
+     * @param rs
+     *            the result set
+     * @param index
+     *            the index of the column
      * @return the result in the requested type
      * @throws SQLException
      */
@@ -673,7 +681,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             byte[] bytes = rs.getBytes(index);
             if (bytes != null) {
                 try {
-                    return (M) new String(bytes, "UTF-8");
+                    return (M)new String(bytes, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     throw new CloudRuntimeException("UnsupportedEncodingException exception while converting UTF-8 data");
                 }
@@ -701,7 +709,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (data == null) {
                 return null;
             } else {
-                return (M) DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index));
+                return (M)DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index));
             }
         } else if (type == short.class) {
             return (M) (Short) rs.getShort(index);
@@ -750,12 +758,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             } else {
                 final Calendar cal = Calendar.getInstance();
                 cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-                return (M) cal;
+                return (M)cal;
             }
         } else if (type == byte[].class) {
-            return (M) rs.getBytes(index);
+            return (M)rs.getBytes(index);
         } else {
-            return (M) rs.getObject(index);
+            return (M)rs.getObject(index);
         }
     }
 
@@ -847,7 +855,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     /**
      * If the SQLException.getSQLState is of 23000 (Integrity Constraint Violation), and the Error Code is 1062 (Duplicate Entry), throws EntityExistsException.
-     *
      * @throws EntityExistsException
      */
     protected static void handleEntityExistsException(SQLException e) throws EntityExistsException {
@@ -956,7 +963,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (element == null) {
                 result = lockRow(id, null);
             } else {
-                result = (T) element.getObjectValue();
+                result = (T)element.getObjectValue();
             }
         } else {
             result = lockRow(id, null);
@@ -989,7 +996,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (element == null) {
                 result = findById(id, true, null);
             } else {
-                result = (T) element.getObjectValue();
+                result = (T)element.getObjectValue();
             }
         } else {
             result = findById(id, true, null);
@@ -1376,7 +1383,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     /**
      * Validates if the count of records is higher or equal to the result set's size.<br/><br/>
      * Count cannot be less than the result set, however, it can be higher due to pagination (see CLOUDSTACK-10320).
-     *
      * @return Count if it is higher or equal to the result set's size, otherwise the result set's size.
      */
     protected int checkCountOfRecordsAgainstTheResultSetSize(int count, int resultSetSize) {
@@ -1454,7 +1460,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             if (_idField != null) {
                 ID id;
                 try {
-                    id = (ID) _idField.get(entity);
+                    id = (ID)_idField.get(entity);
                 } catch (IllegalAccessException e) {
                     throw new CloudRuntimeException("How can it be illegal access...come on", e);
                 }
@@ -1485,7 +1491,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 final ResultSet rs = pstmt.getGeneratedKeys();
                 if (id == null) {
                     if (rs != null && rs.next()) {
-                        id = (ID) rs.getObject(1);
+                        id = (ID)rs.getObject(1);
                     }
                     try {
                         if (_idField != null) {
@@ -1496,7 +1502,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                                     _idField.set(entity, id);
                                 }
                             } else {
-                                id = (ID) _idField.get(entity);
+                                id = (ID)_idField.get(entity);
                             }
                         }
                     } catch (final IllegalAccessException e) {
@@ -1536,12 +1542,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             Attribute attr = entry.getKey();
             Object obj = entry.getValue();
 
-            EcInfo ec = (EcInfo) attr.attache;
+            EcInfo ec = (EcInfo)attr.attache;
             Enumeration<?> en = null;
             if (ec.rawClass == null) {
-                en = Collections.enumeration(Arrays.asList((Object[]) obj));
+                en = Collections.enumeration(Arrays.asList((Object[])obj));
             } else {
-                en = Collections.enumeration((Collection) obj);
+                en = Collections.enumeration((Collection)obj);
             }
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(ec.clearSql);
             prepareAttribute(1, pstmt, idAttribute, id);
@@ -1550,7 +1556,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             while (en.hasMoreElements()) {
                 pstmt = txn.prepareAutoCloseStatement(ec.insertSql);
                 if (ec.targetClass == Date.class) {
-                    pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date) en.nextElement()));
+                    pstmt.setString(1, DateUtil.getDateDisplayString(s_gmtTimeZone, (Date)en.nextElement()));
                 } else {
                     pstmt.setObject(1, en.nextElement());
                 }
@@ -1594,9 +1600,16 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 return;
             }
         }
-        if (attr.field.getType() == String.class) {
-            // convert value to DB column type if needed
-            final String str = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+        if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
+            try {
+                Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+                pstmt.setObject(j, val);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        } else if (attr.field.getType() == String.class) {
+            final String str = (String)value;
             if (str == null) {
                 pstmt.setString(j, null);
                 return;
@@ -1631,7 +1644,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             }
         } else if (attr.field.getType() == Date.class) {
-            final Date date = (Date) value;
+            final Date date = (Date)value;
             if (date == null || date.equals(DATE_TO_NULL)) {
                 pstmt.setObject(j, null);
                 return;
@@ -1644,7 +1657,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 pstmt.setString(j, DateUtil.getDateDisplayString(s_gmtTimeZone, date));
             }
         } else if (attr.field.getType() == Calendar.class) {
-            final Calendar cal = (Calendar) value;
+            final Calendar cal = (Calendar)value;
             if (cal == null) {
                 pstmt.setObject(j, null);
                 return;
@@ -1665,15 +1678,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 if (value == null) {
                     pstmt.setObject(j, null);
                 } else {
-                    pstmt.setInt(j, ((Enum<?>) value).ordinal());
+                    pstmt.setInt(j, ((Enum<?>)value).ordinal());
                 }
             }
         } else if (attr.field.getType() == URI.class) {
             pstmt.setString(j, value == null ? null : value.toString());
         } else if (attr.field.getType() == URL.class) {
-            pstmt.setURL(j, (URL) value);
+            pstmt.setURL(j, (URL)value);
         } else if (attr.field.getType() == byte[].class) {
-            pstmt.setBytes(j, (byte[]) value);
+            pstmt.setBytes(j, (byte[])value);
         } else if (attr.field.getType() == Ip.class) {
             final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
             final EnumType type = (enumerated == null) ? EnumType.ORDINAL : enumerated.value();
@@ -1683,7 +1696,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 if (value == null) {
                     pstmt.setObject(j, null);
                 } else {
-                    pstmt.setLong(j, (value instanceof Ip) ? ((Ip) value).longValue() : NetUtils.ip2Long((String) value));
+                    pstmt.setLong(j, (value instanceof Ip) ? ((Ip)value).longValue() : NetUtils.ip2Long((String)value));
                 }
             }
         } else {
@@ -1711,7 +1724,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @SuppressWarnings("unchecked")
     @DB()
     protected T toEntityBean(final ResultSet result, final boolean cache) throws SQLException {
-        final T entity = (T) _factory.newInstance(new Callback[]{NoOp.INSTANCE, new UpdateBuilder(this)});
+        final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)});
 
         toEntityBean(result, entity);
 
@@ -1762,11 +1775,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     @SuppressWarnings("unchecked")
     protected void loadCollection(T entity, Attribute attr) {
-        EcInfo ec = (EcInfo) attr.attache;
+        EcInfo ec = (EcInfo)attr.attache;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try (PreparedStatement pstmt = txn.prepareStatement(ec.selectSql);) {
+        try(PreparedStatement pstmt = txn.prepareStatement(ec.selectSql);)
+        {
             pstmt.setObject(1, _idField.get(entity));
-            try (ResultSet rs = pstmt.executeQuery();) {
+            try(ResultSet rs = pstmt.executeQuery();)
+            {
                 ArrayList lst = new ArrayList();
                 if (ec.targetClass == Integer.class) {
                     while (rs.next()) {
@@ -1816,15 +1831,16 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                         throw new CloudRuntimeException("Never should happen", e);
                     }
                 }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("loadCollection: Exception : " + e.getMessage(), e);
+            }
+            catch (SQLException e) {
+                throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("loadCollection: Exception : " + e.getMessage(), e);
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         } catch (IllegalArgumentException e) {
-            throw new CloudRuntimeException("loadCollection: Exception : " + e.getMessage(), e);
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            throw new CloudRuntimeException("loadCollection: Exception : " + e.getMessage(), e);
+            throw new CloudRuntimeException("loadCollection: Exception : " +e.getMessage(), e);
         }
     }
 
@@ -1936,13 +1952,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void createCache(final Map<String, ? extends Object> params) {
-        final String value = (String) params.get("cache.size");
+        final String value = (String)params.get("cache.size");
 
         if (value != null) {
             final CacheManager cm = CacheManager.create();
             final int maxElements = NumbersUtil.parseInt(value, 0);
-            final int live = NumbersUtil.parseInt((String) params.get("cache.time.to.live"), 300);
-            final int idle = NumbersUtil.parseInt((String) params.get("cache.time.to.idle"), 300);
+            final int live = NumbersUtil.parseInt((String)params.get("cache.time.to.live"), 300);
+            final int idle = NumbersUtil.parseInt((String)params.get("cache.time.to.idle"), 300);
             _cache = new Cache(getName(), maxElements, false, live == -1, live == -1 ? Integer.MAX_VALUE : live, idle);
             cm.addCache(_cache);
             s_logger.info("Cache created: " + _cache.toString());
@@ -1956,11 +1972,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
-        final String value = (String) params.get("lock.timeout");
+        final String value = (String)params.get("lock.timeout");
         _timeoutSeconds = NumbersUtil.parseInt(value, 300);
 
         createCache(params);
-        final boolean load = Boolean.parseBoolean((String) params.get("cache.preload"));
+        final boolean load = Boolean.parseBoolean((String)params.get("cache.preload"));
         if (load) {
             listAll();
         }
@@ -1970,9 +1986,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     public static <T> UpdateBuilder getUpdateBuilder(final T entityObject) {
-        final Factory factory = (Factory) entityObject;
+        final Factory factory = (Factory)entityObject;
         assert (factory != null);
-        return (UpdateBuilder) factory.getCallback(1);
+        return (UpdateBuilder)factory.getCallback(1);
     }
 
     @Override
@@ -2263,4 +2279,5 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             });
         }
     }
+
 }

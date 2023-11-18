@@ -21,11 +21,13 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -57,7 +59,8 @@ public class StoragePoolVO implements StoragePool {
     private String uuid = null;
 
     @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
-    private String poolType;
+    @Convert(converter = StoragePoolTypeConverter.class)
+    private StoragePoolType poolType;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
@@ -140,7 +143,7 @@ public class StoragePoolVO implements StoragePool {
         this.name = name;
         id = poolId;
         this.uuid = uuid;
-        poolType = type.name();
+        poolType = type;
         this.dataCenterId = dataCenterId;
         usedBytes = availableBytes;
         this.capacityBytes = capacityBytes;
@@ -152,11 +155,11 @@ public class StoragePoolVO implements StoragePool {
     }
 
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, StoragePoolType.valueOf(that.poolType), that.dataCenterId, that.podId, that.usedBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.usedBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
-        poolType = type.name();
+        poolType = type;
         this.hostAddress = hostAddress;
         this.port = port;
         setStatus(StoragePoolStatus.Initial);
@@ -176,11 +179,11 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public StoragePoolType getPoolType() {
-        return StoragePoolType.valueOf(poolType);
+        return poolType;
     }
 
-    public void setPoolType(StoragePoolType protocol) {
-        poolType = protocol.name();
+    public void setPoolType(StoragePoolType poolType) {
+        this.poolType = poolType;
     }
 
     @Override

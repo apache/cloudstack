@@ -17,12 +17,14 @@
 package com.cloud.simulator;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.util.StoragePoolTypeConverter;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.storage.Storage.StoragePoolType;
@@ -48,7 +50,8 @@ public class MockStoragePoolVO implements InternalIdentity {
     private String hostGuid;
 
     @Column(name = "pool_type")
-    private String poolType;
+    @Convert(converter = StoragePoolTypeConverter.class)
+    private StoragePoolType poolType;
 
     public MockStoragePoolVO() {
 
@@ -68,11 +71,11 @@ public class MockStoragePoolVO implements InternalIdentity {
     }
 
     public StoragePoolType getPoolType() {
-        return StoragePoolType.valueOf(this.poolType);
+        return this.poolType;
     }
 
     public void setStorageType(StoragePoolType poolType) {
-        this.poolType = poolType.name();
+        this.poolType = poolType;
     }
 
     public String getUuid() {

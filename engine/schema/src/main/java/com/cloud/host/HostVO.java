@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
@@ -44,6 +45,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.util.StoragePoolTypeConverter;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import java.util.Arrays;
@@ -130,7 +132,8 @@ public class HostVO implements Host {
     private String resource;
 
     @Column(name = "fs_type")
-    private String fsType;
+    @Convert(converter = StoragePoolTypeConverter.class)
+    private StoragePoolType fsType;
 
     @Column(name = "available")
     private boolean available = true;
@@ -447,7 +450,7 @@ public class HostVO implements Host {
             null);
         this.parent = parent;
         this.totalSize = totalSize;
-        this.fsType = fsType == null ? null : fsType.name();
+        this.fsType = fsType;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -674,7 +677,7 @@ public class HostVO implements Host {
     }
 
     public StoragePoolType getFsType() {
-        return StoragePoolType.valueOf(fsType);
+        return fsType;
     }
 
     @Override
