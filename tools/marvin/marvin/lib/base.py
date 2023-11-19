@@ -1879,9 +1879,16 @@ class PublicIPAddress:
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
-        """Dissociate Public IP address"""
+        """Dissociate Public IP address using the given ID"""
         cmd = disassociateIpAddress.disassociateIpAddressCmd()
         cmd.id = self.ipaddress.id
+        apiclient.disassociateIpAddress(cmd)
+        return
+
+    def delete_by_ip(self, apiclient):
+        """Dissociate Public IP address using the given IP address"""
+        cmd = disassociateIpAddress.disassociateIpAddressCmd()
+        cmd.ipaddress = self.ipaddress.ipaddress
         apiclient.disassociateIpAddress(cmd)
         return
 
