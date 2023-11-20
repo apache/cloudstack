@@ -27,6 +27,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -363,7 +364,8 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedStatic<ActionEventUtils> ignored2 = Mockito.mockStatic(ActionEventUtils.class)) {
             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
         }
     }
@@ -393,7 +395,9 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        try (MockedStatic<ActionEventUtils> ignored2 = Mockito.mockStatic(ActionEventUtils.class)) {
+            unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
