@@ -1497,8 +1497,15 @@ public class VolumeServiceImpl implements VolumeService {
             String tmplIdManagedPoolIdDestinationHostLockString = "tmplId:" + srcTemplateId + "managedPoolId:" + destDataStoreId + "destinationHostId:" + destHost.getId();
             lock = GlobalLock.getInternLock(tmplIdManagedPoolIdDestinationHostLockString);
             if (lock == null) {
-                throw new CloudRuntimeException("Unable to create managed storage template/volume, couldn't get global lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't get global lock on " + tmplIdManagedPoolIdDestinationHostLockString);
             }
+
+            int storagePoolMaxWaitSeconds = NumbersUtil.parseInt(configDao.getValue(Config.StoragePoolMaxWaitSeconds.key()), 3600);
+            if (!lock.lock(storagePoolMaxWaitSeconds)) {
+                s_logger.debug("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+                throw new CloudRuntimeException("Unable to create volume from template, couldn't lock on " + tmplIdManagedPoolIdDestinationHostLockString);
+            }
+
             s_logger.debug("Copying the template to the volume on primary storage");
             createManagedVolumeCopyManagedTemplateAsync(volumeInfo, destPrimaryDataStore, templateOnPrimary, destHost, future);
         } finally {
