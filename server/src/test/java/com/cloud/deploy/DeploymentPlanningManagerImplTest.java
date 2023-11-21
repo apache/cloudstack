@@ -19,6 +19,8 @@ package com.cloud.deploy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.HostPodVO;
 import com.cloud.gpu.GPU;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -40,19 +43,26 @@ import com.cloud.host.Status;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -67,6 +77,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -197,6 +208,19 @@ public class DeploymentPlanningManagerImplTest {
     @Mock
     ConfigurationDao configDao;
 
+    @Mock
+    AccountManager _accountMgr;
+
+    @Inject
+    DiskOfferingDao _diskOfferingDao;
+
+    @Mock
+    DataStoreManager _dataStoreManager;
+
+    @Inject
+    HostPodDao _podDao;
+
+
     private static final long dataCenterId = 1L;
     private static final long instanceId = 123L;
     private static final long hostId = 0L;
@@ -242,6 +266,8 @@ public class DeploymentPlanningManagerImplTest {
         List<DeploymentPlanner> planners = new ArrayList<DeploymentPlanner>();
         planners.add(_planner);
         _dpm.setPlanners(planners);
+        StoragePoolAllocator allocator = Mockito.mock(StoragePoolAllocator.class);
+        _dpm.setStoragePoolAllocators(Arrays.asList(allocator));
 
         Mockito.when(host.getId()).thenReturn(hostId);
         Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
@@ -700,6 +726,85 @@ public class DeploymentPlanningManagerImplTest {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    @Test
+    public void findSuitablePoolsForVolumesTest() throws Exception {
+        Long diskOfferingId = 1L;
+        HostVO host = Mockito.spy(new HostVO("host"));
+        Map<String, String> hostDetails = new HashMap<>() {
+            {
+                put(Host.HOST_VOLUME_ENCRYPTION, "true");
+            }
+        };
+        host.setDetails(hostDetails);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+
+        VolumeVO vol1 = Mockito.spy(new VolumeVO("vol1", dataCenterId, podId, 1L, 1L, instanceId, "folder", "path",
+                Storage.ProvisioningType.THIN, (long) 10 << 30, Volume.Type.ROOT));
+        Mockito.when(vol1.getId()).thenReturn(1L);
+        vol1.setState(Volume.State.Allocated);
+        vol1.setPassphraseId(1L);
+        vol1.setPoolId(1L);
+        vol1.setDiskOfferingId(diskOfferingId);
+
+        StoragePoolVO storagePool = new StoragePoolVO();
+        storagePool.setStatus(StoragePoolStatus.Maintenance);
+        storagePool.setId(vol1.getPoolId());
+        storagePool.setDataCenterId(dataCenterId);
+        storagePool.setPodId(podId);
+        storagePool.setClusterId(clusterId);
+
+        DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+
+        StoragePoolAllocator allocator = Mockito.mock(StoragePoolAllocator.class);
+
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, podId, clusterId, null, null, null);
+
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(vmProfile.getOwner()).thenReturn(account);
+        Mockito.when(_accountMgr.isRootAdmin(account.getId())).thenReturn(Boolean.FALSE);
+
+        Mockito.when(_dcDao.findById(dataCenterId)).thenReturn(dc);
+        Mockito.when(dc.getAllocationState()).thenReturn(AllocationState.Enabled);
+
+        HostPodVO podVo = Mockito.mock(HostPodVO.class);
+        Mockito.when(podVo.getAllocationState()).thenReturn(AllocationState.Enabled);
+        Mockito.doReturn(podVo).when(_podDao).findById(podId);
+
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getAllocationState()).thenReturn(AllocationState.Enabled);
+        Mockito.when(_clusterDao.findById(clusterId)).thenReturn(cluster);
+
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+
+        Mockito.when(_diskOfferingDao.findById(vol1.getDiskOfferingId())).thenReturn(diskOffering);
+        VirtualMachineTemplate vmt = Mockito.mock(VirtualMachineTemplate.class);
+
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        Mockito.when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
+
+        PrimaryDataStore primaryDataStore = Mockito.mock(PrimaryDataStore.class);
+
+        Mockito.when(vmt.getFormat()).thenReturn(Storage.ImageFormat.ISO);
+        Mockito.when(vmProfile.getTemplate()).thenReturn(vmt);
+
+        Mockito.when(vmProfile.getId()).thenReturn(1L);
+        Mockito.when(vmProfile.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(volDao.findUsableVolumesForInstance(1L)).thenReturn(Arrays.asList(vol1));
+        Mockito.when(volDao.findByInstanceAndType(1L, Volume.Type.ROOT)).thenReturn(Arrays.asList(vol1));
+        Mockito.when(_dataStoreManager.getPrimaryDataStore(vol1.getPoolId())).thenReturn((DataStore) primaryDataStore);
+        Mockito.when(avoids.shouldAvoid(storagePool)).thenReturn(Boolean.FALSE);
+        PowerMockito.whenNew(DiskProfile.class).withAnyArguments().thenReturn(diskProfile);
+
+        Mockito.doReturn(Arrays.asList(storagePool)).when(allocator).allocateToPool(diskProfile, vmProfile, plan,
+                avoids, 10);
+        Mockito.when(volDao.update(vol1.getId(), vol1)).thenReturn(true);
+        _dpm.findSuitablePoolsForVolumes(vmProfile, plan, avoids, 10);
+        verify(vol1, times(1)).setPoolId(null);
+        assertTrue(vol1.getPoolId() == null);
+
     }
 
     // This is so ugly but everything is so intertwined...
