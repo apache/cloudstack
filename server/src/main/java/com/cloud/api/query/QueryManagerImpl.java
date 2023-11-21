@@ -171,6 +171,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
@@ -3280,6 +3281,33 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     private Pair<List<DiskOfferingJoinVO>, Integer> searchForDiskOfferingsInternal(ListDiskOfferingsCmd cmd) {
+        Ternary<List<Long>, Integer, String[]> diskOfferingIdPage = searchForDiskOfferingsIdsAndCount(cmd);
+
+        Integer count = diskOfferingIdPage.second();
+        Long[] idArray = diskOfferingIdPage.first().toArray(new Long[0]);
+        String[] requiredTagsArray = diskOfferingIdPage.third();
+
+        if (count == 0) {
+            return new Pair<>(new ArrayList<>(), count);
+        }
+
+        List<DiskOfferingJoinVO> diskOfferings = _diskOfferingJoinDao.searchByIds(idArray);
+
+        if (requiredTagsArray.length != 0) {
+            ListIterator<DiskOfferingJoinVO> iteratorForTagsChecking = diskOfferings.listIterator();
+            while (iteratorForTagsChecking.hasNext()) {
+                DiskOfferingJoinVO offering = iteratorForTagsChecking.next();
+                String offeringTags = offering.getTags();
+                String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
+                if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
+                    iteratorForTagsChecking.remove();
+                }
+            }
+        }
+        return new Pair<>(diskOfferings, count);
+    }
+
+    private Ternary<List<Long>, Integer, String[]> searchForDiskOfferingsIdsAndCount(ListDiskOfferingsCmd cmd) {
         // Note
         // The list method for offerings is being modified in accordance with
         // discussion with Will/Kevin
@@ -3289,11 +3317,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // their domains+parent domains ... all the way
         // till
         // root
-
-        Filter searchFilter = new Filter(DiskOfferingJoinVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
-        searchFilter.addOrderBy(DiskOfferingJoinVO.class, "id", true);
-        SearchCriteria<DiskOfferingJoinVO> sc = _diskOfferingJoinDao.createSearchCriteria();
-        sc.addAnd("computeOnly", Op.EQ, false);
 
         Account account = CallContext.current().getCallingAccount();
         Object name = cmd.getDiskOfferingName();
@@ -3310,18 +3333,39 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
 
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
+        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
+        diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
+
+        diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
+
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
-        if (domainId != null) {
+        if (domainId != null && accountName == null) {
             if (accountMgr.isRootAdmin(account.getId()) || isPermissible(account.getDomainId(), domainId)) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
-                sc.addAnd("domainId", Op.FIND_IN_SET, String.valueOf(domainId));
+                SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
+                domainDetailsSearch.and("name", domainDetailsSearch.entity().getName(), Op.EQ);
+                domainDetailsSearch.and("domainId", domainDetailsSearch.entity().getValue(), Op.EQ);
+
+                diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+
                 if (!isRootAdmin) {
-                    sc.addAnd("displayOffering", SearchCriteria.Op.EQ, 1);
+                    diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
                 }
-                return _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+
+                SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
+                sc.setParameters("computeOnly", false);
+
+                sc.setJoinParameters("domainDetailsSearch", "name", "domainid");
+                sc.setJoinParameters("domainDetailsSearch", "domainId", domainId);
+
+                Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
+                List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
+                return new Ternary<>(idsArray, uniquePairs.second(), new String[0]);
             } else {
                 throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the disk offering");
             }
@@ -3342,104 +3386,140 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyword != null) {
-            SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
-            ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+            diskOfferingSearch.and().op("keywordDisplayText", diskOfferingSearch.entity().getDisplayText(), Op.LIKE);
+            diskOfferingSearch.or("keywordName", diskOfferingSearch.entity().getName(), Op.LIKE);
+            diskOfferingSearch.cp();
         }
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            diskOfferingSearch.and("id", diskOfferingSearch.entity().getId(), Op.EQ);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+            diskOfferingSearch.and("name", diskOfferingSearch.entity().getName(), Op.EQ);
         }
 
         if (encrypt != null) {
-            sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
+            diskOfferingSearch.and("encrypt", diskOfferingSearch.entity().getEncrypt(), Op.EQ);
         }
 
-        useStorageType(sc, storageType);
+        if (storageType != null || zoneId != null) {
+            diskOfferingSearch.and("useLocalStorage", diskOfferingSearch.entity().isUseLocalStorage(), Op.EQ);
+        }
 
         if (zoneId != null) {
-            SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
-            sb.and("zoneId", sb.entity().getZoneId(), Op.FIND_IN_SET);
-            sb.or("zId", sb.entity().getZoneId(), Op.NULL);
-            sb.done();
-            SearchCriteria<DiskOfferingJoinVO> zoneSC = sb.create();
-            zoneSC.setParameters("zoneId", String.valueOf(zoneId));
-            sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
-            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
-            if (DataCenter.Type.Edge.equals(zone.getType())) {
-                sc.addAnd("useLocalStorage", Op.EQ, true);
-            }
+            SearchBuilder<DiskOfferingDetailVO> zoneDetailSearch = _diskOfferingDetailsDao.createSearchBuilder();
+            zoneDetailSearch.and().op("name", zoneDetailSearch.entity().getName(), Op.EQ); // zoneid
+            zoneDetailSearch.or("nameNull", zoneDetailSearch.entity().getName(), Op.NULL);
+
+            zoneDetailSearch.and().op("zoneId", zoneDetailSearch.entity().getValue(), Op.EQ);
+            zoneDetailSearch.or("zoneIdNull", zoneDetailSearch.entity().getValue(), Op.NULL);
+            zoneDetailSearch.cp();
+
+            diskOfferingSearch.join("zoneDetailSearch", zoneDetailSearch, diskOfferingSearch.entity().getId(), zoneDetailSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
         }
 
         DiskOffering currentDiskOffering = null;
+        Volume volume = null;
         if (volumeId != null) {
-            Volume volume = volumeDao.findById(volumeId);
+            volume = volumeDao.findById(volumeId);
             if (volume == null) {
                 throw new InvalidParameterValueException(String.format("Unable to find a volume with specified id %s", volumeId));
             }
             currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
             if (!currentDiskOffering.isComputeOnly() && currentDiskOffering.getDiskSizeStrictness()) {
-                SearchCriteria<DiskOfferingJoinVO> ssc = _diskOfferingJoinDao.createSearchCriteria();
-                ssc.addOr("diskSize", Op.EQ, volume.getSize());
-                ssc.addOr("customized", SearchCriteria.Op.EQ, true);
-                sc.addAnd("diskSizeOrCustomized", SearchCriteria.Op.SC, ssc);
+                diskOfferingSearch.and().op("diskSize", diskOfferingSearch.entity().getDiskSize(), Op.EQ);
+                diskOfferingSearch.or("customized", diskOfferingSearch.entity().isCustomized(), Op.EQ);
+                diskOfferingSearch.cp();
             }
-            sc.addAnd("id", SearchCriteria.Op.NEQ, currentDiskOffering.getId());
-            sc.addAnd("diskSizeStrictness", Op.EQ, currentDiskOffering.getDiskSizeStrictness());
+            diskOfferingSearch.and("idNEQ", diskOfferingSearch.entity().getId(), Op.NEQ);
+            diskOfferingSearch.and("diskSizeStrictness", diskOfferingSearch.entity().getDiskSizeStrictness(), Op.EQ);
         }
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         account = accountMgr.finalizeOwner(account, accountName, domainId, projectId);
         if (!Account.Type.ADMIN.equals(account.getType())) {
+            SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
+            domainDetailsSearch.and().op("name", domainDetailsSearch.entity().getName(), Op.EQ);
+            domainDetailsSearch.or("nameNull", domainDetailsSearch.entity().getName(), Op.EQ);
+            domainDetailsSearch.cp();
+            domainDetailsSearch.and().op("valueIn", domainDetailsSearch.entity().getValue(), Op.IN);
+            domainDetailsSearch.or("valueNull", domainDetailsSearch.entity().getValue(), Op.NULL);
+
+            diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
+        }
+
+        SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
+
+        sc.setParameters("computeOnly", false);
+
+        if (keyword != null) {
+            sc.setParameters("keywordDisplayText", "%" + keyword + "%");
+            sc.setParameters("keywordName", "%" + keyword + "%");
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (encrypt != null) {
+            sc.setParameters("encrypt", encrypt);
+        }
+
+        if (storageType != null) {
+            if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
+                sc.setParameters("useLocalStorage", true);
+
+            } else if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
+                sc.setParameters("useLocalStorage", false);
+            }
+        }
+
+        if (zoneId != null) {
+            sc.setJoinParameters("zoneDetailSearch", "name", "zoneid");
+            sc.setJoinParameters("zoneDetailSearch", "zoneId", zoneId);
+
+            DataCenterJoinVO zone = _dcJoinDao.findById(zoneId);
+            if (DataCenter.Type.Edge.equals(zone.getType())) {
+                sc.setParameters("useLocalStorage", true);
+            }
+        }
+
+        if (volumeId != null) {
+            if (!currentDiskOffering.isComputeOnly() && currentDiskOffering.getDiskSizeStrictness()) {
+                sc.setParameters("diskSize", volume.getSize());
+                sc.setParameters("customized", true);
+            }
+            sc.setParameters("idNEQ", currentDiskOffering.getId());
+            sc.setParameters("diskSizeStrictness", currentDiskOffering.getDiskSizeStrictness());
+        }
+
+        // Filter offerings that are not associated with caller's domain
+        if (!Account.Type.ADMIN.equals(account.getType())) {
             Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
-            List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
-            SearchBuilder<DiskOfferingJoinVO> sb = _diskOfferingJoinDao.createSearchBuilder();
-            if (ids != null && !ids.isEmpty()) {
-                sb.and("id", sb.entity().getId(), Op.IN);
-            }
-            sb.or("domainId", sb.entity().getDomainId(), Op.NULL);
-            sb.done();
-
-            SearchCriteria<DiskOfferingJoinVO> scc = sb.create();
-            if (ids != null && !ids.isEmpty()) {
-                scc.setParameters("id", ids.toArray());
-            }
-            sc.addAnd("domainId", SearchCriteria.Op.SC, scc);
+            sc.setJoinParameters("domainDetailsSearch", "name", "domainid");
+            sc.setJoinParameters("domainDetailsSearch", "valueIn", domainIds.toArray());
         }
 
-        Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
-        if (CollectionUtils.isNotEmpty(result.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
+        if (CollectionUtils.isNotEmpty(uniquePairs.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
             if (volumeId != null) {
-                Volume volume = volumeDao.findById(volumeId);
-                currentDiskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
                 requiredTagsArray = currentDiskOffering.getTagsArray();
             } else if (storagePoolId != null) {
                 requiredTagsArray = _storageTagDao.getStoragePoolTags(storagePoolId).toArray(new String[0]);
             }
         }
-        if (requiredTagsArray.length != 0) {
-            ListIterator<DiskOfferingJoinVO> iteratorForTagsChecking = result.first().listIterator();
-            while (iteratorForTagsChecking.hasNext()) {
-                DiskOfferingJoinVO offering = iteratorForTagsChecking.next();
-                String offeringTags = offering.getTags();
-                String[] offeringTagsArray = (offeringTags == null || offeringTags.isEmpty()) ? new String[0] : offeringTags.split(",");
-                if (!CollectionUtils.isSubCollection(Arrays.asList(requiredTagsArray), Arrays.asList(offeringTagsArray))) {
-                    iteratorForTagsChecking.remove();
-                }
-            }
-        }
+        List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
 
-        return new Pair<>(result.first(), result.second());
+        return new Ternary<>(idsArray, uniquePairs.second(), requiredTagsArray);
     }
 
     private void useStorageType(SearchCriteria<?> sc, String storageType) {
