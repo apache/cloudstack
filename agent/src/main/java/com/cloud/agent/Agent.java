@@ -825,7 +825,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
-        processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+        processManagementServerList(cmd.getManagementServerList(), cmd.getLoadBalancerAlgorithm(), cmd.getLoadBalancerCheckInterval());
         return new SetupMSListAnswer(true);
     }
 

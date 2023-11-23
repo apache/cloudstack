@@ -2,7 +2,7 @@
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownership. The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
@@ -25,27 +25,27 @@ import com.cloud.agent.api.Command;
 
 public class SetupMSListCommand extends Command {
 
-    private List<String> msList;
-    private String lbAlgorithm;
-    private Long lbCheckInterval;
+    private final List<String> managementServerList;
+    private final String loadBalancerAlgorithm;
+    private final Long loadBalancerCheckInterval;
 
-    public SetupMSListCommand(final List<String> msList, final String lbAlgorithm, final Long lbCheckInterval) {
+    public SetupMSListCommand(final List<String> managementServerList, final String loadBalancerAlgorithm, final Long loadBalancerCheckInterval) {
         super();
-        this.msList = msList;
-        this.lbAlgorithm = lbAlgorithm;
-        this.lbCheckInterval = lbCheckInterval;
+        this.managementServerList = managementServerList;
+        this.loadBalancerAlgorithm = loadBalancerAlgorithm;
+        this.loadBalancerCheckInterval = loadBalancerCheckInterval;
     }
 
-    public List<String> getMsList() {
-        return msList;
+    public List<String> getManagementServerList() {
+        return managementServerList;
     }
 
-    public String getLbAlgorithm() {
-        return lbAlgorithm;
+    public String getLoadBalancerAlgorithm() {
+        return loadBalancerAlgorithm;
     }
 
-    public Long getLbCheckInterval() {
-        return lbCheckInterval;
+    public Long getLoadBalancerCheckInterval() {
+        return loadBalancerCheckInterval;
     }
 
     @Override
