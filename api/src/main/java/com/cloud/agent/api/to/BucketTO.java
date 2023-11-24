@@ -22,8 +22,14 @@ public final class BucketTO {
 
     private String name;
 
+    private String accessKey;
+
+    private String secretKey;
+
     public BucketTO(Bucket bucket) {
         this.name = bucket.getName();
+        this.accessKey = bucket.getAccessKey();
+        this.secretKey = bucket.getSecretKey();
     }
 
     public BucketTO(String name) {
@@ -32,5 +38,13 @@ public final class BucketTO {
 
     public String getName() {
         return this.name;
+    }
+
+    public String getAccessKey() {
+        return this.accessKey;
+    }
+
+    public String getSecretKey() {
+        return this.secretKey;
     }
 }
