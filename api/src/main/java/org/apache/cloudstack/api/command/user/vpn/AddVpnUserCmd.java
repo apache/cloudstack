@@ -125,6 +125,9 @@ public class AddVpnUserCmd extends BaseAsyncCreateCmd {
         vpnResponse.setId(vpnUser.getUuid());
         vpnResponse.setUserName(vpnUser.getUsername());
         vpnResponse.setAccountName(account.getAccountName());
+        // re-retrieve the vpnuser, as the call to `applyVpnUsers` might have changed the state
+        vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
+        vpnResponse.setState(vpnUser.getState().toString());
 
         Domain domain = _entityMgr.findById(Domain.class, account.getDomainId());
         if (domain != null) {
