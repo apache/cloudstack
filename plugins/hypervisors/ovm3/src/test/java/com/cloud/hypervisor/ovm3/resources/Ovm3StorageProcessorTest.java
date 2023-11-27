@@ -307,7 +307,7 @@ public class Ovm3StorageProcessorTest {
      * }
      */
     @Test
-    public void isoDettachTest() throws ConfigurationException {
+    public void isoDetachTest() throws ConfigurationException {
         con = prepare();
 
     }

@@ -150,7 +150,7 @@ public class InternalLbElementServiceTest {
             provider = _lbElSvc.configureInternalLoadBalancerElement(validElId, true);
         } finally {
             assertNotNull("Test failed. Couldn't find the VR provider by the valid id ", provider);
-            assertTrue("Test failed. The provider wasn't eanbled ", provider.isEnabled());
+            assertTrue("Test failed. The provider wasn't enabled ", provider.isEnabled());
         }
     }
 

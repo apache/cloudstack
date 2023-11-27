@@ -1393,7 +1393,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
             // Reset custom field property cloud.zone over this DC
             dcMo.setCustomFieldValue(CustomFieldConstants.CLOUD_ZONE, "false");
-            s_logger.info("Sucessfully reset custom field property cloud.zone over DC " + vmwareDcName);
+            s_logger.info("Successfully reset custom field property cloud.zone over DC " + vmwareDcName);
         } catch (Exception e) {
             String msg = "Unable to reset custom field property cloud.zone over DC " + vmwareDcName + " due to : " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);

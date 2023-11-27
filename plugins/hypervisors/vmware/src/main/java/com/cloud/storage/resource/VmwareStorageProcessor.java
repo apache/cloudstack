@@ -43,7 +43,7 @@ import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -1748,7 +1748,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    // return Pair<String(divice bus name), String[](disk chain)>
+    // return Pair<String(device bus name), String[](disk chain)>
     private Pair<String, String[]> exportVolumeToSecondaryStorage(VmwareContext context, VirtualMachineMO vmMo, VmwareHypervisorHost hyperHost, String volumePath, String secStorageUrl, String secStorageDir,
                                                                   String exportName, String workerVmName, String nfsVersion, boolean clonedWorkerVMNeeded) throws Exception {
 
@@ -2399,12 +2399,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer dettachIso(DettachCommand cmd) {
+    public Answer detachIso(DetachCommand cmd) {
         return this.attachIso(cmd.getDisk(), false, cmd.getVmName(), cmd.isForced());
     }
 
     @Override
-    public Answer dettachVolume(DettachCommand cmd) {
+    public Answer detachVolume(DetachCommand cmd) {
         return this.attachVolume(cmd, cmd.getDisk(), false, cmd.isManaged(), cmd.getVmName(), cmd.get_iScsiName(), cmd.getStorageHost(), cmd.getStoragePort(), null);
     }
 

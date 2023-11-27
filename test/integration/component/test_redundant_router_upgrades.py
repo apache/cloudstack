@@ -226,7 +226,7 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         # 1. listNetworks should show the created network in allocated state
         # 2. VM should be deployed and in Running state and there should be
         #    one Router running for this network
-        # 3. listNetworkOfferings should show craeted offering for RvR
+        # 3. listNetworkOfferings should show created offering for RvR
         # 4. listNetworks shows the network still successfully implemented
         # 5. listRouters shows two routers Up and Running (PRIMARY and BACKUP)
 
@@ -369,11 +369,11 @@ class TestRvRUpgradeDowngrade(cloudstackTestCase):
         # 6. listRouters in the network
         # 7. delete account in which resources are created
         # Validate the following
-        # 1. listNetworkOfferings should show craeted offering for RvR
+        # 1. listNetworkOfferings should show created offering for RvR
         # 2. listNetworks should show the created network in allocated state
         # 3. VM should be deployed and in Running state and there should be
         #    two routers (PRIMARY and BACKUP) for this network
-        # 4. listNetworkOfferings should show craeted offering for VR
+        # 4. listNetworkOfferings should show created offering for VR
         # 5. listNetworks shows the network still successfully implemented
         # 6. listRouters shows only one router for this network in Running
 

@@ -1056,7 +1056,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         Long templateId = cmd.getTemplateId();
         int wait = cmd.getWait();
         if (wait == 0) {
-            /* Defaut timeout 2 hours */
+            /* Default timeout 2 hours */
             wait = 7200;
         }
 

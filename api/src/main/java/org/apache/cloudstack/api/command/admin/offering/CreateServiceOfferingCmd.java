@@ -79,7 +79,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.IS_VOLATILE,
             type = CommandType.BOOLEAN,
-            description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
+            description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is detached then destroyed and a fresh root disk is created and attached to VM")
     private Boolean isVolatile;
 
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the service offering. Values are local and shared.")

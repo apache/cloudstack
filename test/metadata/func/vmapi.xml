@@ -135,7 +135,7 @@ under the License.
 	
 	<command>
 		<name>listVirtualMachines</name>
-		<testcase>72  [List the Destroyed Virutal Machine]</testcase>
+		<testcase>72  [List the Destroyed Virtual Machine]</testcase>
 		<parameters>
 			<item>
 				<name>account</name>

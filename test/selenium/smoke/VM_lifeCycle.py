@@ -97,7 +97,7 @@ class deployVM(unittest.TestCase):
 
 
         ## Now we must wait for some random time (Educated guess based on experience) and check if VM has been deployed and if it is in running state.
-        ## Should take about 4 min to deploy VM.. but we will wait 5 mins and check the status , we will do this twice. So total 2 check within 10 mins with first check occuring at 5th min.
+        ## Should take about 4 min to deploy VM.. but we will wait 5 mins and check the status , we will do this twice. So total 2 check within 10 mins with first check occurring at 5th min.
 
 
         driver.refresh() # Refresh UI Page; This polls latest status.

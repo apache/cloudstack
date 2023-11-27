@@ -261,7 +261,7 @@ def _otherconfig_from_xml(n, attrs):
 # Each object is defined by a dictionary mapping an attribute name in
 # the xapi database to a tuple containing two items:
 #  - a function which takes this attribute and encodes it as XML.
-#  - a function which takes XML and decocdes it into a value.
+#  - a function which takes XML and decodes it into a value.
 #
 # other-config attributes are specified as a simple array of strings
 

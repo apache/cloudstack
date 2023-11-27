@@ -778,7 +778,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
         
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Description("Indecates if smart paging is active.")]
+        [Description("Indicates if smart paging is active.")]
         [TypeConverter(typeof(WMIValueTypeConverter))]
         public bool SwapFilesInUse {
             get {

@@ -1625,7 +1625,7 @@ export default class RFB extends EventTargetMixin {
 
             this._rfbVeNCryptState = 2;
         }
-        // must fall through here (i.e. no "else if"), beacause we may have already received
+        // must fall through here (i.e. no "else if"), because we may have already received
         // the subtypes length and won't be called again
 
         if (this._rfbVeNCryptState == 2) { // waiting for subtypes length

@@ -929,7 +929,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (!StringUtils.isAllBlank(ipaddr, ip6addr)) {
-            // we got the ip addr so up the nics table and secodary ip
+            // we got the ip addr so up the nics table and secondary ip
             final String ip4AddrFinal = ipaddr;
             final String ip6AddrFinal = ip6addr;
             long id = Transaction.execute(new TransactionCallback<Long>() {
@@ -4014,10 +4014,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     // add security group provider to the physical network
                     addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
 
-                    // add VPCVirtualRouter as the defualt network service provider
+                    // add VPCVirtualRouter as the default network service provider
                     addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
-                    // add baremetal as the defualt network service provider
+                    // add baremetal as the default network service provider
                     addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
 
                     //Add Internal Load Balancer element as a default network service provider

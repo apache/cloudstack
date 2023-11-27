@@ -1803,7 +1803,7 @@ public class PaloAltoResource implements ServerResource {
                 throw new ExecutionException(e.getCause().getMessage());
             }
             if (pending_changes.equals("yes")) {
-                throw new ExecutionException("The Palo Alto has uncommited changes, so no changes can be made.  Try again later or contact your administrator.");
+                throw new ExecutionException("The Palo Alto has uncommitted changes, so no changes can be made.  Try again later or contact your administrator.");
             } else {
                 // ADD A CONFIG LOCK TO CAPTURE THE PALO ALTO RESOURCE
                 String add_lock_status;

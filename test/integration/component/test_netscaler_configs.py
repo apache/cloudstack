@@ -486,7 +486,7 @@ class TestNetScalerDedicated(_NetScalerDeployVMBase):
                                   templateid=self.template.id,
                                   zoneid=self.zone.id
                                   )
-            self.debug("Deply instance in dedicated Network offering mode failed")
+            self.debug("Deploy instance in dedicated Network offering mode failed")
 
 class TestNetScalerShared(_NetScalerDeployVMBase):
 

@@ -313,7 +313,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
             }
         }
 
-        s_logger.warn("IPMI Scirpt failed due to " + res + "(" + cmd.toString() + ")");
+        s_logger.warn("IPMI Script failed due to " + res + "(" + cmd.toString() + ")");
         return false;
     }
 

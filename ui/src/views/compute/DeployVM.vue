@@ -1642,7 +1642,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1697,7 +1697,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       api('listInstanceGroups', {
         account: this.$store.getters.userInfo.account,

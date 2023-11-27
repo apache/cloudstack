@@ -1805,7 +1805,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * TODO This should have never been hardcoded like this in the first
          * place if (guestNtwkOff.getRedundantRouter()) { throw new
          * InvalidParameterValueException
-         * ("No redunant router support when network belnogs to VPC"); }
+         * ("No redundant router support when network belongs to VPC"); }
          */
 
         // 4) Conserve mode should be off

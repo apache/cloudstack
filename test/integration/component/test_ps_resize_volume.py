@@ -254,7 +254,7 @@ class TestResizeVolume(cloudstackTestCase):
         # 3. Deploy a VM without any disk offering (only root disk)
         # 4. Create a volume of 5 GB in the account and attach it to the VM
         # 5. Try to (resize) the volume to 20 GB
-        # 6. Resize opearation should fail"""
+        # 6. Resize operation should fail"""
 
         # Setting up account and domain hierarchy
         result = self.setupAccounts()
@@ -318,7 +318,7 @@ class TestResizeVolume(cloudstackTestCase):
         # 3. Deploy a VM without any disk offering (only root disk)
         # 4. Create a volume of 5 GB in the account and attach it to the VM
         # 5. Try to (resize) the volume to 20 GB
-        # 6. Resize opearation should fail"""
+        # 6. Resize operation should fail"""
 
         # Setting up account and domain hierarchy
         result = self.setupAccounts()

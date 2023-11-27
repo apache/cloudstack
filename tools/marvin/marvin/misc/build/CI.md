@@ -122,7 +122,7 @@ When jenkins triggers the job following sequence of actions occur on the test in
 
 3. we fetch the last successful marvin build from builds.a.o and install it within this virtualenv. installing a new marvin on each run helps us test with the latest APIs available.
 
-4. we fetch the latest version of the driver script from github:cloud-autodeploy. fetching the latest allows us to make adjustments to the infra without having to copy scripts in to the test infrastrcuture.
+4. we fetch the latest version of the driver script from github:cloud-autodeploy. fetching the latest allows us to make adjustments to the infra without having to copy scripts in to the test infrastructure.
 
 5. based on the hypervisor chosen we choose a profile for cobbler to reimage the hosts in the infrastructure. if xen is chosen we bring up the profile of the latest xen kickstart available in cobbler. currently - this is at xen 6.0.2. if kvm is chosen we can pick between ubuntu and rhel based host OS  kickstarts.
 

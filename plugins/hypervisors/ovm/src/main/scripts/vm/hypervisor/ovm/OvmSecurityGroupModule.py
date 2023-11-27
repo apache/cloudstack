@@ -329,7 +329,7 @@ class OvmSecurityGroup(OvmObject):
                     try:
                         execute("iptables -t nat " + dnat)
                     except:
-                        logging.debug("Igoring failure to delete dnat: " + dnat)
+                        logging.debug("Ignoring failure to delete dnat: " + dnat)
             except:
                 pass
 

@@ -90,7 +90,7 @@ public class SspElementTest {
 
         when(_element._physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetworkId, "StratosphereSsp")).thenReturn(nspvo);
 
-        // and zone api server, credentail is configured
+        // and zone api server, credential is configured
         when(credential.getUsername()).thenReturn("foo");
         when(credential.getPassword()).thenReturn("bar");
 

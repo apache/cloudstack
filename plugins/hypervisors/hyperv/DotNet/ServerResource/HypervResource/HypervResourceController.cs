@@ -270,12 +270,12 @@ namespace HypervResource
 
         // POST api/HypervResource/DetachCommand
         [HttpPost]
-        [ActionName(CloudStackTypes.DettachCommand)]
+        [ActionName(CloudStackTypes.DetachCommand)]
         public JContainer DetachCommand([FromBody]dynamic cmd)
         {
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
-                logger.Info(CloudStackTypes.DettachCommand + Utils.CleanString(cmd.ToString()));
+                logger.Info(CloudStackTypes.DetachCommand + Utils.CleanString(cmd.ToString()));
 
                 string details = null;
                 bool result = false;
@@ -302,12 +302,12 @@ namespace HypervResource
                     }
                     else
                     {
-                        details = "Invalid disk type to be dettached from vm " + vmName;
+                        details = "Invalid disk type to be detached from vm " + vmName;
                     }
                 }
                 catch (Exception sysEx)
                 {
-                    details = CloudStackTypes.DettachCommand + " failed due to " + sysEx.Message;
+                    details = CloudStackTypes.DetachCommand + " failed due to " + sysEx.Message;
                     logger.Error(details, sysEx);
                 }
 
@@ -318,7 +318,7 @@ namespace HypervResource
                     contextMap = contextMap
                 };
 
-                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DetachAnswer);
             }
         }
 
@@ -1823,7 +1823,7 @@ namespace HypervResource
         }
 
         /// <summary>
-        /// Match implmentation of DownloadManagerImpl.computeCheckSum
+        /// Match implementation of DownloadManagerImpl.computeCheckSum
         /// </summary>
         /// <param name="destFile"></param>
         /// <returns></returns>

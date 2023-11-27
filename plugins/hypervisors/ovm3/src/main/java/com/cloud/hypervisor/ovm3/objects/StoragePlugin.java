@@ -711,7 +711,7 @@ public class StoragePlugin extends OvmObject {
      * Should do some input checking of ss and base
      * storage_plugin_getFileSystemInfo,
      * <class 'agent.api.storageplugin.StoragePlugin'> argument: impl_name -
-     * default: None requires a minumum of uuid, access_host, storage_type
+     * default: None requires a minimum of uuid, access_host, storage_type
      * ss_uuid, access_path, uuid (the ss
      */
     public StorageDetails storagePluginGetFileSystemInfo(String propUuid,

@@ -22,19 +22,19 @@ package org.apache.cloudstack.storage.command;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DiskTO;
 
-public final class DettachAnswer extends Answer {
+public final class DetachAnswer extends Answer {
     private DiskTO disk;
 
-    public DettachAnswer() {
+    public DetachAnswer() {
         super(null);
     }
 
-    public DettachAnswer(DiskTO disk) {
+    public DetachAnswer(DiskTO disk) {
         super(null);
         setDisk(disk);
     }
 
-    public DettachAnswer(String errMsg) {
+    public DetachAnswer(String errMsg) {
         super(null, false, errMsg);
     }
 

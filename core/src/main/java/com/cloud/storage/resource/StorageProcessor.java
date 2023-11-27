@@ -25,7 +25,7 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplain
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.ResignatureCommand;
@@ -56,9 +56,9 @@ public interface StorageProcessor {
 
     public Answer attachVolume(AttachCommand cmd);
 
-    public Answer dettachIso(DettachCommand cmd);
+    public Answer detachIso(DetachCommand cmd);
 
-    public Answer dettachVolume(DettachCommand cmd);
+    public Answer detachVolume(DetachCommand cmd);
 
     public Answer createVolume(CreateObjectCommand cmd);
 

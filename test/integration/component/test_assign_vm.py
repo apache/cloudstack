@@ -327,7 +327,7 @@ class TestVMOwnership(cloudstackTestCase):
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_08_move_across_subdomain_network_create(self):
-        """Test as root, stop a VM from subdomain1 and attempt to move it to subdomain2, network should get craeted
+        """Test as root, stop a VM from subdomain1 and attempt to move it to subdomain2, network should get created
         """
         # Validate the following:
         # 1. deploy VM in sub subdomain1

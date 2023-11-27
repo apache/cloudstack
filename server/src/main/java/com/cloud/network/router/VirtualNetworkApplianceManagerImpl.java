@@ -3160,7 +3160,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         }
                         try {
                             if (answer.getBytesReceived() == 0 && answer.getBytesSent() == 0) {
-                                s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
+                                s_logger.debug("Received and Sent bytes are both 0. Not updating user_statistics");
                                 continue;
                             }
 

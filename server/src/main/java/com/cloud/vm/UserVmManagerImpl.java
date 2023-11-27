@@ -119,7 +119,7 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.DetachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -7921,9 +7921,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // it's OK in this case to send a detach command to the host for a root volume as this
                     // will simply lead to the SR that supports the root volume being removed
-                    cmd = new DettachCommand(disk, vm.getInstanceName());
+                    cmd = new DetachCommand(disk, vm.getInstanceName());
 
-                    DettachCommand detachCommand = (DettachCommand)cmd;
+                    DetachCommand detachCommand = (DetachCommand)cmd;
 
                     detachCommand.setManaged(true);
 

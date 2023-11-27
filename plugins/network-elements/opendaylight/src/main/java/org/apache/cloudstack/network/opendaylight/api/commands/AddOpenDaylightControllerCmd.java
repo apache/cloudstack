@@ -38,7 +38,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "addOpenDaylightController", responseObject = OpenDaylightControllerResponse.class, description = "Adds an OpenDyalight controler",
+@APICommand(name = "addOpenDaylightController", responseObject = OpenDaylightControllerResponse.class, description = "Adds an OpenDaylight controller",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddOpenDaylightControllerCmd extends BaseAsyncCmd {
 

@@ -922,7 +922,7 @@
   "label.disabled": "\u5DF2\u7981\u7528",
   "label.disabling.vpn.access": "\u6B63\u5728\u7981\u7528 VPN \u8BBF\u95EE",
   "label.disassociate.profile.blade": "\u53D6\u6D88\u5C06\u914D\u7F6E\u6587\u4EF6\u4E0E\u5200\u7247\u5F0F\u670D\u52A1\u5668\u5173\u8054",
-  "label.disbale.vnmc.device": "\u7981\u7528 VNMC \u8BBE\u5907",
+  "label.disable.vnmc.device": "\u7981\u7528 VNMC \u8BBE\u5907",
 
   "label.disconnected": "\u4E0A\u6B21\u65AD\u5F00\u8FDE\u63A5\u65F6\u95F4",
   "label.disk": "\u78C1\u76D8",

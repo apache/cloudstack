@@ -22,7 +22,7 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
+import com.cloud.agent.api.AttachOrDetachConfigDriveCommand;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.VBD;
@@ -36,13 +36,13 @@ import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
 import com.cloud.resource.CommandWrapper;
 import org.apache.xmlrpc.XmlRpcException;
 
-@ResourceWrapper(handles =  AttachOrDettachConfigDriveCommand.class)
-public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends CommandWrapper<AttachOrDettachConfigDriveCommand, Answer, CitrixResourceBase> {
+@ResourceWrapper(handles =  AttachOrDetachConfigDriveCommand.class)
+public final class CitrixAttachOrDetachConfigDriveCommandWrapper extends CommandWrapper<AttachOrDetachConfigDriveCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixAttachOrDettachConfigDriveCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(CitrixAttachOrDetachConfigDriveCommandWrapper.class);
 
     @Override
-    public Answer execute(final AttachOrDettachConfigDriveCommand command, final CitrixResourceBase citrixResourceBase) {
+    public Answer execute(final AttachOrDetachConfigDriveCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
 
         String vmName = command.getVmName();
@@ -79,7 +79,7 @@ public final class CitrixAttachOrDettachConfigDriveCommandWrapper extends Comman
                         vdi.destroy(conn);
                     }
 
-                    s_logger.debug("Successfully dettached config drive iso from the VM " + vmName);
+                    s_logger.debug("Successfully detached config drive iso from the VM " + vmName);
                 }
             }
         }catch (Types.XenAPIException ex) {

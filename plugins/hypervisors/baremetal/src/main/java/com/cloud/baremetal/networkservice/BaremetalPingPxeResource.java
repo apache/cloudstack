@@ -91,7 +91,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 
         String pingDirs[] = _pingDir.split("/");
         if (pingDirs.length != 2) {
-            throw new ConfigurationException("PING dir should have format like myshare/direcotry, eg: windows/64bit");
+            throw new ConfigurationException("PING dir should have format like myshare/directory, eg: windows/64bit");
         }
         _share = pingDirs[0];
         _dir = pingDirs[1];

@@ -2995,7 +2995,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      * options such as domain,user,password are passed as query parameters.
      *
      * @param uri
-     *            crresponding to the remote device. Will throw for unsupported
+     *            corresponding to the remote device. Will throw for unsupported
      *            scheme.
      * @param nfsVersion NFS version to use in mount command
      * @return name of folder in _parent that device was mounted.

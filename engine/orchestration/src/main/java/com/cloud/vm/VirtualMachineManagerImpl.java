@@ -94,7 +94,7 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
+import com.cloud.agent.api.AttachOrDetachConfigDriveCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
@@ -3223,12 +3223,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     profile.setConfigDriveIsoRootFolder(configDriveIsoRootFolder);
                     profile.setConfigDriveIsoFile(isoFile);
 
-                    AttachOrDettachConfigDriveCommand dettachCommand = new AttachOrDettachConfigDriveCommand(vm.getInstanceName(), vmData, VmConfigDriveLabel.value(), false);
+                    AttachOrDetachConfigDriveCommand detachCommand = new AttachOrDetachConfigDriveCommand(vm.getInstanceName(), vmData, VmConfigDriveLabel.value(), false);
                     try {
-                        _agentMgr.send(srcHost.getId(), dettachCommand);
+                        _agentMgr.send(srcHost.getId(), detachCommand);
                         s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
                     } catch (OperationTimedoutException e) {
-                        s_logger.error("TIme out occurred while exeuting command AttachOrDettachConfigDrive " + e.getMessage(), e);
+                        s_logger.error("TIme out occurred while exeuting command AttachOrDetachConfigDrive " + e.getMessage(), e);
 
                     }
                 }

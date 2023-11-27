@@ -425,7 +425,7 @@ class OvmVm(OvmObject):
                 xmInfo = successToMap(xen_get_xm_info())
                 nCpus = int(xmInfo['nr_cpus'])
                 totalUtils = 0.0
-                # CPU utlization of VM = (total cpu utilization of each vcpu) / number of physical cpu
+                # CPU utilization of VM = (total cpu utilization of each vcpu) / number of physical cpu
                 for num, util in items:
                     totalUtils += float(util)
                 avgUtils = float(totalUtils/nCpus) * 100

@@ -340,7 +340,7 @@ public class HypervDirectConnectResourceTest {
         }
 
         // Use same spec for pool
-        s_logger.info("Createing pool at : " + folderName);
+        s_logger.info("Creating pool at : " + folderName);
 
         StoragePoolVO pool = new StoragePoolVO(StoragePoolType.Filesystem, "127.0.0.1", -1, folderName);
         pool.setUuid(s_testLocalStoreUUID);
@@ -363,7 +363,7 @@ public class HypervDirectConnectResourceTest {
         }
 
         // Use same spec for pool
-        s_logger.info("Createing pool at : " + folderName);
+        s_logger.info("Creating pool at : " + folderName);
 
         StoragePoolVO pool = new StoragePoolVO(StoragePoolType.Filesystem, "127.0.0.1", -1, folderName);
         return pool;

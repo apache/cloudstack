@@ -150,7 +150,7 @@ for full help
   def installTemplate(self):
     destDir = self.mountpoint + os.sep + "template" + os.sep + "tmpl" + os.sep + "1" + os.sep + str(self.template)
     self.destDir = destDir
-    print 'The desination Directory is : %s' % destDir
+    print 'The destination Directory is : %s' % destDir
     try:
       if self.forcecleanup:
         if os.path.exists(destDir):

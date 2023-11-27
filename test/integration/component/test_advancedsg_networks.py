@@ -760,7 +760,7 @@ class TestNetworksInAdvancedSG(cloudstackTestCase):
         # Steps,
         #  1. create a user account
         #  2. Create account specific sg enabled shared network
-        #  3. Deply vm in the shared network
+        #  3. Deploy vm in the shared network
         #  4. Try to delete shared network while it's stil in use by the vm
 
         # Validations,

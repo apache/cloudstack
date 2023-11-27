@@ -598,7 +598,7 @@ class TestHostHighAvailability(cloudstackTestCase):
         self.assertEqual(
             list_vm_response[0].hostid,
             notSuitableHost.id,
-            "The detination host id of migrated VM is not matching."
+            "The destination host id of migrated VM is not matching."
         )
 
     @attr(configuration="ha.tag")
