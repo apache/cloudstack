@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -171,7 +172,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean _runQuota=false;
     String _hostname = null;
     int _pid = 0;
-    TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock _heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
     private final List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
     private final List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
@@ -183,6 +183,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private Future _heartbeat = null;
     private Future _sanity = null;
     private boolean  usageSnapshotSelection = false;
+    private static TimeZone usageTimeZone = TimeZone.getTimeZone("GMT");
 
     public UsageManagerImpl() {
     }
@@ -225,7 +226,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String execTime = configs.get("usage.stats.job.exec.time");
         String aggregationRange = configs.get("usage.stats.job.aggregation.range");
         String execTimeZone = configs.get("usage.execution.timezone");
-        String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
+        String aggregationTimeZone = configs.get("usage.aggregation.timezone");
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
         String quotaEnable = configs.get("quota.enable.service");
         _runQuota = Boolean.valueOf(quotaEnable == null ? "false" : quotaEnable );
@@ -234,10 +235,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
 
-        if (aggreagationTimeZone != null && !aggreagationTimeZone.isEmpty()) {
-            _usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+        if (aggregationTimeZone != null && !aggregationTimeZone.isEmpty()) {
+            usageTimeZone = TimeZone.getTimeZone(aggregationTimeZone);
         }
-        s_logger.debug("Usage stats aggregation time zone: " + aggreagationTimeZone);
 
         try {
             if ((execTime == null) || (aggregationRange == null)) {
@@ -253,25 +253,29 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
             int hourOfDay = Integer.parseInt(execTimeSegments[0]);
             int minutes = Integer.parseInt(execTimeSegments[1]);
-            _jobExecTime.setTime(new Date());
+
+            Date currentDate = new Date();
+            _jobExecTime.setTime(currentDate);
 
             _jobExecTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
             _jobExecTime.set(Calendar.MINUTE, minutes);
             _jobExecTime.set(Calendar.SECOND, 0);
             _jobExecTime.set(Calendar.MILLISECOND, 0);
-            if (execTimeZone != null && !execTimeZone.isEmpty()) {
-                _jobExecTime.setTimeZone(TimeZone.getTimeZone(execTimeZone));
-            }
+
+            TimeZone jobExecTimeZone = execTimeZone != null ? TimeZone.getTimeZone(execTimeZone) : Calendar.getInstance().getTimeZone();
+            _jobExecTime.setTimeZone(jobExecTimeZone);
 
             // if the hour to execute the job has already passed, roll the day forward to the next day
-            Date execDate = _jobExecTime.getTime();
-            if (execDate.before(new Date())) {
+            if (_jobExecTime.getTime().before(currentDate)) {
                 _jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
             }
 
-            s_logger.debug("Execution Time: " + execDate.toString());
-            Date currentDate = new Date(System.currentTimeMillis());
-            s_logger.debug("Current Time: " + currentDate.toString());
+            s_logger.info(String.format("Usage is configured to execute in time zone [%s], at [%s], each [%s] minutes; the current time in that timezone is [%s] and the " +
+                            "next job is scheduled to execute at [%s]. During its execution, Usage will aggregate stats according to the boundaries of a day in time zone [%s].",
+                    jobExecTimeZone.getID(), execTime, aggregationRange,
+                    DateUtil.displayDateInTimezone(jobExecTimeZone, currentDate),
+                    DateUtil.displayDateInTimezone(jobExecTimeZone, _jobExecTime.getTime()),
+                    usageTimeZone.getID()));
 
             _aggregationDuration = Integer.parseInt(aggregationRange);
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
@@ -295,6 +299,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new ConfigurationException(msg);
         }
         return true;
+    }
+
+    public static TimeZone getUsageTimeZone() {
+        return usageTimeZone;
     }
 
     @Override
@@ -379,7 +387,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             // For executing the job, we treat hourly and daily as special time ranges, using the previous full hour or the previous
             // full day.  Otherwise we just subtract off the aggregation range from the current time and use that as start date with
             // current time as end date.
-            Calendar cal = Calendar.getInstance(_usageTimezone);
+            Calendar cal = Calendar.getInstance(usageTimeZone);
             cal.setTime(new Date());
             long startDate = 0;
             long endDate = 0;
@@ -487,9 +495,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
             Date startDate = new Date(startDateMillis);
             Date endDate = new Date(endDateMillis);
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Parsing usage records between " + startDate + " and " + endDate);
-            }
+            s_logger.info(String.format("Parsing usage records between [%s] and [%s].", DateUtil.displayDateInTimezone(usageTimeZone, startDate),
+                    DateUtil.displayDateInTimezone(usageTimeZone, endDate)));
 
             List<AccountVO> accounts = null;
             List<UserStatisticsVO> userStats = null;
@@ -663,7 +670,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // get user stats in order to compute network usage
                 networkStats = _usageNetworkDao.getRecentNetworkStats();
 
-                Calendar recentlyDeletedCal = Calendar.getInstance(_usageTimezone);
+                Calendar recentlyDeletedCal = Calendar.getInstance(usageTimeZone);
                 recentlyDeletedCal.setTimeInMillis(startDateMillis);
                 recentlyDeletedCal.add(Calendar.MINUTE, -1 * THREE_DAYS_IN_MINUTES);
                 Date recentlyDeletedDate = recentlyDeletedCal.getTime();
@@ -772,7 +779,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 Date currentEndDate = endDate;
                 Date tempDate = endDate;
 
-                Calendar aggregateCal = Calendar.getInstance(_usageTimezone);
+                Calendar aggregateCal = Calendar.getInstance(usageTimeZone);
 
                 while ((tempDate.after(startDate)) && ((tempDate.getTime() - startDate.getTime()) > 60000)) {
                     currentEndDate = tempDate;
@@ -1803,7 +1810,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 break;
             default:
                 s_logger.debug(String.format("The event [type=%s, zoneId=%s, accountId=%s, userId=%s, resourceName=%s, createDate=%s] is neither of type [%s] nor [%s]",
-                        event.getType(), zoneId, accountId, userId, event.getResourceName(), event.getCreateDate(), EventTypes.EVENT_VPN_USER_ADD, EventTypes.EVENT_VPN_USER_REMOVE));
+                        event.getType(), zoneId, accountId, userId, event.getResourceName(), DateUtil.displayDateInTimezone(usageTimeZone, event.getCreateDate()),
+                        EventTypes.EVENT_VPN_USER_ADD, EventTypes.EVENT_VPN_USER_REMOVE));
         }
     }
 
@@ -1920,7 +1928,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 break;
             default:
                 s_logger.debug(String.format("The event [type=%s, zoneId=%s, accountId=%s, resourceName=%s, diskOfferingId=%s, createDate=%s] is neither of type [%s] nor [%s]",
-                        event.getType(), event.getZoneId(), event.getAccountId(), event.getResourceName(), event.getOfferingId(), event.getCreateDate(), EventTypes.EVENT_VM_SNAPSHOT_CREATE, EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+                        event.getType(), event.getZoneId(), event.getAccountId(), event.getResourceName(), event.getOfferingId(),
+                        DateUtil.displayDateInTimezone(usageTimeZone, event.getCreateDate()), EventTypes.EVENT_VM_SNAPSHOT_CREATE,
+                        EventTypes.EVENT_VM_SNAPSHOT_DELETE));
         }
     }
 
@@ -1944,8 +1954,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             String snapId = detailVO.getValue();
             vmSnapshotId = Long.valueOf(snapId);
         }
-        s_logger.debug(String.format("Creating usage VM Snapshot for VM id [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]", vmId, accountId, domainId, zoneId,
-                event.getCreateDate()));
+        s_logger.debug(String.format("Creating usage VM Snapshot for VM id [%s] assigned to account [%s] domain [%s], zone [%s], and created at [%s]",
+                vmId, accountId, domainId, zoneId, DateUtil.displayDateInTimezone(usageTimeZone, event.getCreateDate())));
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         vsVO.setVmSnapshotId(vmSnapshotId);
         _usageVMSnapshotDao.persist(vsVO);

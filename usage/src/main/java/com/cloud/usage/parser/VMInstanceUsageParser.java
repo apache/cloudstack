@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -172,10 +174,9 @@ public class VMInstanceUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VM usage record for vm: " + vmName + ", type: " + type + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
-                endDate + ", for account: " + account.getId());
-        }
+        s_logger.debug(String.format("Creating VM usage record for vm [%s], type [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                vmName, type, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
 
         // Create the usage record
         String usageDesc = vmName;

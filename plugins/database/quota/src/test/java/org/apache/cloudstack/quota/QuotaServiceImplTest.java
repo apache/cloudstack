@@ -99,7 +99,6 @@ public class QuotaServiceImplTest extends TestCase {
         QuotaResponseBuilderField.set(quotaService, respBldr);
 
         Mockito.when(configDao.getValue(Mockito.eq(Config.UsageAggregationTimezone.toString()))).thenReturn("IST");
-        Mockito.when(configDao.getValue(Mockito.eq(Config.UsageStatsJobAggregationRange.toString()))).thenReturn("1");
         quotaService.configure("randomName", null);
     }
 

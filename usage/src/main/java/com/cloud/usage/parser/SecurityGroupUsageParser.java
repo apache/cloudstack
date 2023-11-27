@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.usage.UsageManagerImpl;
+import com.cloud.utils.DateUtil;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -146,10 +148,9 @@ public class SecurityGroupUsageParser {
         DecimalFormat dFormat = new DecimalFormat("#.######");
         String usageDisplay = dFormat.format(usage);
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating security group:" + sgId + " usage record for Vm : " + vmId + ", usage: " + usageDisplay + ", startDate: " + startDate +
-                ", endDate: " + endDate + ", for account: " + account.getId());
-        }
+        s_logger.debug(String.format("Creating security group usage record for id [%s], vm [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
+                sgId, vmId, usageDisplay, DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), startDate),
+                DateUtil.displayDateInTimezone(UsageManagerImpl.getUsageTimeZone(), endDate), account.getId()));
 
         // Create the usage record
         String usageDesc = "Security Group: " + sgId + " for Vm : " + vmId + " usage time";

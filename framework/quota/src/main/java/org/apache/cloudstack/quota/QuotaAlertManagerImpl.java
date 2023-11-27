@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaConfig.QuotaEmailTemplateTypes;
@@ -159,7 +160,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                     continue; // the account is removed
                 }
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" + alertDate + ", lockable=" + lockable);
+                    s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" +
+                            DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageTimeZone(), alertDate) + ", lockable=" + lockable);
                 }
                 if (accountBalance.compareTo(zeroBalance) < 0) {
                     if (_lockAccountEnforcement && (lockable == 1)) {
