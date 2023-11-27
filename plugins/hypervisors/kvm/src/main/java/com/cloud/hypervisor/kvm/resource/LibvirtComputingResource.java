@@ -3980,7 +3980,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if (platformEmulator.contains("Ubuntu") ||
                 StringUtils.startsWithAny(platformEmulator,
                         "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle",
-                        "Rocky", "AlmaLinux", "Other PV")) {
+                        "Rocky Linux", "AlmaLinux", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
