@@ -89,10 +89,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
-
-    static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(DateUtil.HOURS_IN_A_MONTH);
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
+
+    static BigDecimal hoursInCurrentMonth;
 
     public QuotaManagerImpl() {
         super();
@@ -533,7 +533,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     protected BigDecimal getUsageValueAccordingToUsageUnitType(UsageVO usageRecord, BigDecimal aggregatedQuotaTariffsValue, String quotaUnit) {
         BigDecimal rawUsage = BigDecimal.valueOf(usageRecord.getRawUsage());
-        BigDecimal costPerHour = aggregatedQuotaTariffsValue.divide(s_hoursInMonth, 8, RoundingMode.HALF_EVEN);
+        BigDecimal costPerHour = getCostPerHour(aggregatedQuotaTariffsValue, usageRecord.getStartDate());
 
         switch (UsageUnitTypes.getByDescription(quotaUnit)) {
             case COMPUTE_MONTH:
@@ -556,6 +556,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             default:
                 return BigDecimal.ZERO;
         }
+    }
+
+    protected BigDecimal getCostPerHour(BigDecimal costPerMonth, Date date) {
+        BigDecimal hoursInCurrentMonth = BigDecimal.valueOf(DateUtil.getHoursInCurrentMonth(date));
+        s_logger.trace(String.format("Dividing tariff cost per month [%s] by [%s] to get the tariffs cost per hour.", costPerMonth, hoursInCurrentMonth));
+        return costPerMonth.divide(hoursInCurrentMonth, 8, RoundingMode.HALF_EVEN);
     }
 
     @Override

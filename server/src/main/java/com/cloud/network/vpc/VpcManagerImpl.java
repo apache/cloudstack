@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2159,6 +2160,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final PhysicalNetwork physNetFinal = physNet;
         VpcGatewayVO gatewayVO = null;
         try {
+            validateVpcPrivateGatewayAclId(vpcId, aclId);
+
             s_logger.debug("Creating Private gateway for VPC " + vpc);
             // 1) create private network unless it is existing and
             // lswitch'd
@@ -2198,18 +2201,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _dcDao.update(dc.getId(), dc);
             }
 
-            long networkAclId = NetworkACL.DEFAULT_DENY;
-            if (aclId != null) {
-                final NetworkACLVO aclVO = _networkAclDao.findById(aclId);
-                if (aclVO == null) {
-                    throw new InvalidParameterValueException("Invalid network acl id passed ");
-                }
-                if (aclVO.getVpcId() != vpcId && !isDefaultAcl(aclId) && !isGlobalAcl(aclVO.getVpcId())) {
-                    throw new InvalidParameterValueException("Private gateway and network acl are not in the same vpc");
-                }
-
-                networkAclId = aclId;
-            }
+            Long networkAclId = ObjectUtils.defaultIfNull(aclId, NetworkACL.DEFAULT_DENY);
 
             { // experimental block, this is a hack
                 // set vpc id in network to null
@@ -2240,6 +2232,29 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
         return getVpcPrivateGateway(gatewayVO.getId());
+    }
+
+    /**
+     * This method checks if the ACL that is being used to create the private gateway is valid. First, the aclId is used to search for a {@link NetworkACLVO} object
+     * by calling the {@link NetworkACLDao#findById(Serializable)} method. If the object is null, an {@link InvalidParameterValueException} exception is thrown.
+     * Secondly, we check if the ACL and the private gateway are in the same VPC and an {@link InvalidParameterValueException} is thrown if they are not.
+     *
+     * @param vpcId Private gateway VPC ID.
+     * @param aclId Private gateway ACL ID.
+     * @throws InvalidParameterValueException
+     */
+    protected void validateVpcPrivateGatewayAclId(long vpcId, Long aclId) {
+        if (aclId == null) {
+            return;
+        }
+
+        final NetworkACLVO aclVO = _networkAclDao.findById(aclId);
+        if (aclVO == null) {
+            throw new InvalidParameterValueException("Invalid network acl id passed.");
+        }
+        if (aclVO.getVpcId() != vpcId && !(aclId == NetworkACL.DEFAULT_DENY || aclId == NetworkACL.DEFAULT_ALLOW)) {
+            throw new InvalidParameterValueException("Private gateway and network acl are not in the same vpc.");
+        }
     }
 
     private void validateVpcPrivateGatewayAssociateNetworkId(NetworkOfferingVO ntwkOff, String broadcastUri, Long associatedNetworkId, Boolean bypassVlanOverlapCheck) {

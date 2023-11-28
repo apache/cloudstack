@@ -275,6 +275,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#getIp(String)
+     */
+    @Override
+    public IpAddress getIp(String ipAddress) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     @Override
     public Network updateGuestNetwork(final UpdateNetworkCmd cmd) {
         // TODO Auto-generated method stub

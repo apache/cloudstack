@@ -124,7 +124,7 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  private String networkId;
 
  @SerializedName(ApiConstants.STATE)
- @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
+ @Param(description = "State of the ip address. Can be: Allocating, Allocated and Releasing")
  private String state;
 
  @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
