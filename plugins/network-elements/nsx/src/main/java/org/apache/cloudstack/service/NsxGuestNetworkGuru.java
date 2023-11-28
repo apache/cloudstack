@@ -28,10 +28,12 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkMigrationResponder;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
@@ -50,6 +52,7 @@ import org.apache.cloudstack.NsxAnswer;
 import org.apache.cloudstack.agent.api.CreateNsxDhcpRelayConfigCommand;
 import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
+import org.apache.cloudstack.agent.api.CreateNsxTier1NatRuleCommand;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 
 import org.apache.cloudstack.utils.NsxHelper;
@@ -70,6 +73,8 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     AccountDao accountDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    NetworkModel networkModel;
 
     public NsxGuestNetworkGuru() {
         super();
@@ -217,6 +222,25 @@ public class NsxGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
                 String msg = String.format("Unable to find domain with id: %s", account.getDomainId());
                 LOGGER.error(msg);
                 throw new CloudRuntimeException(msg);
+            }
+
+            if (isNull(network.getVpcId())) {
+                long domainId = domain.getId();
+                long accountId = account.getId();
+                long dataCenterId = zone.getId();
+                long resourceId = network.getId();
+                PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
+                String translatedIp = ipAddress.getAddress().addr();
+                String tier1GatewayName = NsxControllerUtils.getTier1GatewayName(domainId, accountId, dataCenterId, resourceId, false);
+                LOGGER.debug(String.format("Creating NSX NAT Rule for Tier1 GW %s for translated IP %s for Isolated network %s", tier1GatewayName, translatedIp, network.getName()));
+                String natRuleId = NsxControllerUtils.getNsxNatRuleId(domainId, accountId, dataCenterId, resourceId, false);
+                CreateNsxTier1NatRuleCommand cmd = NsxHelper.createNsxNatRuleCommand(domainId, accountId, dataCenterId, tier1GatewayName, "SNAT", translatedIp, natRuleId);
+                NsxAnswer nsxAnswer = nsxControllerUtils.sendNsxCommand(cmd, dataCenterId);
+                if (!nsxAnswer.getResult()) {
+                    String msg = String.format("Could not create NSX NAT Rule on Tier1 Gateway %s for IP %s  for Isolated network %s", tier1GatewayName, translatedIp, network.getName());
+                    LOGGER.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
             }
 
             // Create the DHCP relay config for the segment
