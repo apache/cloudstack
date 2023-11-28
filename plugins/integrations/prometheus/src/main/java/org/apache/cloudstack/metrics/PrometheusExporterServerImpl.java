@@ -63,9 +63,9 @@ public class PrometheusExporterServerImpl extends ManagerBase implements Prometh
             try {
                 os.write(bytesToOutput);
             } catch (IOException e) {
-                LOG.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Error during Prometheus export: ", e);
+                logger.error(String.format("could not export Prometheus data due to %s", e.getLocalizedMessage()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Error during Prometheus export: ", e);
                 }
                 os.write("The system could not export Prometheus due to an internal error. Contact your operator to learn about the reason.".getBytes());
             } finally {
