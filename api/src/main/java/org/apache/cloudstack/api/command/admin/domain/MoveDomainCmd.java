@@ -28,8 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 
-import java.util.Objects;
-
 @APICommand(name = "moveDomain", description = "Moves a domain and its children to a new parent domain.", since = "4.19.0.0", responseObject = DomainResponse.class,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class MoveDomainCmd extends BaseCmd {

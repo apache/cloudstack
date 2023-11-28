@@ -1005,6 +1005,18 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         Map<Long, List<String>> idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved =
                 affinityGroupDomainMapDao.listDomainsOfAffinityGroupsUsedByDomainPath(currentPathOfDomainToBeMoved);
         validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfAffinityGroupsUsedByDomainToBeMoved);
+
+        Map<Long, List<String>> idsOfDomainsOfServiceOfferingsUsedByDomainToBeMoved =
+                serviceOfferingJoinDao.listDomainsOfServiceOfferingsUsedByDomainPath(currentPathOfDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfServiceOfferingsUsedByDomainToBeMoved);
+
+        Map<Long, List<String>> idsOfDomainsOfNetworkOfferingsUsedByDomainToBeMoved =
+                networkOfferingJoinDao.listDomainsOfNetworkOfferingsUsedByDomainPath(currentPathOfDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfNetworkOfferingsUsedByDomainToBeMoved);
+
+        Map<Long, List<String>> idsOfDomainsOfDedicatedResourcesUsedByDomainToBeMoved =
+                _dedicatedDao.listDomainsOfDedicatedResourcesUsedByDomainPath(currentPathOfDomainToBeMoved);
+        validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(newPathOfDomainToBeMoved, domainToBeMoved, newParentDomain, idsOfDomainsOfDedicatedResourcesUsedByDomainToBeMoved);
     }
 
     protected void validateNewParentDomainCanAccessResourcesOfDomainToBeMoved(String newPathOfDomainToBeMoved, DomainVO domainToBeMoved, DomainVO newParentDomain,
