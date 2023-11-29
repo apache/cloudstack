@@ -1601,13 +1601,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
         if(attr.field.getDeclaredAnnotation(Convert.class) != null) {
-            try {
-                Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
-                pstmt.setObject(j, val);
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
-            }
+            Object val = _conversionSupport.convertToDatabaseColumn(attr.field, value);
+            pstmt.setObject(j, val);
         } else if (attr.field.getType() == String.class) {
             final String str = (String)value;
             if (str == null) {
