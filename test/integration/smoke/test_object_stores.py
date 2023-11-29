@@ -17,7 +17,7 @@
 """ BVT tests for Object Storage Pool"""
 
 #Import Local Modules
-from marvin.cloudstackTestCase import *
+from marvin.cloudstackTestCase import cloudstackTestCase
 from nose.plugins.attrib import attr
 from marvin.lib.base import (ObjectStoragePool)
 from marvin.lib.utils import (cleanup_resources)
