@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
@@ -63,7 +64,7 @@ public class NfsSecondaryStorageResourceTest {
 
     private static final String PSK = "6HyGMx9Vat7rZw1pMZrM4OlD4FFwLUPznTsFqVFSOIvk0mAWMRCVZ6UCq42gZvhp";
 
-    private static final String PROTOCOL = "http";
+    private static final String PROTOCOL = NetUtils.HTTP_PROTO;
 
     private static final String EXPECTED_SIGNATURE = "expectedSignature";
 
@@ -173,7 +174,7 @@ public class NfsSecondaryStorageResourceTest {
     public void validatePostUploadRequestSignatureTestThrowExceptionWhenProtocolDiffers() {
         try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
             prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
-            Mockito.doReturn("https").when(resource).getUploadProtocol();
+            Mockito.doReturn(NetUtils.HTTPS_PROTO).when(resource).getUploadProtocol();
 
             resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
         }
@@ -230,7 +231,7 @@ public class NfsSecondaryStorageResourceTest {
 
         String result = resource.getUploadProtocol();
 
-        Assert.assertEquals("https", result);
+        Assert.assertEquals(NetUtils.HTTPS_PROTO, result);
     }
 
     @Test
@@ -239,6 +240,6 @@ public class NfsSecondaryStorageResourceTest {
 
         String result = resource.getUploadProtocol();
 
-        Assert.assertEquals("http", result);
+        Assert.assertEquals(NetUtils.HTTP_PROTO, result);
     }
 }

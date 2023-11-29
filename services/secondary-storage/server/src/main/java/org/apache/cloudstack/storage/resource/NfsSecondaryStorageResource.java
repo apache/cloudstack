@@ -3615,10 +3615,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected String getUploadProtocol() {
         if (useHttpsToUpload()) {
             s_logger.debug(String.format("Param [%s] is set to true; therefore, HTTPS is being used.", USE_HTTPS_TO_UPLOAD));
-            return "https";
+            return NetUtils.HTTPS_PROTO;
         }
         s_logger.debug(String.format("Param [%s] is set to false; therefore, HTTP is being used.", USE_HTTPS_TO_UPLOAD));
-        return "http";
+        return NetUtils.HTTP_PROTO;
     }
 
     /**
