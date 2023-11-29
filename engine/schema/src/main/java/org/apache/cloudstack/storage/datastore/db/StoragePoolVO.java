@@ -275,7 +275,7 @@ public class StoragePoolVO implements StoragePool {
     @Override
     public String getPath() {
         String updatedPath = path;
-        if (poolType.equals(StoragePoolType.SMB.name())) {
+        if (poolType.equals(StoragePoolType.SMB)) {
             updatedPath = UriUtils.getUpdateUri(updatedPath, false);
             if (updatedPath.contains("password") && updatedPath.contains("?")) {
                 updatedPath = updatedPath.substring(0, updatedPath.indexOf('?'));
