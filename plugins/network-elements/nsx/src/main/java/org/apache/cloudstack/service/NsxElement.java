@@ -668,6 +668,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
                     .setAclAction(transformActionValue(rule.getAction()))
                     .setTrafficType(rule.getTrafficType().toString())
+                    .setProtocol(rule.getProtocol().toUpperCase())
+                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                    .setPrivatePort(String.valueOf(rule.getSourcePortEnd()))
+                    .setIcmpCode(rule.getIcmpCode())
+                    .setIcmpType(rule.getIcmpType())
+                    .setService(Network.Service.NetworkACL)
                     .build();
             nsxNetworkRules.add(networkRule);
         }

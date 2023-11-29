@@ -398,8 +398,8 @@ public class NsxResource implements ServerResource {
                 cmd.getNetworkResourceId(), cmd.isResourceVpc());
         try {
             String privatePort = cmd.getPrivatePort();
-            String service = privatePort.contains("-") ? nsxApiClient.createNsxInfraService(ruleName, privatePort, cmd.getProtocol()) :
-                    nsxApiClient.getNsxInfraServices(ruleName, privatePort, cmd.getProtocol());
+            String service = privatePort.contains("-") ? nsxApiClient.getServicePath(ruleName, privatePort, cmd.getProtocol(), null, null) :
+                    nsxApiClient.getNsxInfraServices(ruleName, privatePort, cmd.getProtocol(), null, null);
 
             nsxApiClient.createPortForwardingRule(ruleName, tier1GatewayName, cmd.getNetworkResourceName(), cmd.getPublicIp(),
                     cmd.getVmIp(), cmd.getPublicPort(), service);
