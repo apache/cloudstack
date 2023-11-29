@@ -190,6 +190,16 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
+        if (DataObjectType.VOLUME == data.getType()) {
+            final VolumeVO volume = volumeDao.findById(data.getId());
+            if (volume.getInstanceId() == null) {
+                StorPoolUtil.spLog("Removing tags from detached volume=%s", volume.toString());
+                Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, "", null, "");
+                SpConnectionDesc conn = StorPoolUtil.getSpConnection(dataStore.getUuid(), dataStore.getId(), storagePoolDetailsDao, primaryStoreDao);
+                StorPoolUtil.volumeUpadateTags(StorPoolStorageAdaptor.getVolumeNameFromPath(volume.getPath(), true), tags, conn);
+            }
+        }
+
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -1127,6 +1137,9 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void provideVmInfo(long vmId, long volumeId) {
         VolumeVO volume = volumeDao.findById(volumeId);
+        if (volume.getInstanceId() == null) {
+            return;
+        }
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {
             try {
