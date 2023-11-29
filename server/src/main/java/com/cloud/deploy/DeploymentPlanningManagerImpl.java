@@ -1686,6 +1686,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug("Checking suitable pools for volume (Id, Type): (" + toBeCreated.getId() + "," + toBeCreated.getVolumeType().name() + ")");
 
+            if (toBeCreated.getState() == Volume.State.Allocated && toBeCreated.getPoolId() != null) {
+                toBeCreated.setPoolId(null);
+                if (!_volsDao.update(toBeCreated.getId(), toBeCreated)) {
+                    throw new CloudRuntimeException(String.format("Error updating volume [%s] to clear pool Id.", toBeCreated.getId()));
+                }
+                if (s_logger.isDebugEnabled()) {
+                    String msg = String.format("Setting pool_id to NULL for volume id=%s as it is in Allocated state", toBeCreated.getId());
+                    s_logger.debug(msg);
+                }
+            }
             // If the plan specifies a poolId, it means that this VM's ROOT
             // volume is ready and the pool should be reused.
             // In this case, also check if rest of the volumes are ready and can
