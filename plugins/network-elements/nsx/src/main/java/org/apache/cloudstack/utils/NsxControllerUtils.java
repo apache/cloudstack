@@ -46,7 +46,7 @@ public class NsxControllerUtils {
     }
 
     public static String getNsxDistributedFirewallPolicyRuleId(String segmentName, long ruleId) {
-        return String.format("%s-P%s", segmentName, ruleId);
+        return String.format("%s-R%s", segmentName, ruleId);
     }
 
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
