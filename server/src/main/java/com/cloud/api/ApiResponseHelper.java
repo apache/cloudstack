@@ -5111,7 +5111,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private String getDomainPath(String path){
         StringBuilder domainPath = new StringBuilder();
-        if(StringUtils.isEmpty(path) || path.equals("/")){
+        if (StringUtils.isEmpty(path) || path.equals("/")){
             domainPath.append("/");
         }
         else{
