@@ -584,6 +584,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
     }
 
+    private static String getPrivatePortRangeForACLRule(NetworkACLItem rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         for (LoadBalancingRule loadBalancingRule : rules) {
@@ -663,6 +669,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         }
         List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
         for (NetworkACLItem rule : rules) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
+
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
                     .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
@@ -670,7 +678,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setTrafficType(rule.getTrafficType().toString())
                     .setProtocol(rule.getProtocol().toUpperCase())
                     .setPublicPort(String.valueOf(rule.getSourcePortStart()))
-                    .setPrivatePort(String.valueOf(rule.getSourcePortEnd()))
+                    .setPrivatePort(privatePort)
                     .setIcmpCode(rule.getIcmpCode())
                     .setIcmpType(rule.getIcmpType())
                     .setService(Network.Service.NetworkACL)

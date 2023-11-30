@@ -438,7 +438,7 @@ public class NsxApiClient {
             // delete NAT rule
             natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
             if (service == Network.Service.PortForwarding) {
-                String svcName = getServiceName(ruleName, privatePort, protocol);
+                String svcName = getServiceName(ruleName, privatePort, protocol, null, null);
                 // Delete service
                 Services services = (Services) nsxService.apply(Services.class);
                 services.delete(svcName);
@@ -687,7 +687,7 @@ public class NsxApiClient {
 
     private com.vmware.nsx_policy.model.Service getInfraService(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
         Services service = (Services) nsxService.apply(Services.class);
-        String serviceName = getServiceName(ruleName, port, protocol);
+        String serviceName = getServiceName(ruleName, port, protocol, icmpType, icmpCode);
         createNsxInfraService(service, serviceName, ruleName, port, protocol, icmpType, icmpCode);
         return service.get(serviceName);
     }
@@ -705,9 +705,9 @@ public class NsxApiClient {
             String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
             if (protocol.equals("ICMPv4")) {
                 serviceEntries.add(new ICMPTypeServiceEntry.Builder()
+                                .setId(serviceEntryName)
                                 .setDisplayName(serviceEntryName)
-                                .setDisplayName(serviceEntryName)
-                                .setIcmpCode(Long.valueOf(icmpCode))
+//                                .setIcmpCode(Long.valueOf(icmpCode))
                                 .setIcmpType(Long.valueOf(icmpType))
                                 .setProtocol(protocol)
                                 .build()
