@@ -50,6 +50,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -459,6 +460,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private long dom0MinMem;
 
     private long dom0OvercommitMem;
+
+    private int dom0MinCpuCores;
 
     protected int cmdsTimeout;
     protected int stopTimeout;
@@ -1063,6 +1066,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Reserve 1GB unless admin overrides
         dom0MinMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
 
+        dom0MinCpuCores = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_CPU_CORE_COUNT);
+
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
         dom0OvercommitMem = ByteScaleUtils.mebibytesToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB));
@@ -1338,8 +1343,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
                         currentVmBalloonStatsPeriod, vmId, dm.getName()));
-            } catch (final LibvirtException e) {
-                s_logger.warn("Failed to set up memory balloon stats period." + e.getMessage());
+            } catch (final Exception e) {
+                s_logger.warn(String.format("Failed to set up memory balloon stats period for the VM %s with exception %s", parser.getName(), e.getMessage()));
             }
         }
     }
@@ -3540,7 +3545,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(dom0MinMem, dom0OvercommitMem, manualCpuSpeed);
+        final KVMHostInfo info = new KVMHostInfo(dom0MinMem, dom0OvercommitMem, manualCpuSpeed, dom0MinCpuCores);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {
@@ -3548,7 +3553,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, hypervisorType,
+                new StartupRoutingCommand(info.getAllocatableCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
         cmd.setCpuSockets(info.getCpuSockets());
         fillNetworkInformation(cmd);
@@ -4673,6 +4678,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    public Answer listFilesAtPath(ListDataStoreObjectsCommand command) {
+        DataStoreTO store = command.getStore();
+        KVMStoragePool storagePool = storagePoolManager.getStoragePool(StoragePoolType.NetworkFilesystem, store.getUuid());
+        return listFilesAtPath(storagePool.getLocalPath(), command.getPath(), command.getStartIndex(), command.getPageSize());
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,

@@ -24,6 +24,8 @@ import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
+import org.apache.cloudstack.api.command.user.address.RemoveQuarantinedIpCmd;
+import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
@@ -111,6 +113,8 @@ public interface NetworkService {
     Network getNetwork(String networkUuid);
 
     IpAddress getIp(long id);
+
+    IpAddress getIp(String ipAddress);
 
     Network updateGuestNetwork(final UpdateNetworkCmd cmd);
 
@@ -246,4 +250,8 @@ public interface NetworkService {
     boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
 
     void validateIfServiceOfferingIsActiveAndSystemVmTypeIsDomainRouter(final Long serviceOfferingId) throws InvalidParameterValueException;
+
+    PublicIpQuarantine updatePublicIpAddressInQuarantine(UpdateQuarantinedIpCmd cmd);
+
+    void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd);
 }

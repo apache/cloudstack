@@ -48,9 +48,17 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
+import com.vmware.vim25.FolderFileInfo;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
+import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -615,6 +623,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((CheckGuestOsMappingCommand) cmd);
             } else if (clz == GetHypervisorGuestOsNamesCommand.class) {
                 answer = execute((GetHypervisorGuestOsNamesCommand) cmd);
+            } else if (clz == ListDataStoreObjectsCommand.class) {
+                answer = execute((ListDataStoreObjectsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -5219,7 +5229,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     String childPath = datacenterName + summary.getName();
                     poolInfo.setHostPath(childPath);
                     String uuid = childDsMo.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                    if (uuid == null) {
+                    if (uuid == null || !uuid.contains("-")) {
                         uuid = UUID.nameUUIDFromBytes(((pool.getHost() + childPath)).getBytes()).toString();
                     }
                     poolInfo.setUuid(uuid);
@@ -7781,6 +7791,75 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
         }
+    }
+
+    protected ListDataStoreObjectsAnswer execute(ListDataStoreObjectsCommand cmd) {
+        String path = cmd.getPath();
+        int startIndex = cmd.getStartIndex();
+        int pageSize = cmd.getPageSize();
+        PrimaryDataStoreTO dataStore = (PrimaryDataStoreTO) cmd.getStore();
+
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+        ManagedObjectReference morDatastore = null;
+
+        int count = 0;
+        List<String> names = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
+        List<String> absPaths = new ArrayList<>();
+        List<Boolean> isDirs = new ArrayList<>();
+        List<Long> sizes = new ArrayList<>();
+        List<Long> modifiedList = new ArrayList<>();
+
+        try {
+            morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, dataStore.getUuid());
+
+            DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
+            HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
+            FileQueryFlags fqf = new FileQueryFlags();
+            fqf.setFileSize(true);
+            fqf.setFileType(true);
+            fqf.setModification(true);
+            fqf.setFileOwner(false);
+
+            HostDatastoreBrowserSearchSpec spec = new HostDatastoreBrowserSearchSpec();
+            spec.setSearchCaseInsensitive(true);
+            spec.setDetails(fqf);
+
+            String dsPath = String.format("[%s] %s", dsMo.getName(), path);
+
+            HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dsPath, spec);
+            List<FileInfo> fileInfoList = results.getFile();
+            count = fileInfoList.size();
+            for (int i = startIndex; i < startIndex + pageSize && i < count; i++) {
+                FileInfo file = fileInfoList.get(i);
+
+                names.add(file.getPath());
+                paths.add(path + "/" + file.getPath());
+                absPaths.add(dsPath + "/" + file.getPath());
+                isDirs.add(file instanceof FolderFileInfo);
+                sizes.add(file.getFileSize());
+                modifiedList.add(file.getModification().toGregorianCalendar().getTimeInMillis());
+            }
+
+            return new ListDataStoreObjectsAnswer(true, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+        } catch (Exception e) {
+            if (e.getMessage().contains("was not found")) {
+                return new ListDataStoreObjectsAnswer(false, count, names, paths, absPaths, isDirs, sizes, modifiedList);
+            }
+            String errorMsg = String.format("Failed to list files at path [%s] due to: [%s].", path, e.getMessage());
+            s_logger.error(errorMsg, e);
+        }
+
+        return null;
     }
 
     protected GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {

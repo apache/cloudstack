@@ -21,120 +21,25 @@
 
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `state` varchar(25);
 
-DROP VIEW IF EXISTS `cloud`.`async_job_view`;
-CREATE VIEW `cloud`.`async_job_view` AS
-    select
-        account.id account_id,
-        account.uuid account_uuid,
-        account.account_name account_name,
-        account.type account_type,
-        domain.id domain_id,
-        domain.uuid domain_uuid,
-        domain.name domain_name,
-        domain.path domain_path,
-        user.id user_id,
-        user.uuid user_uuid,
-        async_job.id,
-        async_job.uuid,
-        async_job.job_cmd,
-        async_job.job_status,
-        async_job.job_process_status,
-        async_job.job_result_code,
-        async_job.job_result,
-        async_job.created,
-        async_job.removed,
-        async_job.instance_type,
-        async_job.instance_id,
-        async_job.job_executing_msid,
-        CASE
-            WHEN async_job.instance_type = 'Volume' THEN volumes.uuid
-            WHEN
-                async_job.instance_type = 'Template'
-                    or async_job.instance_type = 'Iso'
-            THEN
-                vm_template.uuid
-            WHEN
-                async_job.instance_type = 'VirtualMachine'
-                    or async_job.instance_type = 'ConsoleProxy'
-                    or async_job.instance_type = 'SystemVm'
-                    or async_job.instance_type = 'DomainRouter'
-            THEN
-                vm_instance.uuid
-            WHEN async_job.instance_type = 'Snapshot' THEN snapshots.uuid
-            WHEN async_job.instance_type = 'Host' THEN host.uuid
-            WHEN async_job.instance_type = 'StoragePool' THEN storage_pool.uuid
-            WHEN async_job.instance_type = 'IpAddress' THEN user_ip_address.uuid
-            WHEN async_job.instance_type = 'SecurityGroup' THEN security_group.uuid
-            WHEN async_job.instance_type = 'PhysicalNetwork' THEN physical_network.uuid
-            WHEN async_job.instance_type = 'TrafficType' THEN physical_network_traffic_types.uuid
-            WHEN async_job.instance_type = 'PhysicalNetworkServiceProvider' THEN physical_network_service_providers.uuid
-            WHEN async_job.instance_type = 'FirewallRule' THEN firewall_rules.uuid
-            WHEN async_job.instance_type = 'Account' THEN acct.uuid
-            WHEN async_job.instance_type = 'User' THEN us.uuid
-            WHEN async_job.instance_type = 'StaticRoute' THEN static_routes.uuid
-            WHEN async_job.instance_type = 'PrivateGateway' THEN vpc_gateways.uuid
-            WHEN async_job.instance_type = 'Counter' THEN counter.uuid
-            WHEN async_job.instance_type = 'Condition' THEN conditions.uuid
-            WHEN async_job.instance_type = 'AutoScalePolicy' THEN autoscale_policies.uuid
-            WHEN async_job.instance_type = 'AutoScaleVmProfile' THEN autoscale_vmprofiles.uuid
-            WHEN async_job.instance_type = 'AutoScaleVmGroup' THEN autoscale_vmgroups.uuid
-            ELSE null
-        END instance_uuid
-    from
-        `cloud`.`async_job`
-            left join
-        `cloud`.`account` ON async_job.account_id = account.id
-            left join
-        `cloud`.`domain` ON domain.id = account.domain_id
-            left join
-        `cloud`.`user` ON async_job.user_id = user.id
-            left join
-        `cloud`.`volumes` ON async_job.instance_id = volumes.id
-            left join
-        `cloud`.`vm_template` ON async_job.instance_id = vm_template.id
-            left join
-        `cloud`.`vm_instance` ON async_job.instance_id = vm_instance.id
-            left join
-        `cloud`.`snapshots` ON async_job.instance_id = snapshots.id
-            left join
-        `cloud`.`host` ON async_job.instance_id = host.id
-            left join
-        `cloud`.`storage_pool` ON async_job.instance_id = storage_pool.id
-            left join
-        `cloud`.`user_ip_address` ON async_job.instance_id = user_ip_address.id
-            left join
-        `cloud`.`security_group` ON async_job.instance_id = security_group.id
-            left join
-        `cloud`.`physical_network` ON async_job.instance_id = physical_network.id
-            left join
-        `cloud`.`physical_network_traffic_types` ON async_job.instance_id = physical_network_traffic_types.id
-            left join
-        `cloud`.`physical_network_service_providers` ON async_job.instance_id = physical_network_service_providers.id
-            left join
-        `cloud`.`firewall_rules` ON async_job.instance_id = firewall_rules.id
-            left join
-        `cloud`.`account` acct ON async_job.instance_id = acct.id
-            left join
-        `cloud`.`user` us ON async_job.instance_id = us.id
-            left join
-        `cloud`.`static_routes` ON async_job.instance_id = static_routes.id
-            left join
-        `cloud`.`vpc_gateways` ON async_job.instance_id = vpc_gateways.id
-            left join
-        `cloud`.`counter` ON async_job.instance_id = counter.id
-            left join
-        `cloud`.`conditions` ON async_job.instance_id = conditions.id
-            left join
-        `cloud`.`autoscale_policies` ON async_job.instance_id = autoscale_policies.id
-            left join
-        `cloud`.`autoscale_vmprofiles` ON async_job.instance_id = autoscale_vmprofiles.id
-            left join
-        `cloud`.`autoscale_vmgroups` ON async_job.instance_id = autoscale_vmgroups.id;
-
 -- Invalidate existing console_session records
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
 ALTER TABLE `cloud`.`console_session` DROP `acquired`, ADD `acquired` datetime COMMENT 'When the session was acquired' AFTER `host_id`;
+
+-- IP quarantine PR#7378
+CREATE TABLE IF NOT EXISTS `cloud`.`quarantined_ips` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `uuid` varchar(255) UNIQUE,
+  `public_ip_address_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the quarantined public IP address, foreign key to `user_ip_address` table',
+  `previous_owner_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the previous owner of the public IP address, foreign key to `account` table',
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  `end_date` datetime NOT NULL,
+  `removal_reason` VARCHAR(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_quarantined_ips__public_ip_address_id` FOREIGN KEY(`public_ip_address_id`) REFERENCES `cloud`.`user_ip_address`(`id`),
+  CONSTRAINT `fk_quarantined_ips__previous_owner_id` FOREIGN KEY(`previous_owner_id`) REFERENCES `cloud`.`account`(`id`)
+);
 
 -- create_public_parameter_on_roles. #6960
 ALTER TABLE `cloud`.`roles` ADD COLUMN `public_role` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates whether the role will be visible to all users (public) or only to root admins (private). If this parameter is not specified during the creation of the role its value will be defaulted to true (public).';
@@ -181,8 +86,153 @@ CREATE TABLE `cloud`.`vm_scheduled_job` (
 ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged' COMMENT 'type of cluster';
 ALTER TABLE `cloud`.`kubernetes_cluster` MODIFY COLUMN `kubernetes_version_id` bigint unsigned NULL COMMENT 'the ID of the Kubernetes version of this Kubernetes cluster';
 
+-- Add indexes for data store browser
+ALTER TABLE `cloud`.`template_spool_ref` ADD INDEX `i_template_spool_ref__install_path`(`install_path`);
+ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__path`(`path`);
+ALTER TABLE `cloud`.`snapshot_store_ref` ADD INDEX `i_snapshot_store_ref__install_path`(`install_path`);
+ALTER TABLE `cloud`.`template_store_ref` ADD INDEX `i_template_store_ref__install_path`(`install_path`);
+
+-- Add table for image store object download
+DROP TABLE IF EXISTS `cloud`.`image_store_object_download`;
+CREATE TABLE `cloud`.`image_store_object_download` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'image store id',
+  `path` varchar(255) NOT NULL COMMENT 'path on store',
+  `download_url` varchar(255) NOT NULL COMMENT 'download url',
+  `created` datetime COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`store_id`, `path`),
+  INDEX `i_image_store_object_download__created`(`created`),
+  CONSTRAINT `fk_image_store_object_download__store_id` FOREIGN KEY (`store_id`) REFERENCES `image_store`(`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Set removed state for all removed accounts
 UPDATE `cloud`.`account` SET state='removed' WHERE `removed` IS NOT NULL;
+
+
+-- New tables for VNF
+CREATE TABLE IF NOT EXISTS `cloud`.`vnf_template_nics` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `template_id` bigint unsigned NOT NULL COMMENT 'id of the VNF template',
+    `device_id` bigint unsigned NOT NULL COMMENT 'Device id of the NIC when plugged into the VNF appliances',
+    `device_name` varchar(1024) NOT NULL COMMENT 'Name of the NIC',
+    `required` tinyint NOT NULL DEFAULT '1' COMMENT 'True if the NIC is required. False if optional',
+    `management` tinyint NOT NULL DEFAULT '1' COMMENT 'True if the NIC is a management interface',
+    `description` varchar(1024) COMMENT 'Description of the NIC',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_template_id_device_id` (`template_id`, `device_id`),
+    KEY `fk_vnf_template_nics__template_id` (`template_id`),
+    CONSTRAINT `fk_vnf_template_nics__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`vnf_template_details` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `template_id` bigint unsigned NOT NULL COMMENT 'id of the VNF template',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(1024) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    KEY `fk_vnf_template_details__template_id` (`template_id`),
+    CONSTRAINT `fk_vnf_template_details__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add tables for Cluster DRS
+DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan`;
+CREATE TABLE `cloud`.`cluster_drs_plan` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `cluster_id` bigint unsigned NOT NULL,
+  `event_id` bigint unsigned NOT NULL,
+  `uuid` varchar(40) NOT NULL COMMENT 'schedule uuid',
+  `type` varchar(20) NOT NULL COMMENT 'type of plan',
+  `status` varchar(20) NOT NULL COMMENT 'status of plan',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  INDEX `i_cluster_drs_plan__cluster_id_status`(`cluster_id`, `status`),
+  INDEX `i_cluster_drs_plan__status`(`status`),
+  INDEX `i_cluster_drs_plan__created`(`created`),
+  CONSTRAINT `fk_cluster_drs_plan__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+DROP TABLE IF EXISTS `cloud`.`cluster_drs_plan_migration`;
+CREATE TABLE `cloud`.`cluster_drs_plan_migration` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `plan_id` bigint unsigned NOT NULL,
+  `vm_id` bigint unsigned NOT NULL,
+  `src_host_id` bigint unsigned NOT NULL,
+  `dest_host_id` bigint unsigned NOT NULL,
+  `job_id` bigint unsigned NULL,
+  `status` varchar(20) NULL COMMENT 'status of async job',
+  PRIMARY KEY (`id`),
+  INDEX `i_cluster_drs_plan_migration__plan_id_status`(`plan_id`, `status`),
+  CONSTRAINT `fk_cluster_drs_plan_migration__plan_id` FOREIGN KEY (`plan_id`) REFERENCES `cluster_drs_plan`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('DRS', 'drs', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
+
+UPDATE `cloud`.`configuration`
+    SET subgroup_id = (SELECT id FROM `cloud`.`configuration_subgroup` WHERE name = 'DRS')
+    WHERE name IN ('drs.automatic.enable', 'drs.algorithm', 'drs.automatic.interval', 'drs.max.migrations', 'drs.imbalance', 'drs.metric', 'drs.plan.expire.interval');
+
+-- Add table for snapshot zone reference
+CREATE TABLE  `cloud`.`snapshot_zone_ref` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `zone_id` bigint unsigned NOT NULL,
+  `snapshot_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_snapshot_zone_ref__zone_id` FOREIGN KEY `fk_snapshot_zone_ref__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+  INDEX `i_snapshot_zone_ref__zone_id`(`zone_id`),
+  CONSTRAINT `fk_snapshot_zone_ref__snapshot_id` FOREIGN KEY `fk_snapshot_zone_ref__snapshot_id` (`snapshot_id`) REFERENCES `snapshots` (`id`) ON DELETE CASCADE,
+  INDEX `i_snapshot_zone_ref__snapshot_id`(`snapshot_id`),
+  INDEX `i_snapshot_zone_ref__removed`(`removed`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+-- Alter snapshot_store_ref table to add download related fields
+ALTER TABLE `cloud`.`snapshot_store_ref`
+    ADD COLUMN `download_state` varchar(255) DEFAULT NULL COMMENT 'the state of the snapshot download' AFTER `volume_id`,
+    ADD COLUMN `download_pct` int unsigned DEFAULT NULL COMMENT 'the percentage of the snapshot download completed' AFTER `download_state`,
+    ADD COLUMN `error_str` varchar(255) DEFAULT NULL COMMENT 'the error message when the snapshot download occurs' AFTER `download_pct`,
+    ADD COLUMN `local_path` varchar(255) DEFAULT NULL COMMENT 'the path of the snapshot download' AFTER `error_str`,
+    ADD COLUMN `display` tinyint(1) unsigned NOT NULL DEFAULT 1  COMMENT '1 implies store reference is available for listing' AFTER `error_str`;
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2'),
+    `default_value` = concat(`default_value`, ',OAUTH2'),
+    `value` = concat(`value`, ',OAUTH2')
+WHERE `name` = 'user.authenticators.order' ;
+
+UPDATE `cloud`.`configuration` SET
+    `options` = concat(`options`, ',OAUTH2Auth'),
+    `default_value` = concat(`default_value`, ',OAUTH2Auth'),
+    `value` = concat(`value`, ',OAUTH2Auth')
+where `name` = 'pluggableApi.authenticators.order' ;
+
+-- Create table for OAuth provider details
+DROP TABLE IF EXISTS `cloud`.`oauth_provider`;
+CREATE TABLE `cloud`.`oauth_provider` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'unique identifier',
+  `description` varchar(1024) COMMENT 'description of the provider',
+  `provider` varchar(40) NOT NULL COMMENT 'name of the provider',
+  `client_id` varchar(255) NOT NULL COMMENT 'client id which is configured in the provider',
+  `secret_key` varchar(255) NOT NULL COMMENT 'secret key which is configured in the provider',
+  `redirect_uri` varchar(255) NOT NULL COMMENT 'redirect uri which is configured in the provider',
+  `enabled` int(1) NOT NULL DEFAULT 1 COMMENT 'Enabled or disabled',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Flexible tags
+ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+
+ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
+
+ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+
+ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
 
 -- Create table to persist quota email template configurations
 CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_email_configuration`(

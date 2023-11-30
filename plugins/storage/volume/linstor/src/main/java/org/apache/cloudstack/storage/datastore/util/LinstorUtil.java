@@ -20,12 +20,20 @@ import com.linbit.linstor.api.ApiClient;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
+import com.linbit.linstor.api.model.ApiCallRc;
+import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
+import com.linbit.linstor.api.model.Volume;
+
+import javax.annotation.Nonnull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
@@ -33,6 +41,7 @@ import org.apache.log4j.Logger;
 public class LinstorUtil {
     private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
 
+    public final static String PROVIDER_NAME = "Linstor";
     public static final String RSC_PREFIX = "cs-";
     public static final String RSC_GROUP = "resourceGroup";
 
@@ -45,6 +54,86 @@ public class LinstorUtil {
         ApiClient client = Configuration.getDefaultApiClient();
         client.setBasePath(linstorUrl);
         return new DevelopersApi(client);
+    }
+
+    public static String getBestErrorMessage(ApiCallRcList answers) {
+        return answers != null && !answers.isEmpty() ?
+            answers.stream()
+                .filter(ApiCallRc::isError)
+                .findFirst()
+                .map(ApiCallRc::getMessage)
+                .orElse((answers.get(0)).getMessage()) : null;
+    }
+
+    public static List<String> getLinstorNodeNames(@Nonnull DevelopersApi api) throws ApiException
+    {
+        List<Node> nodes = api.nodeList(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            null,
+            null
+        );
+
+        return nodes.stream().map(Node::getName).collect(Collectors.toList());
+    }
+
+    public static com.linbit.linstor.api.model.StoragePool
+    getDiskfulStoragePool(@Nonnull DevelopersApi api, @Nonnull String rscName) throws ApiException
+    {
+        List<ResourceWithVolumes> resources = api.viewResources(
+            Collections.emptyList(),
+            Collections.singletonList(rscName),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            null,
+            null);
+
+        String nodeName = null;
+        String storagePoolName = null;
+        for (ResourceWithVolumes rwv : resources) {
+            if (rwv.getVolumes().isEmpty()) {
+                continue;
+            }
+            Volume vol = rwv.getVolumes().get(0);
+            if (vol.getProviderKind() != ProviderKind.DISKLESS) {
+                nodeName = rwv.getNodeName();
+                storagePoolName = vol.getStoragePoolName();
+                break;
+            }
+        }
+
+        if (nodeName == null) {
+            return null;
+        }
+
+        List<com.linbit.linstor.api.model.StoragePool> sps = api.viewStoragePools(
+            Collections.singletonList(nodeName),
+            Collections.singletonList(storagePoolName),
+            Collections.emptyList(),
+            null,
+            null
+        );
+        return !sps.isEmpty() ? sps.get(0) : null;
+    }
+
+    public static String getSnapshotPath(com.linbit.linstor.api.model.StoragePool sp, String rscName, String snapshotName) {
+        final String suffix = "00000";
+        final String backingPool = sp.getProps().get("StorDriver/StorPoolName");
+        final String path;
+        switch (sp.getProviderKind()) {
+            case LVM_THIN:
+                path = String.format("/dev/mapper/%s-%s_%s_%s",
+                    backingPool.split("/")[0], rscName.replace("-", "--"), suffix, snapshotName.replace("-", "--"));
+                break;
+            case ZFS:
+            case ZFS_THIN:
+                path = String.format("zfs://%s/%s_%s@%s", backingPool.split("/")[0], rscName, suffix, snapshotName);
+                break;
+            default:
+                throw new CloudRuntimeException(
+                    String.format("Linstor: storage pool type %s doesn't support snapshots.", sp.getProviderKind()));
+        }
+        return path;
     }
 
     public static long getCapacityBytes(String linstorUrl, String rscGroupName) {

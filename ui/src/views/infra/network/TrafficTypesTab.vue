@@ -19,6 +19,20 @@
   <a-spin :spinning="fetchLoading">
     <a-tabs :tabPosition="device === 'mobile' ? 'top' : 'left'" :animated="false">
       <a-tab-pane v-for="(item, index) in traffictypes" :tab="item.traffictype" :key="index">
+        <a-popconfirm
+          :title="$t('message.confirm.delete.traffic.type')"
+          @confirm="deleteTrafficType(itemd)"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')" >
+          <a-button
+            type="primary"
+            danger
+            style="width: 100%; margin-bottom: 10px"
+            :loading="loading"
+            :disabled="!('deleteTrafficType' in $store.getters.apis)">
+            <template #icon><delete-outlined /></template> {{ $t('label.delete.traffic.type') }}
+          </a-button>
+        </a-popconfirm>
         <div
           v-for="(type, idx) in ['kvmnetworklabel', 'vmwarenetworklabel', 'xennetworklabel', 'hypervnetworklabel', 'ovm3networklabel']"
           :key="idx"
@@ -113,14 +127,7 @@ export default {
   },
   methods: {
     async fetchData () {
-      this.fetchLoading = true
-      api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
-        this.traffictypes = json.listtraffictypesresponse.traffictype
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.fetchLoading = false
-      })
+      this.fetchTrafficTypes()
       this.fetchLoading = true
       api('listNetworks', {
         listAll: true,
@@ -142,6 +149,16 @@ export default {
       if (this.networkType === 'Basic') {
         this.fetchGuestNetwork()
       }
+    },
+    fetchTrafficTypes () {
+      this.fetchLoading = true
+      api('listTrafficTypes', { physicalnetworkid: this.resource.id }).then(json => {
+        this.traffictypes = json.listtraffictypesresponse.traffictype
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+      })
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
@@ -173,6 +190,36 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
+      })
+    },
+    deleteTrafficType (trafficType) {
+      api('deleteTrafficType', { id: trafficType.id }).then(response => {
+        this.$pollJob({
+          jobId: response.deletetraffictyperesponse.jobid,
+          title: this.$t('label.delete.traffic.type'),
+          description: trafficType.traffictype,
+          successMessage: this.$t('message.traffic.type.deleted') + ' ' + trafficType.traffictype,
+          successMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          },
+          errorMessage: this.$t('message.delete.failed'),
+          errorMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          },
+          loadingMessage: this.$t('message.delete.traffic.type.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchLoading = false
+            this.fetchTrafficTypes()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.fetchLoading = false
+        this.fetchTrafficTypes()
       })
     }
   }

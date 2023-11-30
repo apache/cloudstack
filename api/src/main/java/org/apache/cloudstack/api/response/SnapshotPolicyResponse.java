@@ -58,8 +58,13 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "The list of zones in which snapshot backup is scheduled", responseObject = ZoneResponse.class, since = "4.19.0")
+    protected Set<ZoneResponse> zones;
+
     public SnapshotPolicyResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+        zones = new LinkedHashSet<>();
     }
 
     public String getId() {
@@ -120,5 +125,9 @@ public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
 
     public void setTags(Set<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setZones(Set<ZoneResponse> zones) {
+        this.zones = zones;
     }
 }

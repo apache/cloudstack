@@ -294,12 +294,14 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        if (storageUri.getScheme().equalsIgnoreCase("nfs") || storageUri.getScheme().equalsIgnoreCase("NetworkFilesystem")) {
+        final String scheme = storageUri.getScheme().toLowerCase();
+        List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
+        if (acceptedSchemes.contains(scheme)) {
             sourcePath = storageUri.getPath();
             sourcePath = sourcePath.replace("//", "/");
             sourceHost = storageUri.getHost();
             uuid = UUID.nameUUIDFromBytes(new String(sourceHost + sourcePath).getBytes()).toString();
-            protocol = StoragePoolType.NetworkFilesystem;
+            protocol = scheme.equals("filesystem") ? StoragePoolType.Filesystem: StoragePoolType.NetworkFilesystem;
         }
 
         // secondary storage registers itself through here
@@ -360,9 +362,9 @@ public class KVMStoragePoolManager {
         KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details);
 
         // LibvirtStorageAdaptor-specific statement
-        if (type == StoragePoolType.NetworkFilesystem && primaryStorage) {
-            KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(pool.getUuid(), host, path, pool.getLocalPath(), PoolType.PrimaryStorage);
-            _haMonitor.addStoragePool(nfspool);
+        if (pool.isPoolSupportHA() && primaryStorage) {
+            KVMHABase.HAStoragePool storagePool = new KVMHABase.HAStoragePool(pool, host, path, PoolType.PrimaryStorage);
+            _haMonitor.addStoragePool(storagePool);
         }
         StoragePoolInformation info = new StoragePoolInformation(name, host, port, path, userInfo, type, details, primaryStorage);
         addStoragePool(pool.getUuid(), info);

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +30,7 @@ import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Snapshot.class)
-public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
+public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "ID of the snapshot")
     private String id;
@@ -90,6 +91,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.State state;
 
+    @SerializedName(ApiConstants.STATUS)
+    @Param(description = "the status of the template")
+    private String status;
+
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
     @Param(description = "physical size of backedup snapshot on image store")
     private long physicalSize;
@@ -97,6 +102,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "id of the availability zone")
     private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "name of the availability zone")
+    private String zoneName;
 
     @SerializedName(ApiConstants.REVERTABLE)
     @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
@@ -113,6 +122,26 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
     @Param(description = "virtual size of backedup snapshot on image store")
     private long virtualSize;
+
+    @SerializedName(ApiConstants.DATASTORE_ID)
+    @Param(description = "ID of the datastore for the snapshot entry", since = "4.19.0")
+    private String datastoreId;
+
+    @SerializedName(ApiConstants.DATASTORE_NAME)
+    @Param(description = "name of the datastore for the snapshot entry", since = "4.19.0")
+    private String datastoreName;
+
+    @SerializedName(ApiConstants.DATASTORE_STATE)
+    @Param(description = "state of the snapshot on the datastore", since = "4.19.0")
+    private String datastoreState;
+
+    @SerializedName(ApiConstants.DATASTORE_TYPE)
+    @Param(description = "type of the datastore for the snapshot entry", since = "4.19.0")
+    private String datastoreType;
+
+    @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
+    @Param(description = "download progress of a snapshot", since = "4.19.0")
+    private Map<String, String> downloadDetails;
 
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -190,7 +219,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
         this.state = state;
     }
 
-    public void setPhysicaSize(long physicalSize) {
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setPhysicalSize(long physicalSize) {
         this.physicalSize = physicalSize;
     }
 
@@ -206,6 +239,10 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     public void setTags(Set<ResourceTagResponse> tags) {
@@ -230,5 +267,25 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setVirtualSize(long virtualSize) {
         this.virtualSize = virtualSize;
+    }
+
+    public void setDatastoreId(String datastoreId) {
+        this.datastoreId = datastoreId;
+    }
+
+    public void setDatastoreName(String datastoreName) {
+        this.datastoreName = datastoreName;
+    }
+
+    public void setDatastoreState(String datastoreState) {
+        this.datastoreState = datastoreState;
+    }
+
+    public void setDatastoreType(String datastoreType) {
+        this.datastoreType = datastoreType;
+    }
+
+    public void setDownloadDetails(Map<String, String> downloadDetails) {
+        this.downloadDetails = downloadDetails;
     }
 }

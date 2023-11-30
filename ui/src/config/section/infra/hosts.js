@@ -21,7 +21,7 @@ import store from '@/store'
 export default {
   name: 'host',
   title: 'label.hosts',
-  icon: 'desktop-outlined',
+  icon: 'database-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-hosts',
   permission: ['listHostsMetrics'],
   resourceType: 'Host',
@@ -68,7 +68,7 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'oscategoryid'],
+      args: ['name', 'hosttags', 'istagarule', 'oscategoryid'],
       mapping: {
         oscategoryid: {
           api: 'listOsCategories'
