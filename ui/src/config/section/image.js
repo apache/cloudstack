@@ -46,6 +46,9 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('templatetype')
@@ -219,6 +222,9 @@ export default {
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
         }
         if (['Admin'].includes(store.getters.userInfo.roletype)) {
           fields.push('order')

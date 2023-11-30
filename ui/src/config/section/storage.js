@@ -52,9 +52,15 @@ export default {
 
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('storage')
         } else if (store.getters.userInfo.roletype === 'DomainAdmin') {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
         }
         fields.push('zonename')
 
@@ -313,6 +319,9 @@ export default {
         var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+          if (store.getters.listAllProjects) {
+            fields.push('project')
+          }
           fields.push('domain')
         }
         fields.push('zonename')
