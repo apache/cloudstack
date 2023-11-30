@@ -324,6 +324,7 @@
 "label.allocatedonly": "Allocated",
 "label.allocationstate": "Allocation state",
 "label.allow": "Allow",
+"label.allow.duplicate.macaddresses": "Allow duplicate MAC addresses",
 "label.allowuserdrivenbackups": "Allow User driven backups",
 "label.annotation": "Comment",
 "label.annotations": "Comments",
