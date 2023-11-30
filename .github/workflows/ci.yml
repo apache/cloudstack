@@ -111,7 +111,8 @@ jobs:
                   smoke/test_reset_configuration_settings
                   smoke/test_reset_vm_on_reboot
                   smoke/test_resource_accounting
-                  smoke/test_resource_detail",
+                  smoke/test_resource_detail
+                  smoke/test_global_acls",
                 "smoke/test_router_dhcphosts
                   smoke/test_router_dns
                   smoke/test_router_dnsservice
