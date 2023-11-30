@@ -58,7 +58,7 @@ multipath -f 3${WWID}
 # https://bugzilla.redhat.com/show_bug.cgi?id=1949369
 if [ ! -z "${SLAVE_DEVS}" ]; then
   for dev in ${SLAVE_DEVS}; do
-     multipathd del path ${SLAVE_DEVS}
+     multipathd del path /dev/${dev}
      echo "1" > /sys/block/${dev}/device/delete
      logger -t CS_SCSI_VOL_REMOVE "${WWID} removal of device ${dev} complete"
   done

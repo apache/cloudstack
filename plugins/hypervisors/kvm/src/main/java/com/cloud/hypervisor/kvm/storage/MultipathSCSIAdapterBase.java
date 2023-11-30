@@ -44,6 +44,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
+import org.joda.time.Duration;
 
 public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static final Logger LOGGER = Logger.getLogger(MultipathSCSIAdapterBase.class);
@@ -62,6 +63,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     static final Property<Boolean> CLEANUP_ENABLED = new Property<Boolean>("multimap.cleanup.enabled", true);
     static final Property<String> CLEANUP_SCRIPT = new Property<String>("multimap.cleanup.script", "cleanStaleMaps.sh");
     static final Property<String> CONNECT_SCRIPT = new Property<String>("multimap.connect.script", "connectVolume.sh");
+    static final Property<String> COPY_SCRIPT = new Property<String>("multimap.copy.script", "copyVolume.sh");
     static final Property<String> DISCONNECT_SCRIPT = new Property<String>("multimap.disconnect.script", "disconnectVolume.sh");
     static final Property<String> RESIZE_SCRIPT = new Property<String>("multimap.resize.script", "resizeVolume.sh");
     static final Property<Integer> DISK_WAIT_SECS = new Property<Integer>("multimap.disk.wait.secs", 240);
@@ -73,6 +75,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     private static String disconnectScript = DISCONNECT_SCRIPT.getFinalValue();
     private static String cleanupScript = CLEANUP_SCRIPT.getFinalValue();
     private static String resizeScript = RESIZE_SCRIPT.getFinalValue();
+    private static String copyScript = COPY_SCRIPT.getFinalValue();
     private static int diskWaitTimeSecs = DISK_WAIT_SECS.getFinalValue();
 
     /**
@@ -96,6 +99,11 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         resizeScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), resizeScript);
         if (resizeScript == null) {
             throw new Error("Unable to find the resizeVolume.sh script");
+        }
+
+        copyScript = Script.findScript(STORAGE_SCRIPTS_DIR.getFinalValue(), copyScript);
+        if (copyScript == null) {
+            throw new Error("Unable to find the copyVolume.sh script");
         }
 
         if (cleanupEnabled) {
@@ -201,10 +209,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool) {
         LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) START", volumePath, pool.getUuid()));
         AddressInfo address = this.parseAndValidatePath(volumePath);
-        String output = Script.runSimpleBashScript(String.format("%s %s", disconnectScript, address.getAddress().toLowerCase()), 60000);
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + output);
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) COMPLETE", volumePath, pool.getUuid()));
-        return true;
+        ScriptResult result = runScript(disconnectScript, 60000L, address.getAddress().toLowerCase());
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
+        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(volumePath,pool) called with args (%s, %s) COMPLETE [rc=%s]", volumePath, pool.getUuid(), result.getResult()));        return true;
     }
 
     @Override
@@ -216,10 +223,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
         LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) STARTED", localPath));
-        String output = Script.runSimpleBashScript(String.format("%s %s", disconnectScript, localPath.replace("/dev/mapper/3", "")), 60000);
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + output);
-        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE", localPath));
-        return true;
+        ScriptResult result = runScript(disconnectScript, 60000L, localPath.replace("/dev/mapper/3", ""));
+        if (LOGGER.isDebugEnabled()) LOGGER.debug("multipath flush output: " + result.getResult());
+        LOGGER.debug(String.format("disconnectPhysicalDiskByPath(localPath) called with args (%s) COMPLETE [rc=%s]", localPath, result.getExitCode()));       return true;
     }
 
     @Override
@@ -332,35 +338,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         File sourceFile = createTemplateFromDirectDownloadFileValidate(templateFilePath, destTemplatePath, destPool, format);
         LOGGER.debug("Create template from direct download template - file path: " + templateFilePath + ", dest path: " + destTemplatePath + ", format: " + format.toString());
-        String srcTemplateFilePath = templateFilePath;
-        KVMPhysicalDisk destDisk = null;
-        QemuImgFile srcFile = null;
-        QemuImgFile destFile = null;
-        try {
-            destDisk = destPool.getPhysicalDisk(destTemplatePath);
-            if (destDisk == null) {
-                LOGGER.error("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
-                throw new CloudRuntimeException("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
-            }
-
-            srcTemplateFilePath = extractSourceTemplateIfNeeded(sourceFile, srcTemplateFilePath);
-
-            QemuImg.PhysicalDiskFormat srcFileFormat = deriveImgFileFormat(format);
-            srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
-            destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
-
-            LOGGER.debug("Starting copy from source downloaded template " + srcFile.getFileName() + " to Primera template volume: " + destDisk.getPath());
-            QemuImg qemu = new QemuImg(timeout);
-            qemu.convert(srcFile, destFile);
-            LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to Primera template volume: " + destDisk.getPath());
-        }  catch (QemuImgException | LibvirtException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
-            destDisk = null;
-        } finally {
-            Script.runSimpleBashScript("rm -f " + srcTemplateFilePath);
-        }
-
-        return destDisk;
+        KVMPhysicalDisk sourceDisk = destPool.getPhysicalDisk(sourceFile.getAbsolutePath());
+        return copyPhysicalDisk(sourceDisk, destTemplatePath, destPool, timeout, null, null,  Storage.ProvisioningType.THIN);
     }
 
     @Override
@@ -376,12 +355,25 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to find the disk: " + name + " of the storage pool: " + destPool.getUuid());
         }
 
+        if (srcPassphrase != null || dstPassphrase != null) {
+            throw new CloudRuntimeException("Storage provider does not support user-space encrypted source or destination volumes");
+        }
+
         destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
         destDisk.setVirtualSize(disk.getVirtualSize());
         destDisk.setSize(disk.getSize());
 
         LOGGER.info("Copying TO destination physical disk " + destDisk.getPath() + ", size: " + destDisk.getSize() + ", virtualsize: " + destDisk.getVirtualSize()+ ", format: " + destDisk.getFormat());
-        qemuCopy(disk, destDisk, name, timeout);
+        QemuImgFile srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+        QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
+        LOGGER.debug("Starting COPY from source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath());
+        ScriptResult result = runScript(copyScript, timeout, destDisk.getFormat().toString().toLowerCase(), srcFile.getFileName(), destFile.getFileName());
+        int rc = result.getExitCode();
+        if (rc != 0) {
+            throw new CloudRuntimeException("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + rc + " - " + result.getResult());
+        }
+        LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to Primera volume: " + destDisk.getPath() + " " + result.getResult());
+
         return destDisk;
     }
 
@@ -451,7 +443,8 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
     boolean isTemplateExtractable(String templatePath) {
-        String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
+        ScriptResult result = runScript("file", 5000L, templatePath, "| awk -F' ' '{print $2}'");
+        String type = result.getResult();
         return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
     }
 
@@ -465,6 +458,23 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         } else {
             throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
         }
+    }
+
+    private static final ScriptResult runScript(String script, long timeout, String...args) {
+        ScriptResult result = new ScriptResult();
+        Script cmd = new Script(script, Duration.millis(timeout), LOGGER);
+        cmd.add(args);
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String output = cmd.execute(parser);
+        // its possible the process never launches which causes an NPE on getExitValue below
+        if (output != null && output.contains("Unable to execute the command")) {
+            result.setResult(output);
+            result.setExitCode(-1);
+            return result;
+        }
+        result.setResult(output);
+        result.setExitCode(cmd.getExitValue());
+        return result;
     }
 
     boolean waitForDiskToBecomeAvailable(AddressInfo address, KVMStoragePool pool, long waitTimeInSec) {
@@ -491,9 +501,10 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
                 lun = address.getConnectionId();
             }
 
+            Process p = null;
             try {
                 ProcessBuilder builder = new ProcessBuilder(connectScript, lun, address.getAddress());
-                Process p = builder.start();
+                p = builder.start();
                 if (p.waitFor(scriptTimeoutSecs, TimeUnit.SECONDS)) {
                     int rc = p.exitValue();
                     StringBuffer output = new StringBuffer();
@@ -525,6 +536,10 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
                 }
             } catch (IOException | InterruptedException | IllegalThreadStateException e) {
                 LOGGER.warn("Problem performing scan on SCSI hosts - try " + tries, e);
+            } finally {
+                if (p != null && p.isAlive()) {
+                    p.destroyForcibly();
+                }
             }
 
             long elapsed = System.currentTimeMillis() - start;
@@ -623,17 +638,20 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         if (LOGGER.isDebugEnabled()) LOGGER.debug(String.format("Running %s %s %s %s", resizeScript, address.getAddress(), vmName, newSize));
 
         // call resizeVolume.sh <wwid>
-        String output = Script.runSimpleBashScript(String.format("%s %s %s %s", resizeScript, address.getAddress(), vmName, newSize), 60000);
+        ScriptResult result = runScript(resizeScript, 60000L, address.getAddress(), vmName, ""+newSize);
 
-        LOGGER.info("Resize of volume at address " + address.getAddress() + " completed successfully: " + output);
-        return ;
+        if (result.getExitCode() != 0) {
+            throw new CloudRuntimeException("Failed to resize volume at address " + address.getAddress() + " to " + newSize + " bytes for VM " + vmName + ": " + result.getResult());
+        }
+
+        LOGGER.info("Resize of volume at address " + address.getAddress() + " completed successfully: " + result.getResult());
     }
 
     static void cleanupStaleMaps() {
         synchronized(CLEANUP_LOCK) {
             long start = System.currentTimeMillis();
-            int result = Script.runSimpleBashScriptForExitValue(cleanupScript,  cleanupTimeoutSecs * 1000);
-            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result, null);
+            ScriptResult result = runScript(cleanupScript, cleanupTimeoutSecs * 1000);
+            LOGGER.debug("Multipath Cleanup Job elapsed time (ms): "+ (System.currentTimeMillis() - start) + "; result: " + result.getExitCode(), null);
         }
     }
 
@@ -717,6 +735,23 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
                     return defaultValue;
                 }
             }
+        }
+    }
+
+    public static class ScriptResult {
+        private int exitCode = -1;
+        private String result = null;
+        public int getExitCode() {
+            return exitCode;
+        }
+        public void setExitCode(int exitCode) {
+            this.exitCode = exitCode;
+        }
+        public String getResult() {
+            return result;
+        }
+        public void setResult(String result) {
+            this.result = result;
         }
     }
 
