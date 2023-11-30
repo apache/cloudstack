@@ -16,9 +16,16 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.network.Network;
+
 import java.util.List;
 
 public class NsxNetworkRule {
+
+    public enum NsxRuleAction {
+        ALLOW, DROP
+    }
+
     private long domainId;
     private long accountId;
     private long zoneId;
@@ -34,6 +41,36 @@ public class NsxNetworkRule {
     private String protocol;
     private String algorithm;
     private List<NsxLoadBalancerMember> memberList;
+    private NsxRuleAction aclAction;
+    private List<String> cidrList;
+    private String trafficType;
+    private Integer icmpCode;
+    private Integer icmpType;
+    private Network.Service service;
+
+    public Integer getIcmpCode() {
+        return icmpCode;
+    }
+
+    public void setIcmpCode(Integer icmpCode) {
+        this.icmpCode = icmpCode;
+    }
+
+    public Integer getIcmpType() {
+        return icmpType;
+    }
+
+    public void setIcmpType(Integer icmpType) {
+        this.icmpType = icmpType;
+    }
+
+    public Network.Service getService() {
+        return service;
+    }
+
+    public void setService(Network.Service service) {
+        this.service = service;
+    }
 
     public long getDomainId() {
         return domainId;
@@ -155,6 +192,30 @@ public class NsxNetworkRule {
         this.memberList = memberList;
     }
 
+    public NsxRuleAction getAclAction() {
+        return aclAction;
+    }
+
+    public void setAclAction(NsxRuleAction aclAction) {
+        this.aclAction = aclAction;
+    }
+
+    public List<String> getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(List<String> cidrList) {
+        this.cidrList = cidrList;
+    }
+
+    public String getTrafficType() {
+        return trafficType;
+    }
+
+    public void setTrafficType(String trafficType) {
+        this.trafficType = trafficType;
+    }
+
     public static final class Builder {
         private long domainId;
         private long accountId;
@@ -172,6 +233,12 @@ public class NsxNetworkRule {
         private String protocol;
         private String algorithm;
         private List<NsxLoadBalancerMember> memberList;
+        private NsxRuleAction aclAction;
+        private List<String> cidrList;
+        private String trafficType;
+        private Integer icmpType;
+        private Integer icmpCode;
+        private Network.Service service;
 
         public Builder() {
         }
@@ -252,6 +319,36 @@ public class NsxNetworkRule {
             return this;
         }
 
+        public Builder setAclAction(NsxRuleAction aclAction) {
+            this.aclAction = aclAction;
+            return this;
+        }
+
+        public Builder setCidrList(List<String> cidrList) {
+            this.cidrList = cidrList;
+            return this;
+        }
+
+        public Builder setTrafficType(String trafficType) {
+            this.trafficType = trafficType;
+            return this;
+        }
+
+        public Builder setIcmpType(Integer icmpType) {
+            this.icmpType = icmpType;
+            return this;
+        }
+
+        public Builder setIcmpCode(Integer icmpCode) {
+            this.icmpCode = icmpCode;
+            return this;
+        }
+
+        public Builder setService(Network.Service service) {
+            this.service = service;
+            return this;
+        }
+
         public NsxNetworkRule build() {
             NsxNetworkRule rule = new NsxNetworkRule();
             rule.setDomainId(this.domainId);
@@ -269,6 +366,12 @@ public class NsxNetworkRule {
             rule.setRuleId(this.ruleId);
             rule.setAlgorithm(this.algorithm);
             rule.setMemberList(this.memberList);
+            rule.setAclAction(this.aclAction);
+            rule.setCidrList(this.cidrList);
+            rule.setTrafficType(this.trafficType);
+            rule.setIcmpType(this.icmpType);
+            rule.setIcmpCode(this.icmpCode);
+            rule.setService(this.service);
             return rule;
         }
     }

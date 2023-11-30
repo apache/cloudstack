@@ -56,6 +56,7 @@ import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
@@ -107,7 +108,7 @@ import java.util.function.LongFunction;
 
 @Component
 public class NsxElement extends AdapterBase implements  DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider,
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
         LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
 
 
@@ -159,6 +160,15 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         capabilities.put(Network.Service.Lb, null);
         capabilities.put(Network.Service.PortForwarding, null);
         capabilities.put(Network.Service.NetworkACL, null);
+
+        Map<Network.Capability, String> firewallCapabilities = new HashMap<>();
+        firewallCapabilities.put(Network.Capability.SupportedProtocols, "tcp,udp,icmp");
+        firewallCapabilities.put(Network.Capability.SupportedEgressProtocols, "tcp,udp,icmp,all");
+        firewallCapabilities.put(Network.Capability.MultipleIps, "true");
+        firewallCapabilities.put(Network.Capability.TrafficStatistics, "per public ip");
+        firewallCapabilities.put(Network.Capability.SupportedTrafficDirection, "ingress, egress");
+        capabilities.put(Network.Service.Firewall, firewallCapabilities);
+
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
@@ -574,6 +584,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
     }
 
+    private static String getPrivatePortRangeForACLRule(NetworkACLItem rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         for (LoadBalancingRule loadBalancingRule : rules) {
@@ -644,5 +660,71 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             lbMembers.add(member);
         }
         return lbMembers;
+    }
+
+    @Override
+    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.NetworkACL)) {
+            return false;
+        }
+        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
+        for (NetworkACLItem rule : rules) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
+
+            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                    .setRuleId(rule.getId())
+                    .setCidrList(transformCidrListValues(rule.getSourceCidrList()))
+                    .setAclAction(transformActionValue(rule.getAction()))
+                    .setTrafficType(rule.getTrafficType().toString())
+                    .setProtocol(rule.getProtocol().toUpperCase())
+                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                    .setPrivatePort(privatePort)
+                    .setIcmpCode(rule.getIcmpCode())
+                    .setIcmpType(rule.getIcmpType())
+                    .setService(Network.Service.NetworkACL)
+                    .build();
+            if (NetworkACLItem.State.Add == rule.getState()) {
+                nsxAddNetworkRules.add(networkRule);
+            } else if (NetworkACLItem.State.Revoke == rule.getState()) {
+                nsxDelNetworkRules.add(networkRule);
+            }
+        }
+        boolean success = true;
+        if (!nsxDelNetworkRules.isEmpty()) {
+            success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
+            if (!success) {
+                LOGGER.warn("Not all firewall rules were successfully deleted");
+            }
+        }
+        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
+    }
+
+    protected NsxNetworkRule.NsxRuleAction transformActionValue(NetworkACLItem.Action action) {
+        if (action == NetworkACLItem.Action.Allow) {
+            return NsxNetworkRule.NsxRuleAction.ALLOW;
+        } else if (action == NetworkACLItem.Action.Deny) {
+            return NsxNetworkRule.NsxRuleAction.DROP;
+        }
+        String err = String.format("Unsupported action %s", action.toString());
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
+    }
+
+    /**
+     * Replace 0.0.0.0/0 to ANY on each occurrence
+     */
+    protected List<String> transformCidrListValues(List<String> sourceCidrList) {
+        List<String> list = new ArrayList<>();
+        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(sourceCidrList)) {
+            for (String cidr : sourceCidrList) {
+                if (cidr.equals("0.0.0.0/0")) {
+                    list.add("ANY");
+                } else {
+                    list.add(cidr);
+                }
+            }
+        }
+        return list;
     }
 }
