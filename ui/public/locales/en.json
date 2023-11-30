@@ -1081,6 +1081,7 @@
 "label.isdedicated": "Dedicated",
 "label.isdefault": "Is default",
 "label.isdynamicallyscalable": "Dynamically scalable",
+"label.istagarule": "Tag as JS rule",
 "label.isextractable": "Extractable",
 "label.isfeatured": "Featured",
 "label.isforced": "Force delete",

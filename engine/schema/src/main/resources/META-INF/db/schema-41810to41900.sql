@@ -224,3 +224,12 @@ CREATE TABLE `cloud`.`oauth_provider` (
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Flexible tags
+ALTER TABLE `cloud`.`storage_pool_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+
+ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
+
+ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
+
+ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
