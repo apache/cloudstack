@@ -667,7 +667,8 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.NetworkACL)) {
             return false;
         }
-        List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         for (NetworkACLItem rule : rules) {
             String privatePort = getPrivatePortRangeForACLRule(rule);
 
@@ -683,9 +684,20 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setIcmpType(rule.getIcmpType())
                     .setService(Network.Service.NetworkACL)
                     .build();
-            nsxNetworkRules.add(networkRule);
+            if (NetworkACLItem.State.Add == rule.getState()) {
+                nsxAddNetworkRules.add(networkRule);
+            } else if (NetworkACLItem.State.Revoke == rule.getState()) {
+                nsxDelNetworkRules.add(networkRule);
+            }
         }
-        return nsxService.addFirewallRules(network, nsxNetworkRules);
+        boolean success = true;
+        if (!nsxDelNetworkRules.isEmpty()) {
+            success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
+            if (!success) {
+                LOGGER.warn("Not all firewall rules were successfully deleted");
+            }
+        }
+        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
     }
 
     protected NsxNetworkRule.NsxRuleAction transformActionValue(NetworkACLItem.Action action) {

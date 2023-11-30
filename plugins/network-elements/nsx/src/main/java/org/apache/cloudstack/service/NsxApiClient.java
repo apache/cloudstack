@@ -31,6 +31,7 @@ import com.vmware.nsx_policy.infra.Sites;
 import com.vmware.nsx_policy.infra.Tier1s;
 import com.vmware.nsx_policy.infra.domains.Groups;
 import com.vmware.nsx_policy.infra.domains.SecurityPolicies;
+import com.vmware.nsx_policy.infra.domains.security_policies.Rules;
 import com.vmware.nsx_policy.infra.sites.EnforcementPoints;
 import com.vmware.nsx_policy.infra.tier_0s.LocaleServices;
 import com.vmware.nsx_policy.infra.tier_1s.nat.NatRules;
@@ -38,6 +39,7 @@ import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Group;
+import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
@@ -789,6 +791,10 @@ public class NsxApiClient {
 
     public void createSegmentDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         try {
+            String groupPath = getGroupPath(segmentName);
+            if (Objects.isNull(groupPath)) {
+                throw new CloudRuntimeException(String.format("Failed to find group for segment %s", segmentName));
+            }
             SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
             List<Rule> rules = getRulesForDistributedFirewall(segmentName, nsxRules);
             SecurityPolicy policy = new SecurityPolicy.Builder()
@@ -796,6 +802,7 @@ public class NsxApiClient {
                     .setId(segmentName)
                     .setCategory("Application")
                     .setRules(rules)
+                    .setScope(List.of(groupPath))
                     .build();
             services.patch(DEFAULT_DOMAIN, segmentName, policy);
         } catch (Error error) {
@@ -806,8 +813,25 @@ public class NsxApiClient {
         }
     }
 
+    public void deleteDistributedFirewallRules(String segmentName, List<NsxNetworkRule> nsxRules) {
+        for(NsxNetworkRule rule : nsxRules) {
+            String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
+            String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
+            // delete rules
+            Rules rules = (Rules) nsxService.apply(Rules.class);
+            rules.delete(DEFAULT_DOMAIN, segmentName, ruleId);
+            // delete service - if any
+            Services services = (Services) nsxService.apply(Services.class);
+            services.delete(svcName);
+        }
+    }
+
     private List<Rule> getRulesForDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         List<Rule> rules = new ArrayList<>();
+        String groupPath = getGroupPath(segmentName);
+        if (Objects.isNull(groupPath)) {
+            throw new CloudRuntimeException(String.format("Failed to find group for segment %s", segmentName));
+        }
         for (NsxNetworkRule rule : nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
@@ -818,7 +842,7 @@ public class NsxApiClient {
                     .setSourceGroups(getGroupsForTraffic(rule, segmentName, true))
                     .setDestinationGroups(getGroupsForTraffic(rule, segmentName, false))
                     .setServices(getServicesListForDistributedFirewallRule(rule, segmentName))
-                    .setScope(List.of("ANY"))
+                    .setScope(List.of(groupPath))
                     .build();
             rules.add(ruleToAdd);
         }
@@ -850,6 +874,26 @@ public class NsxApiClient {
         String err = String.format("Unsupported traffic type %s", trafficType);
         LOGGER.error(err);
         throw new CloudRuntimeException(err);
+    }
+
+    private List<Group> listNsxGroups() {
+        try {
+           Groups groups = (Groups) nsxService.apply(Groups.class);
+           GroupListResult result = groups.list(DEFAULT_DOMAIN, null, false, null, null, null, null, null);
+           return result.getResults();
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to list NSX groups, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getGroupPath(String segmentName) {
+        List<Group> groups = listNsxGroups();
+        Optional<Group> matchingGroup = groups.stream().filter(group -> group.getDisplayName().equals(segmentName)).findFirst();
+        return matchingGroup.map(Group::getPath).orElse(null);
+
     }
 
 }
