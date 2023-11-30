@@ -23,6 +23,7 @@ import java.util.List;
 public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
 
     private final String publicPort;
+    private final String privatePort;
     private final String algorithm;
     private final String protocol;
     List<NsxLoadBalancerMember> memberList;
@@ -31,11 +32,12 @@ public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
     public CreateNsxLoadBalancerRuleCommand(long domainId, long accountId, long zoneId, Long networkResourceId,
                                             String networkResourceName, boolean isResourceVpc,
                                             List<NsxLoadBalancerMember> memberList, long lbId, String publicPort,
-                                            String algorithm, String protocol) {
+                                            String privatePort, String algorithm, String protocol) {
         super(domainId, accountId, zoneId, networkResourceId, networkResourceName, isResourceVpc);
         this.lbId = lbId;
         this.memberList = memberList;
         this.publicPort = publicPort;
+        this.privatePort = privatePort;
         this.algorithm = algorithm;
         this.protocol = protocol;
     }
@@ -47,6 +49,10 @@ public class CreateNsxLoadBalancerRuleCommand extends NsxNetworkCommand {
 
     public String getPublicPort() {
         return publicPort;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
     }
 
     public List<NsxLoadBalancerMember> getMemberList() {

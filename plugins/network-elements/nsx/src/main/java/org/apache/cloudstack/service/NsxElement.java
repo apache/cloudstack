@@ -620,6 +620,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setMemberList(lbMembers)
                     .setPublicIp(publicIp.getAddress().addr())
                     .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
+                    .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
                     .setRuleId(loadBalancingRule.getId())
                     .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
                     .setAlgorithm(loadBalancingRule.getAlgorithm())

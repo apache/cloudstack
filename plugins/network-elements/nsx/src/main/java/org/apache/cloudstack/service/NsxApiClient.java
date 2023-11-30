@@ -369,7 +369,7 @@ public class NsxApiClient {
     public TransportZoneListResult getTransportZones() {
         try {
             com.vmware.nsx.TransportZones transportZones = (com.vmware.nsx.TransportZones) nsxService.apply(com.vmware.nsx.TransportZones.class);
-            return transportZones.list(null, null, false, null, true, null, null, null, TransportType.OVERLAY.name(), null);
+            return transportZones.list(null, null, true, null, null, null, null, null, TransportType.OVERLAY.name(), null);
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to fetch service segment list due to %s", e.getMessage()));
         }

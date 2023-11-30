@@ -161,7 +161,7 @@ public class NsxServiceImpl implements NsxService {
         CreateNsxLoadBalancerRuleCommand command = new CreateNsxLoadBalancerRuleCommand(netRule.getDomainId(),
                 netRule.getAccountId(), netRule.getZoneId(), netRule.getNetworkResourceId(),
                 netRule.getNetworkResourceName(), netRule.isVpcResource(),  netRule.getMemberList(), netRule.getRuleId(),
-                netRule.getPublicPort(), netRule.getAlgorithm(), netRule.getProtocol());
+                netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getAlgorithm(), netRule.getProtocol());
         command.setPublicIp(netRule.getPublicIp());
         NsxAnswer result = nsxControllerUtils.sendNsxCommand(command, netRule.getZoneId());
         return result.getResult();

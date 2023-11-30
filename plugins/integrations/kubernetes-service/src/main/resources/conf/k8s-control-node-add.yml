@@ -259,6 +259,7 @@ write_files:
 
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
+  - ip link set dev eth0 mtu 1400
   - containerd config default > /etc/containerd/config.toml
   - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
   - until [ -f /opt/bin/setup-kube-system ]; do sleep 5; done
