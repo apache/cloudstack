@@ -76,7 +76,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
                             description = "the URL of the storage pool",
                             since = "4.19.0")
     private String url;
-  
+
     @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
 
