@@ -3153,6 +3153,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
         Boolean isRootAdmin = accountMgr.isRootAdmin(account.getAccountId());
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
         Long volumeId = cmd.getVolumeId();
@@ -3246,9 +3248,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        account = accountMgr.finalizeOwner(account, accountName, domainId, projectId);
+        if (!Account.Type.ADMIN.equals(account.getType())) {
+            Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -3338,6 +3340,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -3354,6 +3358,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
 
+        final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!accountMgr.isRootAdmin(caller.getId()) && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
@@ -3365,8 +3370,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (domainId != null && !accountMgr.isRootAdmin(caller.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
-            if (!isPermissible(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("The account:" + caller.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
+            if (!isPermissible(owner.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + owner.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
             }
         }
 
@@ -3432,16 +3437,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
             if (isRecursive) { // domain + all sub-domains
-                if (caller.getType() == Account.Type.NORMAL) {
+                if (owner.getType() == Account.Type.NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
             }
         } else {
             // for root users
-            if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+            if (owner.getDomainId() != 1 && isSystem) { // NON ROOT admin
+                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering.");
             }
-            if (domainId != null) {
+            if (domainId != null && accountName == null) {
                 sc.addAnd("domainId", Op.FIND_IN_SET, String.valueOf(domainId));
             }
         }
@@ -3527,8 +3532,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        if (owner.getType() != Account.Type.ADMIN) {
+            Domain callerDomain = _domainDao.findById(owner.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);

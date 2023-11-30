@@ -253,7 +253,14 @@ export default {
             ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
             (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
-          args: ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled'],
+          args: (record, store) => {
+            var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
+            if (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) {
+              fields.push('domainid')
+              fields.push('account')
+            }
+            return fields
+          },
           mapping: {
             volumeid: {
               value: (record) => { return record.id }
