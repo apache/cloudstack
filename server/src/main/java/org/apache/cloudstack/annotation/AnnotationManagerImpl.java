@@ -197,6 +197,7 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.SYSTEM_VM, ApiCommandResourceType.SystemVm);
         s_typeMap.put(EntityType.AUTOSCALE_VM_GROUP, ApiCommandResourceType.AutoScaleVmGroup);
         s_typeMap.put(EntityType.MANAGEMENT_SERVER, ApiCommandResourceType.Host);
+        s_typeMap.put(EntityType.OBJECT_STORAGE, ApiCommandResourceType.ObjectStore);
     }
 
     public List<KubernetesClusterHelper> getKubernetesClusterHelpers() {

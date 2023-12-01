@@ -83,6 +83,7 @@ import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResult
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
@@ -127,6 +128,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -161,6 +163,8 @@ import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -266,6 +270,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
@@ -280,6 +285,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -315,6 +321,8 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
+import org.apache.cloudstack.api.response.BucketResponse;
 
 import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
@@ -551,6 +559,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private SnapshotJoinDao snapshotJoinDao;
+
+    @Inject
+    private ObjectStoreDao objectStoreDao;
+
+    @Inject
+    private BucketDao bucketDao;
 
     @Inject
     EntityManager entityManager;
@@ -3162,6 +3176,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
         Boolean isRootAdmin = accountMgr.isRootAdmin(account.getAccountId());
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
         Long volumeId = cmd.getVolumeId();
@@ -3255,9 +3271,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        account = accountMgr.finalizeOwner(account, accountName, domainId, projectId);
+        if (!Account.Type.ADMIN.equals(account.getType())) {
+            Domain callerDomain = _domainDao.findById(account.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _diskOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -3347,6 +3363,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         searchFilter.addOrderBy(ServiceOfferingJoinVO.class, "id", true);
 
         Account caller = CallContext.current().getCallingAccount();
+        Long projectId = cmd.getProjectId();
+        String accountName = cmd.getAccountName();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -3363,6 +3381,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
 
+        final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!accountMgr.isRootAdmin(caller.getId()) && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
@@ -3374,8 +3393,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (domainId != null && !accountMgr.isRootAdmin(caller.getId())) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
-            if (!isPermissible(caller.getDomainId(), domainId)) {
-                throw new PermissionDeniedException("The account:" + caller.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
+            if (!isPermissible(owner.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("The account:" + owner.getAccountName() + " does not fall in the same domain hierarchy as the service offering");
             }
         }
 
@@ -3441,16 +3460,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Only root admins can access system's offering");
             }
             if (isRecursive) { // domain + all sub-domains
-                if (caller.getType() == Account.Type.NORMAL) {
+                if (owner.getType() == Account.Type.NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
             }
         } else {
             // for root users
-            if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+            if (owner.getDomainId() != 1 && isSystem) { // NON ROOT admin
+                throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering.");
             }
-            if (domainId != null) {
+            if (domainId != null && accountName == null) {
                 sc.addAnd("domainId", Op.FIND_IN_SET, String.valueOf(domainId));
             }
         }
@@ -3536,8 +3555,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // Filter offerings that are not associated with caller's domain
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
-        if (caller.getType() != Account.Type.ADMIN) {
-            Domain callerDomain = _domainDao.findById(caller.getDomainId());
+        if (owner.getType() != Account.Type.ADMIN) {
+            Domain callerDomain = _domainDao.findById(owner.getDomainId());
             List<Long> domainIds = findRelatedDomainIds(callerDomain, isRecursive);
 
             List<Long> ids = _srvOfferingDetailsDao.findOfferingIdsByDomainIds(domainIds);
@@ -5062,6 +5081,158 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return new Pair<>(snapshots, count);
+    }
+
+    public ListResponse<ObjectStoreResponse> searchForObjectStores(ListObjectStoragePoolsCmd cmd) {
+        Pair<List<ObjectStoreVO>, Integer> result = searchForObjectStoresInternal(cmd);
+        ListResponse<ObjectStoreResponse> response = new ListResponse<ObjectStoreResponse>();
+
+        List<ObjectStoreResponse> poolResponses = ViewResponseHelper.createObjectStoreResponse(result.first().toArray(new ObjectStoreVO[result.first().size()]));
+        response.setResponses(poolResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<ObjectStoreVO>, Integer> searchForObjectStoresInternal(ListObjectStoragePoolsCmd cmd) {
+
+        Object id = cmd.getId();
+        Object name = cmd.getStoreName();
+        String provider = cmd.getProvider();
+        Object keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+
+        Filter searchFilter = new Filter(ObjectStoreVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<ObjectStoreVO> sb = objectStoreDao.createSearchBuilder();
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("provider", sb.entity().getProviderName(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ObjectStoreVO> sc = sb.create();
+
+        if (keyword != null) {
+            SearchCriteria<ObjectStoreVO> ssc = objectStoreDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("providerName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (provider != null) {
+            sc.setParameters("provider", provider);
+        }
+
+        // search Store details by ids
+        Pair<List<ObjectStoreVO>, Integer> uniqueStorePair = objectStoreDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueStorePair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueStorePair;
+        }
+        List<ObjectStoreVO> uniqueStores = uniqueStorePair.first();
+        Long[] osIds = new Long[uniqueStores.size()];
+        int i = 0;
+        for (ObjectStoreVO v : uniqueStores) {
+            osIds[i++] = v.getId();
+        }
+        List<ObjectStoreVO> objectStores = objectStoreDao.searchByIds(osIds);
+        return new Pair<>(objectStores, count);
+    }
+
+
+    @Override
+    public ListResponse<BucketResponse> searchForBuckets(ListBucketsCmd listBucketsCmd) {
+        List<BucketVO> buckets = searchForBucketsInternal(listBucketsCmd);
+        List<BucketResponse> bucketResponses = new ArrayList<>();
+        for (BucketVO bucket : buckets) {
+            bucketResponses.add(responseGenerator.createBucketResponse(bucket));
+        }
+        ListResponse<BucketResponse> response = new ListResponse<>();
+        response.setResponses(bucketResponses, bucketResponses.size());
+        return response;
+    }
+
+    private List<BucketVO> searchForBucketsInternal(ListBucketsCmd cmd) {
+
+        Long id = cmd.getId();
+        String name = cmd.getBucketName();
+        Long storeId = cmd.getObjectStorageId();
+        String keyword = cmd.getKeyword();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
+        Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        // Verify parameters
+        if (id != null) {
+            BucketVO bucket = bucketDao.findById(id);
+            if (bucket != null) {
+                accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, bucket);
+            }
+        }
+
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
+                cmd.isRecursive(), null);
+        accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Long domainId = domainIdRecursiveListProject.first();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
+        Filter searchFilter = new Filter(BucketVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+
+        SearchBuilder<BucketVO> sb = bucketDao.createSearchBuilder();
+        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
+        // ids
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<BucketVO> sc = sb.create();
+        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (keyword != null) {
+            SearchCriteria<BucketVO> ssc = bucketDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        setIdsListToSearchCriteria(sc, ids);
+
+        // search Volume details by ids
+        Pair<List<BucketVO>, Integer> uniqueBktPair = bucketDao.searchAndCount(sc, searchFilter);
+        Integer count = uniqueBktPair.second();
+        if (count.intValue() == 0) {
+            // empty result
+            return uniqueBktPair.first();
+        }
+        List<BucketVO> uniqueBkts = uniqueBktPair.first();
+        Long[] bktIds = new Long[uniqueBkts.size()];
+        int i = 0;
+        for (BucketVO b : uniqueBkts) {
+            bktIds[i++] = b.getId();
+        }
+
+        return bucketDao.searchByIds(bktIds);
     }
 
     @Override

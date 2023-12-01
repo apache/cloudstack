@@ -365,7 +365,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.vnf.nics')"
+                :title="$t('label.vnf.nic.mappings')"
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="showVnfNicsSection">
                 <template #description>
@@ -1906,7 +1906,6 @@ export default {
       }
     },
     updateDefaultNetworks (id) {
-      this.defaultnetworkid = id
       this.form.defaultnetworkid = id
     },
     updateNetworkConfig (networks) {
@@ -2038,7 +2037,7 @@ export default {
               if (templateVnfNic.deviceid !== nextDeviceId) {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
-                  description: this.$t('message.vnf.error.deviceid.should.be.continuous')
+                  description: this.$t('message.vnf.error.deviceid.should.be.consecutive')
                 })
                 return
               }
@@ -2316,7 +2315,11 @@ export default {
                 if (vm.password) {
                   credentials.push('New password : ' + vm.password)
                 }
-                credentials.push(this.$t('message.vnf.credentials.change'))
+                if (credentials.length > 0) {
+                  credentials.push(this.$t('message.vnf.credentials.change'))
+                } else {
+                  credentials.push(this.$t('message.vnf.no.credentials'))
+                }
                 this.$notification.success({
                   message: `${this.$t('message.vnf.credentials.default')} ` + name,
                   description: (<span v-html={credentials.join('<br>')}></span>),

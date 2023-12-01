@@ -207,9 +207,11 @@ export default {
         }
 
         const managementDeviceIds = []
-        for (const vnfnic of this.resource.vnfnics) {
-          if (vnfnic.management) {
-            managementDeviceIds.push(vnfnic.deviceid)
+        if (this.resource.vnfnics) {
+          for (const vnfnic of this.resource.vnfnics) {
+            if (vnfnic.management) {
+              managementDeviceIds.push(vnfnic.deviceid)
+            }
           }
         }
         const managementIps = []

@@ -1049,10 +1049,17 @@ public class ApiConstants {
     public static final String MTU = "mtu";
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
+    public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String VERSIONING = "versioning";
+    public static final String OBJECT_LOCKING = "objectlocking";
+    public static final String ENCRYPTION = "encryption";
+    public static final String QUOTA = "quota";
+    public static final String ACCESS_KEY = "accesskey";
 
     public static final String SOURCE_NAT_IP = "sourcenatipaddress";
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
+    public static final String OBJECT_STORAGE = "objectstore";
 
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
@@ -1068,6 +1075,10 @@ public class ApiConstants {
 
     public static final String CLIENT_ID = "clientid";
     public static final String REDIRECT_URI = "redirecturi";
+
+    public static final String IS_TAG_A_RULE = "istagarule";
+
+    public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
