@@ -19,6 +19,7 @@ package com.cloud.utils.net;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Network protocols and parameters.
@@ -272,6 +273,23 @@ public class NetworkProtocols {
     static void addIcmpCode(IcmpCode code) {
         IcmpType type = IcmpTypes.stream().filter(icmpType -> icmpType.getType().equals(code.getType())).findFirst().get();
         type.addIcmpCodes(code);
+    }
+
+    public static boolean validateIcmpTypeAndCode(Integer type, Integer code) {
+        if (type != null && type != -1) {
+            Optional<IcmpType> icmpTypeOptional = IcmpTypes.stream().filter(t -> t.getType().equals(type)).findFirst();
+            if (icmpTypeOptional == null || icmpTypeOptional.isEmpty()) {
+                return false;
+            }
+            IcmpType icmpType = icmpTypeOptional.get();
+            if (code != null && code != -1) {
+                Optional<IcmpCode> icmpCodeOptional = icmpType.getIcmpCodes().stream().filter(c -> c.getCode().equals(code)).findFirst();
+                if (icmpCodeOptional == null || icmpCodeOptional.isEmpty()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     static {

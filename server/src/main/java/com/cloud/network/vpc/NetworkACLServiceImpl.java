@@ -72,6 +72,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.net.NetworkProtocols;
 
 @Component
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
@@ -588,7 +589,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
         }
         if (isIcmpProtocol) {
-            NetUtils.validateIcmpTypeAndCode(icmpType, icmpCode);
+            if (!NetworkProtocols.validateIcmpTypeAndCode(icmpType, icmpCode)) {
+                throw new InvalidParameterValueException(String.format("Unsupported icmptype %s or icmpcode %s", icmpType, icmpCode));
+            }
         }
 
         Integer sourcePortStart = networkACLItemVO.getSourcePortStart();

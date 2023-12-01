@@ -843,4 +843,31 @@ public class NetUtilsTest {
         Assert.assertEquals(expected, result);
         networkInterfaceMocked.close();
     }
+
+    private void validateIcmpTypeAndCodeInternal(Integer icmpType, Integer icmpCode, boolean expectedResult) {
+        boolean actualResult = true;
+        try {
+            NetUtils.validateIcmpTypeAndCode(icmpType, icmpCode);
+        } catch (CloudRuntimeException e) {
+            actualResult = false;
+        }
+        Assert.assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void validateIcmpTypeAndCodes() {
+        validateIcmpTypeAndCodeInternal(-1, -1, true);
+        validateIcmpTypeAndCodeInternal(3, 2, true);
+        validateIcmpTypeAndCodeInternal(null, null, false);
+        validateIcmpTypeAndCodeInternal(null, -1, false);
+        validateIcmpTypeAndCodeInternal(-1, null, false);
+        validateIcmpTypeAndCodeInternal(-1, 2, false);
+        validateIcmpTypeAndCodeInternal(3, -1, false);   // need discussion
+        validateIcmpTypeAndCodeInternal(-2, 2, false);
+        validateIcmpTypeAndCodeInternal(257, 2, false);
+        validateIcmpTypeAndCodeInternal(3, -2, false);
+        validateIcmpTypeAndCodeInternal(3, -257, false);
+
+    }
 }
