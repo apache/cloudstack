@@ -855,7 +855,6 @@ public class NetUtilsTest {
     }
 
     @Test
-    @PrepareForTest(NetUtils.class)
     public void validateIcmpTypeAndCodes() {
         validateIcmpTypeAndCodeInternal(-1, -1, true);
         validateIcmpTypeAndCodeInternal(3, 2, true);
