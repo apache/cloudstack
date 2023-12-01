@@ -2323,7 +2323,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Boolean applied = cmd.isApplied();
 
         if (applied == null) {
-            s_logger.debug(String.format("The [%s] parameter was not passed. Using the default value [%s].", ApiConstants.APPLIED, Boolean.TRUE));
+            s_logger.info(String.format("The [%s] parameter was not passed. Using the default value [%s].", ApiConstants.APPLIED, Boolean.TRUE));
             applied = Boolean.TRUE;
         }
 
