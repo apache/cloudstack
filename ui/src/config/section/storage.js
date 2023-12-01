@@ -164,8 +164,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
@@ -178,8 +178,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-              record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-              record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
+                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
@@ -250,8 +250,8 @@ export default {
           dataView: true,
           show: (record) => {
             return !['Destroy', 'Destroyed', 'Expunging', 'Expunged', 'Migrating', 'Uploading', 'UploadError', 'Creating'].includes(record.state) &&
-            ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
-            (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
+                ((record.type === 'ROOT' && record.vmstate === 'Stopped') ||
+                    (record.type !== 'ROOT' && !record.virtualmachineid && !['Allocated', 'Uploaded'].includes(record.state)))
           },
           args: (record, store) => {
             var fields = ['volumeid', 'name', 'displaytext', 'ostypeid', 'ispublic', 'isfeatured', 'isdynamicallyscalable', 'requireshvm', 'passwordenabled']
@@ -285,8 +285,8 @@ export default {
           dataView: true,
           show: (record, store) => {
             return ['Expunging', 'Expunged', 'UploadError'].includes(record.state) ||
-              ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
-              ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
+                ['Allocated', 'Uploaded'].includes(record.state) && record.type !== 'ROOT' && !record.virtualmachineid ||
+                ((['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.features.allowuserexpungerecovervolume) && record.state === 'Destroy')
           },
           groupAction: true,
           popup: true,
@@ -445,6 +445,119 @@ export default {
           message: 'message.delete.backup',
           dataView: true,
           show: (record) => { return record.state !== 'Destroyed' }
+        }
+      ]
+    },
+    {
+      name: 'backup',
+      title: 'label.backup',
+      icon: 'cloud-upload-outlined',
+      permission: ['listBackups'],
+      columns: [{ name: (record) => { return record.virtualmachinename } }, 'virtualmachinename', 'status', 'type', 'created', 'account', 'zone'],
+      details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
+      actions: [
+        {
+          api: 'restoreBackup',
+          icon: 'sync-outlined',
+          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          label: 'label.backup.restore',
+          message: 'message.backup.restore',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'restoreVolumeFromBackupAndAttachToVM',
+          icon: 'paper-clip-outlined',
+          label: 'label.backup.attach.restore',
+          message: 'message.backup.attach.restore',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
+        },
+        {
+          api: 'removeVirtualMachineFromBackupOffering',
+          icon: 'scissor-outlined',
+          label: 'label.backup.offering.remove',
+          message: 'message.backup.offering.remove',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          args: ['forced', 'virtualmachineid'],
+          mapping: {
+            forced: {
+              value: (record) => { return true }
+            },
+            virtualmachineid: {
+              value: (record) => { return record.virtualmachineid }
+            }
+          }
+        },
+        {
+          api: 'deleteBackup',
+          icon: 'delete-outlined',
+          label: 'label.delete.backup',
+          message: 'message.delete.backup',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' }
+        }
+      ]
+    },
+    {
+      name: 'buckets',
+      title: 'label.buckets',
+      icon: 'funnel-plot-outlined',
+      permission: ['listBuckets'],
+      columns: ['name', 'state', 'objectstore', 'size', 'account'],
+      details: ['id', 'name', 'state', 'objectstore', 'size', 'url', 'accesskey', 'usersecretkey', 'account', 'domain', 'created', 'quota', 'encryption', 'versioning', 'objectlocking', 'policy'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'browser',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/ObjectStoreBrowser.vue'))),
+          show: (record) => { return record.provider !== 'Simulator' }
+
+        },
+        {
+          name: 'events',
+          resourceType: 'Bucket',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        }
+      ],
+      actions: [
+        {
+          api: 'createBucket',
+          icon: 'plus-outlined',
+          docHelp: 'installguide/configuration.html#create-bucket',
+          label: 'label.create.bucket',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateBucket.vue')))
+        },
+        {
+          api: 'updateBucket',
+          icon: 'edit-outlined',
+          docHelp: 'adminguide/object_storage.html#update-bucket',
+          label: 'label.bucket.update',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UpdateBucket.vue'))),
+          show: (record) => { return record.state !== 'Destroyed' }
+        },
+        {
+          api: 'deleteBucket',
+          icon: 'delete-outlined',
+          label: 'label.bucket.delete',
+          message: 'message.bucket.delete',
+          dataView: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

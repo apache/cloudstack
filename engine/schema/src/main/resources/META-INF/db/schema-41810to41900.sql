@@ -233,3 +233,69 @@ ALTER TABLE `cloud`.`storage_pool_tags` MODIFY tag text NOT NULL;
 ALTER TABLE `cloud`.`host_tags` ADD COLUMN is_tag_a_rule int(1) UNSIGNED not null DEFAULT 0;
 
 ALTER TABLE `cloud`.`host_tags` MODIFY tag text NOT NULL;
+
+DROP TABLE IF EXISTS `cloud`.`object_store`;
+CREATE TABLE `cloud`.`object_store` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of object store',
+  `object_provider_name` varchar(255) NOT NULL COMMENT 'id of object_store_provider',
+  `url` varchar(255) NOT NULL COMMENT 'url of the object store',
+  `uuid` varchar(255) COMMENT 'uuid of object store',
+  `created` datetime COMMENT 'date the object store first signed on',
+  `removed` datetime COMMENT 'date removed if not null',
+  `total_size` bigint unsigned COMMENT 'storage total size statistics',
+  `used_bytes` bigint unsigned COMMENT 'storage available bytes statistics',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`object_store_details`;
+CREATE TABLE `cloud`.`object_store_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `store_id` bigint unsigned NOT NULL COMMENT 'store the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_object_store_details__store_id` FOREIGN KEY `fk_object_store__store_id`(`store_id`) REFERENCES `object_store`(`id`) ON DELETE CASCADE,
+  INDEX `i_object_store__name__value`(`name`(128), `value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket`;
+CREATE TABLE `cloud`.`bucket` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) NOT NULL COMMENT 'name of bucket',
+  `object_store_id` varchar(255) NOT NULL COMMENT 'id of object_store',
+  `state` varchar(255) NOT NULL COMMENT 'state of the bucket',
+  `uuid` varchar(255) COMMENT 'uuid of bucket',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the bucket belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+  `quota` bigint unsigned COMMENT 'Allocated bucket quota in GB',
+  `versioning` boolean COMMENT 'versioning enable/disable',
+  `encryption` boolean COMMENT 'encryption enable/disbale',
+  `object_lock` boolean COMMENT 'Lock objects in bucket',
+  `policy` varchar(255) COMMENT 'Bucket Access Policy',
+  `access_key` varchar(255) COMMENT 'Bucket Access Key',
+  `secret_key` varchar(255) COMMENT 'Bucket Secret Key',
+  `bucket_url` varchar(255) COMMENT 'URL to access bucket',
+  `created` datetime COMMENT 'date the bucket was created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud`.`bucket_statistics`;
+CREATE TABLE `cloud`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `cloud_usage`.`bucket_statistics`;
+CREATE TABLE `cloud_usage`.`bucket_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this bucket',
+  `bucket_id` bigint unsigned NOT NULL COMMENT 'id of this bucket',
+  `size` bigint unsigned COMMENT 'total size of bucket objects',
+   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

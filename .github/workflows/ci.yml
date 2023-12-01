@@ -93,6 +93,7 @@ jobs:
                   smoke/test_nic
                   smoke/test_nic_adapter_type
                   smoke/test_non_contigiousvlan
+                  smoke/test_object_stores
                   smoke/test_outofbandmanagement
                   smoke/test_outofbandmanagement_nestedplugin
                   smoke/test_over_provisioning
