@@ -28,6 +28,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EncryptionUtil;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyAnswer;
 import org.apache.cloudstack.storage.command.QuerySnapshotZoneCopyCommand;
@@ -50,6 +53,22 @@ public class NfsSecondaryStorageResourceTest {
 
     @Spy
     private NfsSecondaryStorageResource resource;
+
+    private static final String HOSTNAME = "hostname";
+
+    private static final String UUID = "uuid";
+
+    private static final String METADATA = "metadata";
+
+    private static final String TIMEOUT = "timeout";
+
+    private static final String PSK = "6HyGMx9Vat7rZw1pMZrM4OlD4FFwLUPznTsFqVFSOIvk0mAWMRCVZ6UCq42gZvhp";
+
+    private static final String PROTOCOL = NetUtils.HTTP_PROTO;
+
+    private static final String EXPECTED_SIGNATURE = "expectedSignature";
+
+    private static final String COMPUTED_SIGNATURE = "computedSignature";
 
     @Test
     public void testSwiftWriteMetadataFile() throws Exception {
@@ -140,5 +159,87 @@ public class NfsSecondaryStorageResourceTest {
             Assert.assertEquals(dir + File.separator + fileName + ".vmdk", result.get(0));
             Assert.assertEquals(dir + File.separator + fileName + ".ovf", result.get(1));
         }
+    }
+
+    private void prepareForValidatePostUploadRequestSignatureTests(MockedStatic<EncryptionUtil> encryptionUtilMock) {
+        Mockito.doReturn(PROTOCOL).when(resource).getUploadProtocol();
+        Mockito.doReturn(PSK).when(resource).getPostUploadPSK();
+        encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(Mockito.anyString(), Mockito.anyString())).thenReturn(COMPUTED_SIGNATURE);
+        String fullUrl = String.format("%s://%s/upload/%s", PROTOCOL, HOSTNAME, UUID);
+        String data = String.format("%s%s%s", METADATA, fullUrl, TIMEOUT);
+        encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(data, PSK)).thenReturn(EXPECTED_SIGNATURE);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenProtocolDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+            Mockito.doReturn(NetUtils.HTTPS_PROTO).when(resource).getUploadProtocol();
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenHostnameDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, "test", UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenUuidDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, "test", METADATA, TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenMetadataDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, "test", TIMEOUT);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validatePostUploadRequestSignatureTestThrowExceptionWhenTimeoutDiffers() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, "test");
+        }
+    }
+
+    @Test
+    public void validatePostUploadRequestSignatureTestSuccessWhenDataIsTheSame() {
+        try (MockedStatic<EncryptionUtil> encryptionUtilMock = Mockito.mockStatic(EncryptionUtil.class)) {
+            prepareForValidatePostUploadRequestSignatureTests(encryptionUtilMock);
+
+            resource.validatePostUploadRequestSignature(EXPECTED_SIGNATURE, HOSTNAME, UUID, METADATA, TIMEOUT);
+        }
+    }
+
+    @Test
+    public void getUploadProtocolTestReturnHttpsWhenUseHttpsToUploadIsTrue() {
+        Mockito.doReturn(true).when(resource).useHttpsToUpload();
+
+        String result = resource.getUploadProtocol();
+
+        Assert.assertEquals(NetUtils.HTTPS_PROTO, result);
+    }
+
+    @Test
+    public void getUploadProtocolTestReturnHttpWhenUseHttpsToUploadIsFalse() {
+        Mockito.doReturn(false).when(resource).useHttpsToUpload();
+
+        String result = resource.getUploadProtocol();
+
+        Assert.assertEquals(NetUtils.HTTP_PROTO, result);
     }
 }
