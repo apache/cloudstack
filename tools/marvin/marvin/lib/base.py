@@ -1854,7 +1854,7 @@ class PublicIPAddress:
 
         if zoneid:
             cmd.zoneid = zoneid
-        elif "zoneid" in services:
+        elif services and "zoneid" in services:
             cmd.zoneid = services["zoneid"]
 
         if domainid:
@@ -1879,9 +1879,16 @@ class PublicIPAddress:
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
-        """Dissociate Public IP address"""
+        """Dissociate Public IP address using the given ID"""
         cmd = disassociateIpAddress.disassociateIpAddressCmd()
         cmd.id = self.ipaddress.id
+        apiclient.disassociateIpAddress(cmd)
+        return
+
+    def delete_by_ip(self, apiclient):
+        """Dissociate Public IP address using the given IP address"""
+        cmd = disassociateIpAddress.disassociateIpAddressCmd()
+        cmd.ipaddress = self.ipaddress.ipaddress
         apiclient.disassociateIpAddress(cmd)
         return
 
@@ -5105,7 +5112,7 @@ class VPC:
     @classmethod
     def create(cls, apiclient, services, vpcofferingid,
                zoneid, networkDomain=None, account=None,
-               domainid=None, **kwargs):
+               domainid=None, start=True, **kwargs):
         """Creates the virtual private connection (VPC)"""
 
         cmd = createVPC.createVPCCmd()
@@ -5113,6 +5120,7 @@ class VPC:
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.vpcofferingid = vpcofferingid
         cmd.zoneid = zoneid
+        cmd.start = start
         if "cidr" in services:
             cmd.cidr = services["cidr"]
         if account:
