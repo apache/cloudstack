@@ -85,7 +85,7 @@ public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
     }
 
     public String getDisplayText() {
-        return StringUtils.isEmpty(displayText) ? getName() : displayText;
+        return StringUtils.isBlank(displayText) ? getName() : displayText;
     }
 
     public Boolean isFeatured() {

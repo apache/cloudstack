@@ -96,7 +96,7 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
     private Boolean deployAsIs;
 
     public String getDisplayText() {
-        return StringUtils.isEmpty(displayText) ? getName() : displayText;
+        return StringUtils.isBlank(displayText) ? getName() : displayText;
     }
 
     public String getHypervisor() {
