@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
@@ -84,6 +85,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
      * make sure shuffled lists of Pools are really shuffled
      */
     private SecureRandom secureRandom = new SecureRandom();
+
+    @Inject
+    protected StoragePoolJoinDao storagePoolJoinDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

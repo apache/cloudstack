@@ -284,4 +284,6 @@
   <bean id="vnfTemplateNicDaoImpl" class="com.cloud.storage.dao.VnfTemplateNicDaoImpl" />
   <bean id="ClusterDrsPlanDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanDaoImpl" />
   <bean id="ClusterDrsPlanDetailsDaoImpl" class="org.apache.cloudstack.cluster.dao.ClusterDrsPlanMigrationDaoImpl" />
+  <bean id="objectStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ObjectStoreDetailsDaoImpl" />
+  <bean id="bucketStatisticsDaoImpl" class="com.cloud.usage.dao.BucketStatisticsDaoImpl" />
 </beans>

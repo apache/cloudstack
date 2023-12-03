@@ -29,6 +29,7 @@ import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
@@ -234,7 +235,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     }
 
     private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
-        List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
+        List<HostTagVO> hostTagVOS = _hostTagsDao.getHostTags(host.getId());
+        List<String> hostTags = new ArrayList<>();
+        hostTagVOS.forEach(hostTagVO -> hostTags.add(hostTagVO.getTag()));
         markTags(hostTags,totalHosts);
         if (host.getStatus() == Status.Up && !host.isInMaintenanceStates()) {
             markTags(hostTags, upHosts);
@@ -277,10 +280,12 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
                 });
 
-        List<String> allHostTags = hostDao.listAll().stream()
+        List<HostTagVO> allHostTagVOS = hostDao.listAll().stream()
                 .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
                 .distinct()
                 .collect(Collectors.toList());
+        List<String> allHostTags = new ArrayList<>();
+        allHostTagVOS.forEach(hostTagVO -> allHostTags.add(hostTagVO.getTag()));
 
         for (final State state : State.values()) {
             for (final String hostTag : allHostTags) {

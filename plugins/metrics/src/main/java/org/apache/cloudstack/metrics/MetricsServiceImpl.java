@@ -71,6 +71,7 @@ import org.apache.cloudstack.response.VolumeMetricsResponse;
 import org.apache.cloudstack.response.VolumeMetricsStatsResponse;
 import org.apache.cloudstack.response.ZoneMetricsResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
@@ -175,6 +176,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     private VolumeDao volumeDao;
     @Inject
     private VolumeStatsDao volumeStatsDao;
+
+    @Inject
+    private ObjectStoreDao objectStoreDao;
 
     private static Gson gson = new Gson();
 
@@ -557,6 +561,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setHosts(hostDao.countAllByType(Host.Type.Routing));
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
+        response.setObjectStores(objectStoreDao.countAllObjectStores());
         response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
