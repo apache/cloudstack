@@ -134,7 +134,7 @@ export default {
     },
     submitForm () {
       var isUserVm = true
-      if (this.$route.meta.name !== 'vm') {
+      if (this.$route.meta.resourceType !== 'UserVm') {
         isUserVm = false
       }
       var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
