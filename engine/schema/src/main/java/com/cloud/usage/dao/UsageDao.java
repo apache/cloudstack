@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.usage.dao;
 
+import com.cloud.usage.BucketStatisticsVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -44,6 +45,12 @@ public interface UsageDao extends GenericDao<UsageVO, Long> {
     Long getLastAccountId();
 
     Long getLastUserStatsId();
+
+    Long getLastBucketStatsId();
+
+    void saveBucketStats(List<BucketStatisticsVO> userStats);
+
+    void updateBucketStats(List<BucketStatisticsVO> userStats);
 
     List<Long> listPublicTemplatesByAccount(long accountId);
 

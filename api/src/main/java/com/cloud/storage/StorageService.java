@@ -24,9 +24,11 @@ import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaint
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 
 import com.cloud.exception.DiscoveryException;
@@ -34,6 +36,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.storage.object.ObjectStore;
 
 public interface StorageService {
     /**
@@ -109,4 +112,9 @@ public interface StorageService {
 
     StoragePool syncStoragePool(SyncStoragePoolCmd cmd);
 
+    ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+    boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
+
+    ObjectStore updateObjectStore(Long id, UpdateObjectStoragePoolCmd cmd);
 }

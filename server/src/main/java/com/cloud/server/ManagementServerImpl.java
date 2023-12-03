@@ -209,14 +209,17 @@ import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.cloudstack.api.command.admin.snapshot.ListSnapshotsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
+import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
@@ -227,6 +230,7 @@ import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForM
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStorageCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
@@ -360,6 +364,10 @@ import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.DeleteBucketCmd;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
+import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
 import org.apache.cloudstack.api.command.user.config.ListCapabilitiesCmd;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
@@ -3911,6 +3919,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteUserDataCmd.class);
         cmdList.add(ListUserDataCmd.class);
         cmdList.add(LinkUserDataToTemplateCmd.class);
+
+        //object store APIs
+        cmdList.add(AddObjectStoragePoolCmd.class);
+        cmdList.add(ListObjectStoragePoolsCmd.class);
+        cmdList.add(UpdateObjectStoragePoolCmd.class);
+        cmdList.add(DeleteObjectStoragePoolCmd.class);
+        cmdList.add(CreateBucketCmd.class);
+        cmdList.add(UpdateBucketCmd.class);
+        cmdList.add(DeleteBucketCmd.class);
+        cmdList.add(ListBucketsCmd.class);
         return cmdList;
     }
 
