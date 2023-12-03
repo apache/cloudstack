@@ -25,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloud.host.HostTagVO;
 import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -351,7 +353,17 @@ public class PresetVariableHelper {
         Host host = new Host();
         host.setId(hostVo.getUuid());
         host.setName(hostVo.getName());
-        host.setTags(hostTagsDao.getHostTags(hostId));
+        List<HostTagVO> hostTagVOList = hostTagsDao.getHostTags(hostId);
+        List<String> hostTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(hostTagVOList)) {
+            isTagARule = hostTagVOList.get(0).getIsTagARule();
+            if (!isTagARule) {
+                hostTags = hostTagVOList.parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        host.setTags(hostTags);
+        host.setIsTagARule(isTagARule);
 
         return host;
     }
@@ -508,7 +520,17 @@ public class PresetVariableHelper {
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
         storage.setScope(storagePoolVo.getScope());
-        storage.setTags(storagePoolTagsDao.getStoragePoolTags(storageId));
+        List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
+        List<String> storageTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(storagePoolTagVOList)) {
+            isTagARule = storagePoolTagVOList.get(0).isTagARule();
+            if (!isTagARule) {
+                storageTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        storage.setTags(storageTags);
+        storage.setIsTagARule(isTagARule);
 
         return storage;
     }

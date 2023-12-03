@@ -260,6 +260,14 @@ known_categories = {
     'updateQuarantinedIp': 'IP Quarantine',
     'removeQuarantinedIp': 'IP Quarantine',
     'Shutdown': 'Shutdown',
+    'addObjectStoragePool': 'Object Store',
+    'listObjectStoragePools': 'Object Store',
+    'deleteObjectStoragePool': 'Object Store',
+    'updateObjectStoragePool': 'Object Store',
+    'createBucket': 'Object Store',
+    'updateBucket': 'Object Store',
+    'deleteBucket': 'Object Store',
+    'listBuckets': 'Object Store',
     'listVmsForImport': 'Virtual Machine',
     'importVm': 'Virtual Machine'
 }
