@@ -1100,8 +1100,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 if (cmd.getUrl() != null) {
                     details.put("url", cmd.getUrl());
                 }
-                ((PrimaryDataStoreLifeCycle)dataStoreLifeCycle).updateStoragePool(storagePool, details);
-                _storagePoolDao.persist(storagePool, details, null);
+                _storagePoolDao.update(id, storagePool);
+                _storagePoolDao.updateDetails(id, details);
             }
         }
 

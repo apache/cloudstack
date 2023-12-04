@@ -213,7 +213,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
             return answer;
         } catch (Exception e) {
-            if (s_logger.isTraceEnabled()) s_logger.trace("copy object failed: ", e);
+            if (s_logger.isDebugEnabled()) s_logger.debug("copy object failed: ", e);
             if (cacheData != null) {
                 cacheMgr.deleteCacheObject(cacheData);
             }
