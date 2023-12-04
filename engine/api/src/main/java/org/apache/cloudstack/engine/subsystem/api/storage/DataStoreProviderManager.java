@@ -33,4 +33,6 @@ public interface DataStoreProviderManager extends Manager, DataStoreProviderApiS
     DataStoreProvider getDefaultCacheDataStoreProvider();
 
     List<DataStoreProvider> getProviders();
+
+    DataStoreProvider getDefaultObjectStoreProvider();
 }

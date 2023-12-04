@@ -409,7 +409,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String format = sanitizeFormat(cmd.getFormat());
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
-        DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
@@ -419,6 +418,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
+        DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId, volume);
 
         volService.registerVolume(vol, store);
         return volume;
@@ -451,7 +451,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         String format = sanitizeFormat(cmd.getFormat());
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
-        final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
 
@@ -460,6 +459,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
                 VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
+
+                final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId, volume);
 
                 VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -655,6 +656,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 //url can be null incase of postupload
                 if (url != null) {
                     _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
+                    volume.setSize(UriUtils.getRemoteSize(url));
                 }
 
                 return volume;
