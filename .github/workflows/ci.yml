@@ -194,8 +194,15 @@ jobs:
                   component/test_vpc_network
                   component/test_vpc_offerings
                   component/test_vpc_routers
-                  component/test_vpn_users",
-                "component/test_vpc_network_lbrules" ]
+                  component/test_vpn_users
+                  component/test_vpc_network_lbrules",
+                "smoke/test_list_accounts
+                  smoke/test_list_disk_offerings
+                  smoke/test_list_domains
+                  smoke/test_list_hosts
+                  smoke/test_list_service_offerings
+                  smoke/test_list_storage_pools
+                  smoke/test_list_volumes"]
 
     steps:
       - uses: actions/checkout@v4
