@@ -165,7 +165,10 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
             return domainsOfNetworkOfferingsUsedByDomainPath;
         } catch (SQLException e) {
             s_logger.error(String.format("Failed to retrieve the domains of the network offerings used by domain with path [%s] due to [%s]. Returning an empty "
-                    + "list of domains.", domainPath, e.getMessage()), e);
+                    + "list of domains.", domainPath, e.getMessage()));
+
+            s_logger.debug(String.format("Failed to retrieve the domains of the network offerings used by domain with path [%s]. Returning an empty " +
+                    "list of domains.", domainPath), e);
 
             return new HashMap<>();
         }

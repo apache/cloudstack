@@ -473,7 +473,10 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
             return domainsOfDedicatedResourcesUsedByDomainPath;
         } catch (SQLException e) {
             LOGGER.error(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s] due to [%s]. Returning an empty "
-                    + "list of domains.", domainPath, e.getMessage()), e);
+                    + "list of domains.", domainPath, e.getMessage()));
+
+            LOGGER.debug(String.format("Failed to retrieve the domains of the dedicated resources used by domain with path [%s]. Returning an empty "
+                    + "list of domains.", domainPath), e);
 
             return new HashMap<>();
         }

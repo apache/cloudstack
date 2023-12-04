@@ -117,7 +117,10 @@ public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> 
             return domainsOfSharedNetworksUsedByDomainPath;
         } catch (SQLException e) {
             logger.error(String.format("Failed to retrieve the domains of the shared networks with subdomain access used by domain with path [%s] due to [%s]. Returning an empty "
-                    + "list of domains.", domainPath, e.getMessage()), e);
+                    + "list of domains.", domainPath, e.getMessage()));
+
+            logger.debug(String.format("Failed to retrieve the domains of the shared networks with subdomain access used by domain with path [%s]. Returning an empty "
+                    + "list of domains.", domainPath), e);
 
             return new HashMap<>();
         }
