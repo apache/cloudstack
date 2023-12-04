@@ -3359,7 +3359,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 event == VirtualMachine.Event.FollowAgentPowerOnReport &&
                 newState == VirtualMachine.State.Running &&
                 isOutOfBandMigrated(opaque)) {
-            s_logger.debug("Virtual router " + vo.getInstanceName() + " is powered-on out-of-band");
+            s_logger.debug(String.format("Virtual router %s is powered-on out-of-band", vo.getInstanceName()));
+            // reboot to make sure ip addresses aren't in conflict
+            try {
+                rebootRouter(vo.getId(), true, false);
+            } catch (ConcurrentOperationException | ResourceUnavailableException | InsufficientCapacityException e) {
+                s_logger.warn(String.format("reboot failed after out of bounds start of router %s due to %s", vo.getUuid(), e.getLocalizedMessage()));
+            }
         }
 
         return true;
