@@ -104,6 +104,7 @@ import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
@@ -149,6 +150,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 
@@ -539,6 +541,8 @@ public interface ResponseGenerator {
     FirewallResponse createIpv6FirewallRuleResponse(FirewallRule acl);
 
     UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host);
+
+    SecondaryStorageHeuristicsResponse createSecondaryStorageSelectorResponse(Heuristic heuristic);
 
     IpQuarantineResponse createQuarantinedIpsResponse(PublicIpQuarantine publicIp);
 

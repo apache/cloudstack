@@ -211,7 +211,7 @@
           <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+        <div v-if="form.protocol === 'icmp'">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
             <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
