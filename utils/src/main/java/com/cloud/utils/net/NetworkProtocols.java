@@ -190,7 +190,7 @@ public class NetworkProtocols {
         ProtocolNumbers.add(new ProtocolNumber(145, "NSH", "Network Service Header"));
     }
     /**
-     * Different types of ICMP.
+     * Different Internet Protocol Numbers.
      */
     public static class ProtocolNumber {
 
@@ -238,7 +238,7 @@ public class NetworkProtocols {
     }
 
     /**
-     * Different types of ICMP.
+     * Different types of ICMP (Internet Control Message Protocol).
      */
     public static class IcmpType {
 
@@ -333,7 +333,7 @@ public class NetworkProtocols {
     }
 
     /**
-     * Different codes of ICMP.
+     * Code field of ICMP types.
      */
     public static class IcmpCode {
 
