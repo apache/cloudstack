@@ -5140,7 +5140,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         bucketResponse.setCreated(bucket.getCreated());
         bucketResponse.setState(bucket.getState());
         bucketResponse.setSize(bucket.getSize());
-        if(bucket.getQuota() != null) {
+        if (bucket.getQuota() != null) {
             bucketResponse.setQuota(bucket.getQuota());
         }
         bucketResponse.setVersioning(bucket.isVersioning());
@@ -5161,10 +5161,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private String getDomainPath(String path){
         StringBuilder domainPath = new StringBuilder();
-        if (StringUtils.isEmpty(path) || path.equals("/")){
+       if (StringUtils.isEmpty(path) || path.equals("/")) {
             domainPath.append("/");
-        }
-        else{
+        } else {
             (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
         }
         return domainPath.toString();
