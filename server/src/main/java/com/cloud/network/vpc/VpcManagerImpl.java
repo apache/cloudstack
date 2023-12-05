@@ -1809,7 +1809,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * ("No redunant router support when network belnogs to VPC"); }
          */
 
-        // 4) Conserve mode should be off in elder versions
+        // 4) Conserve mode should be off in older versions
         if (guestNtwkOff.isConserveMode()) {
             s_logger.info("Creating a network with conserve mode in VPC");
         }
