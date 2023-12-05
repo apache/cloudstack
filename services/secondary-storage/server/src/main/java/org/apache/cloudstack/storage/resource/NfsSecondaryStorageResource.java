@@ -3592,22 +3592,22 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      * throws an InvalidParameterValueException if it does not.
      */
     protected void validatePostUploadRequestSignature(String signature, String hostname, String uuid, String metadata, String timeout) {
-        s_logger.trace(String.format("Validating signature [%s] for post upload request [%s].", signature, uuid));
+        logger.trace(String.format("Validating signature [%s] for post upload request [%s].", signature, uuid));
         String protocol = getUploadProtocol();
         String fullUrl = String.format("%s://%s/upload/%s", protocol, hostname, uuid);
         String data = String.format("%s%s%s", metadata, fullUrl, timeout);
 
         String computedSignature = EncryptionUtil.generateSignature(data, getPostUploadPSK());
-        s_logger.debug(String.format("Computed signature for post upload request [%s] is [%s].", uuid, computedSignature));
+        logger.debug(String.format("Computed signature for post upload request [%s] is [%s].", uuid, computedSignature));
 
         boolean isSignatureValid = computedSignature.equals(signature);
         if (!isSignatureValid) {
-            s_logger.debug(String.format("Signature for post upload request [%s] is invalid.", uuid));
+            logger.debug(String.format("Signature for post upload request [%s] is invalid.", uuid));
             String errorMsg = "signature validation failed.";
             updateStateMapWithError(uuid, errorMsg);
             throw new InvalidParameterValueException(errorMsg);
         }
-        s_logger.debug(String.format("Signature for post upload request [%s] is valid.", uuid));
+        logger.debug(String.format("Signature for post upload request [%s] is valid.", uuid));
     }
 
     /**
@@ -3615,10 +3615,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      */
     protected String getUploadProtocol() {
         if (useHttpsToUpload()) {
-            s_logger.debug(String.format("Param [%s] is set to true; therefore, HTTPS is being used.", USE_HTTPS_TO_UPLOAD));
+            logger.debug(String.format("Param [%s] is set to true; therefore, HTTPS is being used.", USE_HTTPS_TO_UPLOAD));
             return NetUtils.HTTPS_PROTO;
         }
-        s_logger.debug(String.format("Param [%s] is set to false; therefore, HTTP is being used.", USE_HTTPS_TO_UPLOAD));
+        logger.debug(String.format("Param [%s] is set to false; therefore, HTTP is being used.", USE_HTTPS_TO_UPLOAD));
         return NetUtils.HTTP_PROTO;
     }
 

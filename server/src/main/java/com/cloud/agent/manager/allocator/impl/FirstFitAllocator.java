@@ -204,7 +204,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
 
         if (clusterHosts.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTagOnOffering));
+            logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTagOnOffering));
             throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
         }
         // add all hosts that we are not considering to the avoid list

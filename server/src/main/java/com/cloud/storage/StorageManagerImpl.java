@@ -3761,8 +3761,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to add object store: " + e.getMessage(), e);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Failed to add object store: " + e.getMessage(), e);
             }
             throw new CloudRuntimeException("Failed to add object store: " + e.getMessage(), e);
         }
@@ -3794,7 +3794,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _objectStoreDao.remove(storeId);
             }
         });
-        s_logger.debug("Successfully deleted object store with Id: "+storeId);
+        logger.debug("Successfully deleted object store with Id: "+storeId);
         return true;
     }
 
@@ -3835,7 +3835,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             objectStoreVO.setName(cmd.getName());
         }
         _objectStoreDao.update(id, objectStoreVO);
-        s_logger.debug("Successfully updated object store with Id: "+id);
+        logger.debug("Successfully updated object store with Id: "+id);
         return objectStoreVO;
     }
 }

@@ -96,11 +96,11 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         hostsCopy = ListUtils.union(hostsCopy, _hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTag));
 
         if (hostsCopy.isEmpty()) {
-            s_logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTag));
+            logger.error(String.format("No suitable host found for vm [%s] with tags [%s].", vmProfile, hostTag));
             throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
         }
 
-        s_logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");
+        logger.debug("Random Allocator found " + hostsCopy.size() + "  hosts");
         if (hostsCopy.size() == 0) {
             return suitableHosts;
         }

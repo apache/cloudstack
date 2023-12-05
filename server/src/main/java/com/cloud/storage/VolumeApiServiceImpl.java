@@ -3337,14 +3337,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Pair<List<String>, Boolean> storagePoolTags = getStoragePoolTags(destPool);
         if ((storagePoolTags == null || !storagePoolTags.second()) && org.apache.commons.lang.StringUtils.isBlank(diskOfferingTags)) {
             if (storagePoolTags == null) {
-                s_logger.debug(String.format("Destination storage pool [%s] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid()));
+                logger.debug(String.format("Destination storage pool [%s] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid()));
             } else {
-                s_logger.debug("Destination storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.");
+                logger.debug("Destination storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.");
             }
             return true;
         }
         if (storagePoolTags == null || CollectionUtils.isEmpty(storagePoolTags.first())) {
-            s_logger.debug(String.format("Destination storage pool [%s] has no tags, while disk offering has tags [%s]. Therefore, they are not compatible", destPool.getUuid(),
+            logger.debug(String.format("Destination storage pool [%s] has no tags, while disk offering has tags [%s]. Therefore, they are not compatible", destPool.getUuid(),
                     diskOfferingTags));
             return false;
         }
@@ -3357,7 +3357,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             result = CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), storageTagsList);
         }
-        s_logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
+        logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
         return result;
     }
 

@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreHelper;
 import org.apache.cloudstack.storage.object.datastore.ObjectStoreProviderManager;
 import org.apache.cloudstack.storage.object.store.lifecycle.ObjectStoreLifeCycle;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -37,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SimulatorObjectStoreLifeCycleImpl implements ObjectStoreLifeCycle {
-
-    private static final Logger s_logger = Logger.getLogger(SimulatorObjectStoreLifeCycleImpl.class);
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject

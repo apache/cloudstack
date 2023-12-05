@@ -1690,9 +1690,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 if (!_volsDao.update(toBeCreated.getId(), toBeCreated)) {
                     throw new CloudRuntimeException(String.format("Error updating volume [%s] to clear pool Id.", toBeCreated.getId()));
                 }
-                if (s_logger.isDebugEnabled()) {
+                if (logger.isDebugEnabled()) {
                     String msg = String.format("Setting pool_id to NULL for volume id=%s as it is in Allocated state", toBeCreated.getId());
-                    s_logger.debug(msg);
+                    logger.debug(msg);
                 }
             }
             // If the plan specifies a poolId, it means that this VM's ROOT

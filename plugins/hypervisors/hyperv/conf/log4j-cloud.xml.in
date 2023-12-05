@@ -47,10 +47,6 @@ under the License.
    <Loggers>
       <Logger name="com.cloud" level="INFO"/>
 
-      <Logger name="com.cloud.agent.metrics" level="INFO"/>
-
-      <Logger name="com.cloud.agent.resource.computing.ComputingResource$StorageMonitorTask" level="INFO"/>
-
       <Logger name="org.apache" level="INFO"/>
 
       <Logger name="org" level="INFO"/>

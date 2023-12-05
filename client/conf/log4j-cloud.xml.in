@@ -112,7 +112,7 @@ under the License.
 
       <Logger name="httpclient.wire" level="INFO"/>
 
-      <Logger name="org.apache.cloudstack.alerts" additivity="false" level="WARN">
+      <Logger name="org.apache.cloudstack.alert" additivity="false" level="WARN">
          <AppenderRef ref="SYSLOG"/>
          <AppenderRef ref="CONSOLE"/>
          <AppenderRef ref="FILE"/>

@@ -1021,9 +1021,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
         }
         parsed = BucketUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (s_logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (!parsed) {
-                s_logger.debug("Bucket usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+                logger.debug("Bucket usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
         return parsed;

@@ -303,7 +303,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 return Long.valueOf(rs.getLong(1));
             }
         } catch (Exception ex) {
-            s_logger.error("error getting last bucket stats id", ex);
+            logger.error("error getting last bucket stats id", ex);
         }
         return null;
     }
@@ -327,7 +327,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error saving bucket stats to cloud_usage db", ex);
+            logger.error("error saving bucket stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -349,7 +349,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error updating bucket stats to cloud_usage db", ex);
+            logger.error("error updating bucket stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }

@@ -20,7 +20,6 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.storage.StorageService;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +29,6 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 public class DeleteObjectStoragePoolCmdTest {
-    public static final Logger s_logger = Logger.getLogger(DeleteObjectStoragePoolCmdTest.class.getName());
     @Mock
     private StorageService storageService;
 

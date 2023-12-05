@@ -49,7 +49,6 @@ import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.BaseObjectStoreDriverImpl;
 import org.apache.cloudstack.storage.object.BucketObject;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -61,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 
 public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
-    private static final Logger s_logger = Logger.getLogger(MinIOObjectStoreDriverImpl.class);
 
     @Inject
     AccountDao _accountDao;
@@ -259,11 +257,11 @@ public class MinIOObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         try {
             UserInfo userInfo = minioAdminClient.getUserInfo(accessKey);
             if(userInfo != null) {
-                s_logger.debug("User already exists in MinIO store: "+accessKey);
+                logger.debug("User already exists in MinIO store: "+accessKey);
                 return true;
             }
         } catch (Exception e) {
-            s_logger.debug("User does not exist. Creating user: "+accessKey);
+            logger.debug("User does not exist. Creating user: "+accessKey);
         }
 
         KeyGenerator generator = null;

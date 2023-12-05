@@ -1181,10 +1181,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      */
     protected void validateGlobalAclPermissionAndAclAssociatedToVpc(NetworkACL acl, Account account, String exception){
         if (isGlobalAcl(acl.getVpcId())) {
-            s_logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
+            logger.info(String.format("Checking if account [%s] has permission to manipulate global ACL [%s].", account, acl));
             checkGlobalAclPermission(acl.getVpcId(), account, exception);
         } else {
-            s_logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
+            logger.info(String.format("Validating ACL [%s] associated to VPC [%s] with account [%s].", acl, acl.getVpcId(), account));
             validateAclAssociatedToVpc(acl.getVpcId(), account, acl.getUuid());
         }
     }

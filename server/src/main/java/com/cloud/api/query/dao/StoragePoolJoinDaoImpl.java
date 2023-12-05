@@ -415,7 +415,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 if (storagePoolVO != null) {
                     filteredPools.add(storagePoolVO);
                 } else {
-                    s_logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
+                    logger.warn(String.format("Unable to find Storage Pool [%s] in the DB.", storagePoolJoinVO.getUuid()));
                 }
             }
         }

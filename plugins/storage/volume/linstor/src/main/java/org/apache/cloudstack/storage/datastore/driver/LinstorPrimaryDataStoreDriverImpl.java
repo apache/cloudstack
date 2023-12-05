@@ -1032,7 +1032,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             if (optEP.isPresent()) {
                 answer = optEP.get().sendMessage(cmd);
             } else {
-                s_logger.debug("No diskfull endpoint found to copy image, creating diskless endpoint");
+                logger.debug("No diskfull endpoint found to copy image, creating diskless endpoint");
                 answer = copyFromTemporaryResource(api, pool, rscName, snapshotInfo, cmd);
             }
             return answer;

@@ -353,38 +353,38 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
     protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Set<Long> zoneSet, boolean isTemplatePrivate) {
         if (zoneId == null) {
-            s_logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
+            logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
             return false;
         }
 
         DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            s_logger.warn(String.format("Unable to find zone by id [%s], so skip downloading template to its image store [%s].", zoneId, imageStore.getId()));
+            logger.warn(String.format("Unable to find zone by id [%s], so skip downloading template to its image store [%s].", zoneId, imageStore.getId()));
             return false;
         }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-            s_logger.info(String.format("Zone [%s] is disabled. Skip downloading template to its image store [%s].", zoneId, imageStore.getId()));
+            logger.info(String.format("Zone [%s] is disabled. Skip downloading template to its image store [%s].", zoneId, imageStore.getId()));
             return false;
         }
 
         if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-            s_logger.info(String.format("Image store doesn't have enough capacity. Skip downloading template to this image store [%s].", imageStore.getId()));
+            logger.info(String.format("Image store doesn't have enough capacity. Skip downloading template to this image store [%s].", imageStore.getId()));
             return false;
         }
 
         if (zoneSet == null) {
-            s_logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
+            logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
             return true;
         }
 
         if (isTemplatePrivate && zoneSet.contains(zoneId)) {
-            s_logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
+            logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
                     zone, imageStore));
             return false;
         }
 
-        s_logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
+        logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
         zoneSet.add(zoneId);
         return true;
     }
@@ -456,7 +456,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             EndPoint ep = _epSelector.select(templateOnStore);
             if (ep == null) {
                 String errMsg = "There is no secondary storage VM for downloading template to image store " + imageStore.getName();
-                s_logger.warn(errMsg);
+                logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
 
