@@ -106,6 +106,9 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     @Mock
     QuotaUsageDao quotaUsageDaoMock;
 
+    @Mock
+    QuotaAccountDao quotaAccountDaoMock;
+
     @InjectMocks
     QuotaResponseBuilderImpl quotaResponseBuilderSpy = Mockito.spy(QuotaResponseBuilderImpl.class);
 
@@ -119,9 +122,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
     @Mock
     QuotaConfigureEmailCmd quotaConfigureEmailCmdMock;
-
-    @Mock
-    QuotaAccountDao quotaAccountDaoMock;
 
     @Mock
     QuotaAccountVO quotaAccountVOMock;

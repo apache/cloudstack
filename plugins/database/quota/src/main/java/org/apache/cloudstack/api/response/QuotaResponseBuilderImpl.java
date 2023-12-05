@@ -101,7 +101,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private AccountDao _accountDao;
     @Inject
-    private QuotaAccountDao _quotaAccountDao;
+    private QuotaAccountDao quotaAccountDao;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -110,10 +110,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private QuotaStatement _statement;
     @Inject
     private QuotaManager _quotaManager;
-
-    @Inject
-    private QuotaAccountDao quotaAccountDao;
-
     @Inject
     private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
 
@@ -168,7 +164,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                 result.add(qr);
             }
         } else {
-            Pair<List<QuotaAccountVO>, Integer> data = _quotaAccountDao.listAllQuotaAccount(startIndex, pageSize);
+            Pair<List<QuotaAccountVO>, Integer> data = quotaAccountDao.listAllQuotaAccount(startIndex, pageSize);
             count = data.second();
             for (final QuotaAccountVO quotaAccount : data.first()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
