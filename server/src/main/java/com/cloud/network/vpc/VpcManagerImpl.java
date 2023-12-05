@@ -1216,7 +1216,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // cidr has to be RFC 1918 complient
-        if (!ConfigurationManager.AllowNonRFC1918CompliantIPs.value() && !NetUtils.validateGuestCidr(cidr)) {
+        if (!NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
             throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant");
         }
 

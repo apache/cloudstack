@@ -2648,7 +2648,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             zoneName = zone.getName();
         }
 
-        if (guestCidr != null && !AllowNonRFC1918CompliantIPs.value() && !NetUtils.validateGuestCidr(guestCidr)) {
+        if (guestCidr != null && !NetUtils.validateGuestCidr(guestCidr, !AllowNonRFC1918CompliantIPs.value())) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
 
@@ -2817,7 +2817,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
         // hence the method below is generic to check for common params
-        if (guestCidr != null && !AllowNonRFC1918CompliantIPs.value() && !NetUtils.validateGuestCidr(guestCidr)) {
+        if (guestCidr != null && !NetUtils.validateGuestCidr(guestCidr, !AllowNonRFC1918CompliantIPs.value())) {
             throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
 
