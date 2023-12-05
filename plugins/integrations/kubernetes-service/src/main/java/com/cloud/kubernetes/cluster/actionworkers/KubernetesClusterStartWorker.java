@@ -390,6 +390,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 throw new ManagementServerException(String.format("No public IP addresses found for VPC tier : %s, Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
             }
             setupKubernetesClusterVpcTierRules(publicIp, network, clusterVMIds);
+            setupKubernetesClusterIsolatedNetworkRules(publicIp, network, clusterVMIds, true);
             return;
         }
         IpAddress publicIp = getNetworkSourceNatIp(network);

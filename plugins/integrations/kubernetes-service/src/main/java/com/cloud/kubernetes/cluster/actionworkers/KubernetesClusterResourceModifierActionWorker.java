@@ -664,17 +664,19 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * @throws ManagementServerException
      */
     protected void setupKubernetesClusterIsolatedNetworkRules(IpAddress publicIp, Network network, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
-        createFirewallRules(publicIp, clusterVMIds, apiRule);
+        if (network.getVpcId() == null) {
+            createFirewallRules(publicIp, clusterVMIds, apiRule);
 
-        // Port forwarding rule for SSH access on each node VM
-        try {
-            provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
-        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
+            // Port forwarding rule for SSH access on each node VM
+            try {
+                provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
+            } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+                throw new ManagementServerException(String.format("Failed to activate SSH port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
 
-        if (!apiRule) {
-            return;
+            if (!apiRule) {
+                return;
+            }
         }
         // Load balancer rule for API access for control node VMs
         try {
@@ -738,12 +740,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected void setupKubernetesClusterVpcTierRules(IpAddress publicIp, Network network, List<Long> clusterVMIds) throws ManagementServerException {
         // Create ACL rules
         createVpcTierAclRules(network);
-        // Add port forwarding for API access
-        try {
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT, CLUSTER_API_PORT);
-        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
-        }
         // Add port forwarding rule for SSH access on each node VM
         try {
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);
