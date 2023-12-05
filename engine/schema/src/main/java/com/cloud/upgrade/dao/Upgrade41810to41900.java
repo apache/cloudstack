@@ -76,6 +76,7 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         decryptConfigurationValuesFromAccountAndDomainScopesNotInSecureHiddenCategories(conn);
         migrateBackupDates(conn);
+        addIndexes(conn);
     }
 
     @Override
@@ -252,6 +253,13 @@ public class Upgrade41810to41900 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "alert", "archived", "created");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "alert", "type", "data_center_id", "pod_id");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "event", "resource_type", "resource_id");
     }
 
 }
