@@ -46,7 +46,7 @@ public class NsxControllerUtils {
     }
 
     public static String getNsxDistributedFirewallPolicyRuleId(String segmentName, long ruleId) {
-        return String.format("%s-P%s", segmentName, ruleId);
+        return String.format("%s-R%s", segmentName, ruleId);
     }
 
     public NsxAnswer sendNsxCommand(NsxCommand cmd, long zoneId) throws IllegalArgumentException {
@@ -101,8 +101,10 @@ public class NsxControllerUtils {
         return getTier1GatewayName(domainId, accountId, zoneId, networkResourceId, isVpcResource) + suffix + ruleId;
     }
 
-    public static String getServiceName(String ruleName, String port, String protocol) {
-        return ruleName + "-SVC-" + port + "-" +protocol;
+    public static String getServiceName(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
+        return protocol.equalsIgnoreCase("icmp") ?
+                String.format("%s-SVC-%s-%s-%s", ruleName, icmpType, icmpCode, protocol) :
+                String.format("%s-SVC-%s-%s", ruleName, port, protocol);
     }
 
     public static String getServiceEntryName(String ruleName, String port, String protocol) {

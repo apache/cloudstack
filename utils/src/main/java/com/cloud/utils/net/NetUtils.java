@@ -80,6 +80,7 @@ public class NetUtils {
     public static final String ICMP6_PROTO = "icmp6";
     public final static String ALL_PROTO = "all";
     public final static String HTTP_PROTO = "http";
+    public final static String HTTPS_PROTO = "https";
     public final static String SSL_PROTO = "ssl";
 
     public final static String ALL_IP4_CIDRS = "0.0.0.0/0";

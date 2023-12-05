@@ -25,8 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloud.host.HostTagVO;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePoolTagVO;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -65,6 +68,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -318,6 +322,10 @@ public class PresetVariableHelper {
 
         value.setTags(getPresetVariableValueResourceTags(vmId, ResourceObjectType.UserVm));
         value.setTemplate(getPresetVariableValueTemplate(vmVo.getTemplateId()));
+        Hypervisor.HypervisorType hypervisorType = vmVo.getHypervisorType();
+        if (hypervisorType != null) {
+            value.setHypervisorType(hypervisorType.name());
+        }
     }
 
     protected void logNotLoadingMessageInTrace(String resource, int usageType) {
@@ -345,7 +353,17 @@ public class PresetVariableHelper {
         Host host = new Host();
         host.setId(hostVo.getUuid());
         host.setName(hostVo.getName());
-        host.setTags(hostTagsDao.getHostTags(hostId));
+        List<HostTagVO> hostTagVOList = hostTagsDao.getHostTags(hostId);
+        List<String> hostTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(hostTagVOList)) {
+            isTagARule = hostTagVOList.get(0).getIsTagARule();
+            if (!isTagARule) {
+                hostTags = hostTagVOList.parallelStream().map(HostTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        host.setTags(hostTags);
+        host.setIsTagARule(isTagARule);
 
         return host;
     }
@@ -470,6 +488,11 @@ public class PresetVariableHelper {
 
         value.setTags(getPresetVariableValueResourceTags(volumeId, ResourceObjectType.Volume));
         value.setSize(ByteScaleUtils.bytesToMebibytes(volumeVo.getSize()));
+
+        ImageFormat format = volumeVo.getFormat();
+        if (format != null) {
+            value.setVolumeFormat(format.name());
+        }
     }
 
     protected GenericPresetVariable getPresetVariableValueDiskOffering(Long diskOfferingId) {
@@ -497,7 +520,17 @@ public class PresetVariableHelper {
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
         storage.setScope(storagePoolVo.getScope());
-        storage.setTags(storagePoolTagsDao.getStoragePoolTags(storageId));
+        List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
+        List<String> storageTags = new ArrayList<>();
+        boolean isTagARule = false;
+        if (CollectionUtils.isNotEmpty(storagePoolTagVOList)) {
+            isTagARule = storagePoolTagVOList.get(0).isTagARule();
+            if (!isTagARule) {
+                storageTags = storagePoolTagVOList.parallelStream().map(StoragePoolTagVO::getTag).collect(Collectors.toList());
+            }
+        }
+        storage.setTags(storageTags);
+        storage.setIsTagARule(isTagARule);
 
         return storage;
     }
@@ -558,6 +591,10 @@ public class PresetVariableHelper {
         value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
         value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId, usageRecord.getZoneId()), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
+        Hypervisor.HypervisorType hypervisorType = snapshotVo.getHypervisorType();
+        if (hypervisorType != null) {
+            value.setHypervisorType(hypervisorType.name());
+        }
     }
 
     protected SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
@@ -621,6 +658,11 @@ public class PresetVariableHelper {
         value.setName(vmSnapshotVo.getName());
         value.setTags(getPresetVariableValueResourceTags(vmSnapshotId, ResourceObjectType.VMSnapshot));
         value.setVmSnapshotType(vmSnapshotVo.getType());
+
+        VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmSnapshotVo.getVmId());
+        if (vmVo != null && vmVo.getHypervisorType() != null) {
+            value.setHypervisorType(vmVo.getHypervisorType().name());
+        }
     }
 
     protected void loadPresetVariableValueForBackup(UsageVO usageRecord, Value value) {

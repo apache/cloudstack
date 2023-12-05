@@ -14,14 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.agent.api;
+package org.apache.cloudstack.storage.datastore.db;
 
-import org.apache.cloudstack.resource.NsxNetworkRule;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-import java.util.List;
+import java.util.Map;
 
-public class DeletedNsxDistributedFirewallRulesCommand extends CreateNsxDistributedFirewallRulesCommand {
-    public DeletedNsxDistributedFirewallRulesCommand(long domainId, long accountId, long zoneId, Long vpcId, long networkId, List<NsxNetworkRule> rules) {
-        super(domainId, accountId, zoneId, vpcId, networkId, rules);
-    }
+public interface ObjectStoreDetailsDao extends GenericDao<ObjectStoreDetailVO, Long>, ResourceDetailsDao<ObjectStoreDetailVO> {
+
+    void update(long storeId, Map<String, String> details);
+
+    Map<String, String> getDetails(long storeId);
+
+    void deleteDetails(long storeId);
 }

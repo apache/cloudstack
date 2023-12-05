@@ -972,4 +972,9 @@ public class NetworkHelperImpl implements NetworkHelper {
     public String acquireGuestIpAddressForVrouterRedundant(Network network) {
         return _ipAddrMgr.acquireGuestIpAddressByPlacement(network, null);
     }
+
+    @Override
+    public Map<HypervisorType, ConfigKey<String>> getHypervisorRouterTemplateConfigMap() {
+        return hypervisorsMap;
+    }
 }

@@ -55,6 +55,7 @@
         <module>storage/configdrive</module>
         <module>storage/datamotion</module>
         <module>storage/image</module>
+        <module>storage/object</module>
         <module>storage/snapshot</module>
         <module>storage/volume</module>
         <module>userdata/cloud-init</module>

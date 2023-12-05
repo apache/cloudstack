@@ -1854,7 +1854,7 @@ class PublicIPAddress:
 
         if zoneid:
             cmd.zoneid = zoneid
-        elif "zoneid" in services:
+        elif services and "zoneid" in services:
             cmd.zoneid = services["zoneid"]
 
         if domainid:
@@ -1879,9 +1879,16 @@ class PublicIPAddress:
         return PublicIPAddress(apiclient.associateIpAddress(cmd).__dict__)
 
     def delete(self, apiclient):
-        """Dissociate Public IP address"""
+        """Dissociate Public IP address using the given ID"""
         cmd = disassociateIpAddress.disassociateIpAddressCmd()
         cmd.id = self.ipaddress.id
+        apiclient.disassociateIpAddress(cmd)
+        return
+
+    def delete_by_ip(self, apiclient):
+        """Dissociate Public IP address using the given IP address"""
+        cmd = disassociateIpAddress.disassociateIpAddressCmd()
+        cmd.ipaddress = self.ipaddress.ipaddress
         apiclient.disassociateIpAddress(cmd)
         return
 
@@ -5105,7 +5112,7 @@ class VPC:
     @classmethod
     def create(cls, apiclient, services, vpcofferingid,
                zoneid, networkDomain=None, account=None,
-               domainid=None, **kwargs):
+               domainid=None, start=True, **kwargs):
         """Creates the virtual private connection (VPC)"""
 
         cmd = createVPC.createVPCCmd()
@@ -5113,6 +5120,7 @@ class VPC:
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.vpcofferingid = vpcofferingid
         cmd.zoneid = zoneid
+        cmd.start = start
         if "cidr" in services:
             cmd.cidr = services["cidr"]
         if account:
@@ -7064,3 +7072,82 @@ class VnfAppliance:
         cmd.expunge = expunge
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         apiclient.destroyVirtualMachine(cmd)
+
+class ObjectStoragePool:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    """Manage Object Stores"""
+    @classmethod
+    def create(cls, apiclient, name, url, provider, services=None):
+        """Add Object Store"""
+        cmd = addObjectStoragePool.addObjectStoragePoolCmd()
+        cmd.name = name
+        cmd.url = url
+        cmd.provider = provider
+        if services:
+            if "details" in services:
+                cmd.details = services["details"]
+
+        return ObjectStoragePool(apiclient.addObjectStoragePool(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Object Store"""
+        cmd = deleteObjectStoragePool.deleteObjectStoragePoolCmd()
+        cmd.id = self.id
+        apiclient.deleteObjectStoragePool(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listObjectStoragePools.listObjectStoragePoolsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listObjectStoragePools(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update the Object Store"""
+
+        cmd = updateObjectStoragePool.updateObjectStoragePoolCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateObjectStoragePool(cmd)
+
+class Bucket:
+    """Manage Bucket Life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, objectstorageid, **kwargs):
+        """Create Bucket"""
+        cmd = createBucket.createBucketCmd()
+        cmd.name = name
+        cmd.objectstorageid = objectstorageid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+
+        return Bucket(apiclient.createBucket(cmd).__dict__)
+
+    def delete(self, apiclient):
+        """Delete Bucket"""
+        cmd = deleteBucket.deleteBucketCmd()
+        cmd.id = self.id
+        apiclient.deleteBucket(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        cmd = listBuckets.listBucketsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return (apiclient.listBuckets(cmd))
+
+    def update(self, apiclient, **kwargs):
+        """Update Bucket"""
+
+        cmd = updateBucket.updateBucketCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateBucket(cmd)

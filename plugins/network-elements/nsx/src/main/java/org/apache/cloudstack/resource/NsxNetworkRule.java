@@ -21,6 +21,11 @@ import com.cloud.network.Network;
 import java.util.List;
 
 public class NsxNetworkRule {
+
+    public enum NsxRuleAction {
+        ALLOW, DROP
+    }
+
     private long domainId;
     private long accountId;
     private long zoneId;
@@ -36,7 +41,7 @@ public class NsxNetworkRule {
     private String protocol;
     private String algorithm;
     private List<NsxLoadBalancerMember> memberList;
-    private String aclAction;
+    private NsxRuleAction aclAction;
     private List<String> sourceCidrList;
     private List<String> destinationCidrList;
     private Integer icmpCode;
@@ -165,11 +170,11 @@ public class NsxNetworkRule {
         this.memberList = memberList;
     }
 
-    public String getAclAction() {
+    public NsxRuleAction getAclAction() {
         return aclAction;
     }
 
-    public void setAclAction(String aclAction) {
+    public void setAclAction(NsxRuleAction aclAction) {
         this.aclAction = aclAction;
     }
 
@@ -238,7 +243,7 @@ public class NsxNetworkRule {
         private String protocol;
         private String algorithm;
         private List<NsxLoadBalancerMember> memberList;
-        private String aclAction;
+        private NsxRuleAction aclAction;
         private List<String> sourceCidrList;
         private List<String> destinationidrList;
         private String trafficType;
@@ -325,8 +330,14 @@ public class NsxNetworkRule {
             return this;
         }
 
-        public Builder setAclAction(String aclAction) {
+
+        public Builder setAclAction(NsxRuleAction aclAction) {
             this.aclAction = aclAction;
+            return this;
+        }
+
+        public Builder setTrafficType(String trafficType) {
+            this.trafficType = trafficType;
             return this;
         }
 
@@ -347,11 +358,6 @@ public class NsxNetworkRule {
 
         public Builder setDestinationCidrList(List<String> destinationCidrList) {
             this.destinationidrList = destinationCidrList;
-            return this;
-        }
-
-        public Builder setTrafficType(String trafficType) {
-            this.trafficType = trafficType;
             return this;
         }
 

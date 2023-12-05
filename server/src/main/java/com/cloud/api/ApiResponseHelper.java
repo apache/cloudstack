@@ -41,6 +41,8 @@ import javax.inject.Inject;
 
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -66,6 +68,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -103,6 +106,7 @@ import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
@@ -121,6 +125,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -142,6 +147,7 @@ import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -198,10 +204,15 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
@@ -265,7 +276,6 @@ import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
@@ -285,6 +295,7 @@ import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
+import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -472,6 +483,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     UserDataDao userDataDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
+
+    @Inject
+    ObjectStoreDao _objectStoreDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -4317,6 +4331,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 usageRecResponse.setDescription(builder.toString());
             }
+        } else if (usageRecord.getUsageType() == UsageTypes.BUCKET) {
+            BucketVO bucket = _entityMgr.findByIdIncludingRemoved(BucketVO.class, usageRecord.getUsageId().toString());
+            usageRecResponse.setUsageId(bucket.getUuid());
+            usageRecResponse.setResourceName(bucket.getName());
         }
         if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
              usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
@@ -5097,5 +5115,70 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
         return response;
+    }
+
+    @Override
+    public SecondaryStorageHeuristicsResponse createSecondaryStorageSelectorResponse(Heuristic heuristic) {
+        String zoneUuid = ApiDBUtils.findZoneById(heuristic.getZoneId()).getUuid();
+        SecondaryStorageHeuristicsResponse secondaryStorageHeuristicsResponse = new SecondaryStorageHeuristicsResponse(heuristic.getUuid(), heuristic.getName(),
+                heuristic.getDescription(), zoneUuid, heuristic.getType(), heuristic.getHeuristicRule(), heuristic.getCreated(), heuristic.getRemoved());
+        secondaryStorageHeuristicsResponse.setResponseName("secondarystorageheuristics");
+
+        return secondaryStorageHeuristicsResponse;
+    }
+
+    @Override
+    public IpQuarantineResponse createQuarantinedIpsResponse(PublicIpQuarantine quarantinedIp) {
+        IpQuarantineResponse quarantinedIpsResponse = new IpQuarantineResponse();
+        String ipAddress = userIpAddressDao.findById(quarantinedIp.getPublicIpAddressId()).getAddress().toString();
+        Account previousOwner = _accountMgr.getAccount(quarantinedIp.getPreviousOwnerId());
+
+        quarantinedIpsResponse.setId(quarantinedIp.getUuid());
+        quarantinedIpsResponse.setPublicIpAddress(ipAddress);
+        quarantinedIpsResponse.setPreviousOwnerId(previousOwner.getUuid());
+        quarantinedIpsResponse.setPreviousOwnerName(previousOwner.getName());
+        quarantinedIpsResponse.setCreated(quarantinedIp.getCreated());
+        quarantinedIpsResponse.setRemoved(quarantinedIp.getRemoved());
+        quarantinedIpsResponse.setEndDate(quarantinedIp.getEndDate());
+        quarantinedIpsResponse.setRemovalReason(quarantinedIp.getRemovalReason());
+        quarantinedIpsResponse.setResponseName("quarantinedip");
+
+        return quarantinedIpsResponse;
+    }
+
+    public ObjectStoreResponse createObjectStoreResponse(ObjectStore os) {
+        ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
+        objectStoreResponse.setId(os.getUuid());
+        objectStoreResponse.setName(os.getName());
+        objectStoreResponse.setProviderName(os.getProviderName());
+        objectStoreResponse.setObjectName("objectstore");
+        return objectStoreResponse;
+    }
+
+    @Override
+    public BucketResponse createBucketResponse(Bucket bucket) {
+        BucketResponse bucketResponse = new BucketResponse();
+        bucketResponse.setName(bucket.getName());
+        bucketResponse.setId(bucket.getUuid());
+        bucketResponse.setCreated(bucket.getCreated());
+        bucketResponse.setState(bucket.getState());
+        bucketResponse.setSize(bucket.getSize());
+        if(bucket.getQuota() != null) {
+            bucketResponse.setQuota(bucket.getQuota());
+        }
+        bucketResponse.setVersioning(bucket.isVersioning());
+        bucketResponse.setEncryption(bucket.isEncryption());
+        bucketResponse.setObjectLock(bucket.isObjectLock());
+        bucketResponse.setPolicy(bucket.getPolicy());
+        bucketResponse.setBucketURL(bucket.getBucketURL());
+        bucketResponse.setAccessKey(bucket.getAccessKey());
+        bucketResponse.setSecretKey(bucket.getSecretKey());
+        ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
+        bucketResponse.setObjectStoragePoolId(objectStoreVO.getUuid());
+        bucketResponse.setObjectStoragePool(objectStoreVO.getName());
+        bucketResponse.setObjectName("bucket");
+        bucketResponse.setProvider(objectStoreVO.getProviderName());
+        populateAccount(bucketResponse, bucket.getAccountId());
+        return bucketResponse;
     }
 }

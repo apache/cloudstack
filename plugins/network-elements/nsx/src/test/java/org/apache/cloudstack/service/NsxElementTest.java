@@ -28,12 +28,15 @@ import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.vm.ReservationContext;
+import org.apache.cloudstack.resource.NsxNetworkRule;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -129,6 +132,24 @@ public class NsxElementTest {
         assertTrue(nsxElement.shutdownVpc(vpc, reservationContext));
     }
 
+    @Test
+    public void testTransformActionValue() {
+        NsxNetworkRule.NsxRuleAction action = nsxElement.transformActionValue(NetworkACLItem.Action.Deny);
+        Assert.assertEquals(NsxNetworkRule.NsxRuleAction.DROP, action);
+    }
 
+    @Test
+    public void testTransformCidrListValuesEmptyList() {
+        List<String> values = nsxElement.transformCidrListValues(null);
+        Assert.assertNotNull(values);
+        Assert.assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testTransformCidrListValuesList() {
+        List<String> values = nsxElement.transformCidrListValues(List.of("0.0.0.0/0"));
+        Assert.assertEquals(1, values.size());
+        Assert.assertEquals("ANY", values.get(0));
+    }
 
 }

@@ -43,11 +43,11 @@ import org.apache.cloudstack.agent.api.CreateNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.CreateNsxStaticNatCommand;
 import org.apache.cloudstack.agent.api.CreateNsxTier1GatewayCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNsxTier1NatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxSegmentCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNsxTier1GatewayCommand;
-import org.apache.cloudstack.agent.api.DeletedNsxDistributedFirewallRulesCommand;
 import org.apache.cloudstack.service.NsxApiClient;
 import org.apache.cloudstack.utils.NsxControllerUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -125,8 +125,8 @@ public class NsxResource implements ServerResource {
             return executeRequest((CreateNsxLoadBalancerRuleCommand) cmd);
         } else if (cmd instanceof DeleteNsxLoadBalancerRuleCommand) {
             return executeRequest((DeleteNsxLoadBalancerRuleCommand) cmd);
-        } else  if (cmd instanceof DeletedNsxDistributedFirewallRulesCommand) {
-            return executeRequest((DeletedNsxDistributedFirewallRulesCommand) cmd);
+        }  else  if (cmd instanceof DeleteNsxDistributedFirewallRulesCommand) {
+            return executeRequest((DeleteNsxDistributedFirewallRulesCommand) cmd);
         } else if (cmd instanceof CreateNsxDistributedFirewallRulesCommand) {
             return executeRequest((CreateNsxDistributedFirewallRulesCommand) cmd);
         } else {
@@ -474,7 +474,7 @@ public class NsxResource implements ServerResource {
         return new NsxAnswer(cmd, true, null);
     }
 
-    private NsxAnswer executeRequest(DeletedNsxDistributedFirewallRulesCommand cmd) {
+    private NsxAnswer executeRequest(DeleteNsxDistributedFirewallRulesCommand cmd) {
         String segmentName = NsxControllerUtils.getNsxSegmentId(cmd.getDomainId(), cmd.getAccountId(),
                 cmd.getZoneId(), cmd.getVpcId(), cmd.getNetworkId());
         List<NsxNetworkRule> rules = cmd.getRules();
@@ -486,7 +486,6 @@ public class NsxResource implements ServerResource {
         }
         return new NsxAnswer(cmd, true, null);
     }
-
 
     @Override
     public boolean start() {

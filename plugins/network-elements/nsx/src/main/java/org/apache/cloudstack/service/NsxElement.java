@@ -591,6 +591,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
     }
 
+    private static String getPrivatePortRangeForACLRule(NetworkACLItem rule) {
+        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
+                String.valueOf(rule.getSourcePortStart()) :
+                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
+    }
+
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         for (LoadBalancingRule loadBalancingRule : rules) {
@@ -669,33 +675,36 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         if (!canHandle(network, Network.Service.NetworkACL)) {
             return false;
         }
-        List<NsxNetworkRule> nsxNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
+        List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         for (NetworkACLItem rule : rules) {
+            String privatePort = getPrivatePortRangeForACLRule(rule);
             NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
                     .setRuleId(rule.getId())
                     .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                    .setAclAction(rule.getAction().toString())
+                    .setAclAction(transformActionValue(rule.getAction()))
                     .setTrafficType(rule.getTrafficType().toString())
+                    .setProtocol(rule.getProtocol().toUpperCase())
+                    .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                    .setPrivatePort(privatePort)
+                    .setIcmpCode(rule.getIcmpCode())
+                    .setIcmpType(rule.getIcmpType())
                     .setService(Network.Service.NetworkACL)
                     .build();
-            nsxNetworkRules.add(networkRule);
-        }
-        return nsxService.addFirewallRules(network, nsxNetworkRules);
-    }
-
-    /**
-     * Replace 0.0.0.0/0 to ANY on each occurrence
-     */
-    private List<String> transformCidrListValues(List<String> sourceCidrList) {
-        List<String> list = new ArrayList<>();
-        for (String cidr : sourceCidrList) {
-            if (cidr == null || cidr.equals("0.0.0.0/0")) {
-                list.add("ANY");
-            } else {
-                list.add(cidr);
+            if (NetworkACLItem.State.Add == rule.getState()) {
+                nsxAddNetworkRules.add(networkRule);
+            } else if (NetworkACLItem.State.Revoke == rule.getState()) {
+                nsxDelNetworkRules.add(networkRule);
             }
         }
-        return list;
+        boolean success = true;
+        if (!nsxDelNetworkRules.isEmpty()) {
+            success = nsxService.deleteFirewallRules(network, nsxDelNetworkRules);
+            if (!success) {
+                LOGGER.warn("Not all firewall rules were successfully deleted");
+            }
+        }
+        return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
     }
 
     @Override
@@ -734,5 +743,33 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
             }
         }
         return success && nsxService.addFirewallRules(network, nsxAddNetworkRules);
+    }
+
+    protected NsxNetworkRule.NsxRuleAction transformActionValue(NetworkACLItem.Action action) {
+        if (action == NetworkACLItem.Action.Allow) {
+            return NsxNetworkRule.NsxRuleAction.ALLOW;
+        } else if (action == NetworkACLItem.Action.Deny) {
+            return NsxNetworkRule.NsxRuleAction.DROP;
+        }
+        String err = String.format("Unsupported action %s", action.toString());
+        LOGGER.error(err);
+        throw new CloudRuntimeException(err);
+    }
+
+    /**
+     * Replace 0.0.0.0/0 to ANY on each occurrence
+     */
+    protected List<String> transformCidrListValues(List<String> sourceCidrList) {
+        List<String> list = new ArrayList<>();
+        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(sourceCidrList)) {
+            for (String cidr : sourceCidrList) {
+                if (cidr.equals("0.0.0.0/0")) {
+                    list.add("ANY");
+                } else {
+                    list.add(cidr);
+                }
+            }
+        }
+        return list;
     }
 }

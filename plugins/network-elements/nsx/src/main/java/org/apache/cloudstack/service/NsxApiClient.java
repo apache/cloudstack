@@ -39,6 +39,7 @@ import com.vmware.nsx_policy.model.ApiError;
 import com.vmware.nsx_policy.model.DhcpRelayConfig;
 import com.vmware.nsx_policy.model.EnforcementPointListResult;
 import com.vmware.nsx_policy.model.Group;
+import com.vmware.nsx_policy.model.GroupListResult;
 import com.vmware.nsx_policy.model.ICMPTypeServiceEntry;
 import com.vmware.nsx_policy.model.L4PortSetServiceEntry;
 import com.vmware.nsx_policy.model.LBAppProfileListResult;
@@ -451,7 +452,7 @@ public class NsxApiClient {
             // delete NAT rule
             natService.delete(tier1GatewayName, NatId.USER.name(), ruleName);
             if (service == Network.Service.PortForwarding) {
-                String svcName = getServiceName(ruleName, privatePort, protocol);
+                String svcName = getServiceName(ruleName, privatePort, protocol, null, null);
                 // Delete service
                 Services services = (Services) nsxService.apply(Services.class);
                 services.delete(svcName);
@@ -698,23 +699,36 @@ public class NsxApiClient {
         }
     }
 
+
+    private com.vmware.nsx_policy.model.Service getInfraService(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
+        Services service = (Services) nsxService.apply(Services.class);
+        String serviceName = getServiceName(ruleName, port, protocol, icmpType, icmpCode);
+        createNsxInfraService(service, serviceName, ruleName, port, protocol, icmpType, icmpCode);
+        return service.get(serviceName);
+    }
+
+    public String getServicePath(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode)  {
+        com.vmware.nsx_policy.model.Service svc = getInfraService(ruleName, port, protocol, icmpType, icmpCode);
+        return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
+    }
+
     public void createNsxInfraService(Services service, String serviceName, String ruleName, String port, String protocol,
-                                      Integer icmpCode, Integer icmpType) {
+                                      Integer icmpType, Integer icmpCode) {
         try {
             List<Structure> serviceEntries = new ArrayList<>();
-            protocol = "ICMP".equals(protocol) ? "ICMP4" : protocol;
+            protocol = "ICMP".equalsIgnoreCase(protocol) ? "ICMPv4" : protocol;
             String serviceEntryName = getServiceEntryName(ruleName, port, protocol);
-            if (protocol.equals("ICMP4")) {
+            if (protocol.equals("ICMPv4")) {
                 serviceEntries.add(new ICMPTypeServiceEntry.Builder()
-                        .setDisplayName(serviceEntryName)
-                        .setDisplayName(serviceEntryName)
-                                .setIcmpCode(Long.valueOf(icmpCode))
+                                .setId(serviceEntryName)
+                                .setDisplayName(serviceEntryName)
+//                                .setIcmpCode(Long.valueOf(icmpCode))
                                 .setIcmpType(Long.valueOf(icmpType))
                                 .setProtocol(protocol)
-                        .build()
+                                .build()
                 );
             } else {
-                serviceEntries.add( new L4PortSetServiceEntry.Builder()
+                serviceEntries.add(new L4PortSetServiceEntry.Builder()
                         .setId(serviceEntryName)
                         .setDisplayName(serviceEntryName)
                         .setDestinationPorts(List.of(port))
@@ -733,18 +747,6 @@ public class NsxApiClient {
             LOGGER.error(msg);
             throw new CloudRuntimeException(msg);
         }
-    }
-
-    private com.vmware.nsx_policy.model.Service getInfraService(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode) {
-        Services service = (Services) nsxService.apply(Services.class);
-        String serviceName = getServiceName(ruleName, port, protocol);
-        createNsxInfraService(service, serviceName, ruleName, port, protocol, icmpType, icmpCode);
-        return service.get(serviceName);
-    }
-
-    public String getServicePath(String ruleName, String port, String protocol, Integer icmpType, Integer icmpCode)  { //com.vmware.nsx_policy.model.Service svc) {
-        com.vmware.nsx_policy.model.Service svc = getInfraService(ruleName, port, protocol, icmpType, icmpCode);
-        return svc.getServiceEntries().get(0)._getDataValue().getField("parent_path").toString();
     }
 
     private String getServiceById(String ruleName) {
@@ -802,6 +804,10 @@ public class NsxApiClient {
 
     public void createSegmentDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         try {
+            String groupPath = getGroupPath(segmentName);
+            if (Objects.isNull(groupPath)) {
+                throw new CloudRuntimeException(String.format("Failed to find group for segment %s", segmentName));
+            }
             SecurityPolicies services = (SecurityPolicies) nsxService.apply(SecurityPolicies.class);
             List<Rule> rules = getRulesForDistributedFirewall(segmentName, nsxRules);
             SecurityPolicy policy = new SecurityPolicy.Builder()
@@ -809,6 +815,7 @@ public class NsxApiClient {
                     .setId(segmentName)
                     .setCategory("Application")
                     .setRules(rules)
+                    .setScope(List.of(groupPath))
                     .build();
             services.patch(DEFAULT_DOMAIN, segmentName, policy);
         } catch (Error error) {
@@ -822,7 +829,7 @@ public class NsxApiClient {
     public void deleteDistributedFirewallRules(String segmentName, List<NsxNetworkRule> nsxRules) {
         for(NsxNetworkRule rule : nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
-            String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol());
+           String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
             // delete rules
             Rules rules = (Rules) nsxService.apply(Rules.class);
             rules.delete(DEFAULT_DOMAIN, segmentName, ruleId);
@@ -834,25 +841,36 @@ public class NsxApiClient {
 
     private List<Rule> getRulesForDistributedFirewall(String segmentName, List<NsxNetworkRule> nsxRules) {
         List<Rule> rules = new ArrayList<>();
-        for (NsxNetworkRule rule: nsxRules) {
+        String groupPath = getGroupPath(segmentName);
+        if (Objects.isNull(groupPath)) {
+            throw new CloudRuntimeException(String.format("Failed to find group for segment %s", segmentName));
+        }
+        for (NsxNetworkRule rule : nsxRules) {
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
-                    .setAction(Objects.nonNull(rule.getAclAction()) ? actionMap.get(rule.getAclAction()) : FirewallActions.ALLOW.name())
+                    .setAction(rule.getAclAction().toString())
                     .setId(ruleId)
                     .setDisplayName(ruleId)
                     .setResourceType("SecurityPolicy")
                     .setSourceGroups(getGroupsForTraffic(rule, segmentName, true))
                     .setDestinationGroups(getGroupsForTraffic(rule, segmentName, false))
-                    .setServices(Objects.nonNull(rule.getPrivatePort()) && !rule.getPrivatePort().equals("null") ? List.of(getServicePath(ruleId, rule.getPrivatePort(),
-                            rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode())) : List.of("ANY"))
-                    .setScope(List.of("ANY"))
+                    .setServices(getServicesListForDistributedFirewallRule(rule, segmentName))
+                    .setScope(List.of(groupPath))
                     .build();
-            if (Objects.nonNull(rule.getPrivatePort())) {
-
-            }
             rules.add(ruleToAdd);
         }
         return rules;
+    }
+
+    private List<String> getServicesListForDistributedFirewallRule(NsxNetworkRule rule, String segmentName) {
+        List<String> services = List.of("ANY");
+        if (!rule.getProtocol().equalsIgnoreCase("all")) {
+            String ruleName = String.format("%s-R%s", segmentName, rule.getRuleId());
+            String serviceName = getNsxInfraServices(ruleName, rule.getPrivatePort(), rule.getProtocol(),
+                    rule.getIcmpType(), rule.getIcmpCode());
+            services = List.of(serviceName);
+        }
+        return services;
     }
 
     protected List<String> getGroupsForTraffic(NsxNetworkRule rule,
@@ -866,10 +884,30 @@ public class NsxApiClient {
             return source ? sourceCidrList : (rule.getService() == Network.Service.NetworkACL ? segmentGroup : destCidrList);
         } else if (trafficType.equalsIgnoreCase("egress")) {
             return source ? segmentGroup : (rule.getService() == Network.Service.NetworkACL ? sourceCidrList : destCidrList);
-        }
+       }
         String err = String.format("Unsupported traffic type %s", trafficType);
         LOGGER.error(err);
         throw new CloudRuntimeException(err);
     }
 
+
+    private List<Group> listNsxGroups() {
+        try {
+           Groups groups = (Groups) nsxService.apply(Groups.class);
+           GroupListResult result = groups.list(DEFAULT_DOMAIN, null, false, null, null, null, null, null);
+           return result.getResults();
+        } catch (Error error) {
+            ApiError ae = error.getData()._convertTo(ApiError.class);
+            String msg = String.format("Failed to list NSX groups, due to: %s", ae.getErrorMessage());
+            LOGGER.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    private String getGroupPath(String segmentName) {
+        List<Group> groups = listNsxGroups();
+        Optional<Group> matchingGroup = groups.stream().filter(group -> group.getDisplayName().equals(segmentName)).findFirst();
+        return matchingGroup.map(Group::getPath).orElse(null);
+
+    }
 }
