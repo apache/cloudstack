@@ -613,6 +613,33 @@ class TestKubernetesCluster(cloudstackTestCase):
         k8s_cluster = None
         return
 
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorNotSupported")
+    def test_11_vpc_tier_kubernetes_cluster_ha_conserve_mode(self):
+        """Test to deploy a HA Kubernetes cluster on VPC with conserve mode
+
+        # Validate the following:
+        # 1. Deploy a Kubernetes cluster on a VPC tier with conserve mode
+        # 2. Destroy it
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        global k8s_cluster
+        if k8s_cluster != None and k8s_cluster.id != None:
+            self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
+        self.createVpcOffering()
+        self.createVpcTierOfferingWithConserveMode()
+        self.deployVpc()
+        self.deployNetworkTier()
+        self.default_network = self.vpc_tier
+        k8s_cluster = self.getValidKubernetesCluster(1, 3)
+
+        self.debug("Deleting Kubernetes cluster with ID: %s" % k8s_cluster.id)
+        self.deleteKubernetesClusterAndVerify(k8s_cluster.id)
+        self.debug("Kubernetes cluster with ID: %s successfully deleted" % k8s_cluster.id)
+        k8s_cluster = None
+        return
+
     def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
@@ -869,6 +896,16 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.apiclient,
             off_service,
             conservemode=False
+        )
+        self.cleanup.append(self.vpc_tier_offering)
+        self.vpc_tier_offering.update(self.apiclient, state='Enabled')
+
+    def createVpcTierOfferingWithConserveMode(self):
+        off_service = self.services["nw_offering_isolated_vpc"]
+        self.vpc_tier_offering = NetworkOffering.create(
+            self.apiclient,
+            off_service,
+            conservemode=True
         )
         self.cleanup.append(self.vpc_tier_offering)
         self.vpc_tier_offering.update(self.apiclient, state='Enabled')
