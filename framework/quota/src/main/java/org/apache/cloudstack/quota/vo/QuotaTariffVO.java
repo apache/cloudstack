@@ -90,6 +90,10 @@ public class QuotaTariffVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date endDate;
 
+    @Column(name = "position")
+    protected Integer position;
+
+
     public QuotaTariffVO() {
     }
 
@@ -117,6 +121,7 @@ public class QuotaTariffVO implements InternalIdentity {
         this.setDescription(that.getDescription());
         this.setActivationRule(that.getActivationRule());
         this.setEndDate(that.getEndDate());
+        this.setPosition(that.getPosition());
     }
 
     public void setId(Long id) {
@@ -258,6 +263,15 @@ public class QuotaTariffVO implements InternalIdentity {
 
         return true;
     }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
 
     @Override
     public String toString() {

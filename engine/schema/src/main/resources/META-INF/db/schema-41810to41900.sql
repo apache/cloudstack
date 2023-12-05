@@ -314,3 +314,6 @@ CREATE TABLE `cloud_usage`.`bucket_statistics` (
   `size` bigint unsigned COMMENT 'total size of bucket objects',
    PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Quota inject tariff result into subsequent ones
+ALTER TABLE `cloud_usage`.`quota_tariff` ADD COLUMN `position` bigint(20) NOT NULL DEFAULT 1 COMMENT 'Position in the execution sequence for tariffs of the same type' ;

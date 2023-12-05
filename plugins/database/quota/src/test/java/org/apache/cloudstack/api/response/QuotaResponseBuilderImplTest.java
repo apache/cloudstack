@@ -352,8 +352,10 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateValueOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyDouble());
         Mockito.doNothing().when(quotaResponseBuilderSpy).validateStringsOnCreatingNewQuotaTariff(Mockito.any(Consumer.class), Mockito.anyString());
         Mockito.doReturn(quotaTariffVoMock).when(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
+        Mockito.doNothing().when(quotaResponseBuilderSpy).validatePositionOnCreatingNewQuotaTariff(Mockito.any(QuotaTariffVO.class), Mockito.anyInt());
 
-        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "");
+
+        quotaResponseBuilderSpy.persistNewQuotaTariff(quotaTariffVoMock, "", 1, date, 1l, date, 1.0, "", "", 2);
 
         Mockito.verify(quotaTariffDaoMock).addQuotaTariff(Mockito.any(QuotaTariffVO.class));
     }
@@ -403,4 +405,18 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         assertTrue(quotaSummaryResponse.getQuotaEnabled());
     }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestNullValueDoNothing() {
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, null);
+        Mockito.verify(quotaTariffVoMock, Mockito.never()).setPosition(Mockito.any());
+    }
+
+    @Test
+    public void validatePositionOnCreatingNewQuotaTariffTestAnyValueIsSet() {
+        Integer position = 1;
+        quotaResponseBuilderSpy.validatePositionOnCreatingNewQuotaTariff(quotaTariffVoMock, position);
+        Mockito.verify(quotaTariffVoMock).setPosition(position);
+    }
+
 }

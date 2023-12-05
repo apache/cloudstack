@@ -68,6 +68,9 @@ public class QuotaTariffCreateCmd extends BaseCmd {
             + " endDate=2009-06-03.")
     private Date endDate;
 
+    @Parameter(name = ApiConstants.POSITION, type = CommandType.INTEGER, description = "Position in the execution sequence for tariffs of the same type", since = "4.19.0.0")
+    private Integer position;
+
     @Override
     public void execute() {
         QuotaTariffVO result = responseBuilder.createQuotaTariff(this);
@@ -133,5 +136,14 @@ public class QuotaTariffCreateCmd extends BaseCmd {
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
 
 }
