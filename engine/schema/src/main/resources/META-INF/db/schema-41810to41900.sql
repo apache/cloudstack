@@ -21,6 +21,8 @@
 
 ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `state` varchar(25);
 
+UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Invalidate existing console_session records
 UPDATE `cloud`.`console_session` SET removed=now();
 -- Modify acquired column in console_session to datetime type
