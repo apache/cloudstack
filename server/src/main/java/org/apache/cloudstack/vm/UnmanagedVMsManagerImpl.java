@@ -91,6 +91,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -241,6 +242,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private PhysicalNetworkDao physicalNetworkDao;
     @Inject
     private IpAddressManager ipAddressManager;
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     protected Gson gson;
 
@@ -1607,19 +1610,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (networkId == null) {
                 throw new InvalidParameterValueException("Network is required for Import from shared/local storage");
             }
-        }
 
-        if (ImportSource.SHARED == importSource) {
             if (poolId == null) {
-                throw new InvalidParameterValueException("Storage Pool is required for Import from shared storage");
+                throw new InvalidParameterValueException("Storage Pool is required for Import from shared/local storage");
             }
 
-            if (primaryDataStoreDao.findById(poolId) == null) {
+            StoragePool storagePool = primaryDataStoreDao.findById(poolId);
+            if (storagePool == null) {
                 throw new InvalidParameterValueException("Storage Pool not found");
             }
 
             if (volumeDao.findByPoolIdAndPath(poolId, diskPath) != null) {
                 throw new InvalidParameterValueException("Disk image is already in use");
+            }
+
+            DiskOffering diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+
+            if (diskOffering != null && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
+                throw new InvalidParameterValueException(String.format("Service offering: %s is not compatible with selected storage pool: %s", serviceOffering.getUuid(), storagePool.getUuid()));
             }
         }
 
@@ -1632,11 +1640,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 throw new InvalidParameterValueException("Host not found");
             }
 
-            List<StoragePoolVO> localPools = primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(hostId, null);
-            for(StoragePoolVO localPool : localPools) {
-                if (volumeDao.findByPoolIdAndPath(localPool.getId(), diskPath) != null) {
-                    throw new InvalidParameterValueException("Disk image is already in use");
-                }
+            if(storagePoolHostDao.findByPoolHost(poolId, hostId) == null) {
+                throw new InvalidParameterValueException("Specified Local Storage Pool not found on Host");
             }
         }
 

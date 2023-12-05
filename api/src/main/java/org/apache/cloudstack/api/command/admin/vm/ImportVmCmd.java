@@ -345,7 +345,7 @@ public class ImportVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing unmanaged VM";
+        return "Importing VM";
     }
 
 

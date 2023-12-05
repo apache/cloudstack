@@ -164,6 +164,22 @@
                   :rules="rules"
                   layout="vertical"
                 >
+                <a-form-item v-if="showPool" name="scope" ref="scope">
+                  <template #label>
+                    <tooltip-label :title="$t('label.scope')" :tooltip="$t('label.scope.tooltip')"/>
+                  </template>
+                  <a-select
+                    v-model:value="form.scope"
+                    @change="onSelectPoolScope"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+                    <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
+                    <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
+                  </a-select>
+                </a-form-item>
                   <a-form-item
                     name="zoneid"
                     ref="zoneid"
@@ -244,7 +260,7 @@
                       ></a-select>
                   </a-form-item>
                   <a-form-item
-                    v-if="showPool"
+                    v-if="isDiskImport"
                     name="poolid"
                     ref="poolid">
                     <template #label>
@@ -268,8 +284,8 @@
                     ref="diskpath">
                     <template #label>
                           <tooltip-label
-                            :title="$t('label.disk.path')"
-                            :tooltip="$t('label.disk.path.tooltip')"/>
+                            :title="$t('label.disk')"
+                            :tooltip="$t('label.disk.tooltip')"/>
                     </template>
                     <a-input
                       v-model:value="form.diskpath"
@@ -690,6 +706,7 @@ export default {
       poolId: undefined,
       diskpath: undefined,
       tmppath: undefined,
+      poolscope: 'cluster',
       listInstancesApi: {
         unmanaged: 'listUnmanagedInstances',
         managed: 'listVirtualMachines',
@@ -743,10 +760,10 @@ export default {
       return this.destinationHypervisor === 'kvm'
     },
     showPod () {
-      return (this.selectedSourceAction !== 'external')
+      return (this.selectedSourceAction !== 'external' && this.poolscope !== 'zone')
     },
     showCluster () {
-      return (this.selectedSourceAction !== 'external')
+      return (this.selectedSourceAction !== 'external' && this.poolscope !== 'zone')
     },
     showHost () {
       return (this.selectedSourceAction === 'local')
@@ -765,6 +782,13 @@ export default {
     },
     isDiskImport () {
       return ((this.selectedSourceAction === 'local') || (this.selectedSourceAction === 'shared'))
+    },
+    getPoolScope () {
+      if (this.selectedSourceAction === 'local') {
+        return 'host'
+      } else {
+        return this.poolscope
+      }
     },
     params () {
       return {
@@ -811,7 +835,8 @@ export default {
             zoneid: _.get(this.zone, 'id'),
             podid: this.podId,
             clusterid: this.clusterId,
-            scope: 'cluster'
+            hostid: this.hostId,
+            scope: this.getPoolScope
           },
           field: 'poolid'
         }
@@ -1089,9 +1114,17 @@ export default {
     },
     onSelectHostId (value) {
       this.hostId = value
+      this.updateQuery('scope', 'local')
+      this.fetchOptions(this.params.pools, 'pools', value)
     },
     onSelectPoolId (value) {
       this.poolId = value
+    },
+    onSelectPoolScope (value) {
+      this.poolscope = value
+      this.poolId = null
+      this.updateQuery('scope', value)
+      this.fetchOptions(this.params.pools, 'pools', value)
     },
     fetchInstances () {
       this.fetchUnmanagedInstances()
