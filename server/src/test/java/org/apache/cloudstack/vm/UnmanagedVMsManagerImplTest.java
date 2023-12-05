@@ -75,6 +75,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -82,6 +83,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -208,6 +210,8 @@ public class UnmanagedVMsManagerImplTest {
     EntityManager entityMgr;
     @Mock
     DeploymentPlanningManager deploymentPlanningManager;
+    @Mock
+    StoragePoolHostDao storagePoolHostDao;
 
     private static final long virtualMachineId = 1L;
 
@@ -597,6 +601,9 @@ public class UnmanagedVMsManagerImplTest {
         storagePools.add(storagePool);
         when(primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(anyLong(), any())).thenReturn(storagePools);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(storagePool);
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(anyLong(), anyLong())).thenReturn(storagePoolHost);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
                 unmanagedVMsManager.importVm(cmd);
         }
