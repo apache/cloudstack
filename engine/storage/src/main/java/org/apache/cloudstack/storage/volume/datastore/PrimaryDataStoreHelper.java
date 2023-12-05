@@ -137,7 +137,7 @@ public class PrimaryDataStoreHelper {
                 storageTags.add(tag);
             }
         }
-        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags);
+        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule());
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 
