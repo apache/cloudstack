@@ -277,6 +277,8 @@
   <bean id="UserVmDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDaoImpl" />
   <bean id="NetworkPermissionDaoImpl" class="org.apache.cloudstack.network.dao.NetworkPermissionDaoImpl" />
   <bean id="PassphraseDaoImpl" class="org.apache.cloudstack.secret.dao.PassphraseDaoImpl" />
+  <bean id="secondaryStorageHeuristicDaoImpl" class="org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDaoImpl" />
+  <bean id="heuristicRuleHelper" class="org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper" />
   <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
   <bean id="VMScheduleDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduleDaoImpl" />
   <bean id="VMScheduledJobDaoImpl" class="org.apache.cloudstack.vm.schedule.dao.VMScheduledJobDaoImpl" />
