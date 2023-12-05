@@ -240,13 +240,16 @@
           </a-form-item>
         </div>
         <div class="form__item" v-if="!basicGuestNetwork && form.iptype != 'ip6'">
+          <a-form-item name="fornsx" ref="fornsx" :label="$t('label.fornsx')" class="form__item">
+            <a-switch :disabled="form.forsystemvms" v-model:checked="form.fornsx"></a-switch>
+          </a-form-item>
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
           <a-switch v-model:checked="showAccountFields" @change="handleShowAccountFields" />
         </div>
         <div v-if="showAccountFields && !basicGuestNetwork" style="margin-top: 20px;">
           <div v-html="$t('label.set.reservation.desc')"></div>
           <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
-            <a-switch v-model:checked="form.forsystemvms" />
+            <a-switch :disabled="form.fornsx" v-model:checked="form.forsystemvms" />
           </a-form-item>
           <a-spin :spinning="domainsLoading">
             <a-form-item name="account" ref="account" :label="$t('label.account')" class="form__item">
@@ -317,7 +320,7 @@
             <a-input v-model:value="formUpdRange.netmask"></a-input>
           </a-form-item>
           <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
-            <a-switch v-model:checked="formUpdRange.forsystemvms"></a-switch>
+            <a-switch :disabled="formUpdRange.fornsx" v-model:checked="formUpdRange.forsystemvms"></a-switch>
           </a-form-item>
         </div>
 
@@ -576,6 +579,7 @@ export default {
       this.formUpdRange.gateway = this.selectedItem?.gateway || ''
       this.formUpdRange.netmask = this.selectedItem?.netmask || ''
       this.formUpdRange.forsystemvms = this.selectedItem?.forsystemvms || false
+      this.formUpdRange.fornsx = this.selectedItem?.fornsx || false
       this.formUpdRange.ip6gateway = this.selectedItem?.ip6gateway || ''
       this.formUpdRange.ip6cidr = this.selectedItem?.ip6cidr || ''
     },
@@ -613,6 +617,7 @@ export default {
           params.account = values.forsystemvms ? null : values.account
           params.domainid = values.forsystemvms ? null : values.domain
           params.forvirtualnetwork = true
+          params.fornsx = values.fornsx
         } else {
           params.forvirtualnetwork = false
           params.podid = values.podid
