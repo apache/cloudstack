@@ -98,6 +98,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -684,7 +685,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     .setIcmpType(rule.getIcmpType())
                     .setService(Network.Service.NetworkACL)
                     .build();
-            if (NetworkACLItem.State.Add == rule.getState()) {
+            if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
                 nsxAddNetworkRules.add(networkRule);
             } else if (NetworkACLItem.State.Revoke == rule.getState()) {
                 nsxDelNetworkRules.add(networkRule);
