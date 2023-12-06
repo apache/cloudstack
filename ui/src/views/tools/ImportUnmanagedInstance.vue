@@ -257,7 +257,7 @@
                         <span>{{ record.displaytext || record.name }}</span>
                         <div v-if="record.meta">
                           <div v-for="meta in record.meta" :key="meta.key">
-                            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+                            <a-tag v-if="(isKVMUnmanage && meta.key !== 'datastore') || !isKVMUnmanage" style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
                           </div>
                         </div>
                       </template>
@@ -270,6 +270,7 @@
                   :selectionEnabled="false"
                   :customOfferingsAllowed="true"
                   :autoSelectCustomOffering="true"
+                  :isKVMUnmanage="isKVMUnmanage"
                   :autoSelectLabel="$t('label.auto.assign.diskoffering.disk.size')"
                   @select-multi-disk-offering="updateMultiDiskOffering" />
               </div>
