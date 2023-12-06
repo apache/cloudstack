@@ -17,6 +17,7 @@
 package com.cloud.network.as;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+
 public interface AutoScaleManager extends AutoScaleService {
 
     ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
