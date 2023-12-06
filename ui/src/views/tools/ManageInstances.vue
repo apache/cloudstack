@@ -41,8 +41,11 @@
             type="info"
             :showIcon="true"
             :message="wizardTitle"
-            :description="wizardDescription"
-          />
+          >
+            <template #description>
+              <span v-html="wizardDescription" />
+            </template>
+          </a-alert>
           <br />
           <a-row :gutter="12">
             <a-col :md="24" :lg="12">
