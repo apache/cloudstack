@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -149,6 +151,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VolumeApiService volumeService;
     @Inject
     protected VolumeDao volumeDao;
+    @Inject
+    protected NetworkOfferingDao networkOfferingDao;
 
     protected String kubernetesClusterNodeNamePrefix;
 
@@ -738,12 +742,24 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected void setupKubernetesClusterVpcTierRules(IpAddress publicIp, Network network, List<Long> clusterVMIds) throws ManagementServerException {
         // Create ACL rules
         createVpcTierAclRules(network);
-        // Add port forwarding for API access
-        try {
-            provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT, CLUSTER_API_PORT);
-        } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
-            throw new ManagementServerException(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+
+        NetworkOffering offering = networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (offering.isConserveMode()) {
+            // Add load balancing for API access
+            try {
+                provisionLoadBalancerRule(publicIp, network, owner, clusterVMIds, CLUSTER_API_PORT);
+            } catch (InsufficientAddressCapacityException e) {
+                throw new ManagementServerException(String.format("Failed to activate API load balancing rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
+        } else {
+            // Add port forwarding for API access
+            try {
+                provisionPublicIpPortForwardingRule(publicIp, network, owner, clusterVMIds.get(0), CLUSTER_API_PORT, CLUSTER_API_PORT);
+            } catch (ResourceUnavailableException | NetworkRuleConflictException e) {
+                throw new ManagementServerException(String.format("Failed to activate API port forwarding rules for the Kubernetes cluster : %s", kubernetesCluster.getName()), e);
+            }
         }
+
         // Add port forwarding rule for SSH access on each node VM
         try {
             provisionSshPortForwardingRules(publicIp, network, owner, clusterVMIds);

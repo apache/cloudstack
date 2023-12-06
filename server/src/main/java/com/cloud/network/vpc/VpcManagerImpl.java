@@ -1158,8 +1158,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
-            vpc.setPublicMtu(publicMtu);
-            vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
+        vpc.setPublicMtu(publicMtu);
+        vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
         return createVpc(displayVpc, vpc);
     }
@@ -1903,9 +1903,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
          * ("No redunant router support when network belnogs to VPC"); }
          */
 
-        // 4) Conserve mode should be off
+        // 4) Conserve mode should be off in older versions ( < 4.19.0.0)
         if (guestNtwkOff.isConserveMode()) {
-            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
+            s_logger.info("Creating a network with conserve mode in VPC");
         }
 
         // 5) If Netscaler is LB provider make sure it is in dedicated mode
