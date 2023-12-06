@@ -169,7 +169,7 @@
                     <tooltip-label :title="$t('label.scope')" :tooltip="$t('label.scope.tooltip')"/>
                   </template>
                   <a-select
-                    v-model:value="form.scope"
+                    v-model:value="this.poolscope"
                     @change="onSelectPoolScope"
                     showSearch
                     optionFilterProp="label"
@@ -1015,7 +1015,7 @@ export default {
         if (query[param.field] && _.find(this.options[name], (option) => option.id === query[param.field])) {
           paramid = query[param.field]
         }
-        if (!paramid && this.options[name].length === 1) {
+        if (!paramid && this.options[name].length > 0) {
           paramid = (this.options[name])[0].id
         }
         if (paramid) {
