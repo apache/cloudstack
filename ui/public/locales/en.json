@@ -1829,6 +1829,7 @@
 "label.select.project": "Select project",
 "label.select.projects": "Select projects",
 "label.select.ps": "Select primary storage",
+"label.select.root.disk": "Select the ROOT disk",
 "label.select.tier": "Select Network Tier",
 "label.select.zones": "Select zones",
 "label.select.2fa.provider": "Select the provider",

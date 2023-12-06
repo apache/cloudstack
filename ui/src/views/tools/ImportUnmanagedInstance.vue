@@ -234,7 +234,7 @@
                     <tooltip-label :title="$t('label.disk.selection')" :tooltip="apiParams.datadiskofferinglist.description"/>
                   </template>
                 </a-form-item>
-                <a-form-item name="rootdiskid" ref="rootdiskid" :label="$t('label.rootdisk')">
+                <a-form-item name="rootdiskid" ref="rootdiskid" :label="$t('label.select.root.disk')">
                   <a-select
                     v-model:value="form.rootdiskid"
                     defaultActiveFirstOption
@@ -243,11 +243,26 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
-                    @change="val => { selectedRootDiskIndex = val }">
+                    @change="onSelectRootDisk">
                     <a-select-option v-for="(opt, optIndex) in resource.disk" :key="optIndex" :label="opt.label || opt.id">
                       {{ opt.label || opt.id }}
                     </a-select-option>
                   </a-select>
+                  <a-table
+                    :columns="selectedRootDiskColumns"
+                    :dataSource="selectedRootDiskSources"
+                    :pagination="false">
+                    <template #bodyCell="{ column, record }">
+                      <template v-if="column.key === 'name'">
+                        <span>{{ record.displaytext || record.name }}</span>
+                        <div v-if="record.meta">
+                          <div v-for="meta in record.meta" :key="meta.key">
+                            <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
+                          </div>
+                        </div>
+                      </template>
+                    </template>
+                  </a-table>
                 </a-form-item>
                 <multi-disk-selection
                   :items="dataDisks"
@@ -468,7 +483,15 @@ export default {
       storagePoolsForConversion: [],
       selectedStorageOptionForConversion: null,
       selectedStoragePoolForConversion: null,
-      showStoragePoolsForConversion: false
+      showStoragePoolsForConversion: false,
+      selectedRootDiskColumns: [
+        {
+          key: 'name',
+          dataIndex: 'name',
+          title: this.$t('label.rootdisk')
+        }
+      ],
+      selectedRootDiskSources: []
     }
   },
   beforeCreate () {
@@ -674,6 +697,9 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
+      if (this.resource.disk.length > 1) {
+        this.updateSelectedRootDisk()
+      }
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -921,6 +947,17 @@ export default {
           name: 'Primary Storage'
         }
       ]
+    },
+    onSelectRootDisk (val) {
+      this.selectedRootDiskIndex = val
+      this.updateSelectedRootDisk()
+    },
+    updateSelectedRootDisk () {
+      var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
+      rootDisk.size = rootDisk.capacity / (1024 * 1024 * 1024)
+      rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
+      rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
+      this.selectedRootDiskSources = [rootDisk]
     },
     handleSubmit (e) {
       e.preventDefault()
