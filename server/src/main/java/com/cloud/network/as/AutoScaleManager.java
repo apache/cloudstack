@@ -16,11 +16,7 @@
 // under the License.
 package com.cloud.network.as;
 
-import java.security.SecureRandom;
-
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.commons.lang3.RandomStringUtils;
-
 public interface AutoScaleManager extends AutoScaleService {
 
     ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
