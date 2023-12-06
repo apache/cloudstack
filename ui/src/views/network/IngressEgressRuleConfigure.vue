@@ -47,14 +47,6 @@
             <a-select-option value="protocolnumber" :label="$t('label.protocol.number')">{{ capitalise($t('label.protocol.number')) }}</a-select-option>
           </a-select>
         </div>
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
-          <div class="form__label">{{ $t('label.startport') }}</div>
-          <a-input v-model:value="newRule.startport"></a-input>
-        </div>
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
-          <div class="form__label">{{ $t('label.endport') }}</div>
-          <a-input v-model:value="newRule.endport"></a-input>
-        </div>
         <div v-show="newRule.protocol === 'protocolnumber'" class="form__item">
           <div class="form__label">{{ $t('label.protocol.number') }}</div>
           <a-select
@@ -68,6 +60,14 @@
               {{ opt.index + ' - ' + opt.name }}
             </a-select-option>
           </a-select>
+        </div>
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
+          <div class="form__label">{{ $t('label.startport') }}</div>
+          <a-input v-model:value="newRule.startport"></a-input>
+        </div>
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(newRule.protocol) && !(newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
+          <div class="form__label">{{ $t('label.endport') }}</div>
+          <a-input v-model:value="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp' || (newRule.protocol === 'protocolnumber' && newRule.protocolnumber === 1)" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>

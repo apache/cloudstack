@@ -403,6 +403,7 @@ export default {
           this.icmpTypes.push(result)
         }
       })
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
     },
     updateIcmpCodes (val) {
       this.form.icmpcode = -1
