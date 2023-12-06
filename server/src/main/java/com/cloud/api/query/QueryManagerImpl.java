@@ -2473,14 +2473,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
             SearchBuilder<ServiceOfferingVO> serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
             vmSearch.and().op("svmType", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
-            vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
+            vmSearch.or("vmSearchNulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
             vmSearch.cp();
 
             serviceOfferingSearch.and().op("systemUse", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NEQ);
-            serviceOfferingSearch.or("nulltype", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NULL);
+            serviceOfferingSearch.or("serviceOfferingSearchNulltype", serviceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NULL);
             serviceOfferingSearch.cp();
 
-            vmSearch.join("serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
+            vmSearch.join("vmSearch", "serviceOfferingSearch", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), vmSearch.entity().getServiceOfferingId(), JoinBuilder.JoinType.LEFT);
 
             volumeSearchBuilder.join("vmSearch", vmSearch, vmSearch.entity().getId(), volumeSearchBuilder.entity().getInstanceId(), JoinBuilder.JoinType.LEFT);
 
@@ -3409,8 +3409,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (zoneId != null) {
             SearchBuilder<DiskOfferingDetailVO> zoneDetailSearch = _diskOfferingDetailsDao.createSearchBuilder();
-            zoneDetailSearch.and().op("name", zoneDetailSearch.entity().getName(), Op.EQ); // zoneid
-            zoneDetailSearch.or("nameNull", zoneDetailSearch.entity().getName(), Op.NULL);
+            zoneDetailSearch.and().op("name", zoneDetailSearch.entity().getName(), Op.EQ);
+            zoneDetailSearch.or("nameNull", zoneDetailSearch.entity().getName(), Op.NULL).cp();
 
             zoneDetailSearch.and().op("zoneId", zoneDetailSearch.entity().getValue(), Op.EQ);
             zoneDetailSearch.or("zoneIdNull", zoneDetailSearch.entity().getValue(), Op.NULL);
@@ -3442,10 +3442,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (!Account.Type.ADMIN.equals(account.getType())) {
             SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
             domainDetailsSearch.and().op("name", domainDetailsSearch.entity().getName(), Op.EQ);
-            domainDetailsSearch.or("nameNull", domainDetailsSearch.entity().getName(), Op.EQ);
+            domainDetailsSearch.or("nameNull", domainDetailsSearch.entity().getName(), Op.NULL);
             domainDetailsSearch.cp();
             domainDetailsSearch.and().op("valueIn", domainDetailsSearch.entity().getValue(), Op.IN);
             domainDetailsSearch.or("valueNull", domainDetailsSearch.entity().getValue(), Op.NULL);
+            domainDetailsSearch.cp();
 
             diskOfferingSearch.join("domainDetailsSearch", domainDetailsSearch, diskOfferingSearch.entity().getId(), domainDetailsSearch.entity().getResourceId(), JoinBuilder.JoinType.LEFT);
         }
@@ -3767,7 +3768,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         DataCenterJoinVO zone = null;
         if (zoneId != null) {
             SearchBuilder<ServiceOfferingDetailsVO> srvOffrZoneDetailSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            srvOffrZoneDetailSearch.and("name", srvOffrZoneDetailSearch.entity().getName(), Op.EQ);
+            srvOffrZoneDetailSearch.and().op("name", srvOffrZoneDetailSearch.entity().getName(), Op.EQ);
+            srvOffrZoneDetailSearch.or("nameNull", srvOffrZoneDetailSearch.entity().getName(), Op.NULL).cp();
             srvOffrZoneDetailSearch.and().op("value", srvOffrZoneDetailSearch.entity().getValue(), Op.EQ);
             srvOffrZoneDetailSearch.and().or("valueNull", srvOffrZoneDetailSearch.entity().getValue(), Op.NULL);
             srvOffrZoneDetailSearch.cp();
@@ -3784,7 +3786,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
                 if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
                     for (String tag : storageTags) {
-                        diskOfferingSearch.and(tag, diskOfferingSearch.entity().getTags(), Op.FIND_IN_SET);
+                        diskOfferingSearch.and(tag, diskOfferingSearch.entity().getTags(), Op.EQ);
                     }
                     diskOfferingSearch.done();
                 }
@@ -3873,7 +3875,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // Fetch the offering ids from the details table since theres no smart way to filter them in the join ... yet!
         if (owner.getType() != Account.Type.ADMIN) {
             SearchBuilder<ServiceOfferingDetailsVO> srvOffrDomainDetailSearch = _srvOfferingDetailsDao.createSearchBuilder();
-            srvOffrDomainDetailSearch.and("name", srvOffrDomainDetailSearch.entity().getName(), Op.EQ);
+            srvOffrDomainDetailSearch.and().op("name", srvOffrDomainDetailSearch.entity().getName(), Op.EQ);
+            srvOffrDomainDetailSearch.or("nameNull", srvOffrDomainDetailSearch.entity().getName(), Op.NULL).cp();
             srvOffrDomainDetailSearch.and().op("value", srvOffrDomainDetailSearch.entity().getValue(), Op.IN);
             srvOffrDomainDetailSearch.or("value", srvOffrDomainDetailSearch.entity().getValue(), Op.NULL);
             srvOffrDomainDetailSearch.cp().done();
@@ -3888,7 +3891,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 serviceOfferingSearch.or().op();
 
                 for(String tag : hostTags) {
-                    serviceOfferingSearch.and(tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
+                    serviceOfferingSearch.and(tag, serviceOfferingSearch.entity().getHostTag(), Op.EQ);
                 }
                 serviceOfferingSearch.cp().cp().done();
             }

@@ -222,6 +222,19 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         return (J)this;
     }
 
+
+    @SuppressWarnings("unchecked")
+    public J join(final String tableAliasName, final String name, final SearchBase<?, ?, ?> builder, final Object joinField1, final Object joinField2, final JoinBuilder.JoinType joinType) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+
+        _specifiedAttrs.get(0).table = tableAliasName;
+        return join(name, builder, joinField1, joinField2, joinType);
+    }
+
     public SelectType getSelectType() {
         return _selectType;
     }
