@@ -1938,7 +1938,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
+    @Override
+    public String getNextVmHostName(AutoScaleVmGroupVO asGroup) {
         String vmHostNameSuffix = "-" + asGroup.getNextVmSeq() + "-" +
                 RandomStringUtils.random(VM_HOSTNAME_RANDOM_SUFFIX_LENGTH, 0, 0, true, false, (char[])null, new SecureRandom()).toLowerCase();
         // Truncate vm group name because max length of vm name is 63
@@ -1946,7 +1947,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return VM_HOSTNAME_PREFIX + asGroup.getName().substring(0, subStringLength) + vmHostNameSuffix;
     }
 
-    private void checkAutoScaleVmGroupName(String groupName) {
+    @Override
+    public void checkAutoScaleVmGroupName(String groupName) {
         String errorMessage = "";
         if (groupName == null || groupName.length() > 255 || groupName.length() < 1) {
             errorMessage = "AutoScale Vm Group name must be between 1 and 255 characters long";
