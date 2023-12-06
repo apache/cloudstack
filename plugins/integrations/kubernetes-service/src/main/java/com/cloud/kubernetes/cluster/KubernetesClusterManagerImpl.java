@@ -1070,20 +1070,25 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         SecurityGroupVO securityGroupVO = null;
         if (zone.isSecurityGroupEnabled()) {
-            securityGroupVO = securityGroupManager.createSecurityGroup(KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME.concat(Long.toHexString(System.currentTimeMillis())), "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
+            String securityGroupName = String.format("%s-%s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME, owner.getUuid());
+            String securityGroupDesc = String.format("%s and account %s", KubernetesClusterActionWorker.CKS_SECURITY_GROUP_DESCRIPTION, owner.getName());
+            securityGroupVO = securityGroupManager.getSecurityGroup(securityGroupName, owner.getId());
             if (securityGroupVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
+                securityGroupVO = securityGroupManager.createSecurityGroup(securityGroupName, securityGroupDesc, owner.getDomainId(), owner.getId(), owner.getAccountName());
+                if (securityGroupVO == null) {
+                    throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
+                }
+                List<String> cidrList = new ArrayList<>();
+                cidrList.add(NetUtils.ALL_IP4_CIDRS);
+                securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
+                        KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG,
+                        null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+                securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
+                        KubernetesClusterActionWorker.CLUSTER_API_PORT, KubernetesClusterActionWorker.CLUSTER_API_PORT,
+                        null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+                securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO,
+                        null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
             }
-            List<String> cidrList = new ArrayList<>();
-            cidrList.add(NetUtils.ALL_IP4_CIDRS);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
-                    KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG,
-                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
-                    KubernetesClusterActionWorker.CLUSTER_API_PORT, KubernetesClusterActionWorker.CLUSTER_API_PORT,
-                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO,
-                    null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());

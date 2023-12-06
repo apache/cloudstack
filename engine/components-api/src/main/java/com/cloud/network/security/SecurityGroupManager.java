@@ -48,9 +48,9 @@ public interface SecurityGroupManager {
 
     public boolean isVmSecurityGroupEnabled(Long vmId);
 
-    SecurityGroup getDefaultSecurityGroup(long accountId);
+    SecurityGroupVO getDefaultSecurityGroup(long accountId);
 
-    SecurityGroup getSecurityGroup(String name, long accountId);
+    SecurityGroupVO getSecurityGroup(String name, long accountId);
 
     boolean isVmMappedToDefaultSecurityGroup(long vmId);
 

@@ -63,7 +63,6 @@ import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SecurityGroupRulesCmd.IpPortAndProto;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.query.dao.SecurityGroupJoinDao;
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -130,8 +129,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
     @Inject
     SecurityGroupDao _securityGroupDao;
-    @Inject
-    SecurityGroupJoinDao _securityGroupJoinDao;
     @Inject
     SecurityGroupRuleDao _securityGroupRuleDao;
     @Inject
@@ -1410,7 +1407,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
     }
 
     @Override
-    public SecurityGroup getSecurityGroup(String name, long accountId) {
+    public SecurityGroupVO getSecurityGroup(String name, long accountId) {
         return _securityGroupDao.findByAccountAndName(accountId, name);
     }
 
