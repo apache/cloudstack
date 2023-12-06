@@ -1627,7 +1627,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             DiskOffering diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
 
             if (diskOffering != null && !storagePoolSupportsDiskOffering(storagePool, diskOffering)) {
-                throw new InvalidParameterValueException(String.format("Service offering: %s is not compatible with selected storage pool: %s", serviceOffering.getUuid(), storagePool.getUuid()));
+                throw new InvalidParameterValueException(String.format("Service offering: %s storage tags are not compatible with selected storage pool: %s", serviceOffering.getUuid(), storagePool.getUuid()));
             }
         }
 
