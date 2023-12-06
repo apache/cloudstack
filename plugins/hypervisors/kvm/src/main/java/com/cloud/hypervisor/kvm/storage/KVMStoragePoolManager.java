@@ -142,6 +142,13 @@ public class KVMStoragePoolManager {
         }
     }
 
+    /**
+     * Returns true if physical disk copy functionality supported.
+     */
+    public boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return getStorageAdaptor(type).supportsPhysicalDiskCopy(type);
+    }
+
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.getStoragePool(poolUuid);

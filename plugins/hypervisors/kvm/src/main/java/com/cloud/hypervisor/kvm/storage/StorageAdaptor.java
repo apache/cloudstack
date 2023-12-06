@@ -93,4 +93,11 @@ public interface StorageAdaptor {
      * @param timeout
      */
     KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout);
+
+    /**
+     * Returns true if storage adaptor supports physical disk copy functionality.
+     */
+    default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
+        return StoragePoolType.PowerFlex == type;
+    }
 }
