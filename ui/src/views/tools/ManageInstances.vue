@@ -760,10 +760,16 @@ export default {
       return this.destinationHypervisor === 'kvm'
     },
     showPod () {
-      return (this.selectedSourceAction !== 'external' && this.poolscope !== 'zone')
+      if (this.selectedSourceAction === 'shared') {
+        return this.poolscope !== 'zone'
+      }
+      return (this.selectedSourceAction !== 'external')
     },
     showCluster () {
-      return (this.selectedSourceAction !== 'external' && this.poolscope !== 'zone')
+      if (this.selectedSourceAction === 'shared') {
+        return this.poolscope !== 'zone'
+      }
+      return (this.selectedSourceAction !== 'external')
     },
     showHost () {
       return (this.selectedSourceAction === 'local')
