@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -340,8 +341,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private void getServiceProviderMapForNsx(Map<String, List<String>> serviceProviderMap) {
         String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
-        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "BaremetalPxeService"));
+        List<String> unsupportedServices = Arrays.asList("Vpn", "SecurityGroup", "Connectivity",
+                "Gateway", "BaremetalPxeService");
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
         if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {
