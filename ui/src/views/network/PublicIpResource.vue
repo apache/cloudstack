@@ -144,7 +144,7 @@ export default {
       }
       if (this.resource && this.resource.vpcid) {
         // VPC IPs don't have firewall
-        const tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+        let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
