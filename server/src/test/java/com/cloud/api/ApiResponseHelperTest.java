@@ -42,10 +42,13 @@ import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,6 +63,7 @@ import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -366,5 +370,30 @@ public class ApiResponseHelperTest {
             assertNull(response.getUserDataName());
             assertNull(response.getUserDataDetails());
         }
+    }
+
+    private UnmanagedInstanceTO getUnmanagedInstaceForTests() {
+        UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+        Mockito.when(instance.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
+        Mockito.when(instance.getClusterName()).thenReturn("CL1");
+        UnmanagedInstanceTO.Disk disk = Mockito.mock(UnmanagedInstanceTO.Disk.class);
+        Mockito.when(disk.getDiskId()).thenReturn("0");
+        Mockito.when(disk.getLabel()).thenReturn("Hard disk 1");
+        Mockito.when(disk.getCapacity()).thenReturn(17179869184L);
+        Mockito.when(disk.getPosition()).thenReturn(0);
+        Mockito.when(instance.getDisks()).thenReturn(List.of(disk));
+        UnmanagedInstanceTO.Nic nic = Mockito.mock(UnmanagedInstanceTO.Nic.class);
+        Mockito.when(nic.getNicId()).thenReturn("Network adapter 1");
+        Mockito.when(nic.getMacAddress()).thenReturn("aa:bb:cc:dd:ee:ff");
+        Mockito.when(instance.getNics()).thenReturn(List.of(nic));
+        return instance;
+    }
+
+    @Test
+    public void testCreateUnmanagedInstanceResponseVmwareDcVms() {
+        UnmanagedInstanceTO instance = getUnmanagedInstaceForTests();
+        UnmanagedInstanceResponse response = apiResponseHelper.createUnmanagedInstanceResponse(instance, null, null);
+        Assert.assertEquals(1, response.getDisks().size());
+        Assert.assertEquals(1, response.getNics().size());
     }
 }

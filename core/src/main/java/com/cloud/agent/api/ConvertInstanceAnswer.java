@@ -14,24 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.agent.api;
 
-package com.cloud.hypervisor.vmware;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public class ConvertInstanceAnswer extends Answer {
 
-public interface VmwareDatacenter extends Identity, InternalIdentity {
+    public ConvertInstanceAnswer() {
+        super();
+    }
+    private UnmanagedInstanceTO convertedInstance;
 
-    String getVmwareDatacenterName();
+    public ConvertInstanceAnswer(Command command, boolean success, String details) {
+        super(command, success, details);
+    }
 
-    String getGuid();
+    public ConvertInstanceAnswer(Command command, UnmanagedInstanceTO convertedInstance) {
+        super(command, true, "");
+        this.convertedInstance = convertedInstance;
+    }
 
-    String getVcenterHost();
-
-    @Override
-    long getId();
-
-    String getPassword();
-
-    String getUser();
+    public UnmanagedInstanceTO getConvertedInstance() {
+        return convertedInstance;
+    }
 }
