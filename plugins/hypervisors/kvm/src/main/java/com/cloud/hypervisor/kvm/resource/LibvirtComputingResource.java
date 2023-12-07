@@ -743,6 +743,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected StorageSubsystemCommandHandler storageHandler;
 
+    private boolean convertInstanceVerboseMode = false;
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -801,6 +802,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected String getNetworkDirectDevice() {
         return networkDirectDevice;
+    }
+
+    public boolean isConvertInstanceVerboseModeEnabled() {
+        return convertInstanceVerboseMode;
     }
 
     /**
@@ -990,6 +995,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (isDeveloper) {
             params.putAll(getDeveloperProperties());
         }
+
+        convertInstanceVerboseMode = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VIRTV2V_VERBOSE_ENABLED));
 
         pool = (String)params.get("pool");
         if (pool == null) {

@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.hypervisor.vmware.dao;
+package com.cloud.dc.dao;
 
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface VmwareDatacenterDao extends GenericDao<VmwareDatacenterVO, Long> {

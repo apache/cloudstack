@@ -96,6 +96,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> ConvertVmwareInstanceToKvmTimeout = new ConfigKey<>(Integer.class,
+            "convert.vmware.instance.to.kvm.timeout",
+            "Storage",
+            "8",
+            "Timeout (in hours) for the instance conversion process from VMware through the virt-v2v binary on a KVM host",
+            true,
+            ConfigKey.Scope.Global,
+            null);
     ConfigKey<Boolean> KvmAutoConvergence = new ConfigKey<>(Boolean.class,
             "kvm.auto.convergence",
             "Storage",

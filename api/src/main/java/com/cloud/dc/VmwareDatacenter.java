@@ -15,45 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<template>
-  <span>
-    <b v-if="bold">
-      {{ title }}
-    </b>
-    <span v-else>
-      {{ title }}
-    </span>
-    <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
-      <info-circle-outlined class="tooltip-icon" />
-    </a-tooltip>
-  </span>
-</template>
+package com.cloud.dc;
 
-<script>
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-export default {
-  name: 'TooltipLabel',
-  props: {
-    title: {
-      type: String,
-      default: ''
-    },
-    tooltip: {
-      type: String,
-      default: null
-    },
-    tooltipPlacement: {
-      type: String,
-      default: 'top'
-    },
-    bold: Boolean
-  }
+public interface VmwareDatacenter extends Identity, InternalIdentity {
+
+    String getVmwareDatacenterName();
+
+    String getGuid();
+
+    String getVcenterHost();
+
+    @Override
+    long getId();
+
+    String getPassword();
+
+    String getUser();
 }
-</script>
-
-<style scoped lang="scss">
-  .tooltip-icon {
-    color: rgba(0,0,0,.45);
-    margin-left: 2px;
-  }
-</style>
