@@ -81,7 +81,7 @@ export default {
       show: (record, store) => {
         return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
-          record.state === 'disabled'
+          ['disabled', 'locked'].includes(record.state)
       }
     },
     {
@@ -95,6 +95,19 @@ export default {
           !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
           record.state === 'enabled'
       }
+    },
+    {
+      api: 'lockUser',
+      icon: 'LockOutlined',
+      label: 'label.action.lock.user',
+      dataView: true,
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          !(record.domain === 'ROOT' && record.account === 'admin' && record.accounttype === 1) &&
+          record.state === 'enabled'
+      },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/LockUser.vue')))
     },
     {
       api: 'authorizeSamlSso',
