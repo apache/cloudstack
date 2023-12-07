@@ -767,8 +767,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return prefix;
     }
 
-    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
-                                                               final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize, KubernetesCluster.State state) {
+    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
+               final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize, KubernetesCluster.State state) {
         return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
                 @Override
                 public KubernetesClusterVO doInTransaction(TransactionStatus status) {
