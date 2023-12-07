@@ -14,24 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.secstorage.dao;
 
-package com.cloud.hypervisor.vmware;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.secstorage.HeuristicVO;
+import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+public interface SecondaryStorageHeuristicDao extends GenericDao<HeuristicVO, Long> {
 
-public interface VmwareDatacenter extends Identity, InternalIdentity {
-
-    String getVmwareDatacenterName();
-
-    String getGuid();
-
-    String getVcenterHost();
-
-    @Override
-    long getId();
-
-    String getPassword();
-
-    String getUser();
+    HeuristicVO findByZoneIdAndType(long zoneId, HeuristicType type);
 }

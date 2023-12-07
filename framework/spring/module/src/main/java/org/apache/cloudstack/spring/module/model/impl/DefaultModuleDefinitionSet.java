@@ -105,10 +105,16 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         log.info(String.format("Starting module [%s].", moduleDefinitionName));
                         runnable.run();
                     } catch (BeansException e) {
-                        log.error(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()), e);
+                        log.warn(String.format("Failed to start module [%s] due to: [%s].", moduleDefinitionName, e.getMessage()));
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("module start failure of module [%s] was due to: ", moduleDefinitionName), e);
+                        }
                     }
                 } catch (EmptyStackException e) {
-                    log.error(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()), e);
+                    log.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed to obtain module context: ", e);
+                    }
                 }
             }
         });
@@ -125,9 +131,15 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                     log.debug(String.format("Trying to load module [%s] context.", moduleDefinitionName));
                     loadContext(def, parent);
                 } catch (EmptyStackException e) {
-                    log.error(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()), e);
+                    log.warn(String.format("Failed to obtain module context due to [%s]. Using root context instead.", e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed to obtain module context: ", e);
+                    }
                 } catch (BeansException e) {
-                    log.error(String.format("Failed to load module [%s] due to: [%s].", def.getName(), e.getMessage()), e);
+                    log.warn(String.format("Failed to start module [%s] due to: [%s].", def.getName(), e.getMessage()));
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("module start failure of module [%s] was due to: ", def.getName()), e);
+                    }
                 }
             }
         });

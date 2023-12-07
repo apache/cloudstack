@@ -27,6 +27,12 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HostMO;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.vm.VmDetailConstants;
+import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -44,6 +50,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -80,9 +87,9 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
@@ -1216,5 +1223,119 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         return super.toVirtualMachineTO(vmProfile);
+    }
+
+    private VmwareContext connectToVcenter(String vcenter, String username, String password) throws Exception {
+        VmwareClient vimClient = new VmwareClient(vcenter);
+        String serviceUrl = "https://" + vcenter + "/sdk/vimService";
+        vimClient.connect(serviceUrl, username, password);
+        return new VmwareContext(vimClient, vcenter);
+    }
+
+    private void relocateClonedVMToSourceHost(VirtualMachineMO clonedVM, HostMO sourceHost) throws Exception {
+        if (!clonedVM.getRunningHost().getMor().equals(sourceHost.getMor())) {
+            s_logger.debug(String.format("Relocating VM to the same host as the source VM: %s", sourceHost.getHostName()));
+            if (!clonedVM.relocate(sourceHost.getMor())) {
+                String err = String.format("Cannot relocate cloned VM %s to the source host %s", clonedVM.getVmName(), sourceHost.getHostName());
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
+        }
+    }
+
+    private VirtualMachineMO createCloneFromSourceVM(String vmName, VirtualMachineMO vmMo,
+                                                     DatacenterMO dataCenterMO) throws Exception {
+        HostMO sourceHost = vmMo.getRunningHost();
+        String cloneName = UUID.randomUUID().toString();
+        DatastoreMO datastoreMO = vmMo.getAllDatastores().get(0); //pick the first datastore
+        ManagedObjectReference morPool = vmMo.getRunningHost().getHyperHostOwnerResourcePool();
+        boolean result = vmMo.createFullClone(cloneName, dataCenterMO.getVmFolder(), morPool, datastoreMO.getMor(), Storage.ProvisioningType.THIN);
+        VirtualMachineMO clonedVM = dataCenterMO.findVm(cloneName);
+        if (!result || clonedVM == null) {
+            String err = String.format("Could not clone VM %s before migration from VMware", vmName);
+            s_logger.error(err);
+            throw new CloudRuntimeException(err);
+        }
+        relocateClonedVMToSourceHost(clonedVM, sourceHost);
+        return clonedVM;
+    }
+
+    @Override
+    public UnmanagedInstanceTO cloneHypervisorVMOutOfBand(String hostIp, String vmName,
+                                                                 Map<String, String> params) {
+        s_logger.debug(String.format("Cloning VM %s on external vCenter %s", vmName, hostIp));
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
+        String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
+        String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+
+        try {
+            VmwareContext context = connectToVcenter(vcenter, username, password);
+            DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
+            VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
+            if (vmMo == null) {
+                String err = String.format("Cannot find VM with name %s on %s/%s", vmName, vcenter, datacenter);
+                s_logger.error(err);
+                throw new CloudRuntimeException(err);
+            }
+            VirtualMachinePowerState sourceVmPowerState = vmMo.getPowerState();
+            if (sourceVmPowerState == VirtualMachinePowerState.POWERED_ON && isWindowsVm(vmMo)) {
+                s_logger.debug(String.format("VM %s is a Windows VM and its Running, cannot be imported." +
+                                "Please gracefully shut it down before attempting the import",
+                        vmName));
+            }
+
+            VirtualMachineMO clonedVM = createCloneFromSourceVM(vmName, vmMo, dataCenterMO);
+            s_logger.debug(String.format("VM %s cloned successfully", vmName));
+            UnmanagedInstanceTO clonedInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), clonedVM);
+            setNicsFromSourceVM(clonedInstance, vmMo);
+            clonedInstance.setCloneSourcePowerState(sourceVmPowerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn : UnmanagedInstanceTO.PowerState.PowerOff);
+            return clonedInstance;
+        } catch (Exception e) {
+            String err = String.format("Error cloning VM: %s from external vCenter %s: %s", vmName, vcenter, e.getMessage());
+            s_logger.error(err, e);
+            throw new CloudRuntimeException(err, e);
+        }
+    }
+
+    private boolean isWindowsVm(VirtualMachineMO vmMo) throws Exception {
+        UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+        return sourceInstance.getOperatingSystem().toLowerCase().contains("windows");
+    }
+
+    private void setNicsFromSourceVM(UnmanagedInstanceTO clonedInstance, VirtualMachineMO vmMo) throws Exception {
+        UnmanagedInstanceTO sourceInstance = VmwareHelper.getUnmanagedInstance(vmMo.getRunningHost(), vmMo);
+        List<UnmanagedInstanceTO.Disk> sourceDisks = sourceInstance.getDisks();
+        List<UnmanagedInstanceTO.Disk> clonedDisks = clonedInstance.getDisks();
+        for (int i = 0; i < sourceDisks.size(); i++) {
+            UnmanagedInstanceTO.Disk sourceDisk = sourceDisks.get(i);
+            UnmanagedInstanceTO.Disk clonedDisk = clonedDisks.get(i);
+            clonedDisk.setDiskId(sourceDisk.getDiskId());
+        }
+    }
+
+    @Override
+    public boolean removeClonedHypervisorVMOutOfBand(String hostIp, String vmName, Map<String, String> params) {
+        s_logger.debug(String.format("Removing VM %s on external vCenter %s", vmName, hostIp));
+        String vcenter = params.get(VmDetailConstants.VMWARE_VCENTER_HOST);
+        String datacenter = params.get(VmDetailConstants.VMWARE_DATACENTER_NAME);
+        String username = params.get(VmDetailConstants.VMWARE_VCENTER_USERNAME);
+        String password = params.get(VmDetailConstants.VMWARE_VCENTER_PASSWORD);
+        try {
+            VmwareContext context = connectToVcenter(vcenter, username, password);
+            DatacenterMO dataCenterMO = new DatacenterMO(context, datacenter);
+            VirtualMachineMO vmMo = dataCenterMO.findVm(vmName);
+            if (vmMo == null) {
+                String err = String.format("Cannot find VM %s on datacenter %s, not possible to remove VM out of band",
+                        vmName, datacenter);
+                s_logger.error(err);
+                return false;
+            }
+            return vmMo.destroy();
+        } catch (Exception e) {
+            String err = String.format("Error destroying external VM %s: %s", vmName, e.getMessage());
+            s_logger.error(err, e);
+            return false;
+        }
     }
 }

@@ -167,6 +167,7 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
+                  style="margin-bottom: 20px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
@@ -195,39 +196,39 @@
                 <template #label>
                   <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
                 </template>
+                <compute-offering-selection
+                  :compute-items="computeOfferings"
+                  :loading="computeOfferingLoading"
+                  :rowCount="totalComputeOfferings"
+                  :value="computeOffering ? computeOffering.id : ''"
+                  :minimumCpunumber="isVmRunning ? resource.cpunumber : null"
+                  :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
+                  :minimumMemory="isVmRunning ? resource.memory : null"
+                  :allowAllOfferings="selectedVmwareVcenter ? true : false"
+                  size="small"
+                  @select-compute-item="($event) => updateComputeOffering($event)"
+                  @handle-search-filter="($event) => fetchComputeOfferings($event)" />
+                <compute-selection
+                  class="row-element"
+                  v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
+                  :isCustomized="computeOffering.iscustomized"
+                  :isCustomizedIOps="'iscustomizediops' in computeOffering && computeOffering.iscustomizediops"
+                  :cpuNumberInputDecorator="cpuNumberKey"
+                  :cpuSpeedInputDecorator="cpuSpeedKey"
+                  :memoryInputDecorator="memoryKey"
+                  :computeOfferingId="computeOffering.id"
+                  :preFillContent="resource"
+                  :isConstrained="'serviceofferingdetails' in computeOffering"
+                  :minCpu="getMinCpu()"
+                  :maxCpu="getMaxCpu()"
+                  :minMemory="getMinMemory()"
+                  :maxMemory="getMaxMemory()"
+                  :cpuSpeed="getCPUSpeed()"
+                  @update-iops-value="updateFieldValue"
+                  @update-compute-cpunumber="updateFieldValue"
+                  @update-compute-cpuspeed="updateCpuSpeed"
+                  @update-compute-memory="updateFieldValue" />
               </a-form-item>
-              <compute-offering-selection
-                :compute-items="computeOfferings"
-                :loading="computeOfferingLoading"
-                :rowCount="totalComputeOfferings"
-                :value="computeOffering ? computeOffering.id : ''"
-                :minimumCpunumber="isVmRunning ? resource.cpunumber : null"
-                :minimumCpuspeed="isVmRunning ? resource.cpuspeed : null"
-                :minimumMemory="isVmRunning ? resource.memory : null"
-                :exactMatch="isKVMUnmanage ? true : false"
-                size="small"
-                @select-compute-item="($event) => updateComputeOffering($event)"
-                @handle-search-filter="($event) => fetchComputeOfferings($event)" />
-              <compute-selection
-                class="row-element"
-                v-if="computeOffering && (computeOffering.iscustomized || computeOffering.iscustomizediops)"
-                :isCustomized="computeOffering.iscustomized"
-                :isCustomizedIOps="'iscustomizediops' in computeOffering && computeOffering.iscustomizediops"
-                :cpuNumberInputDecorator="cpuNumberKey"
-                :cpuSpeedInputDecorator="cpuSpeedKey"
-                :memoryInputDecorator="memoryKey"
-                :computeOfferingId="computeOffering.id"
-                :preFillContent="resource"
-                :isConstrained="'serviceofferingdetails' in computeOffering"
-                :minCpu="getMinCpu()"
-                :maxCpu="getMaxCpu()"
-                :minMemory="getMinMemory()"
-                :maxMemory="getMaxMemory()"
-                :cpuSpeed="getCPUSpeed()"
-                @update-iops-value="updateFieldValue"
-                @update-compute-cpunumber="updateFieldValue"
-                @update-compute-cpuspeed="updateCpuSpeed"
-                @update-compute-memory="updateFieldValue" />
               <div v-if="resource.disk && resource.disk.length > 1">
                 <a-form-item name="selection" ref="selection">
                   <template #label>
@@ -281,6 +282,18 @@
                   </template>
                   <span>{{ $t('message.ip.address.changes.effect.after.vm.restart') }}</span>
                 </a-form-item>
+                <a-row :gutter="12" justify="end">
+                  <a-col style="text-align: right">
+                    <a-form-item name="forced" ref="forced">
+                      <template #label>
+                        <tooltip-label
+                          :title="selectedVmwareVcenter ? $t('label.allow.duplicate.macaddresses') : $t('label.forced')"
+                          :tooltip="apiParams.forced.description"/>
+                      </template>
+                      <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
                 <multi-network-selection
                   :items="nics"
                   :zoneId="cluster.zoneid"
@@ -327,14 +340,6 @@
                       <tooltip-label :title="$t('label.migrate.allowed')" :tooltip="apiParams.migrateallowed.description"/>
                     </template>
                     <a-switch v-model:checked="form.migrateallowed" @change="val => { switches.migrateAllowed = val }" />
-                  </a-form-item>
-                </a-col>
-                <a-col :md="24" :lg="12" v-if="!isDiskImport">
-                  <a-form-item name="forced" ref="forced">
-                    <template #label>
-                      <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
-                    </template>
-                    <a-switch v-model:checked="form.forced" @change="val => { switches.forced = val }" />
                   </a-form-item>
                 </a-col>
               </a-row>
@@ -483,16 +488,7 @@ export default {
       ],
       storagePoolsForConversion: [],
       selectedStorageOptionForConversion: null,
-      selectedStoragePoolForConversion: null,
-      showStoragePoolsForConversion: false,
-      selectedRootDiskColumns: [
-        {
-          key: 'name',
-          dataIndex: 'name',
-          title: this.$t('label.rootdisk')
-        }
-      ],
-      selectedRootDiskSources: []
+      selectedStoragePoolForConversion: null
     }
   },
   beforeCreate () {
@@ -698,9 +694,6 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
-      if (this.resource.disk.length > 1) {
-        this.updateSelectedRootDisk()
-      }
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -949,17 +942,6 @@ export default {
         }
       ]
     },
-    onSelectRootDisk (val) {
-      this.selectedRootDiskIndex = val
-      this.updateSelectedRootDisk()
-    },
-    updateSelectedRootDisk () {
-      var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
-      rootDisk.size = rootDisk.capacity / (1024 * 1024 * 1024)
-      rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
-      rootDisk.meta = this.getMeta(rootDisk, { controller: 'controller', datastorename: 'datastore', position: 'position' })
-      this.selectedRootDiskSources = [rootDisk]
-    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -982,7 +964,7 @@ export default {
           temppath: this.tmppath
         }
         var importapi = 'importUnmanagedInstance'
-        if (this.isExternalImport || this.isDiskImport) {
+        if (this.isExternalImport || this.isDiskImport || this.selectedVmwareVcenter) {
           importapi = 'importVm'
           if (this.isDiskImport) {
             if (!values.networkid) {
@@ -1130,7 +1112,7 @@ export default {
         return new Promise((resolve, reject) => {
           api(importapi, params).then(response => {
             var jobId
-            if (this.isDiskImport || this.isExternalImport) {
+            if (this.isDiskImport || this.isExternalImport || this.selectedVmwareVcenter) {
               jobId = response.importvmresponse.jobid
             } else {
               jobId = response.importunmanagedinstanceresponse.jobid

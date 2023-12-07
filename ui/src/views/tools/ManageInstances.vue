@@ -41,8 +41,11 @@
             type="info"
             :showIcon="true"
             :message="wizardTitle"
-            :description="wizardDescription"
-          />
+          >
+            <template #description>
+              <span v-html="wizardDescription" />
+            </template>
+          </a-alert>
           <br />
           <a-row :gutter="12">
             <a-card class="source-dest-card">
@@ -552,7 +555,7 @@ export default {
         wizardDescription: this.$t('message.desc.importexportinstancewizard')
       },
       {
-        name: 'migratefromvmware',
+        name: 'vmware',
         label: 'Migrate existing instances to KVM',
         sourceDestHypervisors: {
           vmware: 'kvm'
@@ -754,7 +757,7 @@ export default {
       return this.selectedSourceAction === 'external'
     },
     isMigrateFromVmware () {
-      return this.selectedSourceAction === 'migratefromvmware'
+      return this.selectedSourceAction === 'vmware'
     },
     isDestinationKVM () {
       return this.destinationHypervisor === 'kvm'

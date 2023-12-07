@@ -105,7 +105,7 @@ export default {
       type: Number,
       default: 0
     },
-    exactMatch: {
+    allowAllOfferings: {
       type: Boolean,
       required: false,
       default: false
@@ -182,6 +182,9 @@ export default {
         }
         if (this.autoscale && item.iscustomized) {
           disabled = true
+        }
+        if (this.allowAllOfferings) {
+          disabled = false
         }
         return {
           key: item.id,

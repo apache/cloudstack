@@ -124,7 +124,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the ID of the service offering for the virtual machine")
+            description = "the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
@@ -154,7 +154,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
-            description = "VM is imported despite some of its NIC's MAC addresses are already present")
+            description = "VM is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
     private Boolean forced;
 
     /////////////////////////////////////////////////////

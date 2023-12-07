@@ -20,50 +20,38 @@ package org.apache.cloudstack.api.command.admin.vm;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
-import com.cloud.offering.DiskOffering;
-import com.cloud.user.Account;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.vm.VmImportService;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @APICommand(name = "importVm",
-        description = "Import virtual machine from a unmanaged host",
+        description = "Import virtual machine from a unmanaged host into CloudStack",
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin},
         since = "4.19.0")
-public class ImportVmCmd extends BaseAsyncCmd {
+public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     public static final Logger LOGGER = Logger.getLogger(ImportVmCmd.class);
 
     @Inject
@@ -73,38 +61,6 @@ public class ImportVmCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME,
-            type = CommandType.STRING,
-            required = true,
-            description = "the hypervisor name of the instance")
-    private String name;
-
-    @Parameter(name = ApiConstants.DISPLAY_NAME,
-            type = CommandType.STRING,
-            description = "the display name of the instance")
-    private String displayName;
-
-    @Parameter(name = ApiConstants.HOST_NAME,
-            type = CommandType.STRING,
-            description = "the host name of the instance")
-    private String hostName;
-
-    @Parameter(name = ApiConstants.ACCOUNT,
-            type = CommandType.STRING,
-            description = "an optional account for the virtual machine. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID,
-            type = CommandType.UUID,
-            entityType = DomainResponse.class,
-            description = "import instance to the domain specified")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.PROJECT_ID,
-            type = CommandType.UUID,
-            entityType = ProjectResponse.class,
-            description = "import instance for the project")
-    private Long projectId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
@@ -134,33 +90,6 @@ public class ImportVmCmd extends BaseAsyncCmd {
             description = "hypervisor type of the host")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
-            type = CommandType.UUID,
-            entityType = ServiceOfferingResponse.class,
-            required = true,
-            description = "the ID of the service offering for the virtual machine")
-    private Long serviceOfferingId;
-
-    @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
-            type = CommandType.MAP,
-            description = "VM nic to network id mapping using keys nic and network")
-    private Map nicNetworkList;
-
-    @Parameter(name = ApiConstants.NIC_IP_ADDRESS_LIST,
-            type = CommandType.MAP,
-            description = "VM nic to ip address mapping using keys nic, ip4Address")
-    private Map nicIpAddressList;
-
-    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
-            type = CommandType.MAP,
-            description = "datadisk template to disk-offering mapping using keys disk and diskOffering")
-    private Map dataDiskToDiskOfferingList;
-
-    @Parameter(name = ApiConstants.DETAILS,
-            type = CommandType.MAP,
-            description = "used to specify the custom parameters.")
-    private Map<String, String> details;
-
     @Parameter(name = ApiConstants.DISK_PATH,
             type = CommandType.STRING,
             description = "path of the disk image")
@@ -189,38 +118,66 @@ public class ImportVmCmd extends BaseAsyncCmd {
             description = "Temp Path on external host for disk image copy" )
     private String tmpPath;
 
+    // Import from Vmware to KVM migration parameters
+
+    @Parameter(name = ApiConstants.EXISTING_VCENTER_ID,
+            type = CommandType.UUID,
+            entityType = VmwareDatacenterResponse.class,
+            description = "(only for importing migrated VMs from Vmware to KVM) UUID of a linked existing vCenter")
+    private Long existingVcenterId;
+
+    @Parameter(name = ApiConstants.HOST_IP,
+            type = BaseCmd.CommandType.STRING,
+            description = "(only for importing migrated VMs from Vmware to KVM) VMware ESXi host IP/Name.")
+    private String hostip;
+
+    @Parameter(name = ApiConstants.VCENTER,
+            type = CommandType.STRING,
+            description = "(only for importing migrated VMs from Vmware to KVM) The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
+    private String vcenter;
+
+    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING,
+            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware datacenter.")
+    private String datacenterName;
+
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING,
+            description = "(only for importing migrated VMs from Vmware to KVM) Name of VMware cluster.")
+    private String clusterName;
+
+    @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
+            description = "(only for importing migrated VMs from Vmware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+    private Long convertInstanceHostId;
+
+    @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
+            description = "(only for importing migrated VMs from Vmware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
+    private Long convertStoragePoolId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getHostName() {
-        return hostName;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getProjectId() {
-        return projectId;
-    }
-
-
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public Long getExistingVcenterId() {
+        return existingVcenterId;
+    }
+
+    public String getHostIp() {
+        return hostip;
+    }
+
+    public String getVcenter() {
+        return vcenter;
+    }
+
+    public String getDatacenterName() {
+        return datacenterName;
+    }
+
+    public String getClusterName() {
+        return clusterName;
     }
 
     public String getUsername() {
@@ -235,12 +192,16 @@ public class ImportVmCmd extends BaseAsyncCmd {
         return host;
     }
 
-    public String getHypervisor() {
-        return hypervisor;
+    public Long getConvertInstanceHostId() {
+        return convertInstanceHostId;
     }
 
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
+    public Long getConvertStoragePoolId() {
+        return convertStoragePoolId;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
     }
 
     public String getDiskPath() {
@@ -267,77 +228,6 @@ public class ImportVmCmd extends BaseAsyncCmd {
         return networkId;
     }
 
-    public Map<String, Long> getNicNetworkList() {
-        Map<String, Long> nicNetworkMap = new HashMap<>();
-        if (MapUtils.isNotEmpty(nicNetworkList)) {
-            for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
-                String nic = entry.get(VmDetailConstants.NIC);
-                String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-                }
-                if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
-                    throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
-                }
-                nicNetworkMap.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
-            }
-        }
-        return nicNetworkMap;
-    }
-
-    public Map<String, Network.IpAddresses> getNicIpAddressList() {
-        Map<String, Network.IpAddresses> nicIpAddressMap = new HashMap<>();
-        if (MapUtils.isNotEmpty(nicIpAddressList)) {
-            for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
-                String nic = entry.get(VmDetailConstants.NIC);
-                String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
-                }
-                if (StringUtils.isEmpty(nic)) {
-                    throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
-                }
-                if (StringUtils.isEmpty(ipAddress)) {
-                    throw new InvalidParameterValueException(String.format("Empty address for NIC ID: %s is invalid", nic));
-                }
-                if (StringUtils.isNotEmpty(ipAddress) && !ipAddress.equals("auto") && !NetUtils.isValidIp4(ipAddress)) {
-                    throw new InvalidParameterValueException(String.format("IP address '%s' for NIC ID: %s is invalid", ipAddress, nic));
-                }
-                Network.IpAddresses ipAddresses = new Network.IpAddresses(ipAddress, null);
-                nicIpAddressMap.put(nic, ipAddresses);
-            }
-        }
-        return nicIpAddressMap;
-    }
-
-    public Map<String, Long> getDataDiskToDiskOfferingList() {
-        Map<String, Long> dataDiskToDiskOfferingMap = new HashMap<>();
-        if (MapUtils.isNotEmpty(dataDiskToDiskOfferingList)) {
-            for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
-                String disk = entry.get(VmDetailConstants.DISK);
-                String offeringUuid = entry.get(VmDetailConstants.DISK_OFFERING);
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(String.format("disk, '%s', gets offering, '%s'", disk, offeringUuid));
-                }
-                if (StringUtils.isAnyEmpty(disk, offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
-                    throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
-                }
-                dataDiskToDiskOfferingMap.put(disk, _entityMgr.findByUuid(DiskOffering.class, offeringUuid).getId());
-            }
-        }
-        return dataDiskToDiskOfferingMap;
-    }
-
-    public Map<String, String> getDetails() {
-        if (MapUtils.isEmpty(details)) {
-            return new HashMap<String, String>();
-        }
-
-        Collection<String> paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>) (paramsCollection.toArray())[0];
-        return params;
-    }
-
     @Override
     public String getEventType() {
         return EventTypes.EVENT_VM_IMPORT;
@@ -345,9 +235,15 @@ public class ImportVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Importing VM";
+        String vmName = getName();
+        if (ObjectUtils.anyNotNull(vcenter, existingVcenterId)) {
+            String msg = StringUtils.isNotBlank(vcenter) ?
+                    String.format("external vCenter: %s - datacenter: %s", vcenter, datacenterName) :
+                    String.format("existing vCenter Datacenter with ID: %s", existingVcenterId);
+            return String.format("Importing unmanaged VM: %s from %s - VM: %s", getDisplayName(), msg, vmName);
+        }
+        return String.format("Importing unmanaged VM: %s", vmName);
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -358,19 +254,5 @@ public class ImportVmCmd extends BaseAsyncCmd {
         UserVmResponse response = vmImportService.importVm(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
-        if (accountId == null) {
-            Account account = CallContext.current().getCallingAccount();
-            if (account != null) {
-                accountId = account.getId();
-            } else {
-                accountId = Account.ACCOUNT_ID_SYSTEM;
-            }
-        }
-        return accountId;
     }
 }

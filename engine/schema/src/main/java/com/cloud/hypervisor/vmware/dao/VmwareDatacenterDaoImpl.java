@@ -20,10 +20,11 @@ package com.cloud.hypervisor.vmware.dao;
 import java.util.List;
 
 
+import com.cloud.dc.dao.VmwareDatacenterDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

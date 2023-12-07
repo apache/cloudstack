@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 
 public interface VmImportService {
 
-    public enum ImportSource {
+    enum ImportSource {
         UNMANAGED, VMWARE, EXTERNAL, SHARED, LOCAL;
 
         @Override
@@ -42,5 +42,4 @@ public interface VmImportService {
     UserVmResponse importVm(ImportVmCmd cmd);
 
     ListResponse<UnmanagedInstanceResponse> listVmsForImport(ListVmsForImportCmd cmd);
-
 }

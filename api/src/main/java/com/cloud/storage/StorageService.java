@@ -36,6 +36,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.api.command.admin.storage.heuristics.UpdateSecondaryStorageSelectorCmd;
+import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.storage.object.ObjectStore;
 
 public interface StorageService {
@@ -111,6 +115,12 @@ public interface StorageService {
     void updateStorageCapabilities(Long poolId, boolean failOnChecks);
 
     StoragePool syncStoragePool(SyncStoragePoolCmd cmd);
+
+    Heuristic createSecondaryStorageHeuristic(CreateSecondaryStorageSelectorCmd cmd);
+
+    Heuristic updateSecondaryStorageHeuristic(UpdateSecondaryStorageSelectorCmd cmd);
+
+    void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd);
 
     ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
