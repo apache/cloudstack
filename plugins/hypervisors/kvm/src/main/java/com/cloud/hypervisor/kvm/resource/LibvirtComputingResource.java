@@ -1012,7 +1012,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        enableSSLForKvmAgent(params);
+        enableSSLForKvmAgent();
         configureLocalStorage();
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
@@ -1313,19 +1313,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
                 s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM (Libvirt Domain) with ID [%s] and name [%s].",
                         currentVmBalloonStatsPeriod, vmId, dm.getName()));
-            } catch (final LibvirtException e) {
-                s_logger.warn("Failed to set up memory balloon stats period." + e.getMessage());
+            } catch (final Exception e) {
+                s_logger.warn(String.format("Failed to set up memory balloon stats period for the VM %s with exception %s", parser.getName(), e.getMessage()));
             }
         }
     }
 
-    private void enableSSLForKvmAgent(final Map<String, Object> params) {
+    private void enableSSLForKvmAgent() {
         final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
         if (keyStoreFile == null) {
             s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
             return;
         }
-        String keystorePass = (String)params.get(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+        String keystorePass = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KEYSTORE_PASSPHRASE);
         if (StringUtils.isBlank(keystorePass)) {
             s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
             return;
@@ -3979,7 +3979,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.SCSI;
         } else if (platformEmulator.contains("Ubuntu") ||
                 StringUtils.startsWithAny(platformEmulator,
-                        "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle", "Other PV")) {
+                        "Fedora", "CentOS", "Red Hat Enterprise Linux", "Debian GNU/Linux", "FreeBSD", "Oracle",
+                        "Rocky Linux", "AlmaLinux", "Other PV")) {
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;

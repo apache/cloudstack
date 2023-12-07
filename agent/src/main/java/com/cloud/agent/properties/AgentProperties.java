@@ -14,6 +14,8 @@
  */
 package com.cloud.agent.properties;
 
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
 /**
  * Class of constant agent's properties available to configure on
  * "agent.properties".
@@ -727,6 +729,13 @@ public class AgentProperties{
      * Default value: <code>169.254.0.0/16</code>
      */
     public static final Property<String> CONTROL_CIDR = new Property<>("control.cidr", "169.254.0.0/16");
+
+    /**
+     * Keystore passphrase
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> KEYSTORE_PASSPHRASE = new Property<>(KeyStoreUtils.KS_PASSPHRASE_PROPERTY, null, String.class);
 
     public static class Property <T>{
         private String name;

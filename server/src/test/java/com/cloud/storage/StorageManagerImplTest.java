@@ -19,6 +19,8 @@ package com.cloud.storage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -126,6 +128,34 @@ public class StorageManagerImplTest {
         Mockito.when(volumeVO.getPath()).thenReturn(path);
         Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(volumeVO, Mockito.mock(VolumeVO.class)));
         Assert.assertTrue(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+    }
+
+    @Test
+    public void storagePoolCompatibleWithVolumePoolTestVolumeWithPoolIdInAllocatedState() {
+        StoragePoolVO storagePool = new StoragePoolVO();
+        storagePool.setPoolType(Storage.StoragePoolType.PowerFlex);
+        storagePool.setId(1L);
+        VolumeVO volume = new VolumeVO();
+        volume.setState(Volume.State.Allocated);
+        volume.setPoolId(1L);
+        PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
+        storageManagerImpl._storagePoolDao = storagePoolDao;
+        Mockito.doReturn(storagePool).when(storagePoolDao).findById(volume.getPoolId());
+        Assert.assertFalse(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
+
+    }
+
+    @Test
+    public void storagePoolCompatibleWithVolumePoolTestVolumeWithoutPoolIdInAllocatedState() {
+        StoragePoolVO storagePool = new StoragePoolVO();
+        storagePool.setPoolType(Storage.StoragePoolType.PowerFlex);
+        storagePool.setId(1L);
+        VolumeVO volume = new VolumeVO();
+        volume.setState(Volume.State.Allocated);
+        PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
+        storageManagerImpl._storagePoolDao = storagePoolDao;
+        Assert.assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
+
     }
 
 }
